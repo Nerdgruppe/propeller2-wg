@@ -1,57 +1,6133 @@
 ---
-
 instructions:
-  - mnemonic: ADD  D,{#}S   {WC/WZ/WCZ}
-    description: |
-      Add S into D. D = D + S. C = carry of (D + S).
-    encoding: EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS
-    cycles: 2
-    write: D
+  - mnemonic: "NOP"
+    encoding: 0000 0000000 000 000000000 000000000
+    brief: |
+      No operation.
+    group: Miscellaneous
     tags:
-      - Math and Logic
-
-  - mnemonic: TESTB   D,{#}S     XORC/XORZ
-    encoding: EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
-    description: |
-      Test bit S[4:0] of  D, XOR into C/Z. C/Z = C/Z XOR  D[S[4:0]].
-    cycles: 2
-    tags:
-      - Math and Logic
-   
-  - mnemonic: BITH    D,{#}S         {WCZ}
-    encoding: EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
-    description: |
-      Bits D[S[9:5]+S[4:0]:S[4:0]] = 1. Other bits unaffected.
-      Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-    cycles: 2
-    write: D
-    tags:
-      - Math and Logic
-  
-  - mnemonic: ALTR    D,{#}S
-    encoding: EEEE 1001100 00I DDDDDDDDD SSSSSSSSS
-    description: |
-      Alter result register address (normally D field) of next instruction to (D + S) & $1FF.
-      D += sign-extended S[17:9].
-    instruction-shield: true
-    cycles: 2
-    write: D
-    tags:
-      - Register Indirection
-
-  - mnemonic: WMLONG  D,{#}S/P
-    encoding: EEEE 1010011 11I DDDDDDDDD SSSSSSSSS
-    description: |
-      Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx.
-      Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+      - misc
+    is_alias: false
     cycles:
-      cogexec:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROR     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Rotate right.           D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROL     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Rotate left.            D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SHR     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Shift right.            D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SHL     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Shift left.             D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RCR     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Rotate carry right.     D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RCL     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Rotate carry left.      D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SAR     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Shift arithmetic right. D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SAL     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Shift arithmetic left.  D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ADD     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Add S into D.                                  D = D + S.        C = carry of (D + S).               *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ADDX    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Add (S + C) into D, extended.                  D = D + S + C.    C = carry of (D + S + C).           Z = Z AND (result == 0).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ADDS    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Add S into D, signed.                          D = D + S.        C = correct sign of (D + S).        *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ADDSX   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Add (S + C) into D, signed and extended.       D = D + S + C.    C = correct sign of (D + S + C).    Z = Z AND (result == 0).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUB     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Subtract S from D.                             D = D - S.        C = borrow of (D - S).              *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUBX    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Subtract (S + C) from D, extended.             D = D - (S + C).  C = borrow of (D - (S + C)).        Z = Z AND (result == 0).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUBS    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Subtract S from D, signed.                     D = D - S.        C = correct sign of (D - S).        *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUBSX   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Subtract (S + C) from D, signed and extended.  D = D - (S + C).  C = correct sign of (D - (S + C)).  Z = Z AND (result == 0).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CMP     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Compare D to S.                                                  C = borrow of (D - S).              Z = (D == S).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CMPX    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Compare D to (S + C), extended.                                  C = borrow of (D - (S + C)).        Z = Z AND (D == S + C).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CMPS    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Compare D to S, signed.                                          C = correct sign of (D - S).        Z = (D == S).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CMPSX   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Compare D to (S + C), signed and extended.                       C = correct sign of (D - (S + C)).  Z = Z AND (D == S + C).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CMPR    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Compare S to D (reverse).                                        C = borrow of (S - D).              Z = (D == S).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CMPM    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Compare D to S, get MSB of difference into C.                    C = MSB of (D - S).                 Z = (D == S).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUBR    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Subtract D from S (reverse).                   D = S - D.        C = borrow of (S - D).              *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CMPSUB  D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Compare and subtract S from D if D >= S. If D => S then D = D - S and C = 1, else D same and C = 0.  *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FGE     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Force D >= S. If D < S then D = S and C = 1, else D same and C = 0. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLE     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Force D <= S. If D > S then D = S and C = 1, else D same and C = 0. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FGES    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Force D >= S, signed. If D < S then D = S and C = 1, else D same and C = 0. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLES    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Force D <= S, signed. If D > S then D = S and C = 1, else D same and C = 0. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUMC    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Sum +/-S into D by  C. If C = 1 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUMNC   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Sum +/-S into D by !C. If C = 0 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUMZ    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Sum +/-S into D by  Z. If Z = 1 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SUMNZ   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Sum +/-S into D by !Z. If Z = 0 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTB   D,{#}S         WC/WZ"
+    encoding: EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of  D, write to C/Z. C/Z =          D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTBN  D,{#}S         WC/WZ"
+    encoding: EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of !D, write to C/Z. C/Z =         !D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTB   D,{#}S     ANDC/ANDZ"
+    encoding: EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of  D, AND into C/Z. C/Z = C/Z AND  D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTBN  D,{#}S     ANDC/ANDZ"
+    encoding: EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of !D, AND into C/Z. C/Z = C/Z AND !D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTB   D,{#}S       ORC/ORZ"
+    encoding: EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of  D, OR  into C/Z. C/Z = C/Z OR   D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTBN  D,{#}S       ORC/ORZ"
+    encoding: EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of !D, OR  into C/Z. C/Z = C/Z OR  !D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTB   D,{#}S     XORC/XORZ"
+    encoding: EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of  D, XOR into C/Z. C/Z = C/Z XOR  D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTBN  D,{#}S     XORC/XORZ"
+    encoding: EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test bit S[4:0] of !D, XOR into C/Z. C/Z = C/Z XOR !D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITL    D,{#}S         {WCZ}"
+    encoding: EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = 0.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITH    D,{#}S         {WCZ}"
+    encoding: EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = 1.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITC    D,{#}S         {WCZ}"
+    encoding: EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = C.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITNC   D,{#}S         {WCZ}"
+    encoding: EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = !C.   Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITZ    D,{#}S         {WCZ}"
+    encoding: EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = Z.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITNZ   D,{#}S         {WCZ}"
+    encoding: EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = !Z.   Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITRND  D,{#}S         {WCZ}"
+    encoding: EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = RNDs. Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BITNOT  D,{#}S         {WCZ}"
+    encoding: EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Toggle bits D[S[9:5]+S[4:0]:S[4:0]]. Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "AND     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      AND S into D.    D = D & S.    C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ANDN    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      AND !S into D.   D = D & !S.   C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OR      D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      OR S into D.     D = D | S.    C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "XOR     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      XOR S into D.    D = D ^ S.    C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUXC    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Mux  C into each D bit that is '1' in S. D = (!S & D ) | (S & {32{ C}}). C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUXNC   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Mux !C into each D bit that is '1' in S. D = (!S & D ) | (S & {32{!C}}). C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUXZ    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Mux  Z into each D bit that is '1' in S. D = (!S & D ) | (S & {32{ Z}}). C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUXNZ   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Mux !Z into each D bit that is '1' in S. D = (!S & D ) | (S & {32{!Z}}). C = parity of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MOV     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Move S into D. D = S. C = S[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NOT     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get !S into D. D = !S. C = !S[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NOT     D        {WC/WZ/WCZ}"
+    encoding: EEEE 0110001 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Get !D into D. D = !D. C = !D[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ABS     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get absolute value of S into D. D = ABS(S). C = S[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ABS     D        {WC/WZ/WCZ}"
+    encoding: EEEE 0110010 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Get absolute value of D into D. D = ABS(D). C = D[31]. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEG     D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Negate S into D. D = -S. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEG     D        {WC/WZ/WCZ}"
+    encoding: EEEE 0110011 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Negate D.        D = -D. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGC    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Negate S by  C into D. If C = 1 then D = -S, else D = S. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGC    D        {WC/WZ/WCZ}"
+    encoding: EEEE 0110100 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Negate D by  C.        If C = 1 then D = -D, else D = D. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGNC   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Negate S by !C into D. If C = 0 then D = -S, else D = S. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGNC   D        {WC/WZ/WCZ}"
+    encoding: EEEE 0110101 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Negate D by !C.        If C = 0 then D = -D, else D = D. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGZ    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Negate S by  Z into D. If Z = 1 then D = -S, else D = S. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGZ    D        {WC/WZ/WCZ}"
+    encoding: EEEE 0110110 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Negate D by  Z.        If Z = 1 then D = -D, else D = D. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGNZ   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Negate S by !Z into D. If Z = 0 then D = -S, else D = S. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NEGNZ   D        {WC/WZ/WCZ}"
+    encoding: EEEE 0110111 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Negate D by !Z.        If Z = 0 then D = -D, else D = D. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "INCMOD  D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Increment with modulus. If D = S then D = 0 and C = 1, else D = D + 1 and C = 0. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DECMOD  D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Decrement with modulus. If D = 0 then D = S and C = 1, else D = D - 1 and C = 0. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ZEROX   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Zero-extend D above bit S[4:0]. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SIGNX   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Sign-extend D from bit S[4:0]. C = MSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ENCOD   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get bit position of top-most '1' in S into D. D = position of top '1' in S (0..31). C = (S != 0). *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ENCOD   D        {WC/WZ/WCZ}"
+    encoding: EEEE 0111100 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Get bit position of top-most '1' in D into D. D = position of top '1' in S (0..31). C = (S != 0). *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ONES    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get number of '1's in S into D. D = number of '1's in S (0..32). C = LSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ONES    D        {WC/WZ/WCZ}"
+    encoding: EEEE 0111101 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Get number of '1's in D into D. D = number of '1's in S (0..32). C = LSB of result. *
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TEST    D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D with S. C = parity of (D & S). Z = ((D & S) == 0).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TEST    D        {WC/WZ/WCZ}"
+    encoding: EEEE 0111110 CZ0 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Test D. C = parity of D. Z = (D == 0).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTN   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D with !S. C = parity of (D & !S). Z = ((D & !S) == 0).
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETNIB  D,{#}S,#N"
+    encoding: EEEE 100000N NNI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set S[3:0] into nibble N in D, keeping rest of D same.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETNIB  {#}S"
+    encoding: EEEE 1000000 00I 000000000 SSSSSSSSS
+    brief: |
+      Set S[3:0] into nibble established by prior ALTSN instruction.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETNIB  D,{#}S,#N"
+    encoding: EEEE 100001N NNI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get nibble N of S into D. D = {28'b0, S.NIBBLE[N]).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETNIB  D"
+    encoding: EEEE 1000010 000 DDDDDDDDD 000000000
+    brief: |
+      Get nibble established by prior ALTGN instruction into D.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROLNIB  D,{#}S,#N"
+    encoding: EEEE 100010N NNI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Rotate-left nibble N of S into D. D = {D[27:0], S.NIBBLE[N]).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROLNIB  D"
+    encoding: EEEE 1000100 000 DDDDDDDDD 000000000
+    brief: |
+      Rotate-left nibble established by prior ALTGN instruction into D.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETBYTE D,{#}S,#N"
+    encoding: EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set S[7:0] into byte N in D, keeping rest of D same.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETBYTE {#}S"
+    encoding: EEEE 1000110 00I 000000000 SSSSSSSSS
+    brief: |
+      Set S[7:0] into byte established by prior ALTSB instruction.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETBYTE D,{#}S,#N"
+    encoding: EEEE 1000111 NNI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get byte N of S into D. D = {24'b0, S.BYTE[N]).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETBYTE D"
+    encoding: EEEE 1000111 000 DDDDDDDDD 000000000
+    brief: |
+      Get byte established by prior ALTGB instruction into D.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROLBYTE D,{#}S,#N"
+    encoding: EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Rotate-left byte N of S into D. D = {D[23:0], S.BYTE[N]).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROLBYTE D"
+    encoding: EEEE 1001000 000 DDDDDDDDD 000000000
+    brief: |
+      Rotate-left byte established by prior ALTGB instruction into D.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETWORD D,{#}S,#N"
+    encoding: EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set S[15:0] into word N in D, keeping rest of D same.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETWORD {#}S"
+    encoding: EEEE 1001001 00I 000000000 SSSSSSSSS
+    brief: |
+      Set S[15:0] into word established by prior ALTSW instruction.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETWORD D,{#}S,#N"
+    encoding: EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get word N of S into D. D = {16'b0, S.WORD[N]).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETWORD D"
+    encoding: EEEE 1001001 100 DDDDDDDDD 000000000
+    brief: |
+      Get word established by prior ALTGW instruction into D.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROLWORD D,{#}S,#N"
+    encoding: EEEE 1001010 0NI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Rotate-left word N of S into D. D = {D[15:0], S.WORD[N]).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ROLWORD D"
+    encoding: EEEE 1001010 000 DDDDDDDDD 000000000
+    brief: |
+      Rotate-left word established by prior ALTGW instruction into D.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTSN   D,{#}S"
+    encoding: EEEE 1001010 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter subsequent SETNIB instruction. Next D field = (D[11:3] + S) & $1FF, N field = D[2:0].          D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTSN   D"
+    encoding: EEEE 1001010 101 DDDDDDDDD 000000000
+    brief: |
+      Alter subsequent SETNIB instruction. Next D field = D[11:3], N field = D[2:0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTGN   D,{#}S"
+    encoding: EEEE 1001010 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter subsequent GETNIB/ROLNIB instruction. Next S field = (D[11:3] + S) & $1FF, N field = D[2:0].   D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTGN   D"
+    encoding: EEEE 1001010 111 DDDDDDDDD 000000000
+    brief: |
+      Alter subsequent GETNIB/ROLNIB instruction. Next S field = D[11:3], N field = D[2:0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTSB   D,{#}S"
+    encoding: EEEE 1001011 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter subsequent SETBYTE instruction. Next D field = (D[10:2] + S) & $1FF, N field = D[1:0].         D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTSB   D"
+    encoding: EEEE 1001011 001 DDDDDDDDD 000000000
+    brief: |
+      Alter subsequent SETBYTE instruction. Next D field = D[10:2], N field = D[1:0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTGB   D,{#}S"
+    encoding: EEEE 1001011 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter subsequent GETBYTE/ROLBYTE instruction. Next S field = (D[10:2] + S) & $1FF, N field = D[1:0]. D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTGB   D"
+    encoding: EEEE 1001011 011 DDDDDDDDD 000000000
+    brief: |
+      Alter subsequent GETBYTE/ROLBYTE instruction. Next S field = D[10:2], N field = D[1:0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTSW   D,{#}S"
+    encoding: EEEE 1001011 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter subsequent SETWORD instruction. Next D field = (D[9:1] + S) & $1FF, N field = D[0].            D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTSW   D"
+    encoding: EEEE 1001011 101 DDDDDDDDD 000000000
+    brief: |
+      Alter subsequent SETWORD instruction. Next D field = D[9:1], N field = D[0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTGW   D,{#}S"
+    encoding: EEEE 1001011 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter subsequent GETWORD/ROLWORD instruction. Next S field = ((D[9:1] + S) & $1FF), N field = D[0].  D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTGW   D"
+    encoding: EEEE 1001011 111 DDDDDDDDD 000000000
+    brief: |
+      Alter subsequent GETWORD/ROLWORD instruction. Next S field = D[9:1], N field = D[0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTR    D,{#}S"
+    encoding: EEEE 1001100 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter result register address (normally D field) of next instruction to (D + S) & $1FF.              D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTR    D"
+    encoding: EEEE 1001100 001 DDDDDDDDD 000000000
+    brief: |
+      Alter result register address (normally D field) of next instruction to D[8:0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTD    D,{#}S"
+    encoding: EEEE 1001100 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter D field of next instruction to (D + S) & $1FF.                                                 D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTD    D"
+    encoding: EEEE 1001100 011 DDDDDDDDD 000000000
+    brief: |
+      Alter D field of next instruction to D[8:0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTS    D,{#}S"
+    encoding: EEEE 1001100 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter S field of next instruction to (D + S) & $1FF.                                                 D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTS    D"
+    encoding: EEEE 1001100 101 DDDDDDDDD 000000000
+    brief: |
+      Alter S field of next instruction to D[8:0].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTB    D,{#}S"
+    encoding: EEEE 1001100 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alter D field of next instruction to (D[13:5] + S) & $1FF.                                           D += sign-extended S[17:9].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTB    D"
+    encoding: EEEE 1001100 111 DDDDDDDDD 000000000
+    brief: |
+      Alter D field of next instruction to D[13:5].
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTI    D,{#}S"
+    encoding: EEEE 1001101 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Substitute next instruction's I/R/D/S fields with fields from D, per S. Modify D per S.
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ALTI    D"
+    encoding: EEEE 1001101 001 DDDDDDDDD 101100100
+    brief: |
+      Execute D in place of next instruction. D stays same.
+    group: Register Indirection
+    tags:
+      - control
+    reg_access: D
+    is_alias: true
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETR    D,{#}S"
+    encoding: EEEE 1001101 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set R field of D to S[8:0]. D = {D[31:28], S[8:0], D[18:0]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETD    D,{#}S"
+    encoding: EEEE 1001101 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set D field of D to S[8:0]. D = {D[31:18], S[8:0], D[8:0]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETS    D,{#}S"
+    encoding: EEEE 1001101 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set S field of D to S[8:0]. D = {D[31:9], S[8:0]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DECOD   D,{#}S"
+    encoding: EEEE 1001110 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Decode S[4:0] into D. D = 1 << S[4:0].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DECOD   D"
+    encoding: EEEE 1001110 000 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Decode D[4:0] into D. D = 1 << D[4:0].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BMASK   D,{#}S"
+    encoding: EEEE 1001110 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Get LSB-justified bit mask of size (S[4:0] + 1) into D. D = ($0_0000_0002 << S[4:0]) - 1.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BMASK   D"
+    encoding: EEEE 1001110 010 DDDDDDDDD DDDDDDDDD
+    brief: |
+      Get LSB-justified bit mask of size (D[4:0] + 1) into D. D = ($0_0000_0002 << D[4:0]) - 1.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CRCBIT  D,{#}S"
+    encoding: EEEE 1001110 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Iterate CRC value in D using C and polynomial in S. If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "CRCNIB  D,{#}S"
+    encoding: EEEE 1001110 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Iterate CRC value in D using Q[31:28] and polynomial in S. Like CRCBIT x 4. Q = Q << 4. For long, use SETQ+'REP #1,#8'+CRCNIB.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUXNITS D,{#}S"
+    encoding: EEEE 1001111 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUXNIBS D,{#}S"
+    encoding: EEEE 1001111 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUXQ    D,{#}S"
+    encoding: EEEE 1001111 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Used after SETQ. For each '1' bit in Q, copy the corresponding bit in S into D. D = (D & !Q) | (S & Q).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MOVBYTS D,{#}S"
+    encoding: EEEE 1001111 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Move bytes within D, per S. D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MUL     D,{#}S          {WZ}"
+    encoding: EEEE 1010000 0ZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      D = unsigned (D[15:0] * S[15:0]). Z = (S == 0) | (D == 0).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MULS    D,{#}S          {WZ}"
+    encoding: EEEE 1010000 1ZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      D = signed (D[15:0] * S[15:0]).   Z = (S == 0) | (D == 0).
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SCA     D,{#}S          {WZ}"
+    encoding: EEEE 1010001 0ZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16. *
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SCAS    D,{#}S          {WZ}"
+    encoding: EEEE 1010001 1ZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14. In this scheme, $4000 = 1.0 and $C000 = -1.0. *
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ADDPIX  D,{#}S"
+    encoding: EEEE 1010010 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Add bytes of S into bytes of D, with $FF saturation.
+    group: Pixel Mixer
+    tags:
+      - colors
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 7
+      hub: 7
+
+  - mnemonic: "MULPIX  D,{#}S"
+    encoding: EEEE 1010010 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Multiply bytes of S into bytes of D, where $FF = 1.0 and $00 = 0.0.
+    group: Pixel Mixer
+    tags:
+      - colors
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 7
+      hub: 7
+
+  - mnemonic: "BLNPIX  D,{#}S"
+    encoding: EEEE 1010010 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Alpha-blend bytes of S into bytes of D, using SETPIV value.
+    group: Pixel Mixer
+    tags:
+      - colors
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 7
+      hub: 7
+
+  - mnemonic: "MIXPIX  D,{#}S"
+    encoding: EEEE 1010010 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Mix bytes of S into bytes of D, using SETPIX and SETPIV values.
+    group: Pixel Mixer
+    tags:
+      - colors
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 7
+      hub: 7
+
+  - mnemonic: "ADDCT1  D,{#}S"
+    encoding: EEEE 1010011 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set CT1 event to trigger on CT = D + S. Adds S into D.
+    group: Events - Configuration
+    tags:
+      - events
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ADDCT2  D,{#}S"
+    encoding: EEEE 1010011 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set CT2 event to trigger on CT = D + S. Adds S into D.
+    group: Events - Configuration
+    tags:
+      - events
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "ADDCT3  D,{#}S"
+    encoding: EEEE 1010011 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set CT3 event to trigger on CT = D + S. Adds S into D.
+    group: Events - Configuration
+    tags:
+      - events
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WMLONG  D,{#}S/P"
+    encoding: EEEE 1010011 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx.     Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+    group: Hub RAM - Write
+    tags:
+      - hubram
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
         min: 3
         max: 10
-      hubexec:
-        min: 3
-        max: 20 
-    write: hub
-    tags:
-      - Hub RAM - Write
+        unaligned_delay: true
 
+      hub:
+        min: 3
+        max: 20
+        unaligned_delay: true
+
+  - mnemonic: "RQPIN   D,{#}S          {WC}"
+    encoding: EEEE 1010100 C0I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Read smart pin S[5:0] result "Z" into D, don't acknowledge pin ("Q" in RQPIN means "quiet"). C = modal result.
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RDPIN   D,{#}S          {WC}"
+    encoding: EEEE 1010100 C1I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Read smart pin S[5:0] result "Z" into D, acknowledge pin.                                    C = modal result.
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RDLUT   D,{#}S/P {WC/WZ/WCZ}"
+    encoding: EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Read data from LUT address {#}S/PTRx into D. C = MSB of data. *
+    group: Lookup Table
+    tags:
+      - lut
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 3
+      hub: 3
+
+  - mnemonic: "RDBYTE  D,{#}S/P {WC/WZ/WCZ}"
+    encoding: EEEE 1010110 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Read zero-extended byte from hub address {#}S/PTRx into D. C = MSB of byte. *
+    group: Hub RAM - Read
+    tags:
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog:
+        min: 9
+        max: 16
+
+      hub:
+        min: 9
+        max: 26
+
+  - mnemonic: "RDWORD  D,{#}S/P {WC/WZ/WCZ}"
+    encoding: EEEE 1010111 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Read zero-extended word from hub address {#}S/PTRx into D. C = MSB of word. *
+    group: Hub RAM - Read
+    tags:
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog:
+        min: 9
+        max: 16
+        unaligned_delay: true
+
+      hub:
+        min: 9
+        max: 26
+        unaligned_delay: true
+
+  - mnemonic: "RDLONG  D,{#}S/P {WC/WZ/WCZ}"
+    encoding: EEEE 1011000 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Read long from hub address {#}S/PTRx into D. C = MSB of long. *   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+    group: Hub RAM - Read
+    tags:
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog:
+        min: 9
+        max: 16
+        unaligned_delay: true
+
+      hub:
+        min: 9
+        max: 26
+        unaligned_delay: true
+
+  - mnemonic: "POPA    D        {WC/WZ/WCZ}"
+    encoding: EEEE 1011000 CZ1 DDDDDDDDD 101011111
+    brief: |
+      Read long from hub address --PTRA into D. C = MSB of long. *
+    group: Hub RAM - Read
+    tags:
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: true
+    cycles:
+      cog:
+        min: 9
+        max: 16
+        unaligned_delay: true
+
+      hub:
+        min: 9
+        max: 26
+        unaligned_delay: true
+
+  - mnemonic: "POPB    D        {WC/WZ/WCZ}"
+    encoding: EEEE 1011000 CZ1 DDDDDDDDD 111011111
+    brief: |
+      Read long from hub address --PTRB into D. C = MSB of long. *
+    group: Hub RAM - Read
+    tags:
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: true
+    cycles:
+      cog:
+        min: 9
+        max: 16
+        unaligned_delay: true
+
+      hub:
+        min: 9
+        max: 26
+        unaligned_delay: true
+
+  - mnemonic: "CALLD   D,{#}S   {WC/WZ/WCZ}"
+    encoding: EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D.                    C = S[31], Z = S[30].
+    group: Branch S - Call
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RESI3"
+    encoding: EEEE 1011001 110 111110000 111110001
+    brief: |
+      Resume from INT3. (CALLD $1F0,$1F1 WCZ)
+    group: Branch S - Resume
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RESI2"
+    encoding: EEEE 1011001 110 111110010 111110011
+    brief: |
+      Resume from INT2. (CALLD $1F2,$1F3 WCZ)
+    group: Branch S - Resume
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RESI1"
+    encoding: EEEE 1011001 110 111110100 111110101
+    brief: |
+      Resume from INT1. (CALLD $1F4,$1F5 WCZ)
+    group: Branch S - Resume
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RESI0"
+    encoding: EEEE 1011001 110 111111110 111111111
+    brief: |
+      Resume from INT0. (CALLD $1FE,$1FF WCZ)
+    group: Branch S - Resume
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RETI3"
+    encoding: EEEE 1011001 110 111111111 111110001
+    brief: |
+      Return from INT3. (CALLD $1FF,$1F1 WCZ)
+    group: Branch S - Return
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RETI2"
+    encoding: EEEE 1011001 110 111111111 111110011
+    brief: |
+      Return from INT2. (CALLD $1FF,$1F3 WCZ)
+    group: Branch S - Return
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RETI1"
+    encoding: EEEE 1011001 110 111111111 111110101
+    brief: |
+      Return from INT1. (CALLD $1FF,$1F5 WCZ)
+    group: Branch S - Return
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RETI0"
+    encoding: EEEE 1011001 110 111111111 111111111
+    brief: |
+      Return from INT0. (CALLD $1FF,$1FF WCZ)
+    group: Branch S - Return
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: true
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "CALLPA  {#}D,{#}S"
+    encoding: EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PA.
+    group: Branch S - Call
+    tags:
+      - branch
+      - control
+    reg_access: PA
+    stack_access: push
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "CALLPB  {#}D,{#}S"
+    encoding: EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Call to S** by pushing {C, Z, 10'b0, PC[19:0]} onto stack, copy D to PB.
+    group: Branch S - Call
+    tags:
+      - branch
+      - control
+    reg_access: PB
+    stack_access: push
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "DJZ     D,{#}S"
+    encoding: EEEE 1011011 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Decrement D and jump to S** if result is zero.
+    group: Branch S - Mod & Test
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "DJNZ    D,{#}S"
+    encoding: EEEE 1011011 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Decrement D and jump to S** if result is not zero.
+    group: Branch S - Mod & Test
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "DJF     D,{#}S"
+    encoding: EEEE 1011011 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Decrement D and jump to S** if result is $FFFF_FFFF.
+    group: Branch S - Mod & Test
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "DJNF    D,{#}S"
+    encoding: EEEE 1011011 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Decrement D and jump to S** if result is not $FFFF_FFFF.
+    group: Branch S - Mod & Test
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "IJZ     D,{#}S"
+    encoding: EEEE 1011100 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Increment D and jump to S** if result is zero.
+    group: Branch S - Mod & Test
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "IJNZ    D,{#}S"
+    encoding: EEEE 1011100 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Increment D and jump to S** if result is not zero.
+    group: Branch S - Mod & Test
+    tags:
+      - branch
+      - control
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "TJZ     D,{#}S"
+    encoding: EEEE 1011100 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D and jump to S** if D is zero.
+    group: Branch S - Test
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "TJNZ    D,{#}S"
+    encoding: EEEE 1011100 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D and jump to S** if D is not zero.
+    group: Branch S - Test
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "TJF     D,{#}S"
+    encoding: EEEE 1011101 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D and jump to S** if D is full (D = $FFFF_FFFF).
+    group: Branch S - Test
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "TJNF    D,{#}S"
+    encoding: EEEE 1011101 01I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D and jump to S** if D is not full (D != $FFFF_FFFF).
+    group: Branch S - Test
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "TJS     D,{#}S"
+    encoding: EEEE 1011101 10I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D and jump to S** if D is signed (D[31] = 1).
+    group: Branch S - Test
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "TJNS    D,{#}S"
+    encoding: EEEE 1011101 11I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D and jump to S** if D is not signed (D[31] = 0).
+    group: Branch S - Test
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "TJV     D,{#}S"
+    encoding: EEEE 1011110 00I DDDDDDDDD SSSSSSSSS
+    brief: |
+      Test D and jump to S** if D overflowed (D[31] != C, C = 'correct sign' from last addition/subtraction).
+    group: Branch S - Test
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JINT    {#}S"
+    encoding: EEEE 1011110 01I 000000000 SSSSSSSSS
+    brief: |
+      Jump to S** if INT event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JCT1    {#}S"
+    encoding: EEEE 1011110 01I 000000001 SSSSSSSSS
+    brief: |
+      Jump to S** if CT1 event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JCT2    {#}S"
+    encoding: EEEE 1011110 01I 000000010 SSSSSSSSS
+    brief: |
+      Jump to S** if CT2 event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JCT3    {#}S"
+    encoding: EEEE 1011110 01I 000000011 SSSSSSSSS
+    brief: |
+      Jump to S** if CT3 event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JSE1    {#}S"
+    encoding: EEEE 1011110 01I 000000100 SSSSSSSSS
+    brief: |
+      Jump to S** if SE1 event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JSE2    {#}S"
+    encoding: EEEE 1011110 01I 000000101 SSSSSSSSS
+    brief: |
+      Jump to S** if SE2 event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JSE3    {#}S"
+    encoding: EEEE 1011110 01I 000000110 SSSSSSSSS
+    brief: |
+      Jump to S** if SE3 event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JSE4    {#}S"
+    encoding: EEEE 1011110 01I 000000111 SSSSSSSSS
+    brief: |
+      Jump to S** if SE4 event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JPAT    {#}S"
+    encoding: EEEE 1011110 01I 000001000 SSSSSSSSS
+    brief: |
+      Jump to S** if PAT event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JFBW    {#}S"
+    encoding: EEEE 1011110 01I 000001001 SSSSSSSSS
+    brief: |
+      Jump to S** if FBW event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JXMT    {#}S"
+    encoding: EEEE 1011110 01I 000001010 SSSSSSSSS
+    brief: |
+      Jump to S** if XMT event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JXFI    {#}S"
+    encoding: EEEE 1011110 01I 000001011 SSSSSSSSS
+    brief: |
+      Jump to S** if XFI event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JXRO    {#}S"
+    encoding: EEEE 1011110 01I 000001100 SSSSSSSSS
+    brief: |
+      Jump to S** if XRO event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JXRL    {#}S"
+    encoding: EEEE 1011110 01I 000001101 SSSSSSSSS
+    brief: |
+      Jump to S** if XRL event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JATN    {#}S"
+    encoding: EEEE 1011110 01I 000001110 SSSSSSSSS
+    brief: |
+      Jump to S** if ATN event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JQMT    {#}S"
+    encoding: EEEE 1011110 01I 000001111 SSSSSSSSS
+    brief: |
+      Jump to S** if QMT event flag is set.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNINT   {#}S"
+    encoding: EEEE 1011110 01I 000010000 SSSSSSSSS
+    brief: |
+      Jump to S** if INT event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNCT1   {#}S"
+    encoding: EEEE 1011110 01I 000010001 SSSSSSSSS
+    brief: |
+      Jump to S** if CT1 event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNCT2   {#}S"
+    encoding: EEEE 1011110 01I 000010010 SSSSSSSSS
+    brief: |
+      Jump to S** if CT2 event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNCT3   {#}S"
+    encoding: EEEE 1011110 01I 000010011 SSSSSSSSS
+    brief: |
+      Jump to S** if CT3 event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNSE1   {#}S"
+    encoding: EEEE 1011110 01I 000010100 SSSSSSSSS
+    brief: |
+      Jump to S** if SE1 event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNSE2   {#}S"
+    encoding: EEEE 1011110 01I 000010101 SSSSSSSSS
+    brief: |
+      Jump to S** if SE2 event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNSE3   {#}S"
+    encoding: EEEE 1011110 01I 000010110 SSSSSSSSS
+    brief: |
+      Jump to S** if SE3 event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNSE4   {#}S"
+    encoding: EEEE 1011110 01I 000010111 SSSSSSSSS
+    brief: |
+      Jump to S** if SE4 event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNPAT   {#}S"
+    encoding: EEEE 1011110 01I 000011000 SSSSSSSSS
+    brief: |
+      Jump to S** if PAT event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNFBW   {#}S"
+    encoding: EEEE 1011110 01I 000011001 SSSSSSSSS
+    brief: |
+      Jump to S** if FBW event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNXMT   {#}S"
+    encoding: EEEE 1011110 01I 000011010 SSSSSSSSS
+    brief: |
+      Jump to S** if XMT event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNXFI   {#}S"
+    encoding: EEEE 1011110 01I 000011011 SSSSSSSSS
+    brief: |
+      Jump to S** if XFI event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNXRO   {#}S"
+    encoding: EEEE 1011110 01I 000011100 SSSSSSSSS
+    brief: |
+      Jump to S** if XRO event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNXRL   {#}S"
+    encoding: EEEE 1011110 01I 000011101 SSSSSSSSS
+    brief: |
+      Jump to S** if XRL event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNATN   {#}S"
+    encoding: EEEE 1011110 01I 000011110 SSSSSSSSS
+    brief: |
+      Jump to S** if ATN event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "JNQMT   {#}S"
+    encoding: EEEE 1011110 01I 000011111 SSSSSSSSS
+    brief: |
+      Jump to S** if QMT event flag is clear.
+    group: Events - Branch
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 4
+          - 2
+
+      hub:
+        type: one-of
+        options:
+          - min: 13
+            max: 20
+
+          - 2
+
+  - mnemonic: "SETPAT  {#}D,{#}S"
+    encoding: EEEE 1011111 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set pin pattern for PAT event. C selects INA/INB, Z selects =/!=, D provides mask value, S provides match value.
+    group: Events - Configuration
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "AKPIN   {#}S"
+    encoding: EEEE 1100000 01I 000000001 SSSSSSSSS
+    brief: |
+      Acknowledge smart pins S[10:6]+S[5:0]..S[5:0].                        Wraps within A/B pins. Prior SETQ D[4:0] overrides S[10:6].
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WRPIN   {#}D,{#}S"
+    encoding: EEEE 1100000 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set mode of smart pins S[10:6]+S[5:0]..S[5:0] to D, acknowledge pins. Wraps within A/B pins. Prior SETQ D[4:0] overrides S[10:6].
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WXPIN   {#}D,{#}S"
+    encoding: EEEE 1100000 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set "X"  of smart pins S[10:6]+S[5:0]..S[5:0] to D, acknowledge pins. Wraps within A/B pins. Prior SETQ D[4:0] overrides S[10:6].
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WYPIN   {#}D,{#}S"
+    encoding: EEEE 1100001 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set "Y"  of smart pins S[10:6]+S[5:0]..S[5:0] to D, acknowledge pins. Wraps within A/B pins. Prior SETQ D[4:0] overrides S[10:6].
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WRLUT   {#}D,{#}S/P"
+    encoding: EEEE 1100001 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Write D to LUT address {#}S/PTRx.
+    group: Lookup Table
+    tags:
+      - lut
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WRBYTE  {#}D,{#}S/P"
+    encoding: EEEE 1100010 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Write byte in D[7:0] to hub address {#}S/PTRx.
+    group: Hub RAM - Write
+    tags:
+      - hubram
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
+        min: 3
+        max: 10
+
+      hub:
+        min: 3
+        max: 20
+
+  - mnemonic: "WRWORD  {#}D,{#}S/P"
+    encoding: EEEE 1100010 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Write word in D[15:0] to hub address {#}S/PTRx.
+    group: Hub RAM - Write
+    tags:
+      - hubram
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
+        min: 3
+        max: 10
+        unaligned_delay: true
+
+      hub:
+        min: 3
+        max: 20
+        unaligned_delay: true
+
+  - mnemonic: "WRLONG  {#}D,{#}S/P"
+    encoding: EEEE 1100011 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Write long in D[31:0] to hub address {#}S/PTRx.                   Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+    group: Hub RAM - Write
+    tags:
+      - hubram
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
+        min: 3
+        max: 10
+        unaligned_delay: true
+
+      hub:
+        min: 3
+        max: 20
+        unaligned_delay: true
+
+  - mnemonic: "PUSHA   {#}D"
+    encoding: EEEE 1100011 0L1 DDDDDDDDD 101100001
+    brief: |
+      Write long in D[31:0] to hub address PTRA++.
+    group: Hub RAM - Write
+    tags:
+      - hubram
+    hub_access: write
+    is_alias: true
+    cycles:
+      cog:
+        min: 3
+        max: 10
+        unaligned_delay: true
+
+      hub:
+        min: 3
+        max: 20
+        unaligned_delay: true
+
+  - mnemonic: "PUSHB   {#}D"
+    encoding: EEEE 1100011 0L1 DDDDDDDDD 111100001
+    brief: |
+      Write long in D[31:0] to hub address PTRB++.
+    group: Hub RAM - Write
+    tags:
+      - hubram
+    hub_access: write
+    is_alias: true
+    cycles:
+      cog:
+        min: 3
+        max: 10
+        unaligned_delay: true
+
+      hub:
+        min: 3
+        max: 20
+        unaligned_delay: true
+
+  - mnemonic: "RDFAST  {#}D,{#}S"
+    encoding: EEEE 1100011 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin new fast hub read via FIFO.  D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+    group: Hub FIFO - New Read
+    tags:
+      - fifo
+      - hubram
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 2
+          - type: sum-of
+            summands:
+              - WRFAST finished
+              - min: 10
+                max: 17
+
+      hub: fifo active
+
+  - mnemonic: "WRFAST  {#}D,{#}S"
+    encoding: EEEE 1100100 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin new fast hub write via FIFO. D[31] = no wait, D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+    group: Hub FIFO - New Write
+    tags:
+      - fifo
+      - hubram
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - 2
+          - type: sum-of
+            summands:
+              - WRFAST finished
+              - 3
+
+      hub: fifo active
+
+  - mnemonic: "FBLOCK  {#}D,{#}S"
+    encoding: EEEE 1100100 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Set next block for when block wraps. D[13:0] = block size in 64-byte units (0 = max), S[19:0] = block start address.
+    group: Hub FIFO - New Block
+    tags:
+      - fifo
+      - hubram
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "XINIT   {#}D,{#}S"
+    encoding: EEEE 1100101 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Issue streamer command immediately, zeroing phase. Prior SETQ sets NCO frequency.
+    group: Streamer
+    tags:
+      - fifo
+      - streamer
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "XSTOP"
+    encoding: EEEE 1100101 011 000000000 000000000
+    brief: |
+      Stop streamer immediately. Prior SETQ sets NCO frequency.
+    group: Streamer
+    tags:
+      - fifo
+      - streamer
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "XZERO   {#}D,{#}S"
+    encoding: EEEE 1100101 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Buffer new streamer command to be issued on final NCO rollover of current command, zeroing phase. Prior SETQ sets NCO frequency.
+    group: Streamer
+    tags:
+      - fifo
+      - streamer
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "XCONT   {#}D,{#}S"
+    encoding: EEEE 1100110 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Buffer new streamer command to be issued on final NCO rollover of current command, continuing phase. Prior SETQ sets NCO frequency.
+    group: Streamer
+    tags:
+      - fifo
+      - streamer
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "REP     {#}D,{#}S"
+    encoding: EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Execute next D[8:0] instructions S times. If S = 0, repeat instructions infinitely. If D[8:0] = 0, nothing repeats.
+    group: Branch Repeat
+    tags:
+      - branch
+      - control
+    is_alias: false
+    intr_shield: loop_body
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "COGINIT {#}D,{#}S       {WC}"
+    encoding: EEEE 1100111 CLI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Start cog selected by D. S[19:0] sets hub startup address and PTRB of cog. Prior SETQ sets PTRA of cog. C = 1 if no cog available.
+    group: Hub Control - Cogs
+    tags:
+      - hub
+    reg_access: D_if_WC
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+      hub:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+  - mnemonic: "QMUL    {#}D,{#}S"
+    encoding: EEEE 1101000 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin CORDIC unsigned multiplication of D * S. GETQX/GETQY retrieves lower/upper product.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "QDIV    {#}D,{#}S"
+    encoding: EEEE 1101000 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin CORDIC unsigned division of {SETQ value or 32'b0, D} / S. GETQX/GETQY retrieves quotient/remainder.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "QFRAC   {#}D,{#}S"
+    encoding: EEEE 1101001 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin CORDIC unsigned division of {D, SETQ value or 32'b0} / S. GETQX/GETQY retrieves quotient/remainder.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "QSQRT   {#}D,{#}S"
+    encoding: EEEE 1101001 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin CORDIC square root of {S, D}. GETQX retrieves root.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "QROTATE {#}D,{#}S"
+    encoding: EEEE 1101010 0LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin CORDIC rotation of point (D, SETQ value or 32'b0) by angle S. GETQX/GETQY retrieves X/Y.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "QVECTOR {#}D,{#}S"
+    encoding: EEEE 1101010 1LI DDDDDDDDD SSSSSSSSS
+    brief: |
+      Begin CORDIC vectoring of point (D, S). GETQX/GETQY retrieves length/angle.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "HUBSET  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000000000
+    brief: |
+      Set hub configuration to D.
+    group: Hub Control - Multi
+    tags:
+      - hub
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "COGID   {#}D            {WC}"
+    encoding: EEEE 1101011 C0L DDDDDDDDD 000000001
+    brief: |
+      If D is register and no WC, get cog ID (0 to 15) into D. If WC, check status of cog D[3:0], C = 1 if on.
+    group: Hub Control - Cogs
+    tags:
+      - hub
+    reg_access: D_if_nWC
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+      hub:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+  - mnemonic: "COGSTOP {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000000011
+    brief: |
+      Stop cog D[3:0].
+    group: Hub Control - Cogs
+    tags:
+      - hub
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "LOCKNEW D               {WC}"
+    encoding: EEEE 1101011 C00 DDDDDDDDD 000000100
+    brief: |
+      Request a LOCK. D will be written with the LOCK number (0 to 15). C = 1 if no LOCK available.
+    group: Hub Control - Locks
+    tags:
+      - hub
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        min: 4
+        max: 11
+
+      hub:
+        min: 4
+        max: 11
+
+  - mnemonic: "LOCKRET {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000000101
+    brief: |
+      Return LOCK D[3:0] for reallocation.
+    group: Hub Control - Locks
+    tags:
+      - hub
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "LOCKTRY {#}D            {WC}"
+    encoding: EEEE 1101011 C0L DDDDDDDDD 000000110
+    brief: |
+      Try to get LOCK D[3:0]. C = 1 if got LOCK. LOCKREL releases LOCK. LOCK is also released if owner cog stops or restarts.
+    group: Hub Control - Locks
+    tags:
+      - hub
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+      hub:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+  - mnemonic: "LOCKREL {#}D            {WC}"
+    encoding: EEEE 1101011 C0L DDDDDDDDD 000000111
+    brief: |
+      Release LOCK D[3:0]. If D is a register and WC, get current/last cog ID of LOCK owner into D and LOCK status into C.
+    group: Hub Control - Locks
+    tags:
+      - hub
+    is_alias: false
+    cycles:
+      cog:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+      hub:
+        type: one-of
+        options:
+          - min: 2
+            max: 9
+
+          - min: 4
+            max: 11
+
+  - mnemonic: "QLOG    {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000001110
+    brief: |
+      Begin CORDIC number-to-logarithm conversion of D. GETQX retrieves log {5'whole_exponent, 27'fractional_exponent}.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "QEXP    {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000001111
+    brief: |
+      Begin CORDIC logarithm-to-number conversion of D. GETQX retrieves number.
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 9
+
+      hub:
+        min: 2
+        max: 9
+
+  - mnemonic: "RFBYTE  D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000010000
+    brief: |
+      Used after RDFAST. Read zero-extended byte from FIFO into D. C = MSB of byte. *
+    group: Hub FIFO - Read
+    tags:
+      - fifo
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "RFWORD  D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000010001
+    brief: |
+      Used after RDFAST. Read zero-extended word from FIFO into D. C = MSB of word. *
+    group: Hub FIFO - Read
+    tags:
+      - fifo
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "RFLONG  D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000010010
+    brief: |
+      Used after RDFAST. Read long from FIFO into D. C = MSB of long. *
+    group: Hub FIFO - Read
+    tags:
+      - fifo
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "RFVAR   D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000010011
+    brief: |
+      Used after RDFAST. Read zero-extended 1..4-byte value from FIFO into D. C = 0. *
+    group: Hub FIFO - Read
+    tags:
+      - fifo
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "RFVARS  D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000010100
+    brief: |
+      Used after RDFAST. Read sign-extended 1..4-byte value from FIFO into D. C = MSB of value. *
+    group: Hub FIFO - Read
+    tags:
+      - fifo
+      - hubram
+    reg_access: D
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "WFBYTE  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000010101
+    brief: |
+      Used after WRFAST. Write byte in D[7:0] into FIFO.
+    group: Hub FIFO - Write
+    tags:
+      - fifo
+      - hubram
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "WFWORD  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000010110
+    brief: |
+      Used after WRFAST. Write word in D[15:0] into FIFO.
+    group: Hub FIFO - Write
+    tags:
+      - fifo
+      - hubram
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "WFLONG  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000010111
+    brief: |
+      Used after WRFAST. Write long in D[31:0] into FIFO.
+    group: Hub FIFO - Write
+    tags:
+      - fifo
+      - hubram
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "GETQX   D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000011000
+    brief: |
+      Retrieve CORDIC result X into D. Waits, in case result not ready. C = X[31]. *
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 58
+
+      hub:
+        min: 2
+        max: 58
+
+  - mnemonic: "GETQY   D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000011001
+    brief: |
+      Retrieve CORDIC result Y into D. Waits, in case result not ready. C = Y[31]. *
+    group: CORDIC Solver
+    tags:
+      - cordic
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: 58
+
+      hub:
+        min: 2
+        max: 58
+
+  - mnemonic: "GETCT   D               {WC}"
+    encoding: EEEE 1101011 C00 DDDDDDDDD 000011010
+    brief: |
+      Get CT[31:0] or CT[63:32] if WC into D. GETCT WC + GETCT captures entire CT. CT=0 on reset, CT++ on every clock. C = same.
+    group: Miscellaneous
+    tags:
+      - misc
+    reg_access: D
+    is_alias: false
+    intr_shield: selectable
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETRND  D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000011011
+    brief: |
+      Get RND into D/C/Z. RND is the PRNG that updates on every clock. D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
+    group: Miscellaneous
+    tags:
+      - misc
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETRND            WC/WZ/WCZ"
+    encoding: EEEE 1101011 CZ1 000000000 000011011
+    brief: |
+      Get RND into C/Z. C = RND[31], Z = RND[30], unique per cog.
+    group: Miscellaneous
+    tags:
+      - misc
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETDACS {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000011100
+    brief: |
+      DAC3 = D[31:24], DAC2 = D[23:16], DAC1 = D[15:8], DAC0 = D[7:0].
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETXFRQ {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000011101
+    brief: |
+      Set streamer NCO frequency to D.
+    group: Streamer
+    tags:
+      - fifo
+      - streamer
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETXACC D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 000011110
+    brief: |
+      Get the streamer's Goertzel X accumulator into D and the Y accumulator into the next instruction's S, clear accumulators.
+    group: Streamer
+    tags:
+      - fifo
+      - streamer
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WAITX   {#}D     {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 000011111
+    brief: |
+      Wait 2 + D clocks if no WC/WZ/WCZ. If WC/WZ/WCZ, wait 2 + (D & RND) clocks. C/Z = 0.
+    group: Miscellaneous
+    tags:
+      - misc
+    is_alias: false
+    cycles:
+      cog:
+        type: sum-of
+        summands:
+          - 2
+          - D
+
+      hub:
+        type: sum-of
+        summands:
+          - 2
+          - D
+
+  - mnemonic: "SETSE1  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000100000
+    brief: |
+      Set SE1 event configuration to D[8:0].
+    group: Events - Configuration
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETSE2  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000100001
+    brief: |
+      Set SE2 event configuration to D[8:0].
+    group: Events - Configuration
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETSE3  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000100010
+    brief: |
+      Set SE3 event configuration to D[8:0].
+    group: Events - Configuration
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETSE4  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000100011
+    brief: |
+      Set SE4 event configuration to D[8:0].
+    group: Events - Configuration
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLINT          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000000 000100100
+    brief: |
+      Get INT event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLCT1          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000001 000100100
+    brief: |
+      Get CT1 event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLCT2          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000010 000100100
+    brief: |
+      Get CT2 event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLCT3          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000011 000100100
+    brief: |
+      Get CT3 event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLSE1          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000100 000100100
+    brief: |
+      Get SE1 event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLSE2          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000101 000100100
+    brief: |
+      Get SE2 event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLSE3          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000110 000100100
+    brief: |
+      Get SE3 event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLSE4          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000000111 000100100
+    brief: |
+      Get SE4 event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLPAT          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001000 000100100
+    brief: |
+      Get PAT event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLFBW          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001001 000100100
+    brief: |
+      Get FBW event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLXMT          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001010 000100100
+    brief: |
+      Get XMT event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLXFI          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001011 000100100
+    brief: |
+      Get XFI event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLXRO          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001100 000100100
+    brief: |
+      Get XRO event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLXRL          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001101 000100100
+    brief: |
+      Get XRL event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLATN          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001110 000100100
+    brief: |
+      Get ATN event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POLLQMT          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000001111 000100100
+    brief: |
+      Get QMT event flag into C/Z, then clear it.
+    group: Events - Poll
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WAITINT          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010000 000100100
+    brief: |
+      Wait for INT event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITCT1          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010001 000100100
+    brief: |
+      Wait for CT1 event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITCT2          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010010 000100100
+    brief: |
+      Wait for CT2 event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITCT3          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010011 000100100
+    brief: |
+      Wait for CT3 event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITSE1          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010100 000100100
+    brief: |
+      Wait for SE1 event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITSE2          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010101 000100100
+    brief: |
+      Wait for SE2 event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITSE3          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010110 000100100
+    brief: |
+      Wait for SE3 event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITSE4          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000010111 000100100
+    brief: |
+      Wait for SE4 event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITPAT          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000011000 000100100
+    brief: |
+      Wait for PAT event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITFBW          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000011001 000100100
+    brief: |
+      Wait for FBW event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITXMT          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000011010 000100100
+    brief: |
+      Wait for XMT event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITXFI          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000011011 000100100
+    brief: |
+      Wait for XFI event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITXRO          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000011100 000100100
+    brief: |
+      Wait for XRO event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITXRL          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000011101 000100100
+    brief: |
+      Wait for XRL event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "WAITATN          {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 000011110 000100100
+    brief: |
+      Wait for ATN event flag, then clear it. Prior SETQ sets optional CT timeout value. C/Z = timeout.
+    group: Events - Wait
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog:
+        min: 2
+        max: None
+
+      hub:
+        min: 2
+        max: None
+
+  - mnemonic: "ALLOWI"
+    encoding: EEEE 1101011 000 000100000 000100100
+    brief: |
+      Allow interrupts (default).
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "STALLI"
+    encoding: EEEE 1101011 000 000100001 000100100
+    brief: |
+      Stall Interrupts.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TRGINT1"
+    encoding: EEEE 1101011 000 000100010 000100100
+    brief: |
+      Trigger INT1, regardless of STALLI mode.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TRGINT2"
+    encoding: EEEE 1101011 000 000100011 000100100
+    brief: |
+      Trigger INT2, regardless of STALLI mode.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TRGINT3"
+    encoding: EEEE 1101011 000 000100100 000100100
+    brief: |
+      Trigger INT3, regardless of STALLI mode.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NIXINT1"
+    encoding: EEEE 1101011 000 000100101 000100100
+    brief: |
+      Cancel INT1.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NIXINT2"
+    encoding: EEEE 1101011 000 000100110 000100100
+    brief: |
+      Cancel INT2.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "NIXINT3"
+    encoding: EEEE 1101011 000 000100111 000100100
+    brief: |
+      Cancel INT3.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETINT1 {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000100101
+    brief: |
+      Set INT1 source to D[3:0].
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETINT2 {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000100110
+    brief: |
+      Set INT2 source to D[3:0].
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETINT3 {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000100111
+    brief: |
+      Set INT3 source to D[3:0].
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETQ    {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000101000
+    brief: |
+      Set Q to D. Use before RDLONG/WRLONG/WMLONG to set block transfer. Also used before MUXQ/COGINIT/QDIV/QFRAC/QROTATE/WAITxxx.
+    group: Miscellaneous
+    tags:
+      - misc
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETQ2   {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000101001
+    brief: |
+      Set Q to D. Use before RDLONG/WRLONG/WMLONG to set LUT block transfer.
+    group: Miscellaneous
+    tags:
+      - misc
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "PUSH    {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000101010
+    brief: |
+      Push D onto stack.
+    group: Miscellaneous
+    tags:
+      - misc
+    stack_access: push
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "POP     D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000101011
+    brief: |
+      Pop stack (K). D = K. C = K[31]. *
+    group: Miscellaneous
+    tags:
+      - misc
+    reg_access: D
+    stack_access: pop
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "JMP     D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000101100
+    brief: |
+      Jump to D.                                                              C = D[31], Z = D[30], PC = D[19:0].
+    group: Branch D - Jump
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "CALL    D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000101101
+    brief: |
+      Call to D by pushing {C, Z, 10'b0, PC[19:0]} onto stack.                C = D[31], Z = D[30], PC = D[19:0].
+    group: Branch D - Call
+    tags:
+      - branch
+      - control
+    stack_access: push
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "RET              {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ1 000000000 000101101
+    brief: |
+      Return by popping stack (K).                                            C = K[31], Z = K[30], PC = K[19:0].
+    group: Branch Return
+    tags:
+      - branch
+      - control
+    stack_access: pop
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "CALLA   D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000101110
+    brief: |
+      Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.     C = D[31], Z = D[30], PC = D[19:0].
+    group: Branch D - Call
+    tags:
+      - branch
+      - control
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
+        min: 5
+        max: 12
+        unaligned_delay: true
+
+      hub:
+        min: 14
+        max: 32
+        unaligned_delay: true
+
+  - mnemonic: "RETA             {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ1 000000000 000101110
+    brief: |
+      Return by reading hub long (L) at --PTRA.                               C = L[31], Z = L[30], PC = L[19:0].
+    group: Branch Return
+    tags:
+      - branch
+      - control
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog:
+        min: 11
+        max: 18
+        unaligned_delay: true
+
+      hub:
+        min: 20
+        max: 40
+        unaligned_delay: true
+
+  - mnemonic: "CALLB   D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000101111
+    brief: |
+      Call to D by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.     C = D[31], Z = D[30], PC = D[19:0].
+    group: Branch D - Call
+    tags:
+      - branch
+      - control
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
+        min: 5
+        max: 12
+        unaligned_delay: true
+
+      hub:
+        min: 14
+        max: 32
+        unaligned_delay: true
+
+  - mnemonic: "RETB             {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ1 000000000 000101111
+    brief: |
+      Return by reading hub long (L) at --PTRB.                               C = L[31], Z = L[30], PC = L[19:0].
+    group: Branch Return
+    tags:
+      - branch
+      - control
+    hub_access: read
+    is_alias: false
+    cycles:
+      cog:
+        min: 11
+        max: 18
+        unaligned_delay: true
+
+      hub:
+        min: 20
+        max: 40
+        unaligned_delay: true
+
+  - mnemonic: "JMPREL  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000110000
+    brief: |
+      Jump ahead/back by D instructions. For cogex, PC += D[19:0]. For hubex, PC += D[17:0] << 2.
+    group: Branch D - Jump
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: "SKIP    {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000110001
+    brief: |
+      Skip instructions per D. Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
+    group: Branch D - Skip
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SKIPF   {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000110010
+    brief: |
+      Skip cog/LUT instructions fast per D. Like SKIP, but instead of cancelling instructions, the PC leaps over them.
+    group: Branch D - Jump+Skip
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: illegal
+
+  - mnemonic: "EXECF   {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000110011
+    brief: |
+      Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10]. PC = {10'b0, D[9:0]}.
+    group: Branch D - Call+Skip
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog: 4
+      hub: 4
+
+  - mnemonic: "GETPTR  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 000110100
+    brief: |
+      Get current FIFO hub pointer into D.
+    group: Hub FIFO
+    tags:
+      - fifo
+      - hubram
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: fifo active
+
+  - mnemonic: "GETBRK  D          WC/WZ/WCZ"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 000110101
+    brief: |
+      Get breakpoint/cog status into D according to WC/WZ/WCZ. See documentation for details.
+    group: Interrupts
+    tags:
+      - interrupts
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "COGBRK  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000110101
+    brief: |
+      If in debug ISR, trigger asynchronous breakpoint in cog D[3:0]. Cog D[3:0] must have asynchronous breakpoint enabled.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "BRK     {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000110110
+    brief: |
+      If in debug ISR, set next break condition to D. Else, set BRK code to D[7:0] and unconditionally trigger BRK interrupt, if enabled.
+    group: Interrupts
+    tags:
+      - interrupts
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETLUTS {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000110111
+    brief: |
+      If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this cog's LUT.
+    group: Lookup Table
+    tags:
+      - lut
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETCY   {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111000
+    brief: |
+      Set the colorspace converter "CY" parameter to D[31:0].
+    group: Color Space Converter
+    tags:
+      - colors
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETCI   {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111001
+    brief: |
+      Set the colorspace converter "CI" parameter to D[31:0].
+    group: Color Space Converter
+    tags:
+      - colors
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETCQ   {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111010
+    brief: |
+      Set the colorspace converter "CQ" parameter to D[31:0].
+    group: Color Space Converter
+    tags:
+      - colors
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETCFRQ {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111011
+    brief: |
+      Set the colorspace converter "CFRQ" parameter to D[31:0].
+    group: Color Space Converter
+    tags:
+      - colors
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETCMOD {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111100
+    brief: |
+      Set the colorspace converter "CMOD" parameter to D[8:0].
+    group: Color Space Converter
+    tags:
+      - colors
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETPIV  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111101
+    brief: |
+      Set BLNPIX/MIXPIX blend factor to D[7:0].
+    group: Pixel Mixer
+    tags:
+      - colors
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETPIX  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111110
+    brief: |
+      Set MIXPIX mode to D[5:0].
+    group: Pixel Mixer
+    tags:
+      - colors
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "COGATN  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 000111111
+    brief: |
+      Strobe "attention" of all cogs whose corresponding bits are high in D[15:0].
+    group: Events - Attention
+    tags:
+      - events
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTP   {#}D           WC/WZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000000
+    brief: |
+      Test  IN bit of pin D[5:0], write to C/Z. C/Z =          IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTPN  {#}D           WC/WZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000001
+    brief: |
+      Test !IN bit of pin D[5:0], write to C/Z. C/Z =         !IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTP   {#}D       ANDC/ANDZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000010
+    brief: |
+      Test  IN bit of pin D[5:0], AND into C/Z. C/Z = C/Z AND  IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTPN  {#}D       ANDC/ANDZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000011
+    brief: |
+      Test !IN bit of pin D[5:0], AND into C/Z. C/Z = C/Z AND !IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTP   {#}D         ORC/ORZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000100
+    brief: |
+      Test  IN bit of pin D[5:0], OR  into C/Z. C/Z = C/Z OR   IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTPN  {#}D         ORC/ORZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000101
+    brief: |
+      Test !IN bit of pin D[5:0], OR  into C/Z. C/Z = C/Z OR  !IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTP   {#}D       XORC/XORZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000110
+    brief: |
+      Test  IN bit of pin D[5:0], XOR into C/Z. C/Z = C/Z XOR  IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "TESTPN  {#}D       XORC/XORZ"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000111
+    brief: |
+      Test !IN bit of pin D[5:0], XOR into C/Z. C/Z = C/Z XOR !IN[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRL    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000000
+    brief: |
+      DIR bits of pins D[10:6]+D[5:0]..D[5:0] = 0.                  Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRH    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000001
+    brief: |
+      DIR bits of pins D[10:6]+D[5:0]..D[5:0] = 1.                  Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRC    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000010
+    brief: |
+      DIR bits of pins D[10:6]+D[5:0]..D[5:0] = C.                  Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRNC   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000011
+    brief: |
+      DIR bits of pins D[10:6]+D[5:0]..D[5:0] = !C.                 Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRZ    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000100
+    brief: |
+      DIR bits of pins D[10:6]+D[5:0]..D[5:0] = Z.                  Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRNZ   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000101
+    brief: |
+      DIR bits of pins D[10:6]+D[5:0]..D[5:0] = !Z.                 Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRRND  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000110
+    brief: |
+      DIR bits of pins D[10:6]+D[5:0]..D[5:0] = RNDs.               Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DIRNOT  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001000111
+    brief: |
+      Toggle DIR bits of pins D[10:6]+D[5:0]..D[5:0].               Wraps within DIRA/DIRB. Prior SETQ overrides D[10:6]. C,Z = DIR[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTL    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001000
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = 0.                  Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTH    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001001
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = 1.                  Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTC    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001010
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = C.                  Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTNC   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001011
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = !C.                 Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTZ    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001100
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = Z.                  Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTNZ   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001101
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = !Z.                 Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTRND  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001110
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = RNDs.               Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "OUTNOT  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001001111
+    brief: |
+      Toggle OUT bits of pins D[10:6]+D[5:0]..D[5:0].               Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTL    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010000
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = 0.    DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTH    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010001
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = 1.    DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTC    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010010
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = C.    DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTNC   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010011
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = !C.   DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTZ    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010100
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = Z.    DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTNZ   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010101
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = !Z.   DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTRND  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010110
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = RNDs. DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "FLTNOT  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001010111
+    brief: |
+      Toggle OUT bits of pins D[10:6]+D[5:0]..D[5:0]. DIR bits = 0. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVL    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011000
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = 0.    DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVH    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011001
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = 1.    DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVC    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011010
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = C.    DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVNC   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011011
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = !C.   DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVZ    {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011100
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = Z.    DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVNZ   {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011101
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = !Z.   DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVRND  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011110
+    brief: |
+      OUT bits of pins D[10:6]+D[5:0]..D[5:0] = RNDs. DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "DRVNOT  {#}D           {WCZ}"
+    encoding: EEEE 1101011 CZL DDDDDDDDD 001011111
+    brief: |
+      Toggle OUT bits of pins D[10:6]+D[5:0]..D[5:0]. DIR bits = 1. Wraps within OUTA/OUTB. Prior SETQ overrides D[10:6]. C,Z = OUT[D[5:0]].
+    group: Pins
+    tags:
+      - pins
+    reg_access: DIR_OUT
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SPLITB  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100000
+    brief: |
+      Split every 4th bit of D into bytes. D = {D[31], D[27], D[23], D[19], ...D[12], D[8], D[4], D[0]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MERGEB  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100001
+    brief: |
+      Merge bits of bytes in D. D = {D[31], D[23], D[15], D[7], ...D[24], D[16], D[8], D[0]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SPLITW  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100010
+    brief: |
+      Split odd/even bits of D into words. D = {D[31], D[29], D[27], D[25], ...D[6], D[4], D[2], D[0]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MERGEW  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100011
+    brief: |
+      Merge bits of words in D. D = {D[31], D[15], D[30], D[14], ...D[17], D[1], D[16], D[0]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SEUSSF  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100100
+    brief: |
+      Relocate and periodically invert bits within D. Returns to original value on 32nd iteration. Forward pattern.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SEUSSR  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100101
+    brief: |
+      Relocate and periodically invert bits within D. Returns to original value on 32nd iteration. Reverse pattern.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RGBSQZ  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100110
+    brief: |
+      Squeeze 8:8:8 RGB value in D[31:8] into 5:6:5 value in D[15:0]. D = {15'b0, D[31:27], D[23:18], D[15:11]}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RGBEXP  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001100111
+    brief: |
+      Expand 5:6:5 RGB value in D[15:0] into 8:8:8 value in D[31:8]. D = {D[15:11,15:13], D[10:5,10:9], D[4:0,4:2], 8'b0}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "XORO32  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001101000
+    brief: |
+      Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S. D must be non-zero to iterate.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "REV     D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001101001
+    brief: |
+      Reverse D bits. D = D[0:31].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RCZR    D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 001101010
+    brief: |
+      Rotate C,Z right through D. D = {C, Z, D[31:2]}. C = D[1],  Z = D[0].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "RCZL    D        {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ0 DDDDDDDDD 001101011
+    brief: |
+      Rotate C,Z left through D.  D = {D[29:0], C, Z}. C = D[31], Z = D[30].
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WRC     D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001101100
+    brief: |
+      Write 0 or 1 to D, according to  C. D = {31'b0,  C}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WRNC    D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001101101
+    brief: |
+      Write 0 or 1 to D, according to !C. D = {31'b0, !C}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WRZ     D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001101110
+    brief: |
+      Write 0 or 1 to D, according to  Z. D = {31'b0,  Z}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "WRNZ    D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001101111
+    brief: |
+      Write 0 or 1 to D, according to !Z. D = {31'b0, !Z}.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: D
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MODCZ   c,z      {WC/WZ/WCZ}"
+    encoding: EEEE 1101011 CZ1 0cccczzzz 001101111
+    brief: |
+      Modify C and Z according to cccc and zzzz. C = cccc[{C,Z}], Z = zzzz[{C,Z}]. See "MODCZ Operand" list.
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MODC    c               {WC}"
+    encoding: EEEE 1101011 C01 0cccc0000 001101111
+    brief: |
+      Modify C according to cccc. C = cccc[{C,Z}]. See "MODCZ Operand" list.
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "MODZ    z               {WZ}"
+    encoding: EEEE 1101011 0Z1 00000zzzz 001101111
+    brief: |
+      Modify Z according to zzzz. Z = zzzz[{C,Z}]. See "MODCZ Operand" list.
+    group: Math and Logic
+    tags:
+      - math
+    is_alias: true
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "SETSCP  {#}D"
+    encoding: EEEE 1101011 00L DDDDDDDDD 001110000
+    brief: |
+      Set four-channel oscilloscope enable to D[6] and set input pin base to D[5:2].
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "GETSCP  D"
+    encoding: EEEE 1101011 000 DDDDDDDDD 001110001
+    brief: |
+      Get four-channel oscilloscope samples into D. D = {ch3[7:0],ch2[7:0],ch1[7:0],ch0[7:0]}.
+    group: Smart Pins
+    tags:
+      - pins
+      - smartpins
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: 'JMP     #{\}A'
+    encoding: EEEE 1101100 RAA AAAAAAAAA AAAAAAAAA
+    brief: |
+      Jump to A.                                                                  If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+    group: Branch A - Jump
+    tags:
+      - branch
+      - control
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: 'CALL    #{\}A'
+    encoding: EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA
+    brief: |
+      Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack.                    If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+    group: Branch A - Call
+    tags:
+      - branch
+      - control
+    stack_access: push
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: 'CALLA   #{\}A'
+    encoding: EEEE 1101110 RAA AAAAAAAAA AAAAAAAAA
+    brief: |
+      Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRA++.         If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+    group: Branch A - Call
+    tags:
+      - branch
+      - control
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
+        min: 5
+        max: 12
+        unaligned_delay: true
+
+      hub:
+        min: 14
+        max: 32
+        unaligned_delay: true
+
+  - mnemonic: 'CALLB   #{\}A'
+    encoding: EEEE 1101111 RAA AAAAAAAAA AAAAAAAAA
+    brief: |
+      Call to A by writing {C, Z, 10'b0, PC[19:0]} to hub long at PTRB++.         If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+    group: Branch A - Call
+    tags:
+      - branch
+      - control
+    hub_access: write
+    is_alias: false
+    cycles:
+      cog:
+        min: 5
+        max: 12
+        unaligned_delay: true
+
+      hub:
+        min: 14
+        max: 32
+        unaligned_delay: true
+
+  - mnemonic: 'CALLD   PA/PB/PTRA/PTRB,#{\}A'
+    encoding: EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA
+    brief: |
+      Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W).    If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+    group: Branch A - Call
+    tags:
+      - branch
+      - control
+    reg_access: selectable
+    is_alias: false
+    cycles:
+      cog: 4
+      hub:
+        min: 13
+        max: 20
+
+  - mnemonic: 'LOC     PA/PB/PTRA/PTRB,#{\}A'
+    encoding: EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
+    brief: |
+      Get {12'b0, address[19:0]} into PA/PB/PTRA/PTRB (per W).          If R = 1, address = PC + A, else address = A. "\" forces R = 0.
+    group: Math and Logic
+    tags:
+      - math
+    reg_access: selectable
+    is_alias: false
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "AUGS    #n"
+    encoding: EEEE 11110nn nnn nnnnnnnnn nnnnnnnnn
+    brief: |
+      Queue #n to be used as upper 23 bits for next #S occurrence, so that the next 9-bit #S will be augmented to 32 bits.
+    group: Miscellaneous
+    tags:
+      - misc
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
+
+  - mnemonic: "AUGD    #n"
+    encoding: EEEE 11111nn nnn nnnnnnnnn nnnnnnnnn
+    brief: |
+      Queue #n to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.
+    group: Miscellaneous
+    tags:
+      - misc
+    is_alias: false
+    intr_shield: next
+    cycles:
+      cog: 2
+      hub: 2
