@@ -1,0 +1,57 @@
+---
+
+instructions:
+  - mnemonic: ADD  D,{#}S   {WC/WZ/WCZ}
+    description: |
+      Add S into D. D = D + S. C = carry of (D + S).
+    encoding: EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS
+    cycles: 2
+    write: D
+    tags:
+      - Math and Logic
+
+  - mnemonic: TESTB   D,{#}S     XORC/XORZ
+    encoding: EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
+    description: |
+      Test bit S[4:0] of  D, XOR into C/Z. C/Z = C/Z XOR  D[S[4:0]].
+    cycles: 2
+    tags:
+      - Math and Logic
+   
+  - mnemonic: BITH    D,{#}S         {WCZ}
+    encoding: EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
+    description: |
+      Bits D[S[9:5]+S[4:0]:S[4:0]] = 1. Other bits unaffected.
+      Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
+    cycles: 2
+    write: D
+    tags:
+      - Math and Logic
+  
+  - mnemonic: ALTR    D,{#}S
+    encoding: EEEE 1001100 00I DDDDDDDDD SSSSSSSSS
+    description: |
+      Alter result register address (normally D field) of next instruction to (D + S) & $1FF.
+      D += sign-extended S[17:9].
+    instruction-shield: true
+    cycles: 2
+    write: D
+    tags:
+      - Register Indirection
+
+  - mnemonic: WMLONG  D,{#}S/P
+    encoding: EEEE 1010011 11I DDDDDDDDD SSSSSSSSS
+    description: |
+      Write only non-$00 bytes in D[31:0] to hub address {#}S/PTRx.
+      Prior SETQ/SETQ2 invokes cog/LUT block transfer.
+    cycles:
+      cogexec:
+        min: 3
+        max: 10
+      hubexec:
+        min: 3
+        max: 20 
+    write: hub
+    tags:
+      - Hub RAM - Write
+
