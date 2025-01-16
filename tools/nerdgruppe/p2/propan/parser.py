@@ -212,11 +212,9 @@ class PropanTransformer(Transformer):
     # Conditions
     #
 
-    @_debug
     def condition(self, cond: Condition) -> Condition:
         return cond
     
-    @_debug
     def return_condition(self) -> Condition:
         return Condition(
             style=ConditionStyle._return,
@@ -224,7 +222,6 @@ class PropanTransformer(Transformer):
             z_state=None,
         )
 
-    @_debug
     def compare_condition(self, flag: Token) -> Condition:
         c, z, op = OP_CONDITIONS[flag]
         return Condition(
@@ -264,14 +261,12 @@ class PropanTransformer(Transformer):
         return self._op_condition(lhs, ConditionOp.differs, rhs)
 
 
-    @_debug
     def true_flag(self, flag: Token) -> Condition:
         if flag.lower() == "c":
             return Condition(style=ConditionStyle.boolean, op=None, c_state=True, z_state=None)
         else:
             return Condition(style=ConditionStyle.boolean, op=None, c_state=None, z_state=True)
 
-    @_debug
     def inv_flag(self, flag: Token) -> Condition:
         if flag.lower() == "c":
             return Condition(style=ConditionStyle.boolean, op=None, c_state=False, z_state=None)

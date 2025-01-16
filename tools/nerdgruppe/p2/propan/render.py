@@ -1,5 +1,7 @@
 import io
 
+from dataclasses import dataclass, field
+
 from .ast import (
     Program,
     Expression,
@@ -23,10 +25,19 @@ from .ast import (
     ArrayExpression,
 )
 
+@dataclass
+class _ConstantGroup:
+    items: list[Constant] = field(default_factory=list)
+    width: int = field(default=0)
+
 def render(program: Program, *, file: io.IOBase):
 
     mnemonic_width = 0
     condition_width = 0
+
+    constant_groups: dict[Constant, _ConstantGroup] = dict()
+
+    last_line_const = None
     for line in program.lines:
         if isinstance(line, Instruction):
             mnemonic_width = max(mnemonic_width, len(line.mnemonic))
@@ -35,13 +46,36 @@ def render(program: Program, *, file: io.IOBase):
                 buffer = io.StringIO()
                 render_condition(line.condition, file=buffer)
                 condition_width = max(condition_width, len(buffer.getvalue()))
+        
+        if isinstance(line, Constant):
+
+            group = constant_groups.get(last_line_const, _ConstantGroup())
+            assert group is not None
+
+            group.width = max(group.width, len(line.identifier))
+
+            constant_groups[line] = group
+
+            last_line_const = line
+        else:
+            last_line_const = None
 
     for line in program.lines:
+
+        constant_width = None
+        try:
+            group = constant_groups.get(line, None)
+            if group is not None:
+                constant_width = group.width
+        except:
+            pass 
+
         render_line(
             line, 
             file=file,
             condition_width=condition_width,
             mnemonic_width=mnemonic_width,
+            constant_width=constant_width,
         )
 
 def render_line(
@@ -50,56 +84,66 @@ def render_line(
     file: io.IOBase, 
     mnemonic_width: int | None = None,
     condition_width: int | None = None,
+    constant_width: int | None = None,
 ):
     if line is None:
         file.write("\n")
         return
-
-    label: Label | None = None
-    if isinstance(line, Label):
-        label = line
-    elif isinstance(line, Instruction):
-        label = line.label
     
-    if label is not None:
-        if label.is_variable:
-            file.write("var ")
-        file.write(label.identifier)
-        file.write(": ")
+    with _LineEndTrimmer(file) as file:
 
-    if isinstance(line, Instruction):
+        label: Label | None = None
+        if isinstance(line, Label):
+            label = line
+        elif isinstance(line, Instruction):
+            label = line.label
         
-        if line.label is None:
-            file.write("  ")
+        if label is not None:
+            if label.is_variable:
+                file.write("var ")
+            file.write(label.identifier)
+            file.write(": ")
 
-        if line.condition:
+        if isinstance(line, Instruction):
+            
+            if line.label is None:
+                file.write("  ")
 
-            with _WidthJustifier(file, condition_width or 0) as wrapper:
-                render_condition(line.condition, file=wrapper)
-            file.write(" ")
+            if line.condition:
 
-        mnemonic: str = line.mnemonic.upper()
-        if mnemonic_width is not None:
-            mnemonic = mnemonic.ljust(mnemonic_width)
+                with _WidthJustifier(file, condition_width or 0) as wrapper:
+                    render_condition(line.condition, file=wrapper)
+                file.write(" ")
+            else:
+                if condition_width is not None:
+                    file.write(" " * (condition_width + 1))
 
-        file.write(mnemonic)
+            mnemonic: str = line.mnemonic.upper()
+            if mnemonic_width is not None:
+                mnemonic = mnemonic.ljust(mnemonic_width)
 
-        if line.arguments:
-            file.write(" <ARGS>")
+            file.write(mnemonic)
 
-        if line.effect:
-            file.write(" ")
-            file.write(line.effect.value)
+            if line.arguments:
+                file.write(" <ARGS>")
 
-    elif isinstance(line, Constant):
-        file.write("const ")
-        file.write(line.identifier)
-        file.write(" = ")
-        file.write("<EXPR>")
+            if line.effect:
+                file.write(" ")
+                file.write(line.effect.value)
 
-    # Instruction | Constant | Label
+        elif isinstance(line, Constant):
+            identifier = line.identifier
+            if constant_width is not None:
+                identifier = identifier.ljust(constant_width)
 
-    file.write("\n")
+            file.write("const ")
+            file.write(identifier)
+            file.write(" = ")
+            file.write("<EXPR>")
+
+        # Instruction | Constant | Label
+
+        file.write("\n")
 
 CONDITION_LUT = {
     # C, Z, Op
@@ -160,8 +204,10 @@ def _render_condition_atom(c_state: bool|None,z_state: bool|None, *, file : io.I
         file.write("C")
 
 
-
 class _WidthJustifier:
+    _file: io.IOBase
+    _written: int
+    _width: int
 
     def __init__(self, file: io.IOBase, width: int):
         self._file = file 
@@ -180,4 +226,29 @@ class _WidthJustifier:
     def write(self, text: str):
         self._file.write(text)
         self._written += len(text)
+
+
+class _LineEndTrimmer:
+    _file: io.IOBase
+    _line_buffer: str
     
+    def __init__(self, file: io.IOBase):
+        self._file = file 
+        self._line_buffer = ""
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+    def write(self, text: str):
+        self._line_buffer += text
+
+        while True:
+            line, sep, suffix = self._line_buffer.partition("\n")
+            if sep == "":
+                # no end of line found
+                return
+            self._file.write(line.rstrip() + "\n")
+            self._line_buffer = suffix
