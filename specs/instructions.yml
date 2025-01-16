@@ -1,4 +1,201 @@
 ---
+conditions:
+  IF_E:
+    encoding: 1010
+    description: if comparison/subtraction was equal (Z = 1)
+
+  IF_NE:
+    encoding: 0101
+    description: if comparison/subtraction was not equal (Z = 0)
+
+  IF_A:
+    encoding: 0001
+    description: if comparison/subtraction was above (C = 0 and Z = 0)
+
+  IF_AE:
+    encoding: 0011
+    description: if comparison/subtraction was above or equal (C = 0)
+
+  IF_B:
+    encoding: 1100
+    description: if comparison/subtraction was below (C = 1)
+
+  IF_BE:
+    encoding: 1110
+    description: if comparison/subtraction was below or equal (C = 1 or Z = 1)
+
+  IF_GT:
+    encoding: 0001
+    description: if comparison/subtraction was greater than (C = 0 and Z = 0)
+
+  IF_GE:
+    encoding: 0011
+    description: if comparison/subtraction was greater than or equal (C = 0)
+
+  IF_LT:
+    encoding: 1100
+    description: if comparison/subtraction was less than (C = 1)
+
+  IF_LE:
+    encoding: 1110
+    description: if comparison/subtraction was less than or equal (C = 1 or Z = 1)
+
+  IF_C:
+    encoding: 1100
+    description: if C set (C = 1)
+
+  IF_NC:
+    encoding: 0011
+    description: if C clear (C = 0)
+
+  IF_Z:
+    encoding: 1010
+    description: if Z set (Z = 1)
+
+  IF_NZ:
+    encoding: 0101
+    description: if Z clear (Z = 0)
+
+  IF_C_EQ_Z:
+    encoding: 1001
+    description: if C equal to Z (C = 0 and Z = 0 --or-- C = 1 and Z = 1)
+
+  IF_C_NE_Z:
+    encoding: 0110
+    description: if C not equal to Z (C = 0 and Z = 1 --or-- C = 1 and Z = 0)
+
+  IF_C_AND_Z:
+    encoding: 1000
+    description: if C set and Z set (C = 1 and Z = 1)
+
+  IF_C_AND_NZ:
+    encoding: 0100
+    description: if C set and Z clear (C = 1 and Z = 0)
+
+  IF_NC_AND_Z:
+    encoding: 0010
+    description: if C clear and Z set (C = 0 and Z = 1)
+
+  IF_NC_AND_NZ:
+    encoding: 0001
+    description: if C clear and Z clear (C = 0 and Z = 0)
+
+  IF_C_OR_Z:
+    encoding: 1110
+    description: if C set or Z set (C = 1 or Z = 1)
+
+  IF_C_OR_NZ:
+    encoding: 1101
+    description: if C set or Z clear (C = 1 or Z = 0)
+
+  IF_NC_OR_Z:
+    encoding: 1011
+    description: if C clear or Z set (C = 0 or Z = 1)
+
+  IF_NC_OR_NZ:
+    encoding: 0111
+    description: if C clear or Z clear (C = 1 or Z = 0)
+
+  IF_Z_EQ_C:
+    encoding: 1001
+    description: if Z equal to C (Z = 0 and C = 0 --or-- Z = 1 and C = 1)
+
+  IF_Z_NE_C:
+    encoding: 0110
+    description: if Z not equal to C (Z = 0 and C = 1 --or-- Z = 1 and C = 0)
+
+  IF_Z_AND_C:
+    encoding: 1000
+    description: if Z set and C set (Z = 1 and C = 1)
+
+  IF_Z_AND_NC:
+    encoding: 0010
+    description: if Z set and C clear (Z = 1 and C = 0)
+
+  IF_NZ_AND_C:
+    encoding: 0100
+    description: if Z clear and C set (Z = 0 and C = 1)
+
+  IF_NZ_AND_NC:
+    encoding: 0001
+    description: if Z clear and C clear (Z = 0 and C = 0)
+
+  IF_Z_OR_C:
+    encoding: 1110
+    description: if Z set or C set (Z = 1 or C = 1)
+
+  IF_Z_OR_NC:
+    encoding: 1011
+    description: if Z set or C clear (Z = 1 or C = 0)
+
+  IF_NZ_OR_C:
+    encoding: 1101
+    description: if Z clear or C set (Z = 0 or C = 1)
+
+  IF_NZ_OR_NC:
+    encoding: 0111
+    description: if Z clear or C clear (Z = 0 or C = 0)
+
+  IF_00:
+    encoding: 0001
+    description: if C clear and Z clear (C = 0 and Z = 0)
+
+  IF_01:
+    encoding: 0010
+    description: if C clear and Z set (C = 0 and Z = 1)
+
+  IF_10:
+    encoding: 0100
+    description: if C set and Z clear (C = 1 and Z = 0)
+
+  IF_11:
+    encoding: 1000
+    description: if C set and Z set (C = 1 and Z = 1)
+
+  IF_X0:
+    encoding: 0101
+    description: if Z clear (Z = 0)
+
+  IF_X1:
+    encoding: 1010
+    description: if Z set (Z = 1)
+
+  IF_0X:
+    encoding: 0011
+    description: if C clear (C = 0)
+
+  IF_1X:
+    encoding: 1100
+    description: if C set (C = 1)
+
+  IF_NOT_00:
+    encoding: 1110
+    description: if C clear and Z clear (C = 0 and Z = 0)
+
+  IF_NOT_01:
+    encoding: 1101
+    description: if C set or Z clear (C = 1 or Z = 0)
+
+  IF_NOT_10:
+    encoding: 1011
+    description: if C clear or Z set (C = 0 or Z = 1)
+
+  IF_NOT_11:
+    encoding: 0111
+    description: if C clear or Z clear (C = 0 or Z = 0)
+
+  IF_DIFF:
+    encoding: 0110
+    description: if C not equal to Z (C = 0 and Z = 1 --or-- C = 1 and Z = 0)
+
+  IF_SAME:
+    encoding: 1001
+    description: if C equal to Z (C = 0 and Z = 0 --or-- C = 1 and Z = 1)
+
+  _RET_:
+    encoding: 0000
+    description: always; execute instruction then return if no branch; no context restore
+
 instructions:
   - mnemonic: "NOP"
     encoding: 0000 0000000 000 000000000 000000000

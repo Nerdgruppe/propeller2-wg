@@ -1,0 +1,35 @@
+  BEGIN
+
+c_condition: 
+  if(C)       NOP  
+  if(!C)      NOP  
+
+z_condition: 
+  if(Z)       NOP  
+  if(!Z)      NOP  
+
+comparisons: 
+  if(>=)      NOP  
+  if(<=)      NOP  
+  if(==)      NOP  
+  if(!=)      NOP  
+  if(<)       NOP  
+  if(>)       NOP  
+
+and_op: 
+  if(!C & !Z) NOP  
+  if(!C & Z)  NOP  
+  if(C & !Z)  NOP  
+  if(C & Z)   NOP  
+
+or_op: 
+  if(!C | !Z) NOP  
+  if(!C | Z)  NOP  
+  if(C | !Z)  NOP  
+  if(C | Z)   NOP  
+
+equality: 
+  if(C == Z)  NOP  
+  if(C == Z)  NOP  
+
+  END  
