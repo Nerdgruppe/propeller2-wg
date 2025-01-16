@@ -131,7 +131,7 @@ recv_char:
         OUTNOT LED_PIN
 
         RDPIN  tmp, UART_RX  // read received word
-        SHR    tmp, 32-8     // right-justify it
+        SHR    tmp, (32-8)     // right-justify it
 
         WYPIN  tmp, UART_TX  // echo
 

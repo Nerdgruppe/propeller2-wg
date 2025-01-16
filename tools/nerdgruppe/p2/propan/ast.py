@@ -25,6 +25,7 @@ class ConditionOp(StrEnum):
     differs = "differs"
 
 class NumberFormat(IntEnum):
+    character = 0
     binary = 2
     quaternary = 4
     decimal = 10
@@ -42,10 +43,28 @@ class Identifier(str):
 class Expression(ABC):
     pass
 
+
 @dataclass(kw_only=True, frozen=True)
 class Argument:
     value: Expression
     name: Identifier | None
+
+
+@dataclass(kw_only=True, frozen=True)
+class ArgumentList:
+    multiline: bool
+    items: list[Argument]
+
+    def __len__(self) -> int:
+        return len(self.items)
+    
+    def __iter__(self):
+        return iter(self.items)
+
+
+@dataclass(kw_only=True, frozen=True)
+class WrappingExpression(Expression):
+    value: Expression
 
 @dataclass(kw_only=True, frozen=True)
 class UnaryExpression(Expression):
@@ -57,16 +76,21 @@ class UnaryExpression(Expression):
 class NumericExpression(Expression):
     format: NumberFormat
     value: int
+    written: str
 
 @dataclass(kw_only=True, frozen=True)
 class FunctionCallExpression(Expression):
     function: Identifier
-    arguments: list[Argument]
+    arguments: ArgumentList
 
+@dataclass(kw_only=True, frozen=True)
+class SymbolicExpression(Expression):
+    name: Identifier
 
 @dataclass(kw_only=True, frozen=True)
 class RelativeAddressExpression(Expression):
     target: Identifier
+    
     
 @dataclass(kw_only=True, frozen=True)
 class AddressOfExpression(Expression):
@@ -104,7 +128,7 @@ class Instruction:
     label: Label | None
     condition: Condition | None 
     mnemonic: Identifier
-    arguments: list[Argument]
+    arguments: ArgumentList
     effect: Effect | None
 
 @dataclass(kw_only=True, frozen=True)

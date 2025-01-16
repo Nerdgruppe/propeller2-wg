@@ -4,6 +4,7 @@ from pathlib import Path
 
 from lark import Lark, Transformer, v_args, GrammarError, Token
 from lark.exceptions import UnexpectedInput, UnexpectedCharacters
+from lark.visitors import Discard
 
 from .grammar import PROPAN_GRAMMAR
 from .ast import (
@@ -23,11 +24,20 @@ from .ast import (
     ConditionStyle,
     ConditionOp,
     Argument,
+    ArgumentList,
     RelativeAddressExpression,
     AddressOfExpression,
     ValueOfExpression,
     ArrayExpression,
+    SymbolicExpression,
+    WrappingExpression,
 )
+
+class _EolType:
+    def __repr__(self):
+        return "<END OF LINE>"
+
+EOL = _EolType()
 
 def _debug_print(ctx, args):
     print("debug(", repr(ctx), len(args), ")")
@@ -102,13 +112,19 @@ class PropanTransformer(Transformer):
     def ident(self, token: Token) -> Identifier:
         return Identifier(token)
 
-    def arglist(self, *args) -> list[Argument]:
-        assert all(isinstance(arg, (Argument, Token)) for arg in  args)
-        return [
-            arg
-            for arg in args
-            if isinstance(arg, Argument)
-        ]
+    def arglist(self, *args) -> ArgumentList:
+        assert all(arg is EOL or isinstance(arg, Argument) for arg in  args)
+
+        multiline = any(arg is EOL for arg in args)
+
+        return ArgumentList(
+            multiline = multiline,
+            items = [
+                arg
+                for arg in args
+                if isinstance(arg, Argument)
+            ]
+        )
 
     def positional_arg(self, value: Expression) -> Argument:
         return Argument(
@@ -126,8 +142,13 @@ class PropanTransformer(Transformer):
     # Atomic Expressions
     #
 
-    def function_call(self, name: Identifier, args: list[Argument], _eol: Token = "\n") -> FunctionCallExpression:
-        assert _eol == "\n"
+    def wrapping_expr(self, expr: Expression) -> WrappingExpression:
+        return WrappingExpression(
+            value = expr,
+        )
+
+    def function_call(self, name: Identifier, args: list[Argument], _eol: _EolType = EOL) -> FunctionCallExpression:
+        assert _eol is EOL
         return FunctionCallExpression(
             function = name,
             arguments = args or list(),
@@ -148,6 +169,9 @@ class PropanTransformer(Transformer):
             value = value,
             count = count,
         )
+
+    def symbol_ref(self, identifier: Identifier) -> SymbolicExpression:
+        return SymbolicExpression(name=identifier)
 
     #
     # Binary Operators
@@ -185,28 +209,44 @@ class PropanTransformer(Transformer):
     # Number Literals
     #
 
+    def character_literal(self, text: str) -> NumericExpression:
+
+        char_text = text[1:-1]
+
+        assert len(char_text) == 1, repr(char_text)
+
+        return NumericExpression(
+            format=NumberFormat.character,
+            value = ord(char_text),
+            written = text,
+        )
+
     def bin_number(self, value: str) -> NumericExpression:
         return NumericExpression(
             format=NumberFormat.binary,
             value = int(value, 2),
+            written = value,
         )
 
     def quad_number(self, value: str) -> NumericExpression:
         return NumericExpression(
             format=NumberFormat.quaternary,
             value = int(value, 4),
+            written = value,
         )
 
     def dec_number(self, value: str) -> NumericExpression:
         return NumericExpression(
             format=NumberFormat.decimal,
             value = int(value, 10),
+            written = value,
         )
         
     def hex_number(self, value: str) -> NumericExpression:
         return NumericExpression(
             format=NumberFormat.hexadecimal,
             value = int(value, 16),
+            written = value,
         )
     #
     # Conditions
@@ -304,6 +344,13 @@ class PropanTransformer(Transformer):
 
     def effect_wz(self, _: Token) -> Effect:
         return Effect.wz
+
+    #
+    # Utilities
+    #
+
+    def eol(self, _: Token):
+        return EOL
 
 def _map_none(callable, value):
     if value is None:

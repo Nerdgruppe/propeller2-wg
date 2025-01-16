@@ -1,6 +1,7 @@
 import io
 
 from dataclasses import dataclass, field
+from typing import Callable
 
 from .ast import (
     Program,
@@ -19,10 +20,13 @@ from .ast import (
     ConditionStyle,
     ConditionOp,
     Argument,
+    ArgumentList,
     RelativeAddressExpression,
     AddressOfExpression,
     ValueOfExpression,
     ArrayExpression,
+    SymbolicExpression,
+    WrappingExpression,
 )
 
 @dataclass
@@ -89,6 +93,10 @@ def render_line(
     if line is None:
         file.write("\n")
         return
+
+    indent = "  "
+    if condition_width is not None:
+        indent = " " * (condition_width + 3)
     
     with _LineEndTrimmer(file) as file:
 
@@ -105,6 +113,7 @@ def render_line(
             file.write(": ")
 
         if isinstance(line, Instruction):
+
             
             if line.label is None:
                 file.write("  ")
@@ -124,8 +133,9 @@ def render_line(
 
             file.write(mnemonic)
 
-            if line.arguments:
-                file.write(" <ARGS>")
+            if len(line.arguments) > 0:
+                file.write(" ")
+                render_argument_list(line.arguments, indent=indent, file=file)
 
             if line.effect:
                 file.write(" ")
@@ -139,7 +149,7 @@ def render_line(
             file.write("const ")
             file.write(identifier)
             file.write(" = ")
-            file.write("<EXPR>")
+            render_expression(line.value, indent="", file=file)
 
         # Instruction | Constant | Label
 
@@ -203,6 +213,141 @@ def _render_condition_atom(c_state: bool|None,z_state: bool|None, *, file : io.I
             file.write("!")
         file.write("C")
 
+def render_argument_list(args: ArgumentList, *, indent: str, file: io.IOBase):
+    if len(args) == 0:
+        return
+
+    if args.multiline:       
+        file.write("\n")
+
+        for i, arg in enumerate(args):
+            file.write(indent + "  ")
+            render_argument(arg, indent=indent + "  ",file=file)
+            file.write(",\n")
+        
+        file.write(indent)
+
+    else:
+        for i, arg in enumerate(args):
+            if i > 0:
+                file.write(", ")
+            render_argument(arg, indent=indent, file=file)
+
+def render_argument(arg: Argument, *, indent: str, file: io.IOBase):
+
+    if arg.name is not None:
+        file.write(arg.name)
+        file.write("=")
+
+    render_expression(arg.value, indent=indent, file=file)
+
+
+def render_expression(expr: Expression, *, indent: str, file: io.IOBase):
+
+    handlers: dict[type, Callable] = dict()
+    def handler(T: type):
+        def _wrap(fun):
+            assert handlers.get(T) is None, f"Duplicate handler: {T}"
+            handlers[T] = fun
+            return fun
+        return _wrap
+
+    @handler(WrappingExpression)
+    def wrapper(expr: WrappingExpression):
+        file.write("(")
+        render_expression(expr.value, indent=indent, file=file)
+        file.write(")")
+    
+    @handler(UnaryExpression)
+    def unary(expr: UnaryExpression):
+        assert False
+
+    @handler(NumericExpression)
+    def numeric(expr: NumericExpression):
+        if expr.written is not None:
+            file.write(expr.written)
+            return
+
+        if expr.format == NumberFormat.character:
+            file.write("'")
+
+            if expr.value >= 0x20 and expr.value < 0x7F:
+                # printable ascii range is always
+                file.write(chr(expr.value))
+            elif expr.value <= 0xFF:
+                # use hex escaping
+                file.write(f"\\x{expr.value:02X}")
+            else:
+                # use unicode escaping
+                file.write(f"\\U{{{expr.value:X}}}")
+
+            file.write("'")
+            return
+        
+        MARKERS = {
+            NumberFormat.binary: "b",
+            NumberFormat.quaternary: "q",
+            NumberFormat.decimal: None,
+            NumberFormat.hexadecimal: "x",
+        }
+        DIGITS = "0123456789ABCDEF"
+
+        marker = MARKERS[expr.format]
+
+        if marker is not None:
+            file.write("0" + marker)
+        
+        if expr.value == 0:
+            file.write("0")
+        
+        s = ""
+        v = expr.value
+        while v > 0:
+            i = v % expr.format
+            v /= expr.format
+            s += DIGITS[i]
+        
+        file.write(s.reverse())
+        
+    @handler(FunctionCallExpression)
+    def function_call(expr: FunctionCallExpression):
+        
+        file.write(expr.function)
+        file.write("(")
+        render_argument_list(expr.arguments, indent=indent, file=file)
+        file.write(")")
+
+    @handler(SymbolicExpression)
+    def symbol_ref(expr: SymbolicExpression):
+        file.write(expr.name)
+
+    @handler(RelativeAddressExpression)
+    def relative_address(expr: RelativeAddressExpression):
+        file.write(f"@{expr.target}")
+
+    @handler(AddressOfExpression)
+    def address_of(expr: AddressOfExpression):
+        file.write(f"&{expr.target}")
+
+    @handler(ValueOfExpression)
+    def value_of(expr: ValueOfExpression):
+        file.write(f"*{expr.target}")
+
+    @handler(ArrayExpression)
+    def array(expr: ArrayExpression):
+        
+        render_expression(expr.value, indent=indent, file=file)
+        file.write("[")
+        render_expression(expr.count, indent=indent, file=file)
+        file.write("]")
+
+    handler = handlers.get(type(expr))
+    if handler is None:
+        print("unhandled expression type: ", type(expr))
+        file.write("<DUMMY>")
+        return
+
+    handler(expr)
 
 class _WidthJustifier:
     _file: io.IOBase

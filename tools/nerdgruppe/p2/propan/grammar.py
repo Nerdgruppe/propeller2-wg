@@ -91,28 +91,24 @@ PROPAN_GRAMMAR, _ = load_grammar(r'''
 
     ?expr_atomic : expr_atomic "[" expr "]"       -> array_ctor
                 | ident "(" [arglist_nl] eol* ")" -> function_call
-                | ident
+                | ident                           -> symbol_ref
                 | "@" ident                       -> relative_op
                 | "*" ident                       -> deref_op
                 | "&" ident                       -> addrof_op
                 | number
-                | charliteral
-                | stringliteral
-                | enumliteral
+                | CHARLITERAL                     -> character_literal
+                | STRINGLITERAL
+                | ENUMLITERAL                     -> symbol_ref
                 | "(" expr "?" expr ":" expr ")"
-                | "(" expr ")"
+                | "(" expr ")"                    -> wrapping_expr
 
     ident       : IDENTIFIER
-    ?eol        : EOL
+    eol         : EOL
 
     number      : BIN_NUMBER -> bin_number
                 | QUAD_NUMBER -> quad_number
                 | DEC_NUMBER -> dec_number
                 | HEX_NUMBER -> hex_number
-
-    charliteral : CHARLITERAL
-    stringliteral : STRINGLITERAL
-    enumliteral : ENUMLITERAL -> ident
 
     COMMENT     : "//" /[^\n]*/
     IDENTIFIER  : /\.?[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*/i
