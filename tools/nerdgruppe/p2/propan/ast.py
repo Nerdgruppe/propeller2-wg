@@ -37,6 +37,34 @@ class UnaryOperator(StrEnum):
     plus = "+"
     negate = "-"
 
+class BinaryOperator(StrEnum):
+    logical_and = "and"
+    logical_or = "or"
+    logical_xor = "xor"
+
+    inequal = "!="
+    less_than = "<"
+    less_or_equal = "<="
+    compare = "<=>"
+    equals = "=="
+    greater_than = ">"
+    greater_or_equal = ">="
+    
+
+    subtract = "-"
+    add = "+"
+    
+    multiply = "*"
+    divide = "/"
+    modulus = "%"
+
+    bitwise_or = "|"
+    bitwise_and = "&"
+    bitwise_xor = "^"
+    shift_left = "<<"
+    shift_right = ">>"
+    
+
 class Identifier(str):
     pass
 
@@ -70,6 +98,12 @@ class WrappingExpression(Expression):
 class UnaryExpression(Expression):
     operator: UnaryOperator
     value: Expression
+
+@dataclass(kw_only=True, frozen=True)
+class BinaryExpression(Expression):
+    operator: BinaryOperator
+    lhs: Expression
+    rhs: Expression
 
 
 @dataclass(kw_only=True, frozen=True)

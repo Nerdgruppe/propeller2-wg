@@ -14,6 +14,8 @@ from .ast import (
     NumberFormat,
     UnaryOperator,
     UnaryExpression,
+    BinaryOperator,
+    BinaryExpression,
     FunctionCallExpression,
     Constant,
     Identifier,
@@ -176,6 +178,14 @@ class PropanTransformer(Transformer):
     #
     # Binary Operators
     #
+
+    def binary_op(self, lhs: Expression, op_token: Token, rhs: Expression) -> BinaryExpression:
+        op = BinaryOperator(op_token)
+        return BinaryExpression(
+            lhs=lhs,
+            rhs=rhs,
+            operator=op,
+        )
 
     #
     # Unary Operators
@@ -351,6 +361,10 @@ class PropanTransformer(Transformer):
 
     def eol(self, _: Token):
         return EOL
+
+    def __default__(self, data, children, meta):
+        print("unhandled subtree of type %r: %r" % (str(data), children))
+        return super().__default__(data, children, meta)
 
 def _map_none(callable, value):
     if value is None:

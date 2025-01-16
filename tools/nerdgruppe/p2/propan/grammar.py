@@ -51,35 +51,45 @@ PROPAN_GRAMMAR, _ = load_grammar(r'''
 
     ?expr        : expr_l0
 
-    ?expr_l0     : expr_l1 "and" expr_l0
-                | expr_l1 "or"  expr_l0
-                | expr_l1 "xor" expr_l0
+    ?expr_l0    : expr_l1 BINOP_L0 expr_l0      -> binary_op
                 | expr_l1
 
-    ?expr_l1     : expr_l2 "<=>" expr_l1
-                | expr_l2 "==" expr_l1
-                | expr_l2 "!=" expr_l1
-                | expr_l2 ">=" expr_l1
-                | expr_l2 "<=" expr_l1
-                | expr_l2 ">" expr_l1
-                | expr_l2 "<" expr_l1
+    BINOP_L0    : "and"
+                | "or"
+                | "xor"
+
+    ?expr_l1     : expr_l2 BINOP_L1 expr_l1     -> binary_op
                 | expr_l2
 
-    ?expr_l2     : expr_l3 "+" expr_l2
-                | expr_l3 "-" expr_l2
-                | expr_l3 "|" expr_l2
-                | expr_l3 "^" expr_l2
-                | expr_l3
+    BINOP_L1    : "<=>"
+                | "=="
+                | "!="
+                | ">="
+                | "<="
+                | ">"
+                | "<"
 
-    ?expr_l3     : expr_l4 "*" expr_l3
-                | expr_l4 "/" expr_l3
-                | expr_l4 "%" expr_l3
-                | expr_l4 "&" expr_l3
+    ?expr_l2     : expr_l3 BINOP_L2 expr_l2     -> binary_op
+                | expr_l3
+    
+    BINOP_L2    : "+"
+                | "-"
+                | "|"
+                | "^"
+
+    ?expr_l3    : expr_l4 BINOP_L3 expr_l3      -> binary_op
                 | expr_l4
 
-    ?expr_l4     : expr_l5 "<<" expr_l4
-                | expr_l5 ">>" expr_l4
+    BINOP_L3    : "*"
+                | "/"
+                | "%"
+                | "&"
+
+    ?expr_l4    : expr_l5 BINOP_L4 expr_l4      -> binary_op
                 | expr_l5
+
+    BINOP_L4    : "<<"
+                | ">>"
 
     ?expr_l5     : expr_unary
 
