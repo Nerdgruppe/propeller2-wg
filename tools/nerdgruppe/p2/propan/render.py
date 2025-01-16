@@ -29,6 +29,7 @@ from .ast import (
     ArrayExpression,
     SymbolicExpression,
     WrappingExpression,
+    StringExpression,
 )
 
 
@@ -268,7 +269,8 @@ def render_expression(expr: Expression, *, indent: str, file: io.IOBase):
 
     @handler(UnaryExpression)
     def unary(expr: UnaryExpression):
-        assert False
+        file.write(expr.operator)
+        render_expression(expr.value, indent=indent, file=file)
 
     @handler(NumericExpression)
     def numeric(expr: NumericExpression):
@@ -352,6 +354,15 @@ def render_expression(expr: Expression, *, indent: str, file: io.IOBase):
         file.write("[")
         render_expression(expr.count, indent=indent, file=file)
         file.write("]")
+
+    @handler(StringExpression)
+    def string(expr: StringExpression):
+        if expr.written is not None:
+            file.write(expr.written)
+            return
+
+        # TODO(fqu): Fix string rendernig
+        file.write(f'"{expr.value.decode("utf-8")}"')
 
     handler = handlers.get(type(expr))
     if handler is None:

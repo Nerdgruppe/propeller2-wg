@@ -1,7 +1,7 @@
-
 from lark.load_grammar import load_grammar
 
-PROPAN_GRAMMAR, _ = load_grammar(r'''
+PROPAN_GRAMMAR, _ = load_grammar(
+    r"""
     
     ?start: program
 
@@ -34,7 +34,7 @@ PROPAN_GRAMMAR, _ = load_grammar(r'''
 
     arglist     : arg ("," arg)*            -> arglist
 
-    arglist_nl  : eol* arg ( eol* "," eol* arg)* eol* ("," eol* )? -> arglist
+    arglist_nl  : eol* arg ( eol* "," eol* arg)* eol* (comma eol*)? -> arglist
 
     arg         : expr              -> positional_arg
                 | ident "=" expr    -> named_arg    
@@ -49,7 +49,7 @@ PROPAN_GRAMMAR, _ = load_grammar(r'''
                 | EFFECT_WCZ    -> effect_wcz
                 | EFFECT_WZ     -> effect_wz
 
-    ?expr        : expr_l0
+    ?expr       : expr_l0
 
     ?expr_l0    : expr_l1 BINOP_L0 expr_l0      -> binary_op
                 | expr_l1
@@ -107,13 +107,14 @@ PROPAN_GRAMMAR, _ = load_grammar(r'''
                 | "&" ident                       -> addrof_op
                 | number
                 | CHARLITERAL                     -> character_literal
-                | STRINGLITERAL
+                | STRINGLITERAL                   -> string_literal
                 | ENUMLITERAL                     -> symbol_ref
                 | "(" expr "?" expr ":" expr ")"
                 | "(" expr ")"                    -> wrapping_expr
 
     ident       : IDENTIFIER
     eol         : EOL
+    comma       : ","
 
     number      : BIN_NUMBER -> bin_number
                 | QUAD_NUMBER -> quad_number
@@ -153,4 +154,8 @@ PROPAN_GRAMMAR, _ = load_grammar(r'''
     %ignore WS
     %ignore COMMENT
 
-''', source=__file__, import_paths=None, global_keep_all_tokens=False)
+""",
+    source=__file__,
+    import_paths=None,
+    global_keep_all_tokens=False,
+)

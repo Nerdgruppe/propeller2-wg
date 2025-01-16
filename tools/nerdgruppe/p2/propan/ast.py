@@ -1,6 +1,7 @@
-from abc import ABC 
+from abc import ABC
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
+
 
 class Effect(StrEnum):
     and_c = ":and_c"
@@ -13,16 +14,19 @@ class Effect(StrEnum):
     wcz = ":wcz"
     wz = ":wz"
 
+
 class ConditionStyle(StrEnum):
     comparison = "operation"
     boolean = "boolean"
     _return = "return"
-    
+
+
 class ConditionOp(StrEnum):
     bool_and = "and"
     bool_or = "or"
     equals = "equals"
     differs = "differs"
+
 
 class NumberFormat(IntEnum):
     character = 0
@@ -31,11 +35,13 @@ class NumberFormat(IntEnum):
     decimal = 10
     hexadecimal = 16
 
+
 class UnaryOperator(StrEnum):
     bitwise_invert = "~"
     logical_invert = "!"
     plus = "+"
     negate = "-"
+
 
 class BinaryOperator(StrEnum):
     logical_and = "and"
@@ -49,11 +55,10 @@ class BinaryOperator(StrEnum):
     equals = "=="
     greater_than = ">"
     greater_or_equal = ">="
-    
 
     subtract = "-"
     add = "+"
-    
+
     multiply = "*"
     divide = "/"
     modulus = "%"
@@ -63,10 +68,11 @@ class BinaryOperator(StrEnum):
     bitwise_xor = "^"
     shift_left = "<<"
     shift_right = ">>"
-    
+
 
 class Identifier(str):
     pass
+
 
 class Expression(ABC):
     pass
@@ -81,11 +87,11 @@ class Argument:
 @dataclass(kw_only=True, frozen=True)
 class ArgumentList:
     multiline: bool
-    items: list[Argument]
+    items: tuple[Argument]
 
     def __len__(self) -> int:
         return len(self.items)
-    
+
     def __iter__(self):
         return iter(self.items)
 
@@ -94,10 +100,12 @@ class ArgumentList:
 class WrappingExpression(Expression):
     value: Expression
 
+
 @dataclass(kw_only=True, frozen=True)
 class UnaryExpression(Expression):
     operator: UnaryOperator
     value: Expression
+
 
 @dataclass(kw_only=True, frozen=True)
 class BinaryExpression(Expression):
@@ -110,34 +118,46 @@ class BinaryExpression(Expression):
 class NumericExpression(Expression):
     format: NumberFormat
     value: int
-    written: str
+    written: str | None
+
+
+@dataclass(kw_only=True, frozen=True)
+class StringExpression(Expression):
+    value: bytes
+    written: str | None
+
 
 @dataclass(kw_only=True, frozen=True)
 class FunctionCallExpression(Expression):
     function: Identifier
     arguments: ArgumentList
 
+
 @dataclass(kw_only=True, frozen=True)
 class SymbolicExpression(Expression):
     name: Identifier
 
+
 @dataclass(kw_only=True, frozen=True)
 class RelativeAddressExpression(Expression):
     target: Identifier
-    
-    
+
+
 @dataclass(kw_only=True, frozen=True)
 class AddressOfExpression(Expression):
     target: Identifier
-    
+
+
 @dataclass(kw_only=True, frozen=True)
 class ValueOfExpression(Expression):
     target: Identifier
+
 
 @dataclass(kw_only=True, frozen=True)
 class ArrayExpression(Expression):
     value: Expression
     count: Expression
+
 
 @dataclass(kw_only=True, frozen=True)
 class Condition:
@@ -146,10 +166,12 @@ class Condition:
     c_state: bool | None
     z_state: bool | None
 
+
 @dataclass(kw_only=True, frozen=True)
 class Constant:
     identifier: Identifier
     value: Expression
+
 
 @dataclass(kw_only=True, frozen=True)
 class Label:
@@ -160,12 +182,12 @@ class Label:
 @dataclass(kw_only=True, frozen=True)
 class Instruction:
     label: Label | None
-    condition: Condition | None 
+    condition: Condition | None
     mnemonic: Identifier
     arguments: ArgumentList
     effect: Effect | None
 
+
 @dataclass(kw_only=True, frozen=True)
 class Program:
-
-    lines: list[Instruction | Constant | Label]
+    lines: tuple[Instruction | Constant | Label]

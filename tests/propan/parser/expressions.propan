@@ -1,0 +1,94 @@
+
+const dec_number1 = 1
+const dec_number2 = 123456789
+const dec_number3 = 10_20_30_40
+const dec_number4 = 100_000
+
+const hex_number1 = 0x1
+const hex_number2 = 0x123456789abcdef
+const hex_number3 = 0x10_20_30_40
+const hex_number4 = 0x100_000
+
+const bin_number1 = 0b0
+const bin_number2 = 0b01_01_01_01
+
+const quad_number1 = 0x1
+const quad_number2 = 0x0123
+const quad_number3 = 0x00_10_20_30
+const quad_number4 = 0x100_000
+
+const basic_ref  = identifier
+const count_to   = @identifier
+const address_of = &identifier
+const value_of   = *identifier
+
+const array      = 15 [30]
+
+const char       = '💩'
+// const string     = "hello, world!"
+const enum       = .15pF
+
+const unary_plus = +10
+const unary_negate = -10
+const unary_not = !10
+const unary_invert = ~10
+
+const fncall0     = max()
+const fncall1     = max(1)
+const fncall2     = max(1, 2)
+const fncall3     = max(1, 2, 3)
+
+// These must be wrapped to multiple lines
+const fncall4     = max(1, 2,)
+const fncall5     = max(a=1, b=2,)
+
+// These must be wrapped to one line
+const fncall4     = max(
+    1,
+    2
+)
+const fncall5     = max(
+    a=1,
+    b=2
+)
+
+const all_binops = consume(
+    // logic:
+    a and b,
+    a or b,
+    a xor b,
+
+    // comparisons:
+    a < b,
+    a > b,
+    a >= b,
+    a <= b,
+    a == b,
+    a != b,
+
+    // summand group
+    a + b,
+    a - b,
+    a | b,
+    a ^ b,
+
+    // multiplicative group
+    a * b,
+    a / b,
+    a % b,
+    a & b,
+
+    // shift group
+    a >> b,
+    a << b,
+)
+
+const precedence_test0 = 10 * 20 + 30
+const precedence_test1 = 10 + 20 * 30
+
+const wraps0 = (10 * 20) + 30
+const wraps1 = (10 + 20) * 30
+
+const string = "hello, world!"
+
+identifier:
