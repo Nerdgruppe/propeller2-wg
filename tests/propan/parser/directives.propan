@@ -1,0 +1,44 @@
+const COGSIZE = 0x1F8
+
+.huborg 0x0000 // sets the current hub address where data will be emitted
+.cogorg 0x000 // sets the current cog address which is used in cogexec mode
+.lutorg 0x000 // sets the current lut address which is used in lutexec mode
+
+.cogexec // labels afterwards will use register-addressing
+.lutexec // labels afterwards will use lut addressing (similar to .cogexec)
+.hubexec // labels afterwards will use ram-addressing
+
+.cogexec
+code:
+    RDLONG dst, hub(ramdata) // use builtin to get hub address 
+
+var dst:
+    LONG value
+
+.cogfit COGSIZE // check if the code fits into the given number of registers
+
+ramdata:
+    LONG 10, 20, 30, 40
+
+.cogorg 0x1F0
+.cogexec
+
+var IJMP3: .regs 1  // 0x1F0: Read/WriteInterrupt call address for INT3; set by code
+var IRET3: .regs 1  // 0x1F1: Read/WriteInterrupt return address and C/Z flags for INT3; set by cog
+var IJMP2: .regs 1  // 0x1F2: Read/WriteInterrupt call address for INT2; set by code
+var IRET2: .regs 1  // 0x1F3: Read/WriteInterrupt return address and C/Z flags for INT2; set by cog
+var IJMP1: .regs 1  // 0x1F4: Read/WriteInterrupt call address for INT1; set by code
+var IRET1: .regs 1  // 0x1F5: Read/WriteInterrupt return address and C/Z flags for INT1; set by cog
+var PA:    .regs 1  // 0x1F6: Read/WriteCALLD-imm return, CALLPA parameter, or LOC address
+var PB:    .regs 1  // 0x1F7: Read/WriteCALLD-imm return, CALLPB parameter, or LOC address
+var PTRA:  .regs 1  // 0x1F8: Read Special / Write Special Pointer A to Hub RAM
+var PTRB:  .regs 1  // 0x1F9: Read Special / Write Special Pointer B to Hub RAM
+var DIRA:  .regs 1  // 0x1FA: Read / Write SpecialOutput enables (direction bits) for P31..P0
+var DIRB:  .regs 1  // 0x1FB: Read / Write SpecialOutput enables (direction bits) for P63..P32
+var OUTA:  .regs 1  // 0x1FC: Read / Write SpecialOutput states for P31..P0
+var OUTB:  .regs 1  // 0x1FD: Read / Write SpecialOutput states for P63..P32
+var INA:   .regs 1  // 0x1FE: Read SpecialInput states for P31..P0
+var INB:   .regs 1  // 0x1FE: Read SpecialInput states for P63..P32
+
+// .regs N will advance the cog address by N longs, but prevents further hub emission before another .cogorg
+
