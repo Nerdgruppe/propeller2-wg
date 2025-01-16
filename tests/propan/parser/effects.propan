@@ -1,0 +1,26 @@
+// these must all parse as effect modifiers, and not as labels!
+
+    NOP :wc
+    NOP :wz
+    NOP :wcz
+
+    NOP :WC
+    NOP :WZ
+    NOP :WCZ
+
+    NOP :xor_c
+    NOP :and_c
+    NOP :or_c
+
+    NOP :xor_z
+    NOP :and_z
+    NOP :or_z
+
+// these are equivalent to :xor_c and friends:
+    NOP :xorc
+    NOP :andc
+    NOP :orc
+
+    NOP :xorz
+    NOP :andz
+    NOP :orz

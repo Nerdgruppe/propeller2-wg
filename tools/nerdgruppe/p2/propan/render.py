@@ -132,7 +132,7 @@ def render_line(
 
             file.write(mnemonic)
 
-            if len(line.arguments) > 0:
+            if line.arguments is not None:
                 file.write(" ")
                 render_argument_list(line.arguments, indent=indent, file=file)
 

@@ -9,17 +9,17 @@ PROPAN_GRAMMAR, _ = load_grammar(
 
     ?line       : const_decl eol    -> line
                 | instruction eol   -> line
-                | label eol         -> line 
+                | label eol         -> line
                 | eol               -> empty_line
  
-    const_decl  : "const" ident "=" expr
+    const_decl  : kw_const ident "=" expr
 
     instruction : [label] [condition] ident [arglist] [effect]
 
-    label       : "var" ident ":" -> var_label
+    label       : kw_var ident ":" -> var_label
                 | ident ":"       -> label
 
-    condition   : "if" "(" conditional  ")" -> condition
+    condition   : kw_if "(" conditional  ")" -> condition
                 | "return"                  -> return_condition
 
     ?conditional : COND_OP                     -> compare_condition
@@ -54,9 +54,9 @@ PROPAN_GRAMMAR, _ = load_grammar(
     ?expr_l0    : expr_l1 BINOP_L0 expr_l0      -> binary_op
                 | expr_l1
 
-    BINOP_L0    : "and"
-                | "or"
-                | "xor"
+    BINOP_L0    : /\bAND\b/i
+                | /\bOR\b/i
+                | /\bXOR\b/i
 
     ?expr_l1     : expr_l2 BINOP_L1 expr_l1     -> binary_op
                 | expr_l2
@@ -121,6 +121,14 @@ PROPAN_GRAMMAR, _ = load_grammar(
                 | DEC_NUMBER -> dec_number
                 | HEX_NUMBER -> hex_number
 
+    ?kw_const   : KW_CONST  -> discard
+    ?kw_var     : KW_VAR    -> discard
+    ?kw_if      : KW_IF     -> discard
+
+    KW_CONST .2 : /\bCONST\b/i
+    KW_VAR   .2 : /\bVAR\b/i  
+    KW_IF    .2 : /\bIF\b/i   
+
     COMMENT     : "//" /[^\n]*/
     IDENTIFIER  : /\.?[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*/i
 
@@ -138,15 +146,15 @@ PROPAN_GRAMMAR, _ = load_grammar(
 
     COND_OP : ">=" | "<=" | "==" | "!=" | "<" | ">"
 
-    EFFECT_ANDC : /:and_?c/i
-    EFFECT_ANDZ : /:and_?z/i
-    EFFECT_ORC  : /:or_?c/i
-    EFFECT_ORZ  : /:or_?z/i
-    EFFECT_XORC : /:xor_?c/i
-    EFFECT_XORZ : /:xor_?z/i
-    EFFECT_WC   : /:wc/i
-    EFFECT_WCZ  : /:wcz/i
-    EFFECT_WZ   : /:wz/i
+    EFFECT_ANDC .2 : /:and_?c/i
+    EFFECT_ANDZ .2 : /:and_?z/i
+    EFFECT_ORC .2  : /:or_?c/i
+    EFFECT_ORZ .2  : /:or_?z/i
+    EFFECT_XORC .2 : /:xor_?c/i
+    EFFECT_XORZ .2 : /:xor_?z/i
+    EFFECT_WC .2   : /:wc/i
+    EFFECT_WCZ .2  : /:wcz/i
+    EFFECT_WZ .2   : /:wz/i
 
     WS  : /[ \t]+/
     EOL : /[ \t]*\r?\n/

@@ -347,10 +347,10 @@ class PropanTransformer(Transformer):
         return Effect.and_z
 
     def effect_orc(self, _: Token) -> Effect:
-        return nEffect.or_c
+        return Effect.or_c
 
     def effect_orz(self, _: Token) -> Effect:
-        return nEffect.or_z
+        return Effect.or_z
 
     def effect_xorc(self, _: Token) -> Effect:
         return Effect.xor_c
@@ -376,6 +376,9 @@ class PropanTransformer(Transformer):
 
     def comma(self):
         return COMMA
+
+    def discard(self, _: Token):
+        return Discard
 
     def __default__(self, data, children, meta):
         print("unhandled subtree of type %r: %r" % (str(data), children))
