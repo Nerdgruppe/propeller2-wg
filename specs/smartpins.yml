@@ -1,0 +1,144 @@
+---
+
+smartmodes:
+  off:
+    name: Smart Pin Off
+    encoding: "00000"
+  
+  long_repo:
+    name: Long Repository
+    encoding:
+      - "00001"
+      - "00010"
+      - "00011"
+      DAC_MODE: off
+  
+  dac_noise:
+    name: DAC Noise
+    encoding: 
+      - "00001"
+      DAC_MODE: on
+
+  dac_dither:
+    name: DAC 16-Bit With Noise Dither
+    encoding:
+      - "00010"
+      DAC_MODE: on
+
+  dac_pwm:
+    name: DAC 16-Bit With PWM dither
+    encoding:
+      - "00011"
+      DAC_MODE: on
+  
+  pulse_cycle:
+    name: Pulse/Cycle Output
+    encoding: "00100"
+  
+  transition_output:
+    name: Transition Output
+    encoding: "00101"
+
+  nco_frequency:
+    name: NCO Frequency
+    encoding: "00110"
+
+  nco_duty:
+    name: NCO Duty
+    encoding: "00111"
+
+  pwm_triangle:
+    name: PWM Triangle
+    encoding: "01000"
+
+  pwm_sawtooth:
+    name: PWM Sawtooth
+    encoding: "01001"
+
+  pwm_powersupply:
+    name: PWM Switch-Mode Power Supply With Voltage And Current Feedback
+    encoding: "01010"
+
+  quadrature:
+    name: A/B-Input Quadrature Encoder  
+    encoding: "01011"
+
+  edge_count:
+    name: Count A-Input Positive Edges When B-Input Is High
+    encoding: "01100"
+  
+  step_dir: 
+    name: Count A-Input Positive Edges; Increment w/B-Input = 1, Decrement w/B-Input = 0
+    encoding: "01101"
+
+  edge_count_updown:
+    name: Count A-Input Positive Edges (!Y[0]), Increment w/A-Input Positive Edge, Decrement w/B-Input Positive Edge (Y[0])
+    encoding: "01110"
+  
+  level_count_updown:
+    name: Count A-Input Highs (!Y[0]), Increment w/A-Input High, Decrement w/B-Input High (Y[0])
+    encoding: "01111"
+
+  measure_level_period: 
+    name: Time A-Input States
+    encoding: "10000"
+  
+  measure_high_period: 
+    name: Time A-Input High States
+    encoding: "10001"
+  
+  measure_event_time_or_timeout:
+    name: Time X A-Input Highs/Rises/Edges (!Y[2]), Timeout on X Clocks Of Missing A-Input High/Rise/Edge (%10010 AND Y[2])
+    encoding: "10010"
+  
+  count_time_periods:
+    name: Count Time For X Periods
+    encoding: "10011"
+
+  count_state_periods:
+    name: Count State For X Periods
+    encoding: "10100"
+
+  count_time_clocks:
+    name: Count Time For Periods In X+ Clock Cycles 
+    encoding: "10101"
+
+  count_state_clocks:
+    name: Count States For Periods In X+ Clock Cycles
+    encoding: "10110"
+
+  count_period_clocks:
+    name: Count Periods For Periods In X+ Clock Cycles
+    encoding: "10111"
+
+  adc_sample:
+    name: ADC Sample/Filter/Capture, Internally Clocked
+    encoding: "11000"
+
+  adc_sample_extclk:
+    name: ADC Sample/Filter/Capture, Externally Clock
+    encoding: "11001"
+
+  adc_scope:
+    name: ADC Scope With Trigger
+    encoding: "11010"
+
+  usb:
+    name: USB Host/Device
+    encoding: "11011"
+
+  usart_tx:
+    name: Synchronous Serial Transmit
+    encoding: "11100"
+
+  usart_rx:
+    name: Synchronous Serial Receive
+    encoding: "11101"
+
+  uart_tx:
+    name: Asynchronous Serial Transmit
+    encoding: "11110"
+
+  uart_rx:
+    name: Asynchronous Serial Receive
+    encoding: "11111"
