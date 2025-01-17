@@ -1,6 +1,7 @@
 import sys
 
 from pathlib import Path
+from dataclasses import replace
 
 from lark import Lark, Transformer, v_args, GrammarError, Token
 from lark.exceptions import UnexpectedInput, UnexpectedCharacters
@@ -19,7 +20,9 @@ from .ast import (
     FunctionCallExpression,
     Constant,
     Identifier,
+    Line,
     Label,
+    Comment,
     Instruction,
     Effect,
     Condition,
@@ -86,11 +89,17 @@ class PropanTransformer(Transformer):
             lines=[part for part in sequence if not isinstance(part, Token)],
         )
 
-    def line(self, data, eol):
+    def line(self, data: Line, comment: Comment | None, eol) -> Line:
+        assert data.comment is None
+        if comment is not None:
+            return replace(data, comment=comment)
         return data
 
-    def empty_line(self, eol):
-        return None
+    def empty_line(self, comment: Comment | None, eol) -> Line:
+        return Line(comment=comment)
+
+    def comment(self, text: Token) -> Comment:
+        return Comment(text=text)
 
     def const_decl(self, identifier: Identifier, value: Expression) -> Constant:
         return Constant(
@@ -133,9 +142,15 @@ class PropanTransformer(Transformer):
         assert all(arg is EOL or arg is COMMA or isinstance(arg, Argument) for arg in args)
 
         # multiline = any(arg is EOL for arg in args)
-        multiline = args[-1] == COMMA
+        multiline = (args[-1] == COMMA) or any(arg.comment is not None for arg in args if isinstance(arg, Argument))
 
         return ArgumentList(multiline=multiline, items=tuple(arg for arg in args if isinstance(arg, Argument)))
+
+    def commented_arg(self, arg: Argument, comment: Comment | None) -> Argument:
+        assert arg.comment is None
+        if comment is not None:
+            return replace(arg, comment=comment)
+        return arg
 
     def positional_arg(self, value: Expression) -> Argument:
         return Argument(

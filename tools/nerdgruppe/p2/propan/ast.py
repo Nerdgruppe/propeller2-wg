@@ -79,9 +79,15 @@ class Expression(ABC):
 
 
 @dataclass(kw_only=True, frozen=True)
+class Comment:
+    text: str
+
+
+@dataclass(kw_only=True, frozen=True)
 class Argument:
     value: Expression
     name: Identifier | None
+    comment: Comment | None = field(default=None)
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -168,19 +174,24 @@ class Condition:
 
 
 @dataclass(kw_only=True, frozen=True)
-class Constant:
+class Line:
+    comment: Comment | None = field(default=None)
+
+
+@dataclass(kw_only=True, frozen=True)
+class Constant(Line):
     identifier: Identifier
     value: Expression
 
 
 @dataclass(kw_only=True, frozen=True)
-class Label:
+class Label(Line):
     identifier: Identifier
     is_variable: bool
 
 
 @dataclass(kw_only=True, frozen=True)
-class Instruction:
+class Instruction(Line):
     label: Label | None
     condition: Condition | None
     mnemonic: Identifier
@@ -190,4 +201,4 @@ class Instruction:
 
 @dataclass(kw_only=True, frozen=True)
 class Program:
-    lines: tuple[Instruction | Constant | Label]
+    lines: tuple[Line]

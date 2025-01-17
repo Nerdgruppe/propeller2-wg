@@ -1,0 +1,29 @@
+
+// second line
+
+label:     // with comment
+// comment on the next line
+
+// new
+// commentary  
+// block
+
+    // indented block
+    // indented block
+    // indented block
+
+const post_const = 10 // foobar
+
+    MOV // post instruction
+    MOV 10, 20 // post instruction
+    MOV (hello +  world) // post instruction
+
+label: NOP 10, 20 // post label + instruction
+
+const argument_comments = fun( argument // comment here transform this into multiline syntax
+)
+
+// const argument_comments2 = fun(
+//     arg1, // foo
+//     arg2, // banana
+// )

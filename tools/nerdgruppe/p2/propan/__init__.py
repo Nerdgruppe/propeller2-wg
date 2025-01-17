@@ -3,6 +3,7 @@ import sys
 from .parser import parse_file
 from .render import render
 
+
 def main():
     _patch_print()
 
@@ -16,6 +17,7 @@ def main():
         render(program=program, file=sys.stdout)
     else:
         sys.stderr.write("parse failure!\n")
+
 
 def _patch_print():
     _original_print = __builtins__["print"]

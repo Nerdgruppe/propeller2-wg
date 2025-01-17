@@ -122,11 +122,19 @@ def render_line(
                 with _WidthJustifier(file, condition_width or 0) as wrapper:
                     render_condition(line.condition, file=wrapper)
                 file.write(" ")
-            else:
+            elif line.label is None:
                 if condition_width is not None:
                     file.write(" " * (condition_width + 1))
 
-            mnemonic: str = line.mnemonic.upper()
+            mnemonic: str = line.mnemonic
+
+            if mnemonic.startswith("."):
+                # directives are always lowercase
+                mnemonic = mnemonic.lower()
+            else:
+                # but all instructions and data words are uppercase
+                mnemonic = mnemonic.upper()
+
             if mnemonic_width is not None:
                 mnemonic = mnemonic.ljust(mnemonic_width)
 
@@ -151,6 +159,12 @@ def render_line(
             render_expression(line.value, indent="", file=file)
 
         # Instruction | Constant | Label
+
+        if line.comment is not None:
+            if file.line_length > 0:
+                # use python-style two-space distance for comments
+                file.write("  ")
+            file.write(line.comment.text)
 
         file.write("\n")
 
@@ -227,12 +241,17 @@ def render_argument_list(args: ArgumentList, *, indent: str, file: io.IOBase):
         for i, arg in enumerate(args):
             file.write(indent + "    ")
             render_argument(arg, width=width, pad=True, indent=indent + "    ", file=file)
-            file.write(",\n")
+            file.write(",")
+            if arg.comment is not None:
+                file.write("  ")
+                file.write(arg.comment.text)
+            file.write("\n")
 
         file.write(indent)
 
     else:
         for i, arg in enumerate(args):
+            assert arg.comment is None
             if i > 0:
                 file.write(", ")
             render_argument(arg, width=None, pad=False, indent=indent, file=file)
@@ -420,3 +439,7 @@ class _LineEndTrimmer:
                 return
             self._file.write(line.rstrip() + "\n")
             self._line_buffer = suffix
+
+    @property
+    def line_length(self) -> int:
+        return len(self._line_buffer)

@@ -2,16 +2,16 @@ from lark.load_grammar import load_grammar
 
 PROPAN_GRAMMAR, _ = load_grammar(
     r"""
-    
+
     ?start: program
 
     program     : line*
 
-    ?line       : const_decl eol    -> line
-                | instruction eol   -> line
-                | label eol         -> line
-                | eol               -> empty_line
- 
+    ?line       : const_decl [comment] eol    -> line
+                | instruction [comment] eol   -> line
+                | label [comment] eol         -> line
+                | [comment] eol               -> empty_line
+
     const_decl  : kw_const ident "=" expr
 
     instruction : [label] [condition] ident [arglist] [effect]
@@ -34,10 +34,12 @@ PROPAN_GRAMMAR, _ = load_grammar(
 
     arglist     : arg ("," arg)*            -> arglist
 
-    arglist_nl  : eol* arg ( eol* "," eol* arg)* eol* (comma eol*)? -> arglist
+    arglist_nl  : eol* arg_nl ( eol* "," eol* arg_nl)* eol* (comma eol*)? -> arglist
+
+    arg_nl      : arg [comment]     -> commented_arg
 
     arg         : expr              -> positional_arg
-                | ident "=" expr    -> named_arg    
+                | ident "=" expr    -> named_arg
 
     effect      : EFFECT_ANDC   -> effect_andc
                 | EFFECT_ANDZ   -> effect_andz
@@ -71,7 +73,7 @@ PROPAN_GRAMMAR, _ = load_grammar(
 
     ?expr_l2     : expr_l3 BINOP_L2 expr_l2     -> binary_op
                 | expr_l3
-    
+
     BINOP_L2    : "+"
                 | "-"
                 | "|"
@@ -115,6 +117,7 @@ PROPAN_GRAMMAR, _ = load_grammar(
     ident       : IDENTIFIER
     eol         : EOL
     comma       : ","
+    comment     : COMMENT                         -> comment
 
     number      : BIN_NUMBER -> bin_number
                 | QUAD_NUMBER -> quad_number
@@ -126,8 +129,8 @@ PROPAN_GRAMMAR, _ = load_grammar(
     ?kw_if      : KW_IF     -> discard
 
     KW_CONST .2 : /\bCONST\b/i
-    KW_VAR   .2 : /\bVAR\b/i  
-    KW_IF    .2 : /\bIF\b/i   
+    KW_VAR   .2 : /\bVAR\b/i
+    KW_IF    .2 : /\bIF\b/i
 
     COMMENT     : "//" /[^\n]*/
     IDENTIFIER  : /\.?[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*/i
@@ -160,7 +163,7 @@ PROPAN_GRAMMAR, _ = load_grammar(
     EOL : /[ \t]*\r?\n/
 
     %ignore WS
-    %ignore COMMENT
+    # %ignore COMMENT
 
 """,
     source=__file__,
