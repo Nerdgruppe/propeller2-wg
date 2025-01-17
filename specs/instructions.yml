@@ -216,11 +216,30 @@ instructions:
     group: Math and Logic
     tags:
       - math
+      - bits
     reg_access: D
     is_alias: false
     cycles:
       cog: 2
       hub: 2
+    description: |
+      **Result:** The bits of Dest are rotated right by Src bits; any departing LSBs are moved into MSBs.
+        - Dest is the register containing the value to rotate right by Src bits.
+        - Src is a register or 5-bit literal whose value indicates the number of bit positions to rotate.
+        - `WC`, `WZ`, or `WCZ` are optional effects to update flags.
+
+      **Explanation:**
+      ROR rotates Dest's binary value right by Src places (0–31 bits).
+      All LSBs rotated out are moved into the new MSBs.
+
+      If the WC or WCZ effect is specified, the C flag is updated to the
+      value of the last bit rotated out (effectively C = result bit "31")
+      if Src is 1–31, or to Dest[0] if Src is 0.
+
+      If the WZ or WCZ effect is specified, the Z flag is set (1) if the
+      Dest result equals zero, or is cleared (0) if it is non-zero. Since
+      no bits are lost by this operation, the result will only be zero if
+      Dest started at zero.
 
   - mnemonic: "ROL     D,{#}S   {WC/WZ/WCZ}"
     encoding: EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS
