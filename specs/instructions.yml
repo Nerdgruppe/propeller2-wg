@@ -2183,10 +2183,11 @@ instructions:
   - mnemonic: "RDLUT   D,{#}S/P {WC/WZ/WCZ}"
     encoding: EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS
     brief: |
-      Read data from LUT address {#}S/PTRx into D. C = MSB of data. *
+      Read data from LUT address {#}S/PTRx into D. C = MSB of data.
     group: Lookup Table
     tags:
       - lut
+      - memory
     reg_access: D
     is_alias: false
     cycles:
@@ -2200,6 +2201,7 @@ instructions:
     group: Hub RAM - Read
     tags:
       - hubram
+      - memory
     reg_access: D
     hub_access: read
     is_alias: false
@@ -2219,6 +2221,7 @@ instructions:
     group: Hub RAM - Read
     tags:
       - hubram
+      - memory
     reg_access: D
     hub_access: read
     is_alias: false
@@ -2240,6 +2243,7 @@ instructions:
     group: Hub RAM - Read
     tags:
       - hubram
+      - memory
     reg_access: D
     hub_access: read
     is_alias: false
@@ -2261,6 +2265,7 @@ instructions:
     group: Hub RAM - Read
     tags:
       - hubram
+      - memory
     reg_access: D
     hub_access: read
     is_alias: true
@@ -2282,6 +2287,7 @@ instructions:
     group: Hub RAM - Read
     tags:
       - hubram
+      - memory
     reg_access: D
     hub_access: read
     is_alias: true
@@ -2320,6 +2326,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -2336,6 +2343,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -2352,6 +2360,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -2368,6 +2377,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -2384,6 +2394,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -2400,6 +2411,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -2416,6 +2428,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -2432,6 +2445,7 @@ instructions:
     tags:
       - branch
       - control
+      - interrupts
     reg_access: D
     is_alias: true
     cycles:
@@ -3042,7 +3056,6 @@ instructions:
         options:
           - min: 13
             max: 20
-
           - 2
 
   - mnemonic: "JXFI    {#}S"
@@ -3065,7 +3078,6 @@ instructions:
         options:
           - min: 13
             max: 20
-
           - 2
 
   - mnemonic: "JXRO    {#}S"
@@ -3088,7 +3100,6 @@ instructions:
         options:
           - min: 13
             max: 20
-
           - 2
 
   - mnemonic: "JXRL    {#}S"
