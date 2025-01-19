@@ -1,9 +1,11 @@
 ---
 
 smartmodes:
-  off:
+  normal:
     name: Smart Pin Off
     encoding: "00000"
+    description: |
+      This mode is for normal operation, without any smart pin functionality.
   
   long_repo:
     name: Long Repository
@@ -11,41 +13,164 @@ smartmodes:
       - "00001"
       - "00010"
       - "00011"
-      DAC_MODE: off
+    condition:
+      dac: disabled
+    description: |
+      This mode turns the smart pin into a long repository, where WXPIN writes the long and RDPIN/RQPIN can read the long.
+      When active (DIR=1), WXPIN updates the long and raises IN.
+      During reset (DIR=0), WXPIN instructions are ignored and IN is low.
   
   dac_noise:
     name: DAC Noise
     encoding: 
       - "00001"
-      DAC_MODE: on
+    condition:
+      dac: enabled
 
   dac_dither:
     name: DAC 16-Bit With Noise Dither
     encoding:
       - "00010"
-      DAC_MODE: on
+    condition:
+      dac: enabled
 
   dac_pwm:
     name: DAC 16-Bit With PWM dither
     encoding:
       - "00011"
-      DAC_MODE: on
+    condition:
+      dac: enabled
   
   pulse_cycle:
     name: Pulse/Cycle Output
     encoding: "00100"
+    description: |
+      This mode overrides OUT to control the pin output state.
+      X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units.
+      X.[31..16] establishes a value to which the base period counter will be compared to on each clock cycle, as it counts from
+      X.[15..0] down to 1, before starting over at X.[15..0] if decremented Y > 0. On each clock, if the base period counter >
+      X.[31..16] and Y > 0, the output will be high (else low).
+      Whenever Y.[31..0] is written with a non-zero value, the pin will begin outputting a high pulse or cycles, starting at the next
+      base period. After each pulse, Y is decremented by one, until it reaches zero, at which the output will remain low.
+      Some examples:
+        - If X.[31..16] is set to 0, the output will be high for the duration of Y > 0.
+        - If X.[15..0] is set to 3 and X.[31..16] is set to 2, the output will be 0-0-1 (repeat) for the duration of Y > 0.
+      IN will be raised and the pin will revert to low output when the pulse or cycles complete, meaning Y has been decremented to
+      zero.
+      During reset (DIR=0), IN is low, the output is low, and Y is set to zero.
+    registers:
+      X:
+        format:
+          - bitsize: 16
+            name: base_period
+            description: |
+              X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units.
+
+          - bitsize: 16
+            name: threshold
+            description: |
+              X.[31..16] establishes a value to which the base period counter will be compared to on each clock cycle, as it counts from
+              X.[15..0] down to 1, before starting over at X.[15..0] if decremented Y > 0. On each clock, if the base period counter >
+              X.[31..16] and Y > 0, the output will be high (else low).
+
+      Y:
+        description: |
+          Whenever Y.[31..0] is written with a non-zero value, the pin will begin outputting a high pulse or cycles, starting at the next
+          base period. After each pulse, Y is decremented by one, until it reaches zero, at which the output will remain low.
   
   transition_output:
     name: Transition Output
     encoding: "00101"
 
+    description: |
+      This mode overrides OUT to control the pin output state.
+
+      X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units. The base-period
+      counter begins decrementing and periodically reloading as soon as the smart pin is out of reset. All transition outputs will be
+      synchronized to this free-running base period.
+
+      Whenever Y.[31..0] is written with a non-zero value, the pin will begin toggling for Y transitions at each base period, starting at
+      the next base period.
+
+      IN will be raised when the transitions complete, with the pin remaining in its current output state.
+
+      During reset (DIR=0), IN is low, the output is low, and Y is set to zero.
+
+    io:
+      IN: will be raised when the transitions complete, with the pin remaining in its current output state.
+    
+    registers:
+      X:  
+        description: |
+          X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units. The base-period
+          counter begins decrementing and periodically reloading as soon as the smart pin is out of reset. All transition outputs will be
+          synchronized to this free-running base period.
+        format:
+          - bitsize: 16
+            name: base_period
+
+      Y:
+        description: |
+          Whenever Y.[31..0] is written with a non-zero value, the pin will begin toggling for Y transitions at each base period, starting at
+          the next base period. 
+
   nco_frequency:
     name: NCO Frequency
     encoding: "00110"
 
+    description: |
+      This mode overrides OUT to control the pin output state.
+      X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units.
+      Upon WXPIN, X.[31..16] is written to Z.[31..16] to allow phase setting, even during reset.
+      Y.[31..0] will be added into Z.[31..0] at each base period.
+      The pin output will reflect Z.[31].
+      IN will be raised whenever Z overflows.
+      During reset (DIR=0), IN is low, the output is low, and Z[15:0] is set to zero.
+
+    io:
+      IN: will be raised whenever Z overflows.
+      OUT: The pin output will reflect Z.[31].
+
+    registers:
+      X:
+        description: |
+          X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units.
+
+          Upon WXPIN, X.[31..16] is written to Z.[31..16] to allow phase setting, even during reset.
+        format:
+          - bitsize: 16
+            name: base_period
+      Y:
+        description: |
+          Y.[31..0] will be added into Z.[31..0] at each base period.
+
   nco_duty:
     name: NCO Duty
     encoding: "00111"
+
+    description: |
+      This mode overrides OUT to control the pin output state.
+      X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units.
+      Upon WXPIN, X.[31..16] is written to Z.[31..16] to allow phase setting.
+      Y.[31..0] will be added into Z.[31..0] at each base period.
+      The pin output will reflect Z overflow.
+      IN will be raised whenever Z overflows.
+      During reset (DIR=0), IN is low, the output is low, and Z is set to zero.
+
+    io:
+      OUT: The pin output will reflect Z overflow.
+      IN: IN will be raised whenever Z overflows.
+
+    registers:
+      X:
+        description: |
+          X.[15..0] establishes a base period in clock cycles which forms the empirical high-time and low-time units.
+        format:
+          - bitsize: 16
+            name: base_period
+      Y:
+        description: |
+          Y.[31..0] will be added into Z.[31..0] at each base period.
 
   pwm_triangle:
     name: PWM Triangle
@@ -72,12 +197,28 @@ smartmodes:
     encoding: "01101"
 
   edge_count_updown:
-    name: Count A-Input Positive Edges (!Y[0]), Increment w/A-Input Positive Edge, Decrement w/B-Input Positive Edge (Y[0])
+    name: Count A-Input Positive Edges
     encoding: "01110"
+    condition:
+      Y: "0"
+
+  edge_count_updown:
+    name: Increment w/A-Input Positive Edge, Decrement w/B-Input Positive Edge
+    encoding: "01110"
+    condition:
+      Y: "1"
   
   level_count_updown:
-    name: Count A-Input Highs (!Y[0]), Increment w/A-Input High, Decrement w/B-Input High (Y[0])
+    name: Count A-Input Highs
     encoding: "01111"
+    condition:
+      Y: "0"
+
+  level_count_updown:
+    name: Increment w/A-Input High, Decrement w/B-Input High (Y[0])
+    encoding: "01111"
+    condition:
+      Y: "1"
 
   measure_level_period: 
     name: Time A-Input States
@@ -88,8 +229,16 @@ smartmodes:
     encoding: "10001"
   
   measure_event_time_or_timeout:
-    name: Time X A-Input Highs/Rises/Edges (!Y[2]), Timeout on X Clocks Of Missing A-Input High/Rise/Edge (%10010 AND Y[2])
+    name: Time X A-Input Highs/Rises/Edges
     encoding: "10010"
+    condition:
+      Y: "0xx"
+
+  measure_event_time_or_timeout:
+    name: Timeout on X Clocks Of Missing A-Input High/Rise/Edge (%10010 AND Y[2])
+    encoding: "10010"
+    condition:
+      Y: "1xx"
   
   count_time_periods:
     name: Count Time For X Periods
@@ -139,6 +288,175 @@ smartmodes:
     name: Asynchronous Serial Transmit
     encoding: "11110"
 
+    registers:
+      X:
+        description: |
+          Configuration register, contains the number of bits and the fractional baud rate divider. 
+        format:
+          - bitsize: 5
+            name: word_size
+            description: |
+              X[4:0] sets the number of bits, minus 1. For example, a value of 7 will set the word size to 8 bits.
+            enum:
+              0: "1"
+              1: "2"
+              2: "3"
+              3: "4"
+              4: "5"
+              5: "6"
+              6: "7"
+              7: "8"
+              8: "9"
+              9: "10"
+              10: "11"
+              11: "12"
+              12: "13"
+              13: "14"
+              14: "15"
+              15: "16"
+              16: "17"
+              17: "18"
+              18: "19"
+              19: "20"
+              20: "21"
+              21: "22"
+              22: "23"
+              23: "24"
+              24: "25"
+              25: "26"
+              26: "27"
+              27: "28"
+              28: "29"
+              29: "30"
+              30: "31"
+              31: "32"
+
+          - bitsize: 5
+            unused: true
+
+          - bitsize: 6
+            name: bitclocks_fract
+            description: |
+              Fractional part of the baud rate divider. Only used when the integer divisor is less
+              than 1024, otherwise integral division is used.
+          
+          - bitsize: 16
+            name: bitclocks_int
+            description: |
+              Number of clocks in a bit period.
+              
+      Y: unused
+    
+    description: |
+      - Overrides OUT to control the pin output state.
+      - Words from 1 to 32 bits are serially transmitted on the pin at a programmable baud rate, beginning with a low "start" bit and ending with a high "stop" bit.
+      - WXPIN is used to configure the baud rate and word length.
+      - X[31:16] establishes the number of clocks in a bit period, and in case X[31:26] is zero, X[15:10]
+        establishes the number of fractional clocks in a bit period. The X bit period value can be simply computed
+        as: (clocks * $1_0000) & $FFFFFC00. For example, 7.5 clocks would be $00078000, and 33.33 clocks
+        would be $00215400.
+      - X[4:0] sets the number of bits, minus 1. For example, a value of 7 will set the word size to 8 bits.
+      - WYPIN is used to load the output words. The words first go into a single-stage buffer before being
+        advanced to a shifter for output. This buffering mechanism makes it possible to keep the shifter
+        constantly busy, so that gapless transmissions can be achieved. Any time a word is advanced from the
+        buffer to the shifter, IN is raised, indicating that a new word can be loaded.
+      - Here is the internal state sequence:
+        a. Wait for an output word to be buffered via WYPIN, then set the 'buffer-full' and 'busy' flags.
+        b. Move the word into the shifter, clear the 'buffer-full' flag, and raise IN.
+        c. Output a low for one bit period (the START bit).
+        d. Output the LSB of the shifter for one bit period, shift right, and repeat until all data bits are sent.
+        e. Output a high for one bit period (the STOP bit).
+        f. If the 'buffer-full' flag is set due to an intervening WYPIN, loop to (b). Otherwise, clear the 'busy' flag and loop to (a).
+      - RDPIN / RQPIN with WC always returns the 'busy' flag into C. This is useful for knowing when a
+        transmission has completed. The busy flag can be polled starting three clocks after the WYPIN, which
+        loads the output words:
+        ```pasm
+               WYPIN x, #txpin   'load output word
+               WAITX #1          'wait 2+1 clocks before polling busy
+        wait   RDPINx, #txpin WC 'get busy flag into C
+          IF_C JMP #wait         'loop until C = 0
+        ```
+      - During reset (DIR=0) the output is held high.
+
   uart_rx:
     name: Asynchronous Serial Receive
     encoding: "11111"
+    
+    registers:
+      X:
+        description: |
+          Configuration register, contains the number of bits and the fractional baud rate divider. 
+        format:
+          - bitsize: 5
+            name: word_size
+            description: |
+              X[4:0] sets the number of bits, minus 1. For example, a value of 7 will set the word size to 8 bits.
+            enum:
+              0: 1
+              1: 2
+              2: 3
+              3: 4
+              4: 5
+              5: 6
+              6: 7
+              7: 8
+              8: 9
+              9: 10
+              10: 11
+              11: 12
+              12: 13
+              13: 14
+              14: 15
+              15: 16
+              16: 17
+              17: 18
+              18: 19
+              19: 20
+              20: 21
+              21: 22
+              22: 23
+              23: 24
+              24: 25
+              25: 26
+              26: 27
+              27: 28
+              28: 29
+              29: 30
+              30: 31
+              31: 32
+
+          - bitsize: 5
+            unused: true
+
+          - bitsize: 6
+            name: bitclocks_fract
+            description: |
+              Fractional part of the baud rate divider. Only used when the integer divisor is less
+              than 1024, otherwise integral division is used.
+          
+          - bitsize: 16
+            name: bitclocks_int
+            description: |
+              Number of clocks in a bit period.
+              
+      Y: unused
+
+    description: |
+      - Words from 1 to 32 bits are serially received on the A input at a programmable baud rate.
+      - WXPIN is used to configure the baud rate and word length.
+      - X[31:16] establishes the number of clocks in a bit period, and in case X[31:26] is zero, X[15:10]
+        establishes the number of fractional clocks in a bit period. The X bit period value can be simply computed
+        as: (clocks * $1_0000) & $FFFFFC00. For example, 7.5 clocks would be $00078000, and 33.33 clocks
+        would be $00215400.
+      - X[4:0] sets the number of bits, minus 1. For example, a value of 7 will set the word size to 8 bits.
+      - Here is the internal state sequence:
+        1. Wait for the A input to go high (idle state).
+        2. Wait for the A input to go low (START bit edge).
+        3. Delay for half a bit period.
+        4. If the A input is no longer low, loop to (2.).
+        5. Delay for one bit period.
+        6. Right-shift the A input into the shifter and delay for one bit period, repeat until all data bits are received.
+        7. Capture the shifter into the Z register and raise IN.
+        8. Loop to (1.).
+      - RDPIN / RQPIN is used to read the received word. The word must be shifted right by 32 minus the word
+        size. For example, to LSB-justify an 8-bit word received, you would do a 'SHR D,#32-8'.

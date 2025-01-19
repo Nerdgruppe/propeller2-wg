@@ -2,3 +2,4 @@ lark
 pytest
 pyyaml
 pygls
+dataclasses-json
