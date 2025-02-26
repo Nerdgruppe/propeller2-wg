@@ -21,6 +21,7 @@ from .ast import (
     Constant,
     Identifier,
     Line,
+    EmptyLine,
     Label,
     Comment,
     Instruction,
@@ -96,7 +97,7 @@ class PropanTransformer(Transformer):
         return data
 
     def empty_line(self, comment: Comment | None, eol) -> Line:
-        return Line(comment=comment)
+        return EmptyLine(comment=comment)
 
     def comment(self, text: Token) -> Comment:
         return Comment(text=text)
@@ -412,7 +413,8 @@ def parse_file(path: str | Path) -> Program:
     transformer = PropanTransformer()
 
     try:
-        parse_tree = parser.parse(Path(path).read_text())
+        source = Path(path).read_text()
+        parse_tree = parser.parse(source)
     except UnexpectedInput as err:
         sys.stderr.write(f"{err}\n")
         sys.exit(1)

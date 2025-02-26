@@ -1,199 +1,199 @@
 ---
 conditions:
   IF_E:
-    encoding: 1010
+    encoding: "1010"
     description: if comparison/subtraction was equal (Z = 1)
 
   IF_NE:
-    encoding: 0101
+    encoding: "0101"
     description: if comparison/subtraction was not equal (Z = 0)
 
   IF_A:
-    encoding: 0001
+    encoding: "0001"
     description: if comparison/subtraction was above (C = 0 and Z = 0)
 
   IF_AE:
-    encoding: 0011
+    encoding: "0011"
     description: if comparison/subtraction was above or equal (C = 0)
 
   IF_B:
-    encoding: 1100
+    encoding: "1100"
     description: if comparison/subtraction was below (C = 1)
 
   IF_BE:
-    encoding: 1110
+    encoding: "1110"
     description: if comparison/subtraction was below or equal (C = 1 or Z = 1)
 
   IF_GT:
-    encoding: 0001
+    encoding: "0001"
     description: if comparison/subtraction was greater than (C = 0 and Z = 0)
 
   IF_GE:
-    encoding: 0011
+    encoding: "0011"
     description: if comparison/subtraction was greater than or equal (C = 0)
 
   IF_LT:
-    encoding: 1100
+    encoding: "1100"
     description: if comparison/subtraction was less than (C = 1)
 
   IF_LE:
-    encoding: 1110
+    encoding: "1110"
     description: if comparison/subtraction was less than or equal (C = 1 or Z = 1)
 
   IF_C:
-    encoding: 1100
+    encoding: "1100"
     description: if C set (C = 1)
 
   IF_NC:
-    encoding: 0011
+    encoding: "0011"
     description: if C clear (C = 0)
 
   IF_Z:
-    encoding: 1010
+    encoding: "1010"
     description: if Z set (Z = 1)
 
   IF_NZ:
-    encoding: 0101
+    encoding: "0101"
     description: if Z clear (Z = 0)
 
   IF_C_EQ_Z:
-    encoding: 1001
+    encoding: "1001"
     description: if C equal to Z (C = 0 and Z = 0 --or-- C = 1 and Z = 1)
 
   IF_C_NE_Z:
-    encoding: 0110
+    encoding: "0110"
     description: if C not equal to Z (C = 0 and Z = 1 --or-- C = 1 and Z = 0)
 
   IF_C_AND_Z:
-    encoding: 1000
+    encoding: "1000"
     description: if C set and Z set (C = 1 and Z = 1)
 
   IF_C_AND_NZ:
-    encoding: 0100
+    encoding: "0100"
     description: if C set and Z clear (C = 1 and Z = 0)
 
   IF_NC_AND_Z:
-    encoding: 0010
+    encoding: "0010"
     description: if C clear and Z set (C = 0 and Z = 1)
 
   IF_NC_AND_NZ:
-    encoding: 0001
+    encoding: "0001"
     description: if C clear and Z clear (C = 0 and Z = 0)
 
   IF_C_OR_Z:
-    encoding: 1110
+    encoding: "1110"
     description: if C set or Z set (C = 1 or Z = 1)
 
   IF_C_OR_NZ:
-    encoding: 1101
+    encoding: "1101"
     description: if C set or Z clear (C = 1 or Z = 0)
 
   IF_NC_OR_Z:
-    encoding: 1011
+    encoding: "1011"
     description: if C clear or Z set (C = 0 or Z = 1)
 
   IF_NC_OR_NZ:
-    encoding: 0111
+    encoding: "0111"
     description: if C clear or Z clear (C = 1 or Z = 0)
 
   IF_Z_EQ_C:
-    encoding: 1001
+    encoding: "1001"
     description: if Z equal to C (Z = 0 and C = 0 --or-- Z = 1 and C = 1)
 
   IF_Z_NE_C:
-    encoding: 0110
+    encoding: "0110"
     description: if Z not equal to C (Z = 0 and C = 1 --or-- Z = 1 and C = 0)
 
   IF_Z_AND_C:
-    encoding: 1000
+    encoding: "1000"
     description: if Z set and C set (Z = 1 and C = 1)
 
   IF_Z_AND_NC:
-    encoding: 0010
+    encoding: "0010"
     description: if Z set and C clear (Z = 1 and C = 0)
 
   IF_NZ_AND_C:
-    encoding: 0100
+    encoding: "0100"
     description: if Z clear and C set (Z = 0 and C = 1)
 
   IF_NZ_AND_NC:
-    encoding: 0001
+    encoding: "0001"
     description: if Z clear and C clear (Z = 0 and C = 0)
 
   IF_Z_OR_C:
-    encoding: 1110
+    encoding: "1110"
     description: if Z set or C set (Z = 1 or C = 1)
 
   IF_Z_OR_NC:
-    encoding: 1011
+    encoding: "1011"
     description: if Z set or C clear (Z = 1 or C = 0)
 
   IF_NZ_OR_C:
-    encoding: 1101
+    encoding: "1101"
     description: if Z clear or C set (Z = 0 or C = 1)
 
   IF_NZ_OR_NC:
-    encoding: 0111
+    encoding: "0111"
     description: if Z clear or C clear (Z = 0 or C = 0)
 
   IF_00:
-    encoding: 0001
+    encoding: "0001"
     description: if C clear and Z clear (C = 0 and Z = 0)
 
   IF_01:
-    encoding: 0010
+    encoding: "0010"
     description: if C clear and Z set (C = 0 and Z = 1)
 
   IF_10:
-    encoding: 0100
+    encoding: "0100"
     description: if C set and Z clear (C = 1 and Z = 0)
 
   IF_11:
-    encoding: 1000
+    encoding: "1000"
     description: if C set and Z set (C = 1 and Z = 1)
 
   IF_X0:
-    encoding: 0101
+    encoding: "0101"
     description: if Z clear (Z = 0)
 
   IF_X1:
-    encoding: 1010
+    encoding: "1010"
     description: if Z set (Z = 1)
 
   IF_0X:
-    encoding: 0011
+    encoding: "0011"
     description: if C clear (C = 0)
 
   IF_1X:
-    encoding: 1100
+    encoding: "1100"
     description: if C set (C = 1)
 
   IF_NOT_00:
-    encoding: 1110
+    encoding: "1110"
     description: if C clear and Z clear (C = 0 and Z = 0)
 
   IF_NOT_01:
-    encoding: 1101
+    encoding: "1101"
     description: if C set or Z clear (C = 1 or Z = 0)
 
   IF_NOT_10:
-    encoding: 1011
+    encoding: "1011"
     description: if C clear or Z set (C = 0 or Z = 1)
 
   IF_NOT_11:
-    encoding: 0111
+    encoding: "0111"
     description: if C clear or Z clear (C = 0 or Z = 0)
 
   IF_DIFF:
-    encoding: 0110
+    encoding: "0110"
     description: if C not equal to Z (C = 0 and Z = 1 --or-- C = 1 and Z = 0)
 
   IF_SAME:
-    encoding: 1001
+    encoding: "1001"
     description: if C equal to Z (C = 0 and Z = 0 --or-- C = 1 and Z = 1)
 
   _RET_:
-    encoding: 0000
+    encoding: "0000"
     description: always; execute instruction then return if no branch; no context restore
 
 instructions:
@@ -3834,7 +3834,7 @@ instructions:
   - mnemonic: "REP     {#}D,{#}S"
     encoding: EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS
     brief: |
-      Execute next D[8:0] instructions S times. If S = 0, repeat instructions infinitely. If D[8:0] = 0, nothing repeats.
+      Execute next D[8:0] instructions S times. If S = 0, repeat instructions infinitely. If D[8:0] = 0, nothing repeats.
     group: Branch Repeat
     tags:
       - branch
@@ -4337,7 +4337,7 @@ instructions:
       cog: 2
       hub: 2
 
-  - mnemonic: "GETRND  D        {WC/WZ/WCZ}"
+  - mnemonic: "GETRND  D        {WC/WZ/WCZ}"
     encoding: EEEE 1101011 CZ0 DDDDDDDDD 000011011
     brief: |
       Get RND into D/C/Z. RND is the PRNG that updates on every clock. D = RND[31:0], C = RND[31], Z = RND[30], unique per cog.
@@ -4350,10 +4350,10 @@ instructions:
       cog: 2
       hub: 2
 
-  - mnemonic: "GETRND            WC/WZ/WCZ"
+  - mnemonic: "GETRND            WC/WZ/WCZ"
     encoding: EEEE 1101011 CZ1 000000000 000011011
     brief: |
-      Get RND into C/Z. C = RND[31], Z = RND[30], unique per cog.
+      Get RND into C/Z. C = RND[31], Z = RND[30], unique per cog.
     group: Miscellaneous
     tags:
       - misc
@@ -5250,10 +5250,10 @@ instructions:
         min: 13
         max: 20
 
-  - mnemonic: "SKIP    {#}D"
+  - mnemonic: "SKIP    {#}D"
     encoding: EEEE 1101011 00L DDDDDDDDD 000110001
     brief: |
-      Skip instructions per D. Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
+      Skip instructions per D. Subsequent instructions 0..31 get cancelled for each '1' bit in D[0]..D[31].
     group: Branch D - Skip
     tags:
       - branch
@@ -5263,7 +5263,7 @@ instructions:
       cog: 2
       hub: 2
 
-  - mnemonic: "SKIPF   {#}D"
+  - mnemonic: "SKIPF   {#}D"
     encoding: EEEE 1101011 00L DDDDDDDDD 000110010
     brief: |
       Skip cog/LUT instructions fast per D. Like SKIP, but instead of cancelling instructions, the PC leaps over them.
@@ -5276,10 +5276,10 @@ instructions:
       cog: 2
       hub: illegal
 
-  - mnemonic: "EXECF   {#}D"
+  - mnemonic: "EXECF   {#}D"
     encoding: EEEE 1101011 00L DDDDDDDDD 000110011
     brief: |
-      Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10]. PC = {10'b0, D[9:0]}.
+      Jump to D[9:0] in cog/LUT and set SKIPF pattern to D[31:10]. PC = {10'b0, D[9:0]}.
     group: Branch D - Call+Skip
     tags:
       - branch
@@ -5343,7 +5343,7 @@ instructions:
   - mnemonic: "SETLUTS {#}D"
     encoding: EEEE 1101011 00L DDDDDDDDD 000110111
     brief: |
-      If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this cog's LUT.
+      If D[0] = 1 then enable LUT sharing, where LUT writes within the adjacent odd/even companion cog are copied to this cog's LUT.
     group: Lookup Table
     tags:
       - lut
@@ -6349,7 +6349,7 @@ instructions:
   - mnemonic: "AUGD    #n"
     encoding: EEEE 11111nn nnn nnnnnnnnn nnnnnnnnn
     brief: |
-      Queue #n to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.
+      Queue #n to be used as upper 23 bits for next #D occurrence, so that the next 9-bit #D will be augmented to 32 bits.
     group: Miscellaneous
     tags:
       - misc

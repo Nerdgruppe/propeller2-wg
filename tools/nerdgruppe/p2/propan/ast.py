@@ -1,6 +1,7 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
+from typing import Optional
 
 
 class Effect(StrEnum):
@@ -174,8 +175,17 @@ class Condition:
 
 
 @dataclass(kw_only=True, frozen=True)
-class Line:
+class Line(ABC):
     comment: Comment | None = field(default=None)
+
+    @abstractmethod
+    def get_label(self) -> Optional["Label"]: ...
+
+
+@dataclass(kw_only=True, frozen=True)
+class EmptyLine(Line):
+    def get_label(self) -> Optional["Label"]:
+        return None
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -183,11 +193,17 @@ class Constant(Line):
     identifier: Identifier
     value: Expression
 
+    def get_label(self) -> Optional["Label"]:
+        return None
+
 
 @dataclass(kw_only=True, frozen=True)
 class Label(Line):
     identifier: Identifier
     is_variable: bool
+
+    def get_label(self) -> Optional["Label"]:
+        return self
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -197,6 +213,9 @@ class Instruction(Line):
     mnemonic: Identifier
     arguments: ArgumentList
     effect: Effect | None
+
+    def get_label(self) -> Optional["Label"]:
+        return self.label
 
 
 @dataclass(kw_only=True, frozen=True)
