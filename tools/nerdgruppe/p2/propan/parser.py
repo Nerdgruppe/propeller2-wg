@@ -270,7 +270,7 @@ class PropanTransformer(Transformer):
     def quad_number(self, value: str) -> NumericExpression:
         return NumericExpression(
             format=NumberFormat.quaternary,
-            value=int(value, 4),
+            value=int(value[2:], 4),
             written=value,
         )
 

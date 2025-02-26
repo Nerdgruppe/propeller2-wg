@@ -1,5 +1,8 @@
 
-test: test-propan
+demo-propan:
+    .venv/bin/python -m nerdgruppe.p2.propan examples/propio-client.propan
+
+test: demo-propan test-propan
 
 setup-venv:
     python -m venv .venv
@@ -10,4 +13,8 @@ test-pasm-parser:
     .venv/bin/python -m nerdgruppe.p2.pasm
 
 test-propan:
-    .venv/bin/python -m nerdgruppe.p2.propan
+    for file in $(find tests/propan/sema -name "*.propan"); do \
+        echo $file ; \
+        .venv/bin/python -m nerdgruppe.p2.propan "$file" --validate-output "${file%.propan}.json" ; \
+    done
+

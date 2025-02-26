@@ -1,6 +1,6 @@
 import inspect
 import logging
-
+import io
 
 from enum import Enum
 from dataclasses import dataclass, field
@@ -42,110 +42,36 @@ from .ast import (
     Program,
 )
 
+from .types import (
+    SymbolType,
+    Value,
+    ConstValue,
+    MemoryAddress,
+    PoisonValue,
+    IncompleteValue,
+    BinaryStream,
+    AssemblerState,
+    AddressingMode,
+)
+
 
 def TODO(msg: str, /, *args):
     logging.error("TODO: " + msg, *args)
 
 
-class SymbolType(Enum):
-    code = "code"  # <name>:
-    data = "data"  # var <name>:
-    const = "const"  # const <name> = ...
-
-
-class AddressingMode(Enum):
-    cogexec = "cogexec"
-    lutexec = "lutexec"
-    hubexec = "hubexec"
-
-
-class ExecutionCluster:
-    """
-    A cluster is everything between the switch of the addressing modes.
-
-    You can only refer directly to local symbols in the same execution cluster.
-    """
-
-    hub_base: int
-
-
-@dataclass(kw_only=True)
-class AssemblerState:
-    # Total hub address, ever incrementing
-    hub_address: int = field(default=0)
-
-    # Local address, either HUB, COG or LUT
-    local_address: int = field(default=0)
-
-    # Defines what local_address refers to and how instructions are executed.
-    addressing_mode: AddressingMode = field(default=AddressingMode.cogexec)
-
-    # The current lut/cog exec instruction cluster
-    current_cluster: ExecutionCluster | None = field(default_factory=ExecutionCluster)
-
-
-class Value(ABC):
-    """
-    A generic "value" which can resolve into a 32-bit constant,
-    a hub-relative offset or a cog-relative offset.
-    """
-
-    @abstractmethod
-    def get_hubexec_value(self) -> int: ...
-
-    @abstractmethod
-    def get_cogexec_value(self) -> int: ...
-
-
-class ConstValue(Value):
-    """
-    A value that evaluates to a constant value.
-    """
-
-    value: int
-
-    def __init__(self, value: int):
-        self.value = value
-
-    def __str__(self):
-        return str(self.value)
-
-    def __repr__(self):
-        return f"ConstValue({self.value})"
-
-    def get_hubexec_value(self) -> int:
-        return self.value
-
-    def get_cogexec_value(self) -> int:
-        return self.value
-
-
-class MemoryAddress(Value):
-    """
-    A memory address is a value which refers to a hub address,
-    and optionally a cog offset.
-    """
-
-    hub_address: int
-    local_address: int
-    cluster: ExecutionCluster | None
-
-    def __init__(self, *, cluster: ExecutionCluster | None, hub: int, cog: int):
-        assert isinstance(hub, int)
-        assert isinstance(cog, int)
-
-        self.cluster = cluster
-        self.hub_address = hub
-        self.local_address = cog
-
-
 class Symbol:
     type: SymbolType
     name: Identifier
-    value: Value
+    value: Value | None
     locals: "Scope"
 
-    def __init__(self, container: "Scope", type: SymbolType, name: Identifier, value: int | Value | None = None):
+    def __init__(
+        self,
+        container: "Scope",
+        type: SymbolType,
+        name: Identifier,
+        value: int | Value | None = None,
+    ):
         self.locals = Scope(parent=container)
         self.type = type
         self.name = name
@@ -191,6 +117,8 @@ class Scope:
 class CompileUnit:
     globals: Scope
 
+    full_image: bytes
+
     def __init__(self):
         self.globals = Scope()
 
@@ -203,19 +131,37 @@ class ByteCode(ABC):
     A code is something that can be emitted.
     """
 
+    argv: list[Value]
+
+    def __init__(self, argv: list[Value]):
+        self.argv = argv
+
+    def resolve_values(self, state: AssemblerState) -> None:
+        for i, value in enumerate(self.argv):
+            self.argv[i] = value.resolve(state)
+
     @abstractmethod
     def get_size(self) -> int: ...
+
+    @abstractmethod
+    def serialize(self, asm: AssemblerState, stream: BinaryStream) -> None: ...
 
 
 class InstructionByteCode(ByteCode):
     instruction: instructions.Instruction
 
-    def __init__(self, instruction: instructions.Instruction) -> None:
+    def __init__(
+        self, instruction: instructions.Instruction, argv: list[Value]
+    ) -> None:
+        super().__init__(argv)
         self.instruction = instruction
 
     def get_size(self) -> int:
         TODO("check for AUG")
         return 4
+
+    def serialize(self, asm: AssemblerState, stream: BinaryStream) -> None:
+        pass
 
 
 class DataByteCode(ByteCode):
@@ -224,21 +170,21 @@ class DataByteCode(ByteCode):
     values: list[Value]
 
     def __init__(self, size: int, values: list[Value]):
+        super().__init__(values)
         self.size_per_item = size
-        self.values = values
 
     def get_size(self) -> int:
-        return self.size_per_item * len(self.values)
+        return self.size_per_item * len(self.argv)
+
+    def serialize(self, asm: AssemblerState, stream: BinaryStream) -> None:
+        for value in self.argv:
+            integer: int = value.get_value(asm)
+            stream.write_int(integer, 8 * self.size_per_item, False)
 
 
 def unwrap(cv: Value) -> int:
     assert isinstance(cv, ConstValue)
     return cv.value
-
-
-@dataclass(kw_only=True)
-class BinaryStream:
-    pass
 
 
 class Analyzer:
@@ -326,7 +272,9 @@ class Analyzer:
                 self.evaluate_expression(
                     arg.value,
                     allow_partial=True,
-                    scope=active_symbol.locals if active_symbol is not None else self.cu.globals,
+                    scope=active_symbol.locals
+                    if active_symbol is not None
+                    else self.cu.globals,
                     expected_symbol=None,
                 )
                 for arg in instr.arguments
@@ -377,9 +325,24 @@ class Analyzer:
 
             bytecode: ByteCode = self.code_lut[instr]
 
-            bytecode.serialize(stream, asm)
+            bytecode.resolve_values(asm)
 
-    def select_instruction(self, instr: Instruction, argv: list) -> instructions.Instruction:
+            size = bytecode.get_size()
+
+            bytecode.serialize(asm, stream)
+
+            asm.hub_address += size
+            if asm.addressing_mode != AddressingMode.hubexec:
+                assert (size % 4) == 0, "line does not emit a multiple of 4 bytes!"
+                asm.local_address += size // 4
+            else:
+                asm.local_address += size
+
+        self.cu.full_image = stream.get_bytes()
+
+    def select_instruction(
+        self, instr: Instruction, argv: list
+    ) -> instructions.Instruction:
         group = self.isa.get_group(instr.mnemonic.upper())
         if group is None:
             raise ValueError(f"{instr.mnemonic} is not a valid mnemonic")
@@ -409,9 +372,13 @@ class Analyzer:
             matches.append(isa_instr)
 
         if len(matches) == 0:
-            raise ValueError(f"Could not find matching instruction for {instr.mnemonic}")
+            raise ValueError(
+                f"Could not find matching instruction for {instr.mnemonic}"
+            )
 
-        assert len(matches) == 1, "Ambigious matches: " + ", ".join(m.mnemonic for m in matches)
+        assert len(matches) == 1, "Ambigious matches: " + ", ".join(
+            m.mnemonic for m in matches
+        )
 
         return matches[0]
 
@@ -453,7 +420,18 @@ class Analyzer:
         def _(expr: SymbolicExpression) -> EvalResult:
             sym = scope.get(expr.name)
             if sym is not None:
-                return sym
+                if sym.value is None:
+                    assert allow_partial, "Undefined symbol used in non-partial context"
+
+                    def _resolve(state) -> Value:
+                        assert sym.value is not None, (
+                            f"{sym.name!r} could not be resolved."
+                        )
+                        return sym.value
+
+                    return IncompleteValue(_resolve)
+
+                return sym.value
             else:
                 # How to resolve that?
                 return expr.name
@@ -510,7 +488,22 @@ class Analyzer:
                 raise KeyError(f"Function {expr.function!r} does not exist!")
 
             args = [recurse(arg.value) for arg in expr.arguments if arg.name is None]
-            kwargs = {arg.name: recurse(arg.value) for arg in expr.arguments if arg.name is not None}
+            kwargs = {
+                arg.name: recurse(arg.value)
+                for arg in expr.arguments
+                if arg.name is not None
+            }
+
+            if any(isinstance(arg, IncompleteValue) for arg in args) or any(
+                isinstance(arg, IncompleteValue) for arg in kwargs.values()
+            ):
+                assert allow_partial, "detected incomplete value in non-partial context"
+                def _eval(state: AssemblerState) -> Value:
+                    true_args = [ arg.resolve(state) for arg in args ]
+                    true_kwargs = { name: arg.resolve(state) for name, arg in kwargs.items() }
+                    return func(*true_args, **true_kwargs)
+
+                return IncompleteValue(_eval)
 
             return func(*args, **kwargs)
 
@@ -520,7 +513,9 @@ class Analyzer:
             if sym is None:
                 raise KeyError(f"A label named {expr.target!r} does not exist!")
             if sym.type == SymbolType.const:
-                raise KeyError(f"A {expr.target!r} refers to a constant, but label expected!")
+                raise KeyError(
+                    f"A {expr.target!r} refers to a constant, but label expected!"
+                )
 
             return ("relative", sym)
 
@@ -530,7 +525,9 @@ class Analyzer:
             if sym is None:
                 raise KeyError(f"A label named {expr.target!r} does not exist!")
             if sym.type == SymbolType.const:
-                raise KeyError(f"A {expr.target!r} refers to a constant, but label expected!")
+                raise KeyError(
+                    f"A {expr.target!r} refers to a constant, but label expected!"
+                )
 
             return ("immediate", sym)
 
@@ -540,7 +537,9 @@ class Analyzer:
             if sym is None:
                 raise KeyError(f"A label named {expr.target!r} does not exist!")
             if sym.type == SymbolType.const:
-                raise KeyError(f"A {expr.target!r} refers to a constant, but label expected!")
+                raise KeyError(
+                    f"A {expr.target!r} refers to a constant, but label expected!"
+                )
 
             return ("register", sym)
 
@@ -560,7 +559,9 @@ class Analyzer:
 COMPATIBLE_ISA_EFFECTS: dict[instructions.Effect, frozenset[Effect | None]] = {
     None: frozenset({None}),
     instructions.Effect.opt_wc: frozenset({None, Effect.wc}),
-    instructions.Effect.opt_wc_wz_wcz: frozenset({None, Effect.wc, Effect.wz, Effect.wcz}),
+    instructions.Effect.opt_wc_wz_wcz: frozenset(
+        {None, Effect.wc, Effect.wz, Effect.wcz}
+    ),
     instructions.Effect.opt_wcz: frozenset({None, Effect.wcz}),
     instructions.Effect.opt_wz: frozenset({None, Effect.wz}),
     instructions.Effect.andc_andz: frozenset({Effect.and_c, Effect.and_z}),

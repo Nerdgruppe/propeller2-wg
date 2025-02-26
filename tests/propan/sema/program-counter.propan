@@ -1,0 +1,11 @@
+
+
+
+_start:
+    LONG 0
+    LONG 0
+
+data:
+    LONG _start // emits 0
+    LONG data, hubaddr(data) // emits 2, 8
+

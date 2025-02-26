@@ -2,6 +2,8 @@ import logging
 
 from typing import Callable, Optional
 
+from .types import ConstValue, IncompleteValue, MemoryAddress
+
 
 class Library:
     functions: dict[str, Callable]
@@ -35,6 +37,19 @@ def StandardLibrary() -> Library:
 
     @function
     def aug(value):
+        return value
+
+    @function
+    def hubaddr(value):
+        if not isinstance(value, MemoryAddress):
+            raise ValueError(
+                f"Unexpected value of type {type(value)}. Expected MemoryAddress!"
+            )
+        return ConstValue(value.hub_address)
+
+    @function
+    def localaddr(value):
+        print(type(value), repr(value))
         return value
 
     @named_function("Hub.clockMode")
