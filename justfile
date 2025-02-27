@@ -2,11 +2,12 @@
 demo-propan:
     .venv/bin/python -m nerdgruppe.p2.propan examples/propio-client.propan
 
-test: demo-propan test-propan
+test: test-packed-struct demo-propan test-propan 
 
 setup-venv:
     python -m venv .venv
     .venv/bin/python -m pip install -r tools/requirements.txt
+    .venv/bin/python -m pip install -r tools/dev-requirements.txt
     realpath tools > .venv/lib/$(python -c 'import sys; print(f"python{sys.version_info.major}.{sys.version_info.minor}")')/site-packages/nerdgruppe.pth
 
 test-pasm-parser:
@@ -18,3 +19,5 @@ test-propan:
         .venv/bin/python -m nerdgruppe.p2.propan "$file" --validate-output "${file%.propan}.json" ; \
     done
 
+test-packed-struct:
+    .venv/bin/python -m pytest tests/python
