@@ -4,4 +4,5 @@
 
 // Test the two examples from the datasheet:
 LONG SmartPin.UartTx.config(baud=2, bits=8, clk=15) // 7.5 clocks must be 0x00078000+7
+LONG SmartPin.UartTx.config(baud=2, clk=15) // bits should default to 8
 LONG SmartPin.UartRx.config(baud=3, bits=16, clk=100) // 33.33 clocks must be 0x00215400+15
