@@ -6,6 +6,7 @@
     },
     "memory": [
         {
+            "full": true,
             "offset": 0,
             "format": "hex",
             "data": [

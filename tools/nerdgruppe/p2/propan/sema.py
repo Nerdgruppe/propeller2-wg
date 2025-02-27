@@ -150,9 +150,7 @@ class ByteCode(ABC):
 class InstructionByteCode(ByteCode):
     instruction: instructions.Instruction
 
-    def __init__(
-        self, instruction: instructions.Instruction, argv: list[Value]
-    ) -> None:
+    def __init__(self, instruction: instructions.Instruction, argv: list[Value]) -> None:
         super().__init__(argv)
         self.instruction = instruction
 
@@ -182,9 +180,41 @@ class DataByteCode(ByteCode):
             stream.write_int(integer, 8 * self.size_per_item, False)
 
 
+class ControlByteCode(ByteCode):
+    def get_size(self) -> int:
+        return 0
+
+    def serialize(self, asm: AssemblerState, stream: BinaryStream) -> None:
+        self.execute(asm)
+
+    @abstractmethod
+    def execute(self, asm: AssemblerState) -> None: ...
+
+
+class SwitchAddressingModeCode(ControlByteCode):
+    addressing_mode: AddressingMode
+
+    def __init__(self, addressing_mode: AddressingMode, argv: list[Value]):
+        super().__init__(argv)
+        self.addressing_mode = addressing_mode
+
+    def execute(self, asm: AssemblerState) -> None:
+        asm.switch_addressing_mode(self.addressing_mode)
+
+
 def unwrap(cv: Value) -> int:
     assert isinstance(cv, ConstValue)
     return cv.value
+
+
+BUILTIN_CODES: dict[str, Callable] = {
+    "LONG": lambda argv: DataByteCode(4, argv),
+    "WORD": lambda argv: DataByteCode(2, argv),
+    "BYTE": lambda argv: DataByteCode(1, argv),
+    ".COGEXEC": lambda argv: SwitchAddressingModeCode(AddressingMode.cogexec, argv),
+    ".LUTEXEC": lambda argv: SwitchAddressingModeCode(AddressingMode.lutexec, argv),
+    ".HUBEXEC": lambda argv: SwitchAddressingModeCode(AddressingMode.hubexec, argv),
+}
 
 
 class Analyzer:
@@ -272,21 +302,16 @@ class Analyzer:
                 self.evaluate_expression(
                     arg.value,
                     allow_partial=True,
-                    scope=active_symbol.locals
-                    if active_symbol is not None
-                    else self.cu.globals,
+                    scope=active_symbol.locals if active_symbol is not None else self.cu.globals,
                     expected_symbol=None,
                 )
-                for arg in instr.arguments
+                for arg in instr.arguments or []
             ]
 
-            if code == "LONG" or code == "WORD" or code == "BYTE":
-                size = {
-                    "LONG": 4,
-                    "WORD": 2,
-                    "BYTE": 1,
-                }[code]
-                bytecode = DataByteCode(size, argv)
+            if code in BUILTIN_CODES:
+                ctor = BUILTIN_CODES[code]
+
+                bytecode = ctor(argv)
 
             else:
                 # instruction
@@ -340,9 +365,7 @@ class Analyzer:
 
         self.cu.full_image = stream.get_bytes()
 
-    def select_instruction(
-        self, instr: Instruction, argv: list
-    ) -> instructions.Instruction:
+    def select_instruction(self, instr: Instruction, argv: list) -> instructions.Instruction:
         group = self.isa.get_group(instr.mnemonic.upper())
         if group is None:
             raise ValueError(f"{instr.mnemonic} is not a valid mnemonic")
@@ -372,13 +395,9 @@ class Analyzer:
             matches.append(isa_instr)
 
         if len(matches) == 0:
-            raise ValueError(
-                f"Could not find matching instruction for {instr.mnemonic}"
-            )
+            raise ValueError(f"Could not find matching instruction for {instr.mnemonic}")
 
-        assert len(matches) == 1, "Ambigious matches: " + ", ".join(
-            m.mnemonic for m in matches
-        )
+        assert len(matches) == 1, "Ambigious matches: " + ", ".join(m.mnemonic for m in matches)
 
         return matches[0]
 
@@ -424,9 +443,7 @@ class Analyzer:
                     assert allow_partial, "Undefined symbol used in non-partial context"
 
                     def _resolve(state) -> Value:
-                        assert sym.value is not None, (
-                            f"{sym.name!r} could not be resolved."
-                        )
+                        assert sym.value is not None, f"{sym.name!r} could not be resolved."
                         return sym.value
 
                     return IncompleteValue(_resolve)
@@ -488,19 +505,16 @@ class Analyzer:
                 raise KeyError(f"Function {expr.function!r} does not exist!")
 
             args = [recurse(arg.value) for arg in expr.arguments if arg.name is None]
-            kwargs = {
-                arg.name: recurse(arg.value)
-                for arg in expr.arguments
-                if arg.name is not None
-            }
+            kwargs = {arg.name: recurse(arg.value) for arg in expr.arguments if arg.name is not None}
 
             if any(isinstance(arg, IncompleteValue) for arg in args) or any(
                 isinstance(arg, IncompleteValue) for arg in kwargs.values()
             ):
                 assert allow_partial, "detected incomplete value in non-partial context"
+
                 def _eval(state: AssemblerState) -> Value:
-                    true_args = [ arg.resolve(state) for arg in args ]
-                    true_kwargs = { name: arg.resolve(state) for name, arg in kwargs.items() }
+                    true_args = [arg.resolve(state) for arg in args]
+                    true_kwargs = {name: arg.resolve(state) for name, arg in kwargs.items()}
                     return func(*true_args, **true_kwargs)
 
                 return IncompleteValue(_eval)
@@ -513,9 +527,7 @@ class Analyzer:
             if sym is None:
                 raise KeyError(f"A label named {expr.target!r} does not exist!")
             if sym.type == SymbolType.const:
-                raise KeyError(
-                    f"A {expr.target!r} refers to a constant, but label expected!"
-                )
+                raise KeyError(f"A {expr.target!r} refers to a constant, but label expected!")
 
             return ("relative", sym)
 
@@ -525,9 +537,7 @@ class Analyzer:
             if sym is None:
                 raise KeyError(f"A label named {expr.target!r} does not exist!")
             if sym.type == SymbolType.const:
-                raise KeyError(
-                    f"A {expr.target!r} refers to a constant, but label expected!"
-                )
+                raise KeyError(f"A {expr.target!r} refers to a constant, but label expected!")
 
             return ("immediate", sym)
 
@@ -537,9 +547,7 @@ class Analyzer:
             if sym is None:
                 raise KeyError(f"A label named {expr.target!r} does not exist!")
             if sym.type == SymbolType.const:
-                raise KeyError(
-                    f"A {expr.target!r} refers to a constant, but label expected!"
-                )
+                raise KeyError(f"A {expr.target!r} refers to a constant, but label expected!")
 
             return ("register", sym)
 
@@ -559,9 +567,7 @@ class Analyzer:
 COMPATIBLE_ISA_EFFECTS: dict[instructions.Effect, frozenset[Effect | None]] = {
     None: frozenset({None}),
     instructions.Effect.opt_wc: frozenset({None, Effect.wc}),
-    instructions.Effect.opt_wc_wz_wcz: frozenset(
-        {None, Effect.wc, Effect.wz, Effect.wcz}
-    ),
+    instructions.Effect.opt_wc_wz_wcz: frozenset({None, Effect.wc, Effect.wz, Effect.wcz}),
     instructions.Effect.opt_wcz: frozenset({None, Effect.wcz}),
     instructions.Effect.opt_wz: frozenset({None, Effect.wz}),
     instructions.Effect.andc_andz: frozenset({Effect.and_c, Effect.and_z}),

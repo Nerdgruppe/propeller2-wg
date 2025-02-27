@@ -79,6 +79,15 @@ class AssemblerState:
     # The current lut/cog exec instruction cluster
     current_cluster: ExecutionCluster | None = field(default_factory=ExecutionCluster)
 
+    def switch_addressing_mode(self, addressing_mode: AddressingMode):
+        self.addressing_mode = addressing_mode
+        if self.addressing_mode != AddressingMode.hubexec:
+            self.local_address = 0
+            self.current_cluster = ExecutionCluster()
+        else:
+            self.local_address = self.hub_address
+            self.current_cluster = None
+
 
 class Value(ABC):
     """
@@ -190,7 +199,9 @@ class MemoryAddress(Value):
         if self.cluster is not None:
             return f"0x{self.hub_address:06X}:0x{self.local_address:03X}"
         else:
-            assert self.hub_address == self.local_address
+            assert self.local_address is None or self.hub_address == self.local_address, (
+                f"{self.hub_address} != {self.local_address}"
+            )
             return f"0x{self.hub_address:06X}"
 
     def __repr__(self):

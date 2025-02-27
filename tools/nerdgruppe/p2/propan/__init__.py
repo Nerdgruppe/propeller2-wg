@@ -69,7 +69,8 @@ def main() -> int:
 
     return 0
 
-def validate_compile_unit(compile_unit: CompileUnit, validation_file: Path) :
+
+def validate_compile_unit(compile_unit: CompileUnit, validation_file: Path):
     ref: dict[str, Any]
     with validation_file.open("r", encoding="utf-8") as fp:
         ref = json.load(fp)
@@ -82,9 +83,7 @@ def validate_compile_unit(compile_unit: CompileUnit, validation_file: Path) :
             parts = value.split(":")
             assert len(parts) >= 2
 
-            assert symbol.type.name == parts[0], (
-                f"Expected {name!r} to be {parts[0]!r}, but found {symbol.type.name!r}"
-            )
+            assert symbol.type.name == parts[0], f"Expected {name!r} to be {parts[0]!r}, but found {symbol.type.name!r}"
 
             if symbol.type in [SymbolType.code, SymbolType.data]:
                 assert isinstance(symbol.value, MemoryAddress)
@@ -93,10 +92,10 @@ def validate_compile_unit(compile_unit: CompileUnit, validation_file: Path) :
                 local_address = int(parts[2])
 
                 assert hub_address == symbol.value.hub_address, (
-                    f"Expected {hub_address!r}, but found {symbol.value.hub_address!r}"
+                    f"Expected {name!r} to be hub address {hub_address!r}, but found {symbol.value.hub_address!r}"
                 )
                 assert local_address == symbol.value.local_address, (
-                    f"Expected {local_address!r}, but found {symbol.value.local_address!r}"
+                    f"Expected {name!r} to be local address {local_address!r}, but found {symbol.value.local_address!r}"
                 )
 
             else:
@@ -104,12 +103,11 @@ def validate_compile_unit(compile_unit: CompileUnit, validation_file: Path) :
                 assert isinstance(symbol.value, ConstValue)
 
                 const_value = int(parts[1])
-                assert const_value == symbol.value.value, (
-                    f"Expected {const_value!r}, but found {symbol.value.value!r}!"
-                )
+                assert const_value == symbol.value.value, f"Expected {const_value!r}, but found {symbol.value.value!r}!"
 
     if "memory" in ref:
         for memspec in ref["memory"]:
+            full = memspec.get("full", False)
             offset = memspec["offset"]
             data_fmt = memspec["format"]
             data_raw = memspec["data"]
@@ -124,32 +122,63 @@ def validate_compile_unit(compile_unit: CompileUnit, validation_file: Path) :
             assert offset <= len(compile_unit.full_image)
             assert end_pos <= len(compile_unit.full_image)
 
+            assert not full or offset == 0
+            assert not full or end_pos == len(compile_unit.full_image)
+
             actual_data = compile_unit.full_image[offset:end_pos]
 
             if expected_data != actual_data:
                 assert len(actual_data) == len(expected_data)
 
-                for i in range(len(actual_data)):
-                    e_chunk = expected_data[i]
-                    a_chunk = actual_data[i]
+                for i in range(0, len(actual_data), 8):
+                    e_chunk = expected_data[i : i + 8]
+                    a_chunk = actual_data[i : i + 8]
 
                     if e_chunk != a_chunk:
-                        print(
-                            f"[0x{offset+i:06X}] Expected {e_chunk:02X}, found {a_chunk:02X}"
-                        )
+                        left = " ".join([f"{e:02X}" if e != a else "==" for e, a in zip(e_chunk, a_chunk)])
+                        right = " ".join([f"{a:02X}" if e != a else "==" for e, a in zip(e_chunk, a_chunk)])
+
+                        print(f"[0x{offset + i:06X}] {left} | {right}")
 
                 assert False
 
+
 def _convert_bytes_from(byte_def: str | list[str], format: str) -> bytes:
-    assert isinstance(byte_def, (str, list))
+    assert isinstance(byte_def, (str, int, list))
+
+    fmt_type = {
+        "hex": str,
+        "base64": str,
+        "u8": int,
+        "u16": int,
+        "u32": int,
+    }[format]
 
     if isinstance(byte_def, list):
-        byte_def = " ".join(b for b in byte_def)
+        if fmt_type is str:
+            byte_def = " ".join(b for b in byte_def)
+        elif fmt_type is int:
+            pass  # ok
+        else:
+            assert False, repr(fmt_type)
+    else:
+        if fmt_type is int:
+            byte_def = [byte_def]
 
     if format == "hex":
         return bytes.fromhex(byte_def)
+
     if format == "base64":
         return base64.decodebytes(byte_def)
+
+    if format == "u8":
+        return b"".join(i.to_bytes(length=1, byteorder="little", signed=False) for i in byte_def)
+
+    if format == "u16":
+        return b"".join(i.to_bytes(length=2, byteorder="little", signed=False) for i in byte_def)
+
+    if format == "u32":
+        return b"".join(i.to_bytes(length=4, byteorder="little", signed=False) for i in byte_def)
 
     assert False
 

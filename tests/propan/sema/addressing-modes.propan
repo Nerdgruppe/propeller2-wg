@@ -1,0 +1,32 @@
+
+.cogexec
+_start0:
+    LONG 100
+    LONG 200
+    LONG 300
+_end0:
+    LONG _end0, hubaddr(_end0)
+
+.cogexec
+_start1:
+    LONG 400
+    LONG 500
+    LONG 600
+_end1:
+    LONG _end1, hubaddr(_end1)
+
+.lutexec
+_start2:
+    LONG 700
+    LONG 800
+    LONG 900
+_end2:
+    LONG _end2, hubaddr(_end2)
+
+.hubexec
+_start3:
+    LONG 1000
+    LONG 1100
+    LONG 1200
+_end3:
+    LONG _end3, hubaddr(_end3)
