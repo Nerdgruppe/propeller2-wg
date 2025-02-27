@@ -9,7 +9,9 @@ from abc import ABC, abstractmethod
 
 from nerdgruppe.p2.specs import instructions
 
-from .stdlib import Library, StandardLibrary
+from .library import LibraryCollection, Function
+from .libs.builtin import BuiltinFunctions
+from .libs.stdlib import StandardLibrary
 
 from .ast import (
     Effect,
@@ -218,7 +220,7 @@ BUILTIN_CODES: dict[str, Callable] = {
 
 
 class Analyzer:
-    lib: Library
+    lib: LibraryCollection
     isa: instructions.InstructionSet
     program: Program
     cu: CompileUnit
@@ -230,7 +232,10 @@ class Analyzer:
 
     def __init__(self, program: Program):
         self.isa = instructions.load()
-        self.lib = StandardLibrary()
+        self.lib = LibraryCollection(
+            BuiltinFunctions(),
+            StandardLibrary(),
+        )
 
         self.program = program
         self.cu = CompileUnit()
@@ -318,7 +323,7 @@ class Analyzer:
 
                 isa_instr = self.select_instruction(instr, argv)
 
-                bytecode = InstructionByteCode(isa_instr)
+                bytecode = InstructionByteCode(isa_instr, argv)
 
             self.code_lut[instr] = bytecode
             self.byte_code.append(bytecode)
@@ -502,6 +507,9 @@ class Analyzer:
         def _(expr: FunctionCallExpression) -> EvalResult:
             func = self.lib.get_function(expr.function)
             if func is None:
+                print("available functions:")
+                for func in sorted(self.lib.functions.keys()):
+                    print(f"- {func}")
                 raise KeyError(f"Function {expr.function!r} does not exist!")
 
             args = [recurse(arg.value) for arg in expr.arguments if arg.name is None]
