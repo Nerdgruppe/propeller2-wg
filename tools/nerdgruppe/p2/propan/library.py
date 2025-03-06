@@ -1,15 +1,33 @@
 import logging
+import textwrap
 
 from typing import Callable, Optional
+
+from nerdgruppe.utils import SortedConstDict
+
+
+class Parameter:
+    name: str
+    type: type
+
+    def __init__(self, name: str, param_type: type) -> None:
+        assert isinstance(name, str)
+        assert isinstance(param_type, type)
+        self.name = name
+        self.type = param_type
 
 
 class Function:
     name: str
     function: Callable
+    docs: str | None
+    params: SortedConstDict[str, Parameter]
 
     def __init__(self, name: str, function: Callable):
         self.name = name
         self.function = function
+        self.docs = textwrap.dedent(function.__doc__ or "").strip()
+        # TODO: self.params = SortedConstDict()
 
     def __call__(self, *args, **kwargs):
         return self.function(*args, **kwargs)

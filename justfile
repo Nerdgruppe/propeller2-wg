@@ -2,7 +2,7 @@
 demo-propan:
     .venv/bin/python -m nerdgruppe.p2.propan examples/propio-client.propan
 
-test: test-packed-struct demo-propan test-propan 
+test: test-unit demo-propan test-propan 
 
 setup-venv:
     python -m venv .venv
@@ -19,5 +19,5 @@ test-propan:
         .venv/bin/python -m nerdgruppe.p2.propan "$file" --validate-output "${file%.propan}.json" ; \
     done
 
-test-packed-struct:
+test-unit:
     .venv/bin/python -m pytest tests/python

@@ -18,6 +18,26 @@ class StandardLibrary(Library):
             logging.error("implement Hub.clockMode()")
             return 0
 
+        @function
+        def reboot() -> int:
+            """
+            Hard reset, reboots chip
+            """
+            # %0001_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx_xxxx
+            return 0x1000_0000
+
+        @function
+        def setFilter(r: int, length: int, tap: int) -> int:
+
+        @function
+        def seedRng(seed: int) -> int:
+            """
+            Seed Xoroshiro128** PRNG with `seed`
+            """
+
+            assert (seed & ~0x7FFF_FFFF) == 0
+            return seed | 0x8000_0000
+
     class SmartPin(Namespace):
         class UartTx(Namespace):
             @function
@@ -53,6 +73,4 @@ class StandardLibrary(Library):
 
             @function
             def config(baud: int, clk: int, bits: int = 8) -> int:
-                return StandardLibrary.SmartPin.UartTx.config(
-                    baud=baud, bits=bits, clk=clk
-                )
+                return StandardLibrary.SmartPin.UartTx.config(baud=baud, bits=bits, clk=clk)
