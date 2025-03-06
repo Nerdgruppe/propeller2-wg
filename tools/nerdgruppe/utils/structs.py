@@ -4,7 +4,8 @@ class _PackedStructBase:
 
     bit_size: int
     byte_size: int
-    _raw: int 
+    _raw: int
+
 
 class StructField:
     _total_count: int = 0
@@ -17,10 +18,17 @@ class StructField:
     name: str
     offset: int
 
-    def __init__(self, bits: int, signed: bool = False) -> None:
+    def __init__(
+        self, bits: int, signed: bool = False, default: int | None = None
+    ) -> None:
         self.bits = bits
         self.signed = signed
         self.index = StructField._total_count
+        self.default = default
+
+        if default is not None:
+            assert default >= 0 and default < (1 << bits), f"default {default} is out of range for 2^{bits} bits!"
+
         StructField._total_count += 1
 
     @property
@@ -31,11 +39,14 @@ class StructField:
     def unshifted_mask(self) -> int:
         return (1 << self.bits) - 1
 
-    def __get__(self, instance: "_PackedStructBase", owner: type | None = None, /) -> int:
+    def __get__(
+        self, instance: "_PackedStructBase", owner: type | None = None, /
+    ) -> int:
         return (instance._raw >> self.offset) & self.unshifted_mask
 
     def __set__(self, instance: "_PackedStructBase", value: int, /) -> None:
         if (value & ~self.unshifted_mask) != 0:
+            print(repr(value), repr(self.unshifted_mask), repr(~self.unshifted_mask), repr((value & ~self.unshifted_mask)))
             raise ValueError("out of range")
         instance._raw = (instance._raw & ~self.shifted_mask) | (value << self.offset)
 
@@ -53,12 +64,15 @@ def packed_struct(cls: type) -> type:
 
     named_fields.sort(key=lambda nf: nf[1].index)
 
+    _default_value = 0
     total_bits = 0
     for i, (name, field) in enumerate(named_fields):
         field.index = i
         field.name = name
         field.offset = total_bits
         total_bits += field.bits
+        if field.default is not None:
+            _default_value |= (field.default << field.offset)
 
     fields = [field for (name, field) in named_fields]
 
@@ -76,9 +90,9 @@ def packed_struct(cls: type) -> type:
         _raw: int
 
         def __init__(self, **kwargs):
-            self._raw = 0
+            self._raw = _default_value
             for key, value in kwargs.items():
-                self._FIELDS[key].__set__(self,key, value)
+                self._FIELD_BY_NAME[key].__set__(self, value)
 
         @classmethod
         def from_int(cls, value: int):
@@ -103,6 +117,6 @@ def packed_struct(cls: type) -> type:
 
         @classmethod
         def mask_of(cls, field_name: str) -> int:
-            return  cls._FIELD_BY_NAME[field_name].shifted_mask
+            return cls._FIELD_BY_NAME[field_name].shifted_mask
 
     return PackedStruct

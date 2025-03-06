@@ -4,8 +4,66 @@ import io
 
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Optional, Callable, TypeAlias
+from typing import Optional, Callable, TypeAlias, Any
 from abc import ABC, abstractmethod
+
+
+class IntWithRange(int):
+    @classmethod
+    def get_range(cls) -> tuple[int, int]:
+        assert False, "not implemented for this"
+
+
+class UnsignedInt(IntWithRange):
+    @classmethod
+    def get_range(cls) -> tuple[int, int]:
+        return (0, (1 << cls.bits) - 1)
+
+
+class SignedInt(IntWithRange):
+    @classmethod
+    def get_range(cls) -> tuple[int, int]:
+        r = 1 << (cls.bits - 1)
+        return (-r, r - 1)
+
+
+def _sized_uint(_bits: int) -> type:
+    class _int(UnsignedInt):
+        bits = _bits
+
+    _int.__name__ = f"u{_bits}"
+    return _int
+
+
+u4: type = _sized_uint(4)
+u5: type = _sized_uint(5)
+u8: type = _sized_uint(8)
+u16: type = _sized_uint(16)
+u31: type = _sized_uint(31)
+u32: type = _sized_uint(32)
+
+
+def MinMaxInt(low: int, high: int) -> type:
+    class _MyInt(IntWithRange):
+        @classmethod
+        def get_range(cls) -> tuple[int, int]:
+            return (low, high)
+
+    _MyInt.__name__ = f"MinMaxInt({low}, {high})"
+    return _MyInt
+
+class LookUpTable(ABC):
+
+    @classmethod
+    @abstractmethod
+    def get_mapping(cls) -> dict[str, Any]:
+        ...
+    
+    @classmethod
+    def get(cls, key: str) -> Any:
+        if not hasattr(cls, "_mapping"):
+            setattr(cls, "_mapping", cls.get_mapping())
+        return cls._mapping[key]
 
 
 class SymbolType(Enum):
@@ -199,9 +257,9 @@ class MemoryAddress(Value):
         if self.cluster is not None:
             return f"0x{self.hub_address:06X}:0x{self.local_address:03X}"
         else:
-            assert self.local_address is None or self.hub_address == self.local_address, (
-                f"{self.hub_address} != {self.local_address}"
-            )
+            assert (
+                self.local_address is None or self.hub_address == self.local_address
+            ), f"{self.hub_address} != {self.local_address}"
             return f"0x{self.hub_address:06X}"
 
     def __repr__(self):

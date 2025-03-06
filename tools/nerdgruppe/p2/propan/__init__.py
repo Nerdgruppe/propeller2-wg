@@ -130,15 +130,26 @@ def validate_compile_unit(compile_unit: CompileUnit, validation_file: Path):
             if expected_data != actual_data:
                 assert len(actual_data) == len(expected_data)
 
-                for i in range(0, len(actual_data), 8):
-                    e_chunk = expected_data[i : i + 8]
-                    a_chunk = actual_data[i : i + 8]
+                if data_fmt == "u32":
 
-                    if e_chunk != a_chunk:
-                        left = " ".join([f"{e:02X}" if e != a else "==" for e, a in zip(e_chunk, a_chunk)])
-                        right = " ".join([f"{a:02X}" if e != a else "==" for e, a in zip(e_chunk, a_chunk)])
+                    for i in range(0, len(actual_data), 4):
+                        e_chunk = int.from_bytes( expected_data[i : i + 4], byteorder='little', signed=False)
+                        a_chunk = int.from_bytes( actual_data[i : i + 4], byteorder='little', signed=False)
+                        if e_chunk != a_chunk:
+                            print(f"[0x{offset + i:06X}] expected: 0x{e_chunk:08X}\n"
+                                  f"           actual:   0x{a_chunk:08X}")
 
-                        print(f"[0x{offset + i:06X}] {left} | {right}")
+                else:
+
+                    for i in range(0, len(actual_data), 8):
+                        e_chunk = expected_data[i : i + 8]
+                        a_chunk = actual_data[i : i + 8]
+
+                        if e_chunk != a_chunk:
+                            left = " ".join([f"{e:02X}" if e != a else "==" for e, a in zip(e_chunk, a_chunk)])
+                            right = " ".join([f"{a:02X}" if e != a else "==" for e, a in zip(e_chunk, a_chunk)])
+
+                            print(f"[0x{offset + i:06X}] {left} | {right}")
 
                 assert False
 

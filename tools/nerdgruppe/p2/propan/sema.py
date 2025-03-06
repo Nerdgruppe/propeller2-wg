@@ -515,18 +515,10 @@ class Analyzer:
             args = [recurse(arg.value) for arg in expr.arguments if arg.name is None]
             kwargs = {arg.name: recurse(arg.value) for arg in expr.arguments if arg.name is not None}
 
-            def _unwrap(raw) -> str|int|bool:
-                if isinstance(raw,( str,int,bool)):
-                    return raw
-                if isinstance(raw, ConstValue):
-                    return raw.value
-                if isinstance(raw, Value):
-                    return raw.get_value(None) # TODO: This will eventually fail!
-                assert False, repr(type(raw))
 
             def _invoke(*args, **kwargs):
-                args = [ _unwrap(arg) for arg in args ]
-                kwargs = { name: _unwrap(arg) for name, arg in kwargs.items() }
+                args = [ func.params[i].coerce(arg) for i, arg in enumerate( args) ]
+                kwargs = { name: func.params[name].coerce(arg) for name, arg in kwargs.items() }
                 result = func(*args, **kwargs)
                 if not isinstance(result, Value):
                     return ConstValue(result)

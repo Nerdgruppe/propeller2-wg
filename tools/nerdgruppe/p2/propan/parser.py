@@ -140,12 +140,19 @@ class PropanTransformer(Transformer):
         return Identifier(token)
 
     def arglist(self, *args) -> ArgumentList:
-        assert all(arg is EOL or arg is COMMA or isinstance(arg, Argument) for arg in args)
+        assert all(
+            arg is EOL or arg is COMMA or isinstance(arg, Argument) for arg in args
+        )
 
         # multiline = any(arg is EOL for arg in args)
-        multiline = (args[-1] == COMMA) or any(arg.comment is not None for arg in args if isinstance(arg, Argument))
+        multiline = (args[-1] == COMMA) or any(
+            arg.comment is not None for arg in args if isinstance(arg, Argument)
+        )
 
-        return ArgumentList(multiline=multiline, items=tuple(arg for arg in args if isinstance(arg, Argument)))
+        return ArgumentList(
+            multiline=multiline,
+            items=tuple(arg for arg in args if isinstance(arg, Argument)),
+        )
 
     def commented_arg(self, arg: Argument, comment: Comment | None) -> Argument:
         assert arg.comment is None
@@ -174,7 +181,9 @@ class PropanTransformer(Transformer):
             value=expr,
         )
 
-    def function_call(self, name: Identifier, args: ArgumentList, _eol: _SentinelType = EOL) -> FunctionCallExpression:
+    def function_call(
+        self, name: Identifier, args: ArgumentList, _eol: _SentinelType = EOL
+    ) -> FunctionCallExpression:
         assert _eol is EOL
         return FunctionCallExpression(
             function=name,
@@ -196,7 +205,9 @@ class PropanTransformer(Transformer):
             count=count,
         )
 
-    def symbol_ref(self, identifier: Identifier) -> SymbolicExpression:
+    def symbol_ref(self, identifier: Identifier | Token) -> SymbolicExpression:
+        if isinstance(identifier, Token):
+            identifier = Identifier(identifier)
         return SymbolicExpression(name=identifier)
 
     def string_literal(self, string: str) -> StringExpression:
@@ -209,7 +220,9 @@ class PropanTransformer(Transformer):
     # Binary Operators
     #
 
-    def binary_op(self, lhs: Expression, op_token: Token, rhs: Expression) -> BinaryExpression:
+    def binary_op(
+        self, lhs: Expression, op_token: Token, rhs: Expression
+    ) -> BinaryExpression:
         op = BinaryOperator(op_token)
         return BinaryExpression(
             lhs=lhs,
@@ -342,15 +355,23 @@ class PropanTransformer(Transformer):
 
     def true_flag(self, flag: Token) -> Condition:
         if flag.lower() == "c":
-            return Condition(style=ConditionStyle.boolean, op=None, c_state=True, z_state=None)
+            return Condition(
+                style=ConditionStyle.boolean, op=None, c_state=True, z_state=None
+            )
         else:
-            return Condition(style=ConditionStyle.boolean, op=None, c_state=None, z_state=True)
+            return Condition(
+                style=ConditionStyle.boolean, op=None, c_state=None, z_state=True
+            )
 
     def inv_flag(self, flag: Token) -> Condition:
         if flag.lower() == "c":
-            return Condition(style=ConditionStyle.boolean, op=None, c_state=False, z_state=None)
+            return Condition(
+                style=ConditionStyle.boolean, op=None, c_state=False, z_state=None
+            )
         else:
-            return Condition(style=ConditionStyle.boolean, op=None, c_state=None, z_state=False)
+            return Condition(
+                style=ConditionStyle.boolean, op=None, c_state=None, z_state=False
+            )
 
     #
     # Effect Literals
