@@ -7,6 +7,12 @@ from typing import Literal
 
 
 @dataclass(frozen=True, kw_only=False, eq=True)
+class Condition:
+    mask: int
+    pattern: int
+
+
+@dataclass(frozen=True, kw_only=False, eq=True)
 class Point:
     x: int
     y: int
@@ -44,9 +50,19 @@ def project_point_to_line(line1: Point, line2: Point, pt: Point) -> Point | None
     return r
 
 
+@dataclass(kw_only=True)
 class Graphic(ABC):
+    enable: Condition | None = field(default=None)
+
     @abstractmethod
     def render(self, root: _Element) -> None: ...
+
+    def set_attribs(self, elem: _Element) -> None:
+        "Sets common graphic attributes on 'elem'."
+
+        if self.enable is not None:
+            elem.set("data-mask", f"{self.enable.mask:08X}")
+            elem.set("data-value", f"{self.enable.value:08X}")
 
 
 @dataclass(kw_only=True)
@@ -137,6 +153,7 @@ class Box(Graphic):
             height=str(self.height),
             fill=self.color,
         )
+        self.set_attribs(rect)
         if self.border is not None:
             rect.set("stroke", self.border)
         if self.label.strip() != "":
@@ -163,7 +180,7 @@ class Line(Graphic):
     color: str = field(default="#CCCCCC")
 
     def render(self, root: _Element) -> _Element:
-        return SubElement(
+        line = SubElement(
             root,
             "line",
             x1=str(self.x1),
@@ -172,6 +189,8 @@ class Line(Graphic):
             y2=str(self.y2),
             stroke=self.color,
         )
+        self.set_attribs(line)
+        return line
 
     @property
     def start(self) -> Point:
