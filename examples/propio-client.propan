@@ -82,7 +82,7 @@ wait_complete:
   if(C) JMP    wait_complete
 
 propio_done:
-        WYPIN  ']', UART_TX    
+        WYPIN  ']', UART_TX
         JMP    main_loop
 
 perform_receive:

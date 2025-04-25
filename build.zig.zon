@@ -1,0 +1,24 @@
+.{
+    .name = .propeller2_wg,
+    .version = "0.0.0",
+    .fingerprint = 0xc073faaeeab85286,
+    .minimum_zig_version = "0.14.0",
+
+    .dependencies = .{
+        .ptk = .{
+            .url = "git+https://github.com/ikskuh/parser-toolkit.git#7817ed5d9096b40039c49498ddf7f11fa7a2fc4e",
+            .hash = "parser_toolkit-0.1.0-baYGPbJAEwB2mV9PHH9LFc5yZTx3Ox5rkcJp87Fh8ECO",
+        },
+        .args = .{
+            .url = "git+https://github.com/ikskuh/zig-args.git#9425b94c103a031777fdd272c555ce93a7dea581",
+            .hash = "args-0.0.0-CiLiqv_NAAC97fGpk9hS2K681jkiqPsWP6w3ucb_ctGH",
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "tests",
+    },
+}

@@ -1,7 +1,7 @@
   BEGIN
 
 c_condition: 
-  if(C)       NOP  
+  if(C)       NOP   
   if(!C)      NOP  
 
 z_condition: 
