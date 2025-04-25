@@ -65,6 +65,11 @@ class Parameter:
     def coerce(self, src_value: Any):
         unwrapped_value: Any
 
+
+        if self.param_type is Value:
+            if isinstance(src_value, Value):
+                return src_value
+
         if isinstance(src_value, ConstValue):
             unwrapped_value = src_value.value
         if isinstance(src_value, Value):
@@ -73,6 +78,14 @@ class Parameter:
             )  # TODO: This will eventually fail!
         else:
             unwrapped_value = src_value
+
+        if self.param_type is Value:
+            assert not isinstance(src_value, Value), repr(type(src_value))
+            
+            if isinstance(src_value, (int,str)):
+                return ConstValue(src_value)
+
+            raise TypeError(f"Unsupported type for value: {type(src_value)!r}")
 
         if Enum in self.param_type.mro():
             assert isinstance(unwrapped_value, Identifier), (
@@ -222,7 +235,7 @@ class Namespace:
 
 
 class Library(Namespace):
-    def get_function(self, name: str) -> Optional[Callable]:
+    def get_function(self, name: str) -> Optional[Function]:
         return self.functions.get(name)
 
 
@@ -234,7 +247,7 @@ class LibraryCollection:
         for lib in libs:
             self.functions.update(lib.functions)
 
-    def get_function(self, name: str) -> Optional[Callable]:
+    def get_function(self, name: str) -> Optional[Function]:
         return self.functions.get(name)
 
 

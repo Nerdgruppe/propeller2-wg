@@ -74,11 +74,16 @@ pub const Condition = union(enum) {
     @"return",
     c_is: bool,
     z_is: bool,
-    c_and_z: struct { bool, bool },
-    c_or_z: struct { bool, bool },
+    c_and_z: BinOp,
+    c_or_z: BinOp,
     c_is_z,
     c_is_not_z,
     comparison: Comparison,
+
+    pub const BinOp = struct {
+        c: bool,
+        z: bool,
+    };
 
     pub const Comparison = enum {
         @">=",

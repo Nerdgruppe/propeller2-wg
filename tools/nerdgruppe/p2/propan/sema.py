@@ -401,6 +401,11 @@ class Analyzer:
 
         if len(matches) == 0:
             raise ValueError(f"Could not find matching instruction for {instr.mnemonic}")
+        
+        if len(matches) == 1:
+            return matches[0]
+
+        logging.error("arguments: %r", argv)
 
         assert len(matches) == 1, "Ambigious matches: " + ", ".join(m.mnemonic for m in matches)
 
@@ -517,12 +522,16 @@ class Analyzer:
 
 
             def _invoke(*args, **kwargs):
-                args = [ func.params[i].coerce(arg) for i, arg in enumerate( args) ]
-                kwargs = { name: func.params[name].coerce(arg) for name, arg in kwargs.items() }
-                result = func(*args, **kwargs)
-                if not isinstance(result, Value):
-                    return ConstValue(result)
-                return result 
+                try:
+                    args = [ func.params[i].coerce(arg) for i, arg in enumerate( args) ]
+                    kwargs = { name: func.params[name].coerce(arg) for name, arg in kwargs.items() }
+                    result = func(*args, **kwargs)
+                    if not isinstance(result, Value):
+                        return ConstValue(result)
+                    return result 
+                except BaseException as err:
+                    logging.error("Failed to call function %r: %r", func.name, err)
+                    raise
 
             if any(isinstance(arg, IncompleteValue) for arg in args) or any(
                 isinstance(arg, IncompleteValue) for arg in kwargs.values()

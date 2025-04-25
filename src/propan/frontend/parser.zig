@@ -48,47 +48,224 @@ pub const Parser = struct {
         }
 
         fn accept_line(c: *Core) !?ast.Line {
-            while (true) {
-                const token = if (try c.next_token()) |token| token else return null;
+            const token = if (try c.next_token()) |token| token else return null;
 
-                var condition: ?ast.Condition = null;
-                switch (token.type) {
-                    .linefeed => return .empty,
+            switch (token.type) {
+                .linefeed => return .empty,
 
-                    .designator => return .{
-                        .label = .{
-                            .location = token.location,
-                            .identifier = token.text[0 .. token.text.len - 1],
-                        },
+                .designator => return .{
+                    .label = .{
+                        .location = token.location,
+                        .identifier = token.text[0 .. token.text.len - 1],
                     },
+                },
 
-                    .@"const" => {
-                        // constants
-                        @panic("constants not supported yet!");
-                    },
+                .@"const" => {
+                    // constants
+                    @panic("constants not supported yet!");
+                },
 
-                    .@"if" => {
-                        // if(X) ... instruction ...
+                .@"if" => {
+                    // if(X) mnemonic ...
+                    const condition = try c.accept_condition();
+                    const mnemonic = try c.accept_one(.identifier);
 
-                        condition = try c.accept_condition();
-                    },
+                    return .{
+                        .instruction = try c.accept_instruction(condition, mnemonic),
+                    };
+                },
 
-                    .identifier => {
-                        // instruction ...
+                .identifier => {
+                    // mnemonic ...
+                    return .{
+                        .instruction = try c.accept_instruction(null, token),
+                    };
+                },
 
-                    },
-
-                    else => return c.fatal_syntax_error(),
-                }
+                else => return c.fatal_syntax_error(),
             }
         }
 
-        fn accept_condition(c: *Core) !ast.Condition {
-            //
+        fn accept_instruction(core: *Core, condition: ?ast.ConditionNode, mnemonic: Token) !ast.Instruction {
+            std.debug.assert(mnemonic.type == .identifier);
+            errdefer std.log.err("failed to accept {s}", .{mnemonic.text});
+
+            _ = try core.accept_one(.linefeed);
+
+            return .{
+                .location = mnemonic.location,
+                .condition = condition,
+                .mnemonic = mnemonic.text,
+
+                .arguments = &.{},
+            };
+        }
+
+        // if(!C & !Z)`, `if(>)`
+        // if(!C & Z)`
+        // if(!C)`,`if(>=)`
+        // if(C & !Z)`
+        // if(!Z)`,`if(!=)`
+        // if(C != Z)`
+        // if(!C \| !Z)`
+        // if(C & Z)`
+        // if(C == Z)`
+        // if(Z)`, `if(==)`
+        // if(!C \| Z)`
+        // if(C)`, `if(<)`
+        // if(C \| !Z)`
+        // if(C \| Z)`, `if(<=)`
+        fn accept_condition(core: *Core) !ast.ConditionNode {
+            _ = try core.accept_one(.@"(");
+
+            const which_lhs, var lhs_token = try core.accept_any(&.{
+                .identifier,
+                .@"!",
+                .@"<",
+                .@"<=",
+                .@">",
+                .@">=",
+                .@"==",
+                .@"!=",
+            });
+
+            const cond: ast.Condition = switch (which_lhs) {
+                inline .@"<", .@"<=", .@">=", .@">", .@"!=", .@"==" => |comp| .{
+                    .comparison = @field(ast.Condition.Comparison, @tagName(comp)),
+                },
+
+                else => blk: {
+                    const Flag = enum {
+                        c,
+                        z,
+
+                        pub fn parse(tok: Token) error{ InvalidFlag, SyntaxError }!@This() {
+                            if (tok.type != .identifier)
+                                return error.SyntaxError;
+                            if (std.ascii.eqlIgnoreCase(tok.text, "c")) return .c;
+                            if (std.ascii.eqlIgnoreCase(tok.text, "z")) return .z;
+                            return error.InvalidFlag;
+                        }
+                    };
+
+                    const lhs_level = if (which_lhs == .@"!") inv: {
+                        lhs_token = try core.accept_one(.identifier);
+                        break :inv false;
+                    } else true;
+                    const lhs = try Flag.parse(lhs_token);
+
+                    const which_op, _ = try core.accept_any(&.{
+                        .@"!=",
+                        .@"==",
+                        .@"|",
+                        .@"&",
+                        .@")",
+                    });
+
+                    if (which_op == .@")") {
+                        switch (lhs) {
+                            .c => return .{
+                                .location = lhs_token.location,
+                                .type = .{ .c_is = lhs_level },
+                            },
+                            .z => return .{
+                                .location = lhs_token.location,
+                                .type = .{ .z_is = lhs_level },
+                            },
+                        }
+                    }
+
+                    const which_rhs, var rhs_token = try core.accept_any(&.{
+                        .identifier,
+                        .@"!",
+                    });
+
+                    const rhs_level = if (which_rhs == .@"!") inv: {
+                        rhs_token = try core.accept_one(.identifier);
+                        break :inv false;
+                    } else true;
+                    const rhs = try Flag.parse(rhs_token);
+
+                    if (lhs == rhs)
+                        return error.SyntaxError;
+
+                    const c, const z = switch (lhs) {
+                        .c => .{ lhs_level, rhs_level },
+                        .z => .{ rhs_level, lhs_level },
+                    };
+
+                    switch (which_op) {
+                        .@"==" => {
+                            if (lhs_level == false or rhs_level == false)
+                                return error.SyntaxError;
+                            break :blk .c_is_z;
+                        },
+                        .@"!=" => {
+                            if (lhs_level == false or rhs_level == false)
+                                return error.SyntaxError;
+                            break :blk .c_is_not_z;
+                        },
+
+                        .@"|" => break :blk .{
+                            .c_and_z = .{ .c = c, .z = z },
+                        },
+                        .@"&" => break :blk .{
+                            .c_and_z = .{ .c = c, .z = z },
+                        },
+                        .@")" => unreachable,
+                    }
+                },
+            };
+
+            _ = try core.accept_one(.@")");
+            return .{
+                .location = lhs_token.location,
+                .type = cond,
+            };
+        }
+
+        fn AcceptKey(comptime options: []const TokenType) type {
+            var fields: [options.len]std.builtin.Type.EnumField = undefined;
+            for (&fields, options, 0..) |*fld, opt, i| {
+                fld.* = .{
+                    .name = @tagName(opt),
+                    .value = i,
+                };
+            }
+            return @Type(.{
+                .@"enum" = .{
+                    .is_exhaustive = true,
+                    .tag_type = u8,
+                    .fields = &fields,
+                    .decls = &.{},
+                },
+            });
+        }
+
+        fn accept_any(c: *Core, comptime options: []const TokenType) !struct { AcceptKey(options), Token } {
+            const token_or_maybe = try c.next_token();
+            const token = token_or_maybe orelse return error.UnexpectedEndOfFile;
+
+            inline for (options) |opt| {
+                if (token.type == opt)
+                    return .{ @field(AcceptKey(options), @tagName(opt)), token };
+            }
+
+            std.log.err("failed to accept token {s}. expected one of {any}", .{ @tagName(token.type), options });
+
+            return error.UnexpectedToken;
+        }
+
+        fn accept_one(c: *Core, comptime token_type: TokenType) !Token {
+            _, const token = try c.accept_any(&.{token_type});
+            return token;
         }
 
         fn next_token(c: *Core) !?Token {
-            const tok = try c.core.accept(r.any);
+            const tok = c.core.accept(r.any) catch |err| switch (err) {
+                error.EndOfStream => null,
+                else => |e| return e,
+            };
             std.log.debug("{?}", .{tok});
             return tok;
         }
@@ -221,9 +398,17 @@ fn char_literal(str: []const u8) ?usize {
     return generic_string_literal(str, '\'');
 }
 
+fn whitespace(str: []const u8) ?usize {
+    for (str, 0..) |c, i| {
+        if (!std.ascii.isWhitespace(c) or c == '\r' or c == '\n')
+            return i;
+    }
+    return str.len;
+}
+
 pub const Tokenizer = ptk.Tokenizer(TokenType, &[_]Pattern{
     .create(.linefeed, match.linefeed),
-    .create(.whitespace, match.whitespace),
+    .create(.whitespace, whitespace),
     .create(.comment, pat_sequence(.{ match.literal("//"), match.takeNoneOf("\r\n") })),
 
     .create(.integer, pat_sequence(.{ match.literal("0b"), match.takeAnyOfIgnoreCase("_01") })),
@@ -233,11 +418,6 @@ pub const Tokenizer = ptk.Tokenizer(TokenType, &[_]Pattern{
 
     .create(.integer, pat_sequence(.{ match.takeAnyOfIgnoreCase("0123456789"), match.takeAnyOfIgnoreCase("_0123456789") })),
     .create(.integer, pat_sequence(.{match.takeAnyOfIgnoreCase("0123456789")})),
-
-    .create(.designator, pat_sequence(.{ basic_ident, match.literal(":") })),
-    .create(.tag, pat_sequence(.{ match.literal(":"), basic_ident })),
-
-    .create(.identifier, basic_ident),
 
     .create(.string_literal, string_literal),
     .create(.char_literal, char_literal),
@@ -249,6 +429,11 @@ pub const Tokenizer = ptk.Tokenizer(TokenType, &[_]Pattern{
     .create(.@"and", match.word("and")),
     .create(.@"or", match.word("or")),
     .create(.xor, match.word("xor")),
+
+    .create(.designator, pat_sequence(.{ basic_ident, match.literal(":") })),
+    .create(.tag, pat_sequence(.{ match.literal(":"), basic_ident })),
+
+    .create(.identifier, basic_ident),
 
     .create(.@"<=>", match.literal("<=>")),
     .create(.@"==", match.literal("==")),
