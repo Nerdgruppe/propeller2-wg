@@ -35,7 +35,7 @@ pub const Parser = struct {
 
     const Core = struct {
         arena: std.mem.Allocator,
-        core: ptk.ParserCore(Tokenizer, .{.whitespace}),
+        core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
 
         fn accept_file(c: *Core, sequence: *std.ArrayListUnmanaged(ast.Line)) !void {
             while (true) {
@@ -90,15 +90,57 @@ pub const Parser = struct {
             std.debug.assert(mnemonic.type == .identifier);
             errdefer std.log.err("failed to accept {s}", .{mnemonic.text});
 
-            _ = try core.accept_one(.linefeed);
+            var args: std.ArrayListUnmanaged(ast.Expression) = .empty;
+            defer args.deinit(core.arena);
+
+            var first_expr = true;
+
+            while (core.accept_expression()) |expr| {
+                if (!first_expr) {
+                    _ = core.accept_one(.@",") catch break;
+                }
+                try args.append(core.arena, expr);
+                first_expr = false;
+            } else |_| {}
+
+            var effect: ?ast.Effect = null;
+
+            if (core.accept_one(.effect)) |effect_token| {
+                const ok = for (allowed_effect_names) |ef| {
+                    const name, const eff = ef;
+                    if (std.ascii.eqlIgnoreCase(name, effect_token.text)) {
+                        effect = eff;
+                        break true;
+                    }
+                } else false;
+
+                if (!ok) {
+                    std.log.err("TODO: Emit error here!", .{});
+                }
+            } else |_| {}
+
+            try core.accept_eol_or_eof();
 
             return .{
                 .location = mnemonic.location,
                 .condition = condition,
                 .mnemonic = mnemonic.text,
+                .effect = effect,
 
-                .arguments = &.{},
+                .arguments = try args.toOwnedSlice(core.arena),
             };
+        }
+
+        fn accept_eol_or_eof(core: *Core) !void {
+            _ = core.accept_one(.linefeed) catch |err| switch (err) {
+                error.UnexpectedEndOfFile => {},
+                else => |e| return e,
+            };
+        }
+
+        fn accept_expression(core: *Core) !ast.Expression {
+            _ = core;
+            return error.NotImplemented;
         }
 
         // if(!C & !Z)`, `if(>)`
@@ -207,7 +249,7 @@ pub const Parser = struct {
                         },
 
                         .@"|" => break :blk .{
-                            .c_and_z = .{ .c = c, .z = z },
+                            .c_or_z = .{ .c = c, .z = z },
                         },
                         .@"&" => break :blk .{
                             .c_and_z = .{ .c = c, .z = z },
@@ -243,6 +285,9 @@ pub const Parser = struct {
         }
 
         fn accept_any(c: *Core, comptime options: []const TokenType) !struct { AcceptKey(options), Token } {
+            const state = c.core.saveState();
+            errdefer c.core.restoreState(state);
+
             const token_or_maybe = try c.next_token();
             const token = token_or_maybe orelse return error.UnexpectedEndOfFile;
 
@@ -344,7 +389,7 @@ pub const TokenType = enum {
     string_literal, //
     identifier, // [A-Za-z0-9_\.\-]+
     designator, // identifier, but ends with ":"
-    tag, // identifier, but starts with ":"
+    effect, // identifier, but starts with ":"
 
 };
 
@@ -431,7 +476,7 @@ pub const Tokenizer = ptk.Tokenizer(TokenType, &[_]Pattern{
     .create(.xor, match.word("xor")),
 
     .create(.designator, pat_sequence(.{ basic_ident, match.literal(":") })),
-    .create(.tag, pat_sequence(.{ match.literal(":"), basic_ident })),
+    .create(.effect, pat_sequence(.{ match.literal(":"), basic_ident })),
 
     .create(.identifier, basic_ident),
 
@@ -472,6 +517,25 @@ pub const Tokenizer = ptk.Tokenizer(TokenType, &[_]Pattern{
 
 const ParserCore = ptk.ParserCore(Tokenizer, .{.whitespace});
 
+const allowed_effect_names: []const struct { []const u8, ast.Effect } = &.{
+    .{ ":and_c", .and_c },
+    .{ ":andc", .and_c },
+    .{ ":and_z", .and_z },
+    .{ ":andz", .and_z },
+    .{ ":or_c", .or_c },
+    .{ ":orc", .or_c },
+    .{ ":or_z", .or_z },
+    .{ ":orz", .or_z },
+    .{ ":xor_c", .xor_c },
+    .{ ":xorc", .xor_c },
+    .{ ":xor_z", .xor_z },
+    .{ ":xorz", .xor_z },
+    .{ ":wc", .wc },
+    .{ ":wcz", .wcz },
+    .{ ":wzc", .wcz },
+    .{ ":wz", .wz },
+};
+
 fn fuzz_tokenizer(_: void, input: []const u8) !void {
     var tokenizer: Tokenizer = .init(input, null);
     while (try tokenizer.next()) |item| {
@@ -481,4 +545,128 @@ fn fuzz_tokenizer(_: void, input: []const u8) !void {
 
 test "fuzz tokenizer" {
     try std.testing.fuzz({}, fuzz_tokenizer, .{});
+}
+
+test "parse conditions (positive)" {
+    const Expect = struct {
+        expected: ast.Condition,
+        input: []const u8,
+    };
+
+    const expects = [_]Expect{
+        .{ .input = "(C)", .expected = .{ .c_is = true } },
+        .{ .input = "(!C)", .expected = .{ .c_is = false } },
+        .{ .input = "(Z)", .expected = .{ .z_is = true } },
+        .{ .input = "(!Z)", .expected = .{ .z_is = false } },
+
+        .{ .input = "(C == Z)", .expected = .c_is_z },
+        .{ .input = "(C != Z)", .expected = .c_is_not_z },
+
+        .{ .input = "(Z == C)", .expected = .c_is_z },
+        .{ .input = "(Z != C)", .expected = .c_is_not_z },
+
+        .{ .input = "(C & Z)", .expected = .{ .c_and_z = .{ .c = true, .z = true } } },
+        .{ .input = "(C & !Z)", .expected = .{ .c_and_z = .{ .c = true, .z = false } } },
+        .{ .input = "(!C & Z)", .expected = .{ .c_and_z = .{ .c = false, .z = true } } },
+        .{ .input = "(!C & !Z)", .expected = .{ .c_and_z = .{ .c = false, .z = false } } },
+
+        .{ .input = "(Z & C)", .expected = .{ .c_and_z = .{ .c = true, .z = true } } },
+        .{ .input = "(Z & !C)", .expected = .{ .c_and_z = .{ .c = false, .z = true } } },
+        .{ .input = "(!Z & C)", .expected = .{ .c_and_z = .{ .c = true, .z = false } } },
+        .{ .input = "(!Z & !C)", .expected = .{ .c_and_z = .{ .c = false, .z = false } } },
+
+        .{ .input = "(C | Z)", .expected = .{ .c_or_z = .{ .c = true, .z = true } } },
+        .{ .input = "(C | !Z)", .expected = .{ .c_or_z = .{ .c = true, .z = false } } },
+        .{ .input = "(!C | Z)", .expected = .{ .c_or_z = .{ .c = false, .z = true } } },
+        .{ .input = "(!C | !Z)", .expected = .{ .c_or_z = .{ .c = false, .z = false } } },
+
+        .{ .input = "(Z | C)", .expected = .{ .c_or_z = .{ .c = true, .z = true } } },
+        .{ .input = "(Z | !C)", .expected = .{ .c_or_z = .{ .c = false, .z = true } } },
+        .{ .input = "(!Z | C)", .expected = .{ .c_or_z = .{ .c = true, .z = false } } },
+        .{ .input = "(!Z | !C)", .expected = .{ .c_or_z = .{ .c = false, .z = false } } },
+
+        .{ .input = "(>=)", .expected = .{ .comparison = .@">=" } },
+        .{ .input = "(<=)", .expected = .{ .comparison = .@"<=" } },
+        .{ .input = "(==)", .expected = .{ .comparison = .@"==" } },
+        .{ .input = "(!=)", .expected = .{ .comparison = .@"!=" } },
+        .{ .input = "(<)", .expected = .{ .comparison = .@"<" } },
+        .{ .input = "(>)", .expected = .{ .comparison = .@">" } },
+    };
+
+    for (expects) |expectation| {
+        errdefer std.log.err("condition parsing failed: expected {}", .{expectation.expected});
+
+        var tok: Tokenizer = .init(expectation.input, null);
+
+        var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+        errdefer arena.deinit();
+
+        var core: Parser.Core = .{
+            .arena = arena.allocator(),
+            .core = .init(&tok),
+        };
+
+        const cond = try core.accept_condition();
+
+        try std.testing.expectEqualDeep(expectation.expected, cond.type);
+    }
+}
+
+test "parse effect (positive)" {
+    const Expect = struct {
+        expected: ast.Effect,
+        input: []const u8,
+    };
+
+    const expects = [_]Expect{
+        .{ .input = ":wc", .expected = .wc },
+        .{ .input = ":wz", .expected = .wz },
+        .{ .input = ":wcz", .expected = .wcz },
+        .{ .input = ":wzc", .expected = .wcz },
+        .{ .input = ":xor_c", .expected = .xor_c },
+        .{ .input = ":xorc", .expected = .xor_c },
+        .{ .input = ":and_c", .expected = .and_c },
+        .{ .input = ":andc", .expected = .and_c },
+        .{ .input = ":or_c", .expected = .or_c },
+        .{ .input = ":orc", .expected = .or_c },
+        .{ .input = ":xor_z", .expected = .xor_z },
+        .{ .input = ":xorz", .expected = .xor_z },
+        .{ .input = ":and_z", .expected = .and_z },
+        .{ .input = ":andz", .expected = .and_z },
+        .{ .input = ":or_z", .expected = .or_z },
+        .{ .input = ":orz", .expected = .or_z },
+    };
+
+    for ([2]bool{ false, true }) |upper_case| {
+        for (expects) |expectation| {
+            errdefer std.log.err("condition parsing failed: expected {}", .{expectation.expected});
+
+            var buffer: [32]u8 = @splat(0);
+            var input_buf: [64]u8 = @splat(0);
+            const input = try std.fmt.bufPrint(&input_buf, "NOP {s}\r\n", .{
+                if (upper_case)
+                    std.ascii.upperString(&buffer, expectation.input)
+                else
+                    std.ascii.lowerString(&buffer, expectation.input),
+            });
+
+            var tok: Tokenizer = .init(input, null);
+
+            var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+            errdefer arena.deinit();
+
+            var core: Parser.Core = .{
+                .arena = arena.allocator(),
+                .core = .init(&tok),
+            };
+
+            const identifier = try core.accept_one(.identifier);
+
+            const instr = try core.accept_instruction(null, identifier);
+
+            try std.testing.expectEqualStrings("NOP", instr.mnemonic);
+
+            try std.testing.expectEqual(expectation.expected, instr.effect);
+        }
+    }
 }

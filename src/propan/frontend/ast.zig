@@ -35,6 +35,7 @@ pub const Instruction = struct {
     arguments: []const Expression,
 
     condition: ?ConditionNode,
+    effect: ?Effect,
 };
 
 pub const ConditionNode = struct {
