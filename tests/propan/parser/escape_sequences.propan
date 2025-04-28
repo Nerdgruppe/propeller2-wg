@@ -1,0 +1,33 @@
+
+
+const empty = ""
+const empty = ''
+
+const hello = "hello"
+const hello = 'hello'
+
+const escaped = "\e"
+const escaped = "\r"
+const escaped = "\n"
+const escaped = "\t"
+const escaped = "\'"
+const escaped = "\""
+const escaped = "\xFF"
+const escaped = "\x00"
+const escaped = "\u{0}"
+const escaped = "\u{1FFFF}"
+
+const escaped = '\e'
+const escaped = '\r'
+const escaped = '\n'
+const escaped = '\t'
+const escaped = '\''
+const escaped = '\"'
+const escaped = '\xFF'
+const escaped = '\x00'
+const escaped = '\u{0}'
+const escaped = '\u{1FFFF}'
+const escaped = '\u{1FFFF}'
+
+const utf8 = "💩"
+const utf8 = '💩'

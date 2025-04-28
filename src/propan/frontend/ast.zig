@@ -20,6 +20,12 @@ pub const Line = union(enum) {
 pub const Label = struct {
     location: Location,
     identifier: []const u8,
+    type: Type,
+
+    pub const Type = enum {
+        @"var",
+        code,
+    };
 };
 
 pub const Constant = struct {
@@ -45,6 +51,8 @@ pub const ConditionNode = struct {
 
 pub const Expression = union(enum) {
     integer: IntegerLiteral,
+    string: StringLiteral,
+    symbol: SymbolReference,
 };
 
 pub const IntegerLiteral = struct {
@@ -59,16 +67,35 @@ pub const StringLiteral = struct {
     value: []const u8,
 };
 
-pub const Effect = enum {
-    and_c,
-    and_z,
-    or_c,
-    or_z,
-    xor_c,
-    xor_z,
-    wc,
-    wcz,
-    wz,
+pub const SymbolReference = struct {
+    location: Location,
+    symbol_name: []const u8,
+};
+
+pub const UnaryTransform = struct {
+    location: Location,
+    value: *Expression,
+    operator: UnaryOperator,
+};
+
+pub const BinaryTransform = struct {
+    location: Location,
+    lhs: *Expression,
+    rhs: *Expression,
+    operator: BinaryOperator,
+};
+
+pub const FunctionInvocation = struct {
+    location: Location,
+    function: []const u8,
+    arguments: []const Argument,
+    has_trailing_comma: bool,
+
+    pub const Argument = struct {
+        location: Location,
+        name: ?[]const u8,
+        value: *Expression,
+    };
 };
 
 pub const Condition = union(enum) {
@@ -94,4 +121,49 @@ pub const Condition = union(enum) {
         @"<",
         @">",
     };
+};
+
+pub const UnaryOperator = enum {
+    @"!",
+    @"~",
+    @"+",
+    @"-",
+    @"@",
+    @"*",
+    @"&",
+};
+
+pub const BinaryOperator = enum {
+    @"and",
+    @"or",
+    xor,
+    @"==",
+    @"!=",
+    @"<=>",
+    @"<",
+    @">",
+    @"<=",
+    @">=",
+    @"+",
+    @"-",
+    @"|",
+    @"^",
+    @">>",
+    @"<<",
+    @"&",
+    @"*",
+    @"/",
+    @"%",
+};
+
+pub const Effect = enum {
+    and_c,
+    and_z,
+    or_c,
+    or_z,
+    xor_c,
+    xor_z,
+    wc,
+    wcz,
+    wz,
 };

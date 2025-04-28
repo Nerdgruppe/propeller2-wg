@@ -53,16 +53,42 @@ pub const Parser = struct {
             switch (token.type) {
                 .linefeed => return .empty,
 
+                .@"var" => {
+                    const name = try c.accept_one(.designator);
+
+                    return .{
+                        .label = .{
+                            .location = token.location,
+                            .identifier = name.text[0 .. token.text.len - 1],
+                            .type = .@"var",
+                        },
+                    };
+                },
+
                 .designator => return .{
                     .label = .{
                         .location = token.location,
                         .identifier = token.text[0 .. token.text.len - 1],
+                        .type = .code,
                     },
                 },
 
                 .@"const" => {
-                    // constants
-                    @panic("constants not supported yet!");
+                    const name = try c.accept_one(.identifier);
+
+                    _ = try c.accept_one(.@"=");
+
+                    const value = try c.accept_expression();
+
+                    try c.accept_eol_or_eof();
+
+                    return .{
+                        .constant = .{
+                            .location = token.location,
+                            .identifier = name.text,
+                            .value = value,
+                        },
+                    };
                 },
 
                 .@"if" => {
@@ -93,14 +119,17 @@ pub const Parser = struct {
             var args: std.ArrayListUnmanaged(ast.Expression) = .empty;
             defer args.deinit(core.arena);
 
-            var first_expr = true;
-
             while (core.accept_expression()) |expr| {
-                if (!first_expr) {
-                    _ = core.accept_one(.@",") catch break;
-                }
                 try args.append(core.arena, expr);
-                first_expr = false;
+
+                // If accepting a "," fails, we're at the end of
+                // the argument list.
+                _ = core.accept_one(.@",") catch break;
+
+                // After each argument, we get the option to
+                // insert a *single* line break:
+
+                if (core.accept_one(.linefeed)) |_| {} else |_| {}
             } else |_| {}
 
             var effect: ?ast.Effect = null;
@@ -139,8 +168,164 @@ pub const Parser = struct {
         }
 
         fn accept_expression(core: *Core) !ast.Expression {
+            const which, const token = try core.accept_any(&.{
+                .integer,
+                .identifier,
+                .char_literal,
+                .string_literal,
+            });
+
+            switch (which) {
+                .integer => return .{
+                    .integer = .{
+                        .location = token.location,
+                        .source_text = token.text,
+                        .value = try core.parse_int(token.text),
+                    },
+                },
+                .identifier => return .{
+                    .symbol = .{
+                        .location = token.location,
+                        .symbol_name = token.text,
+                    },
+                },
+                .char_literal => {
+                    var buffer: [32]u8 = undefined;
+                    var fba: std.heap.FixedBufferAllocator = .init(&buffer);
+
+                    const string = try core.unescape_string(fba.allocator(), token.text);
+
+                    const view = try std.unicode.Utf8View.init(string);
+
+                    var iter = view.iterator();
+
+                    const codepoint: u32 = if (iter.nextCodepoint()) |codepoint|
+                        codepoint
+                    else blk: {
+                        std.log.err("empty character literal not allowed!", .{});
+                        break :blk 0;
+                    };
+
+                    return .{
+                        .integer = .{
+                            .location = token.location,
+                            .source_text = token.text,
+                            .value = codepoint,
+                        },
+                    };
+                },
+                .string_literal => {
+                    const string = try core.unescape_string(core.arena, token.text);
+
+                    return .{
+                        .string = .{
+                            .location = token.location,
+                            .source_text = token.text,
+                            .value = string,
+                        },
+                    };
+                },
+            }
+        }
+
+        fn unescape_string(core: *Core, allocator: std.mem.Allocator, raw: []const u8) ![]u8 {
             _ = core;
-            return error.NotImplemented;
+
+            std.debug.assert(raw.len >= 2);
+
+            const body = raw[1 .. raw.len - 1];
+
+            var output: std.ArrayListUnmanaged(u8) = try .initCapacity(allocator, body.len);
+            defer output.deinit(allocator);
+
+            var i: usize = 0;
+            while (i < body.len) : (i += 1) {
+                const char = body[i];
+                if (char < 0x20 or char == 0x7F) {
+                    std.log.err("invalid character in string/char literal: 0x{X:0>2}", .{char});
+                } else if (i == '\\') {
+                    i += 1;
+                    if (i >= body.len) {
+                        std.log.err("unterminated escape sequence", .{});
+                        break;
+                    }
+                    const escape = body[i];
+                    switch (escape) {
+                        // single-char escapes:
+                        'e' => try output.append(allocator, std.ascii.control_code.esc),
+                        'r' => try output.append(allocator, std.ascii.control_code.cr),
+                        'n' => try output.append(allocator, std.ascii.control_code.lf),
+                        't' => try output.append(allocator, std.ascii.control_code.ht),
+                        '\"' => try output.append(allocator, '\"'),
+                        '\'' => try output.append(allocator, '\''),
+
+                        // \xHH
+                        'x' => {
+                            const start = i + 1;
+                            i += 2;
+                            if (i >= body.len) {
+                                std.log.err("unterminated escape sequence", .{});
+                                break;
+                            }
+                            const hex = body[start..i];
+                            std.log.err("escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
+
+                            try output.append(
+                                allocator,
+                                try std.fmt.parseInt(u8, hex, 16),
+                            );
+                        },
+
+                        // \u{HHHHH}
+                        'u' => {
+                            const start = i + 1;
+                            while (i < body.len) {
+                                if (body[i] == '}')
+                                    break;
+                                i += 1;
+                            }
+                            if (i >= body.len) {
+                                std.log.err("unterminated escape sequence", .{});
+                                break;
+                            }
+                            const slice = body[start..i];
+
+                            std.log.err("escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
+
+                            const codepoint = try std.fmt.parseInt(u21, slice, 16);
+
+                            var buf: [8]u8 = undefined;
+                            const len = try std.unicode.utf8Encode(codepoint, &buf);
+                            try output.appendSlice(allocator, buf[0..len]);
+                        },
+                        else => {
+                            std.log.warn("invalid escape sequence: \\x{c}", .{body[i .. i + 1]});
+                            try output.append(allocator, char);
+                        },
+                    }
+                } else {
+                    try output.append(allocator, char);
+                }
+            }
+
+            return output.toOwnedSlice(allocator);
+        }
+
+        fn parse_int(core: *Core, text: []const u8) !u64 {
+            _ = core;
+            if (std.mem.startsWith(u8, text, "0b"))
+                return try std.fmt.parseInt(u64, text[2..], 2);
+
+            if (std.mem.startsWith(u8, text, "0q"))
+                return try std.fmt.parseInt(u64, text[2..], 4);
+
+            if (std.mem.startsWith(u8, text, "0o"))
+                return try std.fmt.parseInt(u64, text[2..], 8);
+
+            if (std.mem.startsWith(u8, text, "0x"))
+                return try std.fmt.parseInt(u64, text[2..], 16);
+
+            return try std.fmt.parseInt(u64, text, 10);
         }
 
         // if(!C & !Z)`, `if(>)`
@@ -296,7 +481,7 @@ pub const Parser = struct {
                     return .{ @field(AcceptKey(options), @tagName(opt)), token };
             }
 
-            std.log.err("failed to accept token {s}. expected one of {any}", .{ @tagName(token.type), options });
+            std.log.debug("failed to accept token {s}. expected one of {any}", .{ @tagName(token.type), options });
 
             return error.UnexpectedToken;
         }
@@ -390,7 +575,6 @@ pub const TokenType = enum {
     identifier, // [A-Za-z0-9_\.\-]+
     designator, // identifier, but ends with ":"
     effect, // identifier, but starts with ":"
-
 };
 
 const Pattern = ptk.Pattern(TokenType);
@@ -455,6 +639,7 @@ pub const Tokenizer = ptk.Tokenizer(TokenType, &[_]Pattern{
     .create(.linefeed, match.linefeed),
     .create(.whitespace, whitespace),
     .create(.comment, pat_sequence(.{ match.literal("//"), match.takeNoneOf("\r\n") })),
+    .create(.comment, pat_sequence(.{match.literal("//")})),
 
     .create(.integer, pat_sequence(.{ match.literal("0b"), match.takeAnyOfIgnoreCase("_01") })),
     .create(.integer, pat_sequence(.{ match.literal("0q"), match.takeAnyOfIgnoreCase("_0123") })),

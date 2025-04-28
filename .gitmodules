@@ -1,0 +1,3 @@
+[submodule "vendor/parser-toolkit"]
+	path = vendor/parser-toolkit
+	url = git@github.com:ikskuh/parser-toolkit.git

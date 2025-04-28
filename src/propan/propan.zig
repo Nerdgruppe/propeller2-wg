@@ -1,13 +1,18 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const frontend = @import("frontend/parser.zig");
+const frontend = @import("frontend.zig");
 
 const args_parser = @import("args");
+
+const TestMode = enum {
+    parser,
+};
 
 const CliArgs = struct {
     help: bool = false,
     output: []const u8 = "",
+    @"test-mode": ?TestMode = null,
 
     pub const shorthands = .{
         .h = "help",
@@ -24,6 +29,7 @@ const CliArgs = struct {
         .option_docs = .{
             .help = "Prints this help text",
             .output = "Sets the path of the output file.",
+            .@"test-mode" = "<internal use only>",
         },
     };
 };
@@ -70,7 +76,16 @@ pub fn main() !u8 {
 
         var parsed_file = try parser.parse(allocator);
         defer parsed_file.deinit();
+
+        try frontend.render.pretty_print(
+            std.io.getStdOut().writer(),
+            parsed_file.file,
+        );
     }
+
+    // Stop after having each file parsed successfully:
+    if (cli.options.@"test-mode" == .parser)
+        return 0;
 
     return 0;
 }

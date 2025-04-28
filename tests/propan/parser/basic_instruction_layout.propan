@@ -1,0 +1,39 @@
+//
+// This file uses several legal ways of setting up a basic mnemonic
+// with zero or more arguments
+//
+
+    // basic single-line chaining
+    NOP
+
+    NOP 10
+
+    NOP 10, 10
+
+    NOP 10, 10, 10
+
+    NOP 10, 10, 10, 10
+
+    NOP 10, 10, 10, 10, 10
+
+    NOP 10, 10, 10, 10, 10, 10
+
+    // Multi-line arguments:
+    NOP 10, 
+        10
+
+    NOP 10, 
+        10, 10
+
+    NOP 10, 
+        10, 10,
+        10
+
+    NOP 10, 
+        10, 10,
+        10, 10
+
+    NOP 10, 
+        10, 10, 
+        10, 10, 
+        10

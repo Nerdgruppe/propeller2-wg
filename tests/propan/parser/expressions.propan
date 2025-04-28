@@ -22,7 +22,7 @@ const count_to   = @identifier
 const address_of = &identifier
 const value_of   = *identifier
 
-const array      = 15 [30]
+// TODO: const array      = 15 [30]
 
 const char       = '💩'
 // const string     = "hello, world!"

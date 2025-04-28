@@ -64,4 +64,22 @@ pub fn build(b: *std.Build) void {
 
         test_step.dependOn(&run_tests_step.step);
     }
+
+    // Propan Behaviour Tests
+    {
+        for (parser_accept_tests) |parser_accept_file| {
+            const run = b.addRunArtifact(propan_exe);
+            run.addArg("--test-mode=parser");
+            run.addFileInput(b.path(parser_accept_file));
+            run.has_side_effects = true;
+            test_step.dependOn(&run.step);
+        }
+    }
 }
+
+const parser_accept_tests: []const []const u8 = &.{
+    "./tests/propan/parser/conditions.propan",
+    "./tests/propan/parser/effects.propan",
+    "./tests/propan/parser/basic_instruction_layout.propan",
+    "./tests/propan/parser/labels.propan",
+};

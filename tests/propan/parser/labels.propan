@@ -1,0 +1,29 @@
+//
+// This file tests basic label syntaxes
+//
+
+
+// bare label
+standard:
+
+// label with instruction
+standard: NOP
+
+// variable label:
+var label: 
+
+// variable label with instruction:
+var label: NOP
+
+// local label
+.local:
+
+// local label with instruction
+.local: NOP
+
+// local variable label
+var .local:
+
+// local variable label with instruction
+var .local: NOP
+

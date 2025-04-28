@@ -1,0 +1,24 @@
+
+const dec_number1 = 1
+const dec_number2 = 123456789
+const dec_number3 = 10_20_30_40
+const dec_number4 = 100_000
+
+const hex_number1 = 0x1
+const hex_number2 = 0x123456789abcdef
+const hex_number3 = 0x10_20_30_40
+const hex_number4 = 0x100_000
+
+const bin_number1 = 0b0
+const bin_number2 = 0b01_01_01_01
+
+const quad_number1 = 0x1
+const quad_number2 = 0x0123
+const quad_number3 = 0x00_10_20_30
+const quad_number4 = 0x100_000
+
+const basic_ref  = identifier
+
+const char       = '💩'
+const string     = "hello, world!"
+const enum       = .15pF
