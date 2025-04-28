@@ -78,8 +78,12 @@ pub fn build(b: *std.Build) void {
 }
 
 const parser_accept_tests: []const []const u8 = &.{
+    "./tests/propan/parser/labels.propan",
     "./tests/propan/parser/conditions.propan",
     "./tests/propan/parser/effects.propan",
+    "./tests/propan/parser/values.propan",
+    "./tests/propan/parser/escape_sequences.propan",
     "./tests/propan/parser/basic_instruction_layout.propan",
-    "./tests/propan/parser/labels.propan",
+    "./tests/propan/parser/directives.propan",
+    "./tests/propan/parser/fncalls.propan",
 };

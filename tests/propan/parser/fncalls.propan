@@ -1,0 +1,207 @@
+
+// positionals:
+    // without trailing comma:
+    NOP
+    NOP mov()
+    NOP mov(1)
+    NOP mov(1,2)
+    NOP mov(1,2,3)
+    NOP mov(1,2,3,4)
+    NOP mov(1,2,3,4,5)
+
+    NOP
+    NOP mov()
+    NOP mov(1)
+    NOP mov(
+        1,
+        2
+    )
+    NOP mov(
+            1,
+            2,
+            
+            3)
+
+    NOP mov(1,
+    2,
+    
+    3,
+    4
+    
+    )
+    NOP mov(1,2,3,4,5
+    )
+
+    // with trailing comma
+    
+    NOP
+    NOP mov()
+    NOP mov(1,)
+    NOP mov(1,2,)
+    NOP mov(1,2,3,)
+    NOP mov(1,2,3,4,)
+    NOP mov(1,2,3,4,5,)
+
+    NOP
+    NOP mov(1,)
+    NOP mov(
+        1,
+        2,
+    )
+    NOP mov(
+            1,
+            2,
+            
+            3,)
+
+    NOP mov(1,
+    2,
+    
+    3,
+    4,
+    
+    )
+    NOP mov(1,2,3,4,5,
+    )
+
+// fully named
+
+    // without trailing comma:
+    NOP
+    NOP mov()
+    NOP mov(a=1)
+    NOP mov(a=1,b=2)
+    NOP mov(a=1,b=2,third=3)
+    NOP mov(a=1,b=2,third=3,fourth=4)
+    NOP mov(a=1,b=2,third=3,fourth=4,last=5)
+
+    NOP
+    NOP mov()
+    NOP mov(a=1)
+    NOP mov(
+        a=1,
+       b   = 
+       2 
+    )
+    NOP mov(
+            a=1,
+            b=2,
+            
+            third=3)
+
+    NOP mov(a 
+    = 1,
+    b=
+    
+    2,
+    
+    c=3,
+    d
+    =
+    
+    4
+    
+    )
+    NOP mov(a=1,b=2,third=3,fourth=4,last=5
+    )
+    
+    NOP
+    NOP mov()
+    NOP mov(a=1,)
+    NOP mov(a=1,b=2,)
+    NOP mov(a=1,b=2,third=3,)
+    NOP mov(a=1,b=2,third=3,fourht=4,)
+    NOP mov(a=1,b=2,third=3,fourht=4,last=5,)
+
+    NOP
+    NOP mov(a=1,)
+    NOP mov(
+        a=1,
+        b=2,
+    )
+    NOP mov(
+            a=1,
+            b=2,
+            
+            third=3,)
+
+    NOP mov(a = 1,
+    b=2,
+    
+    third=3,
+    fourth=4,
+    
+    )
+    NOP mov(a=1,b=2,third=3,fourht=4,last=5,
+    )
+
+// with some names intermixed
+
+    // without trailing comma:
+    NOP
+    NOP mov()
+    NOP mov(a=1)
+    NOP mov(a=1,b=2)
+    NOP mov(a=1,b=2,third=3)
+    NOP mov(a=1,b=2,third=3,fourth=4)
+    NOP mov(a=1,b=2,third=3,fourth=4,last=5)
+
+    NOP
+    NOP mov()
+    NOP mov(a=1)
+    NOP mov(
+        a=1,
+       b   = 
+       2 
+    )
+    NOP mov(
+            a=1,
+            b=2,
+            
+            third=3)
+
+    NOP mov(a 
+    = 1,
+    b=
+    
+    2,
+    
+    c=3,
+    d
+    =
+    
+    4
+    
+    )
+    NOP mov(a=1,b=2,third=3,fourth=4,last=5
+    )
+    
+    NOP
+    NOP mov()
+    NOP mov(a=1,)
+    NOP mov(1,b=2,)
+    NOP mov(a=1,2,third=3,)
+    NOP mov(1,b=2,third=3,4,)
+    NOP mov(a=1,2,third=3,fourht=4,5,)
+
+    NOP
+    NOP mov(a=1,)
+    NOP mov(
+        1,
+        b=2,
+    )
+    NOP mov(
+            a=1,
+            2,
+            
+            3,)
+
+    NOP mov(1,
+    2,
+    
+    3,
+    fourth=4,
+    
+    )
+    NOP mov(a=1,2,third=3,4,last=5,
+    )

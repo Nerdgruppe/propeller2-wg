@@ -50,9 +50,20 @@ pub const ConditionNode = struct {
 };
 
 pub const Expression = union(enum) {
+    wrapped: *Expression,
     integer: IntegerLiteral,
     string: StringLiteral,
     symbol: SymbolReference,
+    // unary_transform: UnaryTransform,
+    // binary_transform: BinaryTransform,
+    function_call: FunctionInvocation,
+
+    pub fn location(expr: Expression) Location {
+        return switch (expr) {
+            .wrapped => |value| value.location(),
+            inline else => |value| value.location,
+        };
+    }
 };
 
 pub const IntegerLiteral = struct {
@@ -94,7 +105,7 @@ pub const FunctionInvocation = struct {
     pub const Argument = struct {
         location: Location,
         name: ?[]const u8,
-        value: *Expression,
+        value: Expression,
     };
 };
 

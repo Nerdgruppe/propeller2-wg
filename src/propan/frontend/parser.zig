@@ -36,6 +36,13 @@ pub const Parser = struct {
     const Core = struct {
         arena: std.mem.Allocator,
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
+        lf_is_whitespace: bool = false,
+
+        fn move_to_heap(core: *Core, comptime T: type, value: T) !*T {
+            const copy = try core.arena.create(T);
+            copy.* = value;
+            return copy;
+        }
 
         fn accept_file(c: *Core, sequence: *std.ArrayListUnmanaged(ast.Line)) !void {
             while (true) {
@@ -167,15 +174,41 @@ pub const Parser = struct {
             };
         }
 
-        fn accept_expression(core: *Core) !ast.Expression {
+        const AcceptExprError = error{
+            OutOfMemory,
+            SyntaxError,
+            UnexpectedToken,
+            UnexpectedCharacter,
+            UnexpectedEndOfFile,
+            Overflow,
+            InvalidCharacter,
+            Utf8CannotEncodeSurrogateHalf,
+            CodepointTooLarge,
+            InvalidUtf8,
+        };
+        fn accept_expression(core: *Core) AcceptExprError!ast.Expression {
             const which, const token = try core.accept_any(&.{
                 .integer,
                 .identifier,
                 .char_literal,
                 .string_literal,
+                .@"(",
             });
 
             switch (which) {
+                .@"(" => {
+                    const whitespace = core.push_ignore_whitespace();
+                    defer whitespace.pop();
+
+                    const value = try core.accept_expression();
+
+                    _ = try core.accept_one(.@")");
+
+                    return .{
+                        .wrapped = try core.move_to_heap(ast.Expression, value),
+                    };
+                },
+
                 .integer => return .{
                     .integer = .{
                         .location = token.location,
@@ -183,11 +216,32 @@ pub const Parser = struct {
                         .value = try core.parse_int(token.text),
                     },
                 },
-                .identifier => return .{
-                    .symbol = .{
-                        .location = token.location,
-                        .symbol_name = token.text,
-                    },
+                .identifier => {
+                    if (core.accept_one(.@"(")) |_| {
+                        // <identifier> "(" is a function call
+
+                        const whitespace = core.push_ignore_whitespace();
+                        defer whitespace.pop();
+
+                        const args, const trailing_comma = try core.accept_argv();
+
+                        return .{
+                            .function_call = .{
+                                .arguments = args,
+                                .has_trailing_comma = trailing_comma,
+                                .location = token.location,
+                                .function = token.text,
+                            },
+                        };
+                    } else |_| {
+                        // symbol reference, not function call
+                        return .{
+                            .symbol = .{
+                                .location = token.location,
+                                .symbol_name = token.text,
+                            },
+                        };
+                    }
                 },
                 .char_literal => {
                     var buffer: [32]u8 = undefined;
@@ -226,6 +280,55 @@ pub const Parser = struct {
                     };
                 },
             }
+        }
+
+        fn accept_argv(core: *Core) !struct { []ast.FunctionInvocation.Argument, bool } {
+            var argv: std.ArrayListUnmanaged(ast.FunctionInvocation.Argument) = try .initCapacity(core.arena, 3);
+            defer argv.deinit(core.arena);
+
+            // shortcut: if we accept a ")", we're having an empty argument list:
+            if (core.accept_one(.@")")) |_| {
+                return .{ &.{}, false };
+            } else |_| {}
+
+            const last_is_comma: bool = while (true) {
+                const backup = core.core.saveState();
+
+                const maybe_name: ?Token = if (core.accept_one(.identifier)) |ident| blk: {
+                    _ = core.accept_one(.@"=") catch {
+                        core.core.restoreState(backup);
+                        break :blk null;
+                    };
+
+                    break :blk ident;
+                } else |_| null;
+
+                const value = try core.accept_expression();
+
+                try argv.append(core.arena, .{
+                    .location = if (maybe_name) |tok| tok.location else value.location(),
+                    .name = if (maybe_name) |tok| tok.text else null,
+                    .value = value,
+                });
+
+                const terminator, _ = try core.accept_any(&.{ .@",", .@")" });
+                switch (terminator) {
+                    .@")" => {
+                        break false;
+                    },
+
+                    .@"," => {
+                        if (core.accept_one(.@")")) |_| {
+                            break true;
+                        } else |_| {}
+                    },
+                }
+            };
+
+            return .{
+                try argv.toOwnedSlice(core.arena),
+                last_is_comma,
+            };
         }
 
         fn unescape_string(core: *Core, allocator: std.mem.Allocator, raw: []const u8) ![]u8 {
@@ -491,13 +594,32 @@ pub const Parser = struct {
             return token;
         }
 
+        const SpaceGuard = struct {
+            core: *Core,
+            restore: bool,
+
+            pub fn pop(sg: SpaceGuard) void {
+                sg.core.lf_is_whitespace = sg.restore;
+            }
+        };
+
+        fn push_ignore_whitespace(core: *Core) SpaceGuard {
+            const restore: SpaceGuard = .{ .core = core, .restore = core.lf_is_whitespace };
+            core.lf_is_whitespace = true;
+            return restore;
+        }
+
         fn next_token(c: *Core) !?Token {
-            const tok = c.core.accept(r.any) catch |err| switch (err) {
-                error.EndOfStream => null,
-                else => |e| return e,
-            };
-            std.log.debug("{?}", .{tok});
-            return tok;
+            while (true) {
+                const tok = c.core.accept(r.any) catch |err| switch (err) {
+                    error.EndOfStream => return null,
+                    else => |e| return e,
+                };
+                if (c.lf_is_whitespace and tok.type == .linefeed)
+                    continue;
+                std.log.debug("next_token() => {}", .{tok});
+                return tok;
+            }
         }
 
         fn fatal_syntax_error(c: *Core) error{SyntaxError} {
@@ -577,128 +699,132 @@ pub const TokenType = enum {
     effect, // identifier, but starts with ":"
 };
 
-const Pattern = ptk.Pattern(TokenType);
+const patterns = struct {
+    const Pattern = ptk.Pattern(TokenType);
 
-const match = ptk.matchers;
-const pat_sequence = match.sequenceOf;
+    const match = ptk.matchers;
+    const pat_sequence = match.sequenceOf;
 
-fn basic_ident(str: []const u8) ?usize {
-    const first_char = "_.-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const all_chars = first_char ++ "0123456789";
-    for (str, 0..) |c, i| {
-        if (std.mem.indexOfScalar(u8, if (i > 0) all_chars else first_char, c) == null) {
-            return i;
+    fn basic_ident(str: []const u8) ?usize {
+        const first_char = "_.-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const all_chars = first_char ++ "0123456789";
+        for (str, 0..) |c, i| {
+            if (std.mem.indexOfScalar(u8, if (i > 0) all_chars else first_char, c) == null) {
+                return i;
+            }
         }
+        return str.len;
     }
-    return str.len;
-}
 
-fn generic_string_literal(str: []const u8, comptime delim: u8) ?usize {
-    if (str.len == 0 or str[0] != delim)
-        return null;
-
-    var i: usize = 1;
-    while (true) {
-        switch (str[i]) {
-            // The end of the string, length includes the string delimiter:
-            delim => return i + 1,
-
-            // Skip over the next character if possible, as we're escaping it!
-            '\\' => i += 1,
-
-            // All non-space whitespace is forbidden inside strings:
-            0x00...0x1F => return null,
-
-            // The rest is ok
-            else => {},
-        }
-
-        i += 1;
-        if (i >= str.len)
+    fn generic_string_literal(str: []const u8, comptime delim: u8) ?usize {
+        if (str.len == 0 or str[0] != delim)
             return null;
+
+        var i: usize = 1;
+        while (true) {
+            switch (str[i]) {
+                // The end of the string, length includes the string delimiter:
+                delim => return i + 1,
+
+                // Skip over the next character if possible, as we're escaping it!
+                '\\' => i += 1,
+
+                // All non-space whitespace is forbidden inside strings:
+                0x00...0x1F => return null,
+
+                // The rest is ok
+                else => {},
+            }
+
+            i += 1;
+            if (i >= str.len)
+                return null;
+        }
     }
-}
 
-fn string_literal(str: []const u8) ?usize {
-    return generic_string_literal(str, '"');
-}
-
-fn char_literal(str: []const u8) ?usize {
-    return generic_string_literal(str, '\'');
-}
-
-fn whitespace(str: []const u8) ?usize {
-    for (str, 0..) |c, i| {
-        if (!std.ascii.isWhitespace(c) or c == '\r' or c == '\n')
-            return i;
+    fn string_literal(str: []const u8) ?usize {
+        return generic_string_literal(str, '"');
     }
-    return str.len;
-}
 
-pub const Tokenizer = ptk.Tokenizer(TokenType, &[_]Pattern{
-    .create(.linefeed, match.linefeed),
-    .create(.whitespace, whitespace),
-    .create(.comment, pat_sequence(.{ match.literal("//"), match.takeNoneOf("\r\n") })),
-    .create(.comment, pat_sequence(.{match.literal("//")})),
+    fn char_literal(str: []const u8) ?usize {
+        return generic_string_literal(str, '\'');
+    }
 
-    .create(.integer, pat_sequence(.{ match.literal("0b"), match.takeAnyOfIgnoreCase("_01") })),
-    .create(.integer, pat_sequence(.{ match.literal("0q"), match.takeAnyOfIgnoreCase("_0123") })),
-    .create(.integer, pat_sequence(.{ match.literal("0o"), match.takeAnyOfIgnoreCase("_01234567") })),
-    .create(.integer, pat_sequence(.{ match.literal("0x"), match.takeAnyOfIgnoreCase("_0123456789ABCDEF") })),
+    fn whitespace(str: []const u8) ?usize {
+        for (str, 0..) |c, i| {
+            if (!std.ascii.isWhitespace(c) or c == '\r' or c == '\n')
+                return i;
+        }
+        return str.len;
+    }
 
-    .create(.integer, pat_sequence(.{ match.takeAnyOfIgnoreCase("0123456789"), match.takeAnyOfIgnoreCase("_0123456789") })),
-    .create(.integer, pat_sequence(.{match.takeAnyOfIgnoreCase("0123456789")})),
+    const list = [_]Pattern{
+        .create(.linefeed, match.linefeed),
+        .create(.whitespace, whitespace),
+        .create(.comment, pat_sequence(.{ match.literal("//"), match.takeNoneOf("\r\n") })),
+        .create(.comment, pat_sequence(.{match.literal("//")})),
 
-    .create(.string_literal, string_literal),
-    .create(.char_literal, char_literal),
+        .create(.integer, pat_sequence(.{ match.literal("0b"), match.takeAnyOfIgnoreCase("_01") })),
+        .create(.integer, pat_sequence(.{ match.literal("0q"), match.takeAnyOfIgnoreCase("_0123") })),
+        .create(.integer, pat_sequence(.{ match.literal("0o"), match.takeAnyOfIgnoreCase("_01234567") })),
+        .create(.integer, pat_sequence(.{ match.literal("0x"), match.takeAnyOfIgnoreCase("_0123456789ABCDEF") })),
 
-    .create(.@"const", match.word("const")),
-    .create(.@"var", match.word("var")),
-    .create(.@"if", match.word("if")),
-    .create(.@"return", match.word("return")),
-    .create(.@"and", match.word("and")),
-    .create(.@"or", match.word("or")),
-    .create(.xor, match.word("xor")),
+        .create(.integer, pat_sequence(.{ match.takeAnyOfIgnoreCase("0123456789"), match.takeAnyOfIgnoreCase("_0123456789") })),
+        .create(.integer, pat_sequence(.{match.takeAnyOfIgnoreCase("0123456789")})),
 
-    .create(.designator, pat_sequence(.{ basic_ident, match.literal(":") })),
-    .create(.effect, pat_sequence(.{ match.literal(":"), basic_ident })),
+        .create(.string_literal, string_literal),
+        .create(.char_literal, char_literal),
 
-    .create(.identifier, basic_ident),
+        .create(.@"const", match.word("const")),
+        .create(.@"var", match.word("var")),
+        .create(.@"if", match.word("if")),
+        .create(.@"return", match.word("return")),
+        .create(.@"and", match.word("and")),
+        .create(.@"or", match.word("or")),
+        .create(.xor, match.word("xor")),
 
-    .create(.@"<=>", match.literal("<=>")),
-    .create(.@"==", match.literal("==")),
-    .create(.@"!=", match.literal("!=")),
-    .create(.@"<=", match.literal("<=")),
-    .create(.@">>", match.literal(">>")),
-    .create(.@"<<", match.literal("<<")),
-    .create(.@">=", match.literal(">=")),
+        .create(.designator, pat_sequence(.{ basic_ident, match.literal(":") })),
+        .create(.effect, pat_sequence(.{ match.literal(":"), basic_ident })),
 
-    .create(.@"<", match.literal("<")),
-    .create(.@">", match.literal(">")),
-    .create(.@"|", match.literal("|")),
-    .create(.@"^", match.literal("^")),
-    .create(.@"/", match.literal("/")),
-    .create(.@"%", match.literal("%")),
-    .create(.@":", match.literal(":")),
-    .create(.@"?", match.literal("?")),
-    .create(.@"=", match.literal("=")),
-    .create(.@"(", match.literal("(")),
-    .create(.@")", match.literal(")")),
-    .create(.@"[", match.literal("[")),
-    .create(.@"]", match.literal("]")),
-    .create(.@",", match.literal(",")),
-    .create(.@"@", match.literal("@")),
-    .create(.@"&", match.literal("&")),
-    .create(.@"*", match.literal("*")),
-    .create(.@"!", match.literal("!")),
-    .create(.@"~", match.literal("~")),
-    .create(.@"+", match.literal("+")),
-    .create(.@"-", match.literal("-")),
+        .create(.identifier, basic_ident),
 
-    // A bare '-' would be a .@"-" token, so any other token caught here
-    // is illegal:
-    .create(.unexpected_character, match.takeNoneOf("-")),
-});
+        .create(.@"<=>", match.literal("<=>")),
+        .create(.@"==", match.literal("==")),
+        .create(.@"!=", match.literal("!=")),
+        .create(.@"<=", match.literal("<=")),
+        .create(.@">>", match.literal(">>")),
+        .create(.@"<<", match.literal("<<")),
+        .create(.@">=", match.literal(">=")),
+
+        .create(.@"<", match.literal("<")),
+        .create(.@">", match.literal(">")),
+        .create(.@"|", match.literal("|")),
+        .create(.@"^", match.literal("^")),
+        .create(.@"/", match.literal("/")),
+        .create(.@"%", match.literal("%")),
+        .create(.@":", match.literal(":")),
+        .create(.@"?", match.literal("?")),
+        .create(.@"=", match.literal("=")),
+        .create(.@"(", match.literal("(")),
+        .create(.@")", match.literal(")")),
+        .create(.@"[", match.literal("[")),
+        .create(.@"]", match.literal("]")),
+        .create(.@",", match.literal(",")),
+        .create(.@"@", match.literal("@")),
+        .create(.@"&", match.literal("&")),
+        .create(.@"*", match.literal("*")),
+        .create(.@"!", match.literal("!")),
+        .create(.@"~", match.literal("~")),
+        .create(.@"+", match.literal("+")),
+        .create(.@"-", match.literal("-")),
+
+        // A bare '-' would be a .@"-" token, so any other token caught here
+        // is illegal:
+        .create(.unexpected_character, match.takeNoneOf("-")),
+    };
+};
+
+pub const Tokenizer = ptk.Tokenizer(TokenType, &patterns.list);
 
 const ParserCore = ptk.ParserCore(Tokenizer, .{.whitespace});
 
