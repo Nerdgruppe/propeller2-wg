@@ -121,7 +121,7 @@ pub const Parser = struct {
 
         fn accept_instruction(core: *Core, condition: ?ast.ConditionNode, mnemonic: Token) !ast.Instruction {
             std.debug.assert(mnemonic.type == .identifier);
-            errdefer std.log.err("failed to accept {s}", .{mnemonic.text});
+            errdefer std.log.info("failed to accept {s}", .{mnemonic.text});
 
             var args: std.ArrayListUnmanaged(ast.Expression) = .empty;
             defer args.deinit(core.arena);
@@ -151,7 +151,7 @@ pub const Parser = struct {
                 } else false;
 
                 if (!ok) {
-                    std.log.err("TODO: Emit error here!", .{});
+                    std.log.info("TODO: Emit error here!", .{});
                 }
             } else |_| {}
 
@@ -624,7 +624,7 @@ pub const Parser = struct {
 
         fn fatal_syntax_error(c: *Core) error{SyntaxError} {
             _ = c;
-            std.log.err("syntax error!", .{});
+            std.log.info("syntax error!", .{});
             return error.SyntaxError;
         }
 
@@ -856,6 +856,20 @@ fn fuzz_tokenizer(_: void, input: []const u8) !void {
 
 test "fuzz tokenizer" {
     try std.testing.fuzz({}, fuzz_tokenizer, .{});
+}
+
+fn fuzz_parser(_: void, input: []const u8) !void {
+    var parser: Parser = .init(input, null);
+
+    var parsed = parser.parse(std.testing.allocator) catch {
+        // parser errors are oke
+        return;
+    };
+    parsed.deinit();
+}
+
+test "fuzz parser" {
+    try std.testing.fuzz({}, fuzz_parser, .{});
 }
 
 test "parse conditions (positive)" {

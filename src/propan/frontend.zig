@@ -4,3 +4,9 @@ pub const render = @import("frontend/render.zig");
 
 pub const Parser = parser.Parser;
 pub const ParsedFile = parser.ParsedFile;
+
+test {
+    _ = parser;
+    _ = ast;
+    _ = render;
+}
