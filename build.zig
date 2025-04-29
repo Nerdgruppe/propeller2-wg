@@ -86,4 +86,5 @@ const parser_accept_tests: []const []const u8 = &.{
     "./tests/propan/parser/basic_instruction_layout.propan",
     "./tests/propan/parser/directives.propan",
     "./tests/propan/parser/fncalls.propan",
+    "./tests/propan/parser/expressions.propan",
 };

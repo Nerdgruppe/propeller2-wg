@@ -12,10 +12,10 @@ const hex_number4 = 0x100_000
 const bin_number1 = 0b0
 const bin_number2 = 0b01_01_01_01
 
-const quad_number1 = 0x1
-const quad_number2 = 0x0123
-const quad_number3 = 0x00_10_20_30
-const quad_number4 = 0x100_000
+const quad_number1 = 0q1
+const quad_number2 = 0q0123
+const quad_number3 = 0q00_10_20_30
+const quad_number4 = 0q100_000
 
 const basic_ref  = identifier
 const count_to   = @identifier
@@ -25,7 +25,7 @@ const value_of   = *identifier
 // TODO: const array      = 15 [30]
 
 const char       = '💩'
-// const string     = "hello, world!"
+const string     = "hello, world!"
 const enum       = .15pF
 
 const unary_plus = +10
@@ -53,41 +53,41 @@ const fncall5     = max(
 )
 
 const all_binops = consume(
-//     // logic:
-//     a and b,
-//     a or b,
-//     a xor b,
-// 
-//     // comparisons:
-//     a < b,
-//     a > b,
-//     a >= b,
-//     a <= b,
-//     a == b,
-//     a != b,
-// 
-//     // summand group
-//     a + b,
-//     a - b,
-//     a | b,
-//     a ^ b,
-// 
-//     // multiplicative group
-//     a * b,
-//     a / b,
-//     a % b,
-//     a & b,
-// 
-//     // shift group
-//     a >> b,
-//     a << b,
+    // logic:
+    a and b,
+    a or b,
+    a xor b,
+
+    // comparisons:
+    a < b,
+    a > b,
+    a >= b,
+    a <= b,
+    a == b,
+    a != b,
+
+    // summand group
+    a + b,
+    a - b,
+    a | b,
+    a ^ b,
+
+    // multiplicative group
+    a * b,
+    a / b,
+    a % b,
+    a & b,
+
+    // shift group
+    a >> b,
+    a << b,
 )
 
-// const precedence_test0 = 10 * 20 + 30
-// const precedence_test1 = 10 + 20 * 30
+const precedence_test0 = 10 * 20 + 30
+const precedence_test1 = 10 + 20 * 30
 
-// const wraps0 = (10 * 20) + 30
-// const wraps1 = (10 + 20) * 30
+const wraps0 = (10 * 20) + 30
+const wraps1 = (10 + 20) * 30
 
 const string = "hello, world!"
 

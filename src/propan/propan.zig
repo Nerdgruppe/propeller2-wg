@@ -77,7 +77,11 @@ pub fn main() !u8 {
         var parsed_file = try parser.parse(allocator);
         defer parsed_file.deinit();
 
-        try frontend.render.pretty_print(
+        // try frontend.render.pretty_print(
+        //     std.io.getStdOut().writer(),
+        //     parsed_file.file,
+        // );
+        try frontend.dump_ast(
             std.io.getStdOut().writer(),
             parsed_file.file,
         );

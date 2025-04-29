@@ -187,9 +187,72 @@ pub const Parser = struct {
             InvalidUtf8,
         };
 
-        fn accept_expression(core: *Core) AcceptExprError!ast.Expression {
-            return try core.accept_unary_expression();
+        fn BinaryOperatorGroup(
+            comptime accept_subexpression: fn (core: *Core) AcceptExprError!ast.Expression,
+            comptime allowed_ops: []const ast.BinaryOperator,
+        ) type {
+            var allowed_tokens_mut: [allowed_ops.len]TokenType = undefined;
+            for (&allowed_tokens_mut, allowed_ops) |*tok, op| {
+                tok.* = @field(TokenType, @tagName(op));
+            }
+            const allowed_tokens = allowed_tokens_mut;
+
+            return struct {
+                fn accept(core: *Core) AcceptExprError!ast.Expression {
+                    const lhs = try accept_subexpression(core);
+
+                    if (core.accept_any(&allowed_tokens)) |bundle| {
+                        const which, const token = bundle;
+
+                        const op: ast.BinaryOperator = switch (which) {
+                            inline else => |tag| @field(ast.BinaryOperator, @tagName(tag)),
+                        };
+
+                        const rhs = try accept(core);
+
+                        return .{
+                            .binary_transform = .{
+                                .location = token.location,
+                                .operator = op,
+                                .lhs = try core.move_to_heap(ast.Expression, lhs),
+                                .rhs = try core.move_to_heap(ast.Expression, rhs),
+                            },
+                        };
+                    } else |_| {
+                        return lhs;
+                    }
+                }
+            };
         }
+
+        fn accept_expression(core: *Core) AcceptExprError!ast.Expression {
+            return try opgroup_0.accept(core);
+        }
+
+        const opgroup_0 = BinaryOperatorGroup(
+            opgroup_1.accept,
+            &.{ .@"and", .@"or", .xor },
+        );
+
+        const opgroup_1 = BinaryOperatorGroup(
+            opgroup_2.accept,
+            &.{ .@"==", .@"!=", .@"<=>", .@"<", .@">", .@"<=", .@">=" },
+        );
+
+        const opgroup_2 = BinaryOperatorGroup(
+            opgroup_3.accept,
+            &.{ .@"+", .@"-", .@"|", .@"^" },
+        );
+
+        const opgroup_3 = BinaryOperatorGroup(
+            opgroup_4.accept,
+            &.{ .@"&", .@"*", .@"/", .@"%" },
+        );
+
+        const opgroup_4 = BinaryOperatorGroup(
+            accept_unary_expression,
+            &.{ .@"<<", .@">>" },
+        );
 
         fn accept_unary_expression(core: *Core) AcceptExprError!ast.Expression {
             const unary_ops: []const TokenType = &.{
@@ -747,7 +810,7 @@ const patterns = struct {
     const pat_sequence = match.sequenceOf;
 
     fn basic_ident(str: []const u8) ?usize {
-        const first_char = "_.-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const first_char = "_.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const all_chars = first_char ++ "0123456789";
         for (str, 0..) |c, i| {
             if (std.mem.indexOfScalar(u8, if (i > 0) all_chars else first_char, c) == null) {

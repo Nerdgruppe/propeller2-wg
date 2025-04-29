@@ -94,6 +94,14 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             try pretty_print_expr(writer, op.value.*);
         },
 
+        .binary_transform => |op| {
+            try pretty_print_expr(writer, op.lhs.*);
+            try writer.writeAll(" ");
+            try writer.writeAll(@tagName(op.operator));
+            try writer.writeAll(" ");
+            try pretty_print_expr(writer, op.rhs.*);
+        },
+
         .function_call => |func| {
             try writer.writeAll(func.function);
             try writer.writeAll("(");

@@ -55,7 +55,7 @@ pub const Expression = union(enum) {
     string: StringLiteral,
     symbol: SymbolReference,
     unary_transform: UnaryTransform,
-    // binary_transform: BinaryTransform,
+    binary_transform: BinaryTransform,
     function_call: FunctionInvocation,
 
     pub fn location(expr: Expression) Location {
