@@ -54,7 +54,7 @@ pub const Expression = union(enum) {
     integer: IntegerLiteral,
     string: StringLiteral,
     symbol: SymbolReference,
-    // unary_transform: UnaryTransform,
+    unary_transform: UnaryTransform,
     // binary_transform: BinaryTransform,
     function_call: FunctionInvocation,
 

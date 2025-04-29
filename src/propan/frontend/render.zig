@@ -89,6 +89,11 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             try writer.writeAll(")");
         },
 
+        .unary_transform => |op| {
+            try writer.writeAll(@tagName(op.operator));
+            try pretty_print_expr(writer, op.value.*);
+        },
+
         .function_call => |func| {
             try writer.writeAll(func.function);
             try writer.writeAll("(");

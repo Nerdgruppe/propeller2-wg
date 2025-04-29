@@ -18,7 +18,7 @@ const MY_CONSTANT = 10
 |----------|------------------------|----------------------------------------------------------|---|-----|----|--------------------------------------------------------------------------|
 | `0b0000` | `return`               | `_RET_`                                                  | - |     | -  | always; execute instruction then return if no branch; no context restore |
 | `0b0001` | `if(!C & !Z)`, `if(>)` | `IF_00`, `IF_A`, `IF_GT`, `IF_NC_AND_NZ`, `IF_NZ_AND_NC` | 0 | and | 0  | if comparison/subtraction was greater than (C = 0 and Z = 0)             |
-| `0b0010` | `if(!C & Z)`           | `IF_01`, `IF_NC_AND_Z`, `IF_Z_AND_NC`                    | 0 | and | 1  | if C clear and Z set (C = 0 and Z = 1)                                   |
+| `0b0010` | `if(!C & Z)`           | `IF_01`, `IFwo_NC_AND_Z`, `IF_Z_AND_NC`                  | 0 | and | 1  | if C clear and Z set (C = 0 and Z = 1)                                   |
 | `0b0011` | `if(!C)`,`if(>=)`      | `IF_0X`, `IF_AE`, `IF_GE`, `IF_NC`                       | 0 |     | -  | if comparison/subtraction was above or equal (C = 0)                     |
 | `0b0100` | `if(C & !Z)`           | `IF_10`, `IF_C_AND_NZ`, `IF_NZ_AND_C`                    | 1 | and | 0  | if C set and Z clear (C = 1 and Z = 0)                                   |
 | `0b0101` | `if(!Z)`,`if(!=)`      | `IF_X0`, `IF_NE`, `IF_NZ`                                | - |     | 0  | if comparison/subtraction was not equal (Z = 0)                          |
@@ -87,8 +87,8 @@ const MY_CONSTANT = 10
 | 3                | `*`      | `*`    | Multiply and return lower 32 bits (signed)   |
 | 3                | `/`      | `/`    | Divide and return quotient (signed)          |
 | 3                |          | `+/`   | Divide and return quotient (unsigned)        |
-| 3                | `%`      | `//`   | Divide and return remainder (signed)         |
-| 3                |          | `+//`  | Divide and return remainder (unsigned)       |
+| 3                |          | `//`   | Divide and return remainder (signed)         |
+| 3                | `%`      | `+//`  | Divide and return remainder (unsigned)       |
 | -                | `smin()` | `#>`   | Limit minimum (signed)                       |
 | -                | `smax()` | `<#`   | Limit maximum (signed)                       |
 

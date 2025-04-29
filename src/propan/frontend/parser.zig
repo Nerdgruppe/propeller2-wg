@@ -186,7 +186,48 @@ pub const Parser = struct {
             CodepointTooLarge,
             InvalidUtf8,
         };
+
         fn accept_expression(core: *Core) AcceptExprError!ast.Expression {
+            return try core.accept_unary_expression();
+        }
+
+        fn accept_unary_expression(core: *Core) AcceptExprError!ast.Expression {
+            const unary_ops: []const TokenType = &.{
+                .@"-",
+                .@"+",
+                .@"~",
+                .@"!",
+                .@"@",
+                .@"*",
+                .@"&",
+            };
+
+            if (core.accept_any(unary_ops)) |bundle| {
+                const which, const token = bundle;
+                const operator: ast.UnaryOperator = switch (which) {
+                    .@"-" => .@"-",
+                    .@"+" => .@"+",
+                    .@"~" => .@"~",
+                    .@"!" => .@"!",
+                    .@"@" => .@"@",
+                    .@"*" => .@"*",
+                    .@"&" => .@"&",
+                };
+                const value = try core.accept_unary_expression();
+
+                return .{
+                    .unary_transform = .{
+                        .location = token.location,
+                        .operator = operator,
+                        .value = try core.move_to_heap(ast.Expression, value),
+                    },
+                };
+            } else |_| {
+                return try core.accept_value_expression();
+            }
+        }
+
+        fn accept_value_expression(core: *Core) AcceptExprError!ast.Expression {
             const which, const token = try core.accept_any(&.{
                 .integer,
                 .identifier,
