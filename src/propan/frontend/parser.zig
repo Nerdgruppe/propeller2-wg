@@ -66,7 +66,7 @@ pub const Parser = struct {
                     return .{
                         .label = .{
                             .location = token.location,
-                            .identifier = name.text[0 .. token.text.len - 1],
+                            .identifier = name.text[0 .. name.text.len - 1],
                             .type = .@"var",
                         },
                     };

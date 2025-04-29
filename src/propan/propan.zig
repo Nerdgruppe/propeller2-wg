@@ -66,12 +66,6 @@ pub fn main() !u8 {
     for (cli.positionals, source_files) |input_path, source_code| {
         std.log.debug("parsing {s}...", .{input_path});
 
-        // var tokenizer: frontend.Tokenizer = .init(source_code, input_path);
-
-        // while (try tokenizer.next()) |item| {
-        //     std.debug.print("{s: >10} | '{}'\n", .{ @tagName(item.type), std.zig.fmtEscapes(item.text) });
-        // }
-
         var parser: frontend.Parser = .init(source_code, input_path);
 
         var parsed_file = try parser.parse(allocator);
