@@ -1,9 +1,12 @@
 const std = @import("std");
 
 const stdlib = @import("stdlib/stdlib.zig");
+const eval = @import("stdlib/eval.zig");
 const ast = @import("frontend.zig").ast;
 
 const logger = std.log.scoped(.sema);
+
+pub const Offset = eval.Offset;
 
 pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
     var analyzer: Analyzer = try .init(allocator, file);
@@ -21,9 +24,54 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
 
     // Lay Out
     try analyzer.prepare_instruction_stream();
-    try analyzer.select_instruction_type();
+    try analyzer.select_instruction_mnemonic();
 
     try analyzer.assign_locations();
+
+    try analyzer.check_undefined_symbols();
+
+    logger.info("symbols:", .{});
+    for (analyzer.symbols.values()) |sym| {
+        if (sym.type == .builtin)
+            continue;
+        logger.info("  {s}: {s} => offset={?}, value={?}, referenced={}", .{
+            sym.name,
+            @tagName(sym.type),
+            sym.offset,
+            sym.value,
+            sym.referenced,
+        });
+    }
+
+    logger.info("map file:", .{});
+    for (analyzer.instructions) |instr| {
+        logger.info("  {}: {s} (+{} bytes)", .{
+            instr.offset.?,
+            instr.ast_node.mnemonic,
+            instr.byte_size.?,
+        });
+    }
+
+    // beyond  this check, all symbols are defined
+    // and expression evaluation can happen:
+    if (!analyzer.ok)
+        return error.SemanticErrors;
+
+    try analyzer.evaluate_constant_values();
+    try analyzer.evaluate_instruction_arguments();
+
+    logger.info("map file:", .{});
+    for (analyzer.instructions) |instr| {
+        logger.info("  {}: {s}", .{
+            instr.offset.?,
+            instr.ast_node.mnemonic,
+        });
+        for (instr.arguments, 0..) |arg, i| {
+            logger.info("    [{}] = {}", .{ i, arg });
+        }
+    }
+
+    try analyzer.select_instruction_encoding();
 
     // Translate
 
@@ -43,8 +91,7 @@ pub const Module = struct {
 };
 
 pub const Symbol = struct {
-    hub_offset: u32,
-    cog_offset: ?u32,
+    offset: Offset,
     type: Type,
 
     pub const Type = enum {
@@ -63,9 +110,7 @@ pub const Constant = struct {
 };
 
 pub const Segment = struct {
-    hub_offset: u32,
-    cog_offset: u9,
-
+    offset: Offset,
     data: []const u8,
 };
 
@@ -77,10 +122,12 @@ const Analyzer = struct {
     symbols: std.StringArrayHashMapUnmanaged(SymbolInfo) = .empty,
 
     functions: std.StringArrayHashMapUnmanaged(Function) = .empty,
-    mnemonics: std.StringArrayHashMapUnmanaged(MnemonicDesc) = .empty,
+    mnemonics: std.StringArrayHashMapUnmanaged(Mnemonic) = .empty,
 
     seq_to_instr_lut: []const ?usize = &.{},
     instructions: []InstructionInfo = &.{},
+
+    ok: bool = true,
 
     fn init(allocator: std.mem.Allocator, file: ast.File) !Analyzer {
         var ana: Analyzer = .{
@@ -99,10 +146,11 @@ const Analyzer = struct {
         ana.mnemonics.putAssumeCapacityNoClobber(".cogexec", .cogexec);
         ana.mnemonics.putAssumeCapacityNoClobber(".lutexec", .lutexec);
         ana.mnemonics.putAssumeCapacityNoClobber(".hubexec", .hubexec);
+        ana.mnemonics.putAssumeCapacityNoClobber(".align", .@"align");
         ana.mnemonics.putAssumeCapacityNoClobber(".assert", .assert);
-        ana.mnemonics.putAssumeCapacityNoClobber(".long", .long);
-        ana.mnemonics.putAssumeCapacityNoClobber(".word", .word);
-        ana.mnemonics.putAssumeCapacityNoClobber(".byte", .byte);
+        ana.mnemonics.putAssumeCapacityNoClobber("LONG", .long);
+        ana.mnemonics.putAssumeCapacityNoClobber("WORD", .word);
+        ana.mnemonics.putAssumeCapacityNoClobber("BYTE", .byte);
 
         return ana;
     }
@@ -113,6 +161,16 @@ const Analyzer = struct {
         ana.functions.deinit(ana.allocator);
         ana.mnemonics.deinit(ana.allocator);
         ana.* = undefined;
+    }
+
+    fn emit_error(ana: *Analyzer, location: ?ast.Location, comptime fmt: []const u8, args: anytype) !void {
+        ana.ok = false;
+        std.log.err("{?}: " ++ fmt, .{location} ++ args);
+    }
+
+    fn emit_warning(ana: *Analyzer, location: ?ast.Location, comptime fmt: []const u8, args: anytype) !void {
+        _ = ana;
+        std.log.warn("{?}: " ++ fmt, .{location} ++ args);
     }
 
     fn get_symbol_info(ana: *Analyzer, name: []const u8) !*SymbolInfo {
@@ -126,6 +184,14 @@ const Analyzer = struct {
         return gop.value_ptr;
     }
 
+    fn get_mnemonic(ana: *Analyzer, name: []const u8) ?*const Mnemonic {
+        return ana.mnemonics.getPtr(name);
+    }
+
+    fn get_function(ana: *Analyzer, name: []const u8) ?*const Function {
+        return ana.functions.getPtr(name);
+    }
+
     /// Loads predefined constants from a string hash map.
     /// The keys must have a lifetime longer than the Analyzer!
     fn load_constants(ana: *Analyzer, constants: std.StaticStringMap(i64)) !void {
@@ -134,7 +200,7 @@ const Analyzer = struct {
         for (constants.keys(), constants.values()) |name, value| {
             const gop = ana.symbols.getOrPutAssumeCapacity(name);
             if (gop.found_existing) {
-                logger.err("duplicate predefined symbol: {s} {}", .{ name, gop.value_ptr.type });
+                try ana.emit_error(null, "duplicate predefined symbol: {s} {}", .{ name, gop.value_ptr.type });
                 return error.DuplicateSymbol;
             }
             gop.value_ptr.* = SymbolInfo{
@@ -200,7 +266,7 @@ const Analyzer = struct {
                 .label => |lbl| {
                     const sym = try ana.get_symbol_info(lbl.identifier);
                     if (sym.type != .undefined) {
-                        logger.err("symbol {s} ({}) is already defined!", .{ lbl.identifier, sym.type });
+                        try ana.emit_error(lbl.location, "symbol {s} ({}) is already defined!", .{ lbl.identifier, sym.type });
                     } else {
                         sym.type = switch (lbl.type) {
                             .@"var" => .{ .data = lbl.location },
@@ -211,7 +277,7 @@ const Analyzer = struct {
                 .constant => |con| {
                     const sym = try ana.get_symbol_info(con.identifier);
                     if (sym.type != .undefined) {
-                        logger.err("symbol {s} ({}) is already defined!", .{ con.identifier, sym.type });
+                        try ana.emit_error(con.location, "symbol {s} ({}) is already defined!", .{ con.identifier, sym.type });
                     } else {
                         sym.type = .{ .constant = con.location };
                     }
@@ -246,8 +312,9 @@ const Analyzer = struct {
             // Symbols are to be checked:
             .symbol => |symref| {
                 const sym = try ana.get_symbol_info(symref.symbol_name);
+                sym.referenced = true;
                 if (sym.type == .undefined) {
-                    logger.err("undefined reference to symbol {s} at {}", .{ sym.name, symref.location });
+                    try ana.emit_error(symref.location, "undefined reference to symbol {s} at {}", .{ sym.name, symref.location });
                 }
             },
 
@@ -305,28 +372,542 @@ const Analyzer = struct {
         ana.seq_to_instr_lut = seq_to_instr_lut;
     }
 
-    fn select_instruction_type(ana: *Analyzer) !void {
+    ///
+    /// Selects the correct mnemonic for each instruction and assigns
+    /// the instruction its corresponding size.
+    ///
+    /// NOTE: This does not select the explicit instruction encoding,
+    ///       but just if a mnemonic is an internal directive or a regular
+    ///       instruction.
+    ///
+    fn select_instruction_mnemonic(ana: *Analyzer) !void {
         std.debug.assert(ana.seq_to_instr_lut.len == ana.file.sequence.len);
 
         for (ana.instructions) |*instr| {
+            const mnemonic = ana.get_mnemonic(instr.ast_node.mnemonic) orelse {
+                try ana.emit_error(instr.ast_node.location, "unknown mnemonic {s}", .{instr.ast_node.mnemonic});
+                continue;
+            };
 
-            //
-            _ = instr;
+            instr.mnemonic = mnemonic;
+
+            instr.byte_size = switch (mnemonic.*) {
+                .cogexec, .lutexec, .hubexec, .assert, .@"align" => 0,
+
+                .long => @intCast(4 * instr.ast_node.arguments.len),
+                .word => @intCast(2 * instr.ast_node.arguments.len),
+                .byte => @intCast(1 * instr.ast_node.arguments.len),
+
+                .encoded => blk: {
+                    // we search for a super-special case here,
+                    // which is an `aug(…)` argument that augments the
+                    // argument with a prefix instruction and increments
+                    // the size by an additional instruction
+                    var size: u32 = 4;
+                    for (instr.ast_node.arguments) |arg| {
+                        switch (arg) {
+                            .function_call => |fncall| {
+                                const func = ana.get_function(fncall.function) orelse {
+                                    try ana.emit_error(fncall.location, "unknown function {s}", .{fncall.function});
+                                    continue;
+                                };
+                                if (func.* == .aug) {
+                                    // Each aug() increments the size
+                                    size += 4;
+                                }
+                            },
+                            else => {},
+                        }
+                    }
+                    break :blk size;
+                },
+            };
         }
     }
 
     ///
-    /// Assigns all label and instruction locations to their associated position in hub/cog/lut ram
+    /// Assigns all label and instruction locations to their associated
+    /// position in hub/cog/lut ram.
     ///
     fn assign_locations(ana: *Analyzer) !void {
         std.debug.assert(ana.seq_to_instr_lut.len == ana.file.sequence.len);
 
-        for (ana.file.sequence, 0..) |seq, i| {
-            _ = seq;
-            _ = i;
+        var cursor: Cursor = .{};
+
+        for (ana.file.sequence, 0..) |*seq, i| {
+            switch (seq.*) {
+                .empty, .constant => {},
+
+                .label => |lbl| {
+                    const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
+                    sym.offset = cursor.offset;
+                },
+
+                .instruction => |*instr| {
+                    const coded = &ana.instructions[ana.seq_to_instr_lut[i].?];
+                    std.debug.assert(coded.ast_node == instr);
+
+                    coded.offset = cursor.offset;
+                    switch (coded.mnemonic.?.*) {
+                        .assert => {},
+
+                        .hubexec => cursor.change_mode(.hubexec),
+                        .lutexec => cursor.change_mode(.lutexec),
+                        .cogexec => cursor.change_mode(.cogexec),
+
+                        .@"align" => blk: {
+                            if (coded.ast_node.arguments.len != 1) {
+                                try ana.emit_error(coded.ast_node.location, ".align requires exactly one argument, but found {}", .{coded.ast_node.arguments.len});
+                            }
+                            if (coded.ast_node.arguments.len < 1) {
+                                break :blk;
+                            }
+
+                            if (ana.evaluate_root_expr(coded.ast_node.arguments[0])) |value| {
+                                switch (value.value) {
+                                    .int => |int| {
+                                        if (std.math.cast(u32, int)) |alignment| {
+                                            cursor.alignas(alignment);
+                                        } else {
+                                            try ana.emit_error(coded.ast_node.location, ".align value {} is out of range.", .{
+                                                int,
+                                            });
+                                        }
+                                    },
+                                    else => {
+                                        try ana.emit_error(coded.ast_node.location, ".align value evaluated to {s}, but expected integer.", .{
+                                            @tagName(value.value),
+                                        });
+                                    },
+                                }
+                            } else |err| {
+                                const err_msg = switch (err) {
+                                    error.OutOfMemory => "out of memory",
+                                    error.UndefinedSymbol => "cannot refer to labels in .align",
+                                    error.InvalidFunctionCall => "invalid function call",
+                                };
+                                try ana.emit_error(coded.ast_node.location, ".align value could not be evaluated: {s}", .{err_msg});
+                            }
+
+                            @panic("not implemented yet.");
+                        },
+
+                        .long => for (coded.ast_node.arguments) |_| {
+                            cursor.advance_data(.long);
+                        },
+                        .word => for (coded.ast_node.arguments) |_| {
+                            cursor.advance_data(.word);
+                        },
+                        .byte => for (coded.ast_node.arguments) |_| {
+                            cursor.advance_data(.byte);
+                        },
+
+                        .encoded => {
+                            for (0..@divExact(coded.byte_size.?, 4)) |_| {
+                                cursor.advance_code();
+                            }
+                        },
+                    }
+                },
+            }
         }
     }
+
+    ///
+    /// Checks if any undefined symbols are in our symbol table.
+    ///
+    fn check_undefined_symbols(ana: *Analyzer) !void {
+        for (ana.symbols.values()) |sym| {
+            switch (sym.type) {
+                .undefined => {
+                    std.debug.assert(sym.referenced);
+                    ana.ok = false;
+                    continue;
+                },
+                .code, .data => std.debug.assert(sym.offset != null and sym.value == null),
+                .constant, .builtin => std.debug.assert(sym.offset == null and sym.value != null),
+            }
+            if (sym.type != .builtin and !sym.referenced) {
+                try ana.emit_warning(sym.location(), "symbol {s} has no references", .{sym.name});
+            }
+        }
+    }
+
+    fn evaluate_constant_values(ana: *Analyzer) !void {
+        for (ana.file.sequence) |seq| {
+            if (seq != .constant)
+                continue;
+            const con = &seq.constant;
+            const sym = ana.get_symbol_info(con.identifier) catch unreachable;
+            std.debug.assert(sym.type == .constant);
+            std.debug.assert(sym.value == null);
+            std.debug.assert(sym.offset == null);
+
+            const value = try ana.evaluate_root_expr(con.value);
+
+            const numeric: i64 = switch (value.value) {
+                .int => |int| int,
+
+                .string => {
+                    try ana.emit_error(con.location, "constant {s} evaluated to string, but expected integer.", .{con.identifier});
+                    continue;
+                },
+
+                .offset => {
+                    try ana.emit_error(con.location, "constant {s} evaluated to memory offset, but expected integer. Use hubaddr() or cogaddr() to resolve the value.", .{con.identifier});
+                    continue;
+                },
+            };
+
+            sym.value = numeric;
+        }
+    }
+
+    fn evaluate_instruction_arguments(ana: *Analyzer) !void {
+        for (ana.instructions) |*instr| {
+            std.debug.assert(instr.mnemonic != null);
+
+            const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
+            for (args, instr.ast_node.arguments) |*value, expr| {
+                value.* = ana.evaluate_root_expr(expr) catch |err| switch (err) {
+                    error.UndefinedSymbol => @panic("implementation error: no referenced symbols should be undefined at this point"),
+                    error.OutOfMemory => |e| return e,
+                    error.InvalidFunctionCall => blk: {
+                        std.debug.assert(ana.ok == false);
+
+                        // this is fine as we've failed the analysis and
+                        // we're never going to use this value:
+                        break :blk undefined;
+                    },
+                };
+            }
+
+            instr.arguments = args;
+        }
+    }
+
+    ///
+    /// Selects the fitting encoding and required arguments for the mnemonic.
+    ///
+    fn select_instruction_encoding(ana: *Analyzer) !void {
+        for (ana.instructions) |*instr| {
+            std.debug.assert(instr.mnemonic != null);
+            std.debug.assert(instr.offset != null);
+            std.debug.assert(instr.arguments.len == instr.ast_node.arguments.len);
+
+            //
+        }
+    }
+
+    const EvalError = error{ OutOfMemory, UndefinedSymbol, InvalidFunctionCall };
+
+    fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression) EvalError!eval.Value {
+        return ana.evaluate_expr(expr, 0);
+    }
+
+    fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, nesting: usize) EvalError!eval.Value {
+        switch (expr) {
+            .wrapped => |inner| return try ana.evaluate_expr(inner.*, nesting + 1),
+            .integer => |int| return .{ .usage = .literal, .value = .{ .int = int.value } },
+            .string => |string| return .{ .usage = .literal, .value = .{ .string = string.value } },
+            .symbol => |symref| {
+                const sym = ana.get_symbol_info(symref.symbol_name) catch unreachable;
+
+                const usage: eval.Value.UsageHint, const payload: eval.Value.Payload = switch (sym.type) {
+                    .undefined => return error.UndefinedSymbol,
+                    .code => .{ .literal, .{ .offset = sym.offset orelse return error.UndefinedSymbol } },
+                    .data => .{ .register, .{ .offset = sym.offset orelse return error.UndefinedSymbol } },
+                    .constant => .{ .literal, .{ .int = sym.value orelse return error.UndefinedSymbol } },
+                    .builtin => .{ .literal, .{ .int = sym.value.? } },
+                };
+
+                return .{ .usage = usage, .value = payload };
+            },
+
+            .unary_transform => |op| {
+                _ = op;
+                @panic(".unary_transform not implemented yet!");
+            },
+            .binary_transform => |op| {
+                _ = op;
+                @panic(".binary_transform not implemented yet!");
+            },
+            .function_call => |fncall| {
+                const func = ana.get_function(fncall.function).?;
+
+                const params = func.get_parameters();
+
+                var argv_buf: [16]eval.Value = undefined;
+                const argv = try ana.map_function_args(fncall, params, &argv_buf, nesting);
+
+                switch (func.*) {
+                    .aug => {
+                        std.debug.assert(argv.len == 1);
+                        if (nesting != 0) {
+                            try ana.emit_error(fncall.arguments[0].location, "aug() must be the root of an expression.", .{});
+                        }
+                        var value = argv[0];
+                        value.augment = true;
+                        return value;
+                    },
+
+                    .cogaddr => {
+                        std.debug.assert(argv.len == 1);
+                        const value = argv[0];
+                        switch (value.value) {
+                            .string, .int => {
+                                try ana.emit_warning(fncall.arguments[0].location, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
+                                return value;
+                            },
+                            .offset => |offset| {
+                                const cog = offset.cog orelse {
+                                    try ana.emit_error(fncall.arguments[0].location, "cogaddr() received offset without cog address.", .{});
+                                    return .int(0);
+                                };
+                                return .int(cog);
+                            },
+                        }
+                    },
+
+                    .hubaddr => {
+                        std.debug.assert(argv.len == 1);
+                        const value = argv[0];
+                        switch (value.value) {
+                            .string, .int => {
+                                try ana.emit_warning(fncall.arguments[0].location, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
+                                return value;
+                            },
+                            .offset => |offset| return .int(offset.hub),
+                        }
+                    },
+                }
+            },
+        }
+    }
+
+    fn map_function_args(
+        ana: *Analyzer,
+        fncall: ast.FunctionInvocation,
+        params: []const Function.Parameter,
+        argv_buffer: []eval.Value,
+        nesting: usize,
+    ) ![]const eval.Value {
+        if (params.len > argv_buffer.len)
+            @panic("BUG: argument storage buffer is too small");
+
+        const first_kwarg_index: usize = for (fncall.arguments, 0..) |arg, i| {
+            if (arg.name != null)
+                break i;
+        } else fncall.arguments.len;
+
+        {
+            var ok = true;
+            for (fncall.arguments[first_kwarg_index..]) |arg| {
+                if (arg.name == null) {
+                    try ana.emit_error(arg.location, "positional arguments must not appear after a named argument", .{});
+                    ok = false;
+                }
+            }
+
+            if (fncall.arguments.len != params.len) {
+                try ana.emit_error(fncall.location, "{s}() expects {} arguments, but found {}", .{
+                    fncall.function,
+                    params.len,
+                    fncall.arguments.len,
+                });
+                ok = false;
+            }
+
+            if (!ok)
+                return error.InvalidFunctionCall;
+        }
+
+        const argv = argv_buffer[0..fncall.arguments.len];
+
+        const pos_argin = fncall.arguments[0..first_kwarg_index];
+        const kw_argin = fncall.arguments[first_kwarg_index..];
+
+        const pos_argv = argv[0..first_kwarg_index];
+        const kw_argv = argv[first_kwarg_index..];
+
+        const pos_params = params[0..first_kwarg_index];
+        const kw_params = params[first_kwarg_index..];
+
+        std.debug.assert(pos_argv.len == pos_params.len);
+        std.debug.assert(kw_argv.len == kw_params.len);
+
+        std.debug.assert(pos_argv.len == pos_argin.len);
+        std.debug.assert(kw_argv.len == kw_argin.len);
+
+        for (pos_argv, pos_argin) |*value, arg| {
+            std.debug.assert(arg.name == null);
+            value.* = try ana.evaluate_expr(arg.value, nesting + 1);
+        }
+
+        {
+            var ok = true;
+            for (kw_argin) |arg| {
+                std.debug.assert(arg.name != null);
+
+                const index = index_of_param(params, arg.name.?) orelse {
+                    ok = false;
+                    try ana.emit_error(arg.location, "{s}() has no parameter named {s}", .{
+                        fncall.function,
+                        arg.name.?,
+                    });
+                    continue;
+                };
+                if (index < first_kwarg_index) {
+                    ok = false;
+                    try ana.emit_error(arg.location, "Parameter {s} passed to {s}() was already given as a positional argument as {}th argument", .{
+                        arg.name.?,
+                        fncall.function,
+                        index,
+                    });
+                    continue;
+                }
+            }
+            for (kw_argin, 0..) |arg1, i| {
+                for (kw_argin[i + 1 ..]) |arg2| {
+                    if (std.mem.eql(u8, arg1.name.?, arg2.name.?)) {
+                        ok = false;
+                        try ana.emit_error(arg2.location, "Parameter {s} passed to {s}() was already given as a named argument here: {}", .{
+                            arg1.name.?,
+                            fncall.function,
+                            arg1.location,
+                        });
+                    }
+                }
+            }
+
+            if (!ok)
+                return error.InvalidFunctionCall;
+        }
+
+        // If we reached here, we don't have duplicates, and we don't have undefined parameters,
+        // which means we have a 1:1 mapping of all parameters.
+        for (kw_argin) |arg| {
+            std.debug.assert(arg.name != null);
+
+            const index = index_of_param(params, arg.name.?).? - first_kwarg_index;
+
+            kw_argv[index] = try ana.evaluate_expr(arg.value, nesting + 1);
+        }
+
+        return argv;
+    }
+
+    fn index_of_param(params: []const Function.Parameter, name: []const u8) ?usize {
+        for (params, 0..) |param, i| {
+            if (std.mem.eql(u8, param.name, name))
+                return i;
+        }
+        return null;
+    }
 };
+
+const Cursor = struct {
+    offset: Offset = .init(0, 0),
+    mode: Mode = .cogexec,
+
+    fn change_mode(cursor: *Cursor, mode: Mode) void {
+        cursor.mode = mode;
+        cursor.offset.cog = switch (cursor.mode) {
+            .cogexec, .lutexec => 0,
+            .hubexec => null,
+        };
+    }
+
+    fn advance_code(cursor: *Cursor) void {
+        // instructions auto-align to 4 in non-hubexec mode:
+        if (cursor.mode != .hubexec) {
+            cursor.alignas(4);
+        }
+        cursor.advance_data(.long);
+    }
+
+    fn advance_data(cursor: *Cursor, size: enum(u4) { byte = 1, word = 2, long = 4 }) void {
+        cursor.offset.hub += @intFromEnum(size);
+
+        const is_instr_aligned = std.mem.isAligned(cursor.offset.hub, 4);
+        switch (cursor.mode) {
+            .cogexec, .lutexec => if (is_instr_aligned) {
+                cursor.offset.cog.? += 1;
+            },
+            .hubexec => {},
+        }
+    }
+
+    fn alignas(cursor: *Cursor, alignment: u32) void {
+        const prev = cursor.offset.hub;
+        const next = std.mem.alignForward(u32, cursor.offset.hub, alignment);
+
+        cursor.offset.hub = next;
+
+        if (cursor.mode != .hubexec) {
+            const cogprev = prev / 4;
+            const cognext = next / 4;
+            // logger.err("{} {} {} {}", .{ prev, next, cogprev, cognext });
+
+            cursor.offset.cog.? += @intCast(cognext - cogprev);
+        }
+    }
+
+    const Mode = enum {
+        hubexec,
+        lutexec,
+        cogexec,
+    };
+};
+
+test Cursor {
+    var cursor: Cursor = .{};
+
+    cursor.advance_data(.long);
+    try std.testing.expectEqual(Offset.init(4, 1), cursor.offset);
+
+    cursor.advance_data(.long);
+    try std.testing.expectEqual(Offset.init(8, 2), cursor.offset);
+
+    cursor.advance_data(.word);
+    try std.testing.expectEqual(Offset.init(10, 2), cursor.offset);
+
+    cursor.advance_data(.word);
+    try std.testing.expectEqual(Offset.init(12, 3), cursor.offset);
+
+    cursor.advance_data(.byte);
+    try std.testing.expectEqual(Offset.init(13, 3), cursor.offset);
+
+    cursor.advance_data(.byte);
+    try std.testing.expectEqual(Offset.init(14, 3), cursor.offset);
+
+    cursor.advance_data(.byte);
+    try std.testing.expectEqual(Offset.init(15, 3), cursor.offset);
+
+    cursor.advance_data(.byte);
+    try std.testing.expectEqual(Offset.init(16, 4), cursor.offset);
+
+    cursor.advance_code();
+    try std.testing.expectEqual(Offset.init(20, 5), cursor.offset);
+
+    cursor.advance_data(.byte);
+    try std.testing.expectEqual(Offset.init(21, 5), cursor.offset);
+
+    cursor.advance_code();
+    try std.testing.expectEqual(Offset.init(28, 7), cursor.offset);
+
+    cursor.advance_data(.byte);
+    try std.testing.expectEqual(Offset.init(29, 7), cursor.offset);
+
+    cursor.alignas(2);
+    try std.testing.expectEqual(Offset.init(30, 7), cursor.offset);
+
+    cursor.alignas(2);
+    try std.testing.expectEqual(Offset.init(30, 7), cursor.offset);
+
+    cursor.alignas(4);
+    try std.testing.expectEqual(Offset.init(32, 8), cursor.offset);
+}
 
 const SymbolInfo = struct {
     name: []const u8,
@@ -334,9 +915,15 @@ const SymbolInfo = struct {
     type: Type = .undefined,
     referenced: bool = false,
 
-    hub_offset: ?u32 = null,
-    cog_offset: ?u32 = null,
+    offset: ?Offset = null,
     value: ?i64 = null,
+
+    pub fn location(sym: SymbolInfo) ?ast.Location {
+        return switch (sym.type) {
+            .code, .data, .constant => |loc| loc,
+            .undefined, .builtin => null,
+        };
+    }
 
     pub const Type = union(enum) {
         undefined,
@@ -352,8 +939,14 @@ const InstructionInfo = struct {
     seq_index: usize,
     ast_node: *const ast.Instruction,
 
+    mnemonic: ?*const Mnemonic = null,
+
+    offset: ?Offset = null,
+
     /// Size of the instruction slot in bytes
     byte_size: ?u32 = null,
+
+    arguments: []const eval.Value = &.{},
 };
 
 const Function = union(enum) {
@@ -364,9 +957,21 @@ const Function = union(enum) {
 
     // stdlib functions are defined as "generic" ones:
     // TODO: generic: GenericFunction,
+
+    pub fn get_parameters(func: Function) []const Parameter {
+        return switch (func) {
+            .aug => &.{},
+            .hubaddr => &.{},
+            .cogaddr => &.{},
+        };
+    }
+
+    pub const Parameter = struct {
+        name: []const u8,
+    };
 };
 
-const MnemonicDesc = union(enum) {
+const Mnemonic = union(enum) {
 
     // data encoded
     long,
@@ -378,6 +983,7 @@ const MnemonicDesc = union(enum) {
     cogexec,
     lutexec,
     hubexec,
+    @"align",
     assert,
 
     encoded: EncodedMnemonic,

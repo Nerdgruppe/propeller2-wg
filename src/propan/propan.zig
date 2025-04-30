@@ -8,12 +8,13 @@ const args_parser = @import("args");
 
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{
-        // .{ .scope = .parser, .level = .info },
+        .{ .scope = .parser, .level = .info },
     },
 };
 
 const TestMode = enum {
     parser,
+    sema,
 };
 
 const CliArgs = struct {
@@ -103,6 +104,10 @@ pub fn main() !u8 {
         defer module.deinit();
     }
 
+    // Stop after having each file parsed successfully:
+    if (cli.options.@"test-mode" == .sema)
+        return 0;
+
     return 0;
 }
 
@@ -113,4 +118,5 @@ fn usage_mistake(comptime fmt: []const u8, args: anytype) !noreturn {
 
 test {
     _ = frontend;
+    _ = sema;
 }

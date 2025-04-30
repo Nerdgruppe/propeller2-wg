@@ -67,17 +67,25 @@ pub fn build(b: *std.Build) void {
 
     // Propan Behaviour Tests
     {
-        for (parser_accept_tests) |parser_accept_file| {
+        for (parser_accept_tests) |accept_file| {
             const run = b.addRunArtifact(propan_exe);
             run.addArg("--test-mode=parser");
-            run.addFileInput(b.path(parser_accept_file));
+            run.addFileInput(b.path(accept_file));
+            run.has_side_effects = true;
+            test_step.dependOn(&run.step);
+        }
+
+        for (sema_accept_tests) |accept_file| {
+            const run = b.addRunArtifact(propan_exe);
+            run.addArg("--test-mode=sema");
+            run.addFileInput(b.path(accept_file));
             run.has_side_effects = true;
             test_step.dependOn(&run.step);
         }
     }
 }
 
-const parser_accept_tests: []const []const u8 = &.{
+const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const u8{
     "./tests/propan/parser/labels.propan",
     "./tests/propan/parser/conditions.propan",
     "./tests/propan/parser/effects.propan",
@@ -89,4 +97,11 @@ const parser_accept_tests: []const []const u8 = &.{
     "./tests/propan/parser/expressions.propan",
     "./tests/propan/parser/comments.propan",
     "./tests/propan/parser/amiguity.propan",
+};
+
+const sema_accept_tests: []const []const u8 = &.{
+    // "./tests/propan/sema/addressing-modes.propan",
+    // "./tests/propan/sema/basic-constants.propan",
+    // "./tests/propan/sema/basic-label-addressing.propan",
+    // "./tests/propan/sema/stdlib.propan",
 };
