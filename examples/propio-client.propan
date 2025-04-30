@@ -140,5 +140,5 @@ recv_char:
 var tmp:
         long 0
 
-var array:
-        byte 10[3]
+// var array:
+//         byte 10 [3]

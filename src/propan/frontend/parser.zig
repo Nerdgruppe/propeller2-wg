@@ -3,6 +3,8 @@ const ptk = @import("ptk");
 
 const ast = @import("ast.zig");
 
+const logger = std.log.scoped(.parser);
+
 pub const Parser = struct {
     tokenizer: Tokenizer,
 
@@ -121,7 +123,7 @@ pub const Parser = struct {
 
         fn accept_instruction(core: *Core, condition: ?ast.ConditionNode, mnemonic: Token) !ast.Instruction {
             std.debug.assert(mnemonic.type == .identifier);
-            errdefer std.log.info("failed to accept {s}", .{mnemonic.text});
+            errdefer logger.info("failed to accept {s}", .{mnemonic.text});
 
             var args: std.ArrayListUnmanaged(ast.Expression) = .empty;
             defer args.deinit(core.arena);
@@ -151,7 +153,7 @@ pub const Parser = struct {
                 } else false;
 
                 if (!ok) {
-                    std.log.info("TODO: Emit error here!", .{});
+                    logger.info("TODO: Emit error here!", .{});
                 }
             } else |_| {}
 
@@ -360,7 +362,7 @@ pub const Parser = struct {
                     const codepoint: u32 = if (iter.nextCodepoint()) |codepoint|
                         codepoint
                     else blk: {
-                        std.log.err("empty character literal not allowed!", .{});
+                        logger.err("empty character literal not allowed!", .{});
                         break :blk 0;
                     };
 
@@ -449,11 +451,11 @@ pub const Parser = struct {
             while (i < body.len) : (i += 1) {
                 const char = body[i];
                 if (char < 0x20 or char == 0x7F) {
-                    std.log.err("invalid character in string/char literal: 0x{X:0>2}", .{char});
+                    logger.err("invalid character in string/char literal: 0x{X:0>2}", .{char});
                 } else if (i == '\\') {
                     i += 1;
                     if (i >= body.len) {
-                        std.log.err("unterminated escape sequence", .{});
+                        logger.err("unterminated escape sequence", .{});
                         break;
                     }
                     const escape = body[i];
@@ -471,11 +473,11 @@ pub const Parser = struct {
                             const start = i + 1;
                             i += 2;
                             if (i >= body.len) {
-                                std.log.err("unterminated escape sequence", .{});
+                                logger.err("unterminated escape sequence", .{});
                                 break;
                             }
                             const hex = body[start..i];
-                            std.log.err("escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
+                            logger.err("escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
 
                             try output.append(
                                 allocator,
@@ -492,12 +494,12 @@ pub const Parser = struct {
                                 i += 1;
                             }
                             if (i >= body.len) {
-                                std.log.err("unterminated escape sequence", .{});
+                                logger.err("unterminated escape sequence", .{});
                                 break;
                             }
                             const slice = body[start..i];
 
-                            std.log.err("escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
+                            logger.err("escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
 
                             const codepoint = try std.fmt.parseInt(u21, slice, 16);
 
@@ -506,7 +508,7 @@ pub const Parser = struct {
                             try output.appendSlice(allocator, buf[0..len]);
                         },
                         else => {
-                            std.log.warn("invalid escape sequence: \\x{c}", .{body[i .. i + 1]});
+                            logger.warn("invalid escape sequence: \\x{c}", .{body[i .. i + 1]});
                             try output.append(allocator, char);
                         },
                     }
@@ -688,7 +690,7 @@ pub const Parser = struct {
                     return .{ @field(AcceptKey(options), @tagName(opt)), token };
             }
 
-            std.log.debug("failed to accept token {s}. expected one of {any}", .{ @tagName(token.type), options });
+            logger.debug("failed to accept token {s}. expected one of {any}", .{ @tagName(token.type), options });
 
             return error.UnexpectedToken;
         }
@@ -721,14 +723,14 @@ pub const Parser = struct {
                 };
                 if (c.lf_is_whitespace and tok.type == .linefeed)
                     continue;
-                std.log.debug("next_token() => {}", .{tok});
+                logger.debug("next_token() => {}", .{tok});
                 return tok;
             }
         }
 
         fn fatal_syntax_error(c: *Core) error{SyntaxError} {
             _ = c;
-            std.log.info("syntax error!", .{});
+            logger.info("syntax error!", .{});
             return error.SyntaxError;
         }
 
@@ -1023,7 +1025,7 @@ test "parse conditions (positive)" {
     };
 
     for (expects) |expectation| {
-        errdefer std.log.err("condition parsing failed: expected {}", .{expectation.expected});
+        errdefer logger.err("condition parsing failed: expected {}", .{expectation.expected});
 
         var tok: Tokenizer = .init(expectation.input, null);
 
@@ -1068,7 +1070,7 @@ test "parse effect (positive)" {
 
     for ([2]bool{ false, true }) |upper_case| {
         for (expects) |expectation| {
-            errdefer std.log.err("condition parsing failed: expected {}", .{expectation.expected});
+            errdefer logger.err("condition parsing failed: expected {}", .{expectation.expected});
 
             var buffer: [32]u8 = @splat(0);
             var input_buf: [64]u8 = @splat(0);

@@ -4,7 +4,7 @@ const ptk = @import("ptk");
 const parser = @import("parser.zig");
 
 const Token = parser.Token;
-const Location = ptk.Location;
+pub const Location = ptk.Location;
 
 pub const File = struct {
     sequence: []const Line,

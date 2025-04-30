@@ -43,14 +43,15 @@ const fncall4     = max(1, 2,)
 const fncall5     = max(a=1, b=2,)
 
 // These must be wrapped to one line
-const fncall4     = max(
+const fncall6     = max(
     1,
     2
 )
-const fncall5     = max(
+const fncall7     = max(
     a=1,
     b=2
 )
+
 
 const all_binops = consume(
     // logic:
@@ -89,6 +90,7 @@ const precedence_test1 = 10 + 20 * 30
 const wraps0 = (10 * 20) + 30
 const wraps1 = (10 + 20) * 30
 
-const string = "hello, world!"
-
 identifier:
+const a = 0
+const b = 0
+const .15pF = 0

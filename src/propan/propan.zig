@@ -2,8 +2,15 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 const frontend = @import("frontend.zig");
+const sema = @import("sema.zig");
 
 const args_parser = @import("args");
+
+pub const std_options: std.Options = .{
+    .log_scope_levels = &.{
+        // .{ .scope = .parser, .level = .info },
+    },
+};
 
 const TestMode = enum {
     parser,
@@ -63,27 +70,38 @@ pub fn main() !u8 {
         buffer.* = try std.fs.cwd().readFileAlloc(arena.allocator(), input_path, 1 << 20);
     }
 
-    for (cli.positionals, source_files) |input_path, source_code| {
+    const loaded_files = try arena.allocator().alloc(frontend.ParsedFile, cli.positionals.len);
+    for (cli.positionals, loaded_files, source_files, 0..) |input_path, *parsed_file, source_code, i| {
+        errdefer for (loaded_files[0..i]) |*file|
+            file.deinit();
         std.log.debug("parsing {s}...", .{input_path});
 
         var parser: frontend.Parser = .init(source_code, input_path);
 
-        var parsed_file = try parser.parse(allocator);
-        defer parsed_file.deinit();
-
-        // try frontend.render.pretty_print(
-        //     std.io.getStdOut().writer(),
-        //     parsed_file.file,
-        // );
-        try frontend.dump_ast(
-            std.io.getStdOut().writer(),
-            parsed_file.file,
-        );
+        parsed_file.* = try parser.parse(allocator);
     }
+    defer for (loaded_files) |*file|
+        file.deinit();
 
     // Stop after having each file parsed successfully:
     if (cli.options.@"test-mode" == .parser)
         return 0;
+
+    // try frontend.render.pretty_print(
+    //     std.io.getStdOut().writer(),
+    //     parsed_file.file,
+    // );
+    // try frontend.dump_ast(
+    //     std.io.getStdOut().writer(),
+    //     parsed_file.file,
+    // );
+
+    for (cli.positionals, loaded_files) |input_path, parsed_file| {
+        std.log.debug("analyzing {s}...", .{input_path});
+
+        var module = try sema.analyze(allocator, parsed_file.file);
+        defer module.deinit();
+    }
 
     return 0;
 }
