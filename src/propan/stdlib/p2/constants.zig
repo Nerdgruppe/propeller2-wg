@@ -20,6 +20,7 @@ pub const p2_constants: std.StaticStringMap(i64) = .initComptime(.{
     .{ "PLL8X", 0x00000200 },
     .{ "PLL16X", 0x00000400 },
 
+    // Hardware Registers:
     .{ "PAR", 0x1f0 },
     .{ "CNT", 0x1f1 },
     .{ "INA", 0x1f2 },
@@ -38,6 +39,8 @@ pub const p2_constants: std.StaticStringMap(i64) = .initComptime(.{
 
     .{ "VCFG", 0x1fe },
     .{ "VSCL", 0x1ff },
+
+    // Constants:
 
     .{ "_CLR", 0x0 },
     .{ "_NC_AND_NZ", 0x1 },
@@ -72,6 +75,8 @@ pub const p2_constants: std.StaticStringMap(i64) = .initComptime(.{
     .{ "_C_OR_Z", 0xE },
     .{ "_LE", 0xE },
     .{ "_SET", 0xF },
+
+    // Smart Pins:
 
     .{ "P_TRUE_A", 0 },
     .{ "P_INVERT_A", 0x80000000 },

@@ -13,6 +13,8 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
     try analyzer.load_constants(stdlib.common.constants);
     try analyzer.load_constants(stdlib.p2.constants);
 
+    try analyzer.load_instructions(stdlib.p2.instructions);
+
     // Validate
     try analyzer.declare_symbols();
     try analyzer.validate_symbol_refs();
@@ -108,6 +110,8 @@ const Analyzer = struct {
     fn deinit(ana: *Analyzer) void {
         ana.arena.deinit();
         ana.symbols.deinit(ana.allocator);
+        ana.functions.deinit(ana.allocator);
+        ana.mnemonics.deinit(ana.allocator);
         ana.* = undefined;
     }
 
@@ -140,6 +144,52 @@ const Analyzer = struct {
                 .type = .builtin,
             };
         }
+    }
+
+    fn load_instructions(ana: *Analyzer, instructions: []const EncodedInstruction) !void {
+        for (instructions) |instr| {
+            try ana.load_instruction(instr);
+        }
+    }
+
+    fn load_instruction(ana: *Analyzer, instr: EncodedInstruction) !void {
+        var key_buf: [32]u8 = undefined;
+
+        const key = std.ascii.upperString(&key_buf, instr.mnemonic);
+
+        const gop = try ana.mnemonics.getOrPut(ana.allocator, key);
+        if (!gop.found_existing) {
+            gop.key_ptr.* = try ana.arena.allocator().dupe(u8, key);
+            gop.value_ptr.* = .{
+                .encoded = .{
+                    .variants = .empty,
+                },
+            };
+            // most instructions won't have more than 2 variants anyways:
+            try gop.value_ptr.*.encoded.variants.ensureTotalCapacity(ana.arena.allocator(), 2);
+        }
+        if (gop.value_ptr.* != .encoded)
+            return error.InstructionNameMismatch;
+
+        const encoded: *EncodedMnemonic = &gop.value_ptr.*.encoded;
+
+        for (encoded.variants.items) |other| {
+            if (other.operands.len == instr.operands.len) {
+                const all_eq = for (other.operands, instr.operands) |aop, bop| {
+                    if (@as(EncodedInstruction.Operand.TypeId, aop.type) != @as(EncodedInstruction.Operand.TypeId, bop.type))
+                        break false;
+                } else true;
+
+                if (all_eq) {
+                    for (other.operands) |op| {
+                        std.log.err("ops: {s}", .{@tagName(op.type)});
+                    }
+                    return error.DuplicateInstruction;
+                }
+            }
+        }
+
+        try encoded.variants.append(ana.arena.allocator(), instr);
     }
 
     /// Declares all symbols from labels and constants.
@@ -330,9 +380,120 @@ const MnemonicDesc = union(enum) {
     hubexec,
     assert,
 
-    encoded: EncodedInstruction,
+    encoded: EncodedMnemonic,
 };
 
-const EncodedInstruction = struct {
-    //
+const EncodedMnemonic = struct {
+    variants: std.ArrayListUnmanaged(EncodedInstruction),
+};
+
+pub const EncodedInstruction = struct {
+    mnemonic: []const u8,
+
+    binary: u32,
+    flags: Flags,
+    operands: []const Operand,
+
+    pub const Slot = struct {
+        shift: u5,
+        bits: u5,
+
+        pub fn from_mask(mval: u32) Slot {
+            const shift = @ctz(mval);
+            const shifted = mval >> shift;
+            const bits = @ctz(~shifted);
+            std.debug.assert(shift + bits <= 32);
+            return .{
+                .shift = shift,
+                .bits = bits,
+            };
+        }
+
+        pub fn mask(slot: Slot) u32 {
+            return ((1 << slot.bits) - 1) << slot.shift;
+        }
+
+        pub fn write(slot: Slot, container: *u32, value: u32) void {
+            const shifted = value << slot.shift;
+            std.debug.assert((shifted & ~slot.mask()) == 0);
+            container.* |= shifted;
+        }
+    };
+
+    pub const Operand = struct {
+        type: Type,
+        slot: Slot,
+
+        pub fn init(optype: Type, opslot: Slot) Operand {
+            return .{
+                .type = optype,
+                .slot = opslot,
+            };
+        }
+
+        pub const TypeId = std.meta.Tag(Type);
+        pub const Type = union(enum) {
+            /// D or S
+            register,
+
+            /// #D, #S or
+            immediate: u32, // encodes limit
+
+            /// {#}D or {#}S
+            reg_or_imm: u32, // encodes limit
+
+            /// Immediate value with absolute or relative addressing
+            /// #{\}A
+            address,
+
+            /// Either #N or PTRx++, --PTRx, ...
+            /// with N <= 255
+            pointer_expr,
+
+            /// PA, PB, PTRA or PTRB
+            pointer_reg,
+
+            /// One of the given named values.
+            enumeration: std.StaticStringMap(u32),
+        };
+    };
+
+    pub const Flags = packed struct {
+        pub const none: Flags = .{
+            .wz = false,
+            .wc = false,
+            .wcz = false,
+            .wr = false,
+            .and_c = false,
+            .and_z = false,
+            .or_c = false,
+            .or_z = false,
+            .xor_c = false,
+            .xor_z = false,
+            .wcz_not_used = .ignore,
+        };
+
+        wz: bool,
+        wc: bool,
+        wcz: bool,
+        wr: bool,
+        and_c: bool,
+        and_z: bool,
+        or_c: bool,
+        or_z: bool,
+        xor_c: bool,
+        xor_z: bool,
+
+        wcz_not_used: enum(u2) { ignore, warn, err },
+
+        pub fn with(flags: Flags, comptime field: std.meta.FieldEnum(Flags), value: @FieldType(Flags, @tagName(field))) Flags {
+            var copy = flags;
+            @field(copy, @tagName(field)) = value;
+            return copy;
+        }
+
+        pub fn add(flags: Flags, comptime field: std.meta.FieldEnum(Flags)) Flags {
+            return flags.with(field, true);
+        }
+    };
 };

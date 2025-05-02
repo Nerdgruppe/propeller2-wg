@@ -19,4 +19,25 @@ pub const p1_constants: std.StaticStringMap(i64) = .initComptime(.{
     .{ "PLL4X", 0x00000100 },
     .{ "PLL8X", 0x00000200 },
     .{ "PLL16X", 0x00000400 },
+
+    // Registers:
+
+    .{ "PAR", 0x1f0 },
+    .{ "CNT", 0x1f1 },
+    .{ "INA", 0x1f2 },
+    .{ "INB", 0x1f3 },
+    .{ "OUTA", 0x1f4 },
+    .{ "OUTB", 0x1f5 },
+    .{ "DIRA", 0x1f6 },
+    .{ "DIRB", 0x1f7 },
+    .{ "CTRA", 0x1f8 },
+    .{ "CTRB", 0x1f9 },
+
+    .{ "FRQA", 0x1fa },
+    .{ "FRQB", 0x1fb },
+    .{ "PHSA", 0x1fc },
+    .{ "PHSB", 0x1fd },
+
+    .{ "VCFG", 0x1fe },
+    .{ "VSCL", 0x1ff },
 });

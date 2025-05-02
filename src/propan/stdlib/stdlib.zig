@@ -8,6 +8,7 @@ pub const p1 = struct {
 
 pub const p2 = struct {
     pub const constants = @import("p2/constants.zig").p2_constants;
+    pub const instructions = @import("p2/instructions.zig").p2_instructions;
 
     pub const functions = @import("p2/functions.zig");
 };
