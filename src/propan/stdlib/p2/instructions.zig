@@ -388,13 +388,13 @@ pub const p2_instructions: []const Instruction = &.{
 
     instr("rep", 0x0cd00000, "D, {#}S", .none),
 
-    instr("coginit", 0x0ce00000, "D, {#}S", flags.wc),
-    instr("qmul", 0x0d000000, "D, {#}S", .none),
-    instr("qdiv", 0x0d100000, "D, {#}S", .none),
-    instr("qfrac", 0x0d200000, "D, {#}S", .none),
-    instr("qsqrt", 0x0d300000, "D, {#}S", .none),
-    instr("qrotate", 0x0d400000, "D, {#}S", .none),
-    instr("qvector", 0x0d500000, "D, {#}S", .none),
+    instr("coginit", 0x0ce00000, "{#}D, {#}S", flags.wc),
+    instr("qmul", 0x0d000000, "{#}D, {#}S", .none),
+    instr("qdiv", 0x0d100000, "{#}D, {#}S", .none),
+    instr("qfrac", 0x0d200000, "{#}D, {#}S", .none),
+    instr("qsqrt", 0x0d300000, "{#}D, {#}S", .none),
+    instr("qrotate", 0x0d400000, "{#}D, {#}S", .none),
+    instr("qvector", 0x0d500000, "{#}D, {#}S", .none),
 
     instr("hubset", 0x0d600000, "{#}D", .none),
     instr("cogid", 0x0d600001, "{#}D", flags.wc),
