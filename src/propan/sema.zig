@@ -595,7 +595,15 @@ const Analyzer = struct {
             std.debug.assert(instr.offset != null);
             std.debug.assert(instr.arguments.len == instr.ast_node.arguments.len);
 
-            //
+            switch (instr.mnemonic.?.*) {
+                .encoded => {
+                    //
+                },
+
+                else => {
+                    // these are all already defined
+                },
+            }
         }
     }
 
