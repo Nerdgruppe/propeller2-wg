@@ -6,11 +6,15 @@ const ast = @import("frontend.zig").ast;
 
 const logger = std.log.scoped(.sema);
 
+const Value = eval.Value;
+
 pub const Offset = eval.Offset;
 
 pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
     var analyzer: Analyzer = try .init(allocator, file);
     defer analyzer.deinit();
+
+    errdefer dump_analyzer(&analyzer);
 
     // Prepare
     try analyzer.load_constants(stdlib.common.constants);
@@ -28,8 +32,39 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
 
     try analyzer.assign_locations();
 
+    if (!analyzer.ok)
+        return error.SemanticErrors;
+
+    try analyzer.check_undefined_labels();
+
+    // beyond  this check, all symbols are defined
+    // and expression evaluation can happen:
+    if (!analyzer.ok)
+        return error.SemanticErrors;
+
+    try analyzer.evaluate_constant_values();
+
     try analyzer.check_undefined_symbols();
 
+    try analyzer.evaluate_instruction_arguments();
+
+    try analyzer.select_instruction_encoding();
+
+    if (!analyzer.ok)
+        return error.SemanticErrors;
+
+    // Translate
+
+    //
+    // @panic("not implemented yet");
+
+    return .{
+        .arena = .init(allocator),
+        .segments = &.{},
+    };
+}
+
+fn dump_analyzer(analyzer: *Analyzer) void {
     logger.info("symbols:", .{});
     for (analyzer.symbols.values()) |sym| {
         if (sym.type == .builtin)
@@ -52,14 +87,6 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
         });
     }
 
-    // beyond  this check, all symbols are defined
-    // and expression evaluation can happen:
-    if (!analyzer.ok)
-        return error.SemanticErrors;
-
-    try analyzer.evaluate_constant_values();
-    try analyzer.evaluate_instruction_arguments();
-
     logger.info("map file:", .{});
     for (analyzer.instructions) |instr| {
         logger.info("  {}: {s}", .{
@@ -70,13 +97,6 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
             logger.info("    [{}] = {}", .{ i, arg });
         }
     }
-
-    try analyzer.select_instruction_encoding();
-
-    // Translate
-
-    //
-    @panic("not implemented yet");
 }
 
 pub const Module = struct {
@@ -101,7 +121,7 @@ pub const Symbol = struct {
 };
 
 pub const Constant = struct {
-    value: Value,
+    value: Constant.Value,
 
     pub const Value = union(enum) {
         integer: u64,
@@ -122,7 +142,7 @@ const Analyzer = struct {
     symbols: std.StringArrayHashMapUnmanaged(SymbolInfo) = .empty,
 
     functions: std.StringArrayHashMapUnmanaged(Function) = .empty,
-    mnemonics: std.StringArrayHashMapUnmanaged(Mnemonic) = .empty,
+    mnemonics: CaseInsensitiveStringHashMap(Mnemonic) = .empty,
 
     seq_to_instr_lut: []const ?usize = &.{},
     instructions: []InstructionInfo = &.{},
@@ -135,10 +155,12 @@ const Analyzer = struct {
             .arena = .init(allocator),
             .file = file,
         };
-        try ana.functions.ensureUnusedCapacity(allocator, 3);
+        try ana.functions.ensureUnusedCapacity(allocator, 5);
 
         ana.functions.putAssumeCapacityNoClobber("hubaddr", .hubaddr);
         ana.functions.putAssumeCapacityNoClobber("cogaddr", .cogaddr);
+        ana.functions.putAssumeCapacityNoClobber("lutaddr", .lutaddr);
+        ana.functions.putAssumeCapacityNoClobber("localaddr", .localaddr);
         ana.functions.putAssumeCapacityNoClobber("aug", .aug);
 
         try ana.mnemonics.ensureUnusedCapacity(allocator, 9);
@@ -326,6 +348,10 @@ const Analyzer = struct {
                 try ana.validate_expr_symbol_refs(trafo.rhs.*);
             },
             .function_call => |fncall| {
+                if (ana.get_function(fncall.function) == null) {
+                    try ana.emit_error(fncall.location, "use of undefined function {s}", .{fncall.function});
+                }
+
                 for (fncall.arguments) |arg| {
                     try ana.validate_expr_symbol_refs(arg.value);
                 }
@@ -451,9 +477,9 @@ const Analyzer = struct {
                     switch (coded.mnemonic.?.*) {
                         .assert => {},
 
-                        .hubexec => cursor.change_mode(.hubexec),
-                        .lutexec => cursor.change_mode(.lutexec),
-                        .cogexec => cursor.change_mode(.cogexec),
+                        .hubexec => cursor.change_mode(.hub),
+                        .lutexec => cursor.change_mode(.lut),
+                        .cogexec => cursor.change_mode(.cog),
 
                         .@"align" => blk: {
                             if (coded.ast_node.arguments.len != 1) {
@@ -514,18 +540,54 @@ const Analyzer = struct {
     }
 
     ///
+    /// Checks if any undefined labels are in our symbol table.
+    /// NOTE: This function does not check "const" declarations!
+    ///
+    fn check_undefined_labels(ana: *Analyzer) !void {
+        for (ana.symbols.values()) |sym| {
+            errdefer logger.err("invalid symbol {s}", .{sym.name});
+            switch (sym.type) {
+                .code, .data => {
+                    if (sym.offset == null)
+                        return error.InvalidSymbol;
+                    if (sym.value != null)
+                        return error.InvalidSymbol;
+                },
+                .undefined, .constant, .builtin => {
+                    // ignored
+                },
+            }
+            if (sym.type != .builtin and !sym.referenced) {
+                try ana.emit_warning(sym.location(), "symbol {s} has no references", .{sym.name});
+            }
+        }
+    }
+
+    ///
     /// Checks if any undefined symbols are in our symbol table.
     ///
     fn check_undefined_symbols(ana: *Analyzer) !void {
         for (ana.symbols.values()) |sym| {
+            errdefer logger.err("invalid symbol {s}", .{sym.name});
             switch (sym.type) {
                 .undefined => {
                     std.debug.assert(sym.referenced);
                     ana.ok = false;
                     continue;
                 },
-                .code, .data => std.debug.assert(sym.offset != null and sym.value == null),
-                .constant, .builtin => std.debug.assert(sym.offset == null and sym.value != null),
+                .code, .data => {
+                    if (sym.offset == null)
+                        return error.InvalidSymbol;
+                    if (sym.value != null)
+                        return error.InvalidSymbol;
+                },
+                .constant, .builtin => {
+                    errdefer logger.err("invalid symbol {s}", .{sym.name});
+                    if (sym.offset != null)
+                        return error.InvalidSymbol;
+                    if (sym.value == null)
+                        return error.InvalidSymbol;
+                },
             }
             if (sym.type != .builtin and !sym.referenced) {
                 try ana.emit_warning(sym.location(), "symbol {s} has no references", .{sym.name});
@@ -590,20 +652,83 @@ const Analyzer = struct {
     /// Selects the fitting encoding and required arguments for the mnemonic.
     ///
     fn select_instruction_encoding(ana: *Analyzer) !void {
-        for (ana.instructions) |*instr| {
+        current_instr: for (ana.instructions) |*instr| {
             std.debug.assert(instr.mnemonic != null);
             std.debug.assert(instr.offset != null);
             std.debug.assert(instr.arguments.len == instr.ast_node.arguments.len);
 
-            switch (instr.mnemonic.?.*) {
-                .encoded => {
-                    //
-                },
+            const mnemonic: *const EncodedMnemonic = switch (instr.mnemonic.?.*) {
+                .encoded => |*mnemonic| mnemonic,
 
-                else => {
-                    // these are all already defined
-                },
+                // these are all already defined
+                else => continue :current_instr,
+            };
+            std.debug.assert(mnemonic.variants.items.len > 0);
+
+            var alternatives: std.BoundedArray(*const EncodedInstruction, 8) = .{};
+
+            for (mnemonic.variants.items) |*option| {
+                if (option.operands.len != instr.arguments.len)
+                    continue;
+                alternatives.append(option) catch @panic("array too small");
             }
+            if (alternatives.len == 0) {
+                try ana.emit_error(instr.ast_node.location, "Could not find a matching instruction for {s}: No variant expects {} operands.", .{
+                    instr.ast_node.mnemonic,
+                    instr.arguments.len,
+                });
+                continue :current_instr;
+            }
+
+            logger.info("{s} => args={}, vars={}, argc_matching={}", .{
+                instr.ast_node.mnemonic,
+                instr.arguments.len,
+                mnemonic.variants.items.len,
+                alternatives.len,
+            });
+
+            logger.info("  args:", .{});
+            for (instr.arguments) |arg| {
+                logger.info("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.usage), arg.augment });
+            }
+            logger.info("  alts:", .{});
+
+            var selection: ?*const EncodedInstruction = null;
+            for (alternatives.constSlice()) |alt| {
+                logger.info("  - {s}", .{alt.mnemonic});
+
+                var can_assign = true;
+                for (alt.operands, instr.arguments) |op, arg| {
+                    const op_ok = op.type.can_assign_from(arg);
+                    logger.info("    - {s}; type ok={}", .{
+                        @tagName(op.type),
+                        op_ok,
+                    });
+                    if (!op_ok) {
+                        can_assign = false;
+                    }
+                }
+                if (!can_assign) {
+                    logger.info("      : skip!", .{});
+                    continue;
+                }
+
+                if (selection != null) {
+                    try ana.emit_error(instr.ast_node.location, "Ambigious instruction selection for {s}", .{
+                        alt.mnemonic,
+                    });
+                    continue :current_instr;
+                }
+                selection = alt;
+            }
+
+            if (selection == null) {
+                try ana.emit_error(instr.ast_node.location, "Ambigious instruction selection for {s}", .{
+                    instr.ast_node.mnemonic,
+                });
+                continue :current_instr;
+            }
+            instr.instruction = selection;
         }
     }
 
@@ -659,7 +784,7 @@ const Analyzer = struct {
                         return value;
                     },
 
-                    .cogaddr => {
+                    .cogaddr, .lutaddr, .localaddr => {
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         switch (value.value) {
@@ -668,11 +793,25 @@ const Analyzer = struct {
                                 return value;
                             },
                             .offset => |offset| {
-                                const cog = offset.cog orelse {
-                                    try ana.emit_error(fncall.arguments[0].location, "cogaddr() received offset without cog address.", .{});
-                                    return .int(0);
+                                const maybe_expected_type: ?eval.ExecMode = switch (func.*) {
+                                    .lutaddr => .lut,
+                                    .cogaddr => .cog,
+                                    .localaddr => null,
+                                    else => unreachable,
                                 };
-                                return .int(cog);
+
+                                if (maybe_expected_type) |expected| {
+                                    if (offset.local != expected) {
+                                        try ana.emit_error(fncall.arguments[0].location, "{s}() expected offset of type {s}, but got type {s}.", .{
+                                            @tagName(func.*),
+                                            @tagName(expected),
+                                            @tagName(offset.local),
+                                        });
+                                        return .int(0);
+                                    }
+                                }
+
+                                return .int(offset.get_local());
                             },
                         }
                     },
@@ -815,20 +954,19 @@ const Analyzer = struct {
 };
 
 const Cursor = struct {
-    offset: Offset = .init(0, 0),
-    mode: Mode = .cogexec,
+    offset: Offset = .init_cog(0, 0),
 
-    fn change_mode(cursor: *Cursor, mode: Mode) void {
-        cursor.mode = mode;
-        cursor.offset.cog = switch (cursor.mode) {
-            .cogexec, .lutexec => 0,
-            .hubexec => null,
+    fn change_mode(cursor: *Cursor, mode: eval.ExecMode) void {
+        cursor.offset = switch (mode) {
+            .hub => cursor.offset,
+            .cog => .init_cog(cursor.offset.hub, 0),
+            .lut => .init_lut(cursor.offset.hub, 0),
         };
     }
 
     fn advance_code(cursor: *Cursor) void {
         // instructions auto-align to 4 in non-hubexec mode:
-        if (cursor.mode != .hubexec) {
+        if (cursor.offset.local != .hub) {
             cursor.alignas(4);
         }
         cursor.advance_data(.long);
@@ -838,11 +976,11 @@ const Cursor = struct {
         cursor.offset.hub += @intFromEnum(size);
 
         const is_instr_aligned = std.mem.isAligned(cursor.offset.hub, 4);
-        switch (cursor.mode) {
-            .cogexec, .lutexec => if (is_instr_aligned) {
-                cursor.offset.cog.? += 1;
+        switch (cursor.offset.local) {
+            .cog, .lut => |*val| if (is_instr_aligned) {
+                val.* += 1;
             },
-            .hubexec => {},
+            .hub => {},
         }
     }
 
@@ -852,69 +990,66 @@ const Cursor = struct {
 
         cursor.offset.hub = next;
 
-        if (cursor.mode != .hubexec) {
-            const cogprev = prev / 4;
-            const cognext = next / 4;
-            // logger.err("{} {} {} {}", .{ prev, next, cogprev, cognext });
+        switch (cursor.offset.local) {
+            .cog, .lut => |*local| {
+                const cogprev = prev / 4;
+                const cognext = next / 4;
+                // logger.err("{} {} {} {}", .{ prev, next, cogprev, cognext });
 
-            cursor.offset.cog.? += @intCast(cognext - cogprev);
+                local.* += @intCast(cognext - cogprev);
+            },
+            .hub => {},
         }
     }
-
-    const Mode = enum {
-        hubexec,
-        lutexec,
-        cogexec,
-    };
 };
 
 test Cursor {
     var cursor: Cursor = .{};
 
     cursor.advance_data(.long);
-    try std.testing.expectEqual(Offset.init(4, 1), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(4, 1), cursor.offset);
 
     cursor.advance_data(.long);
-    try std.testing.expectEqual(Offset.init(8, 2), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(8, 2), cursor.offset);
 
     cursor.advance_data(.word);
-    try std.testing.expectEqual(Offset.init(10, 2), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(10, 2), cursor.offset);
 
     cursor.advance_data(.word);
-    try std.testing.expectEqual(Offset.init(12, 3), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(12, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init(13, 3), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(13, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init(14, 3), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(14, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init(15, 3), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(15, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init(16, 4), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(16, 4), cursor.offset);
 
     cursor.advance_code();
-    try std.testing.expectEqual(Offset.init(20, 5), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(20, 5), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init(21, 5), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(21, 5), cursor.offset);
 
     cursor.advance_code();
-    try std.testing.expectEqual(Offset.init(28, 7), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(28, 7), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init(29, 7), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(29, 7), cursor.offset);
 
     cursor.alignas(2);
-    try std.testing.expectEqual(Offset.init(30, 7), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(30, 7), cursor.offset);
 
     cursor.alignas(2);
-    try std.testing.expectEqual(Offset.init(30, 7), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(30, 7), cursor.offset);
 
     cursor.alignas(4);
-    try std.testing.expectEqual(Offset.init(32, 8), cursor.offset);
+    try std.testing.expectEqual(Offset.init_cog(32, 8), cursor.offset);
 }
 
 const SymbolInfo = struct {
@@ -948,6 +1083,7 @@ const InstructionInfo = struct {
     ast_node: *const ast.Instruction,
 
     mnemonic: ?*const Mnemonic = null,
+    instruction: ?*const EncodedInstruction = null,
 
     offset: ?Offset = null,
 
@@ -962,20 +1098,36 @@ const Function = union(enum) {
     aug,
     hubaddr,
     cogaddr,
+    lutaddr,
+    localaddr,
 
     // stdlib functions are defined as "generic" ones:
     // TODO: generic: GenericFunction,
 
     pub fn get_parameters(func: Function) []const Parameter {
         return switch (func) {
-            .aug => &.{},
-            .hubaddr => &.{},
-            .cogaddr => &.{},
+            .aug => &.{.init("value", .int)},
+            .hubaddr => &.{.init("addr", .offset)},
+            .cogaddr => &.{.init("addr", .offset)},
+            .lutaddr => &.{.init("addr", .offset)},
+            .localaddr => &.{.init("addr", .offset)},
         };
     }
 
     pub const Parameter = struct {
         name: []const u8,
+        type: Type,
+
+        pub fn init(name: []const u8, ptype: Type) Parameter {
+            return .{ .name = name, .type = ptype };
+        }
+
+        pub const Type = enum {
+            int,
+            offset,
+            string,
+            @"enum",
+        };
     };
 };
 
@@ -1047,6 +1199,10 @@ pub const EncodedInstruction = struct {
 
         pub const TypeId = std.meta.Tag(Type);
         pub const Type = union(enum) {
+            /// Immediate value with absolute or relative addressing
+            /// #{\}A
+            address,
+
             /// D or S
             register,
 
@@ -1055,10 +1211,6 @@ pub const EncodedInstruction = struct {
 
             /// {#}D or {#}S
             reg_or_imm: u32, // encodes limit
-
-            /// Immediate value with absolute or relative addressing
-            /// #{\}A
-            address,
 
             /// Either #N or PTRx++, --PTRx, ...
             /// with N <= 255
@@ -1069,6 +1221,28 @@ pub const EncodedInstruction = struct {
 
             /// One of the given named values.
             enumeration: std.StaticStringMap(u32),
+
+            pub fn can_assign_from(opt: Type, value: Value) bool {
+                if (value.value == .string) {
+                    // strings can only be assigned to enumerations:
+                    return (opt == .enumeration);
+                }
+
+                const vtype: Value.Type = value.value;
+                const usage: Value.UsageHint = value.usage;
+
+                return switch (opt) {
+                    .address => (usage == .literal),
+                    .register => (usage == .register),
+                    .immediate => (usage == .literal),
+                    .reg_or_imm => true,
+                    .pointer_expr => (vtype == .int) and (usage == .literal),
+                    .pointer_reg => false,
+
+                    // integers and offsets can't be assigned to enums
+                    .enumeration => false,
+                };
+            }
         };
     };
 
@@ -1110,4 +1284,35 @@ pub const EncodedInstruction = struct {
             return flags.with(field, true);
         }
     };
+};
+
+fn CaseInsensitiveStringHashMap(comptime V: type) type {
+    return std.ArrayHashMapUnmanaged(
+        []const u8,
+        V,
+        CaseInsensitiveStringContext,
+        true,
+    );
+}
+
+const CaseInsensitiveStringContext = struct {
+    pub fn hash(self: @This(), s: []const u8) u32 {
+        var hasher: std.hash.Wyhash = .init(0);
+        var buffer: [32]u8 = undefined;
+        var i: usize = 0;
+        while (s.len - i > 0) {
+            const lower = std.ascii.lowerString(&buffer, s[i..@min(i + buffer.len, s.len)]);
+
+            hasher.update(lower);
+
+            i += lower.len;
+        }
+        _ = self;
+        return @truncate(hasher.final());
+    }
+    pub fn eql(self: @This(), a: []const u8, b: []const u8, b_index: usize) bool {
+        _ = self;
+        _ = b_index;
+        return std.ascii.eqlIgnoreCase(a, b);
+    }
 };

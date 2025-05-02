@@ -43,6 +43,8 @@ const CliArgs = struct {
 };
 
 pub fn main() !u8 {
+    try std.io.getStdOut().writeAll("\x1B[2J\x1B[H");
+
     var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
 
     const allocator = if (builtin.mode == .Debug)

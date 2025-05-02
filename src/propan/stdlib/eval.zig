@@ -52,7 +52,13 @@ pub const Value = struct {
         register,
     };
 
-    pub const Payload = union(enum) {
+    pub const Type = enum {
+        int,
+        string,
+        offset,
+    };
+
+    pub const Payload = union(Type) {
         int: i64,
         string: []const u8,
         offset: Offset,
@@ -74,21 +80,57 @@ pub const Value = struct {
     }
 };
 
+pub const ExecMode = enum {
+    hub,
+    cog,
+    lut,
+};
+
 pub const Offset = struct {
     hub: u32,
-    cog: ?u9,
+    local: Local,
 
-    pub fn init(hub: u32, cog: ?u9) Offset {
-        return .{ .hub = hub, .cog = cog };
+    pub const Local = union(ExecMode) {
+        /// The offset points into hub memory
+        hub,
+
+        /// The offset points into cog memory
+        cog: u9,
+
+        /// The offset points into lut memory
+        lut: u9,
+    };
+
+    pub fn get_local(offset: Offset) u32 {
+        return switch (offset.local) {
+            .cog, .lut => |val| val,
+            .hub => offset.hub,
+        };
+    }
+
+    pub fn init(hub: u32, local: Local) Offset {
+        return .{ .hub = hub, .local = local };
+    }
+
+    pub fn init_hub(hub: u32) Offset {
+        return .{ .hub = hub, .local = .hub };
+    }
+
+    pub fn init_cog(hub: u32, cog: u9) Offset {
+        return .{ .hub = hub, .local = .{ .cog = cog } };
+    }
+
+    pub fn init_lut(hub: u32, lut: u9) Offset {
+        return .{ .hub = hub, .local = .{ .lut = lut } };
     }
 
     pub fn format(offset: Offset, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
         _ = fmt;
         _ = opt;
-        if (offset.cog) |cog| {
-            try writer.print("Offset(hub=0x{X:0>5}, cog=0x{X:0>3})", .{ offset.hub, cog });
-        } else {
-            try writer.print("Offset(hub=0x{X:0>5}, cog=-)", .{offset.hub});
+        switch (offset.local) {
+            .cog => |cog| try writer.print("Offset(hub=0x{X:0>5}, cog=0x{X:0>3})", .{ offset.hub, cog }),
+            .lut => |lut| try writer.print("Offset(hub=0x{X:0>5}, lut=0x{X:0>3})", .{ offset.hub, lut }),
+            .hub => try writer.print("Offset(hub=0x{X:0>5})", .{offset.hub}),
         }
     }
 };

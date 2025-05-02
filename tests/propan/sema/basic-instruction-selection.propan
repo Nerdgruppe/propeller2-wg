@@ -1,0 +1,20 @@
+
+
+_start:
+
+    NOP
+
+    PUSH 0
+
+    ROR ref, 0
+    ROR ref, other
+    
+
+var ref:
+    LONG 0
+
+var other:
+    LONG 0
+
+end:
+    NOP
