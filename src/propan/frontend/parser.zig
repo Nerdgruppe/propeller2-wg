@@ -1,5 +1,6 @@
 const std = @import("std");
 const ptk = @import("ptk");
+const builtin = @import("builtin");
 
 const ast = @import("ast.zig");
 
@@ -39,6 +40,19 @@ pub const Parser = struct {
         arena: std.mem.Allocator,
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
         lf_is_whitespace: bool = false,
+
+        fn emit_error(core: *Core, comptime fmt: []const u8, args: anytype) !void {
+            _ = core;
+            if (!builtin.is_test) {
+                std.log.err(fmt, args);
+            }
+        }
+        fn emit_warning(core: *Core, comptime fmt: []const u8, args: anytype) !void {
+            _ = core;
+            if (!builtin.is_test) {
+                std.log.warn(fmt, args);
+            }
+        }
 
         fn move_to_heap(core: *Core, comptime T: type, value: T) !*T {
             const copy = try core.arena.create(T);
@@ -362,7 +376,7 @@ pub const Parser = struct {
                     const codepoint: u32 = if (iter.nextCodepoint()) |codepoint|
                         codepoint
                     else blk: {
-                        logger.err("empty character literal not allowed!", .{});
+                        try core.emit_error("empty character literal not allowed!", .{});
                         break :blk 0;
                     };
 
@@ -438,8 +452,6 @@ pub const Parser = struct {
         }
 
         fn unescape_string(core: *Core, allocator: std.mem.Allocator, raw: []const u8) ![]u8 {
-            _ = core;
-
             std.debug.assert(raw.len >= 2);
 
             const body = raw[1 .. raw.len - 1];
@@ -451,11 +463,11 @@ pub const Parser = struct {
             while (i < body.len) : (i += 1) {
                 const char = body[i];
                 if (char < 0x20 or char == 0x7F) {
-                    logger.err("invalid character in string/char literal: 0x{X:0>2}", .{char});
+                    try core.emit_error("invalid character in string/char literal: 0x{X:0>2}", .{char});
                 } else if (i == '\\') {
                     i += 1;
                     if (i >= body.len) {
-                        logger.err("unterminated escape sequence", .{});
+                        try core.emit_error("unterminated escape sequence", .{});
                         break;
                     }
                     const escape = body[i];
@@ -473,11 +485,11 @@ pub const Parser = struct {
                             const start = i + 1;
                             i += 2;
                             if (i >= body.len) {
-                                logger.err("unterminated escape sequence", .{});
+                                try core.emit_error("unterminated escape sequence", .{});
                                 break;
                             }
                             const hex = body[start..i];
-                            logger.err("escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
+                            try core.emit_error("escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
 
                             try output.append(
                                 allocator,
@@ -494,12 +506,12 @@ pub const Parser = struct {
                                 i += 1;
                             }
                             if (i >= body.len) {
-                                logger.err("unterminated escape sequence", .{});
+                                try core.emit_error("unterminated escape sequence", .{});
                                 break;
                             }
                             const slice = body[start..i];
 
-                            logger.err("escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
+                            try core.emit_error("escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
 
                             const codepoint = try std.fmt.parseInt(u21, slice, 16);
 
@@ -961,7 +973,10 @@ fn fuzz_tokenizer(_: void, input: []const u8) !void {
 }
 
 test "fuzz tokenizer" {
-    try std.testing.fuzz({}, fuzz_tokenizer, .{});
+    const corpus = @import("fuzz-corpus").files;
+    try std.testing.fuzz({}, fuzz_tokenizer, .{
+        .corpus = corpus,
+    });
 }
 
 fn fuzz_parser(_: void, input: []const u8) !void {
@@ -975,7 +990,11 @@ fn fuzz_parser(_: void, input: []const u8) !void {
 }
 
 test "fuzz parser" {
-    try std.testing.fuzz({}, fuzz_parser, .{});
+    const corpus = @import("fuzz-corpus").files;
+
+    try std.testing.fuzz({}, fuzz_parser, .{
+        .corpus = corpus,
+    });
 }
 
 test "parse conditions (positive)" {

@@ -56,6 +56,40 @@ pub fn build(b: *std.Build) void {
 
     // Propan Unit Tests
     {
+        const fuzz_corpus_files = b.addWriteFiles();
+
+        var fuzz_corpus_index: std.ArrayList(u8) = .init(b.allocator);
+        defer fuzz_corpus_index.deinit();
+
+        fuzz_corpus_index.writer().writeAll(
+            \\pub const files: []const []const u8 = &.{
+            \\
+        ) catch @panic("oom");
+
+        for (parser_accept_tests) |path| {
+            const filename = std.fs.path.basename(path);
+
+            _ = fuzz_corpus_files.addCopyFile(b.path(path), filename);
+
+            fuzz_corpus_index.writer().print(
+                \\    @embedFile("{}"),
+                \\
+            ,
+                .{std.zig.fmtEscapes(filename)},
+            ) catch @panic("oom");
+        }
+
+        fuzz_corpus_index.writer().writeAll(
+            \\};
+            \\
+        ) catch @panic("oom");
+
+        const fuzz_corpus_file = fuzz_corpus_files.add("corpus.zig", fuzz_corpus_index.items);
+
+        const fuzz_corpus_mod = b.createModule(.{ .root_source_file = fuzz_corpus_file });
+
+        propan_mod.addImport("fuzz-corpus", fuzz_corpus_mod);
+
         const propan_tests = b.addTest(.{
             .root_module = propan_mod,
         });
@@ -100,8 +134,10 @@ const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const
 };
 
 const sema_accept_tests: []const []const u8 = &.{
-    // "./tests/propan/sema/addressing-modes.propan",
-    // "./tests/propan/sema/basic-constants.propan",
-    // "./tests/propan/sema/basic-label-addressing.propan",
+    "tests/propan/sema/basic-constants.propan",
+    "tests/propan/sema/basic-instruction-selection.propan",
+    "tests/propan/sema/addressing-modes.propan",
+    "tests/propan/sema/ambigious-selection.propan",
+    "tests/propan/sema/basic-label-addressing.propan",
     // "./tests/propan/sema/stdlib.propan",
 };
