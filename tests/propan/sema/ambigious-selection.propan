@@ -1,0 +1,15 @@
+
+
+select_by_count:
+    ROLNIB value
+    ROLNIB value, 0, 3
+
+select_by_type:
+    JMP destination // must select JMP D {WC/WZ/WCZ}
+    JMP value       // must select JMP #{\}A
+
+destination:
+
+
+var value:
+    long 0

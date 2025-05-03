@@ -1,0 +1,15 @@
+
+
+normal:
+    JMP destination // must select JMP D {WC/WZ/WCZ}
+    JMP value       // must select JMP #{\}A
+
+inverted:
+    JMP *destination // must select JMP #{\}A
+    JMP &value       // must select JMP D {WC/WZ/WCZ}
+
+destination:
+
+
+var value:
+    long 0
