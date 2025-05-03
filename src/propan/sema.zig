@@ -511,6 +511,8 @@ const Analyzer = struct {
                                     error.OutOfMemory => "out of memory",
                                     error.UndefinedSymbol => "cannot refer to labels in .align",
                                     error.InvalidFunctionCall => "invalid function call",
+                                    error.Overflow => "integer overflow",
+                                    error.DivideByZero => "divide by zero",
                                 };
                                 try ana.emit_error(coded.ast_node.location, ".align value could not be evaluated: {s}", .{err_msg});
                             }
@@ -634,6 +636,15 @@ const Analyzer = struct {
                 value.* = ana.evaluate_root_expr(expr) catch |err| switch (err) {
                     error.UndefinedSymbol => @panic("implementation error: no referenced symbols should be undefined at this point"),
                     error.OutOfMemory => |e| return e,
+                    error.Overflow, error.DivideByZero => |e| blk: {
+                        try ana.emit_error(instr.ast_node.location, "failed to evaluate operand: {s}", .{
+                            @errorName(e),
+                        });
+
+                        // this is fine as we've failed the analysis and
+                        // we're never going to use this value:
+                        break :blk undefined;
+                    },
                     error.InvalidFunctionCall => blk: {
                         std.debug.assert(ana.ok == false);
 
@@ -732,7 +743,13 @@ const Analyzer = struct {
         }
     }
 
-    const EvalError = error{ OutOfMemory, UndefinedSymbol, InvalidFunctionCall };
+    const EvalError = error{
+        OutOfMemory,
+        UndefinedSymbol,
+        InvalidFunctionCall,
+        Overflow,
+        DivideByZero,
+    };
 
     fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression) EvalError!eval.Value {
         return ana.evaluate_expr(expr, 0);
@@ -835,8 +852,28 @@ const Analyzer = struct {
                 }
             },
             .binary_transform => |op| {
-                _ = op;
-                @panic(".binary_transform not implemented yet!");
+                const lhs = try ana.evaluate_expr(op.lhs.*, nesting + 1);
+                const rhs = try ana.evaluate_expr(op.rhs.*, nesting + 1);
+
+                const lhs_type: Value.Type = lhs.value;
+                const rhs_type: Value.Type = rhs.value;
+
+                if (lhs_type != rhs_type) {
+                    try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to {s} and {s}", .{
+                        @tagName(op.operator),
+                        @tagName(lhs_type),
+                        @tagName(rhs_type),
+                    });
+                    return .int(0);
+                }
+
+                switch (lhs_type) {
+                    .int => return .int(
+                        try ana.execute_int_op(op.location, lhs.value.int, rhs.value.int, op.operator),
+                    ),
+                    .offset => @panic("TODO: Implement binary operators on offsets."),
+                    .string => @panic("TODO: Implement binary operators on strings."),
+                }
             },
             .function_call => |fncall| {
                 const func = ana.get_function(fncall.function).?;
@@ -903,6 +940,33 @@ const Analyzer = struct {
                 }
             },
         }
+    }
+
+    fn execute_int_op(ana: *Analyzer, location: ast.Location, lhs: i64, rhs: i64, op: ast.BinaryOperator) !i64 {
+        _ = location;
+        _ = ana;
+        return switch (op) {
+            .@"and" => @intFromBool((lhs != 0) and (rhs != 0)),
+            .@"or" => @intFromBool((lhs != 0) or (rhs != 0)),
+            .xor => @intFromBool((lhs != 0) != (rhs != 0)),
+            .@"==" => @intFromBool(lhs == rhs),
+            .@"!=" => @intFromBool(lhs != rhs),
+            .@"<=>" => if (lhs < rhs) -1 else if (lhs > rhs) 1 else 0,
+            .@"<" => @intFromBool(lhs < rhs),
+            .@">" => @intFromBool(lhs > rhs),
+            .@"<=" => @intFromBool(lhs <= rhs),
+            .@">=" => @intFromBool(lhs >= rhs),
+            .@"+" => (lhs +% rhs),
+            .@"-" => (lhs -% rhs),
+            .@"|" => (lhs | rhs),
+            .@"^" => (lhs ^ rhs),
+            .@">>" => if (std.math.cast(u6, rhs)) |shift| (lhs >> shift) else return error.Overflow,
+            .@"<<" => if (std.math.cast(u6, rhs)) |shift| (lhs << shift) else return error.Overflow,
+            .@"&" => lhs & rhs,
+            .@"*" => lhs *% rhs,
+            .@"/" => if (rhs != 0) @divFloor(lhs, rhs) else return error.DivideByZero,
+            .@"%" => if (rhs != 0) @mod(lhs, rhs) else return error.DivideByZero,
+        };
     }
 
     fn map_function_args(
