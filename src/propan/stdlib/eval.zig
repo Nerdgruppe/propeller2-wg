@@ -30,7 +30,7 @@ pub const Value = struct {
     pub fn offset(value: Offset, usage: UsageHint) Value {
         return .{
             .usage = usage,
-            .value = .{ .string = value },
+            .value = .{ .offset = value },
         };
     }
 

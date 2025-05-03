@@ -8,8 +8,12 @@ inverted:
     JMP *destination // must select JMP #{\}A
     JMP &value       // must select JMP D {WC/WZ/WCZ}
 
-destination:
+useless:
+    JMP &destination // must select JMP #{\}A
+    JMP *value       // must select JMP D {WC/WZ/WCZ}
 
+destination:
+    NOP
 
 var value:
     long 0

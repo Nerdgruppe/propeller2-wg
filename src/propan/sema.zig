@@ -758,8 +758,81 @@ const Analyzer = struct {
             },
 
             .unary_transform => |op| {
-                _ = op;
-                @panic(".unary_transform not implemented yet!");
+                const value = try ana.evaluate_expr(op.value.*, nesting + 1);
+
+                switch (op.operator) {
+                    .@"!" => {
+                        if (value.value != .int) {
+                            try ana.emit_error(op.location, "Operator '!' cannot be applied to a value of type {s}", .{
+                                @tagName(value.value),
+                            });
+                            return .int(0);
+                        }
+                        return .int(@intFromBool(value.value.int == 0));
+                    },
+                    .@"~" => {
+                        if (value.value != .int) {
+                            try ana.emit_error(op.location, "Operator '~' cannot be applied to a value of type {s}", .{
+                                @tagName(value.value),
+                            });
+                            return .int(0);
+                        }
+                        return .int(~value.value.int);
+                    },
+                    .@"+" => {
+                        if (value.value != .int) {
+                            try ana.emit_error(op.location, "Operator '+' cannot be applied to a value of type {s}", .{
+                                @tagName(value.value),
+                            });
+                            return .int(0);
+                        }
+                        return .int(-value.value.int);
+                    },
+                    .@"-" => {
+                        if (value.value != .int) {
+                            try ana.emit_error(op.location, "Operator '-' cannot be applied to a value of type {s}", .{
+                                @tagName(value.value),
+                            });
+                            return .int(0);
+                        }
+                        return .int(-value.value.int);
+                    },
+                    .@"@" => {
+                        @panic("TODO: Implement relative addressing");
+                    },
+                    .@"*" => {
+                        if (value.value != .offset) {
+                            try ana.emit_error(op.location, "Operator '*' cannot be applied to a value of type {s}", .{
+                                @tagName(value.value),
+                            });
+                            return .offset(.init_hub(0), .register);
+                        }
+                        if (value.usage == .register) {
+                            try ana.emit_warning(op.location, "Operator '*' is applied to a data label and has no effect", .{});
+                        }
+                        return .{
+                            .value = value.value,
+                            .augment = value.augment,
+                            .usage = .register,
+                        };
+                    },
+                    .@"&" => {
+                        if (value.value != .offset) {
+                            try ana.emit_error(op.location, "Operator '&' cannot be applied to a value of type {s}", .{
+                                @tagName(value.value),
+                            });
+                            return .offset(.init_hub(0), .literal);
+                        }
+                        if (value.usage == .literal) {
+                            try ana.emit_warning(op.location, "Operator '&' is applied to a code label and has no effect", .{});
+                        }
+                        return .{
+                            .value = value.value,
+                            .augment = value.augment,
+                            .usage = .literal,
+                        };
+                    },
+                }
             },
             .binary_transform => |op| {
                 _ = op;
