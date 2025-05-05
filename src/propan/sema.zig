@@ -806,8 +806,8 @@ const Analyzer = struct {
         var segments: std.ArrayListUnmanaged(Segment) = .empty;
         errdefer segments.deinit(segment_allocator);
 
-        var current_segment: SegmentBuilder = .{ .hub_offset = 0 };
-        defer current_segment.data.deinit(segment_allocator);
+        var current_segment: SegmentBuilder = .init(0, .cog, segment_allocator);
+        defer current_segment.data.deinit();
 
         seq_loop: for (ana.file.sequence, 0..) |seq, i| {
             const instr: *InstructionInfo = switch (seq) {
@@ -816,28 +816,110 @@ const Analyzer = struct {
                 .label => |lbl| {
                     // just assert we're not doing stupid things:
                     const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
-                    std.debug.assert(current_segment.hub_offset == sym.offset.?.hub);
+                    std.debug.assert(current_segment.hub_offset + current_segment.data.items.len == sym.offset.?.hub);
                     continue :seq_loop;
                 },
 
                 .instruction => &ana.instructions[ana.seq_to_instr_lut[i].?],
             };
 
-            _ = instr; // TODO
+            const mnemonic: Mnemonic = instr.mnemonic.?.*;
 
-            // switch (instr.mnemonic.?.*) {
-            //     .assert => {},
-            // }
+            logger.info("emit {s}", .{@tagName(mnemonic)});
+
+            switch (mnemonic) {
+                .assert, .@"align" => {},
+
+                inline .byte, .word, .long => |_, tag| {
+                    const T = switch (tag) {
+                        .byte => u8,
+                        .word => u16,
+                        .long => u32,
+                        else => unreachable,
+                    };
+
+                    for (instr.arguments, instr.ast_node.arguments) |container_value, ast_node| {
+                        const value: T = try ana.cast_value_to(
+                            ast_node.location(),
+                            current_segment.exec_mode,
+                            container_value,
+                            T,
+                        );
+                        try current_segment.writer().writeInt(T, value, .little);
+                    }
+                },
+
+                .cogexec => {
+                    // TODO
+                },
+
+                .lutexec => {
+                    // TODO
+                },
+
+                .hubexec => {
+                    // TODO
+                },
+
+                .encoded => {
+                    const encoded = instr.instruction.?;
+
+                    _ = encoded;
+                    // TODO
+                },
+            }
         }
 
         if (current_segment.data.items.len > 0) {
             try segments.append(segment_allocator, .{
                 .hub_offset = current_segment.hub_offset,
-                .data = try current_segment.data.toOwnedSlice(segment_allocator),
+                .data = try current_segment.data.toOwnedSlice(),
             });
         }
 
         return segments.toOwnedSlice(segment_allocator);
+    }
+
+    fn cast_value_to(ana: *Analyzer, location: ast.Location, exec_mode: eval.ExecMode, value: Value, comptime U: type) !U {
+        const I = std.meta.Int(.signed, @bitSizeOf(U));
+
+        const raw_value: i64 = switch (value.value) {
+            .int => |int| int,
+            .offset => |offset| try ana.get_offset_for_exec_mode(offset, exec_mode),
+            .string => @panic("string emission not supported yet"),
+        };
+
+        if (raw_value < 0) {
+            const cast_val: I = @truncate(raw_value);
+            if (cast_val != raw_value) {
+                try ana.emit_warning(
+                    location,
+                    "Integer was truncated to {} bits. Expected: {}, Emitted: {}",
+                    .{ @bitSizeOf(U), raw_value, cast_val },
+                );
+            }
+            return @bitCast(cast_val);
+        } else {
+            const cast_val: U = @truncate(@as(u64, @bitCast(raw_value)));
+            if (cast_val != raw_value) {
+                try ana.emit_warning(
+                    location,
+                    "Integer was truncated to {} bits. Expected: {}, Emitted: {}",
+                    .{ @bitSizeOf(U), raw_value, cast_val },
+                );
+            }
+            return cast_val;
+        }
+    }
+
+    fn get_offset_for_exec_mode(ana: *Analyzer, offset: Offset, mode: eval.ExecMode) !u32 {
+        //  switch(exec_mode) {
+        //     .cog => offset.local
+        // }
+        _ = ana;
+        _ = offset;
+        _ = mode;
+        @panic("TODO: Implement");
     }
 
     const EvalError = error{
@@ -1189,15 +1271,32 @@ const Analyzer = struct {
 
 const SegmentBuilder = struct {
     hub_offset: u32,
-    data: std.ArrayListUnmanaged(u8) = .empty,
+    exec_mode: eval.ExecMode,
+    data: std.ArrayList(u8),
+
+    fn init(hub_offset: u32, exec_mode: eval.ExecMode, allocator: std.mem.Allocator) SegmentBuilder {
+        return .{
+            .hub_offset = hub_offset,
+            .exec_mode = exec_mode,
+            .data = .init(allocator),
+        };
+    }
 
     fn seek_forward(sb: *SegmentBuilder, hub_offset: u32) !void {
         std.debug.assert(hub_offset >= sb.hub_offset);
         try sb.writer().writeByteNTimes(sb.hub_offset < hub_offset);
     }
 
-    fn writer(sb: *SegmentBuilder, allocator: std.mem.Allocator) std.ArrayListUnmanaged(u8).Writer {
-        return sb.data.writer(allocator);
+    fn writer(sb: *SegmentBuilder) Writer {
+        return .{ .context = sb };
+    }
+
+    const Error = error{OutOfMemory};
+    const Writer = std.io.Writer(*SegmentBuilder, Error, append);
+
+    fn append(sb: *SegmentBuilder, buffer: []const u8) Error!usize {
+        try sb.data.appendSlice(buffer);
+        return buffer.len;
     }
 };
 

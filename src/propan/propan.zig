@@ -104,6 +104,34 @@ pub fn main() !u8 {
 
         var module = try sema.analyze(allocator, parsed_file.file);
         defer module.deinit();
+
+        std.log.info("sema yielded {} segments:", .{module.segments.len});
+
+        for (module.segments, 0..) |seg, seg_i| {
+            std.log.info("  [{}]: {} bytes", .{ seg_i, seg.data.len });
+
+            var i: usize = 0;
+            const chunk_size = 16;
+            while (i < seg.data.len) : (i += chunk_size) {
+                const rest = seg.data[i..];
+                const segment = rest[0..@min(chunk_size, rest.len)];
+
+                var chunk_buffer: [4 * chunk_size]u8 = undefined;
+
+                var fbs = std.io.fixedBufferStream(&chunk_buffer);
+                for (segment, 0..) |byte, off| {
+                    if (off > 0) {
+                        try fbs.writer().writeAll(" ");
+                        if ((off % 4) == 0) {
+                            try fbs.writer().writeAll(" ");
+                        }
+                    }
+                    try fbs.writer().print("{X:0>2}", .{byte});
+                }
+
+                std.log.info("    0x{X:0>5}: {s}", .{ seg.hub_offset + i, fbs.getWritten() });
+            }
+        }
     }
 
     // Stop after having each file parsed successfully:
