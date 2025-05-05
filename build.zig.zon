@@ -14,6 +14,10 @@
             .url = "git+https://github.com/ikskuh/zig-args.git#9425b94c103a031777fdd272c555ce93a7dea581",
             .hash = "args-0.0.0-CiLiqv_NAAC97fGpk9hS2K681jkiqPsWP6w3ucb_ctGH",
         },
+        .p2devsuite = .{
+            .url = "git+https://github.com/ikskuh/p2-devsuite.git#4aa03f279454ce7ac83300518cb9703619ae0572",
+            .hash = "p2_devsuite-0.0.0-JopzWDFfAADjUYTLJJwRo4SK3X8Ugiq6ENq8pbchAUqd",
+        },
     },
 
     .paths = .{

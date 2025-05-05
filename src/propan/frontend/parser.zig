@@ -41,16 +41,22 @@ pub const Parser = struct {
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
         lf_is_whitespace: bool = false,
 
-        fn emit_error(core: *Core, comptime fmt: []const u8, args: anytype) !void {
+        fn emit_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
             _ = core;
             if (!builtin.is_test) {
-                std.log.err(fmt, args);
+                std.log.err("{}: " ++ fmt, .{location} ++ args);
             }
         }
-        fn emit_warning(core: *Core, comptime fmt: []const u8, args: anytype) !void {
+
+        fn emit_fatal_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) error{SyntaxError} {
+            try core.emit_error(location, fmt, args);
+            return error.SyntaxError;
+        }
+
+        fn emit_warning(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
             _ = core;
             if (!builtin.is_test) {
-                std.log.warn(fmt, args);
+                std.log.warn("{}: " ++ fmt, .{location} ++ args);
             }
         }
 
@@ -124,6 +130,16 @@ pub const Parser = struct {
                     };
                 },
 
+                .@"return" => {
+                    // return mnemonic ...
+                    const condition: ast.ConditionNode = .{ .location = token.location, .type = .@"return" };
+                    const mnemonic = try c.accept_one(.identifier);
+
+                    return .{
+                        .instruction = try c.accept_instruction(condition, mnemonic),
+                    };
+                },
+
                 .identifier => {
                     // mnemonic ...
                     return .{
@@ -131,7 +147,7 @@ pub const Parser = struct {
                     };
                 },
 
-                else => return c.fatal_syntax_error(),
+                else => return c.emit_fatal_error(token.location, "unrecognized token: {s}", .{@tagName(token.type)}),
             }
         }
 
@@ -367,7 +383,7 @@ pub const Parser = struct {
                     var buffer: [32]u8 = undefined;
                     var fba: std.heap.FixedBufferAllocator = .init(&buffer);
 
-                    const string = try core.unescape_string(fba.allocator(), token.text);
+                    const string = try core.unescape_string(token.location, fba.allocator(), token.text);
 
                     const view = try std.unicode.Utf8View.init(string);
 
@@ -376,7 +392,7 @@ pub const Parser = struct {
                     const codepoint: u32 = if (iter.nextCodepoint()) |codepoint|
                         codepoint
                     else blk: {
-                        try core.emit_error("empty character literal not allowed!", .{});
+                        try core.emit_error(token.location, "empty character literal not allowed!", .{});
                         break :blk 0;
                     };
 
@@ -389,7 +405,7 @@ pub const Parser = struct {
                     };
                 },
                 .string_literal => {
-                    const string = try core.unescape_string(core.arena, token.text);
+                    const string = try core.unescape_string(token.location, core.arena, token.text);
 
                     return .{
                         .string = .{
@@ -451,7 +467,7 @@ pub const Parser = struct {
             };
         }
 
-        fn unescape_string(core: *Core, allocator: std.mem.Allocator, raw: []const u8) ![]u8 {
+        fn unescape_string(core: *Core, location: ast.Location, allocator: std.mem.Allocator, raw: []const u8) ![]u8 {
             std.debug.assert(raw.len >= 2);
 
             const body = raw[1 .. raw.len - 1];
@@ -463,11 +479,11 @@ pub const Parser = struct {
             while (i < body.len) : (i += 1) {
                 const char = body[i];
                 if (char < 0x20 or char == 0x7F) {
-                    try core.emit_error("invalid character in string/char literal: 0x{X:0>2}", .{char});
+                    try core.emit_error(location, "invalid character in string/char literal: 0x{X:0>2}", .{char});
                 } else if (i == '\\') {
                     i += 1;
                     if (i >= body.len) {
-                        try core.emit_error("unterminated escape sequence", .{});
+                        try core.emit_error(location, "unterminated escape sequence", .{});
                         break;
                     }
                     const escape = body[i];
@@ -485,11 +501,11 @@ pub const Parser = struct {
                             const start = i + 1;
                             i += 2;
                             if (i >= body.len) {
-                                try core.emit_error("unterminated escape sequence", .{});
+                                try core.emit_error(location, "unterminated escape sequence", .{});
                                 break;
                             }
                             const hex = body[start..i];
-                            try core.emit_error("escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
+                            try core.emit_error(location, "escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
 
                             try output.append(
                                 allocator,
@@ -506,12 +522,12 @@ pub const Parser = struct {
                                 i += 1;
                             }
                             if (i >= body.len) {
-                                try core.emit_error("unterminated escape sequence", .{});
+                                try core.emit_error(location, "unterminated escape sequence", .{});
                                 break;
                             }
                             const slice = body[start..i];
 
-                            try core.emit_error("escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
+                            try core.emit_error(location, "escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
 
                             const codepoint = try std.fmt.parseInt(u21, slice, 16);
 
@@ -520,7 +536,7 @@ pub const Parser = struct {
                             try output.appendSlice(allocator, buf[0..len]);
                         },
                         else => {
-                            logger.warn("invalid escape sequence: \\x{c}", .{body[i .. i + 1]});
+                            try core.emit_warning(location, "invalid escape sequence: \\x{c}", .{body[i .. i + 1]});
                             try output.append(allocator, char);
                         },
                     }
@@ -738,12 +754,6 @@ pub const Parser = struct {
                 logger.debug("next_token() => {}", .{tok});
                 return tok;
             }
-        }
-
-        fn fatal_syntax_error(c: *Core) error{SyntaxError} {
-            _ = c;
-            logger.info("syntax error!", .{});
-            return error.SyntaxError;
         }
 
         const r = ptk.RuleSet(TokenType);

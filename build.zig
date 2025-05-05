@@ -12,11 +12,18 @@ pub fn build(b: *std.Build) void {
 
     // Dependencies:
 
+    const p2dev_dep = b.dependency("p2devsuite", .{});
+
     const ptk_dep = b.dependency("ptk", .{});
     const args_dep = b.dependency("args", .{});
 
     const ptk_mod = ptk_dep.module("parser-toolkit");
     const args_mod = args_dep.module("args");
+
+    // Exports:
+
+    const flexspin = p2dev_dep.artifact("flexspin");
+    b.installArtifact(flexspin);
 
     // Build:
 
@@ -116,6 +123,29 @@ pub fn build(b: *std.Build) void {
             run.has_side_effects = true;
             test_step.dependOn(&run.step);
         }
+
+        for (emit_compare_tests) |accept_file| {
+            const suffix = std.fs.path.extension(accept_file);
+
+            const spin2_file = b.fmt("{s}.spin2", .{accept_file[0 .. accept_file.len - suffix.len]});
+
+            const convert = b.addRunArtifact(flexspin);
+            convert.addArg("-2");
+            convert.addArg("-o");
+
+            const ref_file = convert.addOutputFileArg(b.fmt("{s}.bin", .{
+                std.fs.path.basename(accept_file),
+            }));
+
+            convert.addFileArg(b.path(spin2_file));
+
+            const run = b.addRunArtifact(propan_exe);
+            run.addArg("--test-mode=compare");
+            run.addPrefixedFileArg("--compare-to=", ref_file);
+            run.addFileArg(b.path(accept_file));
+            run.has_side_effects = true;
+            test_step.dependOn(&run.step);
+        }
     }
 }
 
@@ -137,7 +167,7 @@ const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const
     "./tests/propan/parser/amiguity.propan",
 };
 
-const sema_accept_tests: []const []const u8 = examples ++ &[_][]const u8{
+const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ &[_][]const u8{
     "tests/propan/sema/basic-constants.propan",
     "tests/propan/sema/basic-instruction-selection.propan",
     "tests/propan/sema/addressing-modes.propan",
@@ -145,4 +175,8 @@ const sema_accept_tests: []const []const u8 = examples ++ &[_][]const u8{
     "tests/propan/sema/basic-label-addressing.propan",
     "tests/propan/sema/operators.propan",
     // "./tests/propan/sema/stdlib.propan",
+};
+
+const emit_compare_tests: []const []const u8 = &[_][]const u8{
+    "tests/propan/equivalence/arithmetic_group.propan",
 };

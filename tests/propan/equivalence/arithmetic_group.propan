@@ -1,0 +1,66 @@
+return ROR lbl0, lbl1
+if(!c & !z) ROL lbl2, 3 :wc
+if(!z & !c) SHR lbl4, lbl5 :wz
+if(>) SHL lbl6, 7 :wcz
+if(>) RCR lbl8, lbl0
+if(!c & !z) RCL lbl1, 11 :wc
+if(!c & z) SAR lbl3, lbl4 :wz
+if(z & !c) SAL lbl5, 15 :wcz
+if(!c & z) ADD lbl7, lbl8
+if(!c) ADDX lbl0, 19 :wc
+if(>=) ADDS lbl2, lbl3 :wz
+if(>=) ADDSX lbl4, 23 :wcz
+if(!c) SUB lbl6, lbl7
+if(c & !z) SUBX lbl8, 27 :wc
+if(!z & c) SUBS lbl1, lbl2 :wz
+if(c & !z) SUBSX lbl3, 31 :wcz
+if(!z) CMP lbl5, lbl6
+if(!=) CMPX lbl7, 35 :wc
+if(!=) CMPS lbl0, lbl1 :wz
+if(c != z) CMPSX lbl2, 39 :wcz
+if(z != c) CMPR lbl4, lbl5
+if(c!=z) CMPM lbl6, 43 :wc
+if(!c | !z) SUBR lbl8, lbl0 :wz
+if(!c | !z) CMPSUB lbl1, 47 :wcz
+if(!c | !z) FGE lbl3, lbl4
+if(c & z) FLE lbl5, 51 :wc
+if(z & c) FGES lbl7, lbl8 :wz
+if(c & z) FLES lbl0, 55 :wcz
+if(c == z) SUMC lbl2, lbl3
+if(z == c) SUMNC lbl4, 59 :wc
+if(==) SUMZ lbl6, lbl7 :wz
+if(z) SUMNZ lbl8, 63 :wcz
+if(z) AND lbl1, lbl2
+if(z) ANDN lbl3, 67 :wc
+if(!c | z) OR lbl5, lbl6 :wz
+if(z | !c) XOR lbl7, 71 :wcz
+if(!c | z) MUXC lbl0, lbl1
+if(c) MUXNC lbl2, 75 :wc
+if(<) MUXZ lbl4, lbl5 :wz
+if(<) MUXNZ lbl6, 79 :wcz
+if(c) MOV lbl8, lbl0
+if(c | !z) NOT lbl1, 83 :wc
+if(!z | c) ABS lbl3, lbl4 :wz
+if(!z | c) NEG lbl5, 87 :wcz
+if(c | z) NEGC lbl7, lbl8
+if(z | c) NEGNC lbl0, 91 :wc
+if(<=) NEGZ lbl2, lbl3 :wz
+if(<=) NEGNZ lbl4, 95 :wcz
+if(<=) INCMOD lbl6, lbl7
+return DECMOD lbl8, 99 :wc
+if(!c & !z) ZEROX lbl1, lbl2 :wz
+if(!z & !c) SIGNX lbl3, 103 :wcz
+if(>) ENCOD lbl5, lbl6
+if(>) ONES lbl7, 107 :wc
+if(!c & !z) TEST lbl0, lbl1 :wz
+if(!c & z) TESTN lbl2, 111 :wcz
+
+var lbl0: LONG 0
+var lbl1: LONG 1
+var lbl2: LONG 2
+var lbl3: LONG 3
+var lbl4: LONG 4
+var lbl5: LONG 5
+var lbl6: LONG 6
+var lbl7: LONG 7
+var lbl8: LONG 8

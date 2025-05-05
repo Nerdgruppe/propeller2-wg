@@ -15,12 +15,14 @@ pub const std_options: std.Options = .{
 const TestMode = enum {
     parser,
     sema,
+    compare,
 };
 
 const CliArgs = struct {
     help: bool = false,
     output: []const u8 = "",
     @"test-mode": ?TestMode = null,
+    @"compare-to": []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
@@ -38,6 +40,7 @@ const CliArgs = struct {
             .help = "Prints this help text",
             .output = "Sets the path of the output file.",
             .@"test-mode" = "<internal use only>",
+            .@"compare-to" = "<internal use only>",
         },
     };
 };
@@ -99,11 +102,20 @@ pub fn main() !u8 {
     //     parsed_file.file,
     // );
 
+    var output: std.ArrayListUnmanaged(u8) = .empty;
+    defer output.deinit(allocator);
+
     for (cli.positionals, loaded_files) |input_path, parsed_file| {
         std.log.debug("analyzing {s}...", .{input_path});
 
         var module = try sema.analyze(allocator, parsed_file.file);
         defer module.deinit();
+
+        for (module.segments) |segment| {
+            try output.resize(allocator, @max(output.items.len, segment.hub_offset + segment.data.len));
+            std.debug.assert(output.items.len >= segment.hub_offset + segment.data.len);
+            @memcpy(output.items[segment.hub_offset..][0..segment.data.len], segment.data);
+        }
 
         std.log.info("sema yielded {} segments:", .{module.segments.len});
 
@@ -138,6 +150,33 @@ pub fn main() !u8 {
     if (cli.options.@"test-mode" == .sema)
         return 0;
 
+    // Stop after having each file parsed successfully:
+    if (cli.options.@"test-mode" == .compare) {
+        const ref = try std.fs.cwd().readFileAlloc(arena.allocator(), cli.options.@"compare-to", 512 * 1024);
+
+        if (std.mem.eql(u8, ref, output.items)) {
+            // boring case: our files are identical
+            return 0;
+        }
+
+        const out = std.io.getStdOut();
+
+        try out.writer().print("mismatch detected. expected length: {}, actual length: {}\n", .{
+            ref.len,
+            output.items.len,
+        });
+
+        try out.writer().print("<diff>\n", .{});
+        try render_bin_diff(
+            out,
+            ref,
+            output.items,
+        );
+        try out.writer().print("</diff>\n", .{});
+
+        return 1;
+    }
+
     return 0;
 }
 
@@ -149,4 +188,39 @@ fn usage_mistake(comptime fmt: []const u8, args: anytype) !noreturn {
 test {
     _ = frontend;
     _ = sema;
+}
+
+fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: []const u8) !void {
+    const writer = stream.writer();
+    const common_len = @max(expected_data.len, actual_data.len);
+
+    std.log.info("{}", .{common_len});
+
+    for (0..common_len) |offset| {
+        const expected: ?u8 = if (offset < expected_data.len) expected_data[offset] else null;
+        const actual: ?u8 = if (offset < actual_data.len) actual_data[offset] else null;
+
+        if (actual == expected)
+            continue;
+
+        try writer.print("@{X:0>5}: expected: 0x{?X:0>2} ({s}), actual: 0x{?X:0>2} ({s})\n", .{
+            offset,
+            expected,
+            bitdiff(expected orelse 0, actual orelse 0),
+            actual,
+            bitdiff(actual orelse 0, expected orelse 0),
+        });
+    }
+}
+
+fn bitdiff(comp: u8, ref: u8) [8]u8 {
+    var out: [8]u8 = @splat('-');
+    inline for (0..7) |i| {
+        const mask = (1 << i);
+        out[7 - i] = if ((comp & mask) != (ref & mask))
+            "01"[(comp >> i) & 1]
+        else
+            '-';
+    }
+    return out;
 }

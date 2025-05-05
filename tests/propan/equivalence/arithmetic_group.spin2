@@ -1,0 +1,67 @@
+DAT
+_RET_ ROR lbl0, lbl1
+IF_NC_AND_NZ ROL lbl2, #3 WC
+IF_NZ_AND_NC SHR lbl4, lbl5 WZ
+IF_GT SHL lbl6, #7 WCZ
+IF_A RCR lbl8, lbl0
+IF_00 RCL lbl1, #11 WC
+IF_NC_AND_Z SAR lbl3, lbl4 WZ
+IF_Z_AND_NC SAL lbl5, #15 WCZ
+IF_01 ADD lbl7, lbl8
+IF_NC ADDX lbl0, #19 WC
+IF_GE ADDS lbl2, lbl3 WZ
+IF_AE ADDSX lbl4, #23 WCZ
+IF_0X SUB lbl6, lbl7
+IF_C_AND_NZ SUBX lbl8, #27 WC
+IF_NZ_AND_C SUBS lbl1, lbl2 WZ
+IF_10 SUBSX lbl3, #31 WCZ
+IF_NZ CMP lbl5, lbl6
+IF_NE CMPX lbl7, #35 WC
+IF_X0 CMPS lbl0, lbl1 WZ
+IF_C_NE_Z CMPSX lbl2, #39 WCZ
+IF_Z_NE_C CMPR lbl4, lbl5
+IF_DIFF CMPM lbl6, #43 WC
+IF_NC_OR_NZ SUBR lbl8, lbl0 WZ
+IF_NZ_OR_NC CMPSUB lbl1, #47 WCZ
+IF_NOT_11 FGE lbl3, lbl4
+IF_C_AND_Z FLE lbl5, #51 WC
+IF_Z_AND_C FGES lbl7, lbl8 WZ
+IF_11 FLES lbl0, #55 WCZ
+IF_C_EQ_Z SUMC lbl2, lbl3
+IF_Z_EQ_C SUMNC lbl4, #59 WC
+IF_SAME SUMZ lbl6, lbl7 WZ
+IF_Z SUMNZ lbl8, #63 WCZ
+IF_E AND lbl1, lbl2
+IF_X1 ANDN lbl3, #67 WC
+IF_NC_OR_Z OR lbl5, lbl6 WZ
+IF_Z_OR_NC XOR lbl7, #71 WCZ
+IF_NOT_10 MUXC lbl0, lbl1
+IF_C MUXNC lbl2, #75 WC
+IF_LT MUXZ lbl4, lbl5 WZ
+IF_B MUXNZ lbl6, #79 WCZ
+IF_1X MOV lbl8, lbl0
+IF_C_OR_NZ NOT lbl1, #83 WC
+IF_NZ_OR_C ABS lbl3, lbl4 WZ
+IF_NOT_01 NEG lbl5, #87 WCZ
+IF_C_OR_Z NEGC lbl7, lbl8
+IF_Z_OR_C NEGNC lbl0, #91 WC
+IF_LE NEGZ lbl2, lbl3 WZ
+IF_BE NEGNZ lbl4, #95 WCZ
+IF_NOT_00 INCMOD lbl6, lbl7
+_RET_ DECMOD lbl8, #99 WC
+IF_NC_AND_NZ ZEROX lbl1, lbl2 WZ
+IF_NZ_AND_NC SIGNX lbl3, #103 WCZ
+IF_GT ENCOD lbl5, lbl6
+IF_A ONES lbl7, #107 WC
+IF_00 TEST lbl0, lbl1 WZ
+IF_NC_AND_Z TESTN lbl2, #111 WCZ
+
+lbl0 LONG 0
+lbl1 LONG 1
+lbl2 LONG 2
+lbl3 LONG 3
+lbl4 LONG 4
+lbl5 LONG 5
+lbl6 LONG 6
+lbl7 LONG 7
+lbl8 LONG 8
