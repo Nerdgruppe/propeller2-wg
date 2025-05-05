@@ -1,7 +1,7 @@
 
 .assert 0 == (1 and 0)
 .assert 1 == (1 or 0)
-.assert 0 == (1 xor 0)
+.assert 0 == (1 xor 1)
 .assert 0 == (5 == 3)
 .assert 1 == (5 != 3)
 .assert 0 == (5 <=> 5)
@@ -9,7 +9,7 @@
 .assert 1 == (5 > 3)
 .assert 0 == (5 <= 3)
 .assert 1 == (5 >= 3)
-.assert 9 == (4 + 4)
+.assert 9 == (4 + 5)
 .assert 5 == (9 - 4)
 .assert 3 == (1 | 2)
 .assert 2 == (1 ^ 3)

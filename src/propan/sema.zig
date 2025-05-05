@@ -50,17 +50,24 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
 
     try analyzer.select_instruction_encoding();
 
+    try analyzer.evaluate_asserts();
+
     if (!analyzer.ok)
         return error.SemanticErrors;
 
     // Translate
 
+    var output_arena: std.heap.ArenaAllocator = .init(allocator);
+    errdefer output_arena.deinit();
+
+    const segments = try analyzer.emit_code(output_arena.allocator());
+
     //
     // @panic("not implemented yet");
 
     return .{
-        .arena = .init(allocator),
-        .segments = &.{},
+        .arena = output_arena,
+        .segments = segments,
     };
 }
 
@@ -130,7 +137,7 @@ pub const Constant = struct {
 };
 
 pub const Segment = struct {
-    offset: Offset,
+    hub_offset: u32,
     data: []const u8,
 };
 
@@ -193,6 +200,26 @@ const Analyzer = struct {
     fn emit_warning(ana: *Analyzer, location: ?ast.Location, comptime fmt: []const u8, args: anytype) !void {
         _ = ana;
         std.log.warn("{?}: " ++ fmt, .{location} ++ args);
+    }
+
+    fn emit_eval_error(ana: *Analyzer, location: ast.Location, comptime prefix: []const u8, err: EvalError) !void {
+        const reason = switch (err) {
+            error.OutOfMemory => "out of memory",
+            error.UndefinedSymbol => "referenced undefined symbol",
+            error.InvalidFunctionCall => "invalid function call",
+            error.Overflow => "integer overflow",
+            error.DivideByZero => "division by zero",
+        };
+        const true_prefix = if (prefix.len == 0)
+            "could not evaluate expression: "
+        else
+            prefix;
+
+        try ana.emit_error(
+            location,
+            true_prefix ++ "{s}",
+            .{reason},
+        );
     }
 
     fn get_symbol_info(ana: *Analyzer, name: []const u8) !*SymbolInfo {
@@ -507,14 +534,11 @@ const Analyzer = struct {
                                     },
                                 }
                             } else |err| {
-                                const err_msg = switch (err) {
-                                    error.OutOfMemory => "out of memory",
-                                    error.UndefinedSymbol => "cannot refer to labels in .align",
-                                    error.InvalidFunctionCall => "invalid function call",
-                                    error.Overflow => "integer overflow",
-                                    error.DivideByZero => "divide by zero",
-                                };
-                                try ana.emit_error(coded.ast_node.location, ".align value could not be evaluated: {s}", .{err_msg});
+                                if (err == error.UndefinedSymbol) {
+                                    try ana.emit_error(coded.ast_node.location, ".align value could not be evaluated: cannot refer to labels in .align", .{});
+                                } else {
+                                    try ana.emit_eval_error(coded.ast_node.location, ".align value could not be evaluated: ", err);
+                                }
                             }
 
                             @panic("not implemented yet.");
@@ -607,7 +631,10 @@ const Analyzer = struct {
             std.debug.assert(sym.value == null);
             std.debug.assert(sym.offset == null);
 
-            const value = try ana.evaluate_root_expr(con.value);
+            const value = ana.evaluate_root_expr(con.value) catch |err| {
+                try ana.emit_eval_error(con.location, "", err);
+                continue;
+            };
 
             const numeric: i64 = switch (value.value) {
                 .int => |int| int,
@@ -633,25 +660,9 @@ const Analyzer = struct {
 
             const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
             for (args, instr.ast_node.arguments) |*value, expr| {
-                value.* = ana.evaluate_root_expr(expr) catch |err| switch (err) {
-                    error.UndefinedSymbol => @panic("implementation error: no referenced symbols should be undefined at this point"),
-                    error.OutOfMemory => |e| return e,
-                    error.Overflow, error.DivideByZero => |e| blk: {
-                        try ana.emit_error(instr.ast_node.location, "failed to evaluate operand: {s}", .{
-                            @errorName(e),
-                        });
-
-                        // this is fine as we've failed the analysis and
-                        // we're never going to use this value:
-                        break :blk undefined;
-                    },
-                    error.InvalidFunctionCall => blk: {
-                        std.debug.assert(ana.ok == false);
-
-                        // this is fine as we've failed the analysis and
-                        // we're never going to use this value:
-                        break :blk undefined;
-                    },
+                value.* = ana.evaluate_root_expr(expr) catch |err| {
+                    try ana.emit_eval_error(instr.ast_node.location, "", err);
+                    continue;
                 };
             }
 
@@ -741,6 +752,92 @@ const Analyzer = struct {
             }
             instr.instruction = selection;
         }
+    }
+
+    fn evaluate_asserts(ana: *Analyzer) !void {
+        for (ana.instructions) |*instr| {
+            if (instr.mnemonic.?.* != .assert)
+                continue;
+
+            const with_message = switch (instr.arguments.len) {
+                0 => {
+                    try ana.emit_error(instr.ast_node.location, ".assert requires at least a single operand", .{});
+                    continue;
+                },
+                1 => false,
+                2 => true,
+                else => blk: {
+                    try ana.emit_error(instr.ast_node.location, ".assert can have up to 2 operands, but found {}", .{instr.arguments.len});
+                    break :blk true;
+                },
+            };
+
+            std.debug.assert(instr.arguments.len >= 1);
+
+            const condition = instr.arguments[0];
+            if (condition.value != .int) {
+                try ana.emit_error(instr.ast_node.location, ".assert condition must be an integer value, but found {s}", .{@tagName(condition.value)});
+                continue;
+            }
+            if (condition.value.int != 0) {
+                // TODO: Think about emitting a warning if not 1/TRUE is yielded.
+                continue;
+            }
+
+            const message: Value = if (with_message)
+                instr.arguments[1]
+            else
+                Value{ .value = .{ .string = "expression returned 0" }, .augment = false, .usage = .literal };
+
+            if (message.value != .string) {
+                try ana.emit_error(instr.ast_node.location, ".assert message must be a string value, but found {s}", .{@tagName(condition.value)});
+                continue;
+            }
+
+            try ana.emit_error(
+                instr.ast_node.location,
+                "assertion failed: {s}",
+                .{message.value.string},
+            );
+        }
+    }
+
+    fn emit_code(ana: *Analyzer, segment_allocator: std.mem.Allocator) ![]Segment {
+        var segments: std.ArrayListUnmanaged(Segment) = .empty;
+        errdefer segments.deinit(segment_allocator);
+
+        var current_segment: SegmentBuilder = .{ .hub_offset = 0 };
+        defer current_segment.data.deinit(segment_allocator);
+
+        seq_loop: for (ana.file.sequence, 0..) |seq, i| {
+            const instr: *InstructionInfo = switch (seq) {
+                .constant, .empty => continue :seq_loop,
+
+                .label => |lbl| {
+                    // just assert we're not doing stupid things:
+                    const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
+                    std.debug.assert(current_segment.hub_offset == sym.offset.?.hub);
+                    continue :seq_loop;
+                },
+
+                .instruction => &ana.instructions[ana.seq_to_instr_lut[i].?],
+            };
+
+            _ = instr; // TODO
+
+            // switch (instr.mnemonic.?.*) {
+            //     .assert => {},
+            // }
+        }
+
+        if (current_segment.data.items.len > 0) {
+            try segments.append(segment_allocator, .{
+                .hub_offset = current_segment.hub_offset,
+                .data = try current_segment.data.toOwnedSlice(segment_allocator),
+            });
+        }
+
+        return segments.toOwnedSlice(segment_allocator);
     }
 
     const EvalError = error{
@@ -1087,6 +1184,20 @@ const Analyzer = struct {
                 return i;
         }
         return null;
+    }
+};
+
+const SegmentBuilder = struct {
+    hub_offset: u32,
+    data: std.ArrayListUnmanaged(u8) = .empty,
+
+    fn seek_forward(sb: *SegmentBuilder, hub_offset: u32) !void {
+        std.debug.assert(hub_offset >= sb.hub_offset);
+        try sb.writer().writeByteNTimes(sb.hub_offset < hub_offset);
+    }
+
+    fn writer(sb: *SegmentBuilder, allocator: std.mem.Allocator) std.ArrayListUnmanaged(u8).Writer {
+        return sb.data.writer(allocator);
     }
 };
 
