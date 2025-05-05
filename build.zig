@@ -119,6 +119,10 @@ pub fn build(b: *std.Build) void {
     }
 }
 
+const examples: []const []const u8 = &[_][]const u8{
+    "examples/propio-client.propan",
+};
+
 const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const u8{
     "./tests/propan/parser/labels.propan",
     "./tests/propan/parser/conditions.propan",
@@ -133,7 +137,7 @@ const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const
     "./tests/propan/parser/amiguity.propan",
 };
 
-const sema_accept_tests: []const []const u8 = &.{
+const sema_accept_tests: []const []const u8 = examples ++ &[_][]const u8{
     "tests/propan/sema/basic-constants.propan",
     "tests/propan/sema/basic-instruction-selection.propan",
     "tests/propan/sema/addressing-modes.propan",

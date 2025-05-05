@@ -6,15 +6,15 @@ _start:
 
     PUSH 0
 
-    ROR ref, 0
-    ROR ref, other
+    ROL ref, 0
+    ROL ref, other
     
 
 var ref:
-    LONG 0
+    LONG 0x44332211
 
 var other:
-    LONG 0
+    LONG 0x99887766
 
 end:
     NOP

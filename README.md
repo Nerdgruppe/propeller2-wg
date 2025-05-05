@@ -49,15 +49,16 @@ const MY_CONSTANT = 10
 
 ### Unary Operators
 
-| Propan | PASM | Description                             |
-|--------|------|-----------------------------------------|
-| `!`    | `!!` | Boolean: NOT (0 => TRUE, else => FALSE) |
-| `~`    | `!`  | Bitwise: NOT                            |
-| `+`    | `+`  | Positive (+X) unary form of Add         |
-| `-`    | `-`  | Negate (−X); unary form of Subtract     |
-| `@`    | -    | PC-relative offset to label             |
-| `*`    | -    | Derference code label                   |
-| `&`    | `#`  | Address of data label                   |
+| Propan      | PASM                    | Description                             |
+|-------------|-------------------------|-----------------------------------------|
+| `!`         | `!!`                    | Boolean: NOT (0 => TRUE, else => FALSE) |
+| `~`         | `!`                     | Bitwise: NOT                            |
+| `+`         | `+`                     | Positive (+X) unary form of Add         |
+| `-`         | `-`                     | Negate (−X); unary form of Subtract     |
+| `@`         | `@` (inside `REP`)      | PC-relative offset to label             |
+| `hubaddr()` | `@` (when not in `REP`) | Absolute hub address of label           |
+| `*`         | -                       | Derference code label                   |
+| `&`         | "`#`"                   | Address of data label                   |
 
 ### Binary Operators
 

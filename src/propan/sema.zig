@@ -62,9 +62,6 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
 
     const segments = try analyzer.emit_code(output_arena.allocator());
 
-    //
-    // @panic("not implemented yet");
-
     return .{
         .arena = output_arena,
         .segments = segments,
@@ -864,8 +861,82 @@ const Analyzer = struct {
                 .encoded => {
                     const encoded = instr.instruction.?;
 
-                    _ = encoded;
-                    // TODO
+                    var output: u32 = encoded.binary;
+
+                    for (instr.arguments, encoded.operands, instr.ast_node.arguments) |value, operand, ast_node| {
+                        std.debug.assert(!value.augment); // TODO: Implement AUGS, AUGD
+
+                        const location = ast_node.location();
+
+                        const slot_value: u32 = if (operand.type == .enumeration) {
+                            // this is the most special case here:
+                            // TODO: enumerations take a "string" value (actually they need a enum literal!)
+
+                            if (value.value != .string) {
+                                try ana.emit_error(location, "expected enumeration value, found {s}", .{@tagName(value.value)});
+                                continue;
+                            }
+
+                            continue;
+                        } else blk: {
+                            const hint = value.usage;
+
+                            const int: u32 = try ana.cast_value_to(location, current_segment.exec_mode, value, u32);
+
+                            // TODO: Implement range validation!
+                            const enc: u32 = switch (operand.type) {
+
+                                // TODO: Handle relative/absolute addressing
+                                .address => int,
+
+                                .immediate => switch (hint) {
+                                    .literal => int,
+                                    .register => {
+                                        try ana.emit_error(location, "expected register value, but found immediate", .{});
+                                        continue;
+                                    },
+                                },
+
+                                .register => switch (hint) {
+                                    .register => int,
+                                    .literal => {
+                                        try ana.emit_error(location, "expected immediate value, but found register", .{});
+                                        continue;
+                                    },
+                                },
+
+                                .reg_or_imm => int, // TODO: Encode the decision if register or immediate!
+
+                                .pointer_expr => int, // TODO: Implement pointer operation
+
+                                .pointer_reg => switch (hint) {
+                                    .register => switch (int) {
+                                        0x1F6, 0x1F7, 0x1F8, 0x1F9 => int,
+
+                                        else => {
+                                            try ana.emit_error(location, "expected PA, PB, PTRA or PTRB, but found register {}", .{int});
+                                            continue;
+                                        },
+                                    },
+
+                                    .literal => {
+                                        try ana.emit_error(location, "expected immediate value, but found register", .{});
+                                        continue;
+                                    },
+                                },
+
+                                .enumeration => unreachable,
+                            };
+
+                            break :blk enc;
+                        };
+
+                        operand.slot.write(&output, slot_value) catch |err| switch (err) {
+                            error.Overflow => try ana.emit_error(location, "cannot write operand: integer overflow", .{}),
+                        };
+                    }
+
+                    try current_segment.writer().writeInt(u32, output, .little);
                 },
             }
         }
@@ -913,13 +984,20 @@ const Analyzer = struct {
     }
 
     fn get_offset_for_exec_mode(ana: *Analyzer, offset: Offset, mode: eval.ExecMode) !u32 {
-        //  switch(exec_mode) {
-        //     .cog => offset.local
-        // }
-        _ = ana;
-        _ = offset;
-        _ = mode;
-        @panic("TODO: Implement");
+        const target_mode: eval.ExecMode = offset.local;
+        if (target_mode != mode) {
+            if (mode != .hub) {
+                // TODO: IMPORTANT: WE HAVE TO ENCODE THE SEGMENT ID into Offset
+                // SO WE DON'T JUMP BETWEEN DIFFERENT SEGMENTS!
+                try ana.emit_error(null, "cannot refer to offset from different execution mode!", .{});
+            } else {
+                try ana.emit_warning(null, "jumping from hubexec mode into code that was defined in {s}exec mode. This is potentially unwanted behaviour!", .{
+                    @tagName(target_mode),
+                });
+            }
+        }
+
+        return offset.get_local();
     }
 
     const EvalError = error{
@@ -1523,12 +1601,13 @@ pub const EncodedInstruction = struct {
         }
 
         pub fn mask(slot: Slot) u32 {
-            return ((1 << slot.bits) - 1) << slot.shift;
+            return ((@as(u32, 1) << slot.bits) - 1) << slot.shift;
         }
 
-        pub fn write(slot: Slot, container: *u32, value: u32) void {
+        pub fn write(slot: Slot, container: *u32, value: u32) error{Overflow}!void {
             const shifted = value << slot.shift;
-            std.debug.assert((shifted & ~slot.mask()) == 0);
+            if ((shifted & ~slot.mask()) != 0)
+                return error.Overflow;
             container.* |= shifted;
         }
     };
