@@ -196,31 +196,71 @@ fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: 
 
     std.log.info("{}", .{common_len});
 
-    for (0..common_len) |offset| {
-        const expected: ?u8 = if (offset < expected_data.len) expected_data[offset] else null;
-        const actual: ?u8 = if (offset < actual_data.len) actual_data[offset] else null;
+    var fbs_exp = std.io.fixedBufferStream(expected_data);
+    var fbs_act = std.io.fixedBufferStream(actual_data);
+
+    while (fbs_exp.pos < expected_data.len or fbs_act.pos < expected_data.len) {
+        const offset = @max(fbs_exp.pos, fbs_act.pos);
+
+        const expected = fbs_exp.reader().readInt(u32, .little) catch 0;
+        const actual = fbs_act.reader().readInt(u32, .little) catch 0;
+
+        // const expected: ?u8 = if (offset < expected_data.len) expected_data[offset] else null;
+        // const actual: ?u8 = if (offset < actual_data.len) actual_data[offset] else null;
 
         if (actual == expected)
             continue;
 
-        try writer.print("@{X:0>5}: expected: 0x{?X:0>2} ({s}), actual: 0x{?X:0>2} ({s})\n", .{
+        const instr_groups: []const u32 = &.{ 9, 9, 3, 7, 4 };
+        try writer.print("@{X:0>5}: expected: 0x{X:0>8} ({s}), actual: 0x{X:0>8} ({s})\n", .{
             offset,
             expected,
-            bitdiff(expected orelse 0, actual orelse 0),
+            bitdiff(u32, expected, actual, instr_groups),
             actual,
-            bitdiff(actual orelse 0, expected orelse 0),
+            bitdiff(u32, actual, expected, instr_groups),
         });
     }
 }
 
-fn bitdiff(comp: u8, ref: u8) [8]u8 {
-    var out: [8]u8 = @splat('-');
-    inline for (0..7) |i| {
-        const mask = (1 << i);
-        out[7 - i] = if ((comp & mask) != (ref & mask))
-            "01"[(comp >> i) & 1]
-        else
-            '-';
+fn bitdiff(comptime T: type, comp: T, ref: T, comptime groups: []const u32) [@bitSizeOf(T) + groups.len]u8 {
+    var out: [@bitSizeOf(T) + groups.len]u8 = @splat('-');
+
+    comptime {
+        var size = 0;
+        for (groups) |grp| {
+            size += grp;
+        }
+        std.debug.assert(size == @bitSizeOf(T));
     }
+
+    var group_id: usize = 0;
+    var group_end: usize = groups[0];
+    var bit_index: usize = 0;
+
+    inline for (0..out.len) |idx| {
+        const chr = &out[out.len - idx - 1];
+        if (idx == group_end) {
+            chr.* = ' ';
+            group_id += 1;
+            group_end += 1;
+            if (group_id < groups.len) {
+                group_end += groups[group_id];
+            } else {
+                std.debug.assert(group_end == out.len);
+            }
+        } else {
+            const mask = @as(T, 1) << @intCast(bit_index);
+            const bit = (comp >> @intCast(bit_index)) & 1;
+            const miss = (comp & mask) != (ref & mask);
+
+            chr.* = if (miss)
+                "01"[bit]
+            else
+                '-';
+
+            bit_index += 1;
+        }
+    }
+
     return out;
 }
