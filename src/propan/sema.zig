@@ -878,10 +878,12 @@ const Analyzer = struct {
 
                     var output: u32 = encoded.binary;
 
-                    const cond_code = if (instr.ast_node.condition) |condition|
+                    const cond_code: ast.Condition.Code = if (instr.ast_node.condition) |condition|
                         condition.type.encode()
+                    else if (std.ascii.eqlIgnoreCase(encoded.mnemonic, "NOP"))
+                        .@"return" // TODO: Remove this special case, it's weird. Should be encoded as a flag
                     else
-                        .always;
+                        encoded.default_condition;
 
                     const condition_slot: EncodedInstruction.Slot = comptime .from_mask(0xF000_0000);
                     try condition_slot.write(&output, @intFromEnum(cond_code));
@@ -1668,6 +1670,8 @@ pub const EncodedInstruction = struct {
 
     c_effect_slot: ?Slot = null,
     z_effect_slot: ?Slot = null,
+
+    default_condition: ast.Condition.Code = .always,
 
     pub const Slot = struct {
         shift: u5,

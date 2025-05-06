@@ -1,0 +1,166 @@
+    NOP
+    XSTOP
+    
+    // interrupt group
+    ALLOWI
+    STALLI
+
+    NIXINT1
+    NIXINT2
+    NIXINT3
+
+    TRGINT1
+    TRGINT2
+    TRGINT3
+    
+    RESI0
+    RESI1
+    RESI2
+    RESI3
+    
+    RETI0
+    RETI1
+    RETI2
+    RETI3
+    
+    // return group {:wc/:wz/:wcz}
+    RET
+    RET :wc
+    RET :wz
+    RET :wcz
+    RETA
+    RETA :wc
+    RETA :wz
+    RETA :wcz
+    RETB
+    RETB :wc
+    RETB :wz
+    RETB :wcz
+
+    // poll group {:wc/:wz/:wcz}
+    POLLATN
+    POLLATN :wc
+    POLLATN :wz
+    POLLATN :wcz
+    POLLCT1
+    POLLCT1 :wc
+    POLLCT1 :wz
+    POLLCT1 :wcz
+    POLLCT2
+    POLLCT2 :wc
+    POLLCT2 :wz
+    POLLCT2 :wcz
+    POLLCT3
+    POLLCT3 :wc
+    POLLCT3 :wz
+    POLLCT3 :wcz
+    POLLFBW
+    POLLFBW :wc
+    POLLFBW :wz
+    POLLFBW :wcz
+    POLLINT
+    POLLINT :wc
+    POLLINT :wz
+    POLLINT :wcz
+    POLLPAT
+    POLLPAT :wc
+    POLLPAT :wz
+    POLLPAT :wcz
+    POLLQMT
+    POLLQMT :wc
+    POLLQMT :wz
+    POLLQMT :wcz
+    POLLSE1
+    POLLSE1 :wc
+    POLLSE1 :wz
+    POLLSE1 :wcz
+    POLLSE2
+    POLLSE2 :wc
+    POLLSE2 :wz
+    POLLSE2 :wcz
+    POLLSE3
+    POLLSE3 :wc
+    POLLSE3 :wz
+    POLLSE3 :wcz
+    POLLSE4
+    POLLSE4 :wc
+    POLLSE4 :wz
+    POLLSE4 :wcz
+    POLLXFI
+    POLLXFI :wc
+    POLLXFI :wz
+    POLLXFI :wcz
+    POLLXMT
+    POLLXMT :wc
+    POLLXMT :wz
+    POLLXMT :wcz
+    POLLXRL
+    POLLXRL :wc
+    POLLXRL :wz
+    POLLXRL :wcz
+    POLLXRO
+    POLLXRO :wc
+    POLLXRO :wz
+    POLLXRO :wcz
+
+    // wait group {:wc/:wz/:wcz}
+    WAITATN
+    WAITATN :wc
+    WAITATN :wz
+    WAITATN :wcz
+    WAITCT1
+    WAITCT1 :wc
+    WAITCT1 :wz
+    WAITCT1 :wcz
+    WAITCT2
+    WAITCT2 :wc
+    WAITCT2 :wz
+    WAITCT2 :wcz
+    WAITCT3
+    WAITCT3 :wc
+    WAITCT3 :wz
+    WAITCT3 :wcz
+    WAITFBW
+    WAITFBW :wc
+    WAITFBW :wz
+    WAITFBW :wcz
+    WAITINT
+    WAITINT :wc
+    WAITINT :wz
+    WAITINT :wcz
+    WAITPAT
+    WAITPAT :wc
+    WAITPAT :wz
+    WAITPAT :wcz
+    WAITSE1
+    WAITSE1 :wc
+    WAITSE1 :wz
+    WAITSE1 :wcz
+    WAITSE2
+    WAITSE2 :wc
+    WAITSE2 :wz
+    WAITSE2 :wcz
+    WAITSE3
+    WAITSE3 :wc
+    WAITSE3 :wz
+    WAITSE3 :wcz
+    WAITSE4
+    WAITSE4 :wc
+    WAITSE4 :wz
+    WAITSE4 :wcz
+    WAITXFI
+    WAITXFI :wc
+    WAITXFI :wz
+    WAITXFI :wcz
+    WAITXMT
+    WAITXMT :wc
+    WAITXMT :wz
+    WAITXMT :wcz
+    WAITXRL
+    WAITXRL :wc
+    WAITXRL :wz
+    WAITXRL :wcz
+    WAITXRO
+    WAITXRO :wc
+    WAITXRO :wz
+    WAITXRO :wcz
