@@ -730,6 +730,18 @@ const Analyzer = struct {
                         can_assign = false;
                     }
                 }
+                if (instr.ast_node.effect) |effect| {
+                    if (!alt.effects.contains(effect)) {
+                        logger.info("      : non-matching effect", .{});
+                        can_assign = false;
+                    }
+                } else {
+                    if (!alt.effects.none) {
+                        logger.info("      : requires effect", .{});
+                        can_assign = false;
+                    }
+                }
+
                 if (!can_assign) {
                     logger.info("      : skip!", .{});
                     continue;
@@ -825,7 +837,7 @@ const Analyzer = struct {
 
             const mnemonic: Mnemonic = instr.mnemonic.?.*;
 
-            logger.info("emit {s}", .{@tagName(mnemonic)});
+            logger.debug("emit {s}", .{@tagName(mnemonic)});
 
             switch (mnemonic) {
                 .assert, .@"align" => {},

@@ -1,0 +1,140 @@
+
+DAT 
+    TESTB   dst,  src WC
+    TESTB   dst,  src WZ
+    TESTB   dst, #src WC
+    TESTB   dst, #src WZ
+    TESTBN  dst,  src WC
+    TESTBN  dst,  src WZ
+    TESTBN  dst, #src WC
+    TESTBN  dst, #src WZ
+    TESTB   dst,  src ANDC
+    TESTB   dst,  src ANDZ
+    TESTB   dst, #src ANDC
+    TESTB   dst, #src ANDZ
+    TESTBN  dst,  src ANDC
+    TESTBN  dst,  src ANDZ
+    TESTBN  dst, #src ANDC
+    TESTBN  dst, #src ANDZ
+    TESTB   dst,  src ORC
+    TESTB   dst,  src ORZ
+    TESTB   dst, #src ORC
+    TESTB   dst, #src ORZ
+    TESTBN  dst,  src ORC
+    TESTBN  dst,  src ORZ
+    TESTBN  dst, #src ORC
+    TESTBN  dst, #src ORZ
+    TESTB   dst,  src XORC
+    TESTB   dst,  src XORZ
+    TESTB   dst, #src XORC
+    TESTB   dst, #src XORZ
+    TESTBN  dst,  src XORC
+    TESTBN  dst,  src XORZ
+    TESTBN  dst, #src XORC
+    TESTBN  dst, #src XORZ
+
+    ' Same encoding as TESTB{N}
+    BITL    dst,  src
+    BITL    dst,  src WCZ
+    BITL    dst, #src
+    BITL    dst, #src WCZ
+    BITH    dst,  src
+    BITH    dst,  src WCZ
+    BITH    dst, #src
+    BITH    dst, #src WCZ
+    BITC    dst,  src
+    BITC    dst,  src WCZ
+    BITC    dst, #src
+    BITC    dst, #src WCZ
+    BITNC   dst,  src
+    BITNC   dst,  src WCZ
+    BITNC   dst, #src
+    BITNC   dst, #src WCZ
+    BITZ    dst,  src
+    BITZ    dst,  src WCZ
+    BITZ    dst, #src
+    BITZ    dst, #src WCZ
+    BITNZ   dst,  src
+    BITNZ   dst,  src WCZ
+    BITNZ   dst, #src
+    BITNZ   dst, #src WCZ
+    BITRND  dst,  src
+    BITRND  dst,  src WCZ
+    BITRND  dst, #src
+    BITRND  dst, #src WCZ
+    BITNOT  dst,  src
+    BITNOT  dst,  src WCZ
+    BITNOT  dst, #src
+    BITNOT  dst, #src WCZ
+
+    TESTP   dst WC
+    TESTP  #dst WZ
+    TESTP   dst WC
+    TESTP  #dst WZ
+    TESTPN  dst WC
+    TESTPN #dst WZ
+    TESTPN  dst WC
+    TESTPN #dst WZ
+    TESTP   dst ANDC
+    TESTP  #dst ANDZ
+    TESTP   dst ANDC
+    TESTP  #dst ANDZ
+    TESTPN  dst ANDC
+    TESTPN #dst ANDZ
+    TESTPN  dst ANDC
+    TESTPN #dst ANDZ
+    TESTP   dst ORC
+    TESTP  #dst ORZ
+    TESTP   dst ORC
+    TESTP  #dst ORZ
+    TESTPN  dst ORC
+    TESTPN #dst ORZ
+    TESTPN  dst ORC
+    TESTPN #dst ORZ
+    TESTP   dst XORC
+    TESTP  #dst XORZ
+    TESTP   dst XORC
+    TESTP  #dst XORZ
+    TESTPN  dst XORC
+    TESTPN #dst XORZ
+    TESTPN  dst XORC
+    TESTPN #dst XORZ
+
+    ' Same encoding as TESTP{N}
+    DIRL    dst
+    DIRL   #dst
+    DIRL    dst WCZ
+    DIRL   #dst WCZ
+    DIRH    dst
+    DIRH   #dst
+    DIRH    dst WCZ
+    DIRH   #dst WCZ
+    DIRC    dst
+    DIRC   #dst
+    DIRC    dst WCZ
+    DIRC   #dst WCZ
+    DIRNC   dst
+    DIRNC  #dst
+    DIRNC   dst WCZ
+    DIRNC  #dst WCZ
+    DIRZ    dst
+    DIRZ   #dst
+    DIRZ    dst WCZ
+    DIRZ   #dst WCZ
+    DIRNZ   dst
+    DIRNZ  #dst
+    DIRNZ   dst WCZ
+    DIRNZ  #dst WCZ
+    DIRRND  dst
+    DIRRND #dst
+    DIRRND  dst WCZ
+    DIRRND #dst WCZ
+    DIRNOT  dst
+    DIRNOT #dst
+    DIRNOT  dst WCZ
+    DIRNOT #dst WCZ
+
+src
+    LONG 0
+dst
+    LONG 0
