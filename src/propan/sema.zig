@@ -879,6 +879,8 @@ const Analyzer = struct {
 
                         const location = ast_node.location();
 
+                        var fill_extra_slot: ?EncodedInstruction.Slot = null;
+
                         const slot_value: u32 = if (operand.type == .enumeration) {
                             // this is the most special case here:
                             // TODO: enumerations take a "string" value (actually they need a enum literal!)
@@ -888,17 +890,17 @@ const Analyzer = struct {
                                 continue;
                             }
 
-                            continue;
+                            @panic("not implemented yet!");
                         } else blk: {
                             const hint = value.usage;
 
                             const int: u32 = try ana.cast_value_to(location, current_segment.exec_mode, value, u32);
 
-                            // TODO: Implement range validation!
                             const enc: u32 = switch (operand.type) {
-
-                                // TODO: Handle relative/absolute addressing
-                                .address => int,
+                                .address => enc: {
+                                    fill_extra_slot = null; // TODO: Handle relative/absolute addressing
+                                    break :enc int;
+                                },
 
                                 .immediate => switch (hint) {
                                     .literal => int,
@@ -916,9 +918,24 @@ const Analyzer = struct {
                                     },
                                 },
 
-                                .reg_or_imm => int, // TODO: Encode the decision if register or immediate!
+                                .reg_or_imm => |slot_when_imm| enc: {
+                                    switch (hint) {
+                                        .register => fill_extra_slot = null,
+                                        .literal => fill_extra_slot = slot_when_imm,
+                                    }
+                                    break :enc int;
+                                },
 
-                                .pointer_expr => int, // TODO: Implement pointer operation
+                                .pointer_expr => enc: {
+
+                                    // TODO: Implement pointer operation
+                                    if (int > 255) {
+                                        try ana.emit_error(location, "pointer expression immediate must be in range 0 to 255, but found {}", .{int});
+                                        continue;
+                                    }
+
+                                    break :enc int;
+                                },
 
                                 .pointer_reg => switch (hint) {
                                     .register => switch (int) {
@@ -931,7 +948,7 @@ const Analyzer = struct {
                                     },
 
                                     .literal => {
-                                        try ana.emit_error(location, "expected immediate value, but found register", .{});
+                                        try ana.emit_error(location, "expected register value, but found immediate", .{});
                                         continue;
                                     },
                                 },
@@ -939,12 +956,25 @@ const Analyzer = struct {
                                 .enumeration => unreachable,
                             };
 
+                            const max_value = operand.slot.max_value();
+                            if (enc > max_value) {
+                                try ana.emit_error(location, "operand value out of range. max. allowed value is {}, but got {}", .{
+                                    max_value,
+                                    enc,
+                                });
+                                continue;
+                            }
+
                             break :blk enc;
                         };
 
                         operand.slot.write(&output, slot_value) catch |err| switch (err) {
                             error.Overflow => try ana.emit_error(location, "cannot write operand: integer overflow", .{}),
                         };
+
+                        if (fill_extra_slot) |slot| {
+                            slot.write(&output, slot.max_value()) catch unreachable; // max-value is always in range!
+                        }
                     }
 
                     try current_segment.writer().writeInt(u32, output, .little);
@@ -1618,6 +1648,10 @@ pub const EncodedInstruction = struct {
 
         pub fn mask(slot: Slot) u32 {
             return ((@as(u32, 1) << slot.bits) - 1) << slot.shift;
+        }
+
+        pub fn max_value(slot: Slot) u32 {
+            return (@as(u32, 1) << slot.bits) - 1;
         }
 
         pub fn write(slot: Slot, container: *u32, value: u32) error{Overflow}!void {
