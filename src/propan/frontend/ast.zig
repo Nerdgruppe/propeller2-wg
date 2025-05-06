@@ -258,4 +258,24 @@ pub const Effect = enum {
     wc,
     wcz,
     wz,
+
+    pub const FillMask = packed struct(u2) {
+        c: bool,
+        z: bool,
+    };
+
+    pub fn get_write_mask(effect: Effect) FillMask {
+        const lut: std.EnumArray(Effect, u2) = comptime .init(.{
+            .and_c = 0b01,
+            .and_z = 0b10,
+            .or_c = 0b01,
+            .or_z = 0b10,
+            .xor_c = 0b01,
+            .xor_z = 0b10,
+            .wc = 0b01,
+            .wcz = 0b11,
+            .wz = 0b10,
+        });
+        return @bitCast(lut.get(effect));
+    }
 };

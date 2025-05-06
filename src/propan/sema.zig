@@ -874,6 +874,33 @@ const Analyzer = struct {
                     const condition_slot: EncodedInstruction.Slot = comptime .from_mask(0xF000_0000);
                     try condition_slot.write(&output, @intFromEnum(cond_code));
 
+                    if (instr.ast_node.effect) |effect| {
+                        if (!encoded.effects.contains(effect)) {
+                            try ana.emit_error(instr.ast_node.location, "{s} canont use the effect operator :{s}", .{
+                                encoded.mnemonic,
+                                @tagName(effect),
+                            });
+                            continue;
+                        }
+
+                        const write_mask = effect.get_write_mask();
+
+                        if (write_mask.c) {
+                            const slot = encoded.c_effect_slot orelse return error.BadInstructionEncoding;
+                            slot.fill(&output);
+                        }
+
+                        if (write_mask.z) {
+                            const slot = encoded.z_effect_slot orelse return error.BadInstructionEncoding;
+                            slot.fill(&output);
+                        }
+                    } else {
+                        if (!encoded.effects.none) {
+                            try ana.emit_error(instr.ast_node.location, "{s} cannot be used without effect operator", .{encoded.mnemonic});
+                            continue;
+                        }
+                    }
+
                     for (instr.arguments, encoded.operands, instr.ast_node.arguments) |value, operand, ast_node| {
                         std.debug.assert(!value.augment); // TODO: Implement AUGS, AUGD
 
@@ -973,7 +1000,7 @@ const Analyzer = struct {
                         };
 
                         if (fill_extra_slot) |slot| {
-                            slot.write(&output, slot.max_value()) catch unreachable; // max-value is always in range!
+                            slot.fill(&output);
                         }
                     }
 
@@ -1627,6 +1654,9 @@ pub const EncodedInstruction = struct {
     operands: []const Operand,
     flags: Flags = .{},
 
+    c_effect_slot: ?Slot = null,
+    z_effect_slot: ?Slot = null,
+
     pub const Slot = struct {
         shift: u5,
         bits: u5,
@@ -1659,6 +1689,11 @@ pub const EncodedInstruction = struct {
             if ((shifted & ~slot.mask()) != 0)
                 return error.Overflow;
             container.* |= shifted;
+        }
+
+        /// Sets all values inside the slot to 1.
+        pub fn fill(slot: Slot, container: *u32) void {
+            slot.write(container, slot.max_value()) catch unreachable; // max_value() always fits the slot.
         }
     };
 
@@ -1726,6 +1761,8 @@ pub const EncodedInstruction = struct {
     };
 
     pub const Effects = packed struct {
+        const empty: Effects = std.mem.zeroes(Effects);
+
         none: bool, // allow no effect
         wz: bool,
         wc: bool,
@@ -1739,7 +1776,7 @@ pub const EncodedInstruction = struct {
 
         pub fn from_list(comptime set: []const std.meta.FieldEnum(Effects)) Effects {
             @setEvalBranchQuota(10_000);
-            var results = std.mem.zeroes(Effects);
+            var results = empty;
             inline for (set) |key| {
                 @field(results, @tagName(key)) = true;
             }
@@ -1760,6 +1797,12 @@ pub const EncodedInstruction = struct {
                     return true;
             }
             return false;
+        }
+
+        pub fn contains(set: Effects, item: ast.Effect) bool {
+            return switch (item) {
+                inline else => |tag| return @field(set, @tagName(tag)),
+            };
         }
     };
 
