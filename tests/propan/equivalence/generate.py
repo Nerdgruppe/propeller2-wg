@@ -109,7 +109,7 @@ conditions = [
     ("IF_X0", "if(!=)"),
     ("IF_C_NE_Z", "if(c != z)"),
     ("IF_Z_NE_C", "if(z != c)"),
-    ("IF_DIFF", "if(c!=z)"),
+    ("IF_DIFF", "if(c != z)"),
     ("IF_NC_OR_NZ", "if(!c | !z)"),
     ("IF_NZ_OR_NC", "if(!c | !z)"),
     ("IF_NOT_11", "if(!c | !z)"),
@@ -118,7 +118,7 @@ conditions = [
     ("IF_11", "if(c & z)"),
     ("IF_C_EQ_Z", "if(c == z)"),
     ("IF_Z_EQ_C", "if(z == c)"),
-    ("IF_SAME", "if(==)"),
+    ("IF_SAME", "if(c == z)"),
     ("IF_Z", "if(z)"),
     ("IF_E", "if(z)"),
     ("IF_X1", "if(z)"),
@@ -166,10 +166,10 @@ def gen_sequence(items):
 with open(OUT_DIR / "arithmetic_group.propan", "w") as fp:
     effect = gen_sequence(("", " :wc", " :wz", " :wcz"))
     cond = gen_sequence([second for _, second in conditions])
-    label = gen_lrefs(lambda n: f"&{n}",lambda n: f"{n}")
+    label = gen_lrefs(lambda n: f"&{n}", lambda n: f"{n}")
 
-    for instr in instructions:
-        fp.write(f"{next(cond)} {instr} {next(label)}, {next(label)}{next(effect)}\n")
+    for i, instr in enumerate(instructions):
+        fp.write(f"{next(cond)} {instr} {next(label)}, {next(label)}{next(effect)} // {4 * i:05X}\n")
 
     fp.write("\n")
 
@@ -183,8 +183,8 @@ with open(OUT_DIR / "arithmetic_group.spin2", "w") as fp:
 
     fp.write("DAT\n")
 
-    for instr in instructions:
-        fp.write(f"{next(cond)} {instr} {next(label)}, {next(label)}{next(effect)}\n")
+    for i, instr in enumerate(instructions):
+        fp.write(f"{next(cond)} {instr} {next(label)}, {next(label)}{next(effect)} ' {4 * i:05X}\n")
 
     fp.write("\n")
 

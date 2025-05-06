@@ -292,7 +292,10 @@ const Analyzer = struct {
                         break false;
                 } else true;
 
-                if (all_eq) {
+                const effects_overlap = instr.effects.@"union"(other.effects).any();
+
+                if (all_eq and effects_overlap) {
+                    std.log.err("{s}, {s}", .{ instr.mnemonic, other.mnemonic });
                     for (other.operands) |op| {
                         std.log.err("ops: {s}", .{@tagName(op.type)});
                     }
@@ -862,6 +865,14 @@ const Analyzer = struct {
                     const encoded = instr.instruction.?;
 
                     var output: u32 = encoded.binary;
+
+                    const cond_code = if (instr.ast_node.condition) |condition|
+                        condition.type.encode()
+                    else
+                        .always;
+
+                    const condition_slot: EncodedInstruction.Slot = comptime .from_mask(0xF000_0000);
+                    try condition_slot.write(&output, @intFromEnum(cond_code));
 
                     for (instr.arguments, encoded.operands, instr.ast_node.arguments) |value, operand, ast_node| {
                         std.debug.assert(!value.augment); // TODO: Implement AUGS, AUGD
@@ -1582,12 +1593,17 @@ pub const EncodedInstruction = struct {
     mnemonic: []const u8,
 
     binary: u32,
-    flags: Flags,
+    effects: Effects,
     operands: []const Operand,
+    flags: Flags = .{},
 
     pub const Slot = struct {
         shift: u5,
         bits: u5,
+
+        pub fn init(shift: u8, bits: u5) Slot {
+            return .{ .shift = shift, .bits = bits };
+        }
 
         pub fn from_mask(mval: u32) Slot {
             const shift = @ctz(mval);
@@ -1627,16 +1643,19 @@ pub const EncodedInstruction = struct {
         pub const Type = union(enum) {
             /// Immediate value with absolute or relative addressing
             /// #{\}A
-            address,
+            /// slot marks the bits where relative=1, absolute=0 should be written
+            address: Slot,
 
             /// D or S
             register,
 
             /// #D, #S or
-            immediate: u32, // encodes limit
+            immediate, // limit is encoded by `(1 << op.slot.length)`
 
             /// {#}D or {#}S
-            reg_or_imm: u32, // encodes limit
+            /// limit is encoded by `(1 << op.slot.length)`
+            /// slot marks the bits where immediate=1, register=0 should be written
+            reg_or_imm: Slot,
 
             /// Either #N or PTRx++, --PTRx, ...
             /// with N <= 255
@@ -1672,25 +1691,11 @@ pub const EncodedInstruction = struct {
         };
     };
 
-    pub const Flags = packed struct {
-        pub const none: Flags = .{
-            .wz = false,
-            .wc = false,
-            .wcz = false,
-            .wr = false,
-            .and_c = false,
-            .and_z = false,
-            .or_c = false,
-            .or_z = false,
-            .xor_c = false,
-            .xor_z = false,
-            .wcz_not_used = .ignore,
-        };
-
+    pub const Effects = packed struct {
+        none: bool, // allow no effect
         wz: bool,
         wc: bool,
         wcz: bool,
-        wr: bool,
         and_c: bool,
         and_z: bool,
         or_c: bool,
@@ -1698,17 +1703,34 @@ pub const EncodedInstruction = struct {
         xor_c: bool,
         xor_z: bool,
 
-        wcz_not_used: enum(u2) { ignore, warn, err },
-
-        pub fn with(flags: Flags, comptime field: std.meta.FieldEnum(Flags), value: @FieldType(Flags, @tagName(field))) Flags {
-            var copy = flags;
-            @field(copy, @tagName(field)) = value;
-            return copy;
+        pub fn from_list(comptime set: []const std.meta.FieldEnum(Effects)) Effects {
+            @setEvalBranchQuota(10_000);
+            var results = std.mem.zeroes(Effects);
+            inline for (set) |key| {
+                @field(results, @tagName(key)) = true;
+            }
+            return results;
         }
 
-        pub fn add(flags: Flags, comptime field: std.meta.FieldEnum(Flags)) Flags {
-            return flags.with(field, true);
+        pub fn @"union"(lhs: Effects, rhs: Effects) Effects {
+            var results = std.mem.zeroes(Effects);
+            inline for (std.meta.fields(Effects)) |fld| {
+                @field(results, fld.name) = @field(lhs, fld.name) and @field(rhs, fld.name);
+            }
+            return results;
         }
+
+        pub fn any(value: Effects) bool {
+            inline for (std.meta.fields(Effects)) |fld| {
+                if (@field(value, fld.name))
+                    return true;
+            }
+            return false;
+        }
+    };
+
+    pub const Flags = packed struct {
+        wcz_not_used: enum(u2) { ignore, warn, err } = .ignore,
     };
 };
 

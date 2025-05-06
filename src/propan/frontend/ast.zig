@@ -132,6 +132,87 @@ pub const Condition = union(enum) {
         @"<",
         @">",
     };
+
+    pub fn encode(cond: Condition) Code {
+        return switch (cond) {
+            .@"return" => .@"return",
+
+            .c_is => |c| if (c) .if_c else .if_nc,
+            .z_is => |z| if (z) .if_z else .if_nz,
+
+            .c_and_z => |op| if (op.c)
+                (if (op.z) .if_c_and_z else .if_c_and_nz)
+            else
+                (if (op.z) .if_nc_and_z else .if_nc_and_nz),
+
+            .c_or_z => |op| if (op.c)
+                (if (op.z) .if_c_or_z else .if_c_or_nz)
+            else
+                (if (op.z) .if_nc_or_z else .if_nc_or_nz),
+
+            .c_is_z => .if_c_eq_z,
+            .c_is_not_z => .if_c_ne_z,
+
+            .comparison => |comp| switch (comp) {
+                .@">=" => .if_nc,
+                .@"<=" => .if_c_or_z,
+                .@"==" => .if_z,
+                .@"!=" => .if_nz,
+                .@"<" => .if_c,
+                .@">" => .if_nc_and_nz,
+            },
+        };
+    }
+
+    pub const Code = enum(u4) {
+        /// Always execute and return (More Info)
+        @"return" = 0b0000,
+
+        /// Execute if C=0 AND Z=0
+        if_nc_and_nz = 0b0001,
+
+        /// Execute if C=0 AND Z=1
+        if_nc_and_z = 0b0010,
+
+        ///  Execute if C=0
+        if_nc = 0b0011,
+
+        /// Execute if C=1 AND Z=0
+        if_c_and_nz = 0b0100,
+
+        /// Execute if Z=0
+        if_nz = 0b0101,
+
+        /// Execute if C!=Z
+        if_c_ne_z = 0b0110,
+
+        /// Execute if C=0 OR Z=0
+        if_nc_or_nz = 0b0111,
+
+        /// Execute if C=1 AND Z=1
+        if_c_and_z = 0b1000,
+
+        /// Execute if C=Z
+        if_c_eq_z = 0b1001,
+
+        /// Execute if Z=1
+        if_z = 0b1010,
+
+        /// Execute if C=0 OR Z=1
+        if_nc_or_z = 0b1011,
+
+        /// Execute if C=1
+        if_c = 0b1100,
+
+        /// Execute if C=1 OR Z=0
+        if_c_or_nz = 0b1101,
+
+        /// Execute if C=1 OR Z=1
+        if_c_or_z = 0b1110,
+
+        /// Always execute
+        always = 0b1111,
+    };
 };
 
 pub const UnaryOperator = enum {

@@ -1,59 +1,59 @@
-return ROR lbl0, lbl1
-if(!c & !z) ROL lbl2, 3 :wc
-if(!z & !c) SHR lbl4, lbl5 :wz
-if(>) SHL lbl6, 7 :wcz
-if(>) RCR lbl8, lbl0
-if(!c & !z) RCL lbl1, 11 :wc
-if(!c & z) SAR lbl3, lbl4 :wz
-if(z & !c) SAL lbl5, 15 :wcz
-if(!c & z) ADD lbl7, lbl8
-if(!c) ADDX lbl0, 19 :wc
-if(>=) ADDS lbl2, lbl3 :wz
-if(>=) ADDSX lbl4, 23 :wcz
-if(!c) SUB lbl6, lbl7
-if(c & !z) SUBX lbl8, 27 :wc
-if(!z & c) SUBS lbl1, lbl2 :wz
-if(c & !z) SUBSX lbl3, 31 :wcz
-if(!z) CMP lbl5, lbl6
-if(!=) CMPX lbl7, 35 :wc
-if(!=) CMPS lbl0, lbl1 :wz
-if(c != z) CMPSX lbl2, 39 :wcz
-if(z != c) CMPR lbl4, lbl5
-if(c!=z) CMPM lbl6, 43 :wc
-if(!c | !z) SUBR lbl8, lbl0 :wz
-if(!c | !z) CMPSUB lbl1, 47 :wcz
-if(!c | !z) FGE lbl3, lbl4
-if(c & z) FLE lbl5, 51 :wc
-if(z & c) FGES lbl7, lbl8 :wz
-if(c & z) FLES lbl0, 55 :wcz
-if(c == z) SUMC lbl2, lbl3
-if(z == c) SUMNC lbl4, 59 :wc
-if(==) SUMZ lbl6, lbl7 :wz
-if(z) SUMNZ lbl8, 63 :wcz
-if(z) AND lbl1, lbl2
-if(z) ANDN lbl3, 67 :wc
-if(!c | z) OR lbl5, lbl6 :wz
-if(z | !c) XOR lbl7, 71 :wcz
-if(!c | z) MUXC lbl0, lbl1
-if(c) MUXNC lbl2, 75 :wc
-if(<) MUXZ lbl4, lbl5 :wz
-if(<) MUXNZ lbl6, 79 :wcz
-if(c) MOV lbl8, lbl0
-if(c | !z) NOT lbl1, 83 :wc
-if(!z | c) ABS lbl3, lbl4 :wz
-if(!z | c) NEG lbl5, 87 :wcz
-if(c | z) NEGC lbl7, lbl8
-if(z | c) NEGNC lbl0, 91 :wc
-if(<=) NEGZ lbl2, lbl3 :wz
-if(<=) NEGNZ lbl4, 95 :wcz
-if(<=) INCMOD lbl6, lbl7
-return DECMOD lbl8, 99 :wc
-if(!c & !z) ZEROX lbl1, lbl2 :wz
-if(!z & !c) SIGNX lbl3, 103 :wcz
-if(>) ENCOD lbl5, lbl6
-if(>) ONES lbl7, 107 :wc
-if(!c & !z) TEST lbl0, lbl1 :wz
-if(!c & z) TESTN lbl2, 111 :wcz
+return ROR lbl0, lbl1 // 00000
+if(!c & !z) ROL lbl2, 3 :wc // 00004
+if(!z & !c) SHR lbl4, lbl5 :wz // 00008
+if(>) SHL lbl6, 7 :wcz // 0000C
+if(>) RCR lbl8, lbl0 // 00010
+if(!c & !z) RCL lbl1, 11 :wc // 00014
+if(!c & z) SAR lbl3, lbl4 :wz // 00018
+if(z & !c) SAL lbl5, 15 :wcz // 0001C
+if(!c & z) ADD lbl7, lbl8 // 00020
+if(!c) ADDX lbl0, 19 :wc // 00024
+if(>=) ADDS lbl2, lbl3 :wz // 00028
+if(>=) ADDSX lbl4, 23 :wcz // 0002C
+if(!c) SUB lbl6, lbl7 // 00030
+if(c & !z) SUBX lbl8, 27 :wc // 00034
+if(!z & c) SUBS lbl1, lbl2 :wz // 00038
+if(c & !z) SUBSX lbl3, 31 :wcz // 0003C
+if(!z) CMP lbl5, lbl6 // 00040
+if(!=) CMPX lbl7, 35 :wc // 00044
+if(!=) CMPS lbl0, lbl1 :wz // 00048
+if(c != z) CMPSX lbl2, 39 :wcz // 0004C
+if(z != c) CMPR lbl4, lbl5 // 00050
+if(c != z) CMPM lbl6, 43 :wc // 00054
+if(!c | !z) SUBR lbl8, lbl0 :wz // 00058
+if(!c | !z) CMPSUB lbl1, 47 :wcz // 0005C
+if(!c | !z) FGE lbl3, lbl4 // 00060
+if(c & z) FLE lbl5, 51 :wc // 00064
+if(z & c) FGES lbl7, lbl8 :wz // 00068
+if(c & z) FLES lbl0, 55 :wcz // 0006C
+if(c == z) SUMC lbl2, lbl3 // 00070
+if(z == c) SUMNC lbl4, 59 :wc // 00074
+if(c == z) SUMZ lbl6, lbl7 :wz // 00078
+if(z) SUMNZ lbl8, 63 :wcz // 0007C
+if(z) AND lbl1, lbl2 // 00080
+if(z) ANDN lbl3, 67 :wc // 00084
+if(!c | z) OR lbl5, lbl6 :wz // 00088
+if(z | !c) XOR lbl7, 71 :wcz // 0008C
+if(!c | z) MUXC lbl0, lbl1 // 00090
+if(c) MUXNC lbl2, 75 :wc // 00094
+if(<) MUXZ lbl4, lbl5 :wz // 00098
+if(<) MUXNZ lbl6, 79 :wcz // 0009C
+if(c) MOV lbl8, lbl0 // 000A0
+if(c | !z) NOT lbl1, 83 :wc // 000A4
+if(!z | c) ABS lbl3, lbl4 :wz // 000A8
+if(!z | c) NEG lbl5, 87 :wcz // 000AC
+if(c | z) NEGC lbl7, lbl8 // 000B0
+if(z | c) NEGNC lbl0, 91 :wc // 000B4
+if(<=) NEGZ lbl2, lbl3 :wz // 000B8
+if(<=) NEGNZ lbl4, 95 :wcz // 000BC
+if(<=) INCMOD lbl6, lbl7 // 000C0
+return DECMOD lbl8, 99 :wc // 000C4
+if(!c & !z) ZEROX lbl1, lbl2 :wz // 000C8
+if(!z & !c) SIGNX lbl3, 103 :wcz // 000CC
+if(>) ENCOD lbl5, lbl6 // 000D0
+if(>) ONES lbl7, 107 :wc // 000D4
+if(!c & !z) TEST lbl0, lbl1 :wz // 000D8
+if(!c & z) TESTN lbl2, 111 :wcz // 000DC
 
 var lbl0: LONG 0
 var lbl1: LONG 1
