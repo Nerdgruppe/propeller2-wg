@@ -9,3 +9,4 @@
   - `CALLD PA/PB/PTRA/PTRB,#{\}A`
 - `memory-ptr.spin2`
 - `cursed.spin2`
+- Implement enum literal parser

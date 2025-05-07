@@ -638,7 +638,7 @@ const Analyzer = struct {
             };
 
             switch (value.value) {
-                .int, .string => {},
+                .int, .string, .enumerator => {},
 
                 .register => {
                     // TODO: Consider if this is OK or not. It's kinda handy, but not sure if hazardous
@@ -964,16 +964,27 @@ const Analyzer = struct {
 
                         var fill_extra_slot: ?EncodedInstruction.Slot = null;
 
-                        const slot_value: u32 = if (operand.type == .enumeration) {
+                        const slot_value: u32 = if (operand.type == .enumeration) blk: {
                             // this is the most special case here:
                             // TODO: enumerations take a "string" value (actually they need a enum literal!)
 
-                            if (value.value != .string) {
+                            if (value.value != .enumerator) {
                                 try ana.emit_error(location, "expected enumeration value, found {s}", .{@tagName(value.value)});
                                 continue;
                             }
 
-                            @panic("not implemented yet!");
+                            const lut: std.StaticStringMap(u32) = operand.type.enumeration;
+
+                            const key = value.value.enumerator;
+
+                            if (lut.get(key)) |index| {
+                                break :blk index;
+                            }
+
+                            try ana.emit_error(location, "#{s} is not a valid enumerator", .{
+                                key,
+                            });
+                            continue;
                         } else blk: {
                             const hint = value.flags.usage;
 
@@ -1100,6 +1111,7 @@ const Analyzer = struct {
             .int => |int| int,
             .offset => |offset| try ana.get_offset_for_exec_mode(offset, exec_mode),
             .string => @panic("string emission not supported yet"),
+            .enumerator => @panic("BUG: enumerators must be handled before this!"),
             .register => |reg| @intFromEnum(reg),
         };
 
@@ -1180,6 +1192,12 @@ const Analyzer = struct {
                         @tagName(op.operator),
                     });
                     return .register(0);
+                }
+                if (value.value == .enumerator) {
+                    try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to enumerators", .{
+                        @tagName(op.operator),
+                    });
+                    return .enumerator("");
                 }
 
                 switch (op.operator) {
@@ -1288,6 +1306,12 @@ const Analyzer = struct {
                         });
                         return .register(0);
                     },
+                    .enumerator => {
+                        try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to enumerators", .{
+                            @tagName(op.operator),
+                        });
+                        return .enumerator("");
+                    },
                     .offset => @panic("TODO: Implement binary operators on offsets."),
                     .string => @panic("TODO: Implement binary operators on strings."),
                 }
@@ -1326,8 +1350,13 @@ const Analyzer = struct {
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         switch (value.value) {
-                            .string, .int => {
-                                try ana.emit_warning(loc, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
+                            .string, .enumerator => {
+                                try ana.emit_error(fncall.arguments[0].location, "{s}() cannot be applied to {s}s.", .{ @tagName(func.*), @tagName(value.value) });
+                                return value;
+                            },
+
+                            .int => {
+                                try ana.emit_warning(loc, "{s}() expected offset, but got {s}.", .{ @tagName(func.*), @tagName(value.value) });
                                 return value;
                             },
 
@@ -1372,12 +1401,12 @@ const Analyzer = struct {
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         switch (value.value) {
-                            .string, .int => {
+                            .int => {
                                 try ana.emit_warning(fncall.arguments[0].location, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
                                 return value;
                             },
-                            .register => {
-                                try ana.emit_error(fncall.arguments[0].location, "hubaddr() cannot be applied to registers.", .{});
+                            .string, .register, .enumerator => {
+                                try ana.emit_error(fncall.arguments[0].location, "hubaddr() cannot be applied to {s}s.", .{@tagName(value.value)});
                                 return value;
                             },
                             .offset => |offset| return .int(offset.hub),
@@ -1868,7 +1897,11 @@ pub const EncodedInstruction = struct {
 
             pub fn can_assign_from(opt: Type, value: Value) bool {
                 if (value.value == .string) {
-                    // strings can only be assigned to enumerations:
+                    // strings cannot be assigned to an operand
+                    return false;
+                }
+                if (value.value == .enumerator) {
+                    // enumerators can only be assigned to an enumeration type
                     return (opt == .enumeration);
                 }
 

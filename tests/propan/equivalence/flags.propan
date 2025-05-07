@@ -1,11 +1,11 @@
- 
-    MODCZ _CLR,      _NC_AND_NZ
+
+    // MODCZ _CLR,      _NC_AND_NZ
     MODCZ _NC_AND_Z, _NC            :wc
     MODCZ _C_AND_NZ, _NZ            :wz
     MODCZ _NC_OR_NZ, _C_AND_Z       :wcz
-    MODC _C_EQ_Z
+    // MODC _C_EQ_Z
     MODC _Z                         :wc
-    MODZ _NC_OR_Z
+    // MODZ _NC_OR_Z
     MODZ _C                         :wz
 
     MODC _CLR                       :wc

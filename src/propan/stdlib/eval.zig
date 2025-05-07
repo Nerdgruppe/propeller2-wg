@@ -38,6 +38,13 @@ pub const Value = struct {
         );
     }
 
+    pub fn enumerator(text: []const u8) Value {
+        return .init(
+            .{ .enumerator = text },
+            .literal,
+        );
+    }
+
     pub const Flags = packed struct {
         usage: UsageHint,
         augment: bool = false,
@@ -73,6 +80,7 @@ pub const Value = struct {
         string,
         offset,
         register,
+        enumerator,
     };
 
     pub const Payload = union(Type) {
@@ -80,6 +88,7 @@ pub const Value = struct {
         string: []const u8,
         offset: Offset,
         register: Register,
+        enumerator: []const u8,
     };
 
     pub fn format(val: Value, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
@@ -99,6 +108,7 @@ pub const Value = struct {
             .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
             .offset => |v| try writer.print("{}", .{v}),
             .register => |v| try writer.print("{}", .{v}),
+            .enumerator => |v| try writer.print("#{s}", .{v}),
         }
         try writer.print(", {s})", .{@tagName(val.flags.usage)});
     }
