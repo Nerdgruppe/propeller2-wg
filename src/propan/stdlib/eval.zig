@@ -10,31 +10,47 @@ pub const Symbol = struct {
 
 pub const Value = struct {
     value: Payload,
-    usage: UsageHint,
-    augment: bool = false,
+    flags: Flags,
+
+    pub fn init(value: Payload, usage: UsageHint) Value {
+        return .{
+            .flags = .{ .usage = usage },
+            .value = value,
+        };
+    }
 
     pub fn int(value: i64) Value {
-        return .{
-            .usage = .literal,
-            .value = .{ .int = value },
-        };
+        return .init(.{ .int = value }, .literal);
     }
 
     pub fn string(value: []const u8) Value {
-        return .{
-            .usage = .literal,
-            .value = .{ .string = value },
-        };
+        return .init(.{ .string = value }, .literal);
     }
 
     pub fn offset(value: Offset, usage: UsageHint) Value {
-        return .{
-            .usage = usage,
-            .value = .{ .offset = value },
-        };
+        return .init(.{ .offset = value }, usage);
     }
 
-    pub const UsageHint = enum {
+    pub fn register(index: u9) Value {
+        return .init(
+            .{ .register = @enumFromInt(index) },
+            .register,
+        );
+    }
+
+    pub const Flags = packed struct {
+        usage: UsageHint,
+        augment: bool = false,
+        addressing: AddressingMode = .auto,
+    };
+
+    pub const AddressingMode = enum(u2) {
+        auto = 0,
+        absolute = 1,
+        relative = 2,
+    };
+
+    pub const UsageHint = enum(u1) {
         /// This value is meant to be passed as a literal
         /// value
         /// ```pasm
@@ -56,27 +72,45 @@ pub const Value = struct {
         int,
         string,
         offset,
+        register,
     };
 
     pub const Payload = union(Type) {
         int: i64,
         string: []const u8,
         offset: Offset,
+        register: Register,
     };
 
     pub fn format(val: Value, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
         _ = fmt;
         _ = opt;
         try writer.writeAll("Value(");
-        if (val.augment) {
+        if (val.flags.augment) {
             try writer.writeAll("AUG,");
+        }
+        switch (val.flags.addressing) {
+            .auto => {},
+            .relative => try writer.writeAll("REL,"),
+            .absolute => try writer.writeAll("ABS,"),
         }
         switch (val.value) {
             .int => |v| try writer.print("{}", .{v}),
             .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
             .offset => |v| try writer.print("{}", .{v}),
+            .register => |v| try writer.print("{}", .{v}),
         }
-        try writer.print(", {s})", .{@tagName(val.usage)});
+        try writer.print(", {s})", .{@tagName(val.flags.usage)});
+    }
+};
+
+pub const Register = enum(u9) {
+    _,
+
+    pub fn format(reg: Register, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("r{}", .{@intFromEnum(reg)});
     }
 };
 

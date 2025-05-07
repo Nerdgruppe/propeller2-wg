@@ -1,0 +1,181 @@
+const address = 0x10_000
+
+    DJZ   dst,  src // 00000
+    DJZ   dst, &src // 00004
+    DJNZ  dst,  src // 00008
+    DJNZ  dst, &src // 0000C
+    DJF   dst,  src // 00010
+    DJF   dst, &src // 00014
+    DJNF  dst,  src // 00018
+    DJNF  dst, &src // 0001C
+    IJZ   dst,  src // 00020
+    IJZ   dst, &src // 00024
+    IJNZ  dst,  src // 00028
+    IJNZ  dst, &src // 0002C
+
+    TJZ   dst,  src // 00030
+    TJZ   dst, &src // 00034
+    TJNZ  dst,  src // 00038
+    TJNZ  dst, &src // 0003C
+    TJF   dst,  src // 00040
+    TJF   dst, &src // 00044
+    TJNF  dst,  src // 00048
+    TJNF  dst, &src // 0004C
+    TJS   dst,  src // 00050
+    TJS   dst, &src // 00054
+    TJNS  dst,  src // 00058
+    TJNS  dst, &src // 0005C
+    TJV   dst,  src // 00060
+    TJV   dst, &src // 00064
+
+    JINT  src       // 00068
+    JINT &src       // 0006C
+    JCT1  src       // 00070
+    JCT1 &src       // 00074
+    JCT2  src       // 00078
+    JCT2 &src       // 0007C
+    JCT3  src       // 00080
+    JCT3 &src       // 00084
+    JSE1  src       // 00088
+    JSE1 &src       // 0008C
+    JSE2  src       // 00090
+    JSE2 &src       // 00094
+    JSE3  src       // 00098
+    JSE3 &src       // 0009C
+    JSE4  src       // 000A0
+    JSE4 &src       // 000A4
+    JPAT  src       // 000A8
+    JPAT &src       // 000AC
+    JFBW  src       // 000B0
+    JFBW &src       // 000B4
+    JXMT  src       // 000B8
+    JXMT &src       // 000BC
+    JXFI  src       // 000C0
+    JXFI &src       // 000C4
+    JXRO  src       // 000C8
+    JXRO &src       // 000CC
+    JXRL  src       // 000D0
+    JXRL &src       // 000D4
+    JATN  src       // 000D8
+    JATN &src       // 000DC
+    JQMT  src       // 000E0
+    JQMT &src       // 000E4
+
+    JNINT  src      // 000E8
+    JNINT &src      // 000EC
+    JNCT1  src      // 000F0
+    JNCT1 &src      // 000F4
+    JNCT2  src      // 000F8
+    JNCT2 &src      // 000FC
+    JNCT3  src      // 00100
+    JNCT3 &src      // 00104
+    JNSE1  src      // 00108
+    JNSE1 &src      // 0010C
+    JNSE2  src      // 00110
+    JNSE2 &src      // 00114
+    JNSE3  src      // 00118
+    JNSE3 &src      // 0011C
+    JNSE4  src      // 00120
+    JNSE4 &src      // 00124
+    JNPAT  src      // 00128
+    JNPAT &src      // 0012C
+    JNFBW  src      // 00130
+    JNFBW &src      // 00134
+    JNXMT  src      // 00138
+    JNXMT &src      // 0013C
+    JNXFI  src      // 00140
+    JNXFI &src      // 00144
+    JNXRO  src      // 00148
+    JNXRO &src      // 0014C
+    JNXRL  src      // 00150
+    JNXRL &src      // 00154
+    JNATN  src      // 00158
+    JNATN &src      // 0015C
+    JNQMT  src      // 00160
+    JNQMT &src      // 00164
+
+    JMP     address             // 00168
+    JMP     nrel(address)       // 0016C
+    CALL    address             // 00170
+    CALL    nrel(address)       // 00174
+    CALLA   address             // 00178
+    CALLA   nrel(address)       // 0017C
+    CALLB   address             // 00180
+    CALLB   nrel(address)       // 00184
+    CALLD   PA, address         // 00188
+    CALLD   PA, nrel(address)   // 0018C
+    CALLD   PB, address         // 00190
+    CALLD   PB, nrel(address)   // 00194
+    CALLD   PTRA, address       // 00198
+    CALLD   PTRA, nrel(address) // 0019C
+    CALLD   PTRB, address       // 001A0
+    CALLD   PTRB, nrel(address) // 001A4
+    LOC     PA, address         // 001A8
+    LOC     PA, nrel(address)   // 001AC
+    LOC     PB, address         // 001B0
+    LOC     PB, nrel(address)   // 001B4
+    LOC     PTRA, address       // 001B8
+    LOC     PTRA, nrel(address) // 001BC
+    LOC     PTRB, address       // 001C0
+    LOC     PTRB, nrel(address) // 001C4
+
+    CALLD   dst,  src           // 001C8
+    CALLD   dst,  src :wc       // 001CC
+    CALLD   dst,  src :wz       // 001D0
+    CALLD   dst,  src :wcz      // 001D4
+    CALLD   dst, &src           // 001D8
+    CALLD   dst, &src :wc       // 001DC
+    CALLD   dst, &src :wz       // 001E0
+    CALLD   dst, &src :wcz      // 001E4
+
+    CALLPA  dst,  src           // 001E8
+    CALLPA  dst, &src           // 001EC
+    CALLPA &dst,  src           // 001F0
+    CALLPA &dst, &src           // 001F4
+    CALLPB  dst,  src           // 001F8
+    CALLPB  dst, &src           // 001FC
+    CALLPB &dst,  src           // 00200
+    CALLPB &dst, &src           // 00204
+                                // 00208
+    JMP     dst                 // 0020C
+    JMP     dst :wc             // 00210
+    JMP     dst :wz             // 00214
+    JMP     dst :wcz            // 00218
+    CALL    dst                 // 0021C
+    CALL    dst :wc             // 00220
+    CALL    dst :wz             // 00224
+    CALL    dst :wcz            // 00228
+    CALLA   dst                 // 0022C
+    CALLA   dst :wc             // 00230
+    CALLA   dst :wz             // 00234
+    CALLA   dst :wcz            // 00238
+    CALLB   dst                 // 0023C
+    CALLB   dst :wc             // 00240
+    CALLB   dst :wz             // 00244
+    CALLB   dst :wcz            // 00248
+
+    RET                         // 0024C
+    RET  :wc                    // 00250
+    RET  :wz                    // 00254
+    RET  :wcz                   // 00258
+    RETA                        // 0025C
+    RETA :wc                    // 00260
+    RETA :wz                    // 00264
+    RETA :wcz                   // 00268
+    RETB                        // 0026C
+    RETB :wc                    // 00270
+    RETB :wz                    // 00274
+    RETB :wcz                   // 00278
+
+    JMPREL  dst                 // 0027C
+    JMPREL &dst                 // 00280
+    SKIP    dst                 // 00284
+    SKIP   &dst                 // 00288
+    SKIPF   dst                 // 0028C
+    SKIPF  &dst                 // 00290
+    EXECF   dst                 // 00294
+    EXECF  &dst                 // 00298
+
+var dst: LONG 0
+var src: LONG 1
+

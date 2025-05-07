@@ -28,7 +28,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -47,7 +47,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -66,7 +66,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -85,7 +85,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -104,7 +104,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -123,7 +123,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -142,7 +142,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -161,7 +161,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -180,7 +180,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -199,7 +199,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -218,7 +218,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -237,7 +237,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -256,7 +256,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -275,7 +275,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -294,7 +294,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -313,7 +313,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -332,7 +332,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -351,7 +351,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -370,7 +370,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -389,7 +389,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -408,7 +408,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -427,7 +427,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -446,7 +446,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -465,7 +465,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -484,7 +484,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -503,7 +503,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -522,7 +522,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -541,7 +541,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -560,7 +560,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -579,7 +579,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -598,7 +598,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -617,7 +617,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -636,7 +636,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -655,7 +655,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -674,7 +674,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -693,7 +693,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -712,7 +712,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -731,7 +731,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -750,7 +750,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -769,7 +769,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -788,7 +788,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -807,7 +807,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -826,7 +826,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -845,7 +845,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -864,7 +864,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -883,7 +883,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -902,7 +902,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -921,7 +921,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -940,7 +940,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -959,7 +959,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -978,7 +978,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -997,7 +997,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1016,7 +1016,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1035,7 +1035,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1054,7 +1054,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1073,7 +1073,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1092,7 +1092,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1111,7 +1111,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1130,7 +1130,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1149,7 +1149,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1168,7 +1168,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1187,7 +1187,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1206,7 +1206,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1225,7 +1225,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1244,7 +1244,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1263,7 +1263,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1282,7 +1282,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1301,7 +1301,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1320,7 +1320,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1339,7 +1339,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1358,7 +1358,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1377,7 +1377,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1396,7 +1396,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 3),
@@ -1417,7 +1417,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 3),
@@ -1438,7 +1438,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 3),
@@ -1459,7 +1459,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 2),
@@ -1480,7 +1480,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 2),
@@ -1501,7 +1501,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 2),
@@ -1522,7 +1522,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 1),
@@ -1543,7 +1543,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 1),
@@ -1564,7 +1564,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
             .{ // #N
                 .slot = .init(19, 1),
@@ -1585,7 +1585,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1602,7 +1602,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1619,7 +1619,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1636,7 +1636,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1653,7 +1653,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1670,7 +1670,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1687,7 +1687,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1704,7 +1704,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1721,7 +1721,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1738,7 +1738,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1755,7 +1755,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1772,7 +1772,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1789,7 +1789,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1806,7 +1806,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1823,7 +1823,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1840,7 +1840,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1857,7 +1857,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1874,7 +1874,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1891,7 +1891,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1908,7 +1908,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1925,7 +1925,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1942,7 +1942,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1959,7 +1959,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .z_effect_slot = .init(19, 1),
@@ -1977,7 +1977,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .z_effect_slot = .init(19, 1),
@@ -1995,7 +1995,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .z_effect_slot = .init(19, 1),
@@ -2013,7 +2013,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .z_effect_slot = .init(19, 1),
@@ -2031,7 +2031,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -2048,7 +2048,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -2065,7 +2065,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -2082,7 +2082,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -2099,7 +2099,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -2116,7 +2116,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -2133,7 +2133,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -2167,7 +2167,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -2185,7 +2185,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -2296,7 +2296,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },
-    // CALLD D, {#}S {WC/WZ/WCZ}
+    // CALLD D, {#}S** {WC/WZ/WCZ}
     // EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "CALLD",
@@ -2307,9 +2307,9 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -2379,7 +2379,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .effects = .from_list(&.{.none}),
         .operands = &.{},
     },
-    // CALLPA {#}D, {#}S
+    // CALLPA {#}D, {#}S**
     // EEEE 1011010 0LI DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "CALLPA",
@@ -2388,15 +2388,15 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // CALLPB {#}D, {#}S
+    // CALLPB {#}D, {#}S**
     // EEEE 1011010 1LI DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "CALLPB",
@@ -2405,15 +2405,15 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // DJZ D, {#}S
+    // DJZ D, {#}S**
     // EEEE 1011011 00I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "DJZ",
@@ -2424,13 +2424,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // DJNZ D, {#}S
+    // DJNZ D, {#}S**
     // EEEE 1011011 01I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "DJNZ",
@@ -2441,13 +2441,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // DJF D, {#}S
+    // DJF D, {#}S**
     // EEEE 1011011 10I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "DJF",
@@ -2458,13 +2458,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // DJNF D, {#}S
+    // DJNF D, {#}S**
     // EEEE 1011011 11I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "DJNF",
@@ -2475,13 +2475,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // IJZ D, {#}S
+    // IJZ D, {#}S**
     // EEEE 1011100 00I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "IJZ",
@@ -2492,13 +2492,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // IJNZ D, {#}S
+    // IJNZ D, {#}S**
     // EEEE 1011100 01I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "IJNZ",
@@ -2509,13 +2509,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // TJZ D, {#}S
+    // TJZ D, {#}S**
     // EEEE 1011100 10I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "TJZ",
@@ -2526,13 +2526,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // TJNZ D, {#}S
+    // TJNZ D, {#}S**
     // EEEE 1011100 11I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "TJNZ",
@@ -2543,13 +2543,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // TJF D, {#}S
+    // TJF D, {#}S**
     // EEEE 1011101 00I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "TJF",
@@ -2560,13 +2560,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // TJNF D, {#}S
+    // TJNF D, {#}S**
     // EEEE 1011101 01I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "TJNF",
@@ -2577,13 +2577,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // TJS D, {#}S
+    // TJS D, {#}S**
     // EEEE 1011101 10I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "TJS",
@@ -2594,13 +2594,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // TJNS D, {#}S
+    // TJNS D, {#}S**
     // EEEE 1011101 11I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "TJNS",
@@ -2611,13 +2611,13 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // TJV D, {#}S
+    // TJV D, {#}S**
     // EEEE 1011110 00I DDDDDDDDD SSSSSSSSS
     .{
         .mnemonic = "TJV",
@@ -2628,425 +2628,425 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .slot = .init(9, 9),
                 .type = .register,
             },
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JINT {#}S
+    // JINT {#}S**
     // EEEE 1011110 01I 000000000 SSSSSSSSS
     .{
         .mnemonic = "JINT",
         .binary = 0x0bc80000,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JCT1 {#}S
+    // JCT1 {#}S**
     // EEEE 1011110 01I 000000001 SSSSSSSSS
     .{
         .mnemonic = "JCT1",
         .binary = 0x0bc80200,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JCT2 {#}S
+    // JCT2 {#}S**
     // EEEE 1011110 01I 000000010 SSSSSSSSS
     .{
         .mnemonic = "JCT2",
         .binary = 0x0bc80400,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JCT3 {#}S
+    // JCT3 {#}S**
     // EEEE 1011110 01I 000000011 SSSSSSSSS
     .{
         .mnemonic = "JCT3",
         .binary = 0x0bc80600,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JSE1 {#}S
+    // JSE1 {#}S**
     // EEEE 1011110 01I 000000100 SSSSSSSSS
     .{
         .mnemonic = "JSE1",
         .binary = 0x0bc80800,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JSE2 {#}S
+    // JSE2 {#}S**
     // EEEE 1011110 01I 000000101 SSSSSSSSS
     .{
         .mnemonic = "JSE2",
         .binary = 0x0bc80a00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JSE3 {#}S
+    // JSE3 {#}S**
     // EEEE 1011110 01I 000000110 SSSSSSSSS
     .{
         .mnemonic = "JSE3",
         .binary = 0x0bc80c00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JSE4 {#}S
+    // JSE4 {#}S**
     // EEEE 1011110 01I 000000111 SSSSSSSSS
     .{
         .mnemonic = "JSE4",
         .binary = 0x0bc80e00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JPAT {#}S
+    // JPAT {#}S**
     // EEEE 1011110 01I 000001000 SSSSSSSSS
     .{
         .mnemonic = "JPAT",
         .binary = 0x0bc81000,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JFBW {#}S
+    // JFBW {#}S**
     // EEEE 1011110 01I 000001001 SSSSSSSSS
     .{
         .mnemonic = "JFBW",
         .binary = 0x0bc81200,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JXMT {#}S
+    // JXMT {#}S**
     // EEEE 1011110 01I 000001010 SSSSSSSSS
     .{
         .mnemonic = "JXMT",
         .binary = 0x0bc81400,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JXFI {#}S
+    // JXFI {#}S**
     // EEEE 1011110 01I 000001011 SSSSSSSSS
     .{
         .mnemonic = "JXFI",
         .binary = 0x0bc81600,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JXRO {#}S
+    // JXRO {#}S**
     // EEEE 1011110 01I 000001100 SSSSSSSSS
     .{
         .mnemonic = "JXRO",
         .binary = 0x0bc81800,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JXRL {#}S
+    // JXRL {#}S**
     // EEEE 1011110 01I 000001101 SSSSSSSSS
     .{
         .mnemonic = "JXRL",
         .binary = 0x0bc81a00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JATN {#}S
+    // JATN {#}S**
     // EEEE 1011110 01I 000001110 SSSSSSSSS
     .{
         .mnemonic = "JATN",
         .binary = 0x0bc81c00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JQMT {#}S
+    // JQMT {#}S**
     // EEEE 1011110 01I 000001111 SSSSSSSSS
     .{
         .mnemonic = "JQMT",
         .binary = 0x0bc81e00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNINT {#}S
+    // JNINT {#}S**
     // EEEE 1011110 01I 000010000 SSSSSSSSS
     .{
         .mnemonic = "JNINT",
         .binary = 0x0bc82000,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNCT1 {#}S
+    // JNCT1 {#}S**
     // EEEE 1011110 01I 000010001 SSSSSSSSS
     .{
         .mnemonic = "JNCT1",
         .binary = 0x0bc82200,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNCT2 {#}S
+    // JNCT2 {#}S**
     // EEEE 1011110 01I 000010010 SSSSSSSSS
     .{
         .mnemonic = "JNCT2",
         .binary = 0x0bc82400,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNCT3 {#}S
+    // JNCT3 {#}S**
     // EEEE 1011110 01I 000010011 SSSSSSSSS
     .{
         .mnemonic = "JNCT3",
         .binary = 0x0bc82600,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNSE1 {#}S
+    // JNSE1 {#}S**
     // EEEE 1011110 01I 000010100 SSSSSSSSS
     .{
         .mnemonic = "JNSE1",
         .binary = 0x0bc82800,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNSE2 {#}S
+    // JNSE2 {#}S**
     // EEEE 1011110 01I 000010101 SSSSSSSSS
     .{
         .mnemonic = "JNSE2",
         .binary = 0x0bc82a00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNSE3 {#}S
+    // JNSE3 {#}S**
     // EEEE 1011110 01I 000010110 SSSSSSSSS
     .{
         .mnemonic = "JNSE3",
         .binary = 0x0bc82c00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNSE4 {#}S
+    // JNSE4 {#}S**
     // EEEE 1011110 01I 000010111 SSSSSSSSS
     .{
         .mnemonic = "JNSE4",
         .binary = 0x0bc82e00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNPAT {#}S
+    // JNPAT {#}S**
     // EEEE 1011110 01I 000011000 SSSSSSSSS
     .{
         .mnemonic = "JNPAT",
         .binary = 0x0bc83000,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNFBW {#}S
+    // JNFBW {#}S**
     // EEEE 1011110 01I 000011001 SSSSSSSSS
     .{
         .mnemonic = "JNFBW",
         .binary = 0x0bc83200,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNXMT {#}S
+    // JNXMT {#}S**
     // EEEE 1011110 01I 000011010 SSSSSSSSS
     .{
         .mnemonic = "JNXMT",
         .binary = 0x0bc83400,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNXFI {#}S
+    // JNXFI {#}S**
     // EEEE 1011110 01I 000011011 SSSSSSSSS
     .{
         .mnemonic = "JNXFI",
         .binary = 0x0bc83600,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNXRO {#}S
+    // JNXRO {#}S**
     // EEEE 1011110 01I 000011100 SSSSSSSSS
     .{
         .mnemonic = "JNXRO",
         .binary = 0x0bc83800,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNXRL {#}S
+    // JNXRL {#}S**
     // EEEE 1011110 01I 000011101 SSSSSSSSS
     .{
         .mnemonic = "JNXRL",
         .binary = 0x0bc83a00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNATN {#}S
+    // JNATN {#}S**
     // EEEE 1011110 01I 000011110 SSSSSSSSS
     .{
         .mnemonic = "JNATN",
         .binary = 0x0bc83c00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
-    // JNQMT {#}S
+    // JNQMT {#}S**
     // EEEE 1011110 01I 000011111 SSSSSSSSS
     .{
         .mnemonic = "JNQMT",
         .binary = 0x0bc83e00,
         .effects = .from_list(&.{.none}),
         .operands = &.{
-            .{ // {#}S
+            .{ // {#}S**
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = true } },
             },
         },
     },
@@ -3059,11 +3059,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3076,7 +3076,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3089,11 +3089,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3106,11 +3106,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3123,11 +3123,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3140,7 +3140,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
@@ -3157,7 +3157,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
@@ -3174,7 +3174,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
@@ -3191,7 +3191,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
@@ -3208,7 +3208,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
         },
     },
@@ -3221,7 +3221,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
         },
     },
@@ -3234,11 +3234,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3251,11 +3251,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3268,11 +3268,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3285,11 +3285,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3310,11 +3310,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3327,11 +3327,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3344,11 +3344,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3361,11 +3361,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -3379,11 +3379,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3396,11 +3396,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3413,11 +3413,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3430,11 +3430,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3447,11 +3447,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3464,11 +3464,11 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(19, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(19, 1), .pcrel = false } },
             },
             .{ // {#}S
                 .slot = .init(0, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3481,7 +3481,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3494,7 +3494,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -3508,7 +3508,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3535,7 +3535,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3548,7 +3548,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -3562,7 +3562,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -3576,7 +3576,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3589,7 +3589,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3677,7 +3677,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3690,7 +3690,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3703,7 +3703,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3775,7 +3775,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3788,7 +3788,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3814,7 +3814,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -3829,7 +3829,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3842,7 +3842,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3855,7 +3855,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -3868,7 +3868,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4255,7 +4255,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4268,7 +4268,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4281,7 +4281,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4294,7 +4294,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4307,7 +4307,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4320,7 +4320,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4438,7 +4438,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4451,7 +4451,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4464,7 +4464,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4477,7 +4477,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4518,7 +4518,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4531,7 +4531,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4544,7 +4544,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4557,7 +4557,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4570,7 +4570,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4583,7 +4583,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4596,7 +4596,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4609,7 +4609,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4622,7 +4622,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4635,7 +4635,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4648,7 +4648,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -4661,7 +4661,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4676,7 +4676,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4691,7 +4691,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4706,7 +4706,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4721,7 +4721,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4736,7 +4736,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4751,7 +4751,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4766,7 +4766,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4781,7 +4781,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4796,7 +4796,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4811,7 +4811,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4826,7 +4826,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4841,7 +4841,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4856,7 +4856,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4871,7 +4871,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4886,7 +4886,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4901,7 +4901,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4916,7 +4916,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4931,7 +4931,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4946,7 +4946,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4961,7 +4961,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4976,7 +4976,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -4991,7 +4991,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5006,7 +5006,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5021,7 +5021,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5036,7 +5036,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5051,7 +5051,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5066,7 +5066,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5081,7 +5081,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5096,7 +5096,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5111,7 +5111,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5126,7 +5126,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5141,7 +5141,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5156,7 +5156,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5171,7 +5171,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5186,7 +5186,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5201,7 +5201,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5216,7 +5216,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5231,7 +5231,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5246,7 +5246,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -5520,7 +5520,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // {#}D
                 .slot = .init(9, 9),
-                .type = .{ .reg_or_imm = .init(18, 1) },
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },

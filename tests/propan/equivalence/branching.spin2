@@ -1,0 +1,182 @@
+CON
+    address = $10_000
+
+DAT
+    DJZ   dst,  src
+    DJZ   dst, #src
+    DJNZ  dst,  src
+    DJNZ  dst, #src
+    DJF   dst,  src
+    DJF   dst, #src
+    DJNF  dst,  src
+    DJNF  dst, #src
+    IJZ   dst,  src
+    IJZ   dst, #src
+    IJNZ  dst,  src
+    IJNZ  dst, #src
+
+    TJZ   dst,  src
+    TJZ   dst, #src
+    TJNZ  dst,  src
+    TJNZ  dst, #src
+    TJF   dst,  src
+    TJF   dst, #src
+    TJNF  dst,  src
+    TJNF  dst, #src
+    TJS   dst,  src
+    TJS   dst, #src
+    TJNS  dst,  src
+    TJNS  dst, #src
+    TJV   dst,  src
+    TJV   dst, #src
+
+    JINT  src
+    JINT #src
+    JCT1  src
+    JCT1 #src
+    JCT2  src
+    JCT2 #src
+    JCT3  src
+    JCT3 #src
+    JSE1  src
+    JSE1 #src
+    JSE2  src
+    JSE2 #src
+    JSE3  src
+    JSE3 #src
+    JSE4  src
+    JSE4 #src
+    JPAT  src
+    JPAT #src
+    JFBW  src
+    JFBW #src
+    JXMT  src
+    JXMT #src
+    JXFI  src
+    JXFI #src
+    JXRO  src
+    JXRO #src
+    JXRL  src
+    JXRL #src
+    JATN  src
+    JATN #src
+    JQMT  src
+    JQMT #src
+
+    JNINT  src
+    JNINT #src
+    JNCT1  src
+    JNCT1 #src
+    JNCT2  src
+    JNCT2 #src
+    JNCT3  src
+    JNCT3 #src
+    JNSE1  src
+    JNSE1 #src
+    JNSE2  src
+    JNSE2 #src
+    JNSE3  src
+    JNSE3 #src
+    JNSE4  src
+    JNSE4 #src
+    JNPAT  src
+    JNPAT #src
+    JNFBW  src
+    JNFBW #src
+    JNXMT  src
+    JNXMT #src
+    JNXFI  src
+    JNXFI #src
+    JNXRO  src
+    JNXRO #src
+    JNXRL  src
+    JNXRL #src
+    JNATN  src
+    JNATN #src
+    JNQMT  src
+    JNQMT #src
+
+    JMP     #address
+    JMP     #\address
+    CALL    #address
+    CALL    #\address
+    CALLA   #address
+    CALLA   #\address
+    CALLB   #address
+    CALLB   #\address
+    CALLD   PA, #address
+    CALLD   PA, #\address
+    CALLD   PB, #address
+    CALLD   PB, #\address
+    CALLD   PTRA, #address
+    CALLD   PTRA, #\address
+    CALLD   PTRB, #address
+    CALLD   PTRB, #\address
+    LOC     PA, #address
+    LOC     PA, #\address
+    LOC     PB, #address
+    LOC     PB, #\address
+    LOC     PTRA, #address
+    LOC     PTRA, #\address
+    LOC     PTRB, #address
+    LOC     PTRB, #\address
+
+    CALLD   dst,  src
+    CALLD   dst,  src WC
+    CALLD   dst,  src WZ
+    CALLD   dst,  src WCZ
+    CALLD   dst, #src
+    CALLD   dst, #src WC
+    CALLD   dst, #src WZ
+    CALLD   dst, #src WCZ
+
+    CALLPA  dst,  src
+    CALLPA  dst, #src
+    CALLPA #dst,  src
+    CALLPA #dst, #src
+    CALLPB  dst,  src
+    CALLPB  dst, #src
+    CALLPB #dst,  src
+    CALLPB #dst, #src
+    
+    JMP     dst
+    JMP     dst WC
+    JMP     dst WZ
+    JMP     dst WCZ
+    CALL    dst
+    CALL    dst WC
+    CALL    dst WZ
+    CALL    dst WCZ
+    CALLA   dst
+    CALLA   dst WC
+    CALLA   dst WZ
+    CALLA   dst WCZ
+    CALLB   dst
+    CALLB   dst WC
+    CALLB   dst WZ
+    CALLB   dst WCZ
+
+    RET 
+    RET  WC
+    RET  WZ
+    RET  WCZ
+    RETA
+    RETA WC
+    RETA WZ
+    RETA WCZ
+    RETB
+    RETB WC
+    RETB WZ
+    RETB WCZ
+
+    JMPREL  dst
+    JMPREL #dst
+    SKIP    dst
+    SKIP   #dst
+    SKIPF   dst
+    SKIPF  #dst
+    EXECF   dst
+    EXECF  #dst
+
+dst LONG 0
+src LONG 1

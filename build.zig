@@ -186,4 +186,5 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/three_ops.propan",
     "tests/propan/equivalence/metaprogramming.propan",
     "tests/propan/equivalence/io.propan",
+    "tests/propan/equivalence/branching.propan",
 };

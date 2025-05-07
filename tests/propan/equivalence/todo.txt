@@ -5,54 +5,6 @@ RDWORD D, {#}S/P {WC/WZ/WCZ}
 RDLONG D, {#}S/P {WC/WZ/WCZ}
 POPA D {WC/WZ/WCZ}
 POPB D {WC/WZ/WCZ}
-CALLD D, {#}S {WC/WZ/WCZ}
-CALLPA {#}D, {#}S
-CALLPB {#}D, {#}S
-DJZ D, {#}S
-DJNZ D, {#}S
-DJF D, {#}S
-DJNF D, {#}S
-IJZ D, {#}S
-IJNZ D, {#}S
-TJZ D, {#}S
-TJNZ D, {#}S
-TJF D, {#}S
-TJNF D, {#}S
-TJS D, {#}S
-TJNS D, {#}S
-TJV D, {#}S
-JINT {#}S
-JCT1 {#}S
-JCT2 {#}S
-JCT3 {#}S
-JSE1 {#}S
-JSE2 {#}S
-JSE3 {#}S
-JSE4 {#}S
-JPAT {#}S
-JFBW {#}S
-JXMT {#}S
-JXFI {#}S
-JXRO {#}S
-JXRL {#}S
-JATN {#}S
-JQMT {#}S
-JNINT {#}S
-JNCT1 {#}S
-JNCT2 {#}S
-JNCT3 {#}S
-JNSE1 {#}S
-JNSE2 {#}S
-JNSE3 {#}S
-JNSE4 {#}S
-JNPAT {#}S
-JNFBW {#}S
-JNXMT {#}S
-JNXFI {#}S
-JNXRO {#}S
-JNXRL {#}S
-JNATN {#}S
-JNQMT {#}S
 SETPAT {#}D, {#}S
 WRLUT {#}D, {#}S/P
 WRBYTE {#}D, {#}S/P
@@ -66,7 +18,6 @@ FBLOCK {#}D, {#}S
 XINIT {#}D, {#}S
 XZERO {#}D, {#}S
 XCONT {#}D, {#}S
-REP {#}D, {#}S
 COGINIT {#}D, {#}S {WC}
 QMUL {#}D, {#}S
 QDIV {#}D, {#}S
@@ -110,17 +61,6 @@ SETQ {#}D
 SETQ2 {#}D
 PUSH {#}D
 POP D {WC/WZ/WCZ}
-JMP D {WC/WZ/WCZ}
-CALL D {WC/WZ/WCZ}
-RET {WC/WZ/WCZ}
-CALLA D {WC/WZ/WCZ}
-RETA {WC/WZ/WCZ}
-CALLB D {WC/WZ/WCZ}
-RETB {WC/WZ/WCZ}
-JMPREL {#}D
-SKIP {#}D
-SKIPF {#}D
-EXECF {#}D
 GETPTR D
 GETBRK D WC/WZ/WCZ
 COGBRK {#}D
@@ -137,10 +77,4 @@ COGATN {#}D
 MODCZ c, z {WC/WZ/WCZ}
 MODC c {WC}
 MODZ z {WZ}
-JMP #{\}A
-CALL #{\}A
-CALLA #{\}A
-CALLB #{\}A
-CALLD PA/PB/PTRA/PTRB, #{\}A
-LOC PA/PB/PTRA/PTRB, #{\}A
-
+REP {#}dst, {#}src

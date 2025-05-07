@@ -71,8 +71,8 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
 fn dump_analyzer(analyzer: *Analyzer) void {
     logger.info("symbols:", .{});
     for (analyzer.symbols.values()) |sym| {
-        if (sym.type == .builtin)
-            continue;
+        // if (sym.type == .builtin)
+        //     continue;
         logger.info("  {s}: {s} => offset={?}, value={?}, referenced={}", .{
             sym.name,
             @tagName(sym.type),
@@ -166,6 +166,7 @@ const Analyzer = struct {
         ana.functions.putAssumeCapacityNoClobber("lutaddr", .lutaddr);
         ana.functions.putAssumeCapacityNoClobber("localaddr", .localaddr);
         ana.functions.putAssumeCapacityNoClobber("aug", .aug);
+        ana.functions.putAssumeCapacityNoClobber("nrel", .nrel);
 
         try ana.mnemonics.ensureUnusedCapacity(allocator, 9);
 
@@ -240,7 +241,7 @@ const Analyzer = struct {
 
     /// Loads predefined constants from a string hash map.
     /// The keys must have a lifetime longer than the Analyzer!
-    fn load_constants(ana: *Analyzer, constants: std.StaticStringMap(i64)) !void {
+    fn load_constants(ana: *Analyzer, constants: std.StaticStringMap(Value)) !void {
         try ana.symbols.ensureUnusedCapacity(ana.allocator, constants.values().len);
 
         for (constants.keys(), constants.values()) |name, value| {
@@ -636,21 +637,20 @@ const Analyzer = struct {
                 continue;
             };
 
-            const numeric: i64 = switch (value.value) {
-                .int => |int| int,
+            switch (value.value) {
+                .int, .string => {},
 
-                .string => {
-                    try ana.emit_error(con.location, "constant {s} evaluated to string, but expected integer.", .{con.identifier});
-                    continue;
+                .register => {
+                    // TODO: Consider if this is OK or not. It's kinda handy, but not sure if hazardous
                 },
 
                 .offset => {
                     try ana.emit_error(con.location, "constant {s} evaluated to memory offset, but expected integer. Use hubaddr() or cogaddr() to resolve the value.", .{con.identifier});
                     continue;
                 },
-            };
+            }
 
-            sym.value = numeric;
+            sym.value = value;
         }
     }
 
@@ -711,12 +711,12 @@ const Analyzer = struct {
 
             logger.debug("  args:", .{});
             for (instr.arguments) |arg| {
-                logger.info("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.usage), arg.augment });
+                logger.info("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.flags.usage), arg.flags.augment });
             }
             logger.debug("  alts:", .{});
 
             var selection: ?*const EncodedInstruction = null;
-            for (alternatives.constSlice()) |alt| {
+            match_alternative: for (alternatives.constSlice()) |alt| {
                 logger.debug("  - {s}", .{alt.mnemonic});
 
                 var can_assign = true;
@@ -747,7 +747,38 @@ const Analyzer = struct {
                     continue;
                 }
 
-                if (selection != null) {
+                if (selection) |previous| amgigious_check: {
+                    if (previous.operands.len != 0) {
+                        // special handling for .pointer_reg operands:
+                        // "PA/PB/PTRA/PTRB" is preferred over regular "D" operands, so
+                        // keep the instruction which fits better:
+
+                        const any_ptrreg_prev: bool = for (previous.operands) |op| {
+                            if (op.type == .pointer_reg)
+                                break true;
+                        } else false;
+                        const any_ptrreg_now: bool = for (alt.operands) |op| {
+                            if (op.type == .pointer_reg)
+                                break true;
+                        } else false;
+
+                        if (any_ptrreg_prev == true and any_ptrreg_prev == true) {
+                            @panic("incredibly amgigious instructions, should check the setup");
+                        }
+
+                        if (any_ptrreg_prev) {
+                            // previous instruction is using the pointer_reg operand, so keep the old one:
+                            continue :match_alternative;
+                        }
+
+                        if (any_ptrreg_now) {
+                            // current instruction is using the pointer_reg operand, so use the new one
+                            break :amgigious_check;
+                        }
+
+                        // neither use pointer_reg, so fall through into regular handling:
+                    }
+
                     try ana.emit_error(instr.ast_node.location, "Ambigious instruction selection for {s}", .{
                         alt.mnemonic,
                     });
@@ -799,7 +830,7 @@ const Analyzer = struct {
             const message: Value = if (with_message)
                 instr.arguments[1]
             else
-                Value{ .value = .{ .string = "expression returned 0" }, .augment = false, .usage = .literal };
+                .string("expression returned 0");
 
             if (message.value != .string) {
                 try ana.emit_error(instr.ast_node.location, ".assert message must be a string value, but found {s}", .{@tagName(condition.value)});
@@ -915,8 +946,19 @@ const Analyzer = struct {
                         }
                     }
 
+                    var pc_delta: u32 = 1;
+                    for (instr.arguments) |value| {
+                        if (value.flags.augment)
+                            pc_delta += 1;
+                    }
+
+                    const hub_pc: u32 = @intCast(current_segment.hub_offset + current_segment.data.items.len + 4 * pc_delta);
+                    const cog_pc: u32 = @intCast(current_segment.data.items.len / 4 + pc_delta);
+
                     for (instr.arguments, encoded.operands, instr.ast_node.arguments) |value, operand, ast_node| {
-                        std.debug.assert(!value.augment); // TODO: Implement AUGS, AUGD
+                        if (value.flags.augment) {
+                            @panic("TODO: Implement AUGS, AUGD");
+                        }
 
                         const location = ast_node.location();
 
@@ -933,7 +975,7 @@ const Analyzer = struct {
 
                             @panic("not implemented yet!");
                         } else blk: {
-                            const hint = value.usage;
+                            const hint = value.flags.usage;
 
                             const int: u32 = try ana.cast_value_to(location, current_segment.exec_mode, value, u32);
 
@@ -959,12 +1001,30 @@ const Analyzer = struct {
                                     },
                                 },
 
-                                .reg_or_imm => |slot_when_imm| enc: {
+                                .reg_or_imm => |meta| enc: {
                                     switch (hint) {
                                         .register => fill_extra_slot = null,
-                                        .literal => fill_extra_slot = slot_when_imm,
+                                        .literal => fill_extra_slot = meta.imm,
                                     }
-                                    break :enc int;
+
+                                    if (hint == .register)
+                                        break :enc int;
+
+                                    if (meta.pcrel) {
+                                        const delta33: i33 = switch (current_segment.exec_mode) {
+                                            .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
+                                            .hub => @as(i33, int) - @as(i33, hub_pc),
+                                        };
+
+                                        logger.debug("pcrel: {} {} {} {} => {}", .{ current_segment.exec_mode, cog_pc, hub_pc, int, delta33 });
+                                        const delta9: i9 = @intCast(delta33);
+
+                                        const udelta9: u9 = @bitCast(delta9);
+
+                                        break :enc udelta9;
+                                    } else {
+                                        break :enc int;
+                                    }
                                 },
 
                                 .pointer_expr => enc: {
@@ -980,7 +1040,7 @@ const Analyzer = struct {
 
                                 .pointer_reg => switch (hint) {
                                     .register => switch (int) {
-                                        0x1F6, 0x1F7, 0x1F8, 0x1F9 => int,
+                                        0x1F6, 0x1F7, 0x1F8, 0x1F9 => int - 0x1F6,
 
                                         else => {
                                             try ana.emit_error(location, "expected PA, PB, PTRA or PTRB, but found register {}", .{int});
@@ -1040,6 +1100,7 @@ const Analyzer = struct {
             .int => |int| int,
             .offset => |offset| try ana.get_offset_for_exec_mode(offset, exec_mode),
             .string => @panic("string emission not supported yet"),
+            .register => |reg| @intFromEnum(reg),
         };
 
         if (raw_value < 0) {
@@ -1097,24 +1158,29 @@ const Analyzer = struct {
     fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, nesting: usize) EvalError!eval.Value {
         switch (expr) {
             .wrapped => |inner| return try ana.evaluate_expr(inner.*, nesting + 1),
-            .integer => |int| return .{ .usage = .literal, .value = .{ .int = int.value } },
-            .string => |string| return .{ .usage = .literal, .value = .{ .string = string.value } },
+            .integer => |int| return .int(int.value),
+            .string => |string| return .string(string.value),
             .symbol => |symref| {
                 const sym = ana.get_symbol_info(symref.symbol_name) catch unreachable;
 
-                const usage: eval.Value.UsageHint, const payload: eval.Value.Payload = switch (sym.type) {
+                return switch (sym.type) {
                     .undefined => return error.UndefinedSymbol,
-                    .code => .{ .literal, .{ .offset = sym.offset orelse return error.UndefinedSymbol } },
-                    .data => .{ .register, .{ .offset = sym.offset orelse return error.UndefinedSymbol } },
-                    .constant => .{ .literal, .{ .int = sym.value orelse return error.UndefinedSymbol } },
-                    .builtin => .{ .literal, .{ .int = sym.value.? } },
+                    .code => .offset(sym.offset orelse return error.UndefinedSymbol, .literal),
+                    .data => .offset(sym.offset orelse return error.UndefinedSymbol, .register),
+                    .constant => sym.value orelse return error.UndefinedSymbol,
+                    .builtin => sym.value.?,
                 };
-
-                return .{ .usage = usage, .value = payload };
             },
 
             .unary_transform => |op| {
                 const value = try ana.evaluate_expr(op.value.*, nesting + 1);
+
+                if (value.value == .register) {
+                    try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to registers", .{
+                        @tagName(op.operator),
+                    });
+                    return .register(0);
+                }
 
                 switch (op.operator) {
                     .@"!" => {
@@ -1163,13 +1229,16 @@ const Analyzer = struct {
                             });
                             return .offset(.init_hub(0), .register);
                         }
-                        if (value.usage == .register) {
+                        if (value.flags.usage == .register) {
                             try ana.emit_warning(op.location, "Operator '*' is applied to a data label and has no effect", .{});
                         }
                         return .{
                             .value = value.value,
-                            .augment = value.augment,
-                            .usage = .register,
+                            .flags = .{
+                                .usage = .register,
+                                .augment = value.flags.augment,
+                                .addressing = value.flags.addressing,
+                            },
                         };
                     },
                     .@"&" => {
@@ -1179,13 +1248,16 @@ const Analyzer = struct {
                             });
                             return .offset(.init_hub(0), .literal);
                         }
-                        if (value.usage == .literal) {
+                        if (value.flags.usage == .literal) {
                             try ana.emit_warning(op.location, "Operator '&' is applied to a code label and has no effect", .{});
                         }
                         return .{
                             .value = value.value,
-                            .augment = value.augment,
-                            .usage = .literal,
+                            .flags = .{
+                                .usage = .literal,
+                                .augment = value.flags.augment,
+                                .addressing = value.flags.addressing,
+                            },
                         };
                     },
                 }
@@ -1210,6 +1282,12 @@ const Analyzer = struct {
                     .int => return .int(
                         try ana.execute_int_op(op.location, lhs.value.int, rhs.value.int, op.operator),
                     ),
+                    .register => {
+                        try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to registers", .{
+                            @tagName(op.operator),
+                        });
+                        return .register(0);
+                    },
                     .offset => @panic("TODO: Implement binary operators on offsets."),
                     .string => @panic("TODO: Implement binary operators on strings."),
                 }
@@ -1229,18 +1307,43 @@ const Analyzer = struct {
                             try ana.emit_error(fncall.arguments[0].location, "aug() must be the root of an expression.", .{});
                         }
                         var value = argv[0];
-                        value.augment = true;
+                        value.flags.augment = true;
+                        return value;
+                    },
+
+                    .nrel => {
+                        std.debug.assert(argv.len == 1);
+                        if (nesting != 0) {
+                            try ana.emit_error(fncall.arguments[0].location, "aug() must be the root of an expression.", .{});
+                        }
+                        var value = argv[0];
+                        value.flags.addressing = .absolute;
                         return value;
                     },
 
                     .cogaddr, .lutaddr, .localaddr => {
+                        const loc = fncall.arguments[0].location;
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         switch (value.value) {
                             .string, .int => {
-                                try ana.emit_warning(fncall.arguments[0].location, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
+                                try ana.emit_warning(loc, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
                                 return value;
                             },
+
+                            .register => |reg| {
+                                if (func.* == .lutaddr) {
+                                    try ana.emit_error(loc, "lutaddr() cannot be applied to registers", .{});
+                                    return .int(0);
+                                } else if (func.* == .localaddr) {
+                                    // TODO: Check if "execution mode" is .cogexec
+                                    try ana.emit_error(loc, "localaddr() is only valid for registers in a cogexec scope", .{});
+                                }
+
+                                try ana.emit_warning(fncall.arguments[0].location, "{s}() expected offset, but got {s}.", .{ @tagName(func.*), @tagName(value.value) });
+                                return .int(@intFromEnum(reg));
+                            },
+
                             .offset => |offset| {
                                 const maybe_expected_type: ?eval.ExecMode = switch (func.*) {
                                     .lutaddr => .lut,
@@ -1271,6 +1374,10 @@ const Analyzer = struct {
                         switch (value.value) {
                             .string, .int => {
                                 try ana.emit_warning(fncall.arguments[0].location, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
+                                return value;
+                            },
+                            .register => {
+                                try ana.emit_error(fncall.arguments[0].location, "hubaddr() cannot be applied to registers.", .{});
                                 return value;
                             },
                             .offset => |offset| return .int(offset.hub),
@@ -1566,7 +1673,7 @@ const SymbolInfo = struct {
     referenced: bool = false,
 
     offset: ?Offset = null,
-    value: ?i64 = null,
+    value: ?Value = null,
 
     pub fn location(sym: SymbolInfo) ?ast.Location {
         return switch (sym.type) {
@@ -1602,7 +1709,9 @@ const InstructionInfo = struct {
 
 const Function = union(enum) {
     // the builtin functions are hardcoded here:
-    aug,
+    aug, // adds auto-augmentation to the argument
+    nrel, // computes the absolute address
+
     hubaddr,
     cogaddr,
     lutaddr,
@@ -1614,6 +1723,7 @@ const Function = union(enum) {
     pub fn get_parameters(func: Function) []const Parameter {
         return switch (func) {
             .aug => &.{.init("value", .int)},
+            .nrel => &.{.init("addr", .int)},
             .hubaddr => &.{.init("addr", .offset)},
             .cogaddr => &.{.init("addr", .offset)},
             .lutaddr => &.{.init("addr", .offset)},
@@ -1744,7 +1854,7 @@ pub const EncodedInstruction = struct {
             /// {#}D or {#}S
             /// limit is encoded by `(1 << op.slot.length)`
             /// slot marks the bits where immediate=1, register=0 should be written
-            reg_or_imm: Slot,
+            reg_or_imm: struct { imm: Slot, pcrel: bool },
 
             /// Either #N or PTRx++, --PTRx, ...
             /// with N <= 255
@@ -1763,15 +1873,27 @@ pub const EncodedInstruction = struct {
                 }
 
                 const vtype: Value.Type = value.value;
-                const usage: Value.UsageHint = value.usage;
+                const usage: Value.UsageHint = value.flags.usage;
+
+                const PA: eval.Register = @enumFromInt(0x1F6);
+                const PB: eval.Register = @enumFromInt(0x1F7);
+                const PTRA: eval.Register = @enumFromInt(0x1F8);
+                const PTRB: eval.Register = @enumFromInt(0x1F9);
 
                 return switch (opt) {
                     .address => (usage == .literal),
                     .register => (usage == .register),
                     .immediate => (usage == .literal),
                     .reg_or_imm => true,
-                    .pointer_expr => (vtype == .int) and (usage == .literal),
-                    .pointer_reg => false,
+                    .pointer_expr => ((vtype == .int) and (usage == .literal)) or ((vtype == .register) and switch (value.value.register) {
+                        PTRA, PTRB => true,
+                        else => false,
+                    }),
+
+                    .pointer_reg => (vtype == .register) and switch (value.value.register) {
+                        PA, PB, PTRA, PTRB => true,
+                        else => false,
+                    },
 
                     // integers and offsets can't be assigned to enums
                     .enumeration => false,

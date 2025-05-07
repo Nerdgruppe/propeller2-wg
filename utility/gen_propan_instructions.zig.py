@@ -46,6 +46,7 @@ class OpType(Enum):
     PTREXPR = "ptrexpr"
     SELECTOR = "selector"
     SRC_EITHER = "src_either"
+    SRC_EITHER_PCREL = "src_either_pcrel"
     Z_REMAP = "z_remap"
 
 
@@ -100,6 +101,7 @@ OP_MAPPING: dict[OpType, OpMapping] = {
     OpType.PTREXPR: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),  # can only be second operand
     OpType.SELECTOR: OpMapping(BitField.SELECTOR),
     OpType.SRC_EITHER: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),
+    OpType.SRC_EITHER_PCREL: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),
     OpType.Z_REMAP: OpMapping(BitField.Z_REMAP),
 }
 
@@ -107,12 +109,13 @@ OP_ZIG_TYPE: dict[OpType, str] = {
     OpType.ADDRESS: ".{{ .address = {rel} }}",
     OpType.AUGMENT: ".{{ .immediate = 9 }}",
     OpType.C_REMAP: ".{{ .enumeration = modcz_items }}",
-    OpType.DEST_EITHER: ".{{ .reg_or_imm = {imm} }}",
+    OpType.DEST_EITHER: ".{{ .reg_or_imm = .{{ .imm = {imm}, .pcrel = false }} }}",
     OpType.DEST_REG: ".register",
     OpType.PREG: ".pointer_reg",
     OpType.PTREXPR: ".pointer_expr",
     OpType.SELECTOR: ".{{ .immediate = 0 }}",
-    OpType.SRC_EITHER: ".{{ .reg_or_imm = {imm} }}",
+    OpType.SRC_EITHER: ".{{ .reg_or_imm = .{{ .imm = {imm}, .pcrel = false }} }}",
+    OpType.SRC_EITHER_PCREL: ".{{ .reg_or_imm = .{{ .imm = {imm}, .pcrel = true }} }}",
     OpType.Z_REMAP: ".{{ .enumeration = modcz_items }}",
 }
 
@@ -126,6 +129,7 @@ OP_DISPLAY_TEXT: dict[OpType, str] = {
     OpType.PTREXPR: "{#}S/P",
     OpType.SELECTOR: "#N",
     OpType.SRC_EITHER: "{#}S",
+    OpType.SRC_EITHER_PCREL: "{#}S**",
     OpType.Z_REMAP: "z",
 }
 
