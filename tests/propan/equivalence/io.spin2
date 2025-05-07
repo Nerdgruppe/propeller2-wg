@@ -123,5 +123,9 @@ DAT
     RDPIN  dst, #src
     RDPIN  dst, #src WC
 
+    SETSCP  dst
+    SETSCP #dst
+    GETSCP  dst
+
 dst LONG 0
 src LONG 1

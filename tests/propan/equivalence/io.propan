@@ -122,5 +122,9 @@
     RDPIN  dst, &src
     RDPIN  dst, &src :wc
 
+    SETSCP  dst
+    SETSCP &dst
+    GETSCP  dst
+
 var dst: LONG 0
 var src: LONG 1

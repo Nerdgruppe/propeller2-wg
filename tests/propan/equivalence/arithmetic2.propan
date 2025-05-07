@@ -1,0 +1,75 @@
+
+    DECOD   dst,  src
+    DECOD   dst, &src
+    BMASK   dst,  src
+    BMASK   dst, &src
+    CRCBIT  dst,  src
+    CRCBIT  dst, &src
+    CRCNIB  dst,  src
+    CRCNIB  dst, &src
+    MUXNITS dst,  src
+    MUXNITS dst, &src
+    MUXNIBS dst,  src
+    MUXNIBS dst, &src
+    MUXQ    dst,  src
+    MUXQ    dst, &src
+    MOVBYTS dst,  src
+    MOVBYTS dst, &src
+    MUL     dst,  src
+    MUL     dst,  src :wz
+    MUL     dst, &src
+    MUL     dst, &src :wz
+    MULS    dst,  src
+    MULS    dst,  src :wz
+    MULS    dst, &src
+    MULS    dst, &src :wz
+    SCA     dst,  src
+    SCA     dst,  src :wz
+    SCA     dst, &src
+    SCA     dst, &src :wz
+    SCAS    dst,  src
+    SCAS    dst,  src :wz
+    SCAS    dst, &src
+    SCAS    dst, &src :wz
+    ADDPIX  dst,  src
+    ADDPIX  dst, &src
+    MULPIX  dst,  src
+    MULPIX  dst, &src
+    BLNPIX  dst,  src
+    BLNPIX  dst, &src
+    MIXPIX  dst,  src
+    MIXPIX  dst, &src
+    ADDCT1  dst,  src
+    ADDCT1  dst, &src
+    ADDCT2  dst,  src
+    ADDCT2  dst, &src
+    ADDCT3  dst,  src
+    ADDCT3  dst, &src
+    
+    SPLITB  dst
+    MERGEB  dst
+    SPLITW  dst
+    MERGEW  dst
+    SEUSSF  dst
+    SEUSSR  dst
+    RGBSQZ  dst
+    RGBEXP  dst
+    XORO32  dst
+    REV     dst
+    
+    RCZR    dst
+    RCZR    dst :wc
+    RCZR    dst :wz
+    RCZR    dst :wcz
+    RCZL    dst
+    RCZL    dst :wc
+    RCZL    dst :wz
+    RCZL    dst :wcz
+
+    WRC     dst
+    WRNC    dst
+    WRZ     dst
+    WRNZ    dst
+
+var dst: LONG 0 
+var src: LONG 0 

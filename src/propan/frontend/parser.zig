@@ -200,8 +200,20 @@ pub const Parser = struct {
         }
 
         fn accept_eol_or_eof(core: *Core) !void {
+            const context = core.core.tokenizer.current_location;
             _ = core.accept_one(.linefeed) catch |err| switch (err) {
                 error.UnexpectedEndOfFile => {},
+                error.UnexpectedToken => {
+                    const any: Token = blk: {
+                        const state = core.core.saveState();
+                        defer core.core.restoreState(state);
+                        break :blk (try core.next_token()).?;
+                    };
+
+                    return core.emit_fatal_error(context, "unexpected token: expected end of line, but found {s}", .{
+                        @tagName(any.type),
+                    });
+                },
                 else => |e| return e,
             };
         }
