@@ -1,0 +1,113 @@
+DAT 
+    SETPAT  dst,  src
+    SETPAT  dst, #src
+    SETPAT #dst,  src
+    SETPAT #dst, #src
+    XINIT  dst,  src
+    XINIT  dst, #src
+    XINIT #dst,  src
+    XINIT #dst, #src
+    XZERO  dst,  src
+    XZERO  dst, #src
+    XZERO #dst,  src
+    XZERO #dst, #src
+    XCONT  dst,  src
+    XCONT  dst, #src
+    XCONT #dst,  src
+    XCONT #dst, #src
+    COGINIT  dst,  src
+    COGINIT  dst,  src WC
+    COGINIT  dst, #src
+    COGINIT  dst, #src WC
+    COGINIT #dst,  src
+    COGINIT #dst,  src WC
+    COGINIT #dst, #src
+    COGINIT #dst, #src WC
+    HUBSET  dst
+    HUBSET #dst
+    COGID  dst
+    COGID  dst WC
+    COGID #dst
+    COGID #dst WC
+    COGSTOP  dst
+    COGSTOP #dst
+    LOCKNEW  dst
+    LOCKNEW  dst WC
+    LOCKRET  dst
+    LOCKRET #dst
+    LOCKTRY  dst
+    LOCKTRY  dst WC
+    LOCKTRY #dst
+    LOCKTRY #dst WC
+    LOCKREL  dst
+    LOCKREL  dst WC
+    LOCKREL #dst
+    LOCKREL #dst WC
+    GETCT   dst
+    GETCT   dst WC
+    GETRND  dst
+    GETRND  dst WC
+    GETRND  dst WZ
+    GETRND  dst WCZ
+
+    SETDACS  dst
+    SETDACS #dst
+    SETXFRQ  dst
+    SETXFRQ #dst
+    
+    GETXACC dst
+
+    WAITX    dst
+    WAITX    dst WC
+    WAITX    dst WZ
+    WAITX    dst WCZ
+    WAITX   #dst
+    WAITX   #dst WC
+    WAITX   #dst WZ
+    WAITX   #dst WCZ
+
+    SETSE1   dst
+    SETSE1  #dst
+    SETSE2   dst
+    SETSE2  #dst
+    SETSE3   dst
+    SETSE3  #dst
+    SETSE4   dst
+    SETSE4  #dst
+    SETINT1  dst
+    SETINT1 #dst
+    SETINT2  dst
+    SETINT2 #dst
+    SETINT3  dst
+    SETINT3 #dst
+    SETQ     dst
+    SETQ    #dst
+    SETQ2    dst
+    SETQ2   #dst
+
+    GETBRK   dst WC
+    GETBRK   dst WZ
+    GETBRK   dst WCZ
+
+    SETLUTS  dst
+    SETLUTS #dst
+    SETCY    dst
+    SETCY   #dst
+    SETCI    dst
+    SETCI   #dst
+    SETCQ    dst
+    SETCQ   #dst
+    SETCFRQ  dst
+    SETCFRQ #dst
+    SETCMOD  dst
+    SETCMOD #dst
+    SETPIV   dst
+    SETPIV  #dst
+    SETPIX   dst
+    SETPIX  #dst
+    COGATN   dst
+    COGATN  #dst
+
+
+src LONG 0
+dst LONG 1

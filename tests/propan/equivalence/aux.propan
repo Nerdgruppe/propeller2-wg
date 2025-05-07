@@ -1,0 +1,113 @@
+
+    SETPAT  dst,  src
+    SETPAT  dst, &src
+    SETPAT &dst,  src
+    SETPAT &dst, &src
+    XINIT  dst,  src
+    XINIT  dst, &src
+    XINIT &dst,  src
+    XINIT &dst, &src
+    XZERO  dst,  src
+    XZERO  dst, &src
+    XZERO &dst,  src
+    XZERO &dst, &src
+    XCONT  dst,  src
+    XCONT  dst, &src
+    XCONT &dst,  src
+    XCONT &dst, &src
+    COGINIT  dst,  src
+    COGINIT  dst,  src :wc
+    COGINIT  dst, &src
+    COGINIT  dst, &src :wc
+    COGINIT &dst,  src
+    COGINIT &dst,  src :wc
+    COGINIT &dst, &src
+    COGINIT &dst, &src :wc
+    HUBSET  dst
+    HUBSET &dst
+    COGID  dst
+    COGID  dst :wc
+    COGID &dst
+    COGID &dst :wc
+    COGSTOP  dst
+    COGSTOP &dst
+    LOCKNEW  dst
+    LOCKNEW  dst :wc
+    LOCKRET  dst
+    LOCKRET &dst
+    LOCKTRY  dst
+    LOCKTRY  dst :wc
+    LOCKTRY &dst
+    LOCKTRY &dst :wc
+    LOCKREL  dst
+    LOCKREL  dst :wc
+    LOCKREL &dst
+    LOCKREL &dst :wc
+    GETCT   dst
+    GETCT   dst :wc
+    GETRND  dst
+    GETRND  dst :wc
+    GETRND  dst :wz
+    GETRND  dst :wcz
+
+    SETDACS  dst
+    SETDACS &dst
+    SETXFRQ  dst
+    SETXFRQ &dst
+    
+    GETXACC dst
+
+    WAITX    dst
+    WAITX    dst :wc
+    WAITX    dst :wz
+    WAITX    dst :wcz
+    WAITX   &dst
+    WAITX   &dst :wc
+    WAITX   &dst :wz
+    WAITX   &dst :wcz
+
+    SETSE1   dst
+    SETSE1  &dst
+    SETSE2   dst
+    SETSE2  &dst
+    SETSE3   dst
+    SETSE3  &dst
+    SETSE4   dst
+    SETSE4  &dst
+    SETINT1  dst
+    SETINT1 &dst
+    SETINT2  dst
+    SETINT2 &dst
+    SETINT3  dst
+    SETINT3 &dst
+    SETQ     dst
+    SETQ    &dst
+    SETQ2    dst
+    SETQ2   &dst
+
+    GETBRK   dst :wc
+    GETBRK   dst :wz
+    GETBRK   dst :wcz
+
+    SETLUTS  dst
+    SETLUTS &dst
+    SETCY    dst
+    SETCY   &dst
+    SETCI    dst
+    SETCI   &dst
+    SETCQ    dst
+    SETCQ   &dst
+    SETCFRQ  dst
+    SETCFRQ &dst
+    SETCMOD  dst
+    SETCMOD &dst
+    SETPIV   dst
+    SETPIV  &dst
+    SETPIX   dst
+    SETPIX  &dst
+    COGATN   dst
+    COGATN  &dst
+
+
+var src: LONG 0
+var dst: LONG 1

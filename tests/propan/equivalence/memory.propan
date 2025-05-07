@@ -1,0 +1,67 @@
+
+    POPA dst
+    POPA dst :wc
+    POPA dst :wz
+    POPA dst :wcz
+    POPB dst
+    POPB dst :wc
+    POPB dst :wz
+    POPB dst :wcz
+
+    PUSHA   dst
+    PUSHA  &dst
+    PUSHB   dst
+    PUSHB  &dst
+    RDFAST  dst,  src
+    RDFAST  dst, &src
+    RDFAST &dst,  src
+    RDFAST &dst, &src
+    WRFAST  dst,  src
+    WRFAST  dst, &src
+    WRFAST &dst,  src
+    WRFAST &dst, &src
+    FBLOCK  dst,  src
+    FBLOCK  dst, &src
+    FBLOCK &dst,  src
+    FBLOCK &dst, &src
+
+    RFBYTE dst
+    RFBYTE dst :wc
+    RFBYTE dst :wz
+    RFBYTE dst :wcz
+    RFWORD dst
+    RFWORD dst :wc
+    RFWORD dst :wz
+    RFWORD dst :wcz
+    RFLONG dst
+    RFLONG dst :wc
+    RFLONG dst :wz
+    RFLONG dst :wcz
+    RFVAR  dst
+    RFVAR  dst :wc
+    RFVAR  dst :wz
+    RFVAR  dst :wcz
+    RFVARS dst
+    RFVARS dst :wc
+    RFVARS dst :wz
+    RFVARS dst :wcz
+        
+    WFBYTE  dst
+    WFBYTE &dst
+    WFWORD  dst
+    WFWORD &dst
+    WFLONG  dst
+    WFLONG &dst
+    
+    PUSH  dst
+    PUSH &dst
+    POP   dst
+    POP   dst :wc
+    POP   dst :wz
+    POP   dst :wcz
+    
+    GETPTR dst
+
+var src: LONG 0
+var dst: LONG 1
+

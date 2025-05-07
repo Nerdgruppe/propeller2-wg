@@ -1,0 +1,41 @@
+
+    QMUL     dst,  src
+    QMUL     dst, &src
+    QMUL    &dst,  src
+    QMUL    &dst, &src
+    QDIV     dst,  src
+    QDIV     dst, &src
+    QDIV    &dst,  src
+    QDIV    &dst, &src
+    QFRAC    dst,  src
+    QFRAC    dst, &src
+    QFRAC   &dst,  src
+    QFRAC   &dst, &src
+    QSQRT    dst,  src
+    QSQRT    dst, &src
+    QSQRT   &dst,  src
+    QSQRT   &dst, &src
+    QROTATE  dst,  src
+    QROTATE  dst, &src
+    QROTATE &dst,  src
+    QROTATE &dst, &src
+    QVECTOR  dst,  src
+    QVECTOR  dst, &src
+    QVECTOR &dst,  src
+    QVECTOR &dst, &src
+
+    QLOG  dst
+    QLOG &dst
+    QEXP  dst
+    QEXP &dst
+    GETQX dst
+    GETQX dst :wc
+    GETQX dst :wz
+    GETQX dst :wcz
+    GETQY dst
+    GETQY dst :wc
+    GETQY dst :wz
+    GETQY dst :wcz
+
+var src: LONG 0
+var dst: LONG 1

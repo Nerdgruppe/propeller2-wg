@@ -1,0 +1,14 @@
+DAT 
+    WMLONG dst, {#}S/P
+    RDLUT dst, {#}S/P {WC/WZ/WCZ}
+    RDBYTE dst, {#}S/P {WC/WZ/WCZ}
+    RDWORD dst, {#}S/P {WC/WZ/WCZ}
+    RDLONG dst, {#}S/P {WC/WZ/WCZ}
+
+    WRLUT {#}dst, {#}S/P
+    WRBYTE {#}dst, {#}S/P
+    WRWORD {#}dst, {#}S/P
+    WRLONG {#}dst, {#}S/P
+    
+src LONG 0
+dst LONG 1

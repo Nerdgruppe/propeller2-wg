@@ -1,0 +1,42 @@
+DAT 
+    ' MODCZ _CLR,      _NC_AND_NZ
+    MODCZ _NC_AND_Z, _NC            WC
+    MODCZ _C_AND_NZ, _NZ            WZ
+    MODCZ _NC_OR_NZ, _C_AND_Z       WCZ
+    ' MODC _C_EQ_Z
+    MODC _Z                         WC
+    ' MODZ _NC_OR_Z
+    MODZ _C                         WZ
+
+    MODC _CLR                       WC
+    MODC _NC_AND_NZ                 WC
+    MODC _NZ_AND_NC                 WC
+    MODC _GT                        WC
+    MODC _NC_AND_Z                  WC
+    MODC _Z_AND_NC                  WC
+    MODC _NC                        WC
+    MODC _GE                        WC
+    MODC _C_AND_NZ                  WC
+    MODC _NZ_AND_C                  WC
+    MODC _NZ                        WC
+    MODC _NE                        WC
+    MODC _C_NE_Z                    WC
+    MODC _Z_NE_C                    WC
+    MODC _NC_OR_NZ                  WC
+    MODC _NZ_OR_NC                  WC
+    MODC _C_AND_Z                   WC
+    MODC _Z_AND_C                   WC
+    MODC _C_EQ_Z                    WC
+    MODC _Z_EQ_C                    WC
+    MODC _Z                         WC
+    MODC _E                         WC
+    MODC _NC_OR_Z                   WC
+    MODC _Z_OR_NC                   WC
+    MODC _C                         WC
+    MODC _LT                        WC
+    MODC _C_OR_NZ                   WC
+    MODC _NZ_OR_C                   WC
+    MODC _C_OR_Z                    WC
+    MODC _Z_OR_C                    WC
+    MODC _LE                        WC
+    MODC _SET                       WC
