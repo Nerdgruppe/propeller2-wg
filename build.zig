@@ -174,6 +174,7 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/ambigious-selection.propan",
     "tests/propan/sema/basic-label-addressing.propan",
     "tests/propan/sema/operators.propan",
+    "tests/propan/sema/value-hint-converter.propan",
     // "./tests/propan/sema/stdlib.propan",
 };
 
