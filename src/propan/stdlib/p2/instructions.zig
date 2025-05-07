@@ -1400,7 +1400,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 3),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1421,7 +1421,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 3),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1442,7 +1442,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 3),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1463,7 +1463,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 2),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1484,7 +1484,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 2),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1505,7 +1505,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 2),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1526,7 +1526,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 1),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1547,7 +1547,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 1),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -1568,7 +1568,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #N
                 .slot = .init(19, 1),
-                .type = .immediate,
+                .type = .{ .immediate = 0 },
             },
         },
     },
@@ -5632,7 +5632,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // #n
                 .slot = .init(0, 23),
-                .type = .immediate,
+                .type = .{ .immediate = 9 },
             },
         },
     },
@@ -5645,7 +5645,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // #n
                 .slot = .init(0, 23),
-                .type = .immediate,
+                .type = .{ .immediate = 9 },
             },
         },
     },

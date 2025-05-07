@@ -182,4 +182,7 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/arithmetic_group.propan",
     "tests/propan/equivalence/special_effects.propan",
     "tests/propan/equivalence/argless.propan",
+    "tests/propan/equivalence/three_ops.propan",
+    "tests/propan/equivalence/metaprogramming.propan",
+    "tests/propan/equivalence/io.propan",
 };

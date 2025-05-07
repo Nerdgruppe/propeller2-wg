@@ -702,27 +702,27 @@ const Analyzer = struct {
                 continue :current_instr;
             }
 
-            logger.info("{s} => args={}, vars={}, argc_matching={}", .{
+            logger.debug("{s} => args={}, vars={}, argc_matching={}", .{
                 instr.ast_node.mnemonic,
                 instr.arguments.len,
                 mnemonic.variants.items.len,
                 alternatives.len,
             });
 
-            logger.info("  args:", .{});
+            logger.debug("  args:", .{});
             for (instr.arguments) |arg| {
                 logger.info("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.usage), arg.augment });
             }
-            logger.info("  alts:", .{});
+            logger.debug("  alts:", .{});
 
             var selection: ?*const EncodedInstruction = null;
             for (alternatives.constSlice()) |alt| {
-                logger.info("  - {s}", .{alt.mnemonic});
+                logger.debug("  - {s}", .{alt.mnemonic});
 
                 var can_assign = true;
                 for (alt.operands, instr.arguments) |op, arg| {
                     const op_ok = op.type.can_assign_from(arg);
-                    logger.info("    - {s}; type ok={}", .{
+                    logger.debug("    - {s}; type ok={}", .{
                         @tagName(op.type),
                         op_ok,
                     });
@@ -732,18 +732,18 @@ const Analyzer = struct {
                 }
                 if (instr.ast_node.effect) |effect| {
                     if (!alt.effects.contains(effect)) {
-                        logger.info("      : non-matching effect", .{});
+                        logger.debug("      : non-matching effect", .{});
                         can_assign = false;
                     }
                 } else {
                     if (!alt.effects.none) {
-                        logger.info("      : requires effect", .{});
+                        logger.debug("      : requires effect", .{});
                         can_assign = false;
                     }
                 }
 
                 if (!can_assign) {
-                    logger.info("      : skip!", .{});
+                    logger.debug("      : skip!", .{});
                     continue;
                 }
 
@@ -943,8 +943,8 @@ const Analyzer = struct {
                                     break :enc int;
                                 },
 
-                                .immediate => switch (hint) {
-                                    .literal => int,
+                                .immediate => |shift| switch (hint) {
+                                    .literal => (int >> shift),
                                     .register => {
                                         try ana.emit_error(location, "expected register value, but found immediate", .{});
                                         continue;
@@ -1734,8 +1734,12 @@ pub const EncodedInstruction = struct {
             /// D or S
             register,
 
-            /// #D, #S or
-            immediate, // limit is encoded by `(1 << op.slot.length)`
+            /// Absolute immediate value
+            /// #D, #S or #N
+            /// limit is encoded by `(1 << op.slot.length)`
+            /// value encodes the right-shift of the value, which is used to align it.
+            ///     use case: AUGS/AUGD take a "#n" argument, which is top-most 23 bits of a value
+            immediate: u5,
 
             /// {#}D or {#}S
             /// limit is encoded by `(1 << op.slot.length)`

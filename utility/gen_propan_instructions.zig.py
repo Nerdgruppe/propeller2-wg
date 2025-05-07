@@ -105,13 +105,13 @@ OP_MAPPING: dict[OpType, OpMapping] = {
 
 OP_ZIG_TYPE: dict[OpType, str] = {
     OpType.ADDRESS: ".{{ .address = {rel} }}",
-    OpType.AUGMENT: ".immediate",
+    OpType.AUGMENT: ".{{ .immediate = 9 }}",
     OpType.C_REMAP: ".{{ .enumeration = modcz_items }}",
     OpType.DEST_EITHER: ".{{ .reg_or_imm = {imm} }}",
     OpType.DEST_REG: ".register",
     OpType.PREG: ".pointer_reg",
     OpType.PTREXPR: ".pointer_expr",
-    OpType.SELECTOR: ".immediate",
+    OpType.SELECTOR: ".{{ .immediate = 0 }}",
     OpType.SRC_EITHER: ".{{ .reg_or_imm = {imm} }}",
     OpType.Z_REMAP: ".{{ .enumeration = modcz_items }}",
 }

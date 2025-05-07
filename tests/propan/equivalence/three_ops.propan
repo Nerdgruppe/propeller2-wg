@@ -1,0 +1,96 @@
+    // nib group
+
+    SETNIB  dst,  src, 0
+    SETNIB  dst,  src, 1
+    SETNIB  dst,  src, 2
+    SETNIB  dst,  src, 3
+    SETNIB  dst,  src, 4
+    SETNIB  dst,  src, 6
+    SETNIB  dst,  src, 5
+    SETNIB  dst,  src, 7
+    SETNIB  dst, &src, 0
+    SETNIB  dst, &src, 1
+    SETNIB  dst, &src, 2
+    SETNIB  dst, &src, 3
+    SETNIB  dst, &src, 4
+    SETNIB  dst, &src, 6
+    SETNIB  dst, &src, 5
+    SETNIB  dst, &src, 7
+    GETNIB  dst,  src, 0
+    GETNIB  dst,  src, 1
+    GETNIB  dst,  src, 2
+    GETNIB  dst,  src, 3
+    GETNIB  dst,  src, 4
+    GETNIB  dst,  src, 6
+    GETNIB  dst,  src, 5
+    GETNIB  dst,  src, 7
+    GETNIB  dst, &src, 0
+    GETNIB  dst, &src, 1
+    GETNIB  dst, &src, 2
+    GETNIB  dst, &src, 3
+    GETNIB  dst, &src, 4
+    GETNIB  dst, &src, 6
+    GETNIB  dst, &src, 5
+    GETNIB  dst, &src, 7
+    ROLNIB  dst,  src, 0
+    ROLNIB  dst,  src, 1
+    ROLNIB  dst,  src, 2
+    ROLNIB  dst,  src, 3
+    ROLNIB  dst,  src, 4
+    ROLNIB  dst,  src, 6
+    ROLNIB  dst,  src, 5
+    ROLNIB  dst,  src, 7
+    ROLNIB  dst, &src, 0
+    ROLNIB  dst, &src, 1
+    ROLNIB  dst, &src, 2
+    ROLNIB  dst, &src, 3
+    ROLNIB  dst, &src, 4
+    ROLNIB  dst, &src, 6
+    ROLNIB  dst, &src, 5
+    ROLNIB  dst, &src, 7
+
+    // byte group
+
+    SETBYTE dst,  src, 0
+    SETBYTE dst,  src, 1
+    SETBYTE dst,  src, 2
+    SETBYTE dst,  src, 3
+    SETBYTE dst, &src, 0
+    SETBYTE dst, &src, 1
+    SETBYTE dst, &src, 2
+    SETBYTE dst, &src, 3
+    GETBYTE dst,  src, 0
+    GETBYTE dst,  src, 1
+    GETBYTE dst,  src, 2
+    GETBYTE dst,  src, 3
+    GETBYTE dst, &src, 0
+    GETBYTE dst, &src, 1
+    GETBYTE dst, &src, 2
+    GETBYTE dst, &src, 3
+    ROLBYTE dst,  src, 0
+    ROLBYTE dst,  src, 1
+    ROLBYTE dst,  src, 2
+    ROLBYTE dst,  src, 3
+    ROLBYTE dst, &src, 0
+    ROLBYTE dst, &src, 1
+    ROLBYTE dst, &src, 2
+    ROLBYTE dst, &src, 3
+
+    // word group
+
+    SETWORD dst,  src, 0
+    SETWORD dst,  src, 1
+    SETWORD dst, &src, 0
+    SETWORD dst, &src, 1
+    GETWORD dst,  src, 0
+    GETWORD dst,  src, 1
+    GETWORD dst, &src, 0
+    GETWORD dst, &src, 1
+    ROLWORD dst,  src, 0
+    ROLWORD dst,  src, 1
+    ROLWORD dst, &src, 0
+    ROLWORD dst, &src, 1
+
+
+var dst: LONG 0
+var src: LONG 0

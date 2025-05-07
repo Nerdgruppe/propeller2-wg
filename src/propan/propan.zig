@@ -7,9 +7,9 @@ const sema = @import("sema.zig");
 const args_parser = @import("args");
 
 pub const std_options: std.Options = .{
-    .log_scope_levels = &.{
-        .{ .scope = .parser, .level = .info },
-    },
+    .log_scope_levels = &.{},
+    .log_level = .debug,
+    .logFn = writeLog,
 };
 
 const TestMode = enum {
@@ -23,10 +23,12 @@ const CliArgs = struct {
     output: []const u8 = "",
     @"test-mode": ?TestMode = null,
     @"compare-to": []const u8 = "",
+    verbose: bool = false,
 
     pub const shorthands = .{
         .h = "help",
         .o = "output",
+        .v = "verbose",
     };
 
     pub const meta = .{
@@ -39,6 +41,7 @@ const CliArgs = struct {
         .option_docs = .{
             .help = "Prints this help text",
             .output = "Sets the path of the output file.",
+            .verbose = "Enables debug logging",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -60,6 +63,13 @@ pub fn main() !u8 {
 
     var cli = args_parser.parseForCurrentProcess(CliArgs, allocator, .print) catch return 1;
     defer cli.deinit();
+
+    if (cli.options.@"test-mode" != null) {
+        global_log_level = .warn;
+    }
+    if (cli.options.verbose) {
+        global_log_level = .debug;
+    }
 
     if (cli.options.help) {
         try args_parser.printHelp(
@@ -263,4 +273,18 @@ fn bitdiff(comptime T: type, comp: T, ref: T, comptime groups: []const u32) [@bi
     }
 
     return out;
+}
+
+var global_log_level: std.log.Level = .info;
+
+fn writeLog(
+    comptime message_level: std.log.Level,
+    comptime scope: @TypeOf(.enum_literal),
+    comptime format: []const u8,
+    args: anytype,
+) void {
+    if (@intFromEnum(message_level) > @intFromEnum(global_log_level)) {
+        return;
+    }
+    std.log.defaultLog(message_level, scope, format, args);
 }

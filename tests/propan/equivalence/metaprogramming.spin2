@@ -1,0 +1,36 @@
+DAT
+
+    ALTSN dst,  src ' 00000
+    ALTSN dst, #src ' 00004
+    ALTGN dst,  src ' 00008
+    ALTGN dst, #src ' 0000C
+    ALTSB dst,  src ' 00010
+    ALTSB dst, #src ' 00014
+    ALTGB dst,  src ' 00018
+    ALTGB dst, #src ' 0001C
+    ALTSW dst,  src ' 00020
+    ALTSW dst, #src ' 00024
+    ALTGW dst,  src ' 00028
+    ALTGW dst, #src ' 0002C
+    ALTR  dst,  src ' 00030
+    ALTR  dst, #src ' 00034
+    ALTD  dst,  src ' 00038
+    ALTD  dst, #src ' 0003C
+    ALTS  dst,  src ' 00040
+    ALTS  dst, #src ' 00044
+    ALTB  dst,  src ' 00048
+    ALTB  dst, #src ' 0004C
+    ALTI  dst,  src ' 00050
+    ALTI  dst, #src ' 00054
+    SETR  dst,  src ' 00058
+    SETR  dst, #src ' 0005C
+    SETD  dst,  src ' 00060
+    SETD  dst, #src ' 00064
+    SETS  dst,  src ' 00068
+    SETS  dst, #src ' 0006C
+    
+    AUGS #$44332211 ' 00070
+    AUGD #$88776655 ' 00074
+
+dst LONG 0
+src LONG 1

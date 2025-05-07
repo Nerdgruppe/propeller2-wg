@@ -1,0 +1,126 @@
+    // direct control
+
+    OUTL    dst
+    OUTL    dst :wcz
+    OUTL   &dst
+    OUTL   &dst :wcz
+    OUTH    dst
+    OUTH    dst :wcz
+    OUTH   &dst
+    OUTH   &dst :wcz
+    OUTC    dst
+    OUTC    dst :wcz
+    OUTC   &dst
+    OUTC   &dst :wcz
+    OUTNC   dst
+    OUTNC   dst :wcz
+    OUTNC  &dst
+    OUTNC  &dst :wcz
+    OUTZ    dst
+    OUTZ    dst :wcz
+    OUTZ   &dst
+    OUTZ   &dst :wcz
+    OUTNZ   dst
+    OUTNZ   dst :wcz
+    OUTNZ  &dst
+    OUTNZ  &dst :wcz
+    OUTRND  dst
+    OUTRND  dst :wcz
+    OUTRND &dst
+    OUTRND &dst :wcz
+    OUTNOT  dst
+    OUTNOT  dst :wcz
+    OUTNOT &dst
+    OUTNOT &dst :wcz
+    FLTL    dst
+    FLTL    dst :wcz
+    FLTL   &dst
+    FLTL   &dst :wcz
+    FLTH    dst
+    FLTH    dst :wcz
+    FLTH   &dst
+    FLTH   &dst :wcz
+    FLTC    dst
+    FLTC    dst :wcz
+    FLTC   &dst
+    FLTC   &dst :wcz
+    FLTNC   dst
+    FLTNC   dst :wcz
+    FLTNC  &dst
+    FLTNC  &dst :wcz
+    FLTZ    dst
+    FLTZ    dst :wcz
+    FLTZ   &dst
+    FLTZ   &dst :wcz
+    FLTNZ   dst
+    FLTNZ   dst :wcz
+    FLTNZ  &dst
+    FLTNZ  &dst :wcz
+    FLTRND  dst
+    FLTRND  dst :wcz
+    FLTRND &dst
+    FLTRND &dst :wcz
+    FLTNOT  dst
+    FLTNOT  dst :wcz
+    FLTNOT &dst
+    FLTNOT &dst :wcz
+    DRVL    dst
+    DRVL    dst :wcz
+    DRVL   &dst
+    DRVL   &dst :wcz
+    DRVH    dst
+    DRVH    dst :wcz
+    DRVH   &dst
+    DRVH   &dst :wcz
+    DRVC    dst
+    DRVC    dst :wcz
+    DRVC   &dst
+    DRVC   &dst :wcz
+    DRVNC   dst
+    DRVNC   dst :wcz
+    DRVNC  &dst
+    DRVNC  &dst :wcz
+    DRVZ    dst
+    DRVZ    dst :wcz
+    DRVZ   &dst
+    DRVZ   &dst :wcz
+    DRVNZ   dst
+    DRVNZ   dst :wcz
+    DRVNZ  &dst
+    DRVNZ  &dst :wcz
+    DRVRND  dst
+    DRVRND  dst :wcz
+    DRVRND &dst
+    DRVRND &dst :wcz
+    DRVNOT  dst
+    DRVNOT  dst :wcz
+    DRVNOT &dst
+    DRVNOT &dst :wcz
+
+    // smart pins
+    AKPIN  src
+    AKPIN &src
+    WRPIN  dst,  src
+    WRPIN  dst, &src
+    WRPIN &dst,  src
+    WRPIN &dst, &src
+    WXPIN  dst,  src
+    WXPIN  dst, &src
+    WXPIN &dst,  src
+    WXPIN &dst, &src
+    WYPIN  dst,  src
+    WYPIN  dst, &src
+    WYPIN &dst,  src
+    WYPIN &dst, &src
+
+    RQPIN  dst,  src
+    RQPIN  dst,  src :wc
+    RQPIN  dst, &src
+    RQPIN  dst, &src :wc
+    RDPIN  dst,  src
+    RDPIN  dst,  src :wc
+    RDPIN  dst, &src
+    RDPIN  dst, &src :wc
+
+var dst: LONG 0
+var src: LONG 1
