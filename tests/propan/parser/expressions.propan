@@ -90,6 +90,23 @@ const precedence_test1 = 10 + 20 * 30
 const wraps0 = (10 * 20) + 30
 const wraps1 = (10 + 20) * 30
 
+
+const pre_decrement = --PTRA
+const pre_increment = ++PTRA
+
+// the following constructs are only here for the use with pointer ops,
+// so they are constraint to only work with identifiers:
+
+const post_decrement = PTRA--
+const post_increment = PTRA++
+
+const index_op = PTRA[10]
+
+const pre_decrement_index = --PTRA[10]
+const pre_increment_index = ++PTRA[10]
+const post_decrement_index = PTRA--[10]
+const post_increment_index = PTRA++[10]
+
 identifier:
 const a = 0
 const b = 0

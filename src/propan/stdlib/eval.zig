@@ -81,6 +81,7 @@ pub const Value = struct {
         offset,
         register,
         enumerator,
+        pointer_expr,
     };
 
     pub const Payload = union(Type) {
@@ -89,6 +90,7 @@ pub const Value = struct {
         offset: Offset,
         register: Register,
         enumerator: []const u8,
+        pointer_expr: PointerExpression,
     };
 
     pub fn format(val: Value, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
@@ -109,8 +111,53 @@ pub const Value = struct {
             .offset => |v| try writer.print("{}", .{v}),
             .register => |v| try writer.print("{}", .{v}),
             .enumerator => |v| try writer.print("#{s}", .{v}),
+            .pointer_expr => |v| try writer.print("{}", .{v}),
         }
         try writer.print(", {s})", .{@tagName(val.flags.usage)});
+    }
+};
+
+pub const PointerExpression = struct {
+    pub const Pointer = enum(u1) {
+        PTRA = 0,
+        PTRB = 1,
+    };
+
+    pointer: Pointer,
+    increment: enum {
+        none,
+        pre_increment,
+        pre_decrement,
+        post_increment,
+        post_decrement,
+    },
+    index: ?i64,
+
+    pub fn format(ptr_expr: PointerExpression, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+
+        switch (ptr_expr.increment) {
+            .none => {},
+            .pre_increment => try writer.writeAll("++"),
+            .pre_decrement => try writer.writeAll("--"),
+            .post_increment => {},
+            .post_decrement => {},
+        }
+
+        try writer.print("{s}", .{@tagName(ptr_expr.pointer)});
+
+        switch (ptr_expr.increment) {
+            .none => {},
+            .pre_increment => {},
+            .pre_decrement => {},
+            .post_increment => try writer.writeAll("++"),
+            .post_decrement => try writer.writeAll("--"),
+        }
+
+        if (ptr_expr.index) |index| {
+            try writer.print("[{}]", .{index});
+        }
     }
 };
 

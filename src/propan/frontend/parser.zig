@@ -307,6 +307,8 @@ pub const Parser = struct {
                 .@"@",
                 .@"*",
                 .@"&",
+                .@"++",
+                .@"--",
             };
 
             if (core.accept_any(unary_ops)) |bundle| {
@@ -319,6 +321,8 @@ pub const Parser = struct {
                     .@"@" => .@"@",
                     .@"*" => .@"*",
                     .@"&" => .@"&",
+                    .@"++" => .pre_increment,
+                    .@"--" => .pre_decrement,
                 };
                 const value = try core.accept_unary_expression();
 
@@ -365,6 +369,8 @@ pub const Parser = struct {
                     },
                 },
                 .identifier => {
+                    // function calls are a really special case in that they don't consume
+                    // an identifier expression, but a function name:
                     if (core.accept_one(.@"(")) |_| {
                         // <identifier> "(" is a function call
 
@@ -381,15 +387,55 @@ pub const Parser = struct {
                                 .function = token.text,
                             },
                         };
-                    } else |_| {
-                        // symbol reference, not function call
-                        return .{
-                            .symbol = .{
-                                .location = token.location,
-                                .symbol_name = token.text,
+                    } else |_| {}
+
+                    // All other expressions consume regular expressions:
+                    var result_expr: ast.Expression = .{
+                        .symbol = .{
+                            .location = token.location,
+                            .symbol_name = token.text,
+                        },
+                    };
+
+                    if (core.accept_any(&.{ .@"++", .@"--" })) |tokwrap| {
+                        const which_op, const op_tok = tokwrap;
+                        const op: ast.UnaryOperator = switch (which_op) {
+                            .@"++" => .post_increment,
+                            .@"--" => .post_increment,
+                        };
+                        const value = try core.move_to_heap(ast.Expression, result_expr);
+                        result_expr = .{
+                            .unary_transform = .{
+                                .location = op_tok.location,
+                                .operator = op,
+                                .value = value,
                             },
                         };
-                    }
+                    } else |_| {}
+
+                    if (core.accept_one(.@"[")) |open_tok| {
+                        // <identifier> "[" is an index operator
+
+                        const whitespace = core.push_ignore_whitespace();
+                        defer whitespace.pop();
+
+                        const index = try core.accept_expression();
+
+                        _ = try core.accept_one(.@"]");
+
+                        const lhs = try core.move_to_heap(ast.Expression, result_expr);
+                        const rhs = try core.move_to_heap(ast.Expression, index);
+                        result_expr = .{
+                            .binary_transform = .{
+                                .location = open_tok.location,
+                                .operator = .array_index,
+                                .lhs = lhs,
+                                .rhs = rhs,
+                            },
+                        };
+                    } else |_| {}
+
+                    return result_expr;
                 },
                 .char_literal => {
                     var buffer: [32]u8 = undefined;
@@ -829,6 +875,8 @@ pub const TokenType = enum {
     @"%",
     @":",
     @"?",
+    @"++",
+    @"--",
 
     // values
     integer, // 1234, 0xDEAD, 0b1100101, 0q12340123, 0o1234567
@@ -929,12 +977,16 @@ const patterns = struct {
         .create(.identifier, basic_ident),
 
         .create(.@"<=>", match.literal("<=>")),
+
         .create(.@"==", match.literal("==")),
         .create(.@"!=", match.literal("!=")),
         .create(.@"<=", match.literal("<=")),
         .create(.@">>", match.literal(">>")),
         .create(.@"<<", match.literal("<<")),
         .create(.@">=", match.literal(">=")),
+
+        .create(.@"++", match.literal("++")),
+        .create(.@"--", match.literal("--")),
 
         .create(.@"<", match.literal("<")),
         .create(.@">", match.literal(">")),

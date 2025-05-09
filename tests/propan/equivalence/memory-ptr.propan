@@ -1,0 +1,85 @@
+// CON
+const index5m = -16
+const index5p = 16
+const index6m = -32
+const index6p = 31
+// DAT
+    WMLONG  dst,  src
+    WMLONG  dst, &src
+    WMLONG  dst, PTRA
+    RDLUT   dst,  src
+    RDLUT   dst, &src
+    RDLUT   dst, PTRA++
+    RDLUT   dst,  src            :wc
+    RDLUT   dst, &src            :wc
+    RDLUT   dst, PTRA--          :wc
+    RDLUT   dst,  src            :wz
+    RDLUT   dst, &src            :wz
+    RDLUT   dst, ++PTRA          :wz
+    RDLUT   dst,  src            :wcz
+    RDLUT   dst, &src            :wcz
+    RDLUT   dst, --PTRA          :wcz
+    RDBYTE  dst,  src
+    RDBYTE  dst, &src
+    RDBYTE  dst, PTRA[index6m]
+    RDBYTE  dst,  src            :wc
+    RDBYTE  dst, &src            :wc
+    RDBYTE  dst, PTRA++[index5m] :wc
+    RDBYTE  dst,  src            :wz
+    RDBYTE  dst, &src            :wz
+    RDBYTE  dst, PTRA--[index5m] :wz
+    RDBYTE  dst,  src            :wcz
+    RDBYTE  dst, &src            :wcz
+    RDBYTE  dst, ++PTRA[index5m] :wcz
+    RDWORD  dst,  src
+    RDWORD  dst, &src
+    RDWORD  dst, --PTRA[index5m]
+    RDWORD  dst,  src            :wc
+    RDWORD  dst, &src            :wc
+    RDWORD  dst, PTRB            :wc
+    RDWORD  dst,  src            :wz
+    RDWORD  dst, &src            :wz
+    RDWORD  dst, PTRB++          :wz
+    RDWORD  dst,  src            :wcz
+    RDWORD  dst, &src            :wcz
+    RDWORD  dst, PTRB--          :wcz
+    RDLONG  dst,  src
+    RDLONG  dst, &src
+    RDLONG  dst, ++PTRB
+    RDLONG  dst,  src            :wc
+    RDLONG  dst, &src            :wc
+    RDLONG  dst, --PTRB          :wc
+    RDLONG  dst,  src            :wz
+    RDLONG  dst, &src            :wz
+    RDLONG  dst, PTRB[index6p]   :wz
+    RDLONG  dst,  src            :wcz
+    RDLONG  dst, &src            :wcz
+    RDLONG  dst, PTRB++[index5p] :wcz
+
+    WRLUT   dst,  src
+    WRLUT   dst, &src
+    WRLUT   dst, PTRB--[index5p]
+    WRLUT  &dst,  src
+    WRLUT  &dst, &src
+    WRLUT  &dst, ++PTRB[index5p]
+    WRBYTE  dst,  src
+    WRBYTE  dst, &src
+    WRBYTE  dst, --PTRB[index5p]
+    WRBYTE &dst,  src
+    WRBYTE &dst, &src
+    WRBYTE &dst, PTRA
+    WRWORD  dst,  src
+    WRWORD  dst, &src
+    WRWORD  dst, PTRA++
+    WRWORD &dst,  src
+    WRWORD &dst, &src
+    WRWORD &dst, PTRA--
+    WRLONG  dst,  src
+    WRLONG  dst, &src
+    WRLONG  dst, ++PTRA
+    WRLONG &dst,  src
+    WRLONG &dst, &src
+    WRLONG &dst, --PTRA
+    
+var src: LONG 0
+var dst: LONG 1

@@ -10,6 +10,11 @@ const Value = eval.Value;
 
 pub const Offset = eval.Offset;
 
+const PA: eval.Register = @enumFromInt(0x1F6);
+const PB: eval.Register = @enumFromInt(0x1F7);
+const PTRA: eval.Register = @enumFromInt(0x1F8);
+const PTRB: eval.Register = @enumFromInt(0x1F9);
+
 pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
     var analyzer: Analyzer = try .init(allocator, file);
     defer analyzer.deinit();
@@ -648,6 +653,11 @@ const Analyzer = struct {
                     try ana.emit_error(con.location, "constant {s} evaluated to memory offset, but expected integer. Use hubaddr() or cogaddr() to resolve the value.", .{con.identifier});
                     continue;
                 },
+
+                .pointer_expr => {
+                    try ana.emit_error(con.location, "constants cannot store pointer expression.", .{});
+                    continue;
+                },
             }
 
             sym.value = value;
@@ -1113,6 +1123,8 @@ const Analyzer = struct {
             .string => @panic("string emission not supported yet"),
             .enumerator => @panic("BUG: enumerators must be handled before this!"),
             .register => |reg| @intFromEnum(reg),
+
+            .pointer_expr => |ptr_expr| try ana.encode_ptr_expr(location, ptr_expr),
         };
 
         if (raw_value < 0) {
@@ -1136,6 +1148,67 @@ const Analyzer = struct {
             }
             return cast_val;
         }
+    }
+
+    fn encode_ptr_expr(ana: *Analyzer, location: ast.Location, expr: eval.PointerExpression) !u9 {
+        const ptr_mask = 0b1_0000_0000 | @as(u9, @intFromEnum(expr.pointer)) << 7;
+        const opcode_mask: u7 = switch (expr.increment) {
+            .none => 0b000_0000,
+            .pre_increment => 0b100_0000, // ++PTRx
+            .pre_decrement => 0b101_0000, // --PTRx
+            .post_increment => 0b110_0000, // PTRx++
+            .post_decrement => 0b111_0000, // PTRx--
+        };
+        const index: i64 = expr.index orelse switch (expr.increment) {
+            .none => 0,
+            .pre_decrement, .post_decrement => 1,
+            .pre_increment, .post_increment => 1,
+        };
+        const enc_index: u6 = switch (expr.increment) {
+            .none => blk: {
+                const index6: i6 = std.math.cast(i6, index) orelse err: {
+                    try ana.emit_error(location, "Pointer expression index out of range. Expected value between {} and {}, but found {}", .{
+                        std.math.minInt(i6),
+                        std.math.maxInt(i6),
+                        index,
+                    });
+                    break :err 0;
+                };
+
+                break :blk @bitCast(index6);
+            },
+
+            .pre_decrement,
+            .post_decrement,
+            .pre_increment,
+            .post_increment,
+            => blk: {
+                const min = 1;
+                const max = 16;
+                if (index < min or index > max) {
+                    try ana.emit_error(location, "Pointer expression index out of range. Expected value between {} and {}, but found {}", .{
+                        min,
+                        max,
+                        index,
+                    });
+                    break :blk 0;
+                }
+
+                // wrap 16 to 0
+                const encoded: u4 = @intCast(index & 0xFFFF);
+
+                break :blk switch (expr.increment) {
+                    .pre_decrement, .post_decrement => if (encoded == 0)
+                        0b1_0000 // special case for "-16" which is encoded as
+                    else
+                        @as(u5, @bitCast(-@as(i5, encoded))),
+                    .pre_increment, .post_increment => encoded,
+                    .none => unreachable,
+                };
+            },
+        };
+
+        return ptr_mask | opcode_mask | enc_index;
     }
 
     fn get_offset_for_exec_mode(ana: *Analyzer, offset: Offset, mode: eval.ExecMode) !u32 {
@@ -1187,20 +1260,83 @@ const Analyzer = struct {
             .unary_transform => |op| {
                 const value = try ana.evaluate_expr(op.value.*, nesting + 1);
 
+                switch (op.operator) {
+                    .post_decrement,
+                    .post_increment,
+                    .pre_decrement,
+                    .pre_increment,
+                    => {
+                        const op_name = switch (op.operator) {
+                            .pre_decrement, .post_decrement => "--",
+                            .pre_increment, .post_increment => "++",
+                            else => unreachable,
+                        };
+
+                        var ptr_expr: eval.PointerExpression = switch (value.value) {
+                            .register => |reg| try ana.ptr_expr_from_reg(op.location, reg),
+
+                            .pointer_expr => |ptr_expr| ptr_expr,
+
+                            else => blk: {
+                                try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to {s}s", .{
+                                    op_name,
+                                    @tagName(value.value),
+                                });
+
+                                break :blk .{
+                                    .pointer = .PTRA,
+                                    .increment = .none,
+                                    .index = null,
+                                };
+                            },
+                        };
+
+                        if (ptr_expr.index != null) {
+                            try ana.emit_error(op.location, "Cannot apply operator '{s}' to pointer expressions that already have an index set", .{
+                                op_name,
+                            });
+                        } else if (ptr_expr.increment != .none) {
+                            try ana.emit_error(op.location, "Cannot apply operator '{s}' to pointer expressions which already have an increment mode set ", .{
+                                op_name,
+                            });
+                        }
+
+                        switch (op.operator) {
+                            .pre_decrement => ptr_expr.increment = .pre_decrement,
+                            .post_decrement => ptr_expr.increment = .post_decrement,
+                            .pre_increment => ptr_expr.increment = .pre_increment,
+                            .post_increment => ptr_expr.increment = .post_increment,
+                            else => unreachable,
+                        }
+
+                        return .{
+                            .value = .{ .pointer_expr = ptr_expr },
+                            .flags = value.flags,
+                        };
+                    },
+                    else => {},
+                }
+
                 if (value.value == .register) {
                     try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to registers", .{
                         @tagName(op.operator),
                     });
-                    return .register(0);
+                    return value;
                 }
                 if (value.value == .enumerator) {
                     try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to enumerators", .{
                         @tagName(op.operator),
                     });
-                    return .enumerator("");
+                    return value;
                 }
 
                 switch (op.operator) {
+                    .post_decrement,
+                    .post_increment,
+                    .pre_decrement,
+                    .pre_increment,
+                    => unreachable,
+
                     .@"!" => {
                         if (value.value != .int) {
                             try ana.emit_error(op.location, "Operator '!' cannot be applied to a value of type {s}", .{
@@ -1287,6 +1423,45 @@ const Analyzer = struct {
                 const lhs_type: Value.Type = lhs.value;
                 const rhs_type: Value.Type = rhs.value;
 
+                if (op.operator == .array_index) {
+                    const lhs_ok = (lhs_type == .register or lhs_type == .pointer_expr);
+                    const rhs_ok = (rhs_type == .int);
+
+                    if (!lhs_ok or !rhs_ok) {
+                        try ana.emit_error(op.location, "Type mismatch: Operator '[]' cannot be applied to {s} and {s}", .{
+                            @tagName(lhs_type),
+                            @tagName(rhs_type),
+                        });
+                        return .{
+                            .flags = lhs.flags,
+                            .value = .{
+                                .pointer_expr = .{ .increment = .none, .pointer = .PTRA, .index = null },
+                            },
+                        };
+                    }
+
+                    const src_expr: eval.PointerExpression = switch (lhs.value) {
+                        .pointer_expr => |ptr_expr| ptr_expr,
+                        .register => |reg| try ana.ptr_expr_from_reg(op.location, reg),
+                        else => unreachable,
+                    };
+                    if (src_expr.index != null) {
+                        try ana.emit_error(op.location, "Operator '[]' cannot be applied to a pointer expression which already has an index set", .{});
+                    }
+
+                    var dst_expr = src_expr;
+                    dst_expr.index = rhs.value.int;
+
+                    return .{
+                        .value = .{ .pointer_expr = dst_expr },
+                        .flags = .{
+                            .addressing = lhs.flags.addressing,
+                            .usage = lhs.flags.usage,
+                            .augment = rhs.flags.augment,
+                        },
+                    };
+                }
+
                 if (lhs_type != rhs_type) {
                     try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to {s} and {s}", .{
                         @tagName(op.operator),
@@ -1308,6 +1483,12 @@ const Analyzer = struct {
                     },
                     .enumerator => {
                         try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to enumerators", .{
+                            @tagName(op.operator),
+                        });
+                        return .enumerator("");
+                    },
+                    .pointer_expr => {
+                        try ana.emit_error(op.location, "Type mismatch: Operator '{s}' cannot be applied to pointer expressions", .{
                             @tagName(op.operator),
                         });
                         return .enumerator("");
@@ -1350,7 +1531,7 @@ const Analyzer = struct {
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         switch (value.value) {
-                            .string, .enumerator => {
+                            .string, .enumerator, .pointer_expr => {
                                 try ana.emit_error(fncall.arguments[0].location, "{s}() cannot be applied to {s}s.", .{ @tagName(func.*), @tagName(value.value) });
                                 return value;
                             },
@@ -1405,7 +1586,7 @@ const Analyzer = struct {
                                 try ana.emit_warning(fncall.arguments[0].location, "hubaddr() expected offset, but got {s}.", .{@tagName(value.value)});
                                 return value;
                             },
-                            .string, .register, .enumerator => {
+                            .string, .register, .enumerator, .pointer_expr => {
                                 try ana.emit_error(fncall.arguments[0].location, "hubaddr() cannot be applied to {s}s.", .{@tagName(value.value)});
                                 return value;
                             },
@@ -1415,6 +1596,25 @@ const Analyzer = struct {
                 }
             },
         }
+    }
+
+    fn ptr_expr_from_reg(ana: *Analyzer, location: ast.Location, reg: eval.Register) !eval.PointerExpression {
+        return .{
+            .pointer = switch (reg) {
+                PTRA => .PTRA,
+                PTRB => .PTRB,
+                else => blk: {
+                    try ana.emit_error(location, "Only registers PTRA ({}) or PTRB ({}) can be used for pointer expressions, but not {}", .{
+                        PTRA,
+                        PTRB,
+                        reg,
+                    });
+                    break :blk .PTRA;
+                },
+            },
+            .increment = .none,
+            .index = null,
+        };
     }
 
     fn execute_int_op(ana: *Analyzer, location: ast.Location, lhs: i64, rhs: i64, op: ast.BinaryOperator) !i64 {
@@ -1441,6 +1641,7 @@ const Analyzer = struct {
             .@"*" => lhs *% rhs,
             .@"/" => if (rhs != 0) @divFloor(lhs, rhs) else return error.DivideByZero,
             .@"%" => if (rhs != 0) @mod(lhs, rhs) else return error.DivideByZero,
+            .array_index => unreachable,
         };
     }
 
@@ -1907,11 +2108,6 @@ pub const EncodedInstruction = struct {
 
                 const vtype: Value.Type = value.value;
                 const usage: Value.UsageHint = value.flags.usage;
-
-                const PA: eval.Register = @enumFromInt(0x1F6);
-                const PB: eval.Register = @enumFromInt(0x1F7);
-                const PTRA: eval.Register = @enumFromInt(0x1F8);
-                const PTRB: eval.Register = @enumFromInt(0x1F9);
 
                 return switch (opt) {
                     .address => (usage == .literal),

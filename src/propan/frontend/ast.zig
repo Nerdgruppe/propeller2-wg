@@ -56,6 +56,7 @@ pub const Expression = union(enum) {
     symbol: SymbolReference,
     unary_transform: UnaryTransform,
     binary_transform: BinaryTransform,
+
     function_call: FunctionInvocation,
 
     pub fn location(expr: Expression) Location {
@@ -223,6 +224,10 @@ pub const UnaryOperator = enum {
     @"@",
     @"*",
     @"&",
+    pre_increment, // ++FOO
+    pre_decrement, // --FOO
+    post_increment, // FOO++
+    post_decrement, // FOO--
 };
 
 pub const BinaryOperator = enum {
@@ -246,6 +251,7 @@ pub const BinaryOperator = enum {
     @"*",
     @"/",
     @"%",
+    array_index,
 };
 
 pub const Effect = enum {

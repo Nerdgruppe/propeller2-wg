@@ -108,21 +108,32 @@ pub fn build(b: *std.Build) void {
 
     // Propan Behaviour Tests
     {
+        const parser_tests = make_sequencing_step(b, "parser tests");
+        test_step.dependOn(parser_tests);
+
         for (parser_accept_tests) |accept_file| {
             const run = b.addRunArtifact(propan_exe);
             run.addArg("--test-mode=parser");
             run.addFileInput(b.path(accept_file));
             run.has_side_effects = true;
-            test_step.dependOn(&run.step);
+            parser_tests.dependOn(&run.step);
         }
+
+        const sema_tests = make_sequencing_step(b, "parser tests");
+        sema_tests.dependOn(parser_tests);
+        test_step.dependOn(sema_tests);
 
         for (sema_accept_tests) |accept_file| {
             const run = b.addRunArtifact(propan_exe);
             run.addArg("--test-mode=sema");
             run.addFileInput(b.path(accept_file));
             run.has_side_effects = true;
-            test_step.dependOn(&run.step);
+            sema_tests.dependOn(&run.step);
         }
+
+        const equivalence_tests = make_sequencing_step(b, "parser tests");
+        equivalence_tests.dependOn(sema_tests);
+        test_step.dependOn(equivalence_tests);
 
         for (emit_compare_tests) |accept_file| {
             const suffix = std.fs.path.extension(accept_file);
@@ -144,9 +155,19 @@ pub fn build(b: *std.Build) void {
             run.addPrefixedFileArg("--compare-to=", ref_file);
             run.addFileArg(b.path(accept_file));
             run.has_side_effects = true;
-            test_step.dependOn(&run.step);
+            equivalence_tests.dependOn(&run.step);
         }
     }
+}
+
+fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
+    const step = b.allocator.create(std.Build.Step) catch @panic("OOM");
+    step.* = .init(.{
+        .id = .custom,
+        .name = b.fmt("{s}", .{name}),
+        .owner = b,
+    });
+    return step;
 }
 
 const examples: []const []const u8 = &[_][]const u8{
@@ -191,6 +212,6 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/cordic.propan",
     "tests/propan/equivalence/aux.propan",
     "tests/propan/equivalence/flags.propan",
-    // "tests/propan/equivalence/memory-ptr.propan",
+    "tests/propan/equivalence/memory-ptr.propan",
     // "tests/propan/equivalence/cursed.propan",
 };
