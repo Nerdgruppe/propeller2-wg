@@ -119,7 +119,9 @@ pub fn main() !u8 {
     for (cli.positionals, loaded_files) |input_path, parsed_file| {
         std.log.debug("analyzing {s}...", .{input_path});
 
-        var module = try sema.analyze(allocator, parsed_file.file);
+        var module = try sema.analyze(allocator, parsed_file.file, .{
+            .blank_pointer_expr = .as_ptr_epxr,
+        });
         errdefer module.deinit();
 
         mod = module;

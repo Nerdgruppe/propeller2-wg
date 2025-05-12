@@ -15,8 +15,15 @@ const PB: eval.Register = @enumFromInt(0x1F7);
 const PTRA: eval.Register = @enumFromInt(0x1F8);
 const PTRB: eval.Register = @enumFromInt(0x1F9);
 
-pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
-    var analyzer: Analyzer = try .init(allocator, file);
+pub const AnalyzeOptions = struct {
+    blank_pointer_expr: enum {
+        as_ptr_epxr,
+        as_register,
+    } = .as_ptr_epxr,
+};
+
+pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions) !Module {
+    var analyzer: Analyzer = try .init(allocator, file, options);
     defer analyzer.deinit();
 
     errdefer dump_analyzer(&analyzer);
@@ -163,6 +170,7 @@ const Analyzer = struct {
     allocator: std.mem.Allocator,
     arena: std.heap.ArenaAllocator,
     file: ast.File,
+    options: AnalyzeOptions,
 
     symbols: std.StringArrayHashMapUnmanaged(SymbolInfo) = .empty,
 
@@ -175,11 +183,12 @@ const Analyzer = struct {
 
     ok: bool = true,
 
-    fn init(allocator: std.mem.Allocator, file: ast.File) !Analyzer {
+    fn init(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions) !Analyzer {
         var ana: Analyzer = .{
             .allocator = allocator,
             .arena = .init(allocator),
             .file = file,
+            .options = options,
         };
         try ana.functions.ensureUnusedCapacity(allocator, 5);
 
@@ -814,13 +823,42 @@ const Analyzer = struct {
                 selection = alt;
             }
 
-            if (selection == null) {
+            instr.instruction = selection orelse {
                 try ana.emit_error(instr.ast_node.location, "Ambigious instruction selection for {s}", .{
                     instr.ast_node.mnemonic,
                 });
                 continue :current_instr;
+            };
+
+            switch (ana.options.blank_pointer_expr) {
+                .as_register => {}, // keep as-is
+
+                .as_ptr_epxr => {
+                    // If we find an operand which is a .ptr_expr and the value is register PTRA or PTRB, we patch
+                    // it to also use a pointer expression:
+
+                    for (instr.arguments, instr.instruction.?.operands) |*arg, op| {
+                        if (op.type != .pointer_expr)
+                            continue;
+                        switch (arg.value) {
+                            .register => |reg| switch (reg) {
+                                // rewrite PTRA, PTRB into a pointer_expr
+                                PTRA => arg.* = .{
+                                    .flags = arg.flags,
+                                    .value = .{ .pointer_expr = .{ .pointer = .PTRA, .increment = .none, .index = null } },
+                                },
+                                PTRB => arg.* = .{
+                                    .flags = arg.flags,
+                                    .value = .{ .pointer_expr = .{ .pointer = .PTRB, .increment = .none, .index = null } },
+                                },
+
+                                else => {}, // keep all other registers
+                            },
+                            else => {}, // keep all other values
+                        }
+                    }
+                },
             }
-            instr.instruction = selection;
         }
     }
 
@@ -1980,7 +2018,7 @@ const InstructionInfo = struct {
     /// Size of the instruction slot in bytes
     byte_size: ?u32 = null,
 
-    arguments: []const eval.Value = &.{},
+    arguments: []eval.Value = &.{},
 };
 
 const Function = union(enum) {
