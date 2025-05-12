@@ -1,85 +1,85 @@
 // CON
-const index5m = -16
+const index5m = 1
 const index5p = 16
 const index6m = -32
 const index6p = 31
 // DAT
-    WMLONG  dst,  src
-    WMLONG  dst, &src
-    WMLONG  dst, PTRA
-    RDLUT   dst,  src
-    RDLUT   dst, &src
-    RDLUT   dst, PTRA++
-    RDLUT   dst,  src            :wc
-    RDLUT   dst, &src            :wc
-    RDLUT   dst, PTRA--          :wc
-    RDLUT   dst,  src            :wz
-    RDLUT   dst, &src            :wz
-    RDLUT   dst, ++PTRA          :wz
-    RDLUT   dst,  src            :wcz
-    RDLUT   dst, &src            :wcz
-    RDLUT   dst, --PTRA          :wcz
-    RDBYTE  dst,  src
-    RDBYTE  dst, &src
-    RDBYTE  dst, PTRA[index6m]
-    RDBYTE  dst,  src            :wc
-    RDBYTE  dst, &src            :wc
-    RDBYTE  dst, PTRA++[index5m] :wc
-    RDBYTE  dst,  src            :wz
-    RDBYTE  dst, &src            :wz
-    RDBYTE  dst, PTRA--[index5m] :wz
-    RDBYTE  dst,  src            :wcz
-    RDBYTE  dst, &src            :wcz
-    RDBYTE  dst, ++PTRA[index5m] :wcz
-    RDWORD  dst,  src
-    RDWORD  dst, &src
-    RDWORD  dst, --PTRA[index5m]
-    RDWORD  dst,  src            :wc
-    RDWORD  dst, &src            :wc
-    RDWORD  dst, PTRB            :wc
-    RDWORD  dst,  src            :wz
-    RDWORD  dst, &src            :wz
-    RDWORD  dst, PTRB++          :wz
-    RDWORD  dst,  src            :wcz
-    RDWORD  dst, &src            :wcz
-    RDWORD  dst, PTRB--          :wcz
-    RDLONG  dst,  src
-    RDLONG  dst, &src
-    RDLONG  dst, ++PTRB
-    RDLONG  dst,  src            :wc
-    RDLONG  dst, &src            :wc
-    RDLONG  dst, --PTRB          :wc
-    RDLONG  dst,  src            :wz
-    RDLONG  dst, &src            :wz
-    RDLONG  dst, PTRB[index6p]   :wz
-    RDLONG  dst,  src            :wcz
-    RDLONG  dst, &src            :wcz
-    RDLONG  dst, PTRB++[index5p] :wcz
+    WMLONG  dst,  src                   // 0x00000
+    WMLONG  dst, &src                   // 0x00004
+    WMLONG  dst, PTRA                   // 0x00008
+    RDLUT   dst,  src                   // 0x0000C
+    RDLUT   dst, &src                   // 0x00010
+    RDLUT   dst, PTRA++                 // 0x00014
+    RDLUT   dst,  src            :wc    // 0x00018
+    RDLUT   dst, &src            :wc    // 0x0001C
+    RDLUT   dst, PTRA--          :wc    // 0x00020
+    RDLUT   dst,  src            :wz    // 0x00024
+    RDLUT   dst, &src            :wz    // 0x00028
+    RDLUT   dst, ++PTRA          :wz    // 0x0002C
+    RDLUT   dst,  src            :wcz   // 0x00030
+    RDLUT   dst, &src            :wcz   // 0x00034
+    RDLUT   dst, --PTRA          :wcz   // 0x00038
+    RDBYTE  dst,  src                   // 0x0003C
+    RDBYTE  dst, &src                   // 0x00040
+    RDBYTE  dst, PTRA[index6m]          // 0x00044
+    RDBYTE  dst,  src            :wc    // 0x00048
+    RDBYTE  dst, &src            :wc    // 0x0004C
+    RDBYTE  dst, PTRA++[index5m] :wc    // 0x00050
+    RDBYTE  dst,  src            :wz    // 0x00054
+    RDBYTE  dst, &src            :wz    // 0x00058
+    RDBYTE  dst, PTRA--[index5m] :wz    // 0x0005C
+    RDBYTE  dst,  src            :wcz   // 0x00060
+    RDBYTE  dst, &src            :wcz   // 0x00064
+    RDBYTE  dst, ++PTRA[index5m] :wcz   // 0x00068
+    RDWORD  dst,  src                   // 0x0006C
+    RDWORD  dst, &src                   // 0x00070
+    RDWORD  dst, --PTRA[index5m]        // 0x00074
+    RDWORD  dst,  src            :wc    // 0x00078
+    RDWORD  dst, &src            :wc    // 0x0007C
+    RDWORD  dst, PTRB            :wc    // 0x00080
+    RDWORD  dst,  src            :wz    // 0x00084
+    RDWORD  dst, &src            :wz    // 0x00088
+    RDWORD  dst, PTRB++          :wz    // 0x0008C
+    RDWORD  dst,  src            :wcz   // 0x00090
+    RDWORD  dst, &src            :wcz   // 0x00094
+    RDWORD  dst, PTRB--          :wcz   // 0x00098
+    RDLONG  dst,  src                   // 0x0009C
+    RDLONG  dst, &src                   // 0x000A0
+    RDLONG  dst, ++PTRB                 // 0x000A4
+    RDLONG  dst,  src            :wc    // 0x000A8
+    RDLONG  dst, &src            :wc    // 0x000AC
+    RDLONG  dst, --PTRB          :wc    // 0x000B0
+    RDLONG  dst,  src            :wz    // 0x000B4
+    RDLONG  dst, &src            :wz    // 0x000B8
+    RDLONG  dst, PTRB[index6p]   :wz    // 0x000BC
+    RDLONG  dst,  src            :wcz   // 0x000C0
+    RDLONG  dst, &src            :wcz   // 0x000C4
+    RDLONG  dst, PTRB++[index5p] :wcz   // 0x000C8
 
-    WRLUT   dst,  src
-    WRLUT   dst, &src
-    WRLUT   dst, PTRB--[index5p]
-    WRLUT  &dst,  src
-    WRLUT  &dst, &src
-    WRLUT  &dst, ++PTRB[index5p]
-    WRBYTE  dst,  src
-    WRBYTE  dst, &src
-    WRBYTE  dst, --PTRB[index5p]
-    WRBYTE &dst,  src
-    WRBYTE &dst, &src
-    WRBYTE &dst, PTRA
-    WRWORD  dst,  src
-    WRWORD  dst, &src
-    WRWORD  dst, PTRA++
-    WRWORD &dst,  src
-    WRWORD &dst, &src
-    WRWORD &dst, PTRA--
-    WRLONG  dst,  src
-    WRLONG  dst, &src
-    WRLONG  dst, ++PTRA
-    WRLONG &dst,  src
-    WRLONG &dst, &src
-    WRLONG &dst, --PTRA
-    
+    WRLUT   dst,  src                   // 0x000CC
+    WRLUT   dst, &src                   // 0x000D0
+    WRLUT   dst, PTRB--[index5p]        // 0x000D4
+    WRLUT  &dst,  src                   // 0x000D8
+    WRLUT  &dst, &src                   // 0x000DC
+    WRLUT  &dst, ++PTRB[index5p]        // 0x000E0
+    WRBYTE  dst,  src                   // 0x000E4
+    WRBYTE  dst, &src                   // 0x000E8
+    WRBYTE  dst, --PTRB[index5p]        // 0x000EC
+    WRBYTE &dst,  src                   // 0x000F0
+    WRBYTE &dst, &src                   // 0x000F4
+    WRBYTE &dst, PTRA                   // 0x000F8
+    WRWORD  dst,  src                   // 0x000FC
+    WRWORD  dst, &src                   // 0x00100
+    WRWORD  dst, PTRA++                 // 0x00104
+    WRWORD &dst,  src                   // 0x00108
+    WRWORD &dst, &src                   // 0x0010C
+    WRWORD &dst, PTRA--                 // 0x00110
+    WRLONG  dst,  src                   // 0x00114
+    WRLONG  dst, &src                   // 0x00118
+    WRLONG  dst, ++PTRA                 // 0x0011C
+    WRLONG &dst,  src                   // 0x00120
+    WRLONG &dst, &src                   // 0x00124
+    WRLONG &dst, --PTRA                 // 0x00128
+
 var src: LONG 0
 var dst: LONG 1

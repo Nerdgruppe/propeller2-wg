@@ -401,7 +401,7 @@ pub const Parser = struct {
                         const which_op, const op_tok = tokwrap;
                         const op: ast.UnaryOperator = switch (which_op) {
                             .@"++" => .post_increment,
-                            .@"--" => .post_increment,
+                            .@"--" => .post_decrement,
                         };
                         const value = try core.move_to_heap(ast.Expression, result_expr);
                         result_expr = .{

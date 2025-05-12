@@ -2150,7 +2150,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
     },
@@ -2203,7 +2203,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -2222,7 +2222,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -2241,7 +2241,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -2260,7 +2260,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -3144,7 +3144,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
     },
@@ -3161,7 +3161,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
     },
@@ -3178,7 +3178,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
     },
@@ -3195,7 +3195,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // {#}S/P
                 .slot = .init(0, 9),
-                .type = .pointer_expr,
+                .type = .{ .pointer_expr = .{ .imm = .init(18, 1) } },
             },
         },
     },

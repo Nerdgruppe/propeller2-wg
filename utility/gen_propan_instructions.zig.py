@@ -112,7 +112,7 @@ OP_ZIG_TYPE: dict[OpType, str] = {
     OpType.DEST_EITHER: ".{{ .reg_or_imm = .{{ .imm = {imm}, .pcrel = false }} }}",
     OpType.DEST_REG: ".register",
     OpType.PREG: ".pointer_reg",
-    OpType.PTREXPR: ".pointer_expr",
+    OpType.PTREXPR: ".{{ .pointer_expr = .{{ .imm = {imm} }} }}",
     OpType.SELECTOR: ".{{ .immediate = 0 }}",
     OpType.SRC_EITHER: ".{{ .reg_or_imm = .{{ .imm = {imm}, .pcrel = false }} }}",
     OpType.SRC_EITHER_PCREL: ".{{ .reg_or_imm = .{{ .imm = {imm}, .pcrel = true }} }}",

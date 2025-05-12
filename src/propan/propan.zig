@@ -49,7 +49,7 @@ const CliArgs = struct {
 };
 
 pub fn main() !u8 {
-    try std.io.getStdOut().writeAll("\x1B[2J\x1B[H");
+    // try std.io.getStdOut().writeAll("\x1B[2J\x1B[H");
 
     var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
 
@@ -115,11 +115,14 @@ pub fn main() !u8 {
     var output: std.ArrayListUnmanaged(u8) = .empty;
     defer output.deinit(allocator);
 
+    var mod: ?sema.Module = null;
     for (cli.positionals, loaded_files) |input_path, parsed_file| {
         std.log.debug("analyzing {s}...", .{input_path});
 
         var module = try sema.analyze(allocator, parsed_file.file);
-        defer module.deinit();
+        errdefer module.deinit();
+
+        mod = module;
 
         for (module.segments) |segment| {
             try output.resize(allocator, @max(output.items.len, segment.hub_offset + segment.data.len));
@@ -176,11 +179,21 @@ pub fn main() !u8 {
             output.items.len,
         });
 
+        if (ref.len == output.items.len) {
+            try out.writer().print("    length: {}\n", .{ref.len});
+        } else {
+            try out.writer().print("    expected length: {}, actual length: {}\n", .{
+                ref.len,
+                output.items.len,
+            });
+        }
+
         try out.writer().print("<diff>\n", .{});
         try render_bin_diff(
             out,
             ref,
             output.items,
+            mod.?,
         );
         try out.writer().print("</diff>\n", .{});
 
@@ -200,7 +213,7 @@ test {
     _ = sema;
 }
 
-fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: []const u8) !void {
+fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: []const u8, mod: ?sema.Module) !void {
     const writer = stream.writer();
     const common_len = @max(expected_data.len, actual_data.len);
 
@@ -209,8 +222,8 @@ fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: 
     var fbs_exp = std.io.fixedBufferStream(expected_data);
     var fbs_act = std.io.fixedBufferStream(actual_data);
 
-    while (fbs_exp.pos < expected_data.len or fbs_act.pos < expected_data.len) {
-        const offset = @max(fbs_exp.pos, fbs_act.pos);
+    while (fbs_exp.pos < expected_data.len or fbs_act.pos < actual_data.len) {
+        const offset: u32 = @intCast(@max(fbs_exp.pos, fbs_act.pos));
 
         const expected = fbs_exp.reader().readInt(u32, .little) catch 0;
         const actual = fbs_act.reader().readInt(u32, .little) catch 0;
@@ -222,12 +235,13 @@ fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: 
             continue;
 
         const instr_groups: []const u32 = &.{ 9, 9, 3, 7, 4 };
-        try writer.print("@{X:0>5}: expected: 0x{X:0>8} ({s}), actual: 0x{X:0>8} ({s})\n", .{
+        try writer.print("@{X:0>5}: expected: 0x{X:0>8} ({s}), actual: 0x{X:0>8} ({s}) | {?}\n", .{
             offset,
             expected,
             bitdiff(u32, expected, actual, instr_groups),
             actual,
             bitdiff(u32, actual, expected, instr_groups),
+            if (mod) |m| m.line_for_address(offset) else null,
         });
     }
 }

@@ -70,14 +70,15 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File) !Module {
     return .{
         .arena = output_arena,
         .segments = segments,
+        .line_data = try analyzer.line_data.toOwnedSlice(output_arena.allocator()),
     };
 }
 
 fn dump_analyzer(analyzer: *Analyzer) void {
     logger.info("symbols:", .{});
     for (analyzer.symbols.values()) |sym| {
-        // if (sym.type == .builtin)
-        //     continue;
+        if (sym.type == .builtin)
+            continue;
         logger.info("  {s}: {s} => offset={?}, value={?}, referenced={}", .{
             sym.name,
             @tagName(sym.type),
@@ -112,10 +113,19 @@ pub const Module = struct {
     arena: std.heap.ArenaAllocator,
 
     segments: []const Segment,
+    line_data: []const LineData,
 
     pub fn deinit(mod: *Module) void {
         mod.arena.deinit();
         mod.* = undefined;
+    }
+
+    pub fn line_for_address(mod: Module, hub_offset: u32) ?ast.Location {
+        for (mod.line_data) |line| {
+            if (hub_offset >= line.offset and hub_offset < line.offset + line.length)
+                return line.location;
+        }
+        return null;
     }
 };
 
@@ -143,6 +153,12 @@ pub const Segment = struct {
     data: []const u8,
 };
 
+pub const LineData = struct {
+    offset: u32,
+    length: u32,
+    location: ast.Location,
+};
+
 const Analyzer = struct {
     allocator: std.mem.Allocator,
     arena: std.heap.ArenaAllocator,
@@ -155,6 +171,7 @@ const Analyzer = struct {
 
     seq_to_instr_lut: []const ?usize = &.{},
     instructions: []InstructionInfo = &.{},
+    line_data: std.ArrayListUnmanaged(LineData) = .empty,
 
     ok: bool = true,
 
@@ -862,19 +879,42 @@ const Analyzer = struct {
         var current_segment: SegmentBuilder = .init(0, .cog, segment_allocator);
         defer current_segment.data.deinit();
 
+        std.debug.assert(ana.line_data.items.len == 0);
+        errdefer {
+            ana.line_data.deinit(segment_allocator);
+            ana.line_data = .empty;
+        }
+
         seq_loop: for (ana.file.sequence, 0..) |seq, i| {
+            const hub_offset: u32 = @intCast(current_segment.hub_offset + current_segment.data.items.len);
+
             const instr: *InstructionInfo = switch (seq) {
                 .constant, .empty => continue :seq_loop,
 
                 .label => |lbl| {
                     // just assert we're not doing stupid things:
                     const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
-                    std.debug.assert(current_segment.hub_offset + current_segment.data.items.len == sym.offset.?.hub);
+                    std.debug.assert(hub_offset == sym.offset.?.hub);
+
+                    try ana.line_data.append(segment_allocator, .{
+                        .offset = hub_offset,
+                        .length = 0,
+                        .location = lbl.location,
+                    });
+
                     continue :seq_loop;
                 },
 
                 .instruction => &ana.instructions[ana.seq_to_instr_lut[i].?],
             };
+
+            const line_info = try ana.line_data.addOne(segment_allocator);
+            line_info.* = .{
+                .offset = hub_offset,
+                .length = 0,
+                .location = instr.ast_node.location,
+            };
+            defer line_info.length = @intCast((current_segment.hub_offset + current_segment.data.items.len) - hub_offset);
 
             const mnemonic: Mnemonic = instr.mnemonic.?.*;
 
@@ -1048,10 +1088,16 @@ const Analyzer = struct {
                                     }
                                 },
 
-                                .pointer_expr => enc: {
+                                .pointer_expr => |meta| enc: {
+                                    switch (hint) {
+                                        .register => fill_extra_slot = null,
+                                        .literal => fill_extra_slot = meta.imm,
+                                    }
 
-                                    // TODO: Implement pointer operation
-                                    if (int > 255) {
+                                    if (value.value == .pointer_expr) {
+                                        // is always "immediate"
+                                        fill_extra_slot = meta.imm;
+                                    } else if (hint == .literal and int > 255) {
                                         try ana.emit_error(location, "pointer expression immediate must be in range 0 to 255, but found {}", .{int});
                                         continue;
                                     }
@@ -1195,7 +1241,7 @@ const Analyzer = struct {
                 }
 
                 // wrap 16 to 0
-                const encoded: u4 = @intCast(index & 0xFFFF);
+                const encoded: u4 = @intCast(index & 0xF);
 
                 break :blk switch (expr.increment) {
                     .pre_decrement, .post_decrement => if (encoded == 0)
@@ -1291,7 +1337,7 @@ const Analyzer = struct {
                             },
                         };
 
-                        if (ptr_expr.index != null) {
+                        if (ptr_expr.index != null and ptr_expr.increment != .none) {
                             try ana.emit_error(op.location, "Cannot apply operator '{s}' to pointer expressions that already have an index set", .{
                                 op_name,
                             });
@@ -2088,7 +2134,7 @@ pub const EncodedInstruction = struct {
 
             /// Either #N or PTRx++, --PTRx, ...
             /// with N <= 255
-            pointer_expr,
+            pointer_expr: struct { imm: Slot },
 
             /// PA, PB, PTRA or PTRB
             pointer_reg,
@@ -2114,7 +2160,8 @@ pub const EncodedInstruction = struct {
                     .register => (usage == .register),
                     .immediate => (usage == .literal),
                     .reg_or_imm => true,
-                    .pointer_expr => ((vtype == .int) and (usage == .literal)) or ((vtype == .register) and switch (value.value.register) {
+
+                    .pointer_expr => (vtype == .pointer_expr) or (vtype == .offset) or ((vtype == .int) and (usage == .literal)) or ((vtype == .register) and switch (value.value.register) {
                         PTRA, PTRB => true,
                         else => false,
                     }),
