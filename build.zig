@@ -213,5 +213,5 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/aux.propan",
     "tests/propan/equivalence/flags.propan",
     "tests/propan/equivalence/memory-ptr.propan",
-    // "tests/propan/equivalence/cursed.propan",
+    "tests/propan/equivalence/cursed.propan",
 };

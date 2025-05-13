@@ -548,7 +548,7 @@ const Analyzer = struct {
                                 break :blk;
                             }
 
-                            if (ana.evaluate_root_expr(coded.ast_node.arguments[0])) |value| {
+                            if (ana.evaluate_root_expr(coded.ast_node.arguments[0], null)) |value| {
                                 switch (value.value) {
                                     .int => |int| {
                                         if (std.math.cast(u32, int)) |alignment| {
@@ -663,7 +663,7 @@ const Analyzer = struct {
             std.debug.assert(sym.value == null);
             std.debug.assert(sym.offset == null);
 
-            const value = ana.evaluate_root_expr(con.value) catch |err| {
+            const value = ana.evaluate_root_expr(con.value, null) catch |err| {
                 try ana.emit_eval_error(con.location, "", err);
                 continue;
             };
@@ -693,10 +693,13 @@ const Analyzer = struct {
     fn evaluate_instruction_arguments(ana: *Analyzer) !void {
         for (ana.instructions) |*instr| {
             std.debug.assert(instr.mnemonic != null);
+            std.debug.assert(instr.offset != null);
+
+            const pc_after: Offset = .init_hub(instr.offset.?.hub + instr.byte_size.?);
 
             const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
             for (args, instr.ast_node.arguments) |*value, expr| {
-                value.* = ana.evaluate_root_expr(expr) catch |err| {
+                value.* = ana.evaluate_root_expr(expr, pc_after) catch |err| {
                     try ana.emit_eval_error(instr.ast_node.location, "", err);
                     continue;
                 };
@@ -1320,13 +1323,13 @@ const Analyzer = struct {
         DivideByZero,
     };
 
-    fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression) EvalError!eval.Value {
-        return ana.evaluate_expr(expr, 0);
+    fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, current_address: ?Offset) EvalError!eval.Value {
+        return ana.evaluate_expr(expr, current_address, 0);
     }
 
-    fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, nesting: usize) EvalError!eval.Value {
+    fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, maybe_current_address: ?Offset, nesting: usize) EvalError!eval.Value {
         switch (expr) {
-            .wrapped => |inner| return try ana.evaluate_expr(inner.*, nesting + 1),
+            .wrapped => |inner| return try ana.evaluate_expr(inner.*, maybe_current_address, nesting + 1),
             .integer => |int| return .int(int.value),
             .string => |string| return .string(string.value),
             .symbol => |symref| {
@@ -1342,7 +1345,7 @@ const Analyzer = struct {
             },
 
             .unary_transform => |op| {
-                const value = try ana.evaluate_expr(op.value.*, nesting + 1);
+                const value = try ana.evaluate_expr(op.value.*, maybe_current_address, nesting + 1);
 
                 switch (op.operator) {
                     .post_decrement,
@@ -1458,7 +1461,31 @@ const Analyzer = struct {
                         return .int(-value.value.int);
                     },
                     .@"@" => {
-                        @panic("TODO: Implement relative addressing");
+                        if (value.value != .offset) {
+                            try ana.emit_error(op.location, "Operator '@' cannot be applied to a value of type {s}", .{
+                                @tagName(value.value),
+                            });
+                            return .int(0);
+                        }
+
+                        const local_offset: Offset = maybe_current_address orelse {
+                            try ana.emit_error(op.location, "Operator '@' cannot be used in this scope", .{});
+                            return .int(0);
+                        };
+                        const target_offset: Offset = value.value.offset;
+
+                        // TODO: Validate local_offset and target_offset point into the same segment
+
+                        const local_hub_addr: u32 = local_offset.hub;
+                        const target_hub_addr: u32 = target_offset.hub;
+
+                        const jmp_delta = @as(u33, target_hub_addr) - @as(u33, local_hub_addr);
+
+                        if (@mod(jmp_delta, 4) != 0) {
+                            try ana.emit_error(op.location, "'@' cannot be applied to a offset range which is non-divisible by 4", .{});
+                        }
+
+                        return .int(@divTrunc(jmp_delta, 4));
                     },
                     .@"*" => {
                         if (value.value != .offset) {
@@ -1501,8 +1528,8 @@ const Analyzer = struct {
                 }
             },
             .binary_transform => |op| {
-                const lhs = try ana.evaluate_expr(op.lhs.*, nesting + 1);
-                const rhs = try ana.evaluate_expr(op.rhs.*, nesting + 1);
+                const lhs = try ana.evaluate_expr(op.lhs.*, maybe_current_address, nesting + 1);
+                const rhs = try ana.evaluate_expr(op.rhs.*, maybe_current_address, nesting + 1);
 
                 const lhs_type: Value.Type = lhs.value;
                 const rhs_type: Value.Type = rhs.value;
@@ -1587,7 +1614,7 @@ const Analyzer = struct {
                 const params = func.get_parameters();
 
                 var argv_buf: [16]eval.Value = undefined;
-                const argv = try ana.map_function_args(fncall, params, &argv_buf, nesting);
+                const argv = try ana.map_function_args(fncall, params, &argv_buf, maybe_current_address, nesting);
 
                 switch (func.*) {
                     .aug => {
@@ -1734,6 +1761,7 @@ const Analyzer = struct {
         fncall: ast.FunctionInvocation,
         params: []const Function.Parameter,
         argv_buffer: []eval.Value,
+        maybe_current_address: ?Offset,
         nesting: usize,
     ) ![]const eval.Value {
         if (params.len > argv_buffer.len)
@@ -1785,7 +1813,7 @@ const Analyzer = struct {
 
         for (pos_argv, pos_argin) |*value, arg| {
             std.debug.assert(arg.name == null);
-            value.* = try ana.evaluate_expr(arg.value, nesting + 1);
+            value.* = try ana.evaluate_expr(arg.value, maybe_current_address, nesting + 1);
         }
 
         {
@@ -1835,7 +1863,7 @@ const Analyzer = struct {
 
             const index = index_of_param(params, arg.name.?).? - first_kwarg_index;
 
-            kw_argv[index] = try ana.evaluate_expr(arg.value, nesting + 1);
+            kw_argv[index] = try ana.evaluate_expr(arg.value, maybe_current_address, nesting + 1);
         }
 
         return argv;

@@ -1,0 +1,19 @@
+// DAT 
+    REP  dst,  src
+    REP &dst,  src
+    REP  dst, &src
+    REP &dst, &src
+
+    REP @endrep,  src
+    REP @endrep, &src
+
+    COGBRK   dst
+    // COGBRK  &dst
+endrep:
+
+    BRK      dst
+    BRK     &dst
+
+
+var src: LONG 0
+var dst: LONG 1
