@@ -4,7 +4,7 @@
   "description": "Language support for the alternative Propeller 2 assembler Propan\"",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.100.0"
+    "vscode": "^1.99.3"
   },
   "categories": [
     "Other"
@@ -16,6 +16,23 @@
       {
         "command": "propan-assembler.helloWorld",
         "title": "Hello World"
+      }
+    ],
+    "languages": [
+      {
+        "id": "propan",
+        "extensions": [
+          ".propan",
+          ".p2asm"
+        ],
+        "configuration": "./propan/language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "propan",
+        "scopeName": "source.propan",
+        "path": "./propan/tmGrammar.json"
       }
     ]
   },

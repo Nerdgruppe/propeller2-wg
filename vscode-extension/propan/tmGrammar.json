@@ -1,0 +1,179 @@
+{
+    "scopeName": "source.propan",
+    "patterns": [{ "include": "#document" }],
+    "repository": {
+      "document": {
+        "patterns": [
+          { "include": "#comment" },
+          { "include": "#constant" },
+          { "include": "#varlabel" },
+          { "include": "#label" },
+          { "include": "#condition" },
+          { "include": "#mnemonics" }
+        ]
+      },
+
+      "expression": {
+        "patterns": [
+          { "include": "#comment" },
+          { "include": "#fncall" },
+          { "include": "#identifier" },
+          { "include": "#enumerator" },
+          { "include": "#string" },
+          { "include": "#char" },
+          { "include": "#number-dec" },
+          { "include": "#number-quad" },
+          { "include": "#number-bin" },
+          { "include": "#number-hex" }
+        ]
+      },
+
+      "condition": {
+        "name": "meta.condition.group",
+        "begin": "(\\bif\\b)\\s*(\\()",
+        "end": "\\)",
+        "beginCaptures": {
+          "1": { "name": "keyword.control.if.propan" },
+          "2": { "name": "punctuation.paren.open" }
+        },
+        "endCaptures": {
+          "0": { "name": "punctuation.paren.close" }
+        },
+        "patterns": [{ "include": "#condition_body" }]
+      },
+
+      "condition_body": {
+        "patterns": [
+          {
+            "name": "support.variable.flag.propan",
+            "match": "\\b[cCzZ]\\b"
+          },
+          {
+            "name": "keyword.operator.condition",
+            "match": "(==|!=|>=|<=|!|>|<)"
+          }
+        ]
+      },
+
+      "mnemonics": {
+        "name": "meta.mnemonic.group",
+        "begin": "(\\b[a-zA-Z_][a-zA-Z0-9_]*\\b)",
+        "end": "\n",
+        "beginCaptures": {
+          "1": { "name": "keyword.operator.other.mnemonic.propan" },
+          "2": { "name": "punctuation.paren.open" }
+        },
+        "patterns": [
+          { "include": "#expression" },
+          { "include": "#effect" }
+        ]
+      },
+
+      "constant": {
+        "name": "meta.constant.group",
+        "begin": "\\s*\\b(const)\\b\\s+((\\.|\\b[a-zA-Z_])[a-zA-Z0-9\\._]*)\\s*(=)",
+        "end": "\n",
+        "beginCaptures": {
+          "1": { "name": "storage.type.const.propan" },
+          "2": { "name": "variable.other.varlabel.propan" },
+          "3": { "name": "punctuation.assign.open" }
+        },
+        "patterns": [
+          { "include": "#expression" }
+        ]
+      },
+
+      "fncall": {
+        "name": "meta.function.call",
+        "begin": "\\b([a-zA-Z\\._][a-zA-Z0-9\\._]*)\\b\\s*(\\()",
+        "end": "\\)",
+        "beginCaptures": {
+          "1": { "name": "support.function.name.propan" },
+          "2": { "name": "punctuation.paren.open" }
+        },
+        "endCaptures": {
+          "0": { "name": "punctuation.paren.close" }
+        },
+        "patterns": [
+          { "include": "#named_param" },
+          { "include": "#expression" }
+        ]
+      },
+
+      "named_param": {
+        "name": "meta.argument.group",
+        "match": "\\b([a-zA-Z\\._][a-zA-Z0-9\\._]*)\\b\\s*(=)",
+        "captures": {
+          "1": { "name": "entity.name.function.propan" },
+          "2": { "name": "punctuation.assignment.open" }
+        }
+      },
+
+      "identifier": {
+        "name": "variable.other.identifier.propan",
+        "match": "(\\.|\\b[a-zA-Z_])[a-zA-Z0-9\\._]*\\b"
+      },
+
+
+      "enumerator": {
+        "name": "constant.other.enumerator.propan",
+        "match": "#[a-zA-Z0-9\\._]*\\b"
+      },
+
+      "comment": {
+        "name": "comment.line.double-slash.propan",
+        "begin": "//",
+        "end": "$"
+      },
+
+      "keyword": {
+        "name": "keyword.control.propan",
+        "match": "\\b(const|var)\\b"
+      },
+
+      "label": {
+        "name": "entity.name.function.propan",
+        "match": "(\\.|\\b[a-zA-Z_])[a-zA-Z0-9\\._]*:"
+      },
+
+      "varlabel": {
+        "match": "\\s*\\b(var)\\b\\s+((\\.|\\b[a-zA-Z_])[a-zA-Z0-9\\._]*):",
+        "captures": {
+          "1": { "name": "storage.type.varlabel.propan" },
+          "2": { "name": "variable.other.varlabel.propan" }
+        }
+      },
+
+      "effect": {
+        "name": "keyword.operator.effect.propan",
+        "match": ":[a-z_]+\\b"
+      },
+
+      "string": {
+        "name": "string.quoted.double.propan",
+        "match": "\"([^\\\"]|\\\\.)*\""
+      },
+
+      "char": {
+        "name": "string.quoted.single.propan",
+        "match": "'([^\\']|\\\\.)*'"
+      },
+      
+      "number-dec": {
+        "name": "constant.numeric.decimal.propan",
+        "match": "\\b\\d([\\d_]*\\d)?\\b"
+      },
+      "number-quad": {
+        "name": "constant.numeric.quarternary.propan",
+        "match": "\\b0q[0-3]([0-3_]*[0-3])?\\b"
+      },
+      "number-bin": {
+        "name": "constant.numeric.binary.propan",
+        "match": "\\b0b[0-1]([0-1_]*[0-1])?\\b"
+      },
+      "number-hex": {
+        "name": "constant.numeric.hexadecimal.propan",
+        "match": "\\b0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?\\b"
+      }
+    }
+  }
