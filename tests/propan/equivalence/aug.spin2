@@ -1,0 +1,35 @@
+DAT
+    MOV dst, #0
+    MOV dst, #100
+    MOV dst, #200
+    MOV dst, ##0
+    MOV dst, ##100
+    MOV dst, ##200
+    MOV dst, ##1000
+    MOV dst, ##20000
+    MOV dst, ##300000
+    MOV dst, ##4000000
+    
+    PUSHA #0
+    PUSHA #100
+    PUSHA #200
+    PUSHA ##0
+    PUSHA ##100
+    PUSHA ##200
+    PUSHA ##1000
+    PUSHA ##20000
+    PUSHA ##300000
+    PUSHA ##4000000
+
+    CALLPA #0, #0
+    CALLPA #100, #100
+    CALLPA #200, #200
+    CALLPA ##0, ##0
+    CALLPA ##100, ##100
+    CALLPA ##200, ##200
+    CALLPA ##1000, ##1000
+    CALLPA ##20000, ##20000
+    CALLPA ##300000, ##300000
+    CALLPA ##4000000, ##4000000
+
+dst LONG 0

@@ -1046,18 +1046,19 @@ const Analyzer = struct {
                     const hub_pc: u32 = @intCast(current_segment.hub_offset + current_segment.data.items.len + 4 * pc_delta);
                     const cog_pc: u32 = @intCast(current_segment.data.items.len / 4 + pc_delta);
 
-                    for (instr.arguments, encoded.operands, instr.ast_node.arguments) |value, operand, ast_node| {
-                        if (value.flags.augment) {
-                            @panic("TODO: Implement AUGS, AUGD");
-                        }
+                    const Augments = struct {
+                        d: ?u23 = null,
+                        s: ?u23 = null,
+                    };
+                    var aug: Augments = .{};
 
+                    for (instr.arguments, encoded.operands, instr.ast_node.arguments) |value, operand, ast_node| {
                         const location = ast_node.location();
 
                         var fill_extra_slot: ?EncodedInstruction.Slot = null;
 
                         const slot_value: u32 = if (operand.type == .enumeration) blk: {
                             // this is the most special case here:
-                            // TODO: enumerations take a "string" value (actually they need a enum literal!)
 
                             if (value.value != .enumerator) {
                                 try ana.emit_error(location, "expected enumeration value, found {s}", .{@tagName(value.value)});
@@ -1081,7 +1082,7 @@ const Analyzer = struct {
 
                             const int: u32 = try ana.cast_value_to(location, current_segment.exec_mode, value, u32);
 
-                            const enc: u32 = switch (operand.type) {
+                            const full_enc: u32 = switch (operand.type) {
                                 .address => |meta| enc: {
                                     // If R = 1 then PC += A, else PC = A. "\" forces R = 0.
 
@@ -1093,7 +1094,7 @@ const Analyzer = struct {
                                         },
                                         .relative => {
                                             fill_extra_slot = meta.rel;
-                                            break :enc compute_rel(current_segment.exec_mode, cog_pc, hub_pc, int);
+                                            break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int);
                                         },
                                     }
                                 },
@@ -1124,7 +1125,7 @@ const Analyzer = struct {
                                         break :enc int;
 
                                     if (meta.pcrel) {
-                                        break :enc compute_rel(current_segment.exec_mode, cog_pc, hub_pc, int);
+                                        break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int);
                                     } else {
                                         break :enc int;
                                     }
@@ -1166,6 +1167,29 @@ const Analyzer = struct {
                                 .enumeration => unreachable,
                             };
 
+                            const enc: u32 = if (value.flags.augment) aug: {
+                                const aug_dst: *?u23 = if (operand.slot.eql(.S))
+                                    &aug.s
+                                else if (operand.slot.eql(.D))
+                                    &aug.d
+                                else {
+                                    try ana.emit_error(location, "Cannot aug() operand", .{});
+                                    continue;
+                                };
+
+                                std.debug.assert(aug_dst.* == null);
+
+                                const P = packed struct(u32) {
+                                    enc: u9,
+                                    aug: u23,
+                                };
+                                const p: P = @bitCast(full_enc);
+
+                                aug_dst.* = p.aug;
+
+                                break :aug p.enc;
+                            } else full_enc;
+
                             const max_value = operand.slot.max_value();
                             if (enc > max_value) {
                                 try ana.emit_error(location, "operand value out of range. max. allowed value is {}, but got {}", .{
@@ -1187,6 +1211,13 @@ const Analyzer = struct {
                         }
                     }
 
+                    if (aug.s) |s| {
+                        try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111000_000_000000000_000000000) | s, .little);
+                    }
+                    if (aug.d) |d| {
+                        try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111100_000_000000000_000000000) | d, .little);
+                    }
+
                     try current_segment.writer().writeInt(u32, output, .little);
                 },
             }
@@ -1202,14 +1233,17 @@ const Analyzer = struct {
         return segments.toOwnedSlice(segment_allocator);
     }
 
-    fn compute_rel(exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32) u9 {
+    fn compute_rel(ana: *Analyzer, loc: ast.Location, exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32) !u9 {
         const delta33: i33 = switch (exec_mode) {
             .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
             .hub => @as(i33, int) - @as(i33, hub_pc),
         };
 
         logger.info("pcrel: {} {} {} {} => {}", .{ exec_mode, cog_pc, hub_pc, int, delta33 });
-        const delta9: i9 = @intCast(delta33);
+        const delta9: i9 = std.math.cast(i9, delta33) orelse {
+            try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
+            return 0;
+        };
 
         const udelta9: u9 = @bitCast(delta9);
 
@@ -2147,6 +2181,9 @@ pub const EncodedInstruction = struct {
     default_condition: ast.Condition.Code = .always,
 
     pub const Slot = struct {
+        pub const S: Slot = .init(0, 9);
+        pub const D: Slot = .init(9, 9);
+
         shift: u5,
         bits: u5,
 
@@ -2163,6 +2200,10 @@ pub const EncodedInstruction = struct {
                 .shift = shift,
                 .bits = bits,
             };
+        }
+
+        pub fn eql(a: Slot, b: Slot) bool {
+            return a.shift == b.shift and a.bits == b.bits;
         }
 
         pub fn mask(slot: Slot) u32 {

@@ -1,0 +1,36 @@
+
+    MOV dst, 0
+    MOV dst, 100
+    MOV dst, 200
+    MOV dst, aug(0)
+    MOV dst, aug(100)
+    MOV dst, aug(200)
+    MOV dst, aug(1000)
+    MOV dst, aug(20000)
+    MOV dst, aug(300000)
+    MOV dst, aug(4000000)
+    
+    PUSHA 0
+    PUSHA 100
+    PUSHA 200
+    PUSHA aug(0)
+    PUSHA aug(100)
+    PUSHA aug(200)
+    PUSHA aug(1000)
+    PUSHA aug(20000)
+    PUSHA aug(300000)
+    PUSHA aug(4000000)
+
+    CALLPA 0, 0
+    CALLPA 100, 100
+    CALLPA 200, 200
+    CALLPA aug(0), aug(0)
+    CALLPA aug(100), aug(100)
+    CALLPA aug(200), aug(200)
+    CALLPA aug(1000), aug(1000)
+    CALLPA aug(20000), aug(20000)
+    CALLPA aug(300000), aug(300000)
+    CALLPA aug(4000000), aug(4000000)
+
+
+var dst: LONG 0
