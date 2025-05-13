@@ -24,14 +24,14 @@ _start:
         HUBSET aug(0b0000000_1_000000_0000001001_1111_10_00) // enable crystal+PLL, stay in RCFAST mode
         // HUBSET aug(Hub.clockMode(pll=.on, in_div=1, mul=10, out_div=1, xi=.15pF, sysclk=.rcfast)) // alt usage
         HUBSET aug(0b0000000_1_000000_0000001001_1111_10_11) // now switch to PLL running at 200.0 MHz
-//        HUBSET aug(Hub.clockMode(
-//          pll     = .on, 
-//          in_div  = 1,
-//          mul     = 10,
-//          out_div = 1,
-//          xi      = .15pF,
-//          sysclk  = .pll,
-//        )) // alt usage
+        HUBSET aug(Hub.clockMode(
+            pll     = .on,
+            in_div  = 1,
+            mul     = 10,
+            out_div = 1,
+            xi      = .15pF,
+            sysclk  = .pll,
+        )) // alt usage
 
         // Debug LED
         DRVH   LED_PIN // braucht kein "#LED_PIN" weil Konstante = "zahl" und erst mal kein register
@@ -89,7 +89,7 @@ perform_receive:
         WYPIN  '[', UART_TX
 
 rcv_next_byte:
-        MODZ   _CLR :wz
+        MODZ   #CLR :wz
         MOV    databyte, 0
 
 rcv_next_nibble:
@@ -114,7 +114,7 @@ rcv_wait_clk_high:
 
   // clk had a rising edge, switch to next nibble or process data:
   if(Z) JMP  rcv_process_byte
-        MODZ   _SET :wz
+        MODZ   #SET :wz
         JMP    rcv_next_nibble
 
 rcv_process_byte:
