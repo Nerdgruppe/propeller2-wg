@@ -1082,9 +1082,20 @@ const Analyzer = struct {
                             const int: u32 = try ana.cast_value_to(location, current_segment.exec_mode, value, u32);
 
                             const enc: u32 = switch (operand.type) {
-                                .address => enc: {
-                                    fill_extra_slot = null; // TODO: Handle relative/absolute addressing
-                                    break :enc int;
+                                .address => |meta| enc: {
+                                    // If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+
+                                    switch (value.flags.addressing) {
+                                        .auto, .absolute => {
+                                            fill_extra_slot = null;
+
+                                            break :enc int;
+                                        },
+                                        .relative => {
+                                            fill_extra_slot = meta.rel;
+                                            break :enc compute_rel(current_segment.exec_mode, cog_pc, hub_pc, int);
+                                        },
+                                    }
                                 },
 
                                 .immediate => |shift| switch (hint) {
@@ -1113,17 +1124,7 @@ const Analyzer = struct {
                                         break :enc int;
 
                                     if (meta.pcrel) {
-                                        const delta33: i33 = switch (current_segment.exec_mode) {
-                                            .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
-                                            .hub => @as(i33, int) - @as(i33, hub_pc),
-                                        };
-
-                                        logger.debug("pcrel: {} {} {} {} => {}", .{ current_segment.exec_mode, cog_pc, hub_pc, int, delta33 });
-                                        const delta9: i9 = @intCast(delta33);
-
-                                        const udelta9: u9 = @bitCast(delta9);
-
-                                        break :enc udelta9;
+                                        break :enc compute_rel(current_segment.exec_mode, cog_pc, hub_pc, int);
                                     } else {
                                         break :enc int;
                                     }
@@ -1201,7 +1202,27 @@ const Analyzer = struct {
         return segments.toOwnedSlice(segment_allocator);
     }
 
+    fn compute_rel(exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32) u9 {
+        const delta33: i33 = switch (exec_mode) {
+            .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
+            .hub => @as(i33, int) - @as(i33, hub_pc),
+        };
+
+        logger.info("pcrel: {} {} {} {} => {}", .{ exec_mode, cog_pc, hub_pc, int, delta33 });
+        const delta9: i9 = @intCast(delta33);
+
+        const udelta9: u9 = @bitCast(delta9);
+
+        return udelta9;
+    }
+
     fn cast_value_to(ana: *Analyzer, location: ast.Location, exec_mode: eval.ExecMode, value: Value, comptime U: type) !U {
+        const cast = try ana.cast_value_to_2(location, exec_mode, value, U);
+        logger.debug("cast {} to {}", .{ value, cast });
+        return cast;
+    }
+
+    fn cast_value_to_2(ana: *Analyzer, location: ast.Location, exec_mode: eval.ExecMode, value: Value, comptime U: type) !U {
         const I = std.meta.Int(.signed, @bitSizeOf(U));
 
         const raw_value: i64 = switch (value.value) {
@@ -2181,7 +2202,7 @@ pub const EncodedInstruction = struct {
             /// Immediate value with absolute or relative addressing
             /// #{\}A
             /// slot marks the bits where relative=1, absolute=0 should be written
-            address: Slot,
+            address: struct { rel: Slot },
 
             /// D or S
             register,

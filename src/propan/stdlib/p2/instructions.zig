@@ -5546,7 +5546,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // #{\}A
                 .slot = .init(0, 20),
-                .type = .{ .address = .init(20, 1) },
+                .type = .{ .address = .{ .rel = .init(20, 1) } },
             },
         },
     },
@@ -5559,7 +5559,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // #{\}A
                 .slot = .init(0, 20),
-                .type = .{ .address = .init(20, 1) },
+                .type = .{ .address = .{ .rel = .init(20, 1) } },
             },
         },
     },
@@ -5572,7 +5572,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // #{\}A
                 .slot = .init(0, 20),
-                .type = .{ .address = .init(20, 1) },
+                .type = .{ .address = .{ .rel = .init(20, 1) } },
             },
         },
     },
@@ -5585,7 +5585,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .operands = &.{
             .{ // #{\}A
                 .slot = .init(0, 20),
-                .type = .{ .address = .init(20, 1) },
+                .type = .{ .address = .{ .rel = .init(20, 1) } },
             },
         },
     },
@@ -5602,7 +5602,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #{\}A
                 .slot = .init(0, 20),
-                .type = .{ .address = .init(20, 1) },
+                .type = .{ .address = .{ .rel = .init(20, 1) } },
             },
         },
     },
@@ -5619,7 +5619,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
             .{ // #{\}A
                 .slot = .init(0, 20),
-                .type = .{ .address = .init(20, 1) },
+                .type = .{ .address = .{ .rel = .init(20, 1) } },
             },
         },
     },

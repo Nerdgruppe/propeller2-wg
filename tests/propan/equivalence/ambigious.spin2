@@ -1,0 +1,37 @@
+DAT 
+    CALLD dst,  src
+    CALLD dst,  src WC
+    CALLD dst,  src WZ
+    CALLD dst,  src WCZ
+    CALLD dst, #src
+    CALLD dst, #src WC
+    CALLD dst, #src WZ
+    CALLD dst, #src WCZ
+    CALLD dst,  src
+    CALLD dst,  src WC
+    CALLD dst,  src WZ
+    CALLD dst,  src WCZ
+    CALLD dst, #src
+    CALLD dst, #src WC
+    CALLD dst, #src WZ
+    CALLD dst, #src WCZ
+
+    ' CALLD PA, #src
+    ' CALLD PB, #src
+    ' CALLD PTRA, #src
+    ' CALLD PTRB, #src
+    
+    CALLD PA, #\src
+    CALLD PB, #\src
+    CALLD PTRA, #\src
+    CALLD PTRB, #\src
+
+    ' CALLD PA, #src
+    ' CALLD PA, #1
+    ' CALLD PA, #1000
+    CALLD PA, #\1000
+    CALLD PA, #10000
+    CALLD PA, #\10000
+
+src LONG 0
+dst LONG 1

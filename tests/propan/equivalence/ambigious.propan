@@ -1,0 +1,37 @@
+// DAT 
+    CALLD dst,  src
+    CALLD dst,  src :wc
+    CALLD dst,  src :wz
+    CALLD dst,  src :wcz
+    CALLD dst, &src
+    CALLD dst, &src :wc
+    CALLD dst, &src :wz
+    CALLD dst, &src :wcz
+    CALLD dst,  src
+    CALLD dst,  src :wc
+    CALLD dst,  src :wz
+    CALLD dst,  src :wcz
+    CALLD dst, &src
+    CALLD dst, &src :wc
+    CALLD dst, &src :wz
+    CALLD dst, &src :wcz
+
+    // CALLD PA, &src
+    // CALLD PB, &src
+    // CALLD PTRA, &src
+    // CALLD PTRB, &src
+    
+    CALLD PA, nrel(&src)
+    CALLD PB, nrel(&src)
+    CALLD PTRA, nrel(&src)
+    CALLD PTRB, nrel(&src)
+
+    // CALLD PA, &src
+    // CALLD PA, 1
+    // CALLD PA, 1000
+    CALLD PA, nrel(1000)
+    CALLD PA, 10000
+    CALLD PA, nrel(10000)
+
+var src: LONG 0
+var dst: LONG 1
