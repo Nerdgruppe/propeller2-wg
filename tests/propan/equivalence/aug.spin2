@@ -1,4 +1,5 @@
 DAT
+    ' uses {#}S
     MOV dst, #0
     MOV dst, #100
     MOV dst, #200
@@ -9,7 +10,10 @@ DAT
     MOV dst, ##20000
     MOV dst, ##300000
     MOV dst, ##4000000
+
+dst LONG 0
     
+    ' uses {#}D
     PUSHA #0
     PUSHA #100
     PUSHA #200
@@ -21,15 +25,36 @@ DAT
     PUSHA ##300000
     PUSHA ##4000000
 
+    ' {#}D, {#}S uses absolute immediates:
+    WRPIN #0, #0
+    WRPIN #100, #100
+    WRPIN #200, #200
+    WRPIN ##0, ##0
+    WRPIN ##100, ##100
+    WRPIN ##200, ##200
+    WRPIN ##1000, ##1000
+    WRPIN ##20000, ##20000
+    WRPIN ##300000, ##300000
+    WRPIN ##4000000, ##4000000
+
+    ' {#}D, {#}S uses pc-rel addressing, cogexec:
     CALLPA #0, #0
     CALLPA #100, #100
     CALLPA #200, #200
-    CALLPA ##0, ##0
-    CALLPA ##100, ##100
-    CALLPA ##200, ##200
-    CALLPA ##1000, ##1000
-    CALLPA ##20000, ##20000
-    CALLPA ##300000, ##300000
-    CALLPA ##4000000, ##4000000
 
-dst LONG 0
+    CALLPA #0, ##$0
+    CALLPA #0, ##$100
+    CALLPA #0, ##$200
+    CALLPA ##$0, ##$0
+    CALLPA ##$100, ##$100
+    CALLPA ##$200, ##$200
+
+    ' {#}D, {#}S uses pc-rel addressing, hubexec:
+_end
+    orgh @_end
+
+    CALLPA #0, ##$1000
+    CALLPA #0, ##$20000
+    CALLPA #0, ##$300000
+    CALLPA #0, ##$4000000
+

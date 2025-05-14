@@ -3,6 +3,7 @@ const builtin = @import("builtin");
 
 const frontend = @import("frontend.zig");
 const sema = @import("sema.zig");
+const stdlib = @import("stdlib/stdlib.zig");
 
 const args_parser = @import("args");
 
@@ -176,10 +177,7 @@ pub fn main() !u8 {
 
         const out = std.io.getStdOut();
 
-        try out.writer().print("mismatch detected. expected length: {}, actual length: {}\n", .{
-            ref.len,
-            output.items.len,
-        });
+        try out.writer().print("mismatch detected.\n", .{});
 
         if (ref.len == output.items.len) {
             try out.writer().print("    length: {}\n", .{ref.len});
@@ -245,6 +243,9 @@ fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: 
             bitdiff(u32, actual, expected, instr_groups),
             if (mod) |m| m.line_for_address(offset) else null,
         });
+        var dis_buf: [256]u8 = undefined;
+        try writer.print("  expected: {!s}\n", .{disasm(&dis_buf, expected)});
+        try writer.print("  actual:   {!s}\n", .{disasm(&dis_buf, actual)});
     }
 }
 
@@ -303,4 +304,82 @@ fn writeLog(
         return;
     }
     std.log.defaultLog(message_level, scope, format, args);
+}
+
+fn disasm(buffer: []u8, encoded: u32) ![]const u8 {
+    var fbs = std.io.fixedBufferStream(buffer);
+    const writer = fbs.writer();
+
+    for (stdlib.p2.instructions) |instr| {
+        var ignore_mask: u32 = 0xF000_0000; // we mask the condition by default
+
+        for (instr.operands) |op| {
+            ignore_mask |= op.slot.mask();
+            switch (op.type) {
+                .address => |meta| ignore_mask |= meta.rel.mask(),
+                .reg_or_imm => |meta| ignore_mask |= meta.imm.mask(),
+                .pointer_expr => |meta| ignore_mask |= meta.imm.mask(),
+                .register, .immediate, .pointer_reg, .enumeration => {},
+            }
+        }
+        if (instr.c_effect_slot) |slot| ignore_mask |= slot.mask();
+        if (instr.z_effect_slot) |slot| ignore_mask |= slot.mask();
+
+        if ((encoded & ~ignore_mask) != instr.binary) {
+            continue;
+        }
+
+        const cond: frontend.ast.Condition.Code = @enumFromInt(encoded >> 28);
+        try writer.print("{s} {s}", .{ condition_str(cond), instr.mnemonic });
+
+        for (instr.operands, 0..) |op, i| {
+            if (i > 0) {
+                try writer.writeAll(",");
+            }
+            try writer.writeAll(" ");
+
+            const Decorator = enum { none, imm, abs };
+
+            const decorator: Decorator = switch (op.type) {
+                .address => |meta| if (meta.rel.read(encoded) != 0) .imm else .abs,
+                .reg_or_imm => |meta| if (meta.imm.read(encoded) != 0) .imm else .none,
+                .pointer_expr => |meta| if (meta.imm.read(encoded) != 0) .imm else .none,
+                .immediate => .imm,
+                .register, .pointer_reg, .enumeration => .none,
+            };
+
+            switch (decorator) {
+                .none => {},
+                .imm => try writer.writeAll("#"),
+                .abs => try writer.writeAll("#\\"),
+            }
+
+            const slotval = op.slot.read(encoded);
+
+            try writer.print("0x{X}", .{slotval});
+        }
+    }
+
+    return fbs.getWritten();
+}
+
+fn condition_str(cond: frontend.ast.Condition.Code) []const u8 {
+    return switch (cond) {
+        .@"return" => "return     ",
+        .if_c => "if(C)      ",
+        .if_nc => "if(!C)     ",
+        .if_z => "if(Z)      ",
+        .if_nz => "if(!Z)     ",
+        .if_c_eq_z => "if(C == Z) ",
+        .if_c_ne_z => "if(C != Z) ",
+        .if_nc_and_nz => "if(!C & !Z)",
+        .if_nc_and_z => "if(!C & Z) ",
+        .if_c_and_z => "if(C & Z)  ",
+        .if_c_and_nz => "if(C & !Z) ",
+        .if_nc_or_nz => "if(!C | !Z)",
+        .if_nc_or_z => "if(!C | Z) ",
+        .if_c_or_nz => "if(C | !Z) ",
+        .if_c_or_z => "if(C | Z)  ",
+        .always => "           ",
+    };
 }

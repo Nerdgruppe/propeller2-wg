@@ -20,6 +20,8 @@ pub const AnalyzeOptions = struct {
         as_ptr_epxr,
         as_register,
     } = .as_ptr_epxr,
+
+    flip_augs_on_pcrel: bool = true,
 };
 
 pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions) !Module {
@@ -1049,6 +1051,7 @@ const Analyzer = struct {
                     const Augments = struct {
                         d: ?u23 = null,
                         s: ?u23 = null,
+                        flip: bool = false,
                     };
                     var aug: Augments = .{};
 
@@ -1094,7 +1097,7 @@ const Analyzer = struct {
                                         },
                                         .relative => {
                                             fill_extra_slot = meta.rel;
-                                            break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int);
+                                            break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int, value.flags.augment);
                                         },
                                     }
                                 },
@@ -1125,7 +1128,8 @@ const Analyzer = struct {
                                         break :enc int;
 
                                     if (meta.pcrel) {
-                                        break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int);
+                                        aug.flip = true; // flexspin flips the operands here for some reason
+                                        break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int, value.flags.augment);
                                     } else {
                                         break :enc int;
                                     }
@@ -1211,11 +1215,20 @@ const Analyzer = struct {
                         }
                     }
 
-                    if (aug.s) |s| {
-                        try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111000_000_000000000_000000000) | s, .little);
-                    }
-                    if (aug.d) |d| {
-                        try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111100_000_000000000_000000000) | d, .little);
+                    if (aug.flip and ana.options.flip_augs_on_pcrel) {
+                        if (aug.s) |s| {
+                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111000_000_000000000_000000000) | s, .little);
+                        }
+                        if (aug.d) |d| {
+                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111100_000_000000000_000000000) | d, .little);
+                        }
+                    } else {
+                        if (aug.d) |d| {
+                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111100_000_000000000_000000000) | d, .little);
+                        }
+                        if (aug.s) |s| {
+                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111000_000_000000000_000000000) | s, .little);
+                        }
                     }
 
                     try current_segment.writer().writeInt(u32, output, .little);
@@ -1233,21 +1246,33 @@ const Analyzer = struct {
         return segments.toOwnedSlice(segment_allocator);
     }
 
-    fn compute_rel(ana: *Analyzer, loc: ast.Location, exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32) !u9 {
+    fn compute_rel(ana: *Analyzer, loc: ast.Location, exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32, allow_aug: bool) !u32 {
         const delta33: i33 = switch (exec_mode) {
             .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
             .hub => @as(i33, int) - @as(i33, hub_pc),
         };
 
         logger.info("pcrel: {} {} {} {} => {}", .{ exec_mode, cog_pc, hub_pc, int, delta33 });
-        const delta9: i9 = std.math.cast(i9, delta33) orelse {
-            try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
-            return 0;
-        };
 
-        const udelta9: u9 = @bitCast(delta9);
+        if (allow_aug) {
+            const delta32: i32 = std.math.cast(i32, delta33) orelse {
+                try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
+                return 0;
+            };
 
-        return udelta9;
+            const udelta32: u32 = @bitCast(delta32);
+
+            return udelta32;
+        } else {
+            const delta9: i9 = std.math.cast(i9, delta33) orelse {
+                try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
+                return 0;
+            };
+
+            const udelta9: u9 = @bitCast(delta9);
+
+            return udelta9;
+        }
     }
 
     fn cast_value_to(ana: *Analyzer, location: ast.Location, exec_mode: eval.ExecMode, value: Value, comptime U: type) !U {
@@ -2219,6 +2244,10 @@ pub const EncodedInstruction = struct {
             if ((shifted & ~slot.mask()) != 0)
                 return error.Overflow;
             container.* |= shifted;
+        }
+
+        pub fn read(slot: Slot, container: u32) u32 {
+            return (container & slot.mask()) >> slot.shift;
         }
 
         /// Sets all values inside the slot to 1.

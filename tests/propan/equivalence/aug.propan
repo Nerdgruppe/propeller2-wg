@@ -1,4 +1,5 @@
-
+// DAT
+    // uses {#}S
     MOV dst, 0
     MOV dst, 100
     MOV dst, 200
@@ -10,6 +11,9 @@
     MOV dst, aug(300000)
     MOV dst, aug(4000000)
     
+var dst: LONG 0
+
+    // uses {#}D
     PUSHA 0
     PUSHA 100
     PUSHA 200
@@ -21,16 +25,35 @@
     PUSHA aug(300000)
     PUSHA aug(4000000)
 
+    // {#}D, {#}S uses absolute immediates:
+    WRPIN 0, 0
+    WRPIN 100, 100
+    WRPIN 200, 200
+    WRPIN aug(0), aug(0)
+    WRPIN aug(100), aug(100)
+    WRPIN aug(200), aug(200)
+    WRPIN aug(1000), aug(1000)
+    WRPIN aug(20000), aug(20000)
+    WRPIN aug(300000), aug(300000)
+    WRPIN aug(4000000), aug(4000000)
+
+    // {#}D, {#}S uses pc-rel addressing, cogexec:
     CALLPA 0, 0
     CALLPA 100, 100
     CALLPA 200, 200
-    CALLPA aug(0), aug(0)
-    CALLPA aug(100), aug(100)
-    CALLPA aug(200), aug(200)
-    CALLPA aug(1000), aug(1000)
-    CALLPA aug(20000), aug(20000)
-    CALLPA aug(300000), aug(300000)
-    CALLPA aug(4000000), aug(4000000)
 
+    CALLPA 0, aug(0x0)
+    CALLPA 0, aug(0x100)
+    CALLPA 0, aug(0x200)
+    CALLPA aug(0x0), aug(0x0)
+    CALLPA aug(0x100), aug(0x100)
+    CALLPA aug(0x200), aug(0x200)
 
-var dst: LONG 0
+    // {#}D, {#}S uses pc-rel addressing:
+_end:
+.hubexec
+    
+    CALLPA 0, aug(0x1000)
+    CALLPA 0, aug(0x20000)
+    CALLPA 0, aug(0x300000)
+    CALLPA 0, aug(0x4000000)
