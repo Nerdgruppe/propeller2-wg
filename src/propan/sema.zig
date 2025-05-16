@@ -929,18 +929,19 @@ const Analyzer = struct {
         }
 
         seq_loop: for (ana.file.sequence, 0..) |seq, i| {
-            const hub_offset: u32 = @intCast(current_segment.hub_offset + current_segment.data.items.len);
+            const segment_end_hub_offset: u32 = @intCast(current_segment.hub_offset + current_segment.data.items.len);
 
             const instr: *InstructionInfo = switch (seq) {
                 .constant, .empty => continue :seq_loop,
 
                 .label => |lbl| {
+
                     // just assert we're not doing stupid things:
                     const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
-                    std.debug.assert(hub_offset == sym.offset.?.hub);
+                    std.debug.assert(segment_end_hub_offset == sym.offset.?.hub);
 
                     try ana.line_data.append(segment_allocator, .{
-                        .offset = hub_offset,
+                        .offset = segment_end_hub_offset,
                         .length = 0,
                         .location = lbl.location,
                     });
@@ -950,6 +951,15 @@ const Analyzer = struct {
 
                 .instruction => &ana.instructions[ana.seq_to_instr_lut[i].?],
             };
+
+            const hub_offset = instr.offset.?.hub;
+
+            std.debug.assert(hub_offset >= segment_end_hub_offset);
+
+            if (hub_offset > segment_end_hub_offset) {
+                // insert alignment padding
+                try current_segment.writer().writeByteNTimes(0xFF, hub_offset - segment_end_hub_offset);
+            }
 
             const line_info = try ana.line_data.addOne(segment_allocator);
             line_info.* = .{
@@ -985,16 +995,20 @@ const Analyzer = struct {
                     }
                 },
 
-                .cogexec => {
-                    // TODO
-                },
-
-                .lutexec => {
-                    // TODO
-                },
-
-                .hubexec => {
-                    // TODO
+                .cogexec, .lutexec, .hubexec => {
+                    if (current_segment.data.items.len > 0) {
+                        try segments.append(segment_allocator, .{
+                            .hub_offset = current_segment.hub_offset,
+                            .data = try current_segment.data.toOwnedSlice(),
+                        });
+                        current_segment.deinit();
+                        current_segment = .init(hub_offset, switch (mnemonic) {
+                            .cogexec => .cog,
+                            .lutexec => .lut,
+                            .hubexec => .hub,
+                            else => unreachable,
+                        }, segment_allocator);
+                    }
                 },
 
                 .encoded => {
@@ -1249,20 +1263,20 @@ const Analyzer = struct {
     fn compute_rel(ana: *Analyzer, loc: ast.Location, exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32, allow_aug: bool) !u32 {
         const delta33: i33 = switch (exec_mode) {
             .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
-            .hub => @as(i33, int) - @as(i33, hub_pc),
+            .hub => @as(i33, int) - @as(i33, 0x400 + (hub_pc - 0x400) / 4),
         };
 
-        logger.info("pcrel: {} {} {} {} => {}", .{ exec_mode, cog_pc, hub_pc, int, delta33 });
+        logger.info("pcrel: cog={} hub={} target={}:{s} => rel {}", .{ cog_pc, hub_pc, int, @tagName(exec_mode), delta33 });
 
         if (allow_aug) {
-            const delta32: i32 = std.math.cast(i32, delta33) orelse {
+            const delta20: i20 = std.math.cast(i20, delta33) orelse {
                 try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
                 return 0;
             };
 
-            const udelta32: u32 = @bitCast(delta32);
+            const udelta20: u20 = @bitCast(delta20);
 
-            return udelta32;
+            return udelta20;
         } else {
             const delta9: i9 = std.math.cast(i9, delta33) orelse {
                 try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
@@ -1969,6 +1983,11 @@ const SegmentBuilder = struct {
             .exec_mode = exec_mode,
             .data = .init(allocator),
         };
+    }
+
+    fn deinit(sb: *SegmentBuilder) void {
+        sb.data.deinit();
+        sb.* = undefined;
     }
 
     fn seek_forward(sb: *SegmentBuilder, hub_offset: u32) !void {

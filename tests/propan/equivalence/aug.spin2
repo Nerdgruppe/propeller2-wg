@@ -50,11 +50,12 @@ dst LONG 0
     CALLPA ##$200, ##$200
 
     ' {#}D, {#}S uses pc-rel addressing, hubexec:
-_end
-    orgh @_end
+
+    orgh $450
 
     CALLPA #0, ##$1000
     CALLPA #0, ##$20000
-    CALLPA #0, ##$300000
-    CALLPA #0, ##$4000000
+    ' CALLPA #0, ##$300000
+    ' CALLPA #0, ##$4000000
 
+tag

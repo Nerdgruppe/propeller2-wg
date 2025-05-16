@@ -51,9 +51,12 @@ var dst: LONG 0
 
     // {#}D, {#}S uses pc-rel addressing:
 _end:
+
 .hubexec
     
     CALLPA 0, aug(0x1000)
     CALLPA 0, aug(0x20000)
-    CALLPA 0, aug(0x300000)
-    CALLPA 0, aug(0x4000000)
+    // CALLPA 0, aug(0x300000)
+    // CALLPA 0, aug(0x4000000)
+
+tag:
