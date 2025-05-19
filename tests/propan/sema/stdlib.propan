@@ -16,15 +16,15 @@ LONG Hub.seedRng(0x2AAA_AAAA) // set all trailing bits to 01010101…
 LONG Hub.seedRng(0x7FFF_FFFF) // set all trailing bits 1
 
 LONG Hub.debugConfig(debug_enable=0b0000_0000_0000_0001) // 'enable debug interrupt for cog 0
-LONG Hub.debugConfig(debug_enable=0xFFFF, write_protect=.true) // 'enable debug interrupts for cogs 15..0 and write-protect the last 16KB of hub RAM
-LONG Hub.debugConfig(debug_enable=0x00FF, write_protect=.true, lock=.true) // enable debug interrupts for cogs 7..0
+LONG Hub.debugConfig(debug_enable=0xFFFF, write_protect=#on) // 'enable debug interrupts for cogs 15..0 and write-protect the last 16KB of hub RAM
+LONG Hub.debugConfig(debug_enable=0x00FF, write_protect=#on, lock=#on) // enable debug interrupts for cogs 7..0
                                                                            // ..and write-protect the last 16KB of hub RAM
                                                                            // ..and disallow subsequent changes to this scheme
 
 
-LONG Hub.clockMode(pll=.off, in_div=1,  mul=1,   out_div=1, xi=.float, sysclk=.rcfast) // set 20 MHz+ (RCFAST) mode
-LONG Hub.clockMode(pll=.on,  in_div=40, mul=297, out_div=1, xi=.15pF,  sysclk=.rcfast) // enable crystal+PLL, stay in RCFAST mode
-LONG Hub.clockMode(pll=.on,  in_div=40, mul=297, out_div=1, xi=.15pF,  sysclk=.pll)    // now switch to PLL running at 148.5 MHz
+LONG Hub.clockMode(pll=#off, in_div=1,  mul=1,   out_div=1, xi=#float, sysclk=#rcfast) // set 20 MHz+ (RCFAST) mode
+LONG Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#rcfast) // enable crystal+PLL, stay in RCFAST mode
+LONG Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#pll)    // now switch to PLL running at 148.5 MHz
 
 
 // Test the two examples from the datasheet:

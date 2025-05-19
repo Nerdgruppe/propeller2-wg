@@ -8,7 +8,8 @@ const logger = std.log.scoped(.sema);
 
 const Value = eval.Value;
 
-pub const Offset = eval.Offset;
+pub const TaggedAddress = eval.TaggedAddress;
+pub const Segment_ID = eval.Segment_ID;
 
 const PA: eval.Register = @enumFromInt(0x1F6);
 const PB: eval.Register = @enumFromInt(0x1F7);
@@ -100,7 +101,7 @@ fn dump_analyzer(analyzer: *Analyzer) void {
     logger.info("map file:", .{});
     for (analyzer.instructions) |instr| {
         logger.info("  {}: {s} (+{} bytes)", .{
-            instr.offset.?,
+            instr.start_addr.?,
             instr.ast_node.mnemonic,
             instr.byte_size.?,
         });
@@ -109,7 +110,7 @@ fn dump_analyzer(analyzer: *Analyzer) void {
     logger.info("map file:", .{});
     for (analyzer.instructions) |instr| {
         logger.info("  {}: {s}", .{
-            instr.offset.?,
+            instr.start_addr.?,
             instr.ast_node.mnemonic,
         });
         for (instr.arguments, 0..) |arg, i| {
@@ -139,7 +140,7 @@ pub const Module = struct {
 };
 
 pub const Symbol = struct {
-    offset: Offset,
+    label: TaggedAddress,
     type: Type,
 
     pub const Type = enum {
@@ -158,7 +159,8 @@ pub const Constant = struct {
 };
 
 pub const Segment = struct {
-    hub_offset: u32,
+    id: Segment_ID,
+    hub_offset: u20,
     data: []const u8,
 };
 
@@ -519,7 +521,8 @@ const Analyzer = struct {
     fn assign_locations(ana: *Analyzer) !void {
         std.debug.assert(ana.seq_to_instr_lut.len == ana.file.sequence.len);
 
-        var cursor: Cursor = .{};
+        var idgen: Segment_ID_Gen = .{};
+        var cursor: Cursor = .init(idgen.next());
 
         for (ana.file.sequence, 0..) |*seq, i| {
             switch (seq.*) {
@@ -534,13 +537,15 @@ const Analyzer = struct {
                     const coded = &ana.instructions[ana.seq_to_instr_lut[i].?];
                     std.debug.assert(coded.ast_node == instr);
 
-                    coded.offset = cursor.offset;
+                    coded.start_addr = cursor.offset;
+                    defer coded.end_addr = cursor.offset;
+
                     switch (coded.mnemonic.?.*) {
                         .assert => {},
 
-                        .hubexec => cursor.change_mode(.hub),
-                        .lutexec => cursor.change_mode(.lut),
-                        .cogexec => cursor.change_mode(.cog),
+                        .hubexec => cursor.change_mode(idgen.next(), .hub),
+                        .lutexec => cursor.change_mode(idgen.next(), .lut),
+                        .cogexec => cursor.change_mode(idgen.next(), .cog),
 
                         .@"align" => blk: {
                             if (coded.ast_node.arguments.len != 1) {
@@ -553,7 +558,7 @@ const Analyzer = struct {
                             if (ana.evaluate_root_expr(coded.ast_node.arguments[0], null)) |value| {
                                 switch (value.value) {
                                     .int => |int| {
-                                        if (std.math.cast(u32, int)) |alignment| {
+                                        if (std.math.cast(u20, int)) |alignment| {
                                             cursor.alignas(alignment);
                                         } else {
                                             try ana.emit_error(coded.ast_node.location, ".align value {} is out of range.", .{
@@ -677,7 +682,7 @@ const Analyzer = struct {
                     // TODO: Consider if this is OK or not. It's kinda handy, but not sure if hazardous
                 },
 
-                .offset => {
+                .address => {
                     try ana.emit_error(con.location, "constant {s} evaluated to memory offset, but expected integer. Use hubaddr() or cogaddr() to resolve the value.", .{con.identifier});
                     continue;
                 },
@@ -695,13 +700,12 @@ const Analyzer = struct {
     fn evaluate_instruction_arguments(ana: *Analyzer) !void {
         for (ana.instructions) |*instr| {
             std.debug.assert(instr.mnemonic != null);
-            std.debug.assert(instr.offset != null);
-
-            const pc_after: Offset = .init_hub(instr.offset.?.hub + instr.byte_size.?);
+            std.debug.assert(instr.start_addr != null);
+            std.debug.assert(instr.end_addr != null);
 
             const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
             for (args, instr.ast_node.arguments) |*value, expr| {
-                value.* = ana.evaluate_root_expr(expr, pc_after) catch |err| {
+                value.* = ana.evaluate_root_expr(expr, instr.end_addr.?) catch |err| {
                     try ana.emit_eval_error(instr.ast_node.location, "", err);
                     continue;
                 };
@@ -717,7 +721,8 @@ const Analyzer = struct {
     fn select_instruction_encoding(ana: *Analyzer) !void {
         current_instr: for (ana.instructions) |*instr| {
             std.debug.assert(instr.mnemonic != null);
-            std.debug.assert(instr.offset != null);
+            std.debug.assert(instr.start_addr != null);
+            std.debug.assert(instr.end_addr != null);
             std.debug.assert(instr.arguments.len == instr.ast_node.arguments.len);
 
             const mnemonic: *const EncodedMnemonic = switch (instr.mnemonic.?.*) {
@@ -919,6 +924,8 @@ const Analyzer = struct {
         var segments: std.ArrayListUnmanaged(Segment) = .empty;
         errdefer segments.deinit(segment_allocator);
 
+        var sid: Segment_ID_Gen = .{};
+
         var current_segment: SegmentBuilder = .init(0, .cog, segment_allocator);
         defer current_segment.data.deinit();
 
@@ -938,7 +945,7 @@ const Analyzer = struct {
 
                     // just assert we're not doing stupid things:
                     const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
-                    std.debug.assert(segment_end_hub_offset == sym.offset.?.hub);
+                    std.debug.assert(segment_end_hub_offset == sym.offset.?.hub_address);
 
                     try ana.line_data.append(segment_allocator, .{
                         .offset = segment_end_hub_offset,
@@ -952,7 +959,7 @@ const Analyzer = struct {
                 .instruction => &ana.instructions[ana.seq_to_instr_lut[i].?],
             };
 
-            const hub_offset = instr.offset.?.hub;
+            const hub_offset = instr.start_addr.?.hub_address;
 
             std.debug.assert(hub_offset >= segment_end_hub_offset);
 
@@ -998,6 +1005,7 @@ const Analyzer = struct {
                 .cogexec, .lutexec, .hubexec => {
                     if (current_segment.data.items.len > 0) {
                         try segments.append(segment_allocator, .{
+                            .id = sid.next(),
                             .hub_offset = current_segment.hub_offset,
                             .data = try current_segment.data.toOwnedSlice(),
                         });
@@ -1252,6 +1260,7 @@ const Analyzer = struct {
 
         if (current_segment.data.items.len > 0) {
             try segments.append(segment_allocator, .{
+                .id = sid.next(),
                 .hub_offset = current_segment.hub_offset,
                 .data = try current_segment.data.toOwnedSlice(),
             });
@@ -1263,12 +1272,14 @@ const Analyzer = struct {
     fn compute_rel(ana: *Analyzer, loc: ast.Location, exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32, allow_aug: bool) !u32 {
         const delta33: i33 = switch (exec_mode) {
             .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
-            .hub => @as(i33, int) - @as(i33, 0x400 + (hub_pc - 0x400) / 4),
+            .hub => @divTrunc(@as(i33, int) - @as(i33, 0x400 + (hub_pc -| 0x400)), 4),
         };
 
         logger.info("pcrel: cog={} hub={} target={}:{s} => rel {}", .{ cog_pc, hub_pc, int, @tagName(exec_mode), delta33 });
 
         if (allow_aug) {
+            // somehow the augmented delta only uses 18 bits of PC ?
+
             const delta20: i20 = std.math.cast(i20, delta33) orelse {
                 try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
                 return 0;
@@ -1300,7 +1311,7 @@ const Analyzer = struct {
 
         const raw_value: i64 = switch (value.value) {
             .int => |int| int,
-            .offset => |offset| try ana.get_offset_for_exec_mode(offset, exec_mode),
+            .address => |offset| try ana.get_offset_for_exec_mode(offset, exec_mode),
             .string => @panic("string emission not supported yet"),
             .enumerator => @panic("BUG: enumerators must be handled before this!"),
             .register => |reg| @intFromEnum(reg),
@@ -1392,7 +1403,7 @@ const Analyzer = struct {
         return ptr_mask | opcode_mask | enc_index;
     }
 
-    fn get_offset_for_exec_mode(ana: *Analyzer, offset: Offset, mode: eval.ExecMode) !u32 {
+    fn get_offset_for_exec_mode(ana: *Analyzer, offset: TaggedAddress, mode: eval.ExecMode) !u32 {
         const target_mode: eval.ExecMode = offset.local;
         if (target_mode != mode) {
             if (mode != .hub) {
@@ -1417,11 +1428,11 @@ const Analyzer = struct {
         DivideByZero,
     };
 
-    fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, current_address: ?Offset) EvalError!eval.Value {
+    fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, current_address: ?TaggedAddress) EvalError!eval.Value {
         return ana.evaluate_expr(expr, current_address, 0);
     }
 
-    fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, maybe_current_address: ?Offset, nesting: usize) EvalError!eval.Value {
+    fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, maybe_current_address: ?TaggedAddress, nesting: usize) EvalError!eval.Value {
         switch (expr) {
             .wrapped => |inner| return try ana.evaluate_expr(inner.*, maybe_current_address, nesting + 1),
             .integer => |int| return .int(int.value),
@@ -1431,8 +1442,8 @@ const Analyzer = struct {
 
                 return switch (sym.type) {
                     .undefined => return error.UndefinedSymbol,
-                    .code => .offset(sym.offset orelse return error.UndefinedSymbol, .literal),
-                    .data => .offset(sym.offset orelse return error.UndefinedSymbol, .register),
+                    .code => .address(sym.offset orelse return error.UndefinedSymbol, .literal),
+                    .data => .address(sym.offset orelse return error.UndefinedSymbol, .register),
                     .constant => sym.value orelse return error.UndefinedSymbol,
                     .builtin => sym.value.?,
                 };
@@ -1555,23 +1566,23 @@ const Analyzer = struct {
                         return .int(-value.value.int);
                     },
                     .@"@" => {
-                        if (value.value != .offset) {
+                        if (value.value != .address) {
                             try ana.emit_error(op.location, "Operator '@' cannot be applied to a value of type {s}", .{
                                 @tagName(value.value),
                             });
                             return .int(0);
                         }
 
-                        const local_offset: Offset = maybe_current_address orelse {
+                        const local_offset: TaggedAddress = maybe_current_address orelse {
                             try ana.emit_error(op.location, "Operator '@' cannot be used in this scope", .{});
                             return .int(0);
                         };
-                        const target_offset: Offset = value.value.offset;
+                        const target_offset: TaggedAddress = value.value.address;
 
                         // TODO: Validate local_offset and target_offset point into the same segment
 
-                        const local_hub_addr: u32 = local_offset.hub;
-                        const target_hub_addr: u32 = target_offset.hub;
+                        const local_hub_addr: u32 = local_offset.hub_address;
+                        const target_hub_addr: u32 = target_offset.hub_address;
 
                         const jmp_delta = @as(u33, target_hub_addr) - @as(u33, local_hub_addr);
 
@@ -1582,11 +1593,14 @@ const Analyzer = struct {
                         return .int(@divTrunc(jmp_delta, 4));
                     },
                     .@"*" => {
-                        if (value.value != .offset) {
+                        if (value.value != .address) {
                             try ana.emit_error(op.location, "Operator '*' cannot be applied to a value of type {s}", .{
                                 @tagName(value.value),
                             });
-                            return .offset(.init_hub(0), .register);
+                            return .address(if (maybe_current_address) |addr|
+                                addr
+                            else
+                                .init_hub(undefined, 0), .literal);
                         }
                         if (value.flags.usage == .register) {
                             try ana.emit_warning(op.location, "Operator '*' is applied to a data label and has no effect", .{});
@@ -1601,11 +1615,11 @@ const Analyzer = struct {
                         };
                     },
                     .@"&" => {
-                        if (value.value != .offset) {
+                        if (value.value != .address) {
                             try ana.emit_error(op.location, "Operator '&' cannot be applied to a value of type {s}", .{
                                 @tagName(value.value),
                             });
-                            return .offset(.init_hub(0), .literal);
+                            return .address(.init_hub(undefined, 0), .literal);
                         }
                         if (value.flags.usage == .literal) {
                             try ana.emit_warning(op.location, "Operator '&' is applied to a code label and has no effect", .{});
@@ -1698,7 +1712,7 @@ const Analyzer = struct {
                         });
                         return .enumerator("");
                     },
-                    .offset => @panic("TODO: Implement binary operators on offsets."),
+                    .address => @panic("TODO: Implement binary operators on offsets."),
                     .string => @panic("TODO: Implement binary operators on strings."),
                 }
             },
@@ -1759,7 +1773,7 @@ const Analyzer = struct {
                                 return .int(@intFromEnum(reg));
                             },
 
-                            .offset => |offset| {
+                            .address => |offset| {
                                 const maybe_expected_type: ?eval.ExecMode = switch (func.*) {
                                     .lutaddr => .lut,
                                     .cogaddr => .cog,
@@ -1795,7 +1809,7 @@ const Analyzer = struct {
                                 try ana.emit_error(fncall.arguments[0].location, "hubaddr() cannot be applied to {s}s.", .{@tagName(value.value)});
                                 return value;
                             },
-                            .offset => |offset| return .int(offset.hub),
+                            .address => |address| return .int(address.hub_address),
                         }
                     },
                 }
@@ -1855,7 +1869,7 @@ const Analyzer = struct {
         fncall: ast.FunctionInvocation,
         params: []const Function.Parameter,
         argv_buffer: []eval.Value,
-        maybe_current_address: ?Offset,
+        maybe_current_address: ?TaggedAddress,
         nesting: usize,
     ) ![]const eval.Value {
         if (params.len > argv_buffer.len)
@@ -1973,11 +1987,11 @@ const Analyzer = struct {
 };
 
 const SegmentBuilder = struct {
-    hub_offset: u32,
+    hub_offset: u20,
     exec_mode: eval.ExecMode,
     data: std.ArrayList(u8),
 
-    fn init(hub_offset: u32, exec_mode: eval.ExecMode, allocator: std.mem.Allocator) SegmentBuilder {
+    fn init(hub_offset: u20, exec_mode: eval.ExecMode, allocator: std.mem.Allocator) SegmentBuilder {
         return .{
             .hub_offset = hub_offset,
             .exec_mode = exec_mode,
@@ -1990,7 +2004,7 @@ const SegmentBuilder = struct {
         sb.* = undefined;
     }
 
-    fn seek_forward(sb: *SegmentBuilder, hub_offset: u32) !void {
+    fn seek_forward(sb: *SegmentBuilder, hub_offset: u20) !void {
         std.debug.assert(hub_offset >= sb.hub_offset);
         try sb.writer().writeByteNTimes(sb.hub_offset < hub_offset);
     }
@@ -2008,14 +2022,30 @@ const SegmentBuilder = struct {
     }
 };
 
-const Cursor = struct {
-    offset: Offset = .init_cog(0, 0),
+const Segment_ID_Gen = struct {
+    current: Segment_ID = @enumFromInt(0),
 
-    fn change_mode(cursor: *Cursor, mode: eval.ExecMode) void {
+    pub fn next(sig: *Segment_ID_Gen) Segment_ID {
+        const res = sig.current;
+        sig.current = @enumFromInt(@intFromEnum(sig.current) + 1);
+        return res;
+    }
+};
+
+const Cursor = struct {
+    offset: TaggedAddress,
+
+    fn init(segment: Segment_ID) Cursor {
+        return .{
+            .offset = .init_cog(segment, 0, 0),
+        };
+    }
+
+    fn change_mode(cursor: *Cursor, seg: Segment_ID, mode: eval.ExecMode) void {
         cursor.offset = switch (mode) {
-            .hub => cursor.offset,
-            .cog => .init_cog(cursor.offset.hub, 0),
-            .lut => .init_lut(cursor.offset.hub, 0),
+            .hub => .init_hub(seg, cursor.offset.hub_address),
+            .cog => .init_cog(seg, cursor.offset.hub_address, 0),
+            .lut => .init_lut(seg, cursor.offset.hub_address, 0),
         };
     }
 
@@ -2028,9 +2058,9 @@ const Cursor = struct {
     }
 
     fn advance_data(cursor: *Cursor, size: enum(u4) { byte = 1, word = 2, long = 4 }) void {
-        cursor.offset.hub += @intFromEnum(size);
+        cursor.offset.hub_address += @intFromEnum(size);
 
-        const is_instr_aligned = std.mem.isAligned(cursor.offset.hub, 4);
+        const is_instr_aligned = std.mem.isAligned(cursor.offset.hub_address, 4);
         switch (cursor.offset.local) {
             .cog, .lut => |*val| if (is_instr_aligned) {
                 val.* += 1;
@@ -2039,11 +2069,11 @@ const Cursor = struct {
         }
     }
 
-    fn alignas(cursor: *Cursor, alignment: u32) void {
-        const prev = cursor.offset.hub;
-        const next = std.mem.alignForward(u32, cursor.offset.hub, alignment);
+    fn alignas(cursor: *Cursor, alignment: u20) void {
+        const prev = cursor.offset.hub_address;
+        const next = std.mem.alignForward(u20, cursor.offset.hub_address, alignment);
 
-        cursor.offset.hub = next;
+        cursor.offset.hub_address = next;
 
         switch (cursor.offset.local) {
             .cog, .lut => |*local| {
@@ -2059,52 +2089,54 @@ const Cursor = struct {
 };
 
 test Cursor {
-    var cursor: Cursor = .{};
+    const seg: Segment_ID = @enumFromInt(0x1234_5678);
+
+    var cursor: Cursor = .init(seg);
 
     cursor.advance_data(.long);
-    try std.testing.expectEqual(Offset.init_cog(4, 1), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 4, 1), cursor.offset);
 
     cursor.advance_data(.long);
-    try std.testing.expectEqual(Offset.init_cog(8, 2), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 8, 2), cursor.offset);
 
     cursor.advance_data(.word);
-    try std.testing.expectEqual(Offset.init_cog(10, 2), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 10, 2), cursor.offset);
 
     cursor.advance_data(.word);
-    try std.testing.expectEqual(Offset.init_cog(12, 3), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 12, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init_cog(13, 3), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 13, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init_cog(14, 3), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 14, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init_cog(15, 3), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 15, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init_cog(16, 4), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 16, 4), cursor.offset);
 
     cursor.advance_code();
-    try std.testing.expectEqual(Offset.init_cog(20, 5), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 20, 5), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init_cog(21, 5), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 21, 5), cursor.offset);
 
     cursor.advance_code();
-    try std.testing.expectEqual(Offset.init_cog(28, 7), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 28, 7), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(Offset.init_cog(29, 7), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 29, 7), cursor.offset);
 
     cursor.alignas(2);
-    try std.testing.expectEqual(Offset.init_cog(30, 7), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 30, 7), cursor.offset);
 
     cursor.alignas(2);
-    try std.testing.expectEqual(Offset.init_cog(30, 7), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 30, 7), cursor.offset);
 
     cursor.alignas(4);
-    try std.testing.expectEqual(Offset.init_cog(32, 8), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 32, 8), cursor.offset);
 }
 
 const SymbolInfo = struct {
@@ -2113,7 +2145,7 @@ const SymbolInfo = struct {
     type: Type = .undefined,
     referenced: bool = false,
 
-    offset: ?Offset = null,
+    offset: ?TaggedAddress = null,
     value: ?Value = null,
 
     pub fn location(sym: SymbolInfo) ?ast.Location {
@@ -2140,7 +2172,8 @@ const InstructionInfo = struct {
     mnemonic: ?*const Mnemonic = null,
     instruction: ?*const EncodedInstruction = null,
 
-    offset: ?Offset = null,
+    start_addr: ?TaggedAddress = null,
+    end_addr: ?TaggedAddress = null,
 
     /// Size of the instruction slot in bytes
     byte_size: ?u32 = null,
@@ -2190,7 +2223,6 @@ const Function = union(enum) {
 };
 
 const Mnemonic = union(enum) {
-
     // data encoded
     long,
     word,
@@ -2337,7 +2369,7 @@ pub const EncodedInstruction = struct {
                     .immediate => (usage == .literal),
                     .reg_or_imm => true,
 
-                    .pointer_expr => (vtype == .pointer_expr) or (vtype == .offset) or ((vtype == .int) and (usage == .literal)) or ((vtype == .register) and switch (value.value.register) {
+                    .pointer_expr => (vtype == .pointer_expr) or (vtype == .address) or ((vtype == .int) and (usage == .literal)) or ((vtype == .register) and switch (value.value.register) {
                         PTRA, PTRB => true,
                         else => false,
                     }),

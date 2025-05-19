@@ -27,8 +27,8 @@ pub const Value = struct {
         return .init(.{ .string = value }, .literal);
     }
 
-    pub fn offset(value: Offset, usage: UsageHint) Value {
-        return .init(.{ .offset = value }, usage);
+    pub fn address(value: TaggedAddress, usage: UsageHint) Value {
+        return .init(.{ .address = value }, usage);
     }
 
     pub fn register(index: u9) Value {
@@ -78,7 +78,7 @@ pub const Value = struct {
     pub const Type = enum {
         int,
         string,
-        offset,
+        address,
         register,
         enumerator,
         pointer_expr,
@@ -87,7 +87,7 @@ pub const Value = struct {
     pub const Payload = union(Type) {
         int: i64,
         string: []const u8,
-        offset: Offset,
+        address: TaggedAddress,
         register: Register,
         enumerator: []const u8,
         pointer_expr: PointerExpression,
@@ -108,7 +108,7 @@ pub const Value = struct {
         switch (val.value) {
             .int => |v| try writer.print("{}", .{v}),
             .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
-            .offset => |v| try writer.print("{}", .{v}),
+            .address => |v| try writer.print("{}", .{v}),
             .register => |v| try writer.print("{}", .{v}),
             .enumerator => |v| try writer.print("#{s}", .{v}),
             .pointer_expr => |v| try writer.print("{}", .{v}),
@@ -177,8 +177,11 @@ pub const ExecMode = enum {
     lut,
 };
 
-pub const Offset = struct {
-    hub: u32,
+pub const Segment_ID = enum(u32) { _ };
+
+pub const TaggedAddress = struct {
+    hub_address: u20,
+    segment_id: Segment_ID,
     local: Local,
 
     pub const Local = union(ExecMode) {
@@ -192,36 +195,36 @@ pub const Offset = struct {
         lut: u9,
     };
 
-    pub fn get_local(offset: Offset) u32 {
+    pub fn get_local(offset: TaggedAddress) u20 {
         return switch (offset.local) {
             .cog, .lut => |val| val,
-            .hub => offset.hub,
+            .hub => offset.hub_address,
         };
     }
 
-    pub fn init(hub: u32, local: Local) Offset {
-        return .{ .hub = hub, .local = local };
+    pub fn init(segment: Segment_ID, hub: u20, local: Local) TaggedAddress {
+        return .{ .segment_id = segment, .hub = hub, .local = local };
     }
 
-    pub fn init_hub(hub: u32) Offset {
-        return .{ .hub = hub, .local = .hub };
+    pub fn init_hub(segment: Segment_ID, hub: u20) TaggedAddress {
+        return .{ .segment_id = segment, .hub_address = hub, .local = .hub };
     }
 
-    pub fn init_cog(hub: u32, cog: u9) Offset {
-        return .{ .hub = hub, .local = .{ .cog = cog } };
+    pub fn init_cog(segment: Segment_ID, hub: u20, cog: u9) TaggedAddress {
+        return .{ .segment_id = segment, .hub_address = hub, .local = .{ .cog = cog } };
     }
 
-    pub fn init_lut(hub: u32, lut: u9) Offset {
-        return .{ .hub = hub, .local = .{ .lut = lut } };
+    pub fn init_lut(segment: Segment_ID, hub: u20, lut: u9) TaggedAddress {
+        return .{ .segment_id = segment, .hub_address = hub, .local = .{ .lut = lut } };
     }
 
-    pub fn format(offset: Offset, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(offset: TaggedAddress, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
         _ = fmt;
         _ = opt;
         switch (offset.local) {
-            .cog => |cog| try writer.print("Offset(hub=0x{X:0>5}, cog=0x{X:0>3})", .{ offset.hub, cog }),
-            .lut => |lut| try writer.print("Offset(hub=0x{X:0>5}, lut=0x{X:0>3})", .{ offset.hub, lut }),
-            .hub => try writer.print("Offset(hub=0x{X:0>5})", .{offset.hub}),
+            .cog => |cog| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, cog=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, cog }),
+            .lut => |lut| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, lut=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, lut }),
+            .hub => try writer.print("Address(segment=#{}, hub=0x{X:0>5})", .{ @intFromEnum(offset.segment_id), offset.hub_address }),
         }
     }
 };

@@ -1,3 +1,7 @@
+' linked issue:
+' https://github.com/totalspectrum/spin2cpp/issues/485
+
+
 DAT
     ' uses {#}S
     MOV dst, #0
@@ -42,19 +46,19 @@ dst LONG 0
     CALLPA #100, #100
     CALLPA #200, #200
 
-    CALLPA #0, ##$0
+    ' TODO(spin2cpp#485): CALLPA #0, ##$0
     CALLPA #0, ##$100
     CALLPA #0, ##$200
-    CALLPA ##$0, ##$0
+    ' TODO(spin2cpp#485): CALLPA ##$0, ##$0
     CALLPA ##$100, ##$100
     CALLPA ##$200, ##$200
 
     ' {#}D, {#}S uses pc-rel addressing, hubexec:
 
-    orgh $450
+    ' orgh $450
 
-    CALLPA #0, ##$1000
-    CALLPA #0, ##$20000
+    ' TODO(spin2cpp#485): CALLPA #0, ##$1000
+    ' TODO(spin2cpp#485): CALLPA #0, ##$20000
     ' CALLPA #0, ##$300000
     ' CALLPA #0, ##$4000000
 

@@ -9,8 +9,8 @@ inverted:
     JMP &value       // must select JMP D {WC/WZ/WCZ}
 
 useless:
-    JMP &destination // must select JMP #{\}A
-    JMP *value       // must select JMP D {WC/WZ/WCZ}
+    JMP &destination // must select JMP D {WC/WZ/WCZ}
+    JMP *value       // must select JMP #{\}A
 
 destination:
     NOP

@@ -1,7 +1,6 @@
 # TODO-List
 
 - `TEST D {WC/WZ/WCZ}`
-- `aug()` => `AUGS`, `AUGD`
 - Consider if `const magic = register(13)` is a good idea
 - Resolve ambigious instruction encoding
   - `CALLD D,{#}S {WC/WZ/WCZ}`
@@ -15,3 +14,5 @@
   - symbol info
   - debug info
 - `COGBRK #S` seems to be unsupported in flexspin
+- <https://github.com/totalspectrum/spin2cpp/issues/485>
+- local labels
