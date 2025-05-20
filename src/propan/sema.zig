@@ -80,10 +80,30 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     const segments = try analyzer.emit_code(output_arena.allocator());
 
+    var symbols: std.ArrayList(Module.Symbol) = .init(output_arena.allocator());
+    defer symbols.deinit();
+
+    for (analyzer.symbols.keys(), analyzer.symbols.values()) |name, sym| {
+        const stype: Module.Symbol.Type = switch (sym.type) {
+            .undefined => continue,
+            .code => .code,
+            .data => .data,
+            .constant => continue,
+            .builtin => continue,
+        };
+
+        try symbols.append(.{
+            .name = try output_arena.allocator().dupe(u8, name),
+            .label = sym.offset.?,
+            .type = stype,
+        });
+    }
+
     return .{
         .arena = output_arena,
         .segments = segments,
         .line_data = try analyzer.line_data.toOwnedSlice(output_arena.allocator()),
+        .symbols = try symbols.toOwnedSlice(),
     };
 }
 
@@ -967,19 +987,21 @@ const Analyzer = struct {
                 },
 
                 .cogexec, .lutexec, .hubexec => {
+                    const new_mode: eval.ExecMode = switch (mnemonic) {
+                        .cogexec => .cog,
+                        .lutexec => .lut,
+                        .hubexec => .hub,
+                        else => unreachable,
+                    };
                     if (current_segment.data.items.len > 0) {
                         try segments.append(segment_allocator, .{
                             .id = sid.next(),
                             .hub_offset = current_segment.hub_offset,
                             .data = try current_segment.data.toOwnedSlice(),
+                            .exec_mode = current_segment.exec_mode,
                         });
                         current_segment.deinit();
-                        current_segment = .init(hub_offset, switch (mnemonic) {
-                            .cogexec => .cog,
-                            .lutexec => .lut,
-                            .hubexec => .hub,
-                            else => unreachable,
-                        }, segment_allocator);
+                        current_segment = .init(hub_offset, new_mode, segment_allocator);
                     }
                 },
 
@@ -1227,6 +1249,7 @@ const Analyzer = struct {
                 .id = sid.next(),
                 .hub_offset = current_segment.hub_offset,
                 .data = try current_segment.data.toOwnedSlice(),
+                .exec_mode = current_segment.exec_mode,
             });
         }
 

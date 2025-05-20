@@ -221,11 +221,11 @@ pub fn main() !u8 {
         var file = try std.fs.cwd().atomicFile(cli.options.output, .{});
         defer file.deinit();
 
-        try emit.emit(file.file, mod.?, output_format);
+        try emit.emit(allocator, file.file, mod.?, output_format);
 
         try file.finish();
     } else {
-        try emit.emit(std.io.getStdOut(), mod.?, output_format);
+        try emit.emit(allocator, std.io.getStdOut(), mod.?, output_format);
     }
 
     return 0;

@@ -12,6 +12,7 @@ arena: std.heap.ArenaAllocator,
 
 segments: []const Segment,
 line_data: []const LineData,
+symbols: []const Symbol,
 
 pub fn deinit(mod: *Module) void {
     mod.arena.deinit();
@@ -27,6 +28,7 @@ pub fn line_for_address(mod: Module, hub_offset: u32) ?ast.Location {
 }
 
 pub const Symbol = struct {
+    name: []const u8,
     label: TaggedAddress,
     type: Type,
 
@@ -40,6 +42,7 @@ pub const Segment = struct {
     id: Segment_ID,
     hub_offset: u20,
     data: []const u8,
+    exec_mode: eval.ExecMode,
 };
 
 pub const LineData = struct {
