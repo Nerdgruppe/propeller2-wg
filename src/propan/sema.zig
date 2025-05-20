@@ -38,6 +38,8 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     try analyzer.load_constants(stdlib.common.constants);
     try analyzer.load_constants(stdlib.p2.constants);
 
+    try analyzer.load_functions(stdlib.p2.functions);
+
     try analyzer.load_instructions(stdlib.p2.instructions);
 
     // Validate
@@ -175,7 +177,7 @@ const Analyzer = struct {
             .file = file,
             .options = options,
         };
-        try ana.functions.ensureUnusedCapacity(allocator, 5);
+        try ana.functions.ensureUnusedCapacity(allocator, 6);
 
         ana.functions.putAssumeCapacityNoClobber("hubaddr", .hubaddr);
         ana.functions.putAssumeCapacityNoClobber("cogaddr", .cogaddr);
@@ -223,6 +225,7 @@ const Analyzer = struct {
             error.InvalidFunctionCall => "invalid function call",
             error.Overflow => "integer overflow",
             error.DivideByZero => "division by zero",
+            error.InvalidArg => "invalid argument",
         };
         const true_prefix = if (prefix.len == 0)
             "could not evaluate expression: "
@@ -272,6 +275,18 @@ const Analyzer = struct {
                 .value = value,
                 .type = .builtin,
             };
+        }
+    }
+
+    fn load_functions(ana: *Analyzer, functions: std.StaticStringMap(UserFunction)) !void {
+        for (functions.keys(), functions.values()) |name, func| {
+            const gop = try ana.functions.getOrPut(ana.allocator, name);
+            if (gop.found_existing) {
+                try ana.emit_error(null, "duplicate function symbol: {s}", .{name});
+                return error.DuplicateFunction;
+            }
+            gop.value_ptr.* = .{ .user = func };
+            logger.warn("func: {s}", .{name});
         }
     }
 
@@ -1413,6 +1428,7 @@ const Analyzer = struct {
         InvalidFunctionCall,
         Overflow,
         DivideByZero,
+        InvalidArg,
     };
 
     fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, current_address: ?TaggedAddress) EvalError!eval.Value {
@@ -1713,6 +1729,15 @@ const Analyzer = struct {
                 const argv = try ana.map_function_args(fncall, params, &argv_buf, maybe_current_address, nesting);
 
                 switch (func.*) {
+                    .user => |f| {
+                        const ctx: FunctionCallContext = .{};
+
+                        return f.invoke(ctx, argv) catch |err| switch (err) {
+                            error.InvalidArgCount => unreachable, // we check that before
+                            else => |e| return e,
+                        };
+                    },
+
                     .aug => {
                         std.debug.assert(argv.len == 1);
                         if (nesting != 0) {
@@ -2169,7 +2194,7 @@ const InstructionInfo = struct {
     arguments: []eval.Value = &.{},
 };
 
-const Function = union(enum) {
+pub const Function = union(enum) {
     // the builtin functions are hardcoded here:
     aug, // adds auto-augmentation to the argument
     nrel, // computes the absolute address
@@ -2180,22 +2205,24 @@ const Function = union(enum) {
     localaddr,
 
     // stdlib functions are defined as "generic" ones:
-    // TODO: generic: GenericFunction,
+    user: UserFunction,
 
     pub fn get_parameters(func: Function) []const Parameter {
         return switch (func) {
             .aug => &.{.init("value", .int)},
             .nrel => &.{.init("addr", .int)},
-            .hubaddr => &.{.init("addr", .offset)},
-            .cogaddr => &.{.init("addr", .offset)},
-            .lutaddr => &.{.init("addr", .offset)},
-            .localaddr => &.{.init("addr", .offset)},
+            .hubaddr => &.{.init("addr", .address)},
+            .cogaddr => &.{.init("addr", .address)},
+            .lutaddr => &.{.init("addr", .address)},
+            .localaddr => &.{.init("addr", .address)},
+            .user => |f| f.params,
         };
     }
 
     pub const Parameter = struct {
         name: []const u8,
         type: Type,
+        docs: []const u8 = "",
 
         pub fn init(name: []const u8, ptype: Type) Parameter {
             return .{ .name = name, .type = ptype };
@@ -2203,12 +2230,28 @@ const Function = union(enum) {
 
         pub const Type = enum {
             int,
-            offset,
             string,
-            @"enum",
+            address,
+            register,
+            enumerator,
+            pointer_expr,
+            any,
         };
     };
 };
+
+pub const UserFunction = struct {
+    name: ?[]const u8 = null,
+    docs: []const u8,
+    params: []const Function.Parameter,
+    invoke: *const fn (ctx: FunctionCallContext, []const eval.Value) FunctionCallError!eval.Value,
+};
+
+pub const FunctionCallContext = struct {
+    //
+};
+
+pub const FunctionCallError = error{ OutOfMemory, InvalidArg, InvalidArgCount, Overflow };
 
 const Mnemonic = union(enum) {
     // data encoded

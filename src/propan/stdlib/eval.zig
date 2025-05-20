@@ -4,10 +4,6 @@ pub const Context = struct {
     //
 };
 
-pub const Symbol = struct {
-    //
-};
-
 pub const Value = struct {
     value: Payload,
     flags: Flags,
