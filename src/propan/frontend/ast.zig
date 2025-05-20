@@ -70,7 +70,7 @@ pub const Expression = union(enum) {
 pub const IntegerLiteral = struct {
     location: Location,
     source_text: []const u8,
-    value: u32,
+    value: u63,
 };
 
 pub const StringLiteral = struct {

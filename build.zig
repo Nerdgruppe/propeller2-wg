@@ -113,8 +113,9 @@ pub fn build(b: *std.Build) void {
 
         for (parser_accept_tests) |accept_file| {
             const run = b.addRunArtifact(propan_exe);
+            run.addArg("--format=none");
             run.addArg("--test-mode=parser");
-            run.addFileInput(b.path(accept_file));
+            run.addFileArg(b.path(accept_file));
             run.has_side_effects = true;
             parser_tests.dependOn(&run.step);
         }
@@ -125,8 +126,9 @@ pub fn build(b: *std.Build) void {
 
         for (sema_accept_tests) |accept_file| {
             const run = b.addRunArtifact(propan_exe);
+            run.addArg("--format=none");
             run.addArg("--test-mode=sema");
-            run.addFileInput(b.path(accept_file));
+            run.addFileArg(b.path(accept_file));
             run.has_side_effects = true;
             sema_tests.dependOn(&run.step);
         }
@@ -151,6 +153,7 @@ pub fn build(b: *std.Build) void {
             convert.addFileArg(b.path(spin2_file));
 
             const run = b.addRunArtifact(propan_exe);
+            run.addArg("--format=none");
             run.addArg("--test-mode=compare");
             run.addPrefixedFileArg("--compare-to=", ref_file);
             run.addFileArg(b.path(accept_file));
@@ -171,7 +174,7 @@ fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
 }
 
 const examples: []const []const u8 = &[_][]const u8{
-    "examples/propio-client.propan",
+    // "examples/propio-client.propan",
 };
 
 const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const u8{

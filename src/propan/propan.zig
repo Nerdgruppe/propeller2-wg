@@ -3,7 +3,9 @@ const builtin = @import("builtin");
 
 const frontend = @import("frontend.zig");
 const sema = @import("sema.zig");
+const emit = @import("emit.zig");
 const stdlib = @import("stdlib/stdlib.zig");
+const Module = @import("Module.zig");
 
 const args_parser = @import("args");
 
@@ -25,11 +27,13 @@ const CliArgs = struct {
     @"test-mode": ?TestMode = null,
     @"compare-to": []const u8 = "",
     verbose: bool = false,
+    format: emit.BinaryFormat = .flat,
 
     pub const shorthands = .{
         .h = "help",
         .o = "output",
         .v = "verbose",
+        .f = "format",
     };
 
     pub const meta = .{
@@ -43,6 +47,7 @@ const CliArgs = struct {
             .help = "Prints this help text",
             .output = "Sets the path of the output file.",
             .verbose = "Enables debug logging",
+            .format = "Selects the binary format to use",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -81,6 +86,15 @@ pub fn main() !u8 {
         return 0;
     }
 
+    const output_format = cli.options.format;
+    if (output_format.is_binary() and cli.options.output.len == 0) {
+        try usage_mistake("Cannot emit {s} to stdio. Use \"-o -\" to force emission to stdout.", .{@tagName(output_format)});
+    }
+
+    if (cli.positionals.len == 0) {
+        try usage_mistake("missing input files.", .{});
+    }
+
     const source_files = try arena.allocator().alloc([]const u8, cli.positionals.len);
     for (source_files, cli.positionals) |*buffer, input_path| {
         std.log.debug("loading {s}...", .{input_path});
@@ -116,7 +130,7 @@ pub fn main() !u8 {
     var output: std.ArrayListUnmanaged(u8) = .empty;
     defer output.deinit(allocator);
 
-    var mod: ?sema.Module = null;
+    var mod: ?Module = null;
     for (cli.positionals, loaded_files) |input_path, parsed_file| {
         std.log.debug("analyzing {s}...", .{input_path});
 
@@ -200,11 +214,25 @@ pub fn main() !u8 {
         return 1;
     }
 
+    if (output_format == .none)
+        return 0;
+
+    if (cli.options.output.len > 0 and !std.mem.eql(u8, cli.options.output, "-")) {
+        var file = try std.fs.cwd().atomicFile(cli.options.output, .{});
+        defer file.deinit();
+
+        try emit.emit(file.file, mod.?, output_format);
+
+        try file.finish();
+    } else {
+        try emit.emit(std.io.getStdOut(), mod.?, output_format);
+    }
+
     return 0;
 }
 
 fn usage_mistake(comptime fmt: []const u8, args: anytype) !noreturn {
-    try std.io.getStdErr().print("usage error: " ++ fmt ++ "\n", args);
+    try std.io.getStdErr().writer().print("usage error: " ++ fmt ++ "\n", args);
     std.process.exit(1);
 }
 
@@ -213,7 +241,7 @@ test {
     _ = sema;
 }
 
-fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: []const u8, mod: ?sema.Module) !void {
+fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: []const u8, mod: ?Module) !void {
     const writer = stream.writer();
     const common_len = @max(expected_data.len, actual_data.len);
 

@@ -365,7 +365,10 @@ pub const Parser = struct {
                     .integer = .{
                         .location = token.location,
                         .source_text = token.text,
-                        .value = try core.parse_int(token.text),
+                        .value = core.parse_int(token.text) catch blk: {
+                            try core.emit_error(token.location, "integer overflow: {s} does not fit into a i64!", .{token.text});
+                            break :blk 0;
+                        },
                     },
                 },
                 .identifier => {
@@ -606,21 +609,21 @@ pub const Parser = struct {
             return output.toOwnedSlice(allocator);
         }
 
-        fn parse_int(core: *Core, text: []const u8) !u32 {
+        fn parse_int(core: *Core, text: []const u8) !u63 {
             _ = core;
             if (std.mem.startsWith(u8, text, "0b"))
-                return try std.fmt.parseInt(u32, text[2..], 2);
+                return try std.fmt.parseInt(u63, text[2..], 2);
 
             if (std.mem.startsWith(u8, text, "0q"))
-                return try std.fmt.parseInt(u32, text[2..], 4);
+                return try std.fmt.parseInt(u63, text[2..], 4);
 
             if (std.mem.startsWith(u8, text, "0o"))
-                return try std.fmt.parseInt(u32, text[2..], 8);
+                return try std.fmt.parseInt(u63, text[2..], 8);
 
             if (std.mem.startsWith(u8, text, "0x"))
-                return try std.fmt.parseInt(u32, text[2..], 16);
+                return try std.fmt.parseInt(u63, text[2..], 16);
 
-            return try std.fmt.parseInt(u32, text, 10);
+            return try std.fmt.parseInt(u63, text, 10);
         }
 
         // if(!C & !Z)`, `if(>)`

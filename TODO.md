@@ -16,3 +16,4 @@
 - `COGBRK #S` seems to be unsupported in flexspin
 - <https://github.com/totalspectrum/spin2cpp/issues/485>
 - local labels
+- implement instruction aliases (rolnib, ..)
