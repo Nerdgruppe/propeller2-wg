@@ -1,11 +1,11 @@
 
-    // MODCZ _CLR,      _NC_AND_NZ
+    MODCZ _CLR,      _NC_AND_NZ     :wcz
     MODCZ _NC_AND_Z, _NC            :wc
     MODCZ _C_AND_NZ, _NZ            :wz
     MODCZ _NC_OR_NZ, _C_AND_Z       :wcz
-    // MODC _C_EQ_Z
+    MODC _C_EQ_Z                    :wc
     MODC _Z                         :wc
-    // MODZ _NC_OR_Z
+    MODZ _NC_OR_NZ                  :wz
     MODZ _C                         :wz
 
     MODC _CLR                       :wc
@@ -40,4 +40,37 @@
     MODC _Z_OR_C                    :wc
     MODC _LE                        :wc
     MODC _SET                       :wc
+    
+    MODZ #CLR                       :wz
+    MODZ #NC_AND_NZ                 :wz
+    MODZ #NZ_AND_NC                 :wz
+    MODZ #GT                        :wz
+    MODZ #NC_AND_Z                  :wz
+    MODZ #Z_AND_NC                  :wz
+    MODZ #NC                        :wz
+    MODZ #GE                        :wz
+    MODZ #C_AND_NZ                  :wz
+    MODZ #NZ_AND_C                  :wz
+    MODZ #NZ                        :wz
+    MODZ #NE                        :wz
+    MODZ #C_NE_Z                    :wz
+    MODZ #Z_NE_C                    :wz
+    MODZ #NC_OR_NZ                  :wz
+    MODZ #NZ_OR_NC                  :wz
+    MODZ #C_AND_Z                   :wz
+    MODZ #Z_AND_C                   :wz
+    MODZ #C_EQ_Z                    :wz
+    MODZ #Z_EQ_C                    :wz
+    MODZ #Z                         :wz
+    MODZ #E                         :wz
+    MODZ #NC_OR_Z                   :wz
+    MODZ #Z_OR_NC                   :wz
+    MODZ #C                         :wz
+    MODZ #LT                        :wz
+    MODZ #C_OR_NZ                   :wz
+    MODZ #NZ_OR_C                   :wz
+    MODZ #C_OR_Z                    :wz
+    MODZ #Z_OR_C                    :wz
+    MODZ #LE                        :wz
+    MODZ #SET                       :wz
     

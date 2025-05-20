@@ -21,4 +21,4 @@ const basic_ref  = identifier
 
 const char       = '💩'
 const string     = "hello, world!"
-const enum       = .15pF
+const enum       = #15pF

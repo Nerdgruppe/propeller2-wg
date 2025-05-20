@@ -384,6 +384,7 @@ const Analyzer = struct {
             // These values don't require checks:
             .integer => {},
             .string => {},
+            .enumerator => {},
         }
     }
 
@@ -581,6 +582,7 @@ const Analyzer = struct {
                 },
                 .undefined, .constant, .builtin => {
                     // ignored
+                    continue;
                 },
             }
             if (sym.type != .builtin and !sym.referenced) {
@@ -606,6 +608,7 @@ const Analyzer = struct {
                         return error.InvalidSymbol;
                     if (sym.value != null)
                         return error.InvalidSymbol;
+                    continue;
                 },
                 .constant, .builtin => {
                     errdefer logger.err("invalid symbol {s}", .{sym.name});
@@ -1398,6 +1401,7 @@ const Analyzer = struct {
             .wrapped => |inner| return try ana.evaluate_expr(inner.*, maybe_current_address, nesting + 1),
             .integer => |int| return .int(int.value),
             .string => |string| return .string(string.value),
+            .enumerator => |enumerator| return .enumerator(enumerator.symbol_name),
             .symbol => |symref| {
                 const sym = ana.get_symbol_info(symref.symbol_name) catch unreachable;
 

@@ -6,7 +6,6 @@
   - `CALLD D,{#}S {WC/WZ/WCZ}`
   - `CALLD PA/PB/PTRA/PTRB,#{\}A`
   - `tests/propan/equivalence/ambigious.spin2`
-- Implement enum literal parser
 - annotate Offset/Label with segment id, so it can be detected if labels are used cross-segment
 - Configuration File for analyzer options
 - Custom binary format which contains

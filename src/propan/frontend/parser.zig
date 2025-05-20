@@ -344,6 +344,7 @@ pub const Parser = struct {
                 .identifier,
                 .char_literal,
                 .string_literal,
+                .enumerator,
                 .@"(",
             });
 
@@ -369,6 +370,12 @@ pub const Parser = struct {
                             try core.emit_error(token.location, "integer overflow: {s} does not fit into a i64!", .{token.text});
                             break :blk 0;
                         },
+                    },
+                },
+                .enumerator => return .{
+                    .enumerator = .{
+                        .location = token.location,
+                        .symbol_name = token.text[1..],
                     },
                 },
                 .identifier => {
@@ -888,6 +895,7 @@ pub const TokenType = enum {
     identifier, // [A-Za-z0-9_\.\-]+
     designator, // identifier, but ends with ":"
     effect, // identifier, but starts with ":"
+    enumerator, // identifier, but starts with "#"
 };
 
 const patterns = struct {
@@ -896,11 +904,12 @@ const patterns = struct {
     const match = ptk.matchers;
     const pat_sequence = match.sequenceOf;
 
+    const ident_first_chars = "_.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const ident_suffix_chars = ident_first_chars ++ "0123456789";
+
     fn basic_ident(str: []const u8) ?usize {
-        const first_char = "_.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const all_chars = first_char ++ "0123456789";
         for (str, 0..) |c, i| {
-            if (std.mem.indexOfScalar(u8, if (i > 0) all_chars else first_char, c) == null) {
+            if (std.mem.indexOfScalar(u8, if (i > 0) ident_suffix_chars else ident_first_chars, c) == null) {
                 return i;
             }
         }
@@ -976,6 +985,7 @@ const patterns = struct {
 
         .create(.designator, pat_sequence(.{ basic_ident, match.literal(":") })),
         .create(.effect, pat_sequence(.{ match.literal(":"), basic_ident })),
+        .create(.enumerator, pat_sequence(.{ match.literal("#"), match.takeAnyOf(ident_suffix_chars) })),
 
         .create(.identifier, basic_ident),
 

@@ -52,6 +52,7 @@ pub const ConditionNode = struct {
 pub const Expression = union(enum) {
     wrapped: *Expression,
     integer: IntegerLiteral,
+    enumerator: SymbolReference,
     string: StringLiteral,
     symbol: SymbolReference,
     unary_transform: UnaryTransform,

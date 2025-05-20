@@ -25,12 +25,12 @@ _start:
         // HUBSET aug(Hub.clockMode(pll=.on, in_div=1, mul=10, out_div=1, xi=.15pF, sysclk=.rcfast)) // alt usage
         HUBSET aug(0b0000000_1_000000_0000001001_1111_10_11) // now switch to PLL running at 200.0 MHz
         HUBSET aug(Hub.clockMode(
-            pll     = .on,
+            pll     = #on,
             in_div  = 1,
             mul     = 10,
             out_div = 1,
-            xi      = .15pF,
-            sysclk  = .pll,
+            xi      = #15pF,
+            sysclk  = #pll,
         )) // alt usage
 
         // Debug LED
