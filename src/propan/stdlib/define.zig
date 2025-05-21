@@ -168,7 +168,7 @@ fn convert_to_value(v: anytype) EvalError!Value {
     const info = @typeInfo(T);
 
     switch (info) {
-        .int => return .int(std.math.cast(i64, v) orelse return error.Overflow),
+        .comptime_int, .int => return .int(std.math.cast(i64, v) orelse return error.Overflow),
         .@"enum" => return .enumerator(@tagName(v)),
         .bool => return if (v) // TODO: Change this to #on, #off?
             Value.int(1)

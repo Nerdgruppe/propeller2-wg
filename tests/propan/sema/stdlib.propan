@@ -3,7 +3,7 @@
 //
 
 
-// // Test with the default values from the datasheet
+// Test with the default values from the datasheet
 .assert 0x4000_0000 == Hub.setFilter(filter=#filt0, length=2, tap=0)  // $4000_0000 + 0<<5 + 0
 .assert 0x4000_00A5 == Hub.setFilter(filter=#filt1, length=3, tap=5)  // $4000_0080 + 1<<5 + 5
 .assert 0x4000_0153 == Hub.setFilter(filter=#filt2, length=5, tap=19) // $4000_0100 + 2<<5 + 19
@@ -18,15 +18,15 @@
 .assert 0x2000_0001 == Hub.debugConfig(debug_enable=0b0000_0000_0000_0001) // 'enable debug interrupt for cog 0
 .assert 0x2001_FFFF == Hub.debugConfig(debug_enable=0xFFFF, write_protect=#on) // 'enable debug interrupts for cogs 15..0 and write-protect the last 16KB of hub RAM
 .assert 0x2003_00FF == Hub.debugConfig(debug_enable=0x00FF, write_protect=#on, lock=#on) // enable debug interrupts for cogs 7..0
-//                                                                            // ..and write-protect the last 16KB of hub RAM
-//                                                                            // ..and disallow subsequent changes to this scheme
+                                                                                         // ..and write-protect the last 16KB of hub RAM
+                                                                                         // ..and disallow subsequent changes to this scheme
 
 .assert 0x0000_00F0 == Hub.clockMode(pll=#off, in_div=1,  mul=1,   out_div=1, xi=#float, sysclk=#rcfast) // set 20 MHz+ (RCFAST) mode
 .assert 0x019D_28F8 == Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#rcfast) // enable crystal+PLL, stay in RCFAST mode
 .assert 0x019D_28FB == Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#pll)    // now switch to PLL running at 148.5 MHz
 
 
-// // Test the two examples from the datasheet:
-// .assert 491527 == SmartPin.UartTx.config(baud=2, bits=8, clk=15) // 7.5 clocks must be 0x00078000+7
-// .assert 491527 == SmartPin.UartTx.config(baud=2, clk=15) // bits should default to 8
-// .assert 2184207 == SmartPin.UartRx.config(baud=3, bits=16, clk=100) // 33.33 clocks must be 0x00215400+15
+// Test the two examples from the datasheet:
+.assert 0x0007_8007 == SmartPin.UartTx.config(baud=2, bits=8, clk=15) // 7.5 clocks must be 0x00078000+7
+.assert 0x0007_8007 == SmartPin.UartTx.config(baud=2, clk=15) // bits should default to 8
+.assert 0x0021_540F == SmartPin.UartRx.config(baud=3, bits=16, clk=100) // 33.33 clocks must be 0x00215400+15

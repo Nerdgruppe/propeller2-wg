@@ -120,7 +120,7 @@ pub const functions = define.namespace(.{
                 .tap = .{ .docs = "The bit of CNT that is used to advance the shift register." },
             };
 
-            pub fn invoke(filter: FilterName, length: i64, tap: u5) !u32 {
+            pub fn invoke(filter: FilterName, length: u32, tap: u5) !u32 {
                 const enc_len: u2 = switch (length) {
                     2 => 0,
                     3 => 1,
@@ -152,7 +152,7 @@ pub const functions = define.namespace(.{
                 pll: bool,
                 in_div: std.math.IntFittingRange(1, 64),
                 mul: std.math.IntFittingRange(1, 1024),
-                out_div: i64,
+                out_div: u32,
                 xi: CrystalMode,
                 sysclk: ClockSource,
             ) !u32 {
@@ -190,11 +190,45 @@ pub const functions = define.namespace(.{
 
     .SmartPin = define.namespace(.{
         .UartTx = define.namespace(.{
-            //
+            .config = config_uart_rx_tx,
         }),
 
         .UartRx = define.namespace(.{
-            //
+            .config = config_uart_rx_tx,
         }),
     }),
+});
+
+const config_uart_rx_tx = define.function(struct {
+    pub const docs = "";
+
+    pub const params = .{
+        .baud = .{ .docs = "The baud rate in symbols/s" },
+        .clk = .{ .docs = "The cpu clock in Hz" },
+        .bits = .{ .docs = "Number of bits", .min = 1, .max = 32, .default = 8 },
+    };
+
+    pub fn invoke(baud: u64, clk: u64, bits: u6) !u32 {
+        std.debug.assert(bits >= 1 and bits <= 32);
+
+        // X[31:16] establishes the number of clocks in a bit period, and in case X[31:26] is zero, X[15:10]
+        // establishes the number of fractional clocks in a bit period. The X bit period value can be simply computed
+        // as: (clocks * $1_0000) & $FFFFFC00. For example, 7.5 clocks would be $00078000, and 33.33 clocks
+        // would be $00215400.
+
+        // Use float here to support fractional divisions:
+        const clk_f: f64 = @floatFromInt(clk);
+        const baud_f: f64 = @floatFromInt(baud);
+
+        const clocks_f = clk_f / baud_f;
+
+        const fract_clocks_f = clocks_f * 0x1_0000;
+        if (fract_clocks_f < 0 or fract_clocks_f > std.math.maxInt(u32))
+            return error.Overflow;
+
+        const fract_clocks: u32 = @intFromFloat(fract_clocks_f);
+
+        // Cast back after multiplying with the hex value:
+        return (fract_clocks & 0xFFFFFC00) | (bits - 1);
+    }
 });
