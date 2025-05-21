@@ -286,7 +286,6 @@ const Analyzer = struct {
                 return error.DuplicateFunction;
             }
             gop.value_ptr.* = .{ .user = func };
-            logger.warn("func: {s}", .{name});
         }
     }
 
@@ -1725,8 +1724,14 @@ const Analyzer = struct {
 
                 const params = func.get_parameters();
 
-                var argv_buf: [16]eval.Value = undefined;
-                const argv = try ana.map_function_args(fncall, params, &argv_buf, maybe_current_address, nesting);
+                const argv_res = try ana.map_function_args(
+                    fncall,
+                    params,
+                    maybe_current_address,
+                    nesting,
+                );
+                const argv = argv_res.constSlice();
+                std.debug.assert(argv.len == params.len);
 
                 switch (func.*) {
                     .user => |f| {
@@ -1877,21 +1882,31 @@ const Analyzer = struct {
         };
     }
 
+    const max_supported_parameters = 16;
+
     fn map_function_args(
         ana: *Analyzer,
         fncall: ast.FunctionInvocation,
         params: []const Function.Parameter,
-        argv_buffer: []eval.Value,
         maybe_current_address: ?TaggedAddress,
         nesting: usize,
-    ) ![]const eval.Value {
-        if (params.len > argv_buffer.len)
+    ) !std.BoundedArray(Value, max_supported_parameters) {
+        if (params.len > max_supported_parameters)
             @panic("BUG: argument storage buffer is too small");
 
         const first_kwarg_index: usize = for (fncall.arguments, 0..) |arg, i| {
             if (arg.name != null)
                 break i;
         } else fncall.arguments.len;
+
+        const default_arg_count = blk: {
+            var cnt: usize = 0;
+            for (params) |p| {
+                if (p.default_value != null)
+                    cnt += 1;
+            }
+            break :blk cnt;
+        };
 
         {
             var ok = true;
@@ -1902,9 +1917,10 @@ const Analyzer = struct {
                 }
             }
 
-            if (fncall.arguments.len != params.len) {
-                try ana.emit_error(fncall.location, "{s}() expects {} arguments, but found {}", .{
+            if (fncall.arguments.len < params.len - default_arg_count or fncall.arguments.len > params.len) {
+                try ana.emit_error(fncall.location, "{s}() expects {}..{} arguments, but found {}", .{
                     fncall.function,
+                    params.len - default_arg_count,
                     params.len,
                     fncall.arguments.len,
                 });
@@ -1915,26 +1931,35 @@ const Analyzer = struct {
                 return error.InvalidFunctionCall;
         }
 
-        const argv = argv_buffer[0..fncall.arguments.len];
+        var argv: std.BoundedArray(Value, max_supported_parameters) = .{};
+        var argv_ok: std.bit_set.IntegerBitSet(max_supported_parameters) = .initEmpty();
+
+        argv.resize(params.len) catch unreachable; // we asserted capacity above
+
+        for (argv.slice(), params, 0..) |*arg, param, index| {
+            arg.* = param.default_value orelse continue;
+            argv_ok.set(index);
+        }
 
         const pos_argin = fncall.arguments[0..first_kwarg_index];
         const kw_argin = fncall.arguments[first_kwarg_index..];
 
-        const pos_argv = argv[0..first_kwarg_index];
-        const kw_argv = argv[first_kwarg_index..];
+        const pos_argv = argv.slice()[0..first_kwarg_index];
+        const kw_argv = argv.slice()[first_kwarg_index..];
 
         const pos_params = params[0..first_kwarg_index];
         const kw_params = params[first_kwarg_index..];
 
         std.debug.assert(pos_argv.len == pos_params.len);
-        std.debug.assert(kw_argv.len == kw_params.len);
+        std.debug.assert(kw_argv.len >= kw_params.len);
 
         std.debug.assert(pos_argv.len == pos_argin.len);
-        std.debug.assert(kw_argv.len == kw_argin.len);
+        std.debug.assert(kw_argv.len >= kw_argin.len);
 
-        for (pos_argv, pos_argin) |*value, arg| {
+        for (pos_argv, pos_argin, 0..) |*value, arg, index| {
             std.debug.assert(arg.name == null);
             value.* = try ana.evaluate_expr(arg.value, maybe_current_address, nesting + 1);
+            argv_ok.set(index);
         }
 
         {
@@ -1983,8 +2008,25 @@ const Analyzer = struct {
             std.debug.assert(arg.name != null);
 
             const index = index_of_param(params, arg.name.?).? - first_kwarg_index;
-
             kw_argv[index] = try ana.evaluate_expr(arg.value, maybe_current_address, nesting + 1);
+            argv_ok.set(index);
+        }
+
+        {
+            var all_ok = true;
+            for (params, 0..) |param, index| {
+                if (!argv_ok.isSet(index)) {
+                    // This error can only happen for non-defaulted parameters
+                    std.debug.assert(param.default_value == null);
+                    try ana.emit_error(fncall.location, "Missing parameter {s} for function {s}()", .{
+                        param.name,
+                        fncall.function,
+                    });
+                    all_ok = false;
+                }
+            }
+            if (!all_ok)
+                return error.InvalidFunctionCall;
         }
 
         return argv;
@@ -2223,6 +2265,7 @@ pub const Function = union(enum) {
         name: []const u8,
         type: Type,
         docs: []const u8 = "",
+        default_value: ?Value = null,
 
         pub fn init(name: []const u8, ptype: Type) Parameter {
             return .{ .name = name, .type = ptype };

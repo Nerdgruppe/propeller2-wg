@@ -71,7 +71,7 @@ pub fn main() !u8 {
     defer cli.deinit();
 
     if (cli.options.@"test-mode" != null) {
-        global_log_level = .warn;
+        global_log_level = .err; // mute warnings in test mode
     }
     if (cli.options.verbose) {
         global_log_level = .debug;

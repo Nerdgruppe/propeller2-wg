@@ -39,12 +39,20 @@ pub fn function(comptime T: type) Function {
     for (pdecls, 0..) |fld, i| {
         const name = fld.name;
         const value = @field(T.params, name);
+        const Param = @TypeOf(value);
+
         const ptype = invoke_params[i];
+
+        var default: ?Value = null;
+        if (@hasField(Param, "default")) {
+            default = convert_to_value(value.default) catch @compileError("unsupported default value");
+        }
 
         const param: sema.Function.Parameter = .{
             .name = name,
             .type = derive_value_type(ptype.type.?),
             .docs = value.docs,
+            .default_value = default,
         };
 
         params = params ++ &[_]sema.Function.Parameter{param};
@@ -143,6 +151,10 @@ fn convert_to_value(v: anytype) EvalError!Value {
     switch (info) {
         .int => return .int(std.math.cast(i64, v) orelse return error.Overflow),
         .@"enum" => return .enumerator(@tagName(v)),
+        .bool => return if (v) // TODO: Change this to #on, #off?
+            Value.int(1)
+        else
+            Value.int(0),
 
         else => @compileError("Unsupported return type " ++ @typeName(T)),
     }

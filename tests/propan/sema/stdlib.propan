@@ -15,19 +15,19 @@
 .assert 0xAAAA_AAAA == Hub.seedRng(0x2AAA_AAAA) // set all trailing bits to 01010101…
 .assert 0xFFFF_FFFF == Hub.seedRng(0x7FFF_FFFF) // set all trailing bits 1
 
-// LONG Hub.debugConfig(debug_enable=0b0000_0000_0000_0001) // 'enable debug interrupt for cog 0
-// LONG Hub.debugConfig(debug_enable=0xFFFF, write_protect=#on) // 'enable debug interrupts for cogs 15..0 and write-protect the last 16KB of hub RAM
-// LONG Hub.debugConfig(debug_enable=0x00FF, write_protect=#on, lock=#on) // enable debug interrupts for cogs 7..0
+.assert 0x20000001 == Hub.debugConfig(debug_enable=0b0000_0000_0000_0001) // 'enable debug interrupt for cog 0
+.assert 0x2001FFFF == Hub.debugConfig(debug_enable=0xFFFF, write_protect=#on) // 'enable debug interrupts for cogs 15..0 and write-protect the last 16KB of hub RAM
+.assert 0x200300FF == Hub.debugConfig(debug_enable=0x00FF, write_protect=#on, lock=#on) // enable debug interrupts for cogs 7..0
 //                                                                            // ..and write-protect the last 16KB of hub RAM
 //                                                                            // ..and disallow subsequent changes to this scheme
 
 
-// LONG Hub.clockMode(pll=#off, in_div=1,  mul=1,   out_div=1, xi=#float, sysclk=#rcfast) // set 20 MHz+ (RCFAST) mode
-// LONG Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#rcfast) // enable crystal+PLL, stay in RCFAST mode
-// LONG Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#pll)    // now switch to PLL running at 148.5 MHz
+// .assert 240 == Hub.clockMode(pll=#off, in_div=1,  mul=1,   out_div=1, xi=#float, sysclk=#rcfast) // set 20 MHz+ (RCFAST) mode
+// .assert 27076856 == Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#rcfast) // enable crystal+PLL, stay in RCFAST mode
+// .assert 27076859 == Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#pll)    // now switch to PLL running at 148.5 MHz
 
 
 // // Test the two examples from the datasheet:
-// LONG SmartPin.UartTx.config(baud=2, bits=8, clk=15) // 7.5 clocks must be 0x00078000+7
-// LONG SmartPin.UartTx.config(baud=2, clk=15) // bits should default to 8
-// LONG SmartPin.UartRx.config(baud=3, bits=16, clk=100) // 33.33 clocks must be 0x00215400+15
+// .assert 491527 == SmartPin.UartTx.config(baud=2, bits=8, clk=15) // 7.5 clocks must be 0x00078000+7
+// .assert 491527 == SmartPin.UartTx.config(baud=2, clk=15) // bits should default to 8
+// .assert 2184207 == SmartPin.UartRx.config(baud=3, bits=16, clk=100) // 33.33 clocks must be 0x00215400+15
