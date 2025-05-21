@@ -226,6 +226,7 @@ const Analyzer = struct {
             error.Overflow => "integer overflow",
             error.DivideByZero => "division by zero",
             error.InvalidArg => "invalid argument",
+            error.TypeMismatch => "type mismatch",
         };
         const true_prefix = if (prefix.len == 0)
             "could not evaluate expression: "
@@ -900,21 +901,39 @@ const Analyzer = struct {
                 continue;
             }
 
-            const message: Value = if (with_message)
-                instr.arguments[1]
-            else
-                .string("expression returned 0");
+            var message: []const u8 = "expression returned 0";
 
-            if (message.value != .string) {
-                try ana.emit_error(instr.ast_node.location, ".assert message must be a string value, but found {s}", .{@tagName(condition.value)});
-                continue;
+            if (with_message) {
+                const msg = instr.arguments[1];
+
+                if (msg.value != .string) {
+                    try ana.emit_error(instr.ast_node.location, ".assert message must be a string value, but found {s}", .{@tagName(condition.value)});
+                    continue;
+                }
+                message = msg.value.string;
+            } else {
+                const arg_expr = instr.ast_node.arguments[0];
+                if (arg_expr == .binary_transform) {
+                    const maybe_relation: ?[]const u8 = switch (arg_expr.binary_transform.operator) {
+                        .@"==" => "is not equal to",
+                        .@"!=" => "is equal to",
+                        .@"<" => "is not less than",
+                        .@">" => "is not greater than",
+                        .@"<=" => "is greater than",
+                        .@">=" => "is smaller than",
+                        else => null,
+                    };
+
+                    if (maybe_relation) |relation| {
+                        const lhs = try ana.evaluate_root_expr(arg_expr.binary_transform.lhs.*, null);
+                        const rhs = try ana.evaluate_root_expr(arg_expr.binary_transform.rhs.*, null);
+
+                        message = try std.fmt.allocPrint(ana.arena.allocator(), "{nice} {s} {nice}!", .{ lhs, relation, rhs });
+                    }
+                }
             }
 
-            try ana.emit_error(
-                instr.ast_node.location,
-                "assertion failed: {s}",
-                .{message.value.string},
-            );
+            try ana.emit_error(instr.ast_node.location, "assertion failed: {s}", .{message});
         }
     }
 
@@ -1428,6 +1447,7 @@ const Analyzer = struct {
         Overflow,
         DivideByZero,
         InvalidArg,
+        TypeMismatch,
     };
 
     fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, current_address: ?TaggedAddress) EvalError!eval.Value {
@@ -2294,7 +2314,13 @@ pub const FunctionCallContext = struct {
     //
 };
 
-pub const FunctionCallError = error{ OutOfMemory, InvalidArg, InvalidArgCount, Overflow };
+pub const FunctionCallError = error{
+    OutOfMemory,
+    InvalidArg,
+    InvalidArgCount,
+    Overflow,
+    TypeMismatch,
+};
 
 const Mnemonic = union(enum) {
     // data encoded

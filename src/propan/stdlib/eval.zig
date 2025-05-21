@@ -90,26 +90,37 @@ pub const Value = struct {
     };
 
     pub fn format(val: Value, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
         _ = opt;
-        try writer.writeAll("Value(");
-        if (val.flags.augment) {
-            try writer.writeAll("AUG,");
+
+        if (std.mem.eql(u8, fmt, "nice")) {
+            switch (val.value) {
+                .int => |v| try writer.print("{}", .{v}),
+                .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
+                .address => |v| try writer.print("{}", .{v}),
+                .register => |v| try writer.print("{}", .{v}),
+                .enumerator => |v| try writer.print("#{s}", .{v}),
+                .pointer_expr => |v| try writer.print("{}", .{v}),
+            }
+        } else {
+            try writer.writeAll("Value(");
+            if (val.flags.augment) {
+                try writer.writeAll("AUG,");
+            }
+            switch (val.flags.addressing) {
+                .auto => {},
+                .relative => try writer.writeAll("REL,"),
+                .absolute => try writer.writeAll("ABS,"),
+            }
+            switch (val.value) {
+                .int => |v| try writer.print("{}", .{v}),
+                .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
+                .address => |v| try writer.print("{}", .{v}),
+                .register => |v| try writer.print("{}", .{v}),
+                .enumerator => |v| try writer.print("#{s}", .{v}),
+                .pointer_expr => |v| try writer.print("{}", .{v}),
+            }
+            try writer.print(", {s})", .{@tagName(val.flags.usage)});
         }
-        switch (val.flags.addressing) {
-            .auto => {},
-            .relative => try writer.writeAll("REL,"),
-            .absolute => try writer.writeAll("ABS,"),
-        }
-        switch (val.value) {
-            .int => |v| try writer.print("{}", .{v}),
-            .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
-            .address => |v| try writer.print("{}", .{v}),
-            .register => |v| try writer.print("{}", .{v}),
-            .enumerator => |v| try writer.print("#{s}", .{v}),
-            .pointer_expr => |v| try writer.print("{}", .{v}),
-        }
-        try writer.print(", {s})", .{@tagName(val.flags.usage)});
     }
 };
 

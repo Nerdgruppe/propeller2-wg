@@ -5,6 +5,9 @@ const sema = @import("../sema.zig");
 const Value = eval.Value;
 const Parameter = sema.Function.Parameter;
 
+const PTRA: eval.Register = @enumFromInt(0x1F8);
+const PTRB: eval.Register = @enumFromInt(0x1F9);
+
 pub const EvalError = sema.FunctionCallError;
 
 pub const Context = sema.FunctionCallContext;
@@ -66,16 +69,32 @@ pub fn function(comptime T: type) Function {
 
             var mapped_args: std.meta.ArgsTuple(InvokeType) = undefined;
 
-            inline for (&mapped_args, args_fixed) |*dst, arg| {
-                dst.* = undefined;
-                _ = arg;
+            inline for (&mapped_args, args_fixed, 0..) |*dst, arg, index| {
+                const param = @field(T.params, pdecls[index].name);
+                const Param = @TypeOf(param);
+
+                dst.* = try convert_to_type(@TypeOf(dst.*), arg);
+
+                if (@hasField(Param, "min")) {
+                    if (dst.* < param.min)
+                        return error.InvalidArg;
+                }
+                if (@hasField(Param, "max")) {
+                    if (dst.* > param.max)
+                        return error.InvalidArg;
+                }
             }
 
-            const result = if (has_ctx)
+            const wrapped_result = if (has_ctx)
                 @call(.auto, T.invoke, &.{ctx} ++ mapped_args)
             else
                 @call(.auto, T.invoke, mapped_args);
 
+            const info = @typeInfo(@TypeOf(wrapped_result));
+            const result = if (info == .error_union)
+                try wrapped_result
+            else
+                wrapped_result;
             return convert_to_value(result);
         }
     };
@@ -158,4 +177,96 @@ fn convert_to_value(v: anytype) EvalError!Value {
 
         else => @compileError("Unsupported return type " ++ @typeName(T)),
     }
+}
+
+fn convert_to_type(comptime T: type, value: Value) EvalError!T {
+    const info = @typeInfo(T);
+
+    if (T == Value)
+        return value;
+
+    switch (T) {
+        eval.TaggedAddress => switch (value.value) {
+            .address => |addr| return addr,
+            else => return error.TypeMismatch,
+        },
+
+        eval.PointerExpression => switch (value.value) {
+            .pointer_expr => |expr| return expr,
+            .register => |reg| switch (reg) {
+                PTRA => .{ .pointer = .PTRA, .inremenet = .none, .index = null },
+                PTRA => .{ .pointer = .PTRB, .inremenet = .none, .index = null },
+                else => return error.InvalidArg,
+            },
+            else => return error.TypeMismatch,
+        },
+
+        eval.Register => switch (value.value) {
+            .register => |reg| return reg,
+            else => return error.TypeMismatch,
+        },
+
+        []const u8 => switch (value.value) {
+            .string => |str| return str,
+            else => return error.TypeMismatch,
+        },
+
+        else => {},
+    }
+
+    switch (info) {
+        .int => switch (value.value) {
+            .int => |val| return std.math.cast(T, val) orelse error.Overflow,
+            else => return error.TypeMismatch,
+        },
+
+        .float => switch (value.value) {
+            .int => |val| return @floatFromInt(val),
+            else => return error.TypeMismatch,
+        },
+
+        .bool => switch (value.value) {
+            .int => |val| return (val != 0),
+            .enumerator => |en| return try enum_to_bool(en),
+            else => return error.TypeMismatch,
+        },
+
+        .@"enum" => switch (value.value) {
+            .enumerator => |en| return std.meta.stringToEnum(T, en) orelse return error.InvalidArg,
+            else => return error.TypeMismatch,
+        },
+
+        .@"struct", // TODO: Should a int => packed struct cast be allowed?
+        .void,
+        .type,
+        .noreturn,
+        .pointer,
+        .array,
+        .null,
+        .optional,
+        .frame,
+        .@"anyframe",
+        .vector,
+        .undefined,
+        .@"union",
+        .@"fn",
+        .@"opaque",
+        .enum_literal,
+        .error_set,
+        .error_union,
+        .comptime_int,
+        .comptime_float,
+        => @compileError("Unsupported parameter type: " ++ @typeName(T)),
+    }
+}
+
+const bool_lut: std.StaticStringMap(bool) = .initComptime(.{
+    .{ "true", true }, .{ "false ", false },
+    .{ "yes", true },  .{ "no", false },
+    .{ "on", true },   .{ "off", false },
+    .{ "1", true },    .{ "0", false },
+});
+
+fn enum_to_bool(str: []const u8) error{InvalidArg}!bool {
+    return bool_lut.get(str) orelse return error.InvalidArg;
 }
