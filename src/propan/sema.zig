@@ -220,6 +220,10 @@ const Analyzer = struct {
 
     fn emit_eval_error(ana: *Analyzer, location: ast.Location, comptime prefix: []const u8, err: EvalError) !void {
         const reason = switch (err) {
+            error.DiagnosedFailure => {
+                // This failure is a silent failure and assumes we already have emitted at least a single diagnostic mesasge
+                return;
+            },
             error.OutOfMemory => "out of memory",
             error.UndefinedSymbol => "referenced undefined symbol",
             error.InvalidFunctionCall => "invalid function call",
@@ -1448,6 +1452,7 @@ const Analyzer = struct {
         DivideByZero,
         InvalidArg,
         TypeMismatch,
+        DiagnosedFailure,
     };
 
     fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, current_address: ?TaggedAddress) EvalError!eval.Value {
@@ -1755,7 +1760,10 @@ const Analyzer = struct {
 
                 switch (func.*) {
                     .user => |f| {
-                        const ctx: FunctionCallContext = .{};
+                        const ctx: FunctionCallContext = .{
+                            .ana = ana,
+                            .location = fncall.location,
+                        };
 
                         return f.invoke(ctx, argv) catch |err| switch (err) {
                             error.InvalidArgCount => unreachable, // we check that before
@@ -2311,7 +2319,21 @@ pub const UserFunction = struct {
 };
 
 pub const FunctionCallContext = struct {
-    //
+    ana: *Analyzer,
+    location: ast.Location,
+
+    pub fn fatal_error(ctx: FunctionCallContext, comptime msg: []const u8, args: anytype) error{DiagnosedFailure} {
+        try ctx.ana.emit_error(ctx.location, msg, args);
+        return error.DiagnosedFailure;
+    }
+
+    pub fn emit_error(ctx: FunctionCallContext, comptime msg: []const u8, args: anytype) !void {
+        try ctx.ana.emit_error(ctx.location, msg, args);
+    }
+
+    pub fn emit_warning(ctx: FunctionCallContext, comptime msg: []const u8, args: anytype) !void {
+        try ctx.ana.emit_warning(ctx.location, msg, args);
+    }
 };
 
 pub const FunctionCallError = error{
@@ -2320,6 +2342,8 @@ pub const FunctionCallError = error{
     InvalidArgCount,
     Overflow,
     TypeMismatch,
+    /// Special error which is silently swallowed and does not emit an explicit diagnostic code
+    DiagnosedFailure,
 };
 
 const Mnemonic = union(enum) {

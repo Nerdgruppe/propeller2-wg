@@ -1,9 +1,5 @@
 const std = @import("std");
 
-pub const Context = struct {
-    //
-};
-
 pub const Value = struct {
     value: Payload,
     flags: Flags,

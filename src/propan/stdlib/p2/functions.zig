@@ -1,6 +1,7 @@
 const std = @import("std");
 const eval = @import("../eval.zig");
 const define = @import("../define.zig");
+const EvalContext = define.EvalContext;
 
 pub const DebugConfig = packed struct(u32) {
     debug_enable: u16,
@@ -19,13 +20,13 @@ pub const FilterName = enum(u2) {
 
 pub const FilterConfig = packed struct(u32) {
     // %0100_xxxx_xxxx_xxxx_xxxx_xxxR_RLLT_TTTT
-
     tap: u5,
     length: u2,
     filter: FilterName,
     _padding: u19 = 0,
     tag: u4 = 0b0100,
 };
+
 pub const CrystalMode = enum(u2) {
     float = 0,
     nocap = 1,
@@ -42,7 +43,6 @@ pub const ClockSource = enum(u2) {
 
 pub const ClockMode = packed struct(u32) {
     // %0000_000E_DDDD_DDMM_MMMM_MMMM_PPPP_CCSS
-
     clock_src: ClockSource,
     crystal: CrystalMode,
     vco_div: u4,
@@ -53,12 +53,100 @@ pub const ClockMode = packed struct(u32) {
     tag: u4 = 0b0000,
 };
 
+pub const BitField = packed struct(u10) {
+    // Make bitfield, (x & $1F) | (y & $1F) << 5
+    base: u5,
+    extra_bits: u5,
+};
+
+pub const PinField = packed struct(u11) {
+    // x ADDPINS y: Make pinfield, (x & $3F) | (y & $1F) << 6
+    base: u6,
+    extra_pins: u5,
+};
+
+pub const OptionalBoolean = enum {
+    unset,
+    true,
+    false,
+    yes,
+    no,
+    on,
+    off,
+    @"1",
+    @"0",
+
+    pub fn as_bool(trool: OptionalBoolean) ?bool {
+        return switch (trool) {
+            .unset => null,
+            .@"0", .false, .no, .off => false,
+            .@"1", .true, .yes, .on => true,
+        };
+    }
+};
+
 pub const functions = define.namespace(.{
+    .bitrange = define.function(struct {
+        pub const docs = "Computes a bit range including low and high.";
+
+        pub const params = .{
+            .low = .{ .docs = "The index of the lowest bit in the range." },
+            .high = .{ .docs = "The index of the highest bit in the range." },
+        };
+
+        pub fn invoke(low: u5, high: u5) !u10 {
+            if (high < low)
+                return error.InvalidArg; // TODO: Diagnostic
+            return @bitCast(BitField{
+                .base = low,
+                .extra_bits = high - low,
+            });
+        }
+    }),
+
+    .pinrange = define.function(struct {
+        pub const docs = "Computes a bit range including low and high.";
+
+        pub const params = .{
+            .start = .{ .docs = "The index of the first pin of the range." },
+            .end = .{ .docs = "The index of the last pin of the range." },
+            .wrap = .{ .docs = "If not set, will emit an error diagnostic if the pins wrap at an unexpected location", .default = .unset },
+        };
+
+        pub fn invoke(ctx: EvalContext, start: u6, end: u6, wrap: OptionalBoolean) !u11 {
+            if (start == end)
+                return start;
+
+            const start_grp = start / 32;
+            const end_grp = end / 32;
+
+            if (start_grp != end_grp) {
+                return ctx.fatal_error("Pins {} and {} are not in the same pin group", .{ start, end });
+            }
+
+            if (start > end) {
+                if (wrap.as_bool() == null) {
+                    try ctx.emit_warning("The pin range from {} to {} wraps inside its register. Add wrap=#on to mute this, or wrap=#off to make it an error.", .{ start, end });
+                } else if (wrap.as_bool() == false) {
+                    try ctx.emit_error("The pin range from {} to {} wraps inside its register.", .{ start, end });
+                }
+            }
+
+            const extra_count: u5 = @intCast(if (start > end)
+                (@as(u7, 32) + end) - start
+            else
+                end - start);
+
+            return @bitCast(PinField{
+                .base = start,
+                .extra_pins = extra_count,
+            });
+        }
+    }),
+
     .Hub = define.namespace(.{
         .reboot = define.function(struct {
-            pub const docs =
-                \\Hard reset, reboots chip
-            ;
+            pub const docs = "Hard reset, reboots chip";
 
             pub const params = .{};
 
@@ -70,9 +158,7 @@ pub const functions = define.namespace(.{
         }),
 
         .seedRng = define.function(struct {
-            pub const docs =
-                \\Seed Xoroshiro128 PRNG with `seed`
-            ;
+            pub const docs = "Seed Xoroshiro128 PRNG with `seed`";
 
             pub const params = .{
                 .seed = .{ .docs = "The seed to use for the RNG" },
@@ -84,9 +170,7 @@ pub const functions = define.namespace(.{
         }),
 
         .debugConfig = define.function(struct {
-            pub const docs =
-                \\Change the debug configuration of hub and cogs.
-            ;
+            pub const docs = "Change the debug configuration of hub and cogs.";
 
             pub const params = .{
                 .debug_enable = .{ .docs = "Debug interrupt enables for cogs 15..0, respectively" },
@@ -126,7 +210,7 @@ pub const functions = define.namespace(.{
                     3 => 1,
                     5 => 2,
                     8 => 3,
-                    else => return error.InvalidArg,
+                    else => return error.InvalidArg, // TODO: Diagnostic
                 };
                 return @bitCast(FilterConfig{
                     .filter = filter,
@@ -173,7 +257,7 @@ pub const functions = define.namespace(.{
                     28 => 13,
                     3 => 14,
                     1 => 15,
-                    else => return error.InvalidArg,
+                    else => return error.InvalidArg, // TODO: Diagnostic
                 };
 
                 return @bitCast(ClockMode{
@@ -200,7 +284,7 @@ pub const functions = define.namespace(.{
 });
 
 const config_uart_rx_tx = define.function(struct {
-    pub const docs = "";
+    pub const docs = "Computes a UART smart mode configuration for register X";
 
     pub const params = .{
         .baud = .{ .docs = "The baud rate in symbols/s" },

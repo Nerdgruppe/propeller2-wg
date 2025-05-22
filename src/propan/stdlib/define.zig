@@ -10,7 +10,7 @@ const PTRB: eval.Register = @enumFromInt(0x1F9);
 
 pub const EvalError = sema.FunctionCallError;
 
-pub const Context = sema.FunctionCallContext;
+pub const EvalContext = sema.FunctionCallContext;
 
 pub const Function = sema.UserFunction;
 
@@ -27,7 +27,7 @@ pub fn function(comptime T: type) Function {
     const invoke_info = @typeInfo(InvokeType).@"fn";
 
     const has_ctx = if (invoke_info.params.len > 0)
-        invoke_info.params[0].type == Context
+        invoke_info.params[0].type == EvalContext
     else
         false;
 
@@ -62,12 +62,32 @@ pub fn function(comptime T: type) Function {
     }
 
     const Wrap = struct {
-        fn invoke(ctx: Context, args: []const eval.Value) EvalError!eval.Value {
+        fn ArgsTuple(comptime Func: type) type {
+            const info = @typeInfo(Func);
+            if (info != .@"fn")
+                @compileError("ArgsTuple expects a function type");
+
+            const function_info = info.@"fn";
+            if (function_info.is_var_args)
+                @compileError("Cannot create ArgsTuple for variadic function");
+
+            const delta = if (has_ctx) 1 else 0;
+
+            var argument_field_list: [function_info.params.len - delta]type = undefined;
+            inline for (function_info.params[delta..], 0..) |arg, i| {
+                const Arg = arg.type orelse @compileError("cannot create ArgsTuple for function with an 'anytype' parameter");
+                argument_field_list[i] = Arg;
+            }
+
+            return std.meta.Tuple(&argument_field_list);
+        }
+
+        fn invoke(ctx: EvalContext, args: []const eval.Value) EvalError!eval.Value {
             if (args.len != invoke_params.len)
                 return error.InvalidArgCount;
             const args_fixed = args[0..invoke_params.len];
 
-            var mapped_args: std.meta.ArgsTuple(InvokeType) = undefined;
+            var mapped_args: ArgsTuple(InvokeType) = undefined;
 
             inline for (&mapped_args, args_fixed, 0..) |*dst, arg, index| {
                 const param = @field(T.params, pdecls[index].name);
@@ -86,7 +106,7 @@ pub fn function(comptime T: type) Function {
             }
 
             const wrapped_result = if (has_ctx)
-                @call(.auto, T.invoke, &.{ctx} ++ mapped_args)
+                @call(.auto, T.invoke, .{ctx} ++ mapped_args)
             else
                 @call(.auto, T.invoke, mapped_args);
 
@@ -169,7 +189,7 @@ fn convert_to_value(v: anytype) EvalError!Value {
 
     switch (info) {
         .comptime_int, .int => return .int(std.math.cast(i64, v) orelse return error.Overflow),
-        .@"enum" => return .enumerator(@tagName(v)),
+        .@"enum", .enum_literal => return .enumerator(@tagName(v)),
         .bool => return if (v) // TODO: Change this to #on, #off?
             Value.int(1)
         else
