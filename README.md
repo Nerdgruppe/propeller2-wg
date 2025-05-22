@@ -49,49 +49,80 @@ const MY_CONSTANT = 10
 
 ### Unary Operators
 
-| Propan      | PASM                    | Description                             |
-|-------------|-------------------------|-----------------------------------------|
-| `!`         | `!!`                    | Boolean: NOT (0 => TRUE, else => FALSE) |
-| `~`         | `!`                     | Bitwise: NOT                            |
-| `+`         | `+`                     | Positive (+X) unary form of Add         |
-| `-`         | `-`                     | Negate (−X); unary form of Subtract     |
-| `@`         | `@` (inside `REP`)      | PC-relative offset to label             |
-| `hubaddr()` | `@` (when not in `REP`) | Absolute hub address of label           |
-| `*`         | -                       | Derference code label                   |
-| `&`         | "`#`"                   | Address of data label                   |
+| Propan      | PASM                    | Description                                        |
+|-------------|-------------------------|----------------------------------------------------|
+| `!`         | `!!`                    | Boolean: NOT (0 => TRUE, else => FALSE)            |
+| `~`         | `!`                     | Bitwise: NOT                                       |
+| `+`         | `+`                     | Positive (+X) unary form of Add                    |
+| `-`         | `-`                     | Negate (−X); unary form of Subtract                |
+| `@`         | `@` (inside `REP`)      | PC-relative offset to label                        |
+| `hubaddr()` | `@` (when not in `REP`) | Absolute hub address of label                      |
+| `*`         | *n.a.*                  | Derference code label                              |
+| `&`         | "`#`"                   | Address of data label                              |
+| `abs()`     | `ABS`                   | Absolute value                                     |
+| `fabs()`    | `FABS`                  | Floating-point absolute value (clears MSB)         |
+| `encod()`   | `ENCOD`                 | Encode MSB, 0..31                                  |
+| `decod()`   | `DECOD`                 | Decode, 1 << (x & $1F)                             |
+| `bmask()`   | `BMASK`                 | Bitmask, (2 << (x & $1F)) - 1                      |
+| `popcnt()`  | `ONES`                  | Sum all '1' bits, 0..32                            |
+| `sqrt()`    | `SQRT`                  | Square root of unsigned value                      |
+| `fsqrt()`   | `FSQRT`                 | Floating-point square root                         |
+| `qlog()`    | `QLOG`                  | Unsigned value to logarithm {5'whole, 27'fraction} |
+| `qexp()`    | `QEXP`                  | Logarithm to unsigned value                        |
 
 ### Binary Operators
 
-| Precedence Group | Propan   | PASM   | Description                                  |
-|------------------|----------|--------|----------------------------------------------|
-| 0                | `and`    | `&&`   | Boolean: AND                                 |
-| 0                | `or`     | `\|\|` | Boolean: OR                                  |
-| 0                | `xor`    | `^^`   | Boolean: XOR                                 |
-| 1                | `==`     | `==`   | Boolean: Is equal                            |
-| 1                | `!=`     | `<>`   | Boolean: Is not equal                        |
-| 1                | `<=>`    | `<=>`  | Signed comparison (<, =, > returns -1, 0, 1) |
-| 1                | `<`      | `<`    | Boolean: Is less than (signed)               |
-| 1                |          | `+<`   | Boolean: Is less than (unsigned)             |
-| 1                | `>`      | `>`    | Boolean: Is greater than (signed)            |
-| 1                |          | `+>`   | Boolean: Is greater than (unsigned)          |
-| 1                | `<=`     | `<=`   | Boolean: Is less than or equal (signed)      |
-| 1                |          | `+<=`  | Boolean: Is less than or equal (unsigned)    |
-| 1                | `>=`     | `>=`   | Boolean: Is greater than or equal (signed)   |
-| 1                |          | `+>=`  | Boolean: Is greater than or equal (unsigned) |
-| 2                | `+`      | `+`    | Add                                          |
-| 2                | `-`      | `-`    | Subtract                                     |
-| 2                | `\|`     | `\|`   | Bitwise: OR                                  |
-| 2                | `^`      | `^`    | Bitwise: XOR                                 |
-| 4                | `>>`     | `>>`   | Bitwise: Shift right                         |
-| 4                | `<<`     | `<<`   | Bitwise: Shift left                          |
-| 3                | `&`      | `&`    | Bitwise: AND                                 |
-| 3                | `*`      | `*`    | Multiply and return lower 32 bits (signed)   |
-| 3                | `/`      | `/`    | Divide and return quotient (signed)          |
-| 3                |          | `+/`   | Divide and return quotient (unsigned)        |
-| 3                |          | `//`   | Divide and return remainder (signed)         |
-| 3                | `%`      | `+//`  | Divide and return remainder (unsigned)       |
-| -                | `smin()` | `#>`   | Limit minimum (signed)                       |
-| -                | `smax()` | `<#`   | Limit maximum (signed)                       |
+| Precedence Group | Propan       | PASM      | Description                                            |
+|------------------|--------------|-----------|--------------------------------------------------------|
+| 0                | `and`        | `&&`      | Boolean: AND                                           |
+| 0                | `or`         | `\|\|`    | Boolean: OR                                            |
+| 0                | `xor`        | `^^`      | Boolean: XOR                                           |
+| 1                | `==`         | `==`      | Boolean: Is equal                                      |
+| 1                | `!=`         | `<>`      | Boolean: Is not equal                                  |
+| 1                | `<=>`        | `<=>`     | Signed comparison (<, =, > returns -1, 0, 1)           |
+| 1                | `<`          | `<`       | Boolean: Is less than (signed)                         |
+| 1                | *n.a.*       | `+<`      | Boolean: Is less than (unsigned)                       |
+| 1                | `>`          | `>`       | Boolean: Is greater than (signed)                      |
+| 1                | *n.a.*       | `+>`      | Boolean: Is greater than (unsigned)                    |
+| 1                | `<=`         | `<=`      | Boolean: Is less than or equal (signed)                |
+| 1                | *n.a.*       | `+<=`     | Boolean: Is less than or equal (unsigned)              |
+| 1                | `>=`         | `>=`      | Boolean: Is greater than or equal (signed)             |
+| 1                | *n.a.*       | `+>=`     | Boolean: Is greater than or equal (unsigned)           |
+| 2                | `+`          | `+`       | Add                                                    |
+| 2                | `-`          | `-`       | Subtract                                               |
+| 2                | `\|`         | `\|`      | Bitwise: OR                                            |
+| 2                | `^`          | `^`       | Bitwise: XOR                                           |
+| 4                | `>>`         | `>>`      | Bitwise: shift x right by y bits, insert 0's           |
+| 4                | `<<`         | `<<`      | Bitwise: shift x left by y bits, insert 0's            |
+| 3                | `&`          | `&`       | Bitwise: AND                                           |
+| 3                | `*`          | `*`       | Multiply and return lower 32 bits (signed)             |
+| 3                | `/`          | `/`       | Divide and return quotient (signed)                    |
+| 3                | *n.a.*       | `+/`      | Divide and return quotient (unsigned)                  |
+| 3                | *n.a.*       | `//`      | Divide and return remainder (signed)                   |
+| 3                | `%`          | `+//`     | Divide and return remainder (unsigned)                 |
+| -                | `smin()`     | `#>`      | Limit minimum (signed)                                 |
+| -                | `smax()`     | `<#`      | Limit maximum (signed)                                 |
+| -                | `sar()`      | `SAR`     | Shift x right by y bits, insert MSB's                  |
+| -                | `ror()`      | `ROR`     | Rotate x right by y bits                               |
+| -                | `rol()`      | `ROL`     | Rotate x left by y bits                                |
+| -                | `rev()`      | `REV`     | Reverse order of bits 0..y of x and zero-extend        |
+| -                | `zerox()`    | `ZEROX`   | Zero-extend above bit y                                |
+| -                | `signx()`    | `SIGNX`   | Sign-extend from bit y                                 |
+| -                | `sca()`      | `SCA`     | Unsigned scale, (x * y) >> 32                          |
+| -                | `scas()`     | `SCAS`    | Signed scale, (x * y) >> 30                            |
+| -                | `frac()`     | `FRAC`    | Unsigned fraction, (x << 32) / y                       |
+| -                | `bitrange()` | `ADDBITS` | Make bit field                                         |
+| -                | `pinrange()` | `ADDPINS` | Make pin field                                         |
+| -                | `fmul()`     | `*.`      | Floating-point multiply                                |
+| -                | `fdiv()`     | `/.`      | Floating-point divide                                  |
+| -                | `fadd()`     | `+.`      | Floating-point add                                     |
+| -                | `fsub()`     | `-.`      | Floating-point subtract                                |
+| -                | `flt()`      | `<.`      | Floating-point less than (returns 0 or -1)             |
+| -                | `fle()`      | `<=.`     | Floating-point less than or equal (returns 0 or -1)    |
+| -                | `==`         | `==.`     | Floating-point equal (returns 0 or -1)                 |
+| -                | `!=`         | `<>.`     | Floating-point not equal (returns 0 or -1)             |
+| -                | `fgt()`      | `>=.`     | Floating-point greater than or equal (returns 0 or -1) |
+| -                | `fge()`      | `>.`      | Floating-point greater than (returns 0 or -1)          |
 
 ### Ternary Operators
 
