@@ -1,0 +1,60 @@
+// keeps current segment,
+// moves PC forward only to ${addr},
+// emission of data afterwards will pad the skipped space
+.org ${addr}
+
+// keeps current segment,
+// aligns PC forward such that it is divisible by ${size},
+// emission of data afterwards will pad the skipped space
+.align ${size}
+
+// keeps current segment,
+// increments PC by one LONG,
+// emission of data afterwards will be an error,
+// only legal in cogexec or regspace
+.reserve ${count}
+
+// starts new segment,
+// switches mode into "cog exec" mode and sets PC = 0x000
+.cogexec
+
+// starts new segment,
+// switches mode into "lut exec" mode and sets PC = 0x200
+.lutexec
+
+// starts new segment,
+// switches mode into "hub exec" mode and sets PC = <current hub address>
+.hubexec
+
+// starts new segment,
+// switches mode into "cog exec" mode and sets PC = 0x000,
+// will emit at hub address ${addr}.
+.cogexec ${addr}
+
+// starts new segment,
+// switches mode into "lut exec" mode and sets PC = 0x200,
+// will emit at hub address ${addr}.
+.lutexec ${addr}
+
+// starts new segment,
+// switches mode into "hub exec" mode and sets PC = ${addr},
+// will emit at hub address ${addr}.
+.hubexec ${addr}
+
+// starts new segment,
+// switches into "reg space" mode, sets PC = 0x000
+// will not emit any data
+.regspace
+
+// starts new segment,
+// switches into "no code" mode, sets PC = invalid
+// allows only emission of data instructions, not code
+// labels have no "jump" address associated,
+.data
+
+// starts new segment,
+// switches into "no code" mode, sets PC = invalid
+// allows only emission of data instructions, not code
+// labels have no "jump" address associated,
+// will emit at hub address ${addr}.
+.data ${addr}

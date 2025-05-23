@@ -1,0 +1,31 @@
+//
+// swiftly sums buf_a and buf_b into buf_c
+//   for(buf_a, buf_b, buf_c) |a, b, *c| {
+//     c.* = a + b;
+//   }
+//
+quicksum:
+    REP 2, 8
+        ALTI what, whatmode
+        ADD 0, 0
+    RET
+
+var what:
+    // store R, D, S pointers
+    LONG (buf_c << 18) | (buf_b << 9) | (buf_a << 0)
+
+var whatmode:
+    // increment R, D, S with wrap-8,
+    // substitue each field into next instr
+    LONG 0b110_110_110_111_111_111
+
+.align 8
+
+buf_a:
+    LONG 1, 2, 3, 4, 5, 6, 7, 8
+
+buf_b:
+    LONG 9, 10, 11, 12, 13, 14, 15
+
+buf_c:
+    LONG 0, 0, 0, 0, 0, 0, 0, 0

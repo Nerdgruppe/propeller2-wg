@@ -1,0 +1,24 @@
+
+.cogexec 0x01000
+
+cog:    JMP     cog                 // 0xFD9FFFFC      cog to cog, relative
+        JMP     nrel(cog)           // 0xFD800000      cog to cog, force absolute
+        JMP     hubaddr(cog)        // 0xFD801000      cog to hub, always absolute
+        JMP     nrel(hubaddr(cog))  // 0xFD801000      cog to hub, always absolute
+
+        JMP     hub                 // 0xFD802000      cog to hub, always absolute
+        JMP     nrel(hub)           // 0xFD802000      cog to hub, always absolute
+        JMP     hubaddr(hub)        // 0xFD802000      cog to hub, always absolute
+        JMP     nrel(hubaddr(hub))  // 0xFD802000      cog to hub, always absolute
+
+.hubexec 0x02000
+
+hub:    JMP     cog                 // 0xFD800000      hub to cog, always absolute
+        JMP     nrel(cog)           // 0xFD800000      hub to cog, always absolute
+        JMP     hubaddr(cog)        // 0xFD9FEFF4      hub to hub, relative
+        JMP     nrel(hubaddr(cog))  // 0xFD801000      hub to hub, force absolute
+
+        JMP     hub                 // 0xFD9FFFEC      hub to hub, relative
+        JMP     nrel(hub)           // 0xFD802000      hub to hub, force absolute
+        JMP     hubaddr(hub)        // 0xFD9FFFE4      hub to hub, relative
+        JMP     nrel(@hub)          // 0xFD802000      hub to hub, force absolute

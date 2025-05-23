@@ -1,0 +1,25 @@
+DAT
+        ORGH    $01000
+        ORG     0       'cog code
+
+cog     JMP     #cog    '$FD9FFFFC      cog to cog, relative
+        JMP     #\cog   '$FD800000      cog to cog, force absolute
+        JMP     #@cog   '$FD801000      cog to hub, always absolute
+        JMP     #\@cog  '$FD801000      cog to hub, always absolute
+
+        JMP     #hub    '$FD802000      cog to hub, always absolute
+        JMP     #\hub   '$FD802000      cog to hub, always absolute
+        JMP     #@hub   '$FD802000      cog to hub, always absolute
+        JMP     #\@hub  '$FD802000      cog to hub, always absolute
+
+        ORGH    $02000  'hub code
+
+hub     JMP     #cog    '$FD800000      hub to cog, always absolute
+        JMP     #\cog   '$FD800000      hub to cog, always absolute
+        JMP     #@cog   '$FD9FEFF4      hub to hub, relative
+        JMP     #\@cog  '$FD801000      hub to hub, force absolute
+
+        JMP     #hub    '$FD9FFFEC      hub to hub, relative
+        JMP     #\hub   '$FD802000      hub to hub, force absolute
+        JMP     #@hub   '$FD9FFFE4      hub to hub, relative
+        JMP     #\@hub  '$FD802000      hub to hub, force absolute

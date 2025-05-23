@@ -174,7 +174,8 @@ fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
 }
 
 const examples: []const []const u8 = &[_][]const u8{
-    // "examples/propio-client.propan",
+    "examples/propio-client.propan",
+    // "examples/sumloop.propan",
 };
 
 const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const u8{

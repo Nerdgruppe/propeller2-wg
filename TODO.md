@@ -12,3 +12,5 @@
 - <https://github.com/totalspectrum/spin2cpp/issues/485>
 - local labels
 - implement instruction aliases (rolnib, ..)
+- `ALIGN`/sumloop example
+- tests/propan/equivalence/absrel_sample.propan
