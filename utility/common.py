@@ -212,6 +212,7 @@ class Instruction:
     operands: list[OpType]
     alias_name: str | None
 
+    iid: int | None = ds_field(default=None)
     group: str | None = ds_field(default=None)
     description: str | None = ds_field(default=None)
     shield: str | None = ds_field(default=None)
@@ -414,6 +415,7 @@ def decode_dataset(json_path: Path, tsv_path: Path) -> list[Instruction]:
         instructions.append(
             ds_replace(
                 json_instr,
+                iid=tsv_instr.iid,
                 group=tsv_instr.group,
                 description=tsv_instr.description,
                 shield=tsv_instr.shield,

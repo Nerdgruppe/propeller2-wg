@@ -318,7 +318,25 @@ def render_executor_stub(
         )
     )
 
-    for instr in sorted(instructions, key=lambda i: i.id):
+    last_grp = None
+
+    for instr in sorted(instructions, key=lambda i: (i.group, i.iid, i.id)):
+        if instr.group != last_grp:
+            stream.write(
+                textwrap.dedent(
+                    f"""
+
+
+                    //
+                    // GROUP: {instr.group}
+                    //
+
+
+                    """
+                )
+            )
+            last_grp = instr.group
+
         key = str(instr.encoding).replace("1", "_").replace("0", "_")
 
         grp = groups[key]
@@ -333,7 +351,9 @@ def render_executor_stub(
         stream.write(f"/// description: {instr.description}\n")
         stream.write(f"/// cog timing:  {instr.cog_timing}\n")
         stream.write(f"/// hub timing:  {instr.hub_timing}\n")
-        stream.write(f"/// access:      mem={instr.memory_access}, reg={instr.register_access}, stack={instr.stack_access}\n")
+        stream.write(
+            f"/// access:      mem={instr.memory_access}, reg={instr.register_access}, stack={instr.stack_access}\n"
+        )
         stream.write(
             f"pub fn {zig_id(opcode)}(cog: *Cog, args: encoding.{grpname}) Cog.ExecResult {{\n"
         )
