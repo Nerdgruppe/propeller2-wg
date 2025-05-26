@@ -37,6 +37,15 @@ pub fn build(b: *std.Build) void {
         },
     });
 
+    const windtunnel_mod = b.addModule("windtunnel", .{
+        .root_source_file = b.path("src/windtunnel/windtunnel.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "args", .module = args_mod },
+        },
+    });
+
     const propan_exe = blk: {
         const exe = b.addExecutable(.{
             .name = "propan",
@@ -47,6 +56,19 @@ pub fn build(b: *std.Build) void {
 
         break :blk exe;
     };
+
+    const windtunnel_exe = blk: {
+        const exe = b.addExecutable(.{
+            .name = "windtunnel",
+            .root_module = windtunnel_mod,
+        });
+
+        b.installArtifact(exe);
+
+        break :blk exe;
+    };
+
+    _ = windtunnel_exe;
 
     // "zig build run"
     {

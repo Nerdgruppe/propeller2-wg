@@ -1,23 +1,25 @@
 
-demo-propan:
-    .venv/bin/python -m nerdgruppe.p2.propan examples/propio-client.propan
+zig := "zig-0.14.0"
 
-test: test-unit test-propan  demo-propan
+nothing:
+    true
+
+update-windtunnel:
+    .venv/bin/python utility/gen_windtunnel.py encoding \
+        | tee src/windtunnel/sim/encoding.zig
+    .venv/bin/python utility/gen_windtunnel.py decoder \
+        | tee src/windtunnel/sim/decode.zig
+
+    {{zig}} fmt src/windtunnel/sim/encoding.zig
+    {{zig}} fmt src/windtunnel/sim/decode.zig
+
+regenerate-windtunnel-executor:
+    .venv/bin/python utility/gen_windtunnel.py executor \
+        | tee src/windtunnel/sim/execute.zig
+    {{zig}} fmt src/windtunnel/sim/execute.zig
 
 setup-venv:
     python -m venv .venv
     .venv/bin/python -m pip install -r tools/requirements.txt
     .venv/bin/python -m pip install -r tools/dev-requirements.txt
     realpath tools > .venv/lib/$(python -c 'import sys; print(f"python{sys.version_info.major}.{sys.version_info.minor}")')/site-packages/nerdgruppe.pth
-
-test-pasm-parser:
-    .venv/bin/python -m nerdgruppe.p2.pasm
-
-test-propan:
-    for file in $(find tests/propan/sema -name "*.propan"); do \
-        echo $file ; \
-        .venv/bin/python -m nerdgruppe.p2.propan "$file" --validate-output "${file%.propan}.json" ; \
-    done
-
-test-unit:
-    .venv/bin/python -m pytest tests/python
