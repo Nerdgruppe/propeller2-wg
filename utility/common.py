@@ -1,9 +1,10 @@
-from dataclasses import dataclass, field as ds_field
+from dataclasses import dataclass, field as ds_field, replace as ds_replace
 from pathlib import Path
 from enum import Enum
 import io
 import logging
 import json
+import re
 import sys
 from typing import ClassVar, Iterable
 import yaml
@@ -12,6 +13,7 @@ DATA_ROOT = Path(__file__).parent / ".." / "data" / "encoding"
 
 P2INSTRUCTIONS_JSON = DATA_ROOT / "p2instructions.json"
 INSTRUCTIONS_YML = DATA_ROOT / "instructions.yml"
+P2INSTRUCTIONS_TSV = DATA_ROOT / "instructions.tsv"
 
 
 class Flag(Enum):
@@ -210,6 +212,20 @@ class Instruction:
     operands: list[OpType]
     alias_name: str | None
 
+    group: str | None = ds_field(default=None)
+    description: str | None = ds_field(default=None)
+    shield: str | None = ds_field(default=None)
+    cog_timing: str | None = ds_field(default=None)
+    hub_timing: str | None = ds_field(default=None)
+    register_access: str | None = ds_field(default=None)
+    memory_access: str | None = ds_field(default=None)
+    stack_access: str | None = ds_field(default=None)
+
+    @property
+    def is_alias(self) -> bool:
+        return self.alias_name is not None 
+    
+
     @property
     def display_text(self) -> str:
         parts = [self.name]
@@ -229,7 +245,7 @@ class Instruction:
                 fstr = f"{{{fstr}}}"
             parts.append(fstr)
 
-        return " ".join(parts)
+        return " ".join(parts).strip()
 
 
 def decode_json(path: Path) -> list[Instruction]:
@@ -293,6 +309,119 @@ def decode_json(path: Path) -> list[Instruction]:
                 encoding=encoding,
                 operands=operands,
                 alias_name=alias_name,
+            )
+        )
+
+    return instructions
+
+
+@dataclass(kw_only=True)
+class TsvInstruction:
+    iid: int
+    name: str
+    group: str
+    encoding: str
+    alias: bool
+    description: str
+    shield: str | None
+    cog_exec8: str
+    hub_exec8: str
+    cog_exec16: str
+    hub_exec16: str
+    register_access: str | None
+    memory_access: str | None
+    stack_access: str | None
+
+
+def _empty_to_none(v: str) -> str | None:
+    if v.strip() == "":
+        return None
+    return v
+
+
+def decode_tsv(path: Path) -> dict[str, TsvInstruction]:
+    items: dict[str, TsvInstruction] = dict()
+
+    with path.open("r", encoding="utf-8") as fp:
+        for line in fp:
+            line = line.strip()
+
+            columns = line.split("\t")
+            if len(columns) == 0:
+                continue
+            if len(columns) == 11:
+                columns.append("")
+            if len(columns) == 12:
+                columns.append("")
+            if len(columns) == 13:
+                columns.append("")
+            if len(columns) != 14:
+                raise ValueError(f"Invalid column: {len(columns)} {columns!r}")
+
+            (
+                iid,
+                name,
+                group,
+                encoding,
+                alias,
+                description,
+                shield,
+                cog_exec8,
+                hub_exec8,
+                cog_exec16,
+                hub_exec16,
+                register_access,
+                memory_access,
+                stack_access,
+            ) = (*columns,)
+
+
+            instr = TsvInstruction(
+                iid=int(iid.strip()),
+                name=re.sub(r"\s+", " ", name.strip()).replace(",", ", "),
+                group=group.strip(),
+                encoding=encoding.strip(),
+                alias=(alias.strip() != "."),
+                description=description.strip(),
+                shield=_empty_to_none(shield),
+                cog_exec8=cog_exec8.strip(),
+                hub_exec8=hub_exec8.strip(),
+                cog_exec16=cog_exec16.strip(),
+                hub_exec16=hub_exec16.strip(),
+                register_access=_empty_to_none(register_access),
+                memory_access=_empty_to_none(memory_access),
+                stack_access=_empty_to_none(stack_access),
+            )
+            if instr.name in items:
+                raise ValueError(f"duplicate encoding: {encoding!r}")
+
+            items[instr.name] = instr
+
+    return items
+
+
+def decode_dataset(json_path: Path, tsv_path: Path) -> list[Instruction]:
+    src_instructions = decode_json(json_path)
+
+    tsv_data = decode_tsv(tsv_path)
+
+    instructions: list[Instruction] = list()
+    for json_instr in src_instructions:
+        tsv_instr = tsv_data[json_instr.display_text.replace("**", "")]
+
+        assert tsv_instr.alias == (json_instr.alias_name is not None), f"{json_instr.display_text!r} {json_instr.alias_name!r}"
+
+        instructions.append(
+            ds_replace(
+                json_instr,
+                group=tsv_instr.group,
+                description=tsv_instr.description,
+                shield=tsv_instr.shield,
+                cog_timing=tsv_instr.cog_exec8,
+                hub_timing=tsv_instr.hub_exec8,
+                register_access=tsv_instr.register_access,
+                memory_access=tsv_instr.memory_access,
+                stack_access=tsv_instr.stack_access,
             )
         )
 

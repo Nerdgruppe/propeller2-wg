@@ -4929,7 +4929,7 @@
         ],
         "category": "pin",
         "enctext": "EEEE 1100000 01I 000000001 SSSSSSSSS",
-        "alias": null,
+        "alias": "wrpin",
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,

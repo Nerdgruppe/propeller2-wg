@@ -10,7 +10,14 @@ import caseconverter
 
 from typing import Iterable
 
-from common import Instruction, decode_json, P2INSTRUCTIONS_JSON, zig_id, zig_escape
+from common import (
+    Instruction,
+    P2INSTRUCTIONS_JSON,
+    P2INSTRUCTIONS_TSV,
+    decode_dataset,
+    zig_id,
+    zig_escape,
+)
 
 DATA_ROOT = Path(__file__).parent / ".." / "data" / "encoding"
 
@@ -38,9 +45,9 @@ def splitgroups(mask: str) -> Iterable[str]:
 def main() -> int | None:
     groups = process_groups()
 
-    instructions = [
-        instr for instr in decode_json(P2INSTRUCTIONS_JSON) if instr.alias_name is None
-    ]
+    instructions = decode_dataset(P2INSTRUCTIONS_JSON, P2INSTRUCTIONS_TSV)
+
+    instructions = [instr for instr in instructions if not instr.is_alias]
 
     logging.info("loaded %d instructions!", len(instructions))
 
@@ -320,8 +327,13 @@ def render_executor_stub(
         grpname = zig_id(grp.name)
 
         stream.write("\n\n")
-        stream.write(f"    /// {instr.display_text}\n")
-        stream.write(f"    /// {instr.encoding}\n")
+        stream.write(f"/// {instr.display_text}\n")
+        stream.write(f"/// {instr.encoding}\n")
+        stream.write("///\n")
+        stream.write(f"/// description: {instr.description}\n")
+        stream.write(f"/// cog timing:  {instr.cog_timing}\n")
+        stream.write(f"/// hub timing:  {instr.hub_timing}\n")
+        stream.write(f"/// access:      mem={instr.memory_access}, reg={instr.register_access}, stack={instr.stack_access}\n")
         stream.write(
             f"pub fn {zig_id(opcode)}(cog: *Cog, args: encoding.{grpname}) Cog.ExecResult {{\n"
         )
