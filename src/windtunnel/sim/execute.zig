@@ -1,4 +1,5 @@
 const std = @import("std");
+const logger = std.log.scoped(.exec);
 
 const encoding = @import("encoding.zig");
 const Cog = @import("Cog.zig");
@@ -1785,10 +1786,29 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D if reg and !WC, stack=None
 pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
-    _ = cog;
-    _ = args;
-    @panic("COGID {#}D {WC} is not implemented yet!");
-    // return .next;
+    if (!cog.is_condition_met(args.cond))
+        return .skip;
+
+    if (args.c_mod == .write) {
+        // If COGID is used with WC, it will not overwrite D, but will return the status of
+        // cog D/# into C, where C=0 indicates the cog is free (stopped or never started)
+        // and C=1 indicates the cog is busy (started).
+
+        const id: u3 = @truncate(cog.resolve_operand(args.d, args.d_imm));
+
+        // COGID ThatCog WC ' C=1 if ThatCog is busy
+        cog.c = (cog.hub.cogs[id].exec_mode != .stopped);
+        return .next;
+    } else {
+        // A cog can discover its own ID by doing a COGID instruction, which will
+        // return its ID into D[3:0], with upper bits cleared.
+        // This is useful, in case the cog wants to restart or stop itself, as shown above.
+
+        if (args.d_imm)
+            return .trap; // TODO: Figure this out
+        cog.write_reg(args.d, cog.id);
+        return .next;
+    }
 }
 
 /// COGSTOP {#}D
@@ -1799,10 +1819,15 @@ pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn cogstop(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    _ = cog;
-    _ = args;
-    @panic("COGSTOP {#}D is not implemented yet!");
-    // return .next;
+    if (!cog.is_condition_met(args.cond))
+        return .skip;
+
+    const id: u3 = @truncate(cog.resolve_operand(args.d, args.d_imm));
+
+    logger.info("stop cog {}", .{id});
+    cog.hub.cogs[id].reset();
+
+    return .next;
 }
 
 //
@@ -4041,8 +4066,7 @@ pub fn loc(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
 pub fn nop(cog: *Cog, args: encoding.Nop) Cog.ExecResult {
     _ = cog;
     _ = args;
-    @panic("NOP is not implemented yet!");
-    // return .next;
+    return .next;
 }
 
 /// GETCT D {WC}

@@ -220,6 +220,35 @@ def render_encoding(stream: io.TextIOBase, groups: Iterable[Group]) -> None:
         for fname, ftype in grp.fields:
             stream.write(f"    {fname}: {ftype},\n")
 
+        stream.write("\n")
+        stream.write(f"    pub fn format(grp: {grp.name}, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {{\n")
+        stream.write("    _ = fmt;\n")
+        stream.write("    _ = opt;\n")
+        stream.write(f'    try writer.print("{grp.name}(')
+
+        first = True
+        for fname, ftype in reversed(grp.fields):
+            if fname.startswith("_mask"):
+                continue
+
+            if not first:
+                stream.write(", ")
+            stream.write(f"{fname}={{}}")
+            first = False
+        stream.write(')", .{')
+        
+        for fname, ftype in reversed( grp.fields):
+            if fname.startswith("_mask"):
+                continue
+            stream.write(f"grp.{fname},\n")
+
+        stream.write('});\n')
+
+        if first:
+            stream.write("    _ = grp;\n")
+
+        stream.write("}\n")
+
         stream.write("};\n")
 
 
@@ -285,12 +314,17 @@ def render_decoder(
 
             pub fn decode(raw: u32) OpCode
             {
+                if(raw == 0x00000000)
+                    return .nop;
             """).lstrip()
     )
 
     for instr in sorted(
         instructions, key=lambda i: i.encoding.variable_bits, reverse=True
     ):
+        if instr.encoding.binary == 0:
+            # skip special-cased NOP
+            continue 
         opcode = zig_id(caseconverter.snakecase(instr.id))
         stream.write(
             f"    if((raw & 0x{instr.encoding.mask:08X}) == 0x{instr.encoding.binary:08X})\n"

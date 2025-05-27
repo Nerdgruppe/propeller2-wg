@@ -740,6 +740,8 @@ pub const instruction_type: std.EnumArray(OpCode, []const u8) = blk: {
 };
 
 pub fn decode(raw: u32) OpCode {
+    if (raw == 0x00000000)
+        return .nop;
     if ((raw & 0x0F800000) == 0x0E000000)
         return .calld_a;
     if ((raw & 0x0F800000) == 0x0E800000)
@@ -754,8 +756,6 @@ pub fn decode(raw: u32) OpCode {
         return .getnib;
     if ((raw & 0x0FC00000) == 0x08800000)
         return .rolnib;
-    if ((raw & 0x0FE00000) == 0x00000000)
-        return .ror;
     if ((raw & 0x0FE00000) == 0x00200000)
         return .rol;
     if ((raw & 0x0FE00000) == 0x00400000)
@@ -1454,7 +1454,5 @@ pub fn decode(raw: u32) OpCode {
         return .nixint2;
     if ((raw & 0x0FFFFFFF) == 0x0D604E24)
         return .nixint3;
-    if ((raw & 0xFFFFFFFF) == 0x00000000)
-        return .nop;
     return .invalid;
 }

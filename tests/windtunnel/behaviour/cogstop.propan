@@ -5,4 +5,6 @@ _start:
     COGSTOP id
     // end of code
 
+    LONG 0b0000_1011110_111_000000000_000000000 // <empty> 1	
+
 var id: LONG 0

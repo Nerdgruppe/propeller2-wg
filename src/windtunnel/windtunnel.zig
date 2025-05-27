@@ -118,7 +118,9 @@ pub fn main() !u8 {
         hub.step();
     }
 
-    std.log.warn("all cogs stopped. halting...", .{});
+    std.log.warn("all cogs stopped after {} clocks. halting...", .{
+        hub.counter,
+    });
 
     return 0;
 }

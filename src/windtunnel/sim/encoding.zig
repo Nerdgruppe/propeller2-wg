@@ -51,6 +51,17 @@ pub const LocStyle = packed struct(u32) {
     pointer: PointerReg,
     _mask1: u5,
     cond: Condition,
+
+    pub fn format(grp: LocStyle, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("LocStyle(cond={}, pointer={}, relative={}, address={})", .{
+            grp.cond,
+            grp.pointer,
+            grp.relative,
+            grp.address,
+        });
+    }
 };
 
 /// 'EEEE______NNNIDDDDDDDDDSSSSSSSSS'
@@ -61,6 +72,18 @@ pub const Both_D_Simm_N3 = packed struct(u32) {
     n: u3,
     _mask1: u6,
     cond: Condition,
+
+    pub fn format(grp: Both_D_Simm_N3, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_D_Simm_N3(cond={}, n={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.n,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_______CLIDDDDDDDDDSSSSSSSSS'
@@ -72,6 +95,19 @@ pub const Both_Dimm_Simm_CFlag = packed struct(u32) {
     c_mod: FlagModifier,
     _mask1: u7,
     cond: Condition,
+
+    pub fn format(grp: Both_Dimm_Simm_CFlag, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_Dimm_Simm_CFlag(cond={}, c_mod={}, d_imm={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.d_imm,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_______CZIDDDDDDDDDSSSSSSSSS'
@@ -83,6 +119,19 @@ pub const Both_D_Simm_Flags = packed struct(u32) {
     c_mod: FlagModifier,
     _mask1: u7,
     cond: Condition,
+
+    pub fn format(grp: Both_D_Simm_Flags, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_D_Simm_Flags(cond={}, c_mod={}, z_mod={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.z_mod,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_______CZLDDDDDDDDD_________'
@@ -94,6 +143,18 @@ pub const Only_Dimm_Flags = packed struct(u32) {
     c_mod: FlagModifier,
     _mask2: u7,
     cond: Condition,
+
+    pub fn format(grp: Only_Dimm_Flags, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_Dimm_Flags(cond={}, c_mod={}, z_mod={}, d_imm={}, d={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.z_mod,
+            grp.d_imm,
+            grp.d,
+        });
+    }
 };
 
 /// 'EEEE_______CZ_DDDDDDDDD_________'
@@ -105,6 +166,17 @@ pub const Only_D_Flags = packed struct(u32) {
     c_mod: FlagModifier,
     _mask3: u7,
     cond: Condition,
+
+    pub fn format(grp: Only_D_Flags, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_D_Flags(cond={}, c_mod={}, z_mod={}, d={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.z_mod,
+            grp.d,
+        });
+    }
 };
 
 /// 'EEEE_______CZ___________________'
@@ -114,6 +186,16 @@ pub const OnlyFlags = packed struct(u32) {
     c_mod: FlagModifier,
     _mask2: u7,
     cond: Condition,
+
+    pub fn format(grp: OnlyFlags, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("OnlyFlags(cond={}, c_mod={}, z_mod={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.z_mod,
+        });
+    }
 };
 
 /// 'EEEE_______CZ__cccczzzz_________'
@@ -126,6 +208,18 @@ pub const UpdateFlags = packed struct(u32) {
     c_mod: FlagModifier,
     _mask3: u7,
     cond: Condition,
+
+    pub fn format(grp: UpdateFlags, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("UpdateFlags(cond={}, c_mod={}, z_mod={}, c_value={}, z_value={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.z_mod,
+            grp.c_value,
+            grp.z_value,
+        });
+    }
 };
 
 /// 'EEEE_______C_IDDDDDDDDDSSSSSSSSS'
@@ -137,6 +231,18 @@ pub const Both_D_Simm_CFlag = packed struct(u32) {
     c_mod: FlagModifier,
     _mask2: u7,
     cond: Condition,
+
+    pub fn format(grp: Both_D_Simm_CFlag, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_D_Simm_CFlag(cond={}, c_mod={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_______C_LDDDDDDDDD_________'
@@ -148,6 +254,17 @@ pub const Only_Dimm_CFlag = packed struct(u32) {
     c_mod: FlagModifier,
     _mask3: u7,
     cond: Condition,
+
+    pub fn format(grp: Only_Dimm_CFlag, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_Dimm_CFlag(cond={}, c_mod={}, d_imm={}, d={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.d_imm,
+            grp.d,
+        });
+    }
 };
 
 /// 'EEEE_______C__DDDDDDDDD_________'
@@ -158,6 +275,16 @@ pub const Only_D_CFlag = packed struct(u32) {
     c_mod: FlagModifier,
     _mask3: u7,
     cond: Condition,
+
+    pub fn format(grp: Only_D_CFlag, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_D_CFlag(cond={}, c_mod={}, d={})", .{
+            grp.cond,
+            grp.c_mod,
+            grp.d,
+        });
+    }
 };
 
 /// 'EEEE_______NNIDDDDDDDDDSSSSSSSSS'
@@ -168,6 +295,18 @@ pub const Both_D_Simm_N2 = packed struct(u32) {
     n: u2,
     _mask1: u7,
     cond: Condition,
+
+    pub fn format(grp: Both_D_Simm_N2, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_D_Simm_N2(cond={}, n={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.n,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_______RAAAAAAAAAAAAAAAAAAAA'
@@ -176,6 +315,16 @@ pub const AbsPointer = packed struct(u32) {
     relative: bool,
     _mask1: u7,
     cond: Condition,
+
+    pub fn format(grp: AbsPointer, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("AbsPointer(cond={}, relative={}, address={})", .{
+            grp.cond,
+            grp.relative,
+            grp.address,
+        });
+    }
 };
 
 /// 'EEEE________LIDDDDDDDDDSSSSSSSSS'
@@ -186,6 +335,18 @@ pub const Both_Dimm_Simm = packed struct(u32) {
     d_imm: bool,
     _mask1: u8,
     cond: Condition,
+
+    pub fn format(grp: Both_Dimm_Simm, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_Dimm_Simm(cond={}, d_imm={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.d_imm,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE________L_DDDDDDDDD_________'
@@ -196,6 +357,16 @@ pub const Only_DimmHigh = packed struct(u32) {
     d_imm: bool,
     _mask3: u8,
     cond: Condition,
+
+    pub fn format(grp: Only_DimmHigh, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_DimmHigh(cond={}, d_imm={}, d={})", .{
+            grp.cond,
+            grp.d_imm,
+            grp.d,
+        });
+    }
 };
 
 /// 'EEEE________NIDDDDDDDDDSSSSSSSSS'
@@ -206,6 +377,18 @@ pub const Both_D_Simm_N1 = packed struct(u32) {
     n: u1,
     _mask1: u8,
     cond: Condition,
+
+    pub fn format(grp: Both_D_Simm_N1, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_D_Simm_N1(cond={}, n={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.n,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE________ZIDDDDDDDDDSSSSSSSSS'
@@ -216,6 +399,18 @@ pub const Both_D_Simm_ZFlag = packed struct(u32) {
     z_mod: FlagModifier,
     _mask1: u8,
     cond: Condition,
+
+    pub fn format(grp: Both_D_Simm_ZFlag, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_D_Simm_ZFlag(cond={}, z_mod={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.z_mod,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_________IDDDDDDDDDSSSSSSSSS'
@@ -225,6 +420,17 @@ pub const Both_D_Simm = packed struct(u32) {
     s_imm: bool,
     _mask1: u9,
     cond: Condition,
+
+    pub fn format(grp: Both_D_Simm, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Both_D_Simm(cond={}, s_imm={}, d={}, s={})", .{
+            grp.cond,
+            grp.s_imm,
+            grp.d,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_________I_________SSSSSSSSS'
@@ -234,6 +440,16 @@ pub const Only_Simm = packed struct(u32) {
     s_imm: bool,
     _mask2: u9,
     cond: Condition,
+
+    pub fn format(grp: Only_Simm, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_Simm(cond={}, s_imm={}, s={})", .{
+            grp.cond,
+            grp.s_imm,
+            grp.s,
+        });
+    }
 };
 
 /// 'EEEE_________LDDDDDDDDD_________'
@@ -243,6 +459,16 @@ pub const Only_Dimm = packed struct(u32) {
     d_imm: bool,
     _mask2: u9,
     cond: Condition,
+
+    pub fn format(grp: Only_Dimm, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_Dimm(cond={}, d_imm={}, d={})", .{
+            grp.cond,
+            grp.d_imm,
+            grp.d,
+        });
+    }
 };
 
 /// 'EEEE__________DDDDDDDDD_________'
@@ -251,12 +477,29 @@ pub const Only_D = packed struct(u32) {
     d: Register,
     _mask2: u10,
     cond: Condition,
+
+    pub fn format(grp: Only_D, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Only_D(cond={}, d={})", .{
+            grp.cond,
+            grp.d,
+        });
+    }
 };
 
 /// 'EEEE____________________________'
 pub const NoOperands = packed struct(u32) {
     _mask1: u28,
     cond: Condition,
+
+    pub fn format(grp: NoOperands, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("NoOperands(cond={})", .{
+            grp.cond,
+        });
+    }
 };
 
 /// 'EEEE_____nnnnnnnnnnnnnnnnnnnnnnn'
@@ -264,9 +507,25 @@ pub const Augment = packed struct(u32) {
     augment: u23,
     _mask1: u5,
     cond: Condition,
+
+    pub fn format(grp: Augment, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Augment(cond={}, augment={})", .{
+            grp.cond,
+            grp.augment,
+        });
+    }
 };
 
 /// '________________________________'
 pub const Nop = packed struct(u32) {
     _mask1: u32,
+
+    pub fn format(grp: Nop, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = opt;
+        try writer.print("Nop()", .{});
+        _ = grp;
+    }
 };
