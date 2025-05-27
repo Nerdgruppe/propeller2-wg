@@ -68,8 +68,6 @@ pub fn build(b: *std.Build) void {
         break :blk exe;
     };
 
-    _ = windtunnel_exe;
-
     // "zig build run"
     {
         const run_cmd = b.addRunArtifact(propan_exe);
@@ -183,6 +181,21 @@ pub fn build(b: *std.Build) void {
             equivalence_tests.dependOn(&run.step);
         }
     }
+
+    // Windtunnel behaviour tests
+    {
+        for (windtunnel_behaviour_tests) |test_file| {
+            const assemble = b.addRunArtifact(propan_exe);
+            assemble.addArg("--format=flat");
+            assemble.addFileArg(b.path(test_file));
+            const bin_file = assemble.addPrefixedOutputFileArg("--output=", "app.bin");
+
+            const run = b.addRunArtifact(windtunnel_exe);
+            run.addPrefixedFileArg("--image=", bin_file);
+            run.has_side_effects = true;
+            test_step.dependOn(&run.step);
+        }
+    }
 }
 
 fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
@@ -242,4 +255,8 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/cursed.propan",
     "tests/propan/equivalence/ambigious.propan",
     "tests/propan/equivalence/aug.propan",
+};
+
+const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
+    "tests/windtunnel/behaviour/cogstop.propan",
 };

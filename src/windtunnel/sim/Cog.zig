@@ -18,7 +18,7 @@ pub const ExecMode = enum {
 hub: *Hub,
 id: u3,
 
-registers: std.EnumArray(Register, u8) = .initFill(0),
+registers: std.EnumArray(Register, u32) = .initFill(0),
 lut: [512]u32 = undefined,
 
 pc: u20 = 0,
@@ -40,6 +40,12 @@ pub fn init(hub: *Hub, id: u3) Cog {
         .id = id,
         .hub = hub,
     };
+}
+
+pub fn reset(cog: *Cog) void {
+    const id = cog.id;
+    const hub = cog.hub;
+    cog.* = .init(hub, id);
 }
 
 pub fn step(cog: *Cog) void {

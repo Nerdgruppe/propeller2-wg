@@ -24,10 +24,12 @@ const CliArgs = struct {
     help: bool = false,
     @"test-mode": ?TestMode = null,
     verbose: bool = false,
+    image: []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
         .v = "verbose",
+        .i = "image",
     };
 
     pub const meta = .{
@@ -40,6 +42,7 @@ const CliArgs = struct {
         .option_docs = .{
             .help = "Prints this help text",
             .verbose = "Enables debug logging",
+            .image = "The image file which contains the hub data.",
             .@"test-mode" = "<internal use only>",
         },
     };
@@ -76,13 +79,46 @@ pub fn main() !u8 {
         );
         return 0;
     }
+    if (cli.positionals.len != 0) {
+        try args_parser.printHelp(
+            CliArgs,
+            cli.executable_name orelse "windtunnel",
+            std.io.getStdErr().writer(),
+        );
+        return 1;
+    }
 
     var hub: Hub = undefined;
     hub.init();
 
-    while (true) {
+    if (cli.options.image.len != 0) {
+        var file = try std.fs.cwd().openFile(cli.options.image, .{});
+        defer file.close();
+
+        const stat = try file.stat();
+
+        const count = try file.readAll(&hub.memory);
+        std.debug.assert(count <= hub.memory.len);
+
+        if (stat.size > count) {
+            std.log.warn("hub image exceeds hub size. expected {:.3} or less bytes, but got {:.3}", .{
+                std.fmt.fmtIntSizeBin(hub.memory.len),
+                std.fmt.fmtIntSizeBin(stat.size),
+            });
+        } else {
+            std.log.info("loaded {:.2} into hub memory", .{
+                std.fmt.fmtIntSizeBin(count),
+            });
+        }
+    }
+
+    try hub.start_cog(0, .{});
+
+    while (hub.is_any_cog_active()) {
         hub.step();
     }
+
+    std.log.warn("all cogs stopped. halting...", .{});
 
     return 0;
 }

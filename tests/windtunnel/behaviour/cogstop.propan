@@ -1,0 +1,8 @@
+
+
+_start:
+    COGID id
+    COGSTOP id
+    // end of code
+
+var id: LONG 0

@@ -4,6 +4,7 @@ const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
 const Hub = @This();
 
+memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
@@ -32,4 +33,24 @@ pub fn step(hub: *Hub) void {
     hub.io.step();
 
     hub.counter +%= 1;
+}
+
+pub fn is_any_cog_active(hub: *Hub) bool {
+    for (hub.cogs) |cog| {
+        if (cog.exec_mode != .stopped)
+            return true;
+    }
+    return false;
+}
+
+pub fn start_cog(hub: *Hub, index: u3, options: struct {}) !void {
+    _ = options;
+
+    const cog = &hub.cogs[index];
+
+    cog.reset();
+
+    @memcpy(std.mem.sliceAsBytes(&cog.registers.values), hub.memory[0 .. 512 * 4]);
+
+    cog.exec_mode = .cog;
 }
