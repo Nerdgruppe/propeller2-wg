@@ -20,7 +20,6 @@ pub const OpCode = enum {
     adds,
     addsx,
     addx,
-    akpin,
     allowi,
     altb,
     altd,
@@ -388,7 +387,6 @@ pub const instruction_type: std.EnumArray(OpCode, []const u8) = blk: {
         .adds = "both_d_simm_flags",
         .addsx = "both_d_simm_flags",
         .addx = "both_d_simm_flags",
-        .akpin = "only_simm",
         .allowi = "no_operands",
         .altb = "both_d_simm",
         .altd = "both_d_simm",
@@ -1260,8 +1258,6 @@ pub fn decode(raw: u32) OpCode {
         return .jnatn;
     if ((raw & 0x0FFBFE00) == 0x0BC83E00)
         return .jnqmt;
-    if ((raw & 0x0FFBFE00) == 0x0C080200)
-        return .akpin;
     if ((raw & 0x0FF801FF) == 0x0D600000)
         return .hubset;
     if ((raw & 0x0FF801FF) == 0x0D600003)
