@@ -6091,6 +6091,10 @@ pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     const d = cog.resolve_operand(args.d, args.d_imm); // data
     const s = cog.resolve_operand(args.s, args.s_imm); // pin/file
 
+    if (cog.hub.debug_stream) |debug_stream| {
+        debug_stream.writeItem(d) catch @panic("debug stream overflow!");
+    }
+
     switch (s) {
         1 => std.io.getStdIn().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),
         2 => std.io.getStdOut().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),

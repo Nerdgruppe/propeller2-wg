@@ -192,6 +192,7 @@ pub fn build(b: *std.Build) void {
 
             const run = b.addRunArtifact(windtunnel_exe);
             run.addPrefixedFileArg("--image=", bin_file);
+            run.addPrefixedFileArg("--tests=", b.path(test_file));
             run.has_side_effects = true;
             test_step.dependOn(&run.step);
         }
