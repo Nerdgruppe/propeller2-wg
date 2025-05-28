@@ -172,6 +172,10 @@ fn execute_simple(
     if (@hasField(Operands, "d_imm"))
         @compileError("This code cannot handle immediate D yet!");
 
+    // TODO: Figure out if this still fetches AUGx or not.
+    if (!cog.is_condition_met(operands.cond))
+        return .skip;
+
     const d_reg: Cog.Register = state.alt_d orelse operands.d;
     const r_reg: Cog.Register = state.alt_r orelse d_reg;
 
