@@ -12,10 +12,18 @@ pub fn build(b: *std.Build) void {
 
     // Dependencies:
 
-    const p2dev_dep = b.dependency("p2devsuite", .{});
-
-    const ptk_dep = b.dependency("ptk", .{});
-    const args_dep = b.dependency("args", .{});
+    const p2dev_dep = b.dependency("p2devsuite", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const ptk_dep = b.dependency("ptk", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const args_dep = b.dependency("args", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     const ptk_mod = ptk_dep.module("parser-toolkit");
     const args_mod = args_dep.module("args");
@@ -71,7 +79,6 @@ pub fn build(b: *std.Build) void {
     // "zig build run"
     {
         const run_cmd = b.addRunArtifact(propan_exe);
-
         run_cmd.step.dependOn(b.getInstallStep());
 
         if (b.args) |args| {
@@ -183,7 +190,11 @@ pub fn build(b: *std.Build) void {
     }
 
     // Windtunnel behaviour tests
+
     {
+        const windtunnel_tests = b.step("test-windtunnel", "Run the windtunnel tests");
+        test_step.dependOn(windtunnel_tests);
+
         for (windtunnel_behaviour_tests) |test_file| {
             const assemble = b.addRunArtifact(propan_exe);
             assemble.addArg("--format=flat");
@@ -193,8 +204,21 @@ pub fn build(b: *std.Build) void {
             const run = b.addRunArtifact(windtunnel_exe);
             run.addPrefixedFileArg("--image=", bin_file);
             run.has_side_effects = true;
-            test_step.dependOn(&run.step);
+            windtunnel_tests.dependOn(&run.step);
         }
+    }
+
+    {
+        const run_sim = b.step("run-sim", "Runs a propan file through windtunnel");
+        const assemble = b.addRunArtifact(propan_exe);
+        assemble.addArg("--format=flat");
+        if (b.args) |args| assemble.addFileArg(b.path(args[0]));
+        const bin_file = assemble.addPrefixedOutputFileArg("--output=", "app.bin");
+
+        const run = b.addRunArtifact(windtunnel_exe);
+        run.addPrefixedFileArg("--image=", bin_file);
+        run.has_side_effects = true;
+        run_sim.dependOn(&run.step);
     }
 }
 
@@ -261,4 +285,5 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
 const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
     "tests/windtunnel/behaviour/cogstop.propan",
     "tests/windtunnel/behaviour/output.propan",
+    "tests/windtunnel/behaviour/arithmetic.propan",
 };

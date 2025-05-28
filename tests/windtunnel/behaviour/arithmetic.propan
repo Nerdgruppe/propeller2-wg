@@ -1,0 +1,16 @@
+
+
+_start:
+    MOV a, 10
+    MOV b, 20
+    ADD a, b
+    SUB a, b
+    COGID id
+    COGSTOP id
+    // end of code
+
+    LONG 0b0000_1011110_111_000000000_000000000 // <empty> 1	
+
+var id: LONG 0
+var a: LONG 1
+var b: LONG 2
