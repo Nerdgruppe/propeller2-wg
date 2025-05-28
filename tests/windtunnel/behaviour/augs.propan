@@ -1,0 +1,15 @@
+_start:
+
+    MOV tmp, 0x1FF
+    WYPIN tmp, 1
+
+    MOV tmp, aug(0x12345678)
+    WYPIN tmp, 1
+
+    MOV tmp, 0x1FF
+    WYPIN tmp, 1
+
+    COGID tmp
+    COGSTOP tmp
+
+var tmp: LONG 0

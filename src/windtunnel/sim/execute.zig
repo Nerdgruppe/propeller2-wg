@@ -172,7 +172,7 @@ fn execute_simple(
     if (@hasField(Operands, "d_imm"))
         @compileError("This code cannot handle immediate D yet!");
 
-    // TODO: Figure out if this still fetches AUGx or not.
+    // Experimentation proves that AUGx is evalutated *after* the condition check
     if (!cog.is_condition_met(operands.cond))
         return .skip;
 
@@ -208,7 +208,7 @@ fn execute_simple(
         cog.z = result.z;
     }
 
-    return .trap;
+    return .next;
 }
 // codegen: end:globalcode
 
@@ -5029,6 +5029,13 @@ pub fn pop(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: end:pop
 }
 
+// codegen: begin:augdata
+const Augment = packed struct(u32) {
+    low: u9 = 0,
+    aug: u23,
+};
+// codegen: end:augdata
+
 /// AUGS #n
 /// EEEE 11110nn nnn nnnnnnnnn nnnnnnnnn
 ///
@@ -5038,10 +5045,10 @@ pub fn pop(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn augs(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
     // codegen: begin:augs
-    _ = cog;
-    _ = args;
-    @panic("AUGS #n is not implemented yet!");
-    // return .next;
+    if (!cog.is_condition_met(args.cond))
+        return .skip;
+    cog.augs = @bitCast(Augment{ .aug = args.augment });
+    return .next;
     // codegen: end:augs
 }
 
@@ -5054,10 +5061,10 @@ pub fn augs(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn augd(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
     // codegen: begin:augd
-    _ = cog;
-    _ = args;
-    @panic("AUGD #n is not implemented yet!");
-    // return .next;
+    if (!cog.is_condition_met(args.cond))
+        return .skip;
+    cog.augd = @bitCast(Augment{ .aug = args.augment });
+    return .next;
     // codegen: end:augd
 }
 

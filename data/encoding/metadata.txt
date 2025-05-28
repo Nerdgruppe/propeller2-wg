@@ -187,3 +187,54 @@ NEGZ:       +c_is_resmsb
 NEGNZ:      +c_is_resmsb
 ZEROX:      +c_is_resmsb
 SIGNX:      +c_is_resmsb
+
+
+# the following instructions are relative branches (marked with S**):
+CALLD   D,{#}S   {WC/WZ/WCZ} : +pcrel_branch
+CALLPA  {#}D,{#}S            : +pcrel_branch
+CALLPB  {#}D,{#}S            : +pcrel_branch
+DJF     D,{#}S               : +pcrel_branch
+DJNF    D,{#}S               : +pcrel_branch
+DJNZ    D,{#}S               : +pcrel_branch
+DJZ     D,{#}S               : +pcrel_branch
+IJNZ    D,{#}S               : +pcrel_branch
+IJZ     D,{#}S               : +pcrel_branch
+JATN    {#}S                 : +pcrel_branch
+JCT1    {#}S                 : +pcrel_branch
+JCT2    {#}S                 : +pcrel_branch
+JCT3    {#}S                 : +pcrel_branch
+JFBW    {#}S                 : +pcrel_branch
+JINT    {#}S                 : +pcrel_branch
+JNATN   {#}S                 : +pcrel_branch
+JNCT1   {#}S                 : +pcrel_branch
+JNCT2   {#}S                 : +pcrel_branch
+JNCT3   {#}S                 : +pcrel_branch
+JNFBW   {#}S                 : +pcrel_branch
+JNINT   {#}S                 : +pcrel_branch
+JNPAT   {#}S                 : +pcrel_branch
+JNQMT   {#}S                 : +pcrel_branch
+JNSE1   {#}S                 : +pcrel_branch
+JNSE2   {#}S                 : +pcrel_branch
+JNSE3   {#}S                 : +pcrel_branch
+JNSE4   {#}S                 : +pcrel_branch
+JNXFI   {#}S                 : +pcrel_branch
+JNXMT   {#}S                 : +pcrel_branch
+JNXRL   {#}S                 : +pcrel_branch
+JNXRO   {#}S                 : +pcrel_branch
+JPAT    {#}S                 : +pcrel_branch
+JQMT    {#}S                 : +pcrel_branch
+JSE1    {#}S                 : +pcrel_branch
+JSE2    {#}S                 : +pcrel_branch
+JSE3    {#}S                 : +pcrel_branch
+JSE4    {#}S                 : +pcrel_branch
+JXFI    {#}S                 : +pcrel_branch
+JXMT    {#}S                 : +pcrel_branch
+JXRL    {#}S                 : +pcrel_branch
+JXRO    {#}S                 : +pcrel_branch
+TJF     D,{#}S               : +pcrel_branch
+TJNF    D,{#}S               : +pcrel_branch
+TJNS    D,{#}S               : +pcrel_branch
+TJNZ    D,{#}S               : +pcrel_branch
+TJS     D,{#}S               : +pcrel_branch
+TJV     D,{#}S               : +pcrel_branch
+TJZ     D,{#}S               : +pcrel_branch

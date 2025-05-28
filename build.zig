@@ -261,4 +261,5 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
 const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
     "tests/windtunnel/behaviour/cogstop.propan",
     "tests/windtunnel/behaviour/output.propan",
+    "tests/windtunnel/behaviour/augs.propan",
 };

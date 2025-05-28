@@ -6,7 +6,7 @@ import logging
 import json
 import re
 import sys
-from typing import ClassVar, Iterable
+from typing import ClassVar, Iterable, Callable
 import yaml
 
 DATA_ROOT = Path(__file__).parent / ".." / "data" / "encoding"
@@ -16,6 +16,10 @@ INSTRUCTIONS_YML = DATA_ROOT / "instructions.yml"
 P2INSTRUCTIONS_TSV = DATA_ROOT / "instructions.tsv"
 P2METADATA_TXT = DATA_ROOT / "metadata.txt"
 
+_COLLAPSE_WHITESPACE = re.compile(r"\s+")
+
+def collapse_ws(v: str) -> str:
+    return _COLLAPSE_WHITESPACE.sub(" ", v)
 
 class Flag(Enum):
     NONE = "none"
@@ -101,7 +105,9 @@ OP_MAPPING: dict[OpType, OpMapping] = {
     OpType.DEST_EITHER: OpMapping(BitField.DEST, imm=BitField.IMMEDIATE_D),
     OpType.DEST_REG: OpMapping(BitField.DEST),
     OpType.PREG: OpMapping(BitField.POINTER),  # can only be first operand
-    OpType.PTREXPR: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),  # can only be second operand
+    OpType.PTREXPR: OpMapping(
+        BitField.SOURCE, imm=BitField.IMMEDIATE_S
+    ),  # can only be second operand
     OpType.SELECTOR: OpMapping(BitField.SELECTOR),
     OpType.SRC_EITHER: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),
     OpType.SRC_EITHER_PCREL: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),
@@ -298,7 +304,9 @@ def decode_json(path: Path) -> list[Instruction]:
         if fields_used != set(encoding.fields.keys()):
             print("  ", sorted(fields_used))
             print("  ", sorted(encoding.fields.keys()))
-            raise ValueError("missing encoding: fields required are not the fields available!")
+            raise ValueError(
+                "missing encoding: fields required are not the fields available!"
+            )
 
         instructions.append(
             Instruction(
@@ -400,9 +408,12 @@ def decode_tsv(path: Path) -> dict[str, TsvInstruction]:
 
 @dataclass(frozen=True, kw_only=True)
 class MetadataTag:
-    selector: str
+    selector: Callable[[Instruction], bool]
     added_tags: set[str] = ds_field(default_factory=set)
     removed_tags: set[str] = ds_field(default_factory=set)
+
+    def selects(self, instr: Instruction) -> bool:
+        return self.selector(instr)
 
 
 def decode_metadata(metadata_file: Path) -> list[MetadataTag]:
@@ -418,7 +429,16 @@ def decode_metadata(metadata_file: Path) -> list[MetadataTag]:
             head = head.strip()
             props = [item for item in tail.strip().split(" ") if item != ""]
 
-            tag = MetadataTag(selector=head)
+            selector: Callable[[Instruction],None]
+            if " " in head:
+                head = collapse_ws(head)
+                def selector(i: Instruction) -> bool:
+                    return (i.display_text == head)
+            else:
+                def selector(i: Instruction) -> bool:
+                    return (i.name == head)
+
+            tag = MetadataTag(selector=selector)
 
             for prop in props:
                 if prop.startswith("+"):
