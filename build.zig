@@ -212,8 +212,7 @@ pub fn build(b: *std.Build) void {
         const run_sim = b.step("run-sim", "Runs a propan file through windtunnel");
         const assemble = b.addRunArtifact(propan_exe);
         assemble.addArg("--format=flat");
-        const args = b.args orelse @panic("no input file provided");
-        assemble.addFileArg(b.path(args[0]));
+        if (b.args) |args| assemble.addFileArg(b.path(args[0]));
         const bin_file = assemble.addPrefixedOutputFileArg("--output=", "app.bin");
 
         const run = b.addRunArtifact(windtunnel_exe);
@@ -286,5 +285,5 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
 const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
     "tests/windtunnel/behaviour/cogstop.propan",
     "tests/windtunnel/behaviour/output.propan",
-    "tests/windtunnel/behaviour/add.propan",
+    "tests/windtunnel/behaviour/arithmetic.propan",
 };

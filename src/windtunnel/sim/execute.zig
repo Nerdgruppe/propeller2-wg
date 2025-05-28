@@ -2652,10 +2652,30 @@ pub fn addsx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn sub(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
-    _ = cog;
-    _ = args;
-    @panic("SUB D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    if (!cog.is_condition_met(args.cond))
+        return .skip;
+
+    const src = cog.resolve_operand(args.s, args.s_imm);
+    const dst = cog.read_reg(args.d);
+
+    const result, const carry = @subWithOverflow(dst, src);
+
+    if (args.c_mod == .write) {
+        // If the WC or WCZ effect is specified, the C flag is set (1)
+        // if the subtraction results in an unsigned borrow (= 32-bit underflow),
+        // or is cleared (0) if no borrow.
+        cog.c = @bitCast(carry);
+    }
+
+    if (args.z_mod == .write) {
+        // If the WZ or WCZ effect is specified, the Z flag is set (1)
+        // if the result stored into Destination is zero, or is
+        // cleared (0) if it is non-zero.
+        cog.z = result == 0;
+    }
+
+    cog.write_reg(args.d, result);
+    return .next;
 }
 
 /// SUBX D, {#}S {WC/WZ/WCZ}
