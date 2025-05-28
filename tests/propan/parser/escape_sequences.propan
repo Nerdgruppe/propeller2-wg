@@ -4,7 +4,7 @@ const empty = ""
 // const empty = ''
 
 const hello = "hello"
-const hello = 'hello'
+const hello = 'h'
 
 const escaped = "\e"
 const escaped = "\r"

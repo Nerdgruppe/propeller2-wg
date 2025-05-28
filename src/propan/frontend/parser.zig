@@ -453,6 +453,16 @@ pub const Parser = struct {
 
                     const string = try core.unescape_string(token.location, fba.allocator(), token.text);
 
+                    if (string.len == 1) {
+                        return .{
+                            .integer = .{
+                                .location = token.location,
+                                .source_text = token.text,
+                                .value = string[0],
+                            },
+                        };
+                    }
+
                     const view = try std.unicode.Utf8View.init(string);
 
                     var iter = view.iterator();
@@ -463,6 +473,10 @@ pub const Parser = struct {
                         try core.emit_error(token.location, "empty character literal not allowed!", .{});
                         break :blk 0;
                     };
+
+                    if (iter.nextCodepoint() != null) {
+                        try core.emit_error(token.location, "character literal contains more than one character!", .{});
+                    }
 
                     return .{
                         .integer = .{
@@ -548,7 +562,7 @@ pub const Parser = struct {
                 const char = body[i];
                 if (char < 0x20 or char == 0x7F) {
                     try core.emit_error(location, "invalid character in string/char literal: 0x{X:0>2}", .{char});
-                } else if (i == '\\') {
+                } else if (char == '\\') {
                     i += 1;
                     if (i >= body.len) {
                         try core.emit_error(location, "unterminated escape sequence", .{});
@@ -567,14 +581,12 @@ pub const Parser = struct {
                         // \xHH
                         'x' => {
                             const start = i + 1;
-                            i += 2;
-                            if (i >= body.len) {
+                            i += 3;
+                            if (i > body.len) {
                                 try core.emit_error(location, "unterminated escape sequence", .{});
                                 break;
                             }
                             const hex = body[start..i];
-                            try core.emit_error(location, "escape: {}", .{std.fmt.fmtSliceHexLower(hex)});
-
                             try output.append(
                                 allocator,
                                 try std.fmt.parseInt(u8, hex, 16),
@@ -583,7 +595,17 @@ pub const Parser = struct {
 
                         // \u{HHHHH}
                         'u' => {
-                            const start = i + 1;
+                            if (i + 1 >= body.len) {
+                                try core.emit_error(location, "unterminated escape sequence", .{});
+                                break;
+                            }
+
+                            if (body[i + 1] != '{') {
+                                try core.emit_error(location, "unicode escape sequence must have the format \\u{{...}} where ... is a hexadecimal notation of the code point", .{});
+                                break;
+                            }
+
+                            const start = i + 2;
                             while (i < body.len) {
                                 if (body[i] == '}')
                                     break;
@@ -593,9 +615,8 @@ pub const Parser = struct {
                                 try core.emit_error(location, "unterminated escape sequence", .{});
                                 break;
                             }
-                            const slice = body[start..i];
 
-                            try core.emit_error(location, "escape: {}", .{std.fmt.fmtSliceHexLower(slice)});
+                            const slice = body[start..i];
 
                             const codepoint = try std.fmt.parseInt(u21, slice, 16);
 

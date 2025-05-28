@@ -1,0 +1,18 @@
+
+_start:
+    WXPIN 'H', 1 // WXPIN writes raw bytes to S=(stdin,stdout,stderr), discards upper 24 bits!
+    WXPIN 'e', 1
+    WXPIN 'l', 1
+    WXPIN 'l', 1
+    WXPIN 'o', 1
+    WXPIN ':', 1
+    WXPIN ' ', 1
+    WXPIN ' ', 1
+    WYPIN 0x123, 1 // WYPIN prints hexadecimal values S=(stdin,stdout,stderr)
+    WXPIN '\r', 1
+    WXPIN '\n', 1
+
+    COGID id
+    COGSTOP id
+
+var id: LONG 0

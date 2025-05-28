@@ -1,0 +1,20 @@
+
+
+.assert 0x09 == '\t' // HT
+.assert 0x0A == '\n' // LF
+.assert 0x0D == '\r' // CR
+.assert 0x1B == '\e' // ESC
+.assert 0x22 == '\"'
+.assert 0x27 == '\''
+.assert 0x00 == '\x00'
+.assert 0x10 == '\x10'
+.assert 0x13 == '\x13'
+.assert 0x37 == '\x37'
+.assert 0xEF == '\xEF'
+.assert 0xFF == '\xFF'
+
+.assert 0x00 == '\u{00}'
+.assert 0x10 == '\u{10}'
+.assert 0x13 == '\u{13}'
+.assert 0x37 == '\u{37}'
+.assert 0x1F4A9 == '\u{1F4A9}'

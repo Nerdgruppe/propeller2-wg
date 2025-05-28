@@ -5059,10 +5059,25 @@ pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    _ = cog;
-    _ = args;
-    @panic("WXPIN {#}D, {#}S is not implemented yet!");
-    // return .next;
+
+    // TODO: Correctly implement WXPIN!
+
+    if (!cog.is_condition_met(args.cond))
+        return .skip;
+
+    const d = cog.resolve_operand(args.d, args.d_imm); // data
+    const s = cog.resolve_operand(args.s, args.s_imm); // pin/file
+
+    const chr: u8 = @truncate(d);
+
+    switch (s) {
+        1 => std.io.getStdIn().writer().writeByte(chr) catch @panic("i/o error"),
+        2 => std.io.getStdOut().writer().writeByte(chr) catch @panic("i/o error"),
+        3 => std.io.getStdErr().writer().writeByte(chr) catch @panic("i/o error"),
+        else => @panic("invalid S operand to WXPIN!"),
+    }
+
+    return .next;
 }
 
 /// WYPIN {#}D, {#}S
@@ -5073,10 +5088,23 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    _ = cog;
-    _ = args;
-    @panic("WYPIN {#}D, {#}S is not implemented yet!");
-    // return .next;
+
+    // TODO: Correctly implement WXPIN!
+
+    if (!cog.is_condition_met(args.cond))
+        return .skip;
+
+    const d = cog.resolve_operand(args.d, args.d_imm); // data
+    const s = cog.resolve_operand(args.s, args.s_imm); // pin/file
+
+    switch (s) {
+        1 => std.io.getStdIn().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),
+        2 => std.io.getStdOut().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),
+        3 => std.io.getStdErr().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),
+        else => @panic("invalid S operand to WXPIN!"),
+    }
+
+    return .next;
 }
 
 /// SETDACS {#}D
