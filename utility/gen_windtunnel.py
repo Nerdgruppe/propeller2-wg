@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
+import re
 import io
 import sys
 import logging
@@ -8,7 +9,7 @@ import sys
 import textwrap
 import caseconverter
 
-from typing import Iterable
+from typing import Iterable, Callable
 
 from common import (
     Instruction,
@@ -43,6 +44,7 @@ def splitgroups(mask: str) -> Iterable[str]:
 
 
 def main() -> int | None:
+    logging.basicConfig()
     groups = process_groups()
 
     instructions = decode_dataset(P2INSTRUCTIONS_JSON, P2INSTRUCTIONS_TSV)
@@ -58,7 +60,98 @@ def main() -> int | None:
         render_decoder(sys.stdout, instructions, groups)
 
     if "executor" in sys.argv:
-        render_executor_stub(sys.stdout, instructions, groups)
+        _render_incremental(Path(sys.argv[2]), lambda s: render_executor_stub(s, instructions, groups))
+
+
+def _render_incremental(path: Path, render: Callable[[io.TextIOBase], None]) -> None:
+    original_text: str
+    try:
+        original_text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        original_text = ""
+
+    _, previous_sections = _exchange_patches(original_text, None)
+
+    new_text: str
+    with io.StringIO() as fp:
+        render(fp)
+        new_text = fp.getvalue()
+
+    output, _ = _exchange_patches(new_text, previous_sections)
+
+    path.write_text(output, encoding="utf-8")
+
+
+_PATCH_PATTERN = re.compile(r"^\s*//\s*codegen:\s*(?P<cmd>\w+)(?::(?P<args>\S+))\s*$")
+
+
+def _exchange_patches(source: str, lut_in: dict[str, list[str]] | None) -> tuple[str, dict[str, list[str]]]:
+    lut_out: dict[str, list[str]] = dict()
+
+    current_tag: str | None = None
+    current_stash: list[str] | None = None
+
+    output_lines: list[str] = list()
+    for line in source.splitlines():
+        try:
+            match = _PATCH_PATTERN.fullmatch(line)
+            if match is not None:
+                cmd = match.group("cmd").strip()
+                arg = match.group("args").strip()
+
+                output_lines.append(line)
+                match cmd:
+                    case "begin":
+                        if current_tag is not None:
+                            raise ValueError(f"missing end cmd for codegen section {current_tag!r}")
+                        assert current_stash is None
+
+                        if arg in lut_out:
+                            raise ValueError(f"duplicate stashing for codegen section {arg!r}")
+
+                        current_tag = arg
+                        current_stash = list()
+
+                        lut_out[arg] = current_stash
+
+                        if lut_in is not None:
+                            previous = lut_in.get(arg, None)
+                            if previous is not None:
+                                output_lines.extend(previous)
+                            else:
+                                logging.warning("patch section %r has currently no replacement", arg)
+                                # this will render the new lines into the output:
+                                current_stash = output_lines
+
+                    case "end":
+                        if current_tag is None:
+                            raise ValueError(f"missing start cmd for codegen section {arg!r}")
+                        if current_tag != arg:
+                            raise ValueError(f"mismatching start cmd for codegen section {current_tag!r} => {arg!r}")
+                        assert current_stash is not None
+                        assert current_tag in lut_out
+                        current_tag = None
+                        current_stash = None
+
+                    case _:
+                        raise ValueError(f"unknown codegen cmd: {cmd!r}")
+
+            elif current_stash is not None:
+                assert current_tag is not None
+                current_stash.append(line)
+            else:
+                output_lines.append(line)
+        except ValueError:
+            logging.error("error in line %r", line)
+            raise
+
+    if current_tag is not None:
+        assert current_stash is not None
+        raise ValueError(f"unterminated codegen section: {current_tag!r}")
+    else:
+        assert current_stash is None
+
+    return "\n".join(output_lines), lut_out
 
 
 # Predefined Instruction Groups:
@@ -153,9 +246,7 @@ def process_groups() -> dict[str, Group]:
             if s_type is not None and d_type is not None:
                 prefix = "Both"
 
-            name = "_".join(
-                [v for v in (prefix, d_type, s_type, n_type, f_type) if v is not None]
-            )
+            name = "_".join([v for v in (prefix, d_type, s_type, n_type, f_type) if v is not None])
 
             assert name is not None, repr(enc)
 
@@ -221,7 +312,9 @@ def render_encoding(stream: io.TextIOBase, groups: Iterable[Group]) -> None:
             stream.write(f"    {fname}: {ftype},\n")
 
         stream.write("\n")
-        stream.write(f"    pub fn format(grp: {grp.name}, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {{\n")
+        stream.write(
+            f"    pub fn format(grp: {grp.name}, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {{\n"
+        )
         stream.write("    _ = fmt;\n")
         stream.write("    _ = opt;\n")
         stream.write(f'    try writer.print("{grp.name}(')
@@ -236,13 +329,13 @@ def render_encoding(stream: io.TextIOBase, groups: Iterable[Group]) -> None:
             stream.write(f"{fname}={{}}")
             first = False
         stream.write(')", .{')
-        
-        for fname, ftype in reversed( grp.fields):
+
+        for fname, ftype in reversed(grp.fields):
             if fname.startswith("_mask"):
                 continue
             stream.write(f"grp.{fname},\n")
 
-        stream.write('});\n')
+        stream.write("});\n")
 
         if first:
             stream.write("    _ = grp;\n")
@@ -319,16 +412,12 @@ def render_decoder(
             """).lstrip()
     )
 
-    for instr in sorted(
-        instructions, key=lambda i: i.encoding.variable_bits, reverse=True
-    ):
+    for instr in sorted(instructions, key=lambda i: i.encoding.variable_bits, reverse=True):
         if instr.encoding.binary == 0:
             # skip special-cased NOP
-            continue 
+            continue
         opcode = zig_id(caseconverter.snakecase(instr.id))
-        stream.write(
-            f"    if((raw & 0x{instr.encoding.mask:08X}) == 0x{instr.encoding.binary:08X})\n"
-        )
+        stream.write(f"    if((raw & 0x{instr.encoding.mask:08X}) == 0x{instr.encoding.binary:08X})\n")
         stream.write(f"        return .{opcode};\n")
 
     stream.write("    return .invalid;\n\n")
@@ -344,10 +433,78 @@ def render_executor_stub(
         textwrap.dedent(
             """
             const std = @import("std");
+            const logger = std.log.scoped(.execute);
 
+            const decode = @import("decode.zig");
             const encoding = @import("encoding.zig");
             const Cog = @import("Cog.zig");
 
+            pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
+                const opcode = decode.decode(state.instr);
+
+                const enc: encoding.Instruction = .{ .raw = state.instr };
+
+                switch (opcode) {
+                    .invalid => return .trap,
+            """
+        )
+    )
+
+    for instr in instructions:
+        if "simple_exec" not in instr.tags:
+            continue
+
+        opcode = caseconverter.snakecase(instr.id)
+
+        grp_key = str(instr.encoding).replace("1", "_").replace("0", "_")
+        grp = groups[grp_key]
+
+        grpname = zig_id(grp.name)
+
+        stream.write(
+            f"inline .{zig_id(opcode)} => |opc| return execute_simple(cog, state, encoding.{grpname}, enc.{caseconverter.snakecase(grpname)}, @tagName(opc)),\n"
+        )
+
+    stream.write(
+        textwrap.dedent(
+            """
+                    inline else => |opc| {
+                        @setEvalBranchQuota(10_000);
+                        const field = comptime decode.instruction_type.get(opc);
+                        const params = @field(enc, field);
+
+                        logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {}", .{ state.pc, state.instr, @tagName(opc), params });
+
+                        return @field(@This(), @tagName(opc))(cog, params);
+                    },
+                }
+            }
+
+            const SimpleResult = struct {
+                result: u32,
+                c: bool,
+                z: bool,
+
+                pub fn simple(result: u32, c: bool, z: bool) SimpleResult {
+                    return .{ .result = result, .c = c, .z = z };
+                }
+
+                pub fn autoz(result: u32, c: bool) SimpleResult {
+                    return .{ .result = result, .c = c, .z = (result == 0) };
+                }
+
+                pub fn autoc(result: u32, z: bool) SimpleResult {
+                    return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = z };
+                }
+                
+                pub fn autocz(result: u32) SimpleResult {
+                    return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = (result == 0) };
+                }
+            };
+
+            // codegen: begin:globalcode
+            // TODO: Implement global stuff here
+            // codegen: end:globalcode
             """
         )
     )
@@ -388,16 +545,66 @@ def render_executor_stub(
         stream.write(
             f"/// access:      mem={instr.memory_access}, reg={instr.register_access}, stack={instr.stack_access}\n"
         )
-        stream.write(
-            f"pub fn {zig_id(opcode)}(cog: *Cog, args: encoding.{grpname}) Cog.ExecResult {{\n"
-        )
-        stream.write("    _ = cog;\n")
-        stream.write("    _ = args;\n")
-        stream.write(
-            f'    @panic("{zig_escape(instr.display_text)} is not implemented yet!");\n'
-        )
-        stream.write("    // return .next;\n")
-        stream.write("}\n")
+
+        if "simple_exec" in instr.tags:
+            grp_key = str(instr.encoding).replace("1", "_").replace("0", "_")
+            grp = groups[grp_key]
+
+            field_keys = [k for k, _ in grp.fields]
+            assert "cond" in field_keys
+
+            has_d = "d" in field_keys
+            if has_d:
+                pass
+            else:
+                assert "d_imm" not in field_keys
+
+            has_s = "s" in field_keys
+            if has_s:
+                pass
+            else:
+                assert "s_imm" not in field_keys
+
+            mods_c = "c_mod" in field_keys
+            mods_z = "z_mod" in field_keys
+
+            stream.write(f"pub fn {zig_id(opcode)}(cog: *Cog")
+            if has_d:
+                stream.write(", d: u32")
+            if has_s:
+                stream.write(", s: u32")
+
+            stream.write(") SimpleResult {\n")
+            stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
+            stream.write("    _ = cog;\n")
+            if has_d:
+                stream.write("    _ = d;\n")
+            if has_s:
+                stream.write("    _ = s;\n")
+
+            stream.write(f'    @panic("{zig_escape(instr.display_text)} is not implemented yet!");\n')
+
+            if "z_is_reszero" in instr.tags and "c_is_resmsb" in instr.tags:
+                stream.write("    // return .autocz(result);\n")
+            elif "z_is_reszero" in instr.tags:
+                stream.write("    // return .autoz(result, c);\n")
+            elif "c_is_resmsb" in instr.tags:
+                stream.write("    // return .autoc(result, z);\n")
+            else:
+                stream.write("    // return .simple(result, c, z);\n")
+
+            stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
+            stream.write("}\n")
+
+        else:
+            stream.write(f"pub fn {zig_id(opcode)}(cog: *Cog, args: encoding.{grpname}) Cog.ExecResult {{\n")
+            stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
+            stream.write("    _ = cog;\n")
+            stream.write("    _ = args;\n")
+            stream.write(f'    @panic("{zig_escape(instr.display_text)} is not implemented yet!");\n')
+            stream.write("    // return .next;\n")
+            stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
+            stream.write("}\n")
 
 
 if __name__ == "__main__":

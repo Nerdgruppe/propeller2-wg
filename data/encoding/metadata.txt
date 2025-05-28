@@ -17,6 +17,9 @@ GETXACC:    +change_next
 XORO32:     +change_next
 
 # these instructions are "simple", as in they don't have any funky behaviour:
+# this tag means that we always have a 2-cycle execution, we always have normal
+# behaviour for D, S fetching and result writing.
+# The condition is also handled normally.
 ROR:        +simple_exec
 ROL:        +simple_exec
 SHR:        +simple_exec
@@ -114,3 +117,73 @@ WRC:        +simple_exec
 WRNC:       +simple_exec
 WRZ:        +simple_exec
 WRNZ:       +simple_exec
+
+# these instructions yield z=(result == 0)
+ROR:        +z_is_reszero
+ROL:        +z_is_reszero
+SHR:        +z_is_reszero
+SHL:        +z_is_reszero
+RCR:        +z_is_reszero
+RCL:        +z_is_reszero
+SAR:        +z_is_reszero
+SAL:        +z_is_reszero
+ADD:        +z_is_reszero
+ADDS:       +z_is_reszero
+SUB:        +z_is_reszero
+SUBS:       +z_is_reszero
+SUBR:       +z_is_reszero
+CMPSUB:     +z_is_reszero
+FGE:        +z_is_reszero
+FLE:        +z_is_reszero
+FGES:       +z_is_reszero
+FLES:       +z_is_reszero
+SUMC:       +z_is_reszero
+SUMNC:      +z_is_reszero
+SUMZ:       +z_is_reszero
+SUMNZ:      +z_is_reszero
+AND:        +z_is_reszero
+ANDN:       +z_is_reszero
+OR:         +z_is_reszero
+XOR:        +z_is_reszero
+MUXC:       +z_is_reszero
+MUXNC:      +z_is_reszero
+MUXZ:       +z_is_reszero
+MUXNZ:      +z_is_reszero
+MOV:        +z_is_reszero
+NOT:        +z_is_reszero
+ABS:        +z_is_reszero
+NEG:        +z_is_reszero
+NEGC:       +z_is_reszero
+NEGNC:      +z_is_reszero
+NEGZ:       +z_is_reszero
+NEGNZ:      +z_is_reszero
+INCMOD:     +z_is_reszero
+DECMOD:     +z_is_reszero
+ZEROX:      +z_is_reszero
+SIGNX:      +z_is_reszero
+ENCOD:      +z_is_reszero
+ONES:       +z_is_reszero
+SCA:        +z_is_reszero
+SCAS:       +z_is_reszero
+RDLUT:      +z_is_reszero
+RDBYTE:     +z_is_reszero
+RDWORD:     +z_is_reszero
+RDLONG:     +z_is_reszero
+RFBYTE:     +z_is_reszero
+RFWORD:     +z_is_reszero
+RFLONG:     +z_is_reszero
+RFVAR:      +z_is_reszero
+RFVARS:     +z_is_reszero
+GETQX:      +z_is_reszero
+GETQY:      +z_is_reszero
+POP:        +z_is_reszero
+
+# these instructions yield C=result[31]
+CMPM:       +c_is_resmsb
+NEG:        +c_is_resmsb
+NEGC:       +c_is_resmsb
+NEGNC:      +c_is_resmsb
+NEGZ:       +c_is_resmsb
+NEGNZ:      +c_is_resmsb
+ZEROX:      +c_is_resmsb
+SIGNX:      +c_is_resmsb

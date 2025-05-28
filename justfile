@@ -14,8 +14,7 @@ update-windtunnel:
     {{zig}} fmt src/windtunnel/sim/decode.zig
 
 regenerate-windtunnel-executor:
-    .venv/bin/python utility/gen_windtunnel.py executor \
-        | tee src/windtunnel/sim/execute.zig
+    .venv/bin/python utility/gen_windtunnel.py executor src/windtunnel/sim/execute.zig
     {{zig}} fmt src/windtunnel/sim/execute.zig
 
 setup-venv:

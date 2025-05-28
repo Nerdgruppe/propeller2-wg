@@ -1,212 +1,8 @@
 const std = @import("std");
-const logger = std.log.scoped(.execute);
+const logger = std.log.scoped(.exec);
 
-const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const Cog = @import("Cog.zig");
-
-pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
-    const opcode = decode.decode(state.instr);
-
-    const enc: encoding.Instruction = .{ .raw = state.instr };
-
-    switch (opcode) {
-        .invalid => return .trap,
-        inline .ror => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rol => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .shr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .shl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rcr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rcl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sar => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sal => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .add => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .addx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .adds => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .addsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sub => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmp => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmps => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpm => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpsub => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fge => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fle => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fges => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fles => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_and => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_and => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_or => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_or => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bith => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitrnd => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnot => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"and" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .andn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"or" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .mov => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .not => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .abs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .neg => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .incmod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .decmod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .zerox => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .signx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .encod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .ones => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"test" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .setr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .setd => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .sets => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .decod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .bmask => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .muxnits => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .muxnibs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .movbyts => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .mul => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_ZFlag, enc.both_d_simm_zflag, @tagName(opc)),
-        inline .muls => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_ZFlag, enc.both_d_simm_zflag, @tagName(opc)),
-        inline .splitb => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .mergeb => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .splitw => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .mergew => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .seussf => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .seussr => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rgbsqz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rgbexp => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rev => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rczr => |opc| return execute_simple(cog, state, encoding.Only_D_Flags, enc.only_d_flags, @tagName(opc)),
-        inline .rczl => |opc| return execute_simple(cog, state, encoding.Only_D_Flags, enc.only_d_flags, @tagName(opc)),
-        inline .wrc => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrnc => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrnz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-
-        inline else => |opc| {
-            @setEvalBranchQuota(10_000);
-            const field = comptime decode.instruction_type.get(opc);
-            const params = @field(enc, field);
-
-            logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {}", .{ state.pc, state.instr, @tagName(opc), params });
-
-            return @field(@This(), @tagName(opc))(cog, params);
-        },
-    }
-}
-
-const SimpleResult = struct {
-    result: u32,
-    c: bool,
-    z: bool,
-
-    pub fn simple(result: u32, c: bool, z: bool) SimpleResult {
-        return .{ .result = result, .c = c, .z = z };
-    }
-
-    pub fn autoz(result: u32, c: bool) SimpleResult {
-        return .{ .result = result, .c = c, .z = (result == 0) };
-    }
-
-    pub fn autoc(result: u32, z: bool) SimpleResult {
-        return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = z };
-    }
-
-    pub fn autocz(result: u32) SimpleResult {
-        return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = (result == 0) };
-    }
-};
-
-// codegen: begin:globalcode
-fn execute_simple(
-    cog: *Cog,
-    state: Cog.PipelineState,
-    comptime Operands: type,
-    operands: Operands,
-    comptime opcode: []const u8,
-) Cog.ExecResult {
-    switch (Operands) {
-        encoding.Both_D_Simm_Flags => {},
-        encoding.Both_D_Simm => {},
-        encoding.Both_D_Simm_ZFlag => {},
-        encoding.Only_D => {},
-        encoding.Only_D_Flags => {},
-        else => @compileError("Unsupported simple type: " ++ @typeName(Operands)),
-    }
-
-    const has_s = @hasField(Operands, "s");
-    const has_s_imm = @hasField(Operands, "s_imm");
-    const has_c_mod = @hasField(Operands, "c_mod");
-    const has_z_mod = @hasField(Operands, "z_mod");
-
-    if (!@hasField(Operands, "d"))
-        @compileError("Simple opcodes always a D operand!");
-
-    if (@hasField(Operands, "d_imm"))
-        @compileError("This code cannot handle immediate D yet!");
-
-    const d_reg: Cog.Register = state.alt_d orelse operands.d;
-    const r_reg: Cog.Register = state.alt_r orelse d_reg;
-
-    const d: u32 = cog.read_reg(d_reg);
-
-    const s: ?u32 = if (has_s) blk: {
-        const s_reg = state.alt_s orelse operands.s;
-
-        if (has_s_imm and operands.s_imm) {
-            break :blk @intFromEnum(s_reg) | cog.fetch_augs();
-        } else {
-            break :blk cog.read_reg(s_reg);
-        }
-    } else null;
-
-    logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {}", .{ state.pc, state.instr, opcode, operands });
-
-    const function = @field(@This(), opcode);
-    const result: SimpleResult = if (has_s)
-        function(cog, d, s.?)
-    else
-        function(cog, d);
-
-    cog.write_reg(r_reg, result.result);
-
-    if (has_c_mod and operands.c_mod == .write) {
-        cog.c = result.c;
-    }
-    if (has_z_mod and operands.z_mod == .write) {
-        cog.z = result.z;
-    }
-
-    return .trap;
-}
-// codegen: end:globalcode
 
 //
 // GROUP: Branch A - Call
@@ -220,13 +16,10 @@ fn execute_simple(
 /// hub timing:  13...20
 /// access:      mem=None, reg=None, stack=Push
 pub fn call_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
-    // codegen: begin:call_a
     _ = cog;
     _ = args;
     @panic("CALL #{\\}A is not implemented yet!");
-    // return .next;p
-
-    // codegen: end:call_a
+    // return .next;
 }
 
 /// CALLA #{\}A
@@ -237,12 +30,10 @@ pub fn call_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// hub timing:  14...32 *
 /// access:      mem=Write, reg=None, stack=None
 pub fn calla_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
-    // codegen: begin:calla_a
     _ = cog;
     _ = args;
     @panic("CALLA #{\\}A is not implemented yet!");
     // return .next;
-    // codegen: end:calla_a
 }
 
 /// CALLB #{\}A
@@ -253,12 +44,10 @@ pub fn calla_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// hub timing:  14...32 *
 /// access:      mem=Write, reg=None, stack=None
 pub fn callb_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
-    // codegen: begin:callb_a
     _ = cog;
     _ = args;
     @panic("CALLB #{\\}A is not implemented yet!");
     // return .next;
-    // codegen: end:callb_a
 }
 
 /// CALLD PA/PB/PTRA/PTRB, #{\}A
@@ -269,12 +58,10 @@ pub fn callb_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=Per W, stack=None
 pub fn calld_a(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
-    // codegen: begin:calld_a
     _ = cog;
     _ = args;
     @panic("CALLD PA/PB/PTRA/PTRB, #{\\}A is not implemented yet!");
     // return .next;
-    // codegen: end:calld_a
 }
 
 //
@@ -289,12 +76,10 @@ pub fn calld_a(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jmp_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
-    // codegen: begin:jmp_a
     _ = cog;
     _ = args;
     @panic("JMP #{\\}A is not implemented yet!");
     // return .next;
-    // codegen: end:jmp_a
 }
 
 //
@@ -309,12 +94,10 @@ pub fn jmp_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=None, stack=Push
 pub fn call_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:call_d
     _ = cog;
     _ = args;
     @panic("CALL D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:call_d
 }
 
 /// CALLA D {WC/WZ/WCZ}
@@ -325,12 +108,10 @@ pub fn call_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  14...32 *
 /// access:      mem=Write, reg=None, stack=None
 pub fn calla_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:calla_d
     _ = cog;
     _ = args;
     @panic("CALLA D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:calla_d
 }
 
 /// CALLB D {WC/WZ/WCZ}
@@ -341,12 +122,10 @@ pub fn calla_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  14...32 *
 /// access:      mem=Write, reg=None, stack=None
 pub fn callb_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:callb_d
     _ = cog;
     _ = args;
     @panic("CALLB D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:callb_d
 }
 
 //
@@ -361,12 +140,10 @@ pub fn callb_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn execf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:execf
     _ = cog;
     _ = args;
     @panic("EXECF {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:execf
 }
 
 //
@@ -381,12 +158,10 @@ pub fn execf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jmp_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:jmp_d
     _ = cog;
     _ = args;
     @panic("JMP D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:jmp_d
 }
 
 /// JMPREL {#}D
@@ -397,12 +172,10 @@ pub fn jmp_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jmprel(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:jmprel
     _ = cog;
     _ = args;
     @panic("JMPREL {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:jmprel
 }
 
 //
@@ -417,12 +190,10 @@ pub fn jmprel(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  ILLEGAL
 /// access:      mem=None, reg=None, stack=None
 pub fn skipf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:skipf
     _ = cog;
     _ = args;
     @panic("SKIPF {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:skipf
 }
 
 //
@@ -437,12 +208,10 @@ pub fn skipf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn skip(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:skip
     _ = cog;
     _ = args;
     @panic("SKIP {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:skip
 }
 
 //
@@ -457,12 +226,10 @@ pub fn skip(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn rep(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:rep
     _ = cog;
     _ = args;
     @panic("REP {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:rep
 }
 
 //
@@ -477,12 +244,10 @@ pub fn rep(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=None, stack=Pop
 pub fn ret(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:ret
     _ = cog;
     _ = args;
     @panic("RET {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:ret
 }
 
 /// RETA {WC/WZ/WCZ}
@@ -493,12 +258,10 @@ pub fn ret(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  20...40 *
 /// access:      mem=Read, reg=None, stack=None
 pub fn reta(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:reta
     _ = cog;
     _ = args;
     @panic("RETA {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:reta
 }
 
 /// RETB {WC/WZ/WCZ}
@@ -509,12 +272,10 @@ pub fn reta(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  20...40 *
 /// access:      mem=Read, reg=None, stack=None
 pub fn retb(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:retb
     _ = cog;
     _ = args;
     @panic("RETB {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:retb
 }
 
 //
@@ -529,12 +290,10 @@ pub fn retb(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=D, stack=None
 pub fn calld_s(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
-    // codegen: begin:calld_s
     _ = cog;
     _ = args;
     @panic("CALLD D, {#}S** {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:calld_s
 }
 
 /// CALLPA {#}D, {#}S**
@@ -545,12 +304,10 @@ pub fn calld_s(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=PA, stack=Push
 pub fn callpa(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:callpa
     _ = cog;
     _ = args;
     @panic("CALLPA {#}D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:callpa
 }
 
 /// CALLPB {#}D, {#}S**
@@ -561,12 +318,10 @@ pub fn callpa(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  13...20
 /// access:      mem=None, reg=PB, stack=Push
 pub fn callpb(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:callpb
     _ = cog;
     _ = args;
     @panic("CALLPB {#}D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:callpb
 }
 
 //
@@ -581,12 +336,10 @@ pub fn callpb(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=D, stack=None
 pub fn djz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:djz
     _ = cog;
     _ = args;
     @panic("DJZ D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:djz
 }
 
 /// DJNZ D, {#}S**
@@ -597,12 +350,10 @@ pub fn djz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=D, stack=None
 pub fn djnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:djnz
     _ = cog;
     _ = args;
     @panic("DJNZ D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:djnz
 }
 
 /// DJF D, {#}S**
@@ -613,12 +364,10 @@ pub fn djnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=D, stack=None
 pub fn djf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:djf
     _ = cog;
     _ = args;
     @panic("DJF D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:djf
 }
 
 /// DJNF D, {#}S**
@@ -629,12 +378,10 @@ pub fn djf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=D, stack=None
 pub fn djnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:djnf
     _ = cog;
     _ = args;
     @panic("DJNF D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:djnf
 }
 
 /// IJZ D, {#}S**
@@ -645,12 +392,10 @@ pub fn djnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=D, stack=None
 pub fn ijz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:ijz
     _ = cog;
     _ = args;
     @panic("IJZ D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:ijz
 }
 
 /// IJNZ D, {#}S**
@@ -661,12 +406,10 @@ pub fn ijz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=D, stack=None
 pub fn ijnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:ijnz
     _ = cog;
     _ = args;
     @panic("IJNZ D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:ijnz
 }
 
 //
@@ -681,12 +424,10 @@ pub fn ijnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn tjz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:tjz
     _ = cog;
     _ = args;
     @panic("TJZ D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:tjz
 }
 
 /// TJNZ D, {#}S**
@@ -697,12 +438,10 @@ pub fn tjz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn tjnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:tjnz
     _ = cog;
     _ = args;
     @panic("TJNZ D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:tjnz
 }
 
 /// TJF D, {#}S**
@@ -713,12 +452,10 @@ pub fn tjnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn tjf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:tjf
     _ = cog;
     _ = args;
     @panic("TJF D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:tjf
 }
 
 /// TJNF D, {#}S**
@@ -729,12 +466,10 @@ pub fn tjf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn tjnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:tjnf
     _ = cog;
     _ = args;
     @panic("TJNF D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:tjnf
 }
 
 /// TJS D, {#}S**
@@ -745,12 +480,10 @@ pub fn tjnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn tjs(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:tjs
     _ = cog;
     _ = args;
     @panic("TJS D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:tjs
 }
 
 /// TJNS D, {#}S**
@@ -761,12 +494,10 @@ pub fn tjs(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn tjns(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:tjns
     _ = cog;
     _ = args;
     @panic("TJNS D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:tjns
 }
 
 /// TJV D, {#}S**
@@ -777,12 +508,10 @@ pub fn tjns(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn tjv(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:tjv
     _ = cog;
     _ = args;
     @panic("TJV D, {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:tjv
 }
 
 //
@@ -797,12 +526,10 @@ pub fn tjv(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qmul(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:qmul
     _ = cog;
     _ = args;
     @panic("QMUL {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:qmul
 }
 
 /// QDIV {#}D, {#}S
@@ -813,12 +540,10 @@ pub fn qmul(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qdiv(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:qdiv
     _ = cog;
     _ = args;
     @panic("QDIV {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:qdiv
 }
 
 /// QFRAC {#}D, {#}S
@@ -829,12 +554,10 @@ pub fn qdiv(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qfrac(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:qfrac
     _ = cog;
     _ = args;
     @panic("QFRAC {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:qfrac
 }
 
 /// QSQRT {#}D, {#}S
@@ -845,12 +568,10 @@ pub fn qfrac(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qsqrt(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:qsqrt
     _ = cog;
     _ = args;
     @panic("QSQRT {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:qsqrt
 }
 
 /// QROTATE {#}D, {#}S
@@ -861,12 +582,10 @@ pub fn qsqrt(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qrotate(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:qrotate
     _ = cog;
     _ = args;
     @panic("QROTATE {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:qrotate
 }
 
 /// QVECTOR {#}D, {#}S
@@ -877,12 +596,10 @@ pub fn qrotate(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qvector(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:qvector
     _ = cog;
     _ = args;
     @panic("QVECTOR {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:qvector
 }
 
 /// QLOG {#}D
@@ -893,12 +610,10 @@ pub fn qvector(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qlog(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:qlog
     _ = cog;
     _ = args;
     @panic("QLOG {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:qlog
 }
 
 /// QEXP {#}D
@@ -909,12 +624,10 @@ pub fn qlog(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn qexp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:qexp
     _ = cog;
     _ = args;
     @panic("QEXP {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:qexp
 }
 
 /// GETQX D {WC/WZ/WCZ}
@@ -925,12 +638,10 @@ pub fn qexp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getqx(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:getqx
     _ = cog;
     _ = args;
     @panic("GETQX D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:getqx
 }
 
 /// GETQY D {WC/WZ/WCZ}
@@ -941,12 +652,10 @@ pub fn getqx(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getqy(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:getqy
     _ = cog;
     _ = args;
     @panic("GETQY D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:getqy
 }
 
 //
@@ -961,12 +670,10 @@ pub fn getqy(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setcy(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setcy
     _ = cog;
     _ = args;
     @panic("SETCY {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setcy
 }
 
 /// SETCI {#}D
@@ -977,12 +684,10 @@ pub fn setcy(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setci(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setci
     _ = cog;
     _ = args;
     @panic("SETCI {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setci
 }
 
 /// SETCQ {#}D
@@ -993,12 +698,10 @@ pub fn setci(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setcq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setcq
     _ = cog;
     _ = args;
     @panic("SETCQ {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setcq
 }
 
 /// SETCFRQ {#}D
@@ -1009,12 +712,10 @@ pub fn setcq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setcfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setcfrq
     _ = cog;
     _ = args;
     @panic("SETCFRQ {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setcfrq
 }
 
 /// SETCMOD {#}D
@@ -1025,12 +726,10 @@ pub fn setcfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setcmod(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setcmod
     _ = cog;
     _ = args;
     @panic("SETCMOD {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setcmod
 }
 
 //
@@ -1045,12 +744,10 @@ pub fn setcmod(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn cogatn(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:cogatn
     _ = cog;
     _ = args;
     @panic("COGATN {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:cogatn
 }
 
 //
@@ -1065,12 +762,10 @@ pub fn cogatn(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jint
     _ = cog;
     _ = args;
     @panic("JINT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jint
 }
 
 /// JCT1 {#}S**
@@ -1081,12 +776,10 @@ pub fn jint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jct1
     _ = cog;
     _ = args;
     @panic("JCT1 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jct1
 }
 
 /// JCT2 {#}S**
@@ -1097,12 +790,10 @@ pub fn jct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jct2
     _ = cog;
     _ = args;
     @panic("JCT2 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jct2
 }
 
 /// JCT3 {#}S**
@@ -1113,12 +804,10 @@ pub fn jct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jct3
     _ = cog;
     _ = args;
     @panic("JCT3 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jct3
 }
 
 /// JSE1 {#}S**
@@ -1129,12 +818,10 @@ pub fn jct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jse1
     _ = cog;
     _ = args;
     @panic("JSE1 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jse1
 }
 
 /// JSE2 {#}S**
@@ -1145,12 +832,10 @@ pub fn jse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jse2
     _ = cog;
     _ = args;
     @panic("JSE2 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jse2
 }
 
 /// JSE3 {#}S**
@@ -1161,12 +846,10 @@ pub fn jse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jse3
     _ = cog;
     _ = args;
     @panic("JSE3 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jse3
 }
 
 /// JSE4 {#}S**
@@ -1177,12 +860,10 @@ pub fn jse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jse4(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jse4
     _ = cog;
     _ = args;
     @panic("JSE4 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jse4
 }
 
 /// JPAT {#}S**
@@ -1193,12 +874,10 @@ pub fn jse4(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jpat(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jpat
     _ = cog;
     _ = args;
     @panic("JPAT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jpat
 }
 
 /// JFBW {#}S**
@@ -1209,12 +888,10 @@ pub fn jpat(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jfbw(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jfbw
     _ = cog;
     _ = args;
     @panic("JFBW {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jfbw
 }
 
 /// JXMT {#}S**
@@ -1225,12 +902,10 @@ pub fn jfbw(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jxmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jxmt
     _ = cog;
     _ = args;
     @panic("JXMT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jxmt
 }
 
 /// JXFI {#}S**
@@ -1241,12 +916,10 @@ pub fn jxmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jxfi(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jxfi
     _ = cog;
     _ = args;
     @panic("JXFI {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jxfi
 }
 
 /// JXRO {#}S**
@@ -1257,12 +930,10 @@ pub fn jxfi(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jxro(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jxro
     _ = cog;
     _ = args;
     @panic("JXRO {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jxro
 }
 
 /// JXRL {#}S**
@@ -1273,12 +944,10 @@ pub fn jxro(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jxrl
     _ = cog;
     _ = args;
     @panic("JXRL {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jxrl
 }
 
 /// JATN {#}S**
@@ -1289,12 +958,10 @@ pub fn jxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jatn
     _ = cog;
     _ = args;
     @panic("JATN {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jatn
 }
 
 /// JQMT {#}S**
@@ -1305,12 +972,10 @@ pub fn jatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jqmt
     _ = cog;
     _ = args;
     @panic("JQMT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jqmt
 }
 
 /// JNINT {#}S**
@@ -1321,12 +986,10 @@ pub fn jqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnint
     _ = cog;
     _ = args;
     @panic("JNINT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnint
 }
 
 /// JNCT1 {#}S**
@@ -1337,12 +1000,10 @@ pub fn jnint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnct1
     _ = cog;
     _ = args;
     @panic("JNCT1 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnct1
 }
 
 /// JNCT2 {#}S**
@@ -1353,12 +1014,10 @@ pub fn jnct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnct2
     _ = cog;
     _ = args;
     @panic("JNCT2 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnct2
 }
 
 /// JNCT3 {#}S**
@@ -1369,12 +1028,10 @@ pub fn jnct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnct3
     _ = cog;
     _ = args;
     @panic("JNCT3 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnct3
 }
 
 /// JNSE1 {#}S**
@@ -1385,12 +1042,10 @@ pub fn jnct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnse1
     _ = cog;
     _ = args;
     @panic("JNSE1 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnse1
 }
 
 /// JNSE2 {#}S**
@@ -1401,12 +1056,10 @@ pub fn jnse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnse2
     _ = cog;
     _ = args;
     @panic("JNSE2 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnse2
 }
 
 /// JNSE3 {#}S**
@@ -1417,12 +1070,10 @@ pub fn jnse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnse3
     _ = cog;
     _ = args;
     @panic("JNSE3 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnse3
 }
 
 /// JNSE4 {#}S**
@@ -1433,12 +1084,10 @@ pub fn jnse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse4(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnse4
     _ = cog;
     _ = args;
     @panic("JNSE4 {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnse4
 }
 
 /// JNPAT {#}S**
@@ -1449,12 +1098,10 @@ pub fn jnse4(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnpat(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnpat
     _ = cog;
     _ = args;
     @panic("JNPAT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnpat
 }
 
 /// JNFBW {#}S**
@@ -1465,12 +1112,10 @@ pub fn jnpat(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnfbw(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnfbw
     _ = cog;
     _ = args;
     @panic("JNFBW {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnfbw
 }
 
 /// JNXMT {#}S**
@@ -1481,12 +1126,10 @@ pub fn jnfbw(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnxmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnxmt
     _ = cog;
     _ = args;
     @panic("JNXMT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnxmt
 }
 
 /// JNXFI {#}S**
@@ -1497,12 +1140,10 @@ pub fn jnxmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnxfi(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnxfi
     _ = cog;
     _ = args;
     @panic("JNXFI {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnxfi
 }
 
 /// JNXRO {#}S**
@@ -1513,12 +1154,10 @@ pub fn jnxfi(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnxro(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnxro
     _ = cog;
     _ = args;
     @panic("JNXRO {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnxro
 }
 
 /// JNXRL {#}S**
@@ -1529,12 +1168,10 @@ pub fn jnxro(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnxrl
     _ = cog;
     _ = args;
     @panic("JNXRL {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnxrl
 }
 
 /// JNATN {#}S**
@@ -1545,12 +1182,10 @@ pub fn jnxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnatn
     _ = cog;
     _ = args;
     @panic("JNATN {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnatn
 }
 
 /// JNQMT {#}S**
@@ -1561,12 +1196,10 @@ pub fn jnatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  2 or 13...20
 /// access:      mem=None, reg=None, stack=None
 pub fn jnqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
-    // codegen: begin:jnqmt
     _ = cog;
     _ = args;
     @panic("JNQMT {#}S** is not implemented yet!");
     // return .next;
-    // codegen: end:jnqmt
 }
 
 //
@@ -1581,12 +1214,10 @@ pub fn jnqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn addct1(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:addct1
     _ = cog;
     _ = args;
     @panic("ADDCT1 D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:addct1
 }
 
 /// ADDCT2 D, {#}S
@@ -1597,12 +1228,10 @@ pub fn addct1(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn addct2(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:addct2
     _ = cog;
     _ = args;
     @panic("ADDCT2 D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:addct2
 }
 
 /// ADDCT3 D, {#}S
@@ -1613,12 +1242,10 @@ pub fn addct2(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn addct3(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:addct3
     _ = cog;
     _ = args;
     @panic("ADDCT3 D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:addct3
 }
 
 /// SETPAT {#}D, {#}S
@@ -1629,12 +1256,10 @@ pub fn addct3(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setpat(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:setpat
     _ = cog;
     _ = args;
     @panic("SETPAT {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:setpat
 }
 
 /// SETSE1 {#}D
@@ -1645,12 +1270,10 @@ pub fn setpat(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setse1(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setse1
     _ = cog;
     _ = args;
     @panic("SETSE1 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setse1
 }
 
 /// SETSE2 {#}D
@@ -1661,12 +1284,10 @@ pub fn setse1(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setse2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setse2
     _ = cog;
     _ = args;
     @panic("SETSE2 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setse2
 }
 
 /// SETSE3 {#}D
@@ -1677,12 +1298,10 @@ pub fn setse2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setse3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setse3
     _ = cog;
     _ = args;
     @panic("SETSE3 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setse3
 }
 
 /// SETSE4 {#}D
@@ -1693,12 +1312,10 @@ pub fn setse3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setse4(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setse4
     _ = cog;
     _ = args;
     @panic("SETSE4 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setse4
 }
 
 //
@@ -1713,12 +1330,10 @@ pub fn setse4(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollint
     _ = cog;
     _ = args;
     @panic("POLLINT {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollint
 }
 
 /// POLLCT1 {WC/WZ/WCZ}
@@ -1729,12 +1344,10 @@ pub fn pollint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollct1
     _ = cog;
     _ = args;
     @panic("POLLCT1 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollct1
 }
 
 /// POLLCT2 {WC/WZ/WCZ}
@@ -1745,12 +1358,10 @@ pub fn pollct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollct2
     _ = cog;
     _ = args;
     @panic("POLLCT2 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollct2
 }
 
 /// POLLCT3 {WC/WZ/WCZ}
@@ -1761,12 +1372,10 @@ pub fn pollct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollct3
     _ = cog;
     _ = args;
     @panic("POLLCT3 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollct3
 }
 
 /// POLLSE1 {WC/WZ/WCZ}
@@ -1777,12 +1386,10 @@ pub fn pollct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollse1
     _ = cog;
     _ = args;
     @panic("POLLSE1 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollse1
 }
 
 /// POLLSE2 {WC/WZ/WCZ}
@@ -1793,12 +1400,10 @@ pub fn pollse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollse2
     _ = cog;
     _ = args;
     @panic("POLLSE2 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollse2
 }
 
 /// POLLSE3 {WC/WZ/WCZ}
@@ -1809,12 +1414,10 @@ pub fn pollse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollse3
     _ = cog;
     _ = args;
     @panic("POLLSE3 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollse3
 }
 
 /// POLLSE4 {WC/WZ/WCZ}
@@ -1825,12 +1428,10 @@ pub fn pollse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse4(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollse4
     _ = cog;
     _ = args;
     @panic("POLLSE4 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollse4
 }
 
 /// POLLPAT {WC/WZ/WCZ}
@@ -1841,12 +1442,10 @@ pub fn pollse4(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollpat(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollpat
     _ = cog;
     _ = args;
     @panic("POLLPAT {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollpat
 }
 
 /// POLLFBW {WC/WZ/WCZ}
@@ -1857,12 +1456,10 @@ pub fn pollpat(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollfbw(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollfbw
     _ = cog;
     _ = args;
     @panic("POLLFBW {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollfbw
 }
 
 /// POLLXMT {WC/WZ/WCZ}
@@ -1873,12 +1470,10 @@ pub fn pollfbw(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollxmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollxmt
     _ = cog;
     _ = args;
     @panic("POLLXMT {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollxmt
 }
 
 /// POLLXFI {WC/WZ/WCZ}
@@ -1889,12 +1484,10 @@ pub fn pollxmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollxfi(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollxfi
     _ = cog;
     _ = args;
     @panic("POLLXFI {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollxfi
 }
 
 /// POLLXRO {WC/WZ/WCZ}
@@ -1905,12 +1498,10 @@ pub fn pollxfi(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollxro(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollxro
     _ = cog;
     _ = args;
     @panic("POLLXRO {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollxro
 }
 
 /// POLLXRL {WC/WZ/WCZ}
@@ -1921,12 +1512,10 @@ pub fn pollxro(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollxrl
     _ = cog;
     _ = args;
     @panic("POLLXRL {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollxrl
 }
 
 /// POLLATN {WC/WZ/WCZ}
@@ -1937,12 +1526,10 @@ pub fn pollxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollatn
     _ = cog;
     _ = args;
     @panic("POLLATN {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollatn
 }
 
 /// POLLQMT {WC/WZ/WCZ}
@@ -1953,12 +1540,10 @@ pub fn pollatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn pollqmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:pollqmt
     _ = cog;
     _ = args;
     @panic("POLLQMT {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pollqmt
 }
 
 //
@@ -1973,12 +1558,10 @@ pub fn pollqmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitint
     _ = cog;
     _ = args;
     @panic("WAITINT {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitint
 }
 
 /// WAITCT1 {WC/WZ/WCZ}
@@ -1989,12 +1572,10 @@ pub fn waitint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitct1
     _ = cog;
     _ = args;
     @panic("WAITCT1 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitct1
 }
 
 /// WAITCT2 {WC/WZ/WCZ}
@@ -2005,12 +1586,10 @@ pub fn waitct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitct2
     _ = cog;
     _ = args;
     @panic("WAITCT2 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitct2
 }
 
 /// WAITCT3 {WC/WZ/WCZ}
@@ -2021,12 +1600,10 @@ pub fn waitct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitct3
     _ = cog;
     _ = args;
     @panic("WAITCT3 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitct3
 }
 
 /// WAITSE1 {WC/WZ/WCZ}
@@ -2037,12 +1614,10 @@ pub fn waitct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitse1
     _ = cog;
     _ = args;
     @panic("WAITSE1 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitse1
 }
 
 /// WAITSE2 {WC/WZ/WCZ}
@@ -2053,12 +1628,10 @@ pub fn waitse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitse2
     _ = cog;
     _ = args;
     @panic("WAITSE2 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitse2
 }
 
 /// WAITSE3 {WC/WZ/WCZ}
@@ -2069,12 +1642,10 @@ pub fn waitse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitse3
     _ = cog;
     _ = args;
     @panic("WAITSE3 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitse3
 }
 
 /// WAITSE4 {WC/WZ/WCZ}
@@ -2085,12 +1656,10 @@ pub fn waitse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse4(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitse4
     _ = cog;
     _ = args;
     @panic("WAITSE4 {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitse4
 }
 
 /// WAITPAT {WC/WZ/WCZ}
@@ -2101,12 +1670,10 @@ pub fn waitse4(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitpat(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitpat
     _ = cog;
     _ = args;
     @panic("WAITPAT {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitpat
 }
 
 /// WAITFBW {WC/WZ/WCZ}
@@ -2117,12 +1684,10 @@ pub fn waitpat(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitfbw(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitfbw
     _ = cog;
     _ = args;
     @panic("WAITFBW {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitfbw
 }
 
 /// WAITXMT {WC/WZ/WCZ}
@@ -2133,12 +1698,10 @@ pub fn waitfbw(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitxmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitxmt
     _ = cog;
     _ = args;
     @panic("WAITXMT {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitxmt
 }
 
 /// WAITXFI {WC/WZ/WCZ}
@@ -2149,12 +1712,10 @@ pub fn waitxmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitxfi(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitxfi
     _ = cog;
     _ = args;
     @panic("WAITXFI {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitxfi
 }
 
 /// WAITXRO {WC/WZ/WCZ}
@@ -2165,12 +1726,10 @@ pub fn waitxfi(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitxro(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitxro
     _ = cog;
     _ = args;
     @panic("WAITXRO {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitxro
 }
 
 /// WAITXRL {WC/WZ/WCZ}
@@ -2181,12 +1740,10 @@ pub fn waitxro(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitxrl
     _ = cog;
     _ = args;
     @panic("WAITXRL {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitxrl
 }
 
 /// WAITATN {WC/WZ/WCZ}
@@ -2197,12 +1754,10 @@ pub fn waitxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
-    // codegen: begin:waitatn
     _ = cog;
     _ = args;
     @panic("WAITATN {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitatn
 }
 
 //
@@ -2217,12 +1772,10 @@ pub fn waitatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D if reg and WC, stack=None
 pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
-    // codegen: begin:coginit
     _ = cog;
     _ = args;
     @panic("COGINIT {#}D, {#}S {WC} is not implemented yet!");
     // return .next;
-    // codegen: end:coginit
 }
 
 /// COGID {#}D {WC}
@@ -2233,7 +1786,6 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D if reg and !WC, stack=None
 pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
-    // codegen: begin:cogid
     if (!cog.is_condition_met(args.cond))
         return .skip;
 
@@ -2257,7 +1809,6 @@ pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
         cog.write_reg(args.d, cog.id);
         return .next;
     }
-    // codegen: end:cogid
 }
 
 /// COGSTOP {#}D
@@ -2268,7 +1819,6 @@ pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn cogstop(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:cogstop
     if (!cog.is_condition_met(args.cond))
         return .skip;
 
@@ -2278,7 +1828,6 @@ pub fn cogstop(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     cog.hub.cogs[id].reset();
 
     return .next;
-    // codegen: end:cogstop
 }
 
 //
@@ -2293,12 +1842,10 @@ pub fn cogstop(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn locknew(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
-    // codegen: begin:locknew
     _ = cog;
     _ = args;
     @panic("LOCKNEW D {WC} is not implemented yet!");
     // return .next;
-    // codegen: end:locknew
 }
 
 /// LOCKRET {#}D
@@ -2309,12 +1856,10 @@ pub fn locknew(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn lockret(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:lockret
     _ = cog;
     _ = args;
     @panic("LOCKRET {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:lockret
 }
 
 /// LOCKTRY {#}D {WC}
@@ -2325,12 +1870,10 @@ pub fn lockret(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn locktry(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
-    // codegen: begin:locktry
     _ = cog;
     _ = args;
     @panic("LOCKTRY {#}D {WC} is not implemented yet!");
     // return .next;
-    // codegen: end:locktry
 }
 
 /// LOCKREL {#}D {WC}
@@ -2341,12 +1884,10 @@ pub fn locktry(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn lockrel(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
-    // codegen: begin:lockrel
     _ = cog;
     _ = args;
     @panic("LOCKREL {#}D {WC} is not implemented yet!");
     // return .next;
-    // codegen: end:lockrel
 }
 
 //
@@ -2361,12 +1902,10 @@ pub fn lockrel(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn hubset(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:hubset
     _ = cog;
     _ = args;
     @panic("HUBSET {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:hubset
 }
 
 //
@@ -2381,12 +1920,10 @@ pub fn hubset(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=None, reg=D, stack=None
 pub fn getptr(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
-    // codegen: begin:getptr
     _ = cog;
     _ = args;
     @panic("GETPTR D is not implemented yet!");
     // return .next;
-    // codegen: end:getptr
 }
 
 //
@@ -2401,12 +1938,10 @@ pub fn getptr(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=None, reg=None, stack=None
 pub fn fblock(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:fblock
     _ = cog;
     _ = args;
     @panic("FBLOCK {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:fblock
 }
 
 //
@@ -2421,12 +1956,10 @@ pub fn fblock(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=None, reg=None, stack=None
 pub fn rdfast(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:rdfast
     _ = cog;
     _ = args;
     @panic("RDFAST {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:rdfast
 }
 
 //
@@ -2441,12 +1974,10 @@ pub fn rdfast(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=None, reg=None, stack=None
 pub fn wrfast(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wrfast
     _ = cog;
     _ = args;
     @panic("WRFAST {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:wrfast
 }
 
 //
@@ -2461,12 +1992,10 @@ pub fn wrfast(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Read, reg=D, stack=None
 pub fn rfbyte(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:rfbyte
     _ = cog;
     _ = args;
     @panic("RFBYTE D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rfbyte
 }
 
 /// RFWORD D {WC/WZ/WCZ}
@@ -2477,12 +2006,10 @@ pub fn rfbyte(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Read, reg=D, stack=None
 pub fn rfword(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:rfword
     _ = cog;
     _ = args;
     @panic("RFWORD D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rfword
 }
 
 /// RFLONG D {WC/WZ/WCZ}
@@ -2493,12 +2020,10 @@ pub fn rfword(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Read, reg=D, stack=None
 pub fn rflong(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:rflong
     _ = cog;
     _ = args;
     @panic("RFLONG D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rflong
 }
 
 /// RFVAR D {WC/WZ/WCZ}
@@ -2509,12 +2034,10 @@ pub fn rflong(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Read, reg=D, stack=None
 pub fn rfvar(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:rfvar
     _ = cog;
     _ = args;
     @panic("RFVAR D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rfvar
 }
 
 /// RFVARS D {WC/WZ/WCZ}
@@ -2525,12 +2048,10 @@ pub fn rfvar(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Read, reg=D, stack=None
 pub fn rfvars(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:rfvars
     _ = cog;
     _ = args;
     @panic("RFVARS D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rfvars
 }
 
 //
@@ -2545,12 +2066,10 @@ pub fn rfvars(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Write, reg=None, stack=None
 pub fn wfbyte(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:wfbyte
     _ = cog;
     _ = args;
     @panic("WFBYTE {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:wfbyte
 }
 
 /// WFWORD {#}D
@@ -2561,12 +2080,10 @@ pub fn wfbyte(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Write, reg=None, stack=None
 pub fn wfword(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:wfword
     _ = cog;
     _ = args;
     @panic("WFWORD {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:wfword
 }
 
 /// WFLONG {#}D
@@ -2577,12 +2094,10 @@ pub fn wfword(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  FIFO IN USE
 /// access:      mem=Write, reg=None, stack=None
 pub fn wflong(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:wflong
     _ = cog;
     _ = args;
     @panic("WFLONG {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:wflong
 }
 
 //
@@ -2597,12 +2112,10 @@ pub fn wflong(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  9...26
 /// access:      mem=Read, reg=D, stack=None
 pub fn rdbyte(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
-    // codegen: begin:rdbyte
     _ = cog;
     _ = args;
     @panic("RDBYTE D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rdbyte
 }
 
 /// RDWORD D, {#}S/P {WC/WZ/WCZ}
@@ -2613,12 +2126,10 @@ pub fn rdbyte(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// hub timing:  9...26 *
 /// access:      mem=Read, reg=D, stack=None
 pub fn rdword(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
-    // codegen: begin:rdword
     _ = cog;
     _ = args;
     @panic("RDWORD D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rdword
 }
 
 /// RDLONG D, {#}S/P {WC/WZ/WCZ}
@@ -2629,12 +2140,10 @@ pub fn rdword(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// hub timing:  9...26 *
 /// access:      mem=Read, reg=D, stack=None
 pub fn rdlong(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
-    // codegen: begin:rdlong
     _ = cog;
     _ = args;
     @panic("RDLONG D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rdlong
 }
 
 //
@@ -2649,12 +2158,10 @@ pub fn rdlong(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// hub timing:  3...20 *
 /// access:      mem=Write, reg=None, stack=None
 pub fn wmlong(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:wmlong
     _ = cog;
     _ = args;
     @panic("WMLONG D, {#}S/P is not implemented yet!");
     // return .next;
-    // codegen: end:wmlong
 }
 
 /// WRBYTE {#}D, {#}S/P
@@ -2665,12 +2172,10 @@ pub fn wmlong(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  3...20
 /// access:      mem=Write, reg=None, stack=None
 pub fn wrbyte(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wrbyte
     _ = cog;
     _ = args;
     @panic("WRBYTE {#}D, {#}S/P is not implemented yet!");
     // return .next;
-    // codegen: end:wrbyte
 }
 
 /// WRWORD {#}D, {#}S/P
@@ -2681,12 +2186,10 @@ pub fn wrbyte(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  3...20 *
 /// access:      mem=Write, reg=None, stack=None
 pub fn wrword(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wrword
     _ = cog;
     _ = args;
     @panic("WRWORD {#}D, {#}S/P is not implemented yet!");
     // return .next;
-    // codegen: end:wrword
 }
 
 /// WRLONG {#}D, {#}S/P
@@ -2697,12 +2200,10 @@ pub fn wrword(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  3...20 *
 /// access:      mem=Write, reg=None, stack=None
 pub fn wrlong(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wrlong
     _ = cog;
     _ = args;
     @panic("WRLONG {#}D, {#}S/P is not implemented yet!");
     // return .next;
-    // codegen: end:wrlong
 }
 
 //
@@ -2717,12 +2218,10 @@ pub fn wrlong(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn allowi(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:allowi
     _ = cog;
     _ = args;
     @panic("ALLOWI is not implemented yet!");
     // return .next;
-    // codegen: end:allowi
 }
 
 /// STALLI
@@ -2733,12 +2232,10 @@ pub fn allowi(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn stalli(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:stalli
     _ = cog;
     _ = args;
     @panic("STALLI is not implemented yet!");
     // return .next;
-    // codegen: end:stalli
 }
 
 /// TRGINT1
@@ -2749,12 +2246,10 @@ pub fn stalli(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn trgint1(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:trgint1
     _ = cog;
     _ = args;
     @panic("TRGINT1 is not implemented yet!");
     // return .next;
-    // codegen: end:trgint1
 }
 
 /// TRGINT2
@@ -2765,12 +2260,10 @@ pub fn trgint1(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn trgint2(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:trgint2
     _ = cog;
     _ = args;
     @panic("TRGINT2 is not implemented yet!");
     // return .next;
-    // codegen: end:trgint2
 }
 
 /// TRGINT3
@@ -2781,12 +2274,10 @@ pub fn trgint2(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn trgint3(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:trgint3
     _ = cog;
     _ = args;
     @panic("TRGINT3 is not implemented yet!");
     // return .next;
-    // codegen: end:trgint3
 }
 
 /// NIXINT1
@@ -2797,12 +2288,10 @@ pub fn trgint3(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn nixint1(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:nixint1
     _ = cog;
     _ = args;
     @panic("NIXINT1 is not implemented yet!");
     // return .next;
-    // codegen: end:nixint1
 }
 
 /// NIXINT2
@@ -2813,12 +2302,10 @@ pub fn nixint1(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn nixint2(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:nixint2
     _ = cog;
     _ = args;
     @panic("NIXINT2 is not implemented yet!");
     // return .next;
-    // codegen: end:nixint2
 }
 
 /// NIXINT3
@@ -2829,12 +2316,10 @@ pub fn nixint2(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn nixint3(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
-    // codegen: begin:nixint3
     _ = cog;
     _ = args;
     @panic("NIXINT3 is not implemented yet!");
     // return .next;
-    // codegen: end:nixint3
 }
 
 /// SETINT1 {#}D
@@ -2845,12 +2330,10 @@ pub fn nixint3(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setint1(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setint1
     _ = cog;
     _ = args;
     @panic("SETINT1 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setint1
 }
 
 /// SETINT2 {#}D
@@ -2861,12 +2344,10 @@ pub fn setint1(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setint2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setint2
     _ = cog;
     _ = args;
     @panic("SETINT2 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setint2
 }
 
 /// SETINT3 {#}D
@@ -2877,12 +2358,10 @@ pub fn setint2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setint3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setint3
     _ = cog;
     _ = args;
     @panic("SETINT3 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setint3
 }
 
 /// GETBRK D WC/WZ/WCZ
@@ -2893,12 +2372,10 @@ pub fn setint3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getbrk(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:getbrk
     _ = cog;
     _ = args;
     @panic("GETBRK D WC/WZ/WCZ is not implemented yet!");
     // return .next;
-    // codegen: end:getbrk
 }
 
 /// COGBRK {#}D
@@ -2909,12 +2386,10 @@ pub fn getbrk(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn cogbrk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:cogbrk
     _ = cog;
     _ = args;
     @panic("COGBRK {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:cogbrk
 }
 
 /// BRK {#}D
@@ -2925,12 +2400,10 @@ pub fn cogbrk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn brk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:brk
     _ = cog;
     _ = args;
     @panic("BRK {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:brk
 }
 
 //
@@ -2945,12 +2418,10 @@ pub fn brk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn rdlut(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
-    // codegen: begin:rdlut
     _ = cog;
     _ = args;
     @panic("RDLUT D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:rdlut
 }
 
 /// WRLUT {#}D, {#}S/P
@@ -2961,12 +2432,10 @@ pub fn rdlut(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn wrlut(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wrlut
     _ = cog;
     _ = args;
     @panic("WRLUT {#}D, {#}S/P is not implemented yet!");
     // return .next;
-    // codegen: end:wrlut
 }
 
 /// SETLUTS {#}D
@@ -2977,12 +2446,10 @@ pub fn wrlut(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setluts(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setluts
     _ = cog;
     _ = args;
     @panic("SETLUTS {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setluts
 }
 
 //
@@ -2996,14 +2463,11 @@ pub fn setluts(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn ror(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:ror
+pub fn ror(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ROR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:ror
+    // return .next;
 }
 
 /// ROL D, {#}S {WC/WZ/WCZ}
@@ -3013,14 +2477,11 @@ pub fn ror(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rol(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rol
+pub fn rol(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ROL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:rol
+    // return .next;
 }
 
 /// SHR D, {#}S {WC/WZ/WCZ}
@@ -3030,14 +2491,11 @@ pub fn rol(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn shr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:shr
+pub fn shr(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SHR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:shr
+    // return .next;
 }
 
 /// SHL D, {#}S {WC/WZ/WCZ}
@@ -3047,14 +2505,11 @@ pub fn shr(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn shl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:shl
+pub fn shl(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SHL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:shl
+    // return .next;
 }
 
 /// RCR D, {#}S {WC/WZ/WCZ}
@@ -3064,14 +2519,11 @@ pub fn shl(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rcr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rcr
+pub fn rcr(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("RCR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:rcr
+    // return .next;
 }
 
 /// RCL D, {#}S {WC/WZ/WCZ}
@@ -3081,14 +2533,11 @@ pub fn rcr(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rcl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rcl
+pub fn rcl(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("RCL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:rcl
+    // return .next;
 }
 
 /// SAR D, {#}S {WC/WZ/WCZ}
@@ -3098,14 +2547,11 @@ pub fn rcl(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sar(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sar
+pub fn sar(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SAR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sar
+    // return .next;
 }
 
 /// SAL D, {#}S {WC/WZ/WCZ}
@@ -3115,14 +2561,11 @@ pub fn sar(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sal(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sal
+pub fn sal(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SAL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sal
+    // return .next;
 }
 
 /// ADD D, {#}S {WC/WZ/WCZ}
@@ -3132,14 +2575,11 @@ pub fn sal(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn add(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:add
+pub fn add(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ADD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:add
+    // return .next;
 }
 
 /// ADDX D, {#}S {WC/WZ/WCZ}
@@ -3149,14 +2589,11 @@ pub fn add(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn addx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:addx
+pub fn addx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ADDX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:addx
+    // return .next;
 }
 
 /// ADDS D, {#}S {WC/WZ/WCZ}
@@ -3166,14 +2603,11 @@ pub fn addx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn adds(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:adds
+pub fn adds(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ADDS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:adds
+    // return .next;
 }
 
 /// ADDSX D, {#}S {WC/WZ/WCZ}
@@ -3183,14 +2617,11 @@ pub fn adds(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn addsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:addsx
+pub fn addsx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ADDSX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:addsx
+    // return .next;
 }
 
 /// SUB D, {#}S {WC/WZ/WCZ}
@@ -3200,14 +2631,11 @@ pub fn addsx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sub(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sub
+pub fn sub(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUB D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sub
+    // return .next;
 }
 
 /// SUBX D, {#}S {WC/WZ/WCZ}
@@ -3217,14 +2645,11 @@ pub fn sub(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn subx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subx
+pub fn subx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUBX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:subx
+    // return .next;
 }
 
 /// SUBS D, {#}S {WC/WZ/WCZ}
@@ -3234,14 +2659,11 @@ pub fn subx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn subs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subs
+pub fn subs(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUBS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:subs
+    // return .next;
 }
 
 /// SUBSX D, {#}S {WC/WZ/WCZ}
@@ -3251,14 +2673,11 @@ pub fn subs(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn subsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subsx
+pub fn subsx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUBSX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:subsx
+    // return .next;
 }
 
 /// CMP D, {#}S {WC/WZ/WCZ}
@@ -3268,14 +2687,11 @@ pub fn subsx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn cmp(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmp
+pub fn cmp(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("CMP D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmp
+    // return .next;
 }
 
 /// CMPX D, {#}S {WC/WZ/WCZ}
@@ -3285,14 +2701,11 @@ pub fn cmp(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn cmpx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpx
+pub fn cmpx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("CMPX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmpx
+    // return .next;
 }
 
 /// CMPS D, {#}S {WC/WZ/WCZ}
@@ -3302,14 +2715,11 @@ pub fn cmpx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn cmps(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmps
+pub fn cmps(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("CMPS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmps
+    // return .next;
 }
 
 /// CMPSX D, {#}S {WC/WZ/WCZ}
@@ -3319,14 +2729,11 @@ pub fn cmps(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn cmpsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpsx
+pub fn cmpsx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("CMPSX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmpsx
+    // return .next;
 }
 
 /// CMPR D, {#}S {WC/WZ/WCZ}
@@ -3336,14 +2743,11 @@ pub fn cmpsx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn cmpr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpr
+pub fn cmpr(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("CMPR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmpr
+    // return .next;
 }
 
 /// CMPM D, {#}S {WC/WZ/WCZ}
@@ -3353,14 +2757,11 @@ pub fn cmpr(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn cmpm(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpm
+pub fn cmpm(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("CMPM D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoc(result, z);
-    // codegen: end:cmpm
+    // return .next;
 }
 
 /// SUBR D, {#}S {WC/WZ/WCZ}
@@ -3370,14 +2771,11 @@ pub fn cmpm(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn subr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subr
+pub fn subr(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUBR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:subr
+    // return .next;
 }
 
 /// CMPSUB D, {#}S {WC/WZ/WCZ}
@@ -3387,14 +2785,11 @@ pub fn subr(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn cmpsub(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpsub
+pub fn cmpsub(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("CMPSUB D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:cmpsub
+    // return .next;
 }
 
 /// FGE D, {#}S {WC/WZ/WCZ}
@@ -3404,14 +2799,11 @@ pub fn cmpsub(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn fge(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fge
+pub fn fge(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("FGE D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fge
+    // return .next;
 }
 
 /// FLE D, {#}S {WC/WZ/WCZ}
@@ -3421,14 +2813,11 @@ pub fn fge(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn fle(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fle
+pub fn fle(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("FLE D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fle
+    // return .next;
 }
 
 /// FGES D, {#}S {WC/WZ/WCZ}
@@ -3438,14 +2827,11 @@ pub fn fle(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn fges(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fges
+pub fn fges(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("FGES D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fges
+    // return .next;
 }
 
 /// FLES D, {#}S {WC/WZ/WCZ}
@@ -3455,14 +2841,11 @@ pub fn fges(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn fles(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fles
+pub fn fles(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("FLES D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fles
+    // return .next;
 }
 
 /// SUMC D, {#}S {WC/WZ/WCZ}
@@ -3472,14 +2855,11 @@ pub fn fles(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sumc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumc
+pub fn sumc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUMC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumc
+    // return .next;
 }
 
 /// SUMNC D, {#}S {WC/WZ/WCZ}
@@ -3489,14 +2869,11 @@ pub fn sumc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sumnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumnc
+pub fn sumnc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUMNC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumnc
+    // return .next;
 }
 
 /// SUMZ D, {#}S {WC/WZ/WCZ}
@@ -3506,14 +2883,11 @@ pub fn sumnc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sumz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumz
+pub fn sumz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUMZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumz
+    // return .next;
 }
 
 /// SUMNZ D, {#}S {WC/WZ/WCZ}
@@ -3523,14 +2897,11 @@ pub fn sumz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sumnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumnz
+pub fn sumnz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SUMNZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumnz
+    // return .next;
 }
 
 /// TESTB D, {#}S WC/WZ
@@ -3540,14 +2911,11 @@ pub fn sumnz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testb(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb
+pub fn testb(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTB D, {#}S WC/WZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb
+    // return .next;
 }
 
 /// TESTBN D, {#}S WC/WZ
@@ -3557,14 +2925,11 @@ pub fn testb(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testbn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn
+pub fn testbn(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTBN D, {#}S WC/WZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn
+    // return .next;
 }
 
 /// TESTB D, {#}S ANDC/ANDZ
@@ -3574,14 +2939,11 @@ pub fn testbn(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testb_and(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_and
+pub fn testb_and(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTB D, {#}S ANDC/ANDZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb_and
+    // return .next;
 }
 
 /// TESTBN D, {#}S ANDC/ANDZ
@@ -3591,14 +2953,11 @@ pub fn testb_and(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testbn_and(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_and
+pub fn testbn_and(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTBN D, {#}S ANDC/ANDZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn_and
+    // return .next;
 }
 
 /// TESTB D, {#}S ORC/ORZ
@@ -3608,14 +2967,11 @@ pub fn testbn_and(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testb_or(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_or
+pub fn testb_or(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTB D, {#}S ORC/ORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb_or
+    // return .next;
 }
 
 /// TESTBN D, {#}S ORC/ORZ
@@ -3625,14 +2981,11 @@ pub fn testb_or(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testbn_or(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_or
+pub fn testbn_or(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTBN D, {#}S ORC/ORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn_or
+    // return .next;
 }
 
 /// TESTB D, {#}S XORC/XORZ
@@ -3642,14 +2995,11 @@ pub fn testbn_or(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testb_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_xor
+pub fn testb_xor(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTB D, {#}S XORC/XORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb_xor
+    // return .next;
 }
 
 /// TESTBN D, {#}S XORC/XORZ
@@ -3659,14 +3009,11 @@ pub fn testb_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testbn_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_xor
+pub fn testbn_xor(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTBN D, {#}S XORC/XORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn_xor
+    // return .next;
 }
 
 /// BITL D, {#}S {WCZ}
@@ -3676,14 +3023,11 @@ pub fn testbn_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bitl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitl
+pub fn bitl(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITL D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitl
+    // return .next;
 }
 
 /// BITH D, {#}S {WCZ}
@@ -3693,14 +3037,11 @@ pub fn bitl(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bith(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bith
+pub fn bith(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITH D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bith
+    // return .next;
 }
 
 /// BITC D, {#}S {WCZ}
@@ -3710,14 +3051,11 @@ pub fn bith(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bitc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitc
+pub fn bitc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITC D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitc
+    // return .next;
 }
 
 /// BITNC D, {#}S {WCZ}
@@ -3727,14 +3065,11 @@ pub fn bitc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bitnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnc
+pub fn bitnc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITNC D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitnc
+    // return .next;
 }
 
 /// BITZ D, {#}S {WCZ}
@@ -3744,14 +3079,11 @@ pub fn bitnc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bitz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitz
+pub fn bitz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITZ D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitz
+    // return .next;
 }
 
 /// BITNZ D, {#}S {WCZ}
@@ -3761,14 +3093,11 @@ pub fn bitz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bitnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnz
+pub fn bitnz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITNZ D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitnz
+    // return .next;
 }
 
 /// BITRND D, {#}S {WCZ}
@@ -3778,14 +3107,11 @@ pub fn bitnz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bitrnd(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitrnd
+pub fn bitrnd(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITRND D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitrnd
+    // return .next;
 }
 
 /// BITNOT D, {#}S {WCZ}
@@ -3795,14 +3121,11 @@ pub fn bitrnd(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bitnot(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnot
+pub fn bitnot(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BITNOT D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitnot
+    // return .next;
 }
 
 /// AND D, {#}S {WC/WZ/WCZ}
@@ -3812,14 +3135,11 @@ pub fn bitnot(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn @"and"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"and"
+pub fn @"and"(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("AND D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:@"and"
+    // return .next;
 }
 
 /// ANDN D, {#}S {WC/WZ/WCZ}
@@ -3829,14 +3149,11 @@ pub fn @"and"(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn andn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:andn
+pub fn andn(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ANDN D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:andn
+    // return .next;
 }
 
 /// OR D, {#}S {WC/WZ/WCZ}
@@ -3846,14 +3163,11 @@ pub fn andn(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn @"or"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"or"
+pub fn @"or"(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("OR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:@"or"
+    // return .next;
 }
 
 /// XOR D, {#}S {WC/WZ/WCZ}
@@ -3863,14 +3177,11 @@ pub fn @"or"(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:xor
+pub fn xor(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("XOR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:xor
+    // return .next;
 }
 
 /// MUXC D, {#}S {WC/WZ/WCZ}
@@ -3880,14 +3191,11 @@ pub fn xor(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn muxc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxc
+pub fn muxc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MUXC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxc
+    // return .next;
 }
 
 /// MUXNC D, {#}S {WC/WZ/WCZ}
@@ -3897,14 +3205,11 @@ pub fn muxc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn muxnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnc
+pub fn muxnc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MUXNC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxnc
+    // return .next;
 }
 
 /// MUXZ D, {#}S {WC/WZ/WCZ}
@@ -3914,14 +3219,11 @@ pub fn muxnc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn muxz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxz
+pub fn muxz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MUXZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxz
+    // return .next;
 }
 
 /// MUXNZ D, {#}S {WC/WZ/WCZ}
@@ -3931,14 +3233,11 @@ pub fn muxz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn muxnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnz
+pub fn muxnz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MUXNZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxnz
+    // return .next;
 }
 
 /// MOV D, {#}S {WC/WZ/WCZ}
@@ -3948,12 +3247,11 @@ pub fn muxnz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn mov(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:mov
+pub fn mov(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    return .autocz(s);
-    // codegen: end:mov
+    _ = args;
+    @panic("MOV D, {#}S {WC/WZ/WCZ} is not implemented yet!");
+    // return .next;
 }
 
 /// NOT D, {#}S {WC/WZ/WCZ}
@@ -3963,14 +3261,11 @@ pub fn mov(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn not(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:not
+pub fn not(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("NOT D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:not
+    // return .next;
 }
 
 /// ABS D, {#}S {WC/WZ/WCZ}
@@ -3980,14 +3275,11 @@ pub fn not(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn abs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:abs
+pub fn abs(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ABS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:abs
+    // return .next;
 }
 
 /// NEG D, {#}S {WC/WZ/WCZ}
@@ -3997,14 +3289,11 @@ pub fn abs(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn neg(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:neg
+pub fn neg(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("NEG D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:neg
+    // return .next;
 }
 
 /// NEGC D, {#}S {WC/WZ/WCZ}
@@ -4014,14 +3303,11 @@ pub fn neg(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn negc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negc
+pub fn negc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("NEGC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negc
+    // return .next;
 }
 
 /// NEGNC D, {#}S {WC/WZ/WCZ}
@@ -4031,14 +3317,11 @@ pub fn negc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn negnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negnc
+pub fn negnc(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("NEGNC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negnc
+    // return .next;
 }
 
 /// NEGZ D, {#}S {WC/WZ/WCZ}
@@ -4048,14 +3331,11 @@ pub fn negnc(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn negz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negz
+pub fn negz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("NEGZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negz
+    // return .next;
 }
 
 /// NEGNZ D, {#}S {WC/WZ/WCZ}
@@ -4065,14 +3345,11 @@ pub fn negz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn negnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negnz
+pub fn negnz(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("NEGNZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negnz
+    // return .next;
 }
 
 /// INCMOD D, {#}S {WC/WZ/WCZ}
@@ -4082,14 +3359,11 @@ pub fn negnz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn incmod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:incmod
+pub fn incmod(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("INCMOD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:incmod
+    // return .next;
 }
 
 /// DECMOD D, {#}S {WC/WZ/WCZ}
@@ -4099,14 +3373,11 @@ pub fn incmod(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn decmod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:decmod
+pub fn decmod(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("DECMOD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:decmod
+    // return .next;
 }
 
 /// ZEROX D, {#}S {WC/WZ/WCZ}
@@ -4116,14 +3387,11 @@ pub fn decmod(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn zerox(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:zerox
+pub fn zerox(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ZEROX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:zerox
+    // return .next;
 }
 
 /// SIGNX D, {#}S {WC/WZ/WCZ}
@@ -4133,14 +3401,11 @@ pub fn zerox(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn signx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:signx
+pub fn signx(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SIGNX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:signx
+    // return .next;
 }
 
 /// ENCOD D, {#}S {WC/WZ/WCZ}
@@ -4150,14 +3415,11 @@ pub fn signx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn encod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:encod
+pub fn encod(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ENCOD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:encod
+    // return .next;
 }
 
 /// ONES D, {#}S {WC/WZ/WCZ}
@@ -4167,14 +3429,11 @@ pub fn encod(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn ones(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:ones
+pub fn ones(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("ONES D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:ones
+    // return .next;
 }
 
 /// TEST D, {#}S {WC/WZ/WCZ}
@@ -4184,14 +3443,11 @@ pub fn ones(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn @"test"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"test"
+pub fn @"test"(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TEST D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:@"test"
+    // return .next;
 }
 
 /// TESTN D, {#}S {WC/WZ/WCZ}
@@ -4201,14 +3457,11 @@ pub fn @"test"(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
-pub fn testn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testn
+pub fn testn(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("TESTN D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testn
+    // return .next;
 }
 
 /// SETNIB D, {#}S, #N
@@ -4219,12 +3472,10 @@ pub fn testn(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn setnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:setnib
     _ = cog;
     _ = args;
     @panic("SETNIB D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:setnib
 }
 
 /// GETNIB D, {#}S, #N
@@ -4235,12 +3486,10 @@ pub fn setnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:getnib
     _ = cog;
     _ = args;
     @panic("GETNIB D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:getnib
 }
 
 /// ROLNIB D, {#}S, #N
@@ -4251,12 +3500,10 @@ pub fn getnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn rolnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:rolnib
     _ = cog;
     _ = args;
     @panic("ROLNIB D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:rolnib
 }
 
 /// SETBYTE D, {#}S, #N
@@ -4267,12 +3514,10 @@ pub fn rolnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn setbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:setbyte
     _ = cog;
     _ = args;
     @panic("SETBYTE D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:setbyte
 }
 
 /// GETBYTE D, {#}S, #N
@@ -4283,12 +3528,10 @@ pub fn setbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:getbyte
     _ = cog;
     _ = args;
     @panic("GETBYTE D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:getbyte
 }
 
 /// ROLBYTE D, {#}S, #N
@@ -4299,12 +3542,10 @@ pub fn getbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn rolbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:rolbyte
     _ = cog;
     _ = args;
     @panic("ROLBYTE D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:rolbyte
 }
 
 /// SETWORD D, {#}S, #N
@@ -4315,12 +3556,10 @@ pub fn rolbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn setword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:setword
     _ = cog;
     _ = args;
     @panic("SETWORD D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:setword
 }
 
 /// GETWORD D, {#}S, #N
@@ -4331,12 +3570,10 @@ pub fn setword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:getword
     _ = cog;
     _ = args;
     @panic("GETWORD D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:getword
 }
 
 /// ROLWORD D, {#}S, #N
@@ -4347,12 +3584,10 @@ pub fn getword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn rolword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:rolword
     _ = cog;
     _ = args;
     @panic("ROLWORD D, {#}S, #N is not implemented yet!");
     // return .next;
-    // codegen: end:rolword
 }
 
 /// SETR D, {#}S
@@ -4362,14 +3597,11 @@ pub fn rolword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn setr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:setr
+pub fn setr(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SETR D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:setr
+    // return .next;
 }
 
 /// SETD D, {#}S
@@ -4379,14 +3611,11 @@ pub fn setr(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn setd(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:setd
+pub fn setd(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SETD D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:setd
+    // return .next;
 }
 
 /// SETS D, {#}S
@@ -4396,14 +3625,11 @@ pub fn setd(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sets(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sets
+pub fn sets(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("SETS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:sets
+    // return .next;
 }
 
 /// DECOD D, {#}S
@@ -4413,14 +3639,11 @@ pub fn sets(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn decod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:decod
+pub fn decod(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("DECOD D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:decod
+    // return .next;
 }
 
 /// BMASK D, {#}S
@@ -4430,14 +3653,11 @@ pub fn decod(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn bmask(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bmask
+pub fn bmask(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("BMASK D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bmask
+    // return .next;
 }
 
 /// CRCBIT D, {#}S
@@ -4448,12 +3668,10 @@ pub fn bmask(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn crcbit(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:crcbit
     _ = cog;
     _ = args;
     @panic("CRCBIT D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:crcbit
 }
 
 /// CRCNIB D, {#}S
@@ -4464,12 +3682,10 @@ pub fn crcbit(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn crcnib(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:crcnib
     _ = cog;
     _ = args;
     @panic("CRCNIB D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:crcnib
 }
 
 /// MUXNITS D, {#}S
@@ -4479,14 +3695,11 @@ pub fn crcnib(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn muxnits(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnits
+pub fn muxnits(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MUXNITS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:muxnits
+    // return .next;
 }
 
 /// MUXNIBS D, {#}S
@@ -4496,14 +3709,11 @@ pub fn muxnits(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn muxnibs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnibs
+pub fn muxnibs(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MUXNIBS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:muxnibs
+    // return .next;
 }
 
 /// MUXQ D, {#}S
@@ -4514,12 +3724,10 @@ pub fn muxnibs(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn muxq(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:muxq
     _ = cog;
     _ = args;
     @panic("MUXQ D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:muxq
 }
 
 /// MOVBYTS D, {#}S
@@ -4529,14 +3737,11 @@ pub fn muxq(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn movbyts(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:movbyts
+pub fn movbyts(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MOVBYTS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:movbyts
+    // return .next;
 }
 
 /// MUL D, {#}S {WZ}
@@ -4546,14 +3751,11 @@ pub fn movbyts(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn mul(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:mul
+pub fn mul(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MUL D, {#}S {WZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:mul
+    // return .next;
 }
 
 /// MULS D, {#}S {WZ}
@@ -4563,14 +3765,11 @@ pub fn mul(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn muls(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muls
+pub fn muls(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
     _ = cog;
-    _ = d;
-    _ = s;
+    _ = args;
     @panic("MULS D, {#}S {WZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:muls
+    // return .next;
 }
 
 /// SCA D, {#}S {WZ}
@@ -4581,12 +3780,10 @@ pub fn muls(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn sca(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
-    // codegen: begin:sca
     _ = cog;
     _ = args;
     @panic("SCA D, {#}S {WZ} is not implemented yet!");
     // return .next;
-    // codegen: end:sca
 }
 
 /// SCAS D, {#}S {WZ}
@@ -4597,12 +3794,10 @@ pub fn sca(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn scas(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
-    // codegen: begin:scas
     _ = cog;
     _ = args;
     @panic("SCAS D, {#}S {WZ} is not implemented yet!");
     // return .next;
-    // codegen: end:scas
 }
 
 /// SPLITB D
@@ -4612,13 +3807,11 @@ pub fn scas(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn splitb(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:splitb
+pub fn splitb(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("SPLITB D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:splitb
+    // return .next;
 }
 
 /// MERGEB D
@@ -4628,13 +3821,11 @@ pub fn splitb(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn mergeb(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:mergeb
+pub fn mergeb(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("MERGEB D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:mergeb
+    // return .next;
 }
 
 /// SPLITW D
@@ -4644,13 +3835,11 @@ pub fn mergeb(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn splitw(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:splitw
+pub fn splitw(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("SPLITW D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:splitw
+    // return .next;
 }
 
 /// MERGEW D
@@ -4660,13 +3849,11 @@ pub fn splitw(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn mergew(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:mergew
+pub fn mergew(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("MERGEW D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:mergew
+    // return .next;
 }
 
 /// SEUSSF D
@@ -4676,13 +3863,11 @@ pub fn mergew(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn seussf(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:seussf
+pub fn seussf(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("SEUSSF D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:seussf
+    // return .next;
 }
 
 /// SEUSSR D
@@ -4692,13 +3877,11 @@ pub fn seussf(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn seussr(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:seussr
+pub fn seussr(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("SEUSSR D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:seussr
+    // return .next;
 }
 
 /// RGBSQZ D
@@ -4708,13 +3891,11 @@ pub fn seussr(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rgbsqz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rgbsqz
+pub fn rgbsqz(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("RGBSQZ D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rgbsqz
+    // return .next;
 }
 
 /// RGBEXP D
@@ -4724,13 +3905,11 @@ pub fn rgbsqz(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rgbexp(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rgbexp
+pub fn rgbexp(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("RGBEXP D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rgbexp
+    // return .next;
 }
 
 /// XORO32 D
@@ -4741,12 +3920,10 @@ pub fn rgbexp(cog: *Cog, d: u32) SimpleResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn xoro32(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
-    // codegen: begin:xoro32
     _ = cog;
     _ = args;
     @panic("XORO32 D is not implemented yet!");
     // return .next;
-    // codegen: end:xoro32
 }
 
 /// REV D
@@ -4756,13 +3933,11 @@ pub fn xoro32(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rev(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rev
+pub fn rev(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("REV D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rev
+    // return .next;
 }
 
 /// RCZR D {WC/WZ/WCZ}
@@ -4772,13 +3947,11 @@ pub fn rev(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rczr(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rczr
+pub fn rczr(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("RCZR D {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rczr
+    // return .next;
 }
 
 /// RCZL D {WC/WZ/WCZ}
@@ -4788,13 +3961,11 @@ pub fn rczr(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn rczl(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rczl
+pub fn rczl(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("RCZL D {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rczl
+    // return .next;
 }
 
 /// WRC D
@@ -4804,13 +3975,11 @@ pub fn rczl(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn wrc(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrc
+pub fn wrc(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("WRC D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrc
+    // return .next;
 }
 
 /// WRNC D
@@ -4820,13 +3989,11 @@ pub fn wrc(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn wrnc(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrnc
+pub fn wrnc(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("WRNC D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrnc
+    // return .next;
 }
 
 /// WRZ D
@@ -4836,13 +4003,11 @@ pub fn wrnc(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn wrz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrz
+pub fn wrz(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("WRZ D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrz
+    // return .next;
 }
 
 /// WRNZ D
@@ -4852,13 +4017,11 @@ pub fn wrz(cog: *Cog, d: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn wrnz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrnz
+pub fn wrnz(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     _ = cog;
-    _ = d;
+    _ = args;
     @panic("WRNZ D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrnz
+    // return .next;
 }
 
 /// MODCZ c, z {WC/WZ/WCZ}
@@ -4869,12 +4032,10 @@ pub fn wrnz(cog: *Cog, d: u32) SimpleResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn modcz(cog: *Cog, args: encoding.UpdateFlags) Cog.ExecResult {
-    // codegen: begin:modcz
     _ = cog;
     _ = args;
     @panic("MODCZ c, z {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:modcz
 }
 
 /// LOC PA/PB/PTRA/PTRB, #{\}A
@@ -4885,12 +4046,10 @@ pub fn modcz(cog: *Cog, args: encoding.UpdateFlags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=Per W, stack=None
 pub fn loc(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
-    // codegen: begin:loc
     _ = cog;
     _ = args;
     @panic("LOC PA/PB/PTRA/PTRB, #{\\}A is not implemented yet!");
     // return .next;
-    // codegen: end:loc
 }
 
 //
@@ -4905,12 +4064,9 @@ pub fn loc(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn nop(cog: *Cog, args: encoding.Nop) Cog.ExecResult {
-    // codegen: begin:nop
     _ = cog;
     _ = args;
-    @panic("NOP is not implemented yet!");
-    // return .next;
-    // codegen: end:nop
+    return .next;
 }
 
 /// GETCT D {WC}
@@ -4921,12 +4077,10 @@ pub fn nop(cog: *Cog, args: encoding.Nop) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getct(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
-    // codegen: begin:getct
     _ = cog;
     _ = args;
     @panic("GETCT D {WC} is not implemented yet!");
     // return .next;
-    // codegen: end:getct
 }
 
 /// GETRND D {WC/WZ/WCZ}
@@ -4937,12 +4091,10 @@ pub fn getct(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getrnd(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:getrnd
     _ = cog;
     _ = args;
     @panic("GETRND D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:getrnd
 }
 
 /// WAITX {#}D {WC/WZ/WCZ}
@@ -4953,12 +4105,10 @@ pub fn getrnd(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn waitx(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:waitx
     _ = cog;
     _ = args;
     @panic("WAITX {#}D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:waitx
 }
 
 /// SETQ {#}D
@@ -4969,12 +4119,10 @@ pub fn waitx(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setq
     _ = cog;
     _ = args;
     @panic("SETQ {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setq
 }
 
 /// SETQ2 {#}D
@@ -4985,12 +4133,10 @@ pub fn setq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setq2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setq2
     _ = cog;
     _ = args;
     @panic("SETQ2 {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setq2
 }
 
 /// PUSH {#}D
@@ -5001,12 +4147,10 @@ pub fn setq2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=Push
 pub fn push(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:push
     _ = cog;
     _ = args;
     @panic("PUSH {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:push
 }
 
 /// POP D {WC/WZ/WCZ}
@@ -5017,12 +4161,10 @@ pub fn push(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=Pop
 pub fn pop(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
-    // codegen: begin:pop
     _ = cog;
     _ = args;
     @panic("POP D {WC/WZ/WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:pop
 }
 
 /// AUGS #n
@@ -5033,12 +4175,10 @@ pub fn pop(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn augs(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
-    // codegen: begin:augs
     _ = cog;
     _ = args;
     @panic("AUGS #n is not implemented yet!");
     // return .next;
-    // codegen: end:augs
 }
 
 /// AUGD #n
@@ -5049,12 +4189,10 @@ pub fn augs(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn augd(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
-    // codegen: begin:augd
     _ = cog;
     _ = args;
     @panic("AUGD #n is not implemented yet!");
     // return .next;
-    // codegen: end:augd
 }
 
 //
@@ -5069,12 +4207,10 @@ pub fn augd(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testp(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testp
     _ = cog;
     _ = args;
     @panic("TESTP {#}D WC/WZ is not implemented yet!");
     // return .next;
-    // codegen: end:testp
 }
 
 /// TESTPN {#}D WC/WZ
@@ -5085,12 +4221,10 @@ pub fn testp(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testpn
     _ = cog;
     _ = args;
     @panic("TESTPN {#}D WC/WZ is not implemented yet!");
     // return .next;
-    // codegen: end:testpn
 }
 
 /// TESTP {#}D ANDC/ANDZ
@@ -5101,12 +4235,10 @@ pub fn testpn(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testp_and
     _ = cog;
     _ = args;
     @panic("TESTP {#}D ANDC/ANDZ is not implemented yet!");
     // return .next;
-    // codegen: end:testp_and
 }
 
 /// TESTPN {#}D ANDC/ANDZ
@@ -5117,12 +4249,10 @@ pub fn testp_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testpn_and
     _ = cog;
     _ = args;
     @panic("TESTPN {#}D ANDC/ANDZ is not implemented yet!");
     // return .next;
-    // codegen: end:testpn_and
 }
 
 /// TESTP {#}D ORC/ORZ
@@ -5133,12 +4263,10 @@ pub fn testpn_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testp_or
     _ = cog;
     _ = args;
     @panic("TESTP {#}D ORC/ORZ is not implemented yet!");
     // return .next;
-    // codegen: end:testp_or
 }
 
 /// TESTPN {#}D ORC/ORZ
@@ -5149,12 +4277,10 @@ pub fn testp_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testpn_or
     _ = cog;
     _ = args;
     @panic("TESTPN {#}D ORC/ORZ is not implemented yet!");
     // return .next;
-    // codegen: end:testpn_or
 }
 
 /// TESTP {#}D XORC/XORZ
@@ -5165,12 +4291,10 @@ pub fn testpn_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testp_xor
     _ = cog;
     _ = args;
     @panic("TESTP {#}D XORC/XORZ is not implemented yet!");
     // return .next;
-    // codegen: end:testp_xor
 }
 
 /// TESTPN {#}D XORC/XORZ
@@ -5181,12 +4305,10 @@ pub fn testp_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:testpn_xor
     _ = cog;
     _ = args;
     @panic("TESTPN {#}D XORC/XORZ is not implemented yet!");
     // return .next;
-    // codegen: end:testpn_xor
 }
 
 /// DIRL {#}D {WCZ}
@@ -5197,12 +4319,10 @@ pub fn testpn_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirl
     _ = cog;
     _ = args;
     @panic("DIRL {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirl
 }
 
 /// DIRH {#}D {WCZ}
@@ -5213,12 +4333,10 @@ pub fn dirl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirh
     _ = cog;
     _ = args;
     @panic("DIRH {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirh
 }
 
 /// DIRC {#}D {WCZ}
@@ -5229,12 +4347,10 @@ pub fn dirh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirc
     _ = cog;
     _ = args;
     @panic("DIRC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirc
 }
 
 /// DIRNC {#}D {WCZ}
@@ -5245,12 +4361,10 @@ pub fn dirc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirnc
     _ = cog;
     _ = args;
     @panic("DIRNC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirnc
 }
 
 /// DIRZ {#}D {WCZ}
@@ -5261,12 +4375,10 @@ pub fn dirnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirz
     _ = cog;
     _ = args;
     @panic("DIRZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirz
 }
 
 /// DIRNZ {#}D {WCZ}
@@ -5277,12 +4389,10 @@ pub fn dirz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirnz
     _ = cog;
     _ = args;
     @panic("DIRNZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirnz
 }
 
 /// DIRRND {#}D {WCZ}
@@ -5293,12 +4403,10 @@ pub fn dirnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirrnd
     _ = cog;
     _ = args;
     @panic("DIRRND {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirrnd
 }
 
 /// DIRNOT {#}D {WCZ}
@@ -5309,12 +4417,10 @@ pub fn dirrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:dirnot
     _ = cog;
     _ = args;
     @panic("DIRNOT {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:dirnot
 }
 
 /// OUTL {#}D {WCZ}
@@ -5325,12 +4431,10 @@ pub fn dirnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outl
     _ = cog;
     _ = args;
     @panic("OUTL {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outl
 }
 
 /// OUTH {#}D {WCZ}
@@ -5341,12 +4445,10 @@ pub fn outl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outh
     _ = cog;
     _ = args;
     @panic("OUTH {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outh
 }
 
 /// OUTC {#}D {WCZ}
@@ -5357,12 +4459,10 @@ pub fn outh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outc
     _ = cog;
     _ = args;
     @panic("OUTC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outc
 }
 
 /// OUTNC {#}D {WCZ}
@@ -5373,12 +4473,10 @@ pub fn outc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outnc
     _ = cog;
     _ = args;
     @panic("OUTNC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outnc
 }
 
 /// OUTZ {#}D {WCZ}
@@ -5389,12 +4487,10 @@ pub fn outnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outz
     _ = cog;
     _ = args;
     @panic("OUTZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outz
 }
 
 /// OUTNZ {#}D {WCZ}
@@ -5405,12 +4501,10 @@ pub fn outz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outnz
     _ = cog;
     _ = args;
     @panic("OUTNZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outnz
 }
 
 /// OUTRND {#}D {WCZ}
@@ -5421,12 +4515,10 @@ pub fn outnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outrnd
     _ = cog;
     _ = args;
     @panic("OUTRND {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outrnd
 }
 
 /// OUTNOT {#}D {WCZ}
@@ -5437,12 +4529,10 @@ pub fn outrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:outnot
     _ = cog;
     _ = args;
     @panic("OUTNOT {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:outnot
 }
 
 /// FLTL {#}D {WCZ}
@@ -5453,12 +4543,10 @@ pub fn outnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:fltl
     _ = cog;
     _ = args;
     @panic("FLTL {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:fltl
 }
 
 /// FLTH {#}D {WCZ}
@@ -5469,12 +4557,10 @@ pub fn fltl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn flth(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:flth
     _ = cog;
     _ = args;
     @panic("FLTH {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:flth
 }
 
 /// FLTC {#}D {WCZ}
@@ -5485,12 +4571,10 @@ pub fn flth(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:fltc
     _ = cog;
     _ = args;
     @panic("FLTC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:fltc
 }
 
 /// FLTNC {#}D {WCZ}
@@ -5501,12 +4585,10 @@ pub fn fltc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:fltnc
     _ = cog;
     _ = args;
     @panic("FLTNC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:fltnc
 }
 
 /// FLTZ {#}D {WCZ}
@@ -5517,12 +4599,10 @@ pub fn fltnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:fltz
     _ = cog;
     _ = args;
     @panic("FLTZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:fltz
 }
 
 /// FLTNZ {#}D {WCZ}
@@ -5533,12 +4613,10 @@ pub fn fltz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:fltnz
     _ = cog;
     _ = args;
     @panic("FLTNZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:fltnz
 }
 
 /// FLTRND {#}D {WCZ}
@@ -5549,12 +4627,10 @@ pub fn fltnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:fltrnd
     _ = cog;
     _ = args;
     @panic("FLTRND {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:fltrnd
 }
 
 /// FLTNOT {#}D {WCZ}
@@ -5565,12 +4641,10 @@ pub fn fltrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:fltnot
     _ = cog;
     _ = args;
     @panic("FLTNOT {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:fltnot
 }
 
 /// DRVL {#}D {WCZ}
@@ -5581,12 +4655,10 @@ pub fn fltnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvl
     _ = cog;
     _ = args;
     @panic("DRVL {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvl
 }
 
 /// DRVH {#}D {WCZ}
@@ -5597,12 +4669,10 @@ pub fn drvl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvh
     _ = cog;
     _ = args;
     @panic("DRVH {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvh
 }
 
 /// DRVC {#}D {WCZ}
@@ -5613,12 +4683,10 @@ pub fn drvh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvc
     _ = cog;
     _ = args;
     @panic("DRVC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvc
 }
 
 /// DRVNC {#}D {WCZ}
@@ -5629,12 +4697,10 @@ pub fn drvc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvnc
     _ = cog;
     _ = args;
     @panic("DRVNC {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvnc
 }
 
 /// DRVZ {#}D {WCZ}
@@ -5645,12 +4711,10 @@ pub fn drvnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvz
     _ = cog;
     _ = args;
     @panic("DRVZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvz
 }
 
 /// DRVNZ {#}D {WCZ}
@@ -5661,12 +4725,10 @@ pub fn drvz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvnz
     _ = cog;
     _ = args;
     @panic("DRVNZ {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvnz
 }
 
 /// DRVRND {#}D {WCZ}
@@ -5677,12 +4739,10 @@ pub fn drvnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvrnd
     _ = cog;
     _ = args;
     @panic("DRVRND {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvrnd
 }
 
 /// DRVNOT {#}D {WCZ}
@@ -5693,12 +4753,10 @@ pub fn drvrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
-    // codegen: begin:drvnot
     _ = cog;
     _ = args;
     @panic("DRVNOT {#}D {WCZ} is not implemented yet!");
     // return .next;
-    // codegen: end:drvnot
 }
 
 //
@@ -5713,12 +4771,10 @@ pub fn drvnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn addpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:addpix
     _ = cog;
     _ = args;
     @panic("ADDPIX D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:addpix
 }
 
 /// MULPIX D, {#}S
@@ -5729,12 +4785,10 @@ pub fn addpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn mulpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:mulpix
     _ = cog;
     _ = args;
     @panic("MULPIX D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:mulpix
 }
 
 /// BLNPIX D, {#}S
@@ -5745,12 +4799,10 @@ pub fn mulpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn blnpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:blnpix
     _ = cog;
     _ = args;
     @panic("BLNPIX D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:blnpix
 }
 
 /// MIXPIX D, {#}S
@@ -5761,12 +4813,10 @@ pub fn blnpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn mixpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:mixpix
     _ = cog;
     _ = args;
     @panic("MIXPIX D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:mixpix
 }
 
 /// SETPIV {#}D
@@ -5777,12 +4827,10 @@ pub fn mixpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setpiv(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setpiv
     _ = cog;
     _ = args;
     @panic("SETPIV {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setpiv
 }
 
 /// SETPIX {#}D
@@ -5793,12 +4841,10 @@ pub fn setpiv(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setpix(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setpix
     _ = cog;
     _ = args;
     @panic("SETPIX {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setpix
 }
 
 //
@@ -5813,12 +4859,10 @@ pub fn setpix(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altsn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altsn
     _ = cog;
     _ = args;
     @panic("ALTSN D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altsn
 }
 
 /// ALTGN D, {#}S
@@ -5829,12 +4873,10 @@ pub fn altsn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altgn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altgn
     _ = cog;
     _ = args;
     @panic("ALTGN D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altgn
 }
 
 /// ALTSB D, {#}S
@@ -5845,12 +4887,10 @@ pub fn altgn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altsb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altsb
     _ = cog;
     _ = args;
     @panic("ALTSB D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altsb
 }
 
 /// ALTGB D, {#}S
@@ -5861,12 +4901,10 @@ pub fn altsb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altgb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altgb
     _ = cog;
     _ = args;
     @panic("ALTGB D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altgb
 }
 
 /// ALTSW D, {#}S
@@ -5877,12 +4915,10 @@ pub fn altgb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altsw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altsw
     _ = cog;
     _ = args;
     @panic("ALTSW D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altsw
 }
 
 /// ALTGW D, {#}S
@@ -5893,12 +4929,10 @@ pub fn altsw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altgw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altgw
     _ = cog;
     _ = args;
     @panic("ALTGW D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altgw
 }
 
 /// ALTR D, {#}S
@@ -5909,12 +4943,10 @@ pub fn altgw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altr(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altr
     _ = cog;
     _ = args;
     @panic("ALTR D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altr
 }
 
 /// ALTD D, {#}S
@@ -5925,12 +4957,10 @@ pub fn altr(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altd(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altd
     _ = cog;
     _ = args;
     @panic("ALTD D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altd
 }
 
 /// ALTS D, {#}S
@@ -5941,12 +4971,10 @@ pub fn altd(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn alts(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:alts
     _ = cog;
     _ = args;
     @panic("ALTS D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:alts
 }
 
 /// ALTB D, {#}S
@@ -5957,12 +4985,10 @@ pub fn alts(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn altb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:altb
     _ = cog;
     _ = args;
     @panic("ALTB D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:altb
 }
 
 /// ALTI D, {#}S
@@ -5973,12 +4999,10 @@ pub fn altb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn alti(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:alti
     _ = cog;
     _ = args;
     @panic("ALTI D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:alti
 }
 
 //
@@ -5993,12 +5017,10 @@ pub fn alti(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn rqpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
-    // codegen: begin:rqpin
     _ = cog;
     _ = args;
     @panic("RQPIN D, {#}S {WC} is not implemented yet!");
     // return .next;
-    // codegen: end:rqpin
 }
 
 /// RDPIN D, {#}S {WC}
@@ -6009,12 +5031,10 @@ pub fn rqpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn rdpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
-    // codegen: begin:rdpin
     _ = cog;
     _ = args;
     @panic("RDPIN D, {#}S {WC} is not implemented yet!");
     // return .next;
-    // codegen: end:rdpin
 }
 
 /// WRPIN {#}D, {#}S
@@ -6025,12 +5045,10 @@ pub fn rdpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wrpin
     _ = cog;
     _ = args;
     @panic("WRPIN {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:wrpin
 }
 
 /// WXPIN {#}D, {#}S
@@ -6041,7 +5059,7 @@ pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wxpin
+
     // TODO: Correctly implement WXPIN!
 
     if (!cog.is_condition_met(args.cond))
@@ -6060,7 +5078,6 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     }
 
     return .next;
-    // codegen: end:wxpin
 }
 
 /// WYPIN {#}D, {#}S
@@ -6071,7 +5088,7 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:wypin
+
     // TODO: Correctly implement WXPIN!
 
     if (!cog.is_condition_met(args.cond))
@@ -6088,7 +5105,6 @@ pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     }
 
     return .next;
-    // codegen: end:wypin
 }
 
 /// SETDACS {#}D
@@ -6099,12 +5115,10 @@ pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setdacs(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setdacs
     _ = cog;
     _ = args;
     @panic("SETDACS {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setdacs
 }
 
 /// SETSCP {#}D
@@ -6115,12 +5129,10 @@ pub fn setdacs(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setscp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setscp
     _ = cog;
     _ = args;
     @panic("SETSCP {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setscp
 }
 
 /// GETSCP D
@@ -6131,12 +5143,10 @@ pub fn setscp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn getscp(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
-    // codegen: begin:getscp
     _ = cog;
     _ = args;
     @panic("GETSCP D is not implemented yet!");
     // return .next;
-    // codegen: end:getscp
 }
 
 //
@@ -6151,12 +5161,10 @@ pub fn getscp(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn xinit(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:xinit
     _ = cog;
     _ = args;
     @panic("XINIT {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:xinit
 }
 
 /// XZERO {#}D, {#}S
@@ -6167,12 +5175,10 @@ pub fn xinit(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn xzero(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:xzero
     _ = cog;
     _ = args;
     @panic("XZERO {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:xzero
 }
 
 /// XCONT {#}D, {#}S
@@ -6183,12 +5189,10 @@ pub fn xzero(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn xcont(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
-    // codegen: begin:xcont
     _ = cog;
     _ = args;
     @panic("XCONT {#}D, {#}S is not implemented yet!");
     // return .next;
-    // codegen: end:xcont
 }
 
 /// SETXFRQ {#}D
@@ -6199,12 +5203,10 @@ pub fn xcont(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=None, stack=None
 pub fn setxfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
-    // codegen: begin:setxfrq
     _ = cog;
     _ = args;
     @panic("SETXFRQ {#}D is not implemented yet!");
     // return .next;
-    // codegen: end:setxfrq
 }
 
 /// GETXACC D
@@ -6215,10 +5217,8 @@ pub fn setxfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
 pub fn getxacc(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
-    // codegen: begin:getxacc
     _ = cog;
     _ = args;
     @panic("GETXACC D is not implemented yet!");
     // return .next;
-    // codegen: end:getxacc
 }
