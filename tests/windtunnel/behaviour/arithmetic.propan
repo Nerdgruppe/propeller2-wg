@@ -4,6 +4,7 @@ _start:
     MOV a, 10
     MOV b, 20
     ADD a, b
+    SUB a, b
     COGID id
     COGSTOP id
     // end of code

@@ -3197,13 +3197,10 @@ pub fn addsx(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn sub(cog: *Cog, d: u32, s: u32) SimpleResult {
+pub fn sub(_: *Cog, d: u32, s: u32) SimpleResult {
     // codegen: begin:sub
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUB D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
+    const result, const carry = @subWithOverflow(d, s);
+    return .autoz(result, @bitCast(carry));
     // codegen: end:sub
 }
 
