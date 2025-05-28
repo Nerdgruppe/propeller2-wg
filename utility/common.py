@@ -14,6 +14,7 @@ DATA_ROOT = Path(__file__).parent / ".." / "data" / "encoding"
 P2INSTRUCTIONS_JSON = DATA_ROOT / "p2instructions.json"
 INSTRUCTIONS_YML = DATA_ROOT / "instructions.yml"
 P2INSTRUCTIONS_TSV = DATA_ROOT / "instructions.tsv"
+P2METADATA_TXT = DATA_ROOT / "metadata.txt"
 
 
 class Flag(Enum):
@@ -100,9 +101,7 @@ OP_MAPPING: dict[OpType, OpMapping] = {
     OpType.DEST_EITHER: OpMapping(BitField.DEST, imm=BitField.IMMEDIATE_D),
     OpType.DEST_REG: OpMapping(BitField.DEST),
     OpType.PREG: OpMapping(BitField.POINTER),  # can only be first operand
-    OpType.PTREXPR: OpMapping(
-        BitField.SOURCE, imm=BitField.IMMEDIATE_S
-    ),  # can only be second operand
+    OpType.PTREXPR: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),  # can only be second operand
     OpType.SELECTOR: OpMapping(BitField.SELECTOR),
     OpType.SRC_EITHER: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),
     OpType.SRC_EITHER_PCREL: OpMapping(BitField.SOURCE, imm=BitField.IMMEDIATE_S),
@@ -111,7 +110,7 @@ OP_MAPPING: dict[OpType, OpMapping] = {
 
 
 OP_DISPLAY_TEXT: dict[OpType, str] = {
-    OpType.ADDRESS: "#{\}A",
+    OpType.ADDRESS: "#{\\}A",
     OpType.AUGMENT: "#n",
     OpType.C_REMAP: "c",
     OpType.DEST_EITHER: "{#}D",
@@ -222,10 +221,11 @@ class Instruction:
     memory_access: str | None = ds_field(default=None)
     stack_access: str | None = ds_field(default=None)
 
+    tags: set[str] = ds_field(default_factory=set)
+
     @property
     def is_alias(self) -> bool:
-        return self.alias_name is not None 
-    
+        return self.alias_name is not None
 
     @property
     def display_text(self) -> str:
@@ -298,9 +298,7 @@ def decode_json(path: Path) -> list[Instruction]:
         if fields_used != set(encoding.fields.keys()):
             print("  ", sorted(fields_used))
             print("  ", sorted(encoding.fields.keys()))
-            raise ValueError(
-                "missing encoding: fields required are not the fields available!"
-            )
+            raise ValueError("missing encoding: fields required are not the fields available!")
 
         instructions.append(
             Instruction(
@@ -376,7 +374,6 @@ def decode_tsv(path: Path) -> dict[str, TsvInstruction]:
                 stack_access,
             ) = (*columns,)
 
-
             instr = TsvInstruction(
                 iid=int(iid.strip()),
                 name=re.sub(r"\s+", " ", name.strip()).replace(",", ", "),
@@ -401,16 +398,60 @@ def decode_tsv(path: Path) -> dict[str, TsvInstruction]:
     return items
 
 
-def decode_dataset(json_path: Path, tsv_path: Path) -> list[Instruction]:
+@dataclass(frozen=True, kw_only=True)
+class MetadataTag:
+    selector: str
+    added_tags: set[str] = ds_field(default_factory=set)
+    removed_tags: set[str] = ds_field(default_factory=set)
+
+
+def decode_metadata(metadata_file: Path) -> list[MetadataTag]:
+    result: list[MetadataTag] = list()
+    with metadata_file.open() as fp:
+        for line in fp:
+            line = line.strip()
+            if line.startswith("#") or line == "":
+                continue
+
+            head, tail = (*line.split(":", maxsplit=2),)
+
+            head = head.strip()
+            props = [item for item in tail.strip().split(" ") if item != ""]
+
+            tag = MetadataTag(selector=head)
+
+            for prop in props:
+                if prop.startswith("+"):
+                    tag.added_tags.add(prop[1:])
+                    tag.removed_tags.discard(prop[1:])
+                elif prop.startswith("-"):
+                    tag.added_tags.discard(prop[1:])
+                    tag.removed_tags.add(prop[1:])
+                else:
+                    raise ValueError(f"invalid tag: {prop!r}")
+
+            result.append(tag)
+    return result
+
+
+def decode_dataset(
+    json_path: Path = P2INSTRUCTIONS_JSON,
+    tsv_path: Path = P2INSTRUCTIONS_TSV,
+    metadata_path: Path = P2METADATA_TXT,
+) -> list[Instruction]:
     src_instructions = decode_json(json_path)
 
     tsv_data = decode_tsv(tsv_path)
+
+    metadata = decode_metadata(metadata_path)
 
     instructions: list[Instruction] = list()
     for json_instr in src_instructions:
         tsv_instr = tsv_data[json_instr.display_text.replace("**", "")]
 
-        assert tsv_instr.alias == (json_instr.alias_name is not None), f"{json_instr.display_text!r} {json_instr.alias_name!r}"
+        assert tsv_instr.alias == (json_instr.alias_name is not None), (
+            f"{json_instr.display_text!r} {json_instr.alias_name!r}"
+        )
 
         instructions.append(
             ds_replace(
@@ -426,6 +467,12 @@ def decode_dataset(json_path: Path, tsv_path: Path) -> list[Instruction]:
                 stack_access=tsv_instr.stack_access,
             )
         )
+
+    for metadatum in metadata:
+        for instr in instructions:
+            if instr.name == metadatum.selector:
+                instr.tags.update(metadatum.added_tags)
+                instr.tags.difference_update(metadatum.removed_tags)
 
     return instructions
 
