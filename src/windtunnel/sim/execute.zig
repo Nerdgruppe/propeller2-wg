@@ -3132,13 +3132,10 @@ pub fn sal(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn add(cog: *Cog, d: u32, s: u32) SimpleResult {
+pub fn add(_: *Cog, d: u32, s: u32) SimpleResult {
     // codegen: begin:add
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ADD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
+    const result, const carry = @addWithOverflow(d, s);
+    return .autoz(result, @bitCast(carry));
     // codegen: end:add
 }
 
@@ -3948,11 +3945,10 @@ pub fn muxnz(cog: *Cog, d: u32, s: u32) SimpleResult {
 /// cog timing:  2
 /// hub timing:  same
 /// access:      mem=None, reg=D, stack=None
-pub fn mov(cog: *Cog, d: u32, s: u32) SimpleResult {
+pub fn mov(_: *Cog, _: u32, s: u32) SimpleResult {
     // codegen: begin:mov
-    _ = cog;
-    _ = d;
-    return .autocz(s);
+    const flag: u1 = @intCast(s >> 31);
+    return .autoz(s, @bitCast(flag));
     // codegen: end:mov
 }
 
