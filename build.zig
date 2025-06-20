@@ -11,12 +11,14 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // Dependencies:
+    const serial_dep = b.dependency("serial", .{});
 
     const p2dev_dep = b.dependency("p2devsuite", .{});
 
     const ptk_dep = b.dependency("ptk", .{});
     const args_dep = b.dependency("args", .{});
 
+    const serial_mod = serial_dep.module("serial");
     const ptk_mod = ptk_dep.module("parser-toolkit");
     const args_mod = args_dep.module("args");
 
@@ -25,7 +27,20 @@ pub fn build(b: *std.Build) void {
     const flexspin = p2dev_dep.artifact("flexspin");
     b.installArtifact(flexspin);
 
+    const loadp2_exe = p2dev_dep.artifact("loadp2");
+    b.installArtifact(loadp2_exe);
+
     // Build:
+
+    const turboprop_mod = b.addModule("turboprop", .{
+        .root_source_file = b.path("src/turboprop/turboprop.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "args", .module = args_mod },
+            .{ .name = "serial", .module = serial_mod },
+        },
+    });
 
     const propan_mod = b.addModule("propan", .{
         .root_source_file = b.path("src/propan/propan.zig"),
@@ -45,6 +60,14 @@ pub fn build(b: *std.Build) void {
             .{ .name = "args", .module = args_mod },
         },
     });
+
+    {
+        const exe = b.addExecutable(.{
+            .name = "turboprop",
+            .root_module = turboprop_mod,
+        });
+        b.installArtifact(exe);
+    }
 
     const propan_exe = blk: {
         const exe = b.addExecutable(.{
