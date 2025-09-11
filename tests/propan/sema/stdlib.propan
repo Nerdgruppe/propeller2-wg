@@ -3,6 +3,7 @@
 //
 
 .assert 0x0000 == bitrange(0, 0)
+.assert 0x0029 == bitrange(9, 10)
 .assert 0x000A == bitrange(10, 10)
 .assert 0x004A == bitrange(10, 12)
 
@@ -10,10 +11,31 @@
 .assert 0x0040 == pinrange(0, 1)
 .assert 0x0242 == pinrange(2, 11)
 .assert 0x0242 == pinrange(2, 11)
+.assert 0x0049 == pinrange(9, 10)
 .assert 0x02E2 == pinrange(34, 45)
 
 .assert 0x017C == pinrange(60, 33, wrap=#on)
 .assert 0x011C == pinrange(28, 0, wrap=#on)
+
+.assert 300_000_000 == ticks(s=1, clk=300_000_000)
+.assert 299_999_998 == ticks(s=1, clk=300_000_000, waitx=#on)
+
+.assert 300_000_000 == ticks(s=1, clk=300_000_000)
+.assert 300_000_000 == ticks(ms=1_000, clk=300_000_000)
+.assert 300_000_000 == ticks(us=1_000_000, clk=300_000_000)
+.assert 300_000_000 == ticks(ns=1_000_000_000, clk=300_000_000)
+.assert 600_000_000 == ticks(s=1, ms=500, us=250_000, ns=250_000_000, clk=300_000_000)
+
+// 28571 ns @ 300 MHz = 8571.3 clocks
+.assert 8571 == ticks(ns=28571, clk=300_000_000, round=#floor)
+.assert 8571 == ticks(ns=28571, clk=300_000_000, round=#nearest)
+.assert 8572 == ticks(ns=28571, clk=300_000_000, round=#ceil)
+
+// 28572 ns @ 300 MHz = 8571.6 clocks
+.assert 8571 == ticks(ns=28572, clk=300_000_000, round=#floor)
+.assert 8572 == ticks(ns=28572, clk=300_000_000, round=#nearest)
+.assert 8572 == ticks(ns=28572, clk=300_000_000, round=#ceil)
+
 
 // Test with the default values from the datasheet
 .assert 0x4000_0000 == Hub.setFilter(filter=#filt0, length=2, tap=0)  // $4000_0000 + 0<<5 + 0

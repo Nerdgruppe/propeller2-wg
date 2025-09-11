@@ -144,6 +144,56 @@ pub const functions = define.namespace(.{
         }
     }),
 
+    .ticks = define.function(struct {
+        pub const RoundingMode = enum {
+            floor,
+            ceil,
+            nearest,
+        };
+
+        pub const docs = "Computes the number of clock periods required to delay a certain amount of time based on a 'clk' frequency.";
+
+        pub const params = .{
+            .s = .{ .docs = "The integer number of seconds to wait.", .default = 0 },
+            .ms = .{ .docs = "The integer number of milli seconds to wait.", .default = 0 },
+            .us = .{ .docs = "The integer number of micro seconds to wait.", .default = 0 },
+            .ns = .{ .docs = "The integer number of nano seconds to wait.", .default = 0 },
+            .clk = .{ .docs = "The frequency used to calculated the number of clock periods.", .default = 0 },
+            .waitx = .{ .docs = "If set `true` will subtract the required 2 clocks", .default = false },
+            .round = .{ .docs = "Selects how the result will be rounded.", .default = .nearest },
+        };
+
+        pub fn invoke(ctx: EvalContext, s: u64, ms: u64, us: u64, ns: u64, clk: u32, waitx: bool, rounding: RoundingMode) !u32 {
+            const delay_ns = std.time.ns_per_s * s +
+                std.time.ns_per_ms * ms +
+                std.time.ns_per_us * us +
+                ns;
+
+            const rounding_offset: u64 = switch (rounding) {
+                .floor => 0,
+                .nearest => std.time.ns_per_s / 2,
+                .ceil => std.time.ns_per_s - 1,
+            };
+
+            var clocks_u64: u64 = (delay_ns * clk + rounding_offset) / std.time.ns_per_s;
+
+            if (waitx) {
+                if (clocks_u64 < 2) {
+                    try ctx.emit_warning("Requested delay time is less than 2 periods. It's recommended to remove the WAITX in question.", .{});
+                }
+                clocks_u64 -|= 2;
+            }
+
+            return std.math.cast(u32, clocks_u64) orelse {
+                try ctx.emit_error("A delay of {} periods ({:.3}) cannot be represented with 32 bits.", .{
+                    clocks_u64,
+                    std.fmt.fmtDuration(delay_ns),
+                });
+                return std.math.maxInt(u32);
+            };
+        }
+    }),
+
     .Hub = define.namespace(.{
         .reboot = define.function(struct {
             pub const docs = "Hard reset, reboots chip";
