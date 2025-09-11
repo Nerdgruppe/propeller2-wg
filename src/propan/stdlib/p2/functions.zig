@@ -154,16 +154,16 @@ pub const functions = define.namespace(.{
         pub const docs = "Computes the number of clock periods required to delay a certain amount of time based on a 'clk' frequency.";
 
         pub const params = .{
+            .clk = .{ .docs = "The frequency used to calculated the number of clock periods.", .default = 0 },
             .s = .{ .docs = "The integer number of seconds to wait.", .default = 0 },
             .ms = .{ .docs = "The integer number of milli seconds to wait.", .default = 0 },
             .us = .{ .docs = "The integer number of micro seconds to wait.", .default = 0 },
             .ns = .{ .docs = "The integer number of nano seconds to wait.", .default = 0 },
-            .clk = .{ .docs = "The frequency used to calculated the number of clock periods.", .default = 0 },
             .waitx = .{ .docs = "If set `true` will subtract the required 2 clocks", .default = false },
             .round = .{ .docs = "Selects how the result will be rounded.", .default = .nearest },
         };
 
-        pub fn invoke(ctx: EvalContext, s: u64, ms: u64, us: u64, ns: u64, clk: u32, waitx: bool, rounding: RoundingMode) !u32 {
+        pub fn invoke(ctx: EvalContext, clk: u32, s: u64, ms: u64, us: u64, ns: u64, waitx: bool, rounding: RoundingMode) !u32 {
             const delay_ns = std.time.ns_per_s * s +
                 std.time.ns_per_ms * ms +
                 std.time.ns_per_us * us +
