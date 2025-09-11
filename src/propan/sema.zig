@@ -27,9 +27,17 @@ pub const AnalyzeOptions = struct {
 
     flip_augs_on_pcrel: bool = true,
 
-    /// If this is `true`, the emitted code will use relative jumps when jumping
-    /// between different `.hubexec` segments.
-    use_relative_hub_to_hub_jmp: bool = true,
+    /// If this is `true`, the emitted code will use relative addressing for
+    /// `JMP #{/}A` and friends if `A` is a label value, and addresses an address
+    /// that jumps from hub exec mode to a hub exec mode address which is *not* in the
+    /// same segment.
+    use_label_relative_hub_to_hub_jmp: bool = true,
+
+    /// If this is `true`, the emitted code will use relative addressing for
+    /// `JMP #{/}A` and friends if `A` is a non-label value, and addresses
+    /// an address in the same execution mode.
+    /// TODO: Make this more fine granular for exec modes and cross-segment.
+    use_relative_jmp_for_same_mode_nonlabel_address: bool = true,
 };
 
 pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions) !Module {
@@ -1212,78 +1220,101 @@ const Analyzer = struct {
                             const int: u32 = try ana.cast_value_to(location, current_segment.exec_mode, value, u32);
 
                             const full_enc: u32 = switch (operand.type) {
-                                .address => |meta| enc: {
-                                    // If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+                                .address => |meta|
+                                // If R = 1 then PC += A, else PC = A. "\" forces R = 0.
 
-                                    selector: switch (value.flags.addressing) {
-                                        .auto => {
-                                            // xq  — 11:29
-                                            // do you happen to know how (or where) flexspin chooses
-                                            // when to use abs/relative addressing?
-                                            //
-                                            // Wuerfel_21 — 12:02
-                                            // It's "relative unless label is in a different memory space
-                                            // OR code has explicit absolute backslash"
+                                selector: switch (value.flags.addressing) {
+                                    .auto => {
+                                        // xq  — 11:29
+                                        // do you happen to know how (or where) flexspin chooses
+                                        // when to use abs/relative addressing?
+                                        //
+                                        // Wuerfel_21 — 12:02
+                                        // It's "relative unless label is in a different memory space
+                                        // OR code has explicit absolute backslash"
 
-                                            switch (value.value) {
-                                                .address => |address| {
-                                                    std.log.err("auto mode translation: segment is #{}, mode is {}, target is {}", .{
-                                                        @intFromEnum(current_segment.id),
-                                                        current_segment.exec_mode,
-                                                        address,
-                                                    });
+                                        switch (value.value) {
+                                            .address => |address| {
+                                                std.log.debug("#{{/}}A auto mode translation: segment is #{}, mode is {}, target is {}", .{
+                                                    @intFromEnum(current_segment.id),
+                                                    current_segment.exec_mode,
+                                                    address,
+                                                });
 
-                                                    if (current_segment.id == address.segment_id) {
-                                                        // Always use relative addressing when in the *same* segment
+                                                if (current_segment.id == address.segment_id) {
+                                                    // Always use relative addressing when in the *same* segment
+                                                    continue :selector .relative;
+                                                } else if (current_segment.exec_mode == .hub and address.local == .hub) {
+                                                    // Use configurable behaviour between two hubexec sections
+                                                    if (ana.options.use_label_relative_hub_to_hub_jmp) {
                                                         continue :selector .relative;
-                                                    } else if (current_segment.exec_mode == .hub and address.local == .hub) {
-                                                        // Use configurable behaviour between two hubexec sections
-                                                        if (ana.options.use_relative_hub_to_hub_jmp) {
-                                                            continue :selector .relative;
-                                                        } else {
-                                                            continue :selector .absolute;
-                                                        }
                                                     } else {
-                                                        // Otherwise, use absolute addressing
                                                         continue :selector .absolute;
                                                     }
-                                                    unreachable;
-                                                },
-                                                else => {
-                                                    // always use absolute addressing for non-label targets:
-                                                    // TODO: Implement policy here to match flexspin/PASM2 behaviour and decide if the address is cog- or lut relative
+                                                } else {
+                                                    // Otherwise, use absolute addressing
                                                     continue :selector .absolute;
-                                                },
-                                            }
-                                        },
+                                                }
+                                                unreachable;
+                                            },
+                                            else => {
+                                                const target_mode: eval.ExecMode = switch (int) {
+                                                    0x000...0x1FF => .cog,
+                                                    0x200...0x3FF => .lut,
+                                                    else => .hub,
+                                                };
 
-                                        .absolute => {
-                                            fill_extra_slot = null;
-                                            break :enc int;
-                                        },
+                                                if (current_segment.exec_mode == target_mode) {
+                                                    std.log.debug("#{{/}}A: src mode={} address={} address:int=0x{X:0>6} cog={} lut={} hub={}", .{
+                                                        current_segment.exec_mode,
+                                                        value,
+                                                        int,
+                                                        int < 0x200,
+                                                        int >= 0x200 and int < 0x400,
+                                                        int >= 0x400,
+                                                    });
+                                                    // We're targeting the same execution mode with a non-label address,
+                                                    // so we need to adhere to the user option selection:
+                                                    if (ana.options.use_relative_jmp_for_same_mode_nonlabel_address) {
+                                                        continue :selector .relative;
+                                                    } else {
+                                                        continue :selector .absolute;
+                                                    }
+                                                } else {
+                                                    // If we would change the execution mode, we must
+                                                    // always perform absolute jumps:
+                                                    continue :selector .absolute;
+                                                }
+                                            },
+                                        }
+                                    },
 
-                                        .relative => {
+                                    .absolute => {
+                                        fill_extra_slot = null;
+                                        break :selector int;
+                                    },
 
-                                            // "A" addressing always uses byte offsets, even if jumping in cog/lut mode:
-                                            const target_address: u32 = switch (value.value) {
-                                                .address => |addr| addr.hub_address,
-                                                else => int,
-                                            };
+                                    .relative => {
 
-                                            const byte_delta_i33: i33 = @as(i33, target_address) - @as(i33, hub_pc);
+                                        // "A" addressing always uses byte offsets, even if jumping in cog/lut mode:
+                                        const target_address: u32 = switch (value.value) {
+                                            .address => |addr| addr.hub_address,
+                                            else => int,
+                                        };
 
-                                            const byte_delta_i20: i20 = std.math.cast(i20, byte_delta_i33) orelse delta: {
-                                                try ana.emit_error(location, "branch too far. Cannot jump by {} bytes", .{byte_delta_i33});
-                                                break :delta 0;
-                                            };
+                                        const byte_delta_i33: i33 = @as(i33, target_address) - @as(i33, hub_pc);
 
-                                            const byte_delta_u20: u20 = @bitCast(byte_delta_i20);
+                                        const byte_delta_i20: i20 = std.math.cast(i20, byte_delta_i33) orelse delta: {
+                                            try ana.emit_error(location, "branch too far. Cannot jump by {} bytes", .{byte_delta_i33});
+                                            break :delta 0;
+                                        };
 
-                                            fill_extra_slot = meta.rel;
-                                            fill_extra_slot = meta.rel;
-                                            break :enc byte_delta_u20;
-                                        },
-                                    }
+                                        const byte_delta_u20: u20 = @bitCast(byte_delta_i20);
+
+                                        fill_extra_slot = meta.rel;
+                                        fill_extra_slot = meta.rel;
+                                        break :selector byte_delta_u20;
+                                    },
                                 },
 
                                 .immediate => |shift| switch (hint) {
