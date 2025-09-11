@@ -544,9 +544,70 @@ const Analyzer = struct {
                     switch (coded.mnemonic.?.*) {
                         .assert => {},
 
-                        .hubexec => cursor.change_mode(idgen.next(), .hub),
-                        .lutexec => cursor.change_mode(idgen.next(), .lut),
-                        .cogexec => cursor.change_mode(idgen.next(), .cog),
+                        .hubexec, .lutexec, .cogexec => {
+                            const mode: eval.ExecMode = switch (coded.mnemonic.?.*) {
+                                .hubexec => .hub,
+                                .lutexec => .lut,
+                                .cogexec => .cog,
+                                else => unreachable,
+                            };
+
+                            var hub_offset = cursor.offset.hub_address;
+
+                            switch (instr.arguments.len) {
+                                0 => {}, // ok, just change the mode
+                                1 => blk: { // ok, requires a new hub offset
+
+                                    const value = ana.evaluate_root_expr(instr.arguments[0], null) catch |err| {
+                                        try ana.emit_error(instr.location, "Failed to evaluate argument for .{s}exec: {s}", .{
+                                            @tagName(mode), @errorName(err),
+                                        });
+                                        break :blk;
+                                    };
+
+                                    const new_offset_or_err = ana.cast_value_to(instr.location, .hub, value, u20);
+                                    if (new_offset_or_err) |new_offset| {
+                                        if (new_offset < hub_offset) {
+                                            try ana.emit_warning(instr.location, "New hub offset 0x{X:0>6} is smaller than previous offset 0x{X:0>6}.", .{
+                                                new_offset,
+                                                hub_offset,
+                                            });
+                                        }
+
+                                        // TODO: Reinclude the overlap check!
+                                        // for (segments.items) |segment| {
+                                        //     if (new_offset >= segment.hub_offset and new_offset < segment.hub_offset + segment.data.len) {
+                                        //         try ana.emit_error(instr.ast_node.location, " New segment at 0x{X:0>6} overlaps with previous segment {} at 0x{X:0>6}...0x{X:0>6}", .{
+                                        //             new_offset,
+                                        //             @intFromEnum(segment.id),
+                                        //             segment.hub_offset,
+                                        //             segment.hub_offset + segment.data.len - 1,
+                                        //         });
+                                        //     }
+                                        // }
+
+                                        hub_offset = new_offset;
+                                    } else |err| {
+                                        try ana.emit_error(instr.location, ".{s}exec expects a numeric operand, but got {}. Could not cast to number: {s}", .{
+                                            @tagName(mode),
+                                            instr.arguments[0],
+                                            @errorName(err),
+                                        });
+                                    }
+                                },
+                                else => {
+                                    try ana.emit_error(instr.location, ".{s}exec expects zero or one operand, but got {} operands.", .{
+                                        @tagName(mode),
+                                        instr.arguments.len,
+                                    });
+                                },
+                            }
+
+                            cursor.change_mode(idgen.next(), mode, hub_offset);
+
+                            // We must change the start address here as we're changing the cursor mode here.
+                            coded.start_addr = cursor.offset;
+                        },
 
                         .@"align" => blk: {
                             if (coded.ast_node.arguments.len != 1) {
@@ -980,9 +1041,39 @@ const Analyzer = struct {
                 .instruction => &ana.instructions[ana.seq_to_instr_lut[i].?],
             };
 
-            const hub_offset = instr.start_addr.?.hub_address;
+            const mnemonic: Mnemonic = instr.mnemonic.?.*;
 
+            const hub_offset = instr.start_addr.?.hub_address;
             std.debug.assert(hub_offset >= segment_end_hub_offset);
+
+            switch (mnemonic) {
+                .assert, .@"align" => continue :seq_loop,
+
+                .cogexec, .lutexec, .hubexec => {
+                    const new_mode: eval.ExecMode = switch (mnemonic) {
+                        .cogexec => .cog,
+                        .lutexec => .lut,
+                        .hubexec => .hub,
+                        else => unreachable,
+                    };
+
+                    if (current_segment.data.items.len > 0) {
+                        try segments.append(segment_allocator, .{
+                            .id = sid.next(),
+                            .hub_offset = current_segment.hub_offset,
+                            .data = try current_segment.data.toOwnedSlice(),
+                            .exec_mode = current_segment.exec_mode,
+                        });
+                    }
+
+                    current_segment.deinit();
+                    current_segment = .init(hub_offset, new_mode, segment_allocator);
+
+                    continue :seq_loop;
+                },
+
+                else => {},
+            }
 
             if (hub_offset > segment_end_hub_offset) {
                 // insert alignment padding
@@ -997,12 +1088,15 @@ const Analyzer = struct {
             };
             defer line_info.length = @intCast((current_segment.hub_offset + current_segment.data.items.len) - hub_offset);
 
-            const mnemonic: Mnemonic = instr.mnemonic.?.*;
-
             logger.debug("emit {s}", .{@tagName(mnemonic)});
 
             switch (mnemonic) {
-                .assert, .@"align" => {},
+                .assert,
+                .@"align",
+                .cogexec,
+                .lutexec,
+                .hubexec,
+                => unreachable,
 
                 inline .byte, .word, .long => |_, tag| {
                     const T = switch (tag) {
@@ -1020,25 +1114,6 @@ const Analyzer = struct {
                             T,
                         );
                         try current_segment.writer().writeInt(T, value, .little);
-                    }
-                },
-
-                .cogexec, .lutexec, .hubexec => {
-                    const new_mode: eval.ExecMode = switch (mnemonic) {
-                        .cogexec => .cog,
-                        .lutexec => .lut,
-                        .hubexec => .hub,
-                        else => unreachable,
-                    };
-                    if (current_segment.data.items.len > 0) {
-                        try segments.append(segment_allocator, .{
-                            .id = sid.next(),
-                            .hub_offset = current_segment.hub_offset,
-                            .data = try current_segment.data.toOwnedSlice(),
-                            .exec_mode = current_segment.exec_mode,
-                        });
-                        current_segment.deinit();
-                        current_segment = .init(hub_offset, new_mode, segment_allocator);
                     }
                 },
 
@@ -1335,7 +1410,7 @@ const Analyzer = struct {
 
         const raw_value: i64 = switch (value.value) {
             .int => |int| int,
-            .address => |offset| try ana.get_offset_for_exec_mode(offset, exec_mode),
+            .address => |offset| try ana.get_offset_for_exec_mode(location, offset, exec_mode),
             .string => @panic("string emission not supported yet"),
             .enumerator => @panic("BUG: enumerators must be handled before this!"),
             .register => |reg| @intFromEnum(reg),
@@ -1427,15 +1502,19 @@ const Analyzer = struct {
         return ptr_mask | opcode_mask | enc_index;
     }
 
-    fn get_offset_for_exec_mode(ana: *Analyzer, offset: TaggedAddress, mode: eval.ExecMode) !u32 {
+    fn get_offset_for_exec_mode(ana: *Analyzer, location: ast.Location, offset: TaggedAddress, mode: eval.ExecMode) !u32 {
         const target_mode: eval.ExecMode = offset.local;
         if (target_mode != mode) {
-            if (mode != .hub) {
+            if (mode == .hub or target_mode == .hub) {
+                try ana.emit_warning(location, "jumping from {s}exec mode into code that was defined in {s}exec mode. This is potentially unwanted behaviour!", .{
+                    @tagName(mode),
+                    @tagName(target_mode),
+                });
+            } else {
                 // TODO: IMPORTANT: WE HAVE TO ENCODE THE SEGMENT ID into Offset
                 // SO WE DON'T JUMP BETWEEN DIFFERENT SEGMENTS!
-                try ana.emit_error(null, "cannot refer to offset from different execution mode!", .{});
-            } else {
-                try ana.emit_warning(null, "jumping from hubexec mode into code that was defined in {s}exec mode. This is potentially unwanted behaviour!", .{
+                try ana.emit_error(location, "cannot perform jump from {s}exec mode into {s}exec mode.", .{
+                    @tagName(mode),
                     @tagName(target_mode),
                 });
             }
@@ -1612,7 +1691,7 @@ const Analyzer = struct {
                         const local_hub_addr: u32 = local_offset.hub_address;
                         const target_hub_addr: u32 = target_offset.hub_address;
 
-                        const jmp_delta = @as(u33, target_hub_addr) - @as(u33, local_hub_addr);
+                        const jmp_delta = @as(i33, target_hub_addr) - @as(i33, local_hub_addr);
 
                         if (@mod(jmp_delta, 4) != 0) {
                             try ana.emit_error(op.location, "'@' cannot be applied to a offset range which is non-divisible by 4", .{});
@@ -2124,11 +2203,11 @@ const Cursor = struct {
         };
     }
 
-    fn change_mode(cursor: *Cursor, seg: Segment_ID, mode: eval.ExecMode) void {
+    fn change_mode(cursor: *Cursor, seg: Segment_ID, mode: eval.ExecMode, hub_offset: ?u20) void {
         cursor.offset = switch (mode) {
-            .hub => .init_hub(seg, cursor.offset.hub_address),
-            .cog => .init_cog(seg, cursor.offset.hub_address, 0),
-            .lut => .init_lut(seg, cursor.offset.hub_address, 0),
+            .hub => .init_hub(seg, hub_offset orelse cursor.offset.hub_address),
+            .cog => .init_cog(seg, hub_offset orelse cursor.offset.hub_address, 0),
+            .lut => .init_lut(seg, hub_offset orelse cursor.offset.hub_address, 0),
         };
     }
 
@@ -2493,10 +2572,16 @@ pub const EncodedInstruction = struct {
                     .immediate => (usage == .literal),
                     .reg_or_imm => true,
 
-                    .pointer_expr => (vtype == .pointer_expr) or (vtype == .address) or ((vtype == .int) and (usage == .literal)) or ((vtype == .register) and switch (value.value.register) {
-                        PTRA, PTRB => true,
+                    .pointer_expr => switch (vtype) {
+                        .pointer_expr => true,
+                        .address => true,
+                        .int => (usage == .literal),
+                        .register => (usage == .register) or switch (value.value.register) {
+                            PTRA, PTRB => true,
+                            else => false,
+                        },
                         else => false,
-                    }),
+                    },
 
                     .pointer_reg => (vtype == .register) and switch (value.value.register) {
                         PA, PB, PTRA, PTRB => true,

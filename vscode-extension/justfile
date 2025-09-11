@@ -1,2 +1,5 @@
-package:
+compile:
+    npm run compile-web
+
+package: compile 
     ./node_modules/.bin/vsce package

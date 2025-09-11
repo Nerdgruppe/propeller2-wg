@@ -28,12 +28,14 @@ const CliArgs = struct {
     @"compare-to": []const u8 = "",
     verbose: bool = false,
     format: emit.BinaryFormat = .flat,
+    @"fill-byte": u8 = 0x00,
 
     pub const shorthands = .{
         .h = "help",
         .o = "output",
         .v = "verbose",
         .f = "format",
+        .F = "fill-byte",
     };
 
     pub const meta = .{
@@ -48,6 +50,7 @@ const CliArgs = struct {
             .output = "Sets the path of the output file.",
             .verbose = "Enables debug logging",
             .format = "Selects the binary format to use",
+            .@"fill-byte" = "The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -109,7 +112,21 @@ pub fn main() !u8 {
 
         var parser: frontend.Parser = .init(source_code, input_path);
 
-        parsed_file.* = try parser.parse(allocator);
+        parsed_file.* = parser.parse(allocator) catch |err| switch (err) {
+            error.Overflow,
+            error.InvalidUtf8,
+            error.Utf8CannotEncodeSurrogateHalf,
+            error.CodepointTooLarge,
+            error.UnexpectedToken,
+            error.UnexpectedCharacter,
+            error.UnexpectedEndOfFile,
+            error.SyntaxError,
+            error.InvalidCharacter,
+            error.InvalidFlag,
+            => return 1,
+
+            error.OutOfMemory => |e| return e,
+        };
     }
     defer for (loaded_files) |*file|
         file.deinit();
@@ -142,15 +159,21 @@ pub fn main() !u8 {
         mod = module;
 
         for (module.segments) |segment| {
+            const previous_end = output.items.len;
             try output.resize(allocator, @max(output.items.len, segment.hub_offset + segment.data.len));
             std.debug.assert(output.items.len >= segment.hub_offset + segment.data.len);
+
+            // fill newly created data with the user-defined fill byte:
+            @memset(output.items[previous_end..], cli.options.@"fill-byte");
+
+            // then insert the segments data:
             @memcpy(output.items[segment.hub_offset..][0..segment.data.len], segment.data);
         }
 
         std.log.info("sema yielded {} segments:", .{module.segments.len});
 
         for (module.segments, 0..) |seg, seg_i| {
-            std.log.info("  [{}]: {} bytes", .{ seg_i, seg.data.len });
+            std.log.info("  [{}]: offset 0x{X:0>6}, length {} bytes", .{ seg_i, seg.hub_offset, seg.data.len });
 
             var i: usize = 0;
             const chunk_size = 16;
@@ -191,13 +214,17 @@ pub fn main() !u8 {
 
         const out = std.io.getStdOut();
 
-        try out.writer().print("mismatch detected.\n", .{});
+        try out.writer().print("OUTPUT DOES NOT MATCH '{s}'.\n", .{
+            cli.options.@"compare-to",
+        });
 
         if (ref.len == output.items.len) {
-            try out.writer().print("    length: {}\n", .{ref.len});
+            try out.writer().print("binary length: {}\n", .{ref.len});
         } else {
-            try out.writer().print("    expected length: {}, actual length: {}\n", .{
+            try out.writer().print("expected binary length: {}\n", .{
                 ref.len,
+            });
+            try out.writer().print("actual binary length:   {}\n", .{
                 output.items.len,
             });
         }
@@ -358,7 +385,11 @@ fn disasm(buffer: []u8, encoded: u32) ![]const u8 {
         }
 
         const cond: frontend.ast.Condition.Code = @enumFromInt(encoded >> 28);
-        try writer.print("{s} {s}", .{ condition_str(cond), instr.mnemonic });
+        if (encoded != 0) {
+            try writer.print("{s} {s}", .{ condition_str(cond), instr.mnemonic });
+        } else {
+            try writer.print("{s} {s}", .{ condition_str(.always), instr.mnemonic });
+        }
 
         for (instr.operands, 0..) |op, i| {
             if (i > 0) {
@@ -386,6 +417,7 @@ fn disasm(buffer: []u8, encoded: u32) ![]const u8 {
 
             try writer.print("0x{X}", .{slotval});
         }
+        break;
     }
 
     return fbs.getWritten();

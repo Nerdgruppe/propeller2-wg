@@ -1,0 +1,8 @@
+CON
+    FIFO_ALTx_CONFIG = 1
+DAT
+    ALTS   fifo,     #FIFO_ALTx_CONFIG
+    RDLONG fifo_tmp, (0-0)
+
+fifo     LONG 0
+fifo_tmp LONG 0

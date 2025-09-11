@@ -1,6 +1,13 @@
 
 zig := "zig-0.14.0"
 
+build:
+    {{zig}} build \
+        -freference-trace=10 \
+        --prominent-compile-errors \
+        install \
+        test 
+
 nothing:
     true
 

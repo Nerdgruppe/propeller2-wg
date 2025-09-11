@@ -1,0 +1,8 @@
+
+const FIFO_ALTx_CONFIG = 1
+
+    ALTS   fifo,     FIFO_ALTx_CONFIG
+    RDLONG fifo_tmp, altered
+
+var fifo:     LONG 0
+var fifo_tmp: LONG 0

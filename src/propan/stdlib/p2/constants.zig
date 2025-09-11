@@ -7,6 +7,10 @@ const eval = @import("../eval.zig");
 ///     https://github.com/totalspectrum/spin2cpp/blob/996a5745ef9c04dbdc7f0e23fc58a9c48852679b/frontends/lexer.c#L3012
 ///
 pub const p2_constants: std.StaticStringMap(eval.Value) = .initComptime(&[_]struct { []const u8, eval.Value }{
+    // this is a special constant that maps to register address 0.
+    // it shall be used to signal a register affected by an `ALT*` instruction.
+    .{ "altered", .register(0) },
+
     .{ "CHIPVER", .int(2) },
 
     // .{ "RCFAST", 0x00000001 },

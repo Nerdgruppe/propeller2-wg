@@ -17,6 +17,7 @@
         "patterns": [
           { "include": "#comment" },
           { "include": "#fncall" },
+          { "include": "#wellknown" },
           { "include": "#identifier" },
           { "include": "#enumerator" },
           { "include": "#string" },
@@ -107,6 +108,11 @@
           "1": { "name": "entity.name.function.propan" },
           "2": { "name": "punctuation.assignment.open" }
         }
+      },
+
+      "wellknown": {
+        "name": "variable.language.builtin.propan",
+        "match": "\\b(altered|I(RET|JMP)[123]|(DIR|IN|OUT|PTR|P)[AB])\\b"
       },
 
       "identifier": {

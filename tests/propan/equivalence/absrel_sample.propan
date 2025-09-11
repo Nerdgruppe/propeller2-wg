@@ -21,4 +21,5 @@ hub:    JMP     cog                 // 0xFD800000      hub to cog, always absolu
         JMP     hub                 // 0xFD9FFFEC      hub to hub, relative
         JMP     nrel(hub)           // 0xFD802000      hub to hub, force absolute
         JMP     hubaddr(hub)        // 0xFD9FFFE4      hub to hub, relative
-        JMP     nrel(@hub)          // 0xFD802000      hub to hub, force absolute
+        JMP     nrel(hubaddr(hub))  // 0xFD802000      hub to hub, force absolute
+

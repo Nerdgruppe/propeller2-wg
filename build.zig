@@ -264,22 +264,24 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{
+    "tests/propan/equivalence/absrel_sample.propan",
+    "tests/propan/equivalence/ambigious.propan",
+    "tests/propan/equivalence/argless.propan",
     "tests/propan/equivalence/arithmetic1.propan",
     "tests/propan/equivalence/arithmetic2.propan",
-    "tests/propan/equivalence/special_effects.propan",
-    "tests/propan/equivalence/argless.propan",
-    "tests/propan/equivalence/three_ops.propan",
-    "tests/propan/equivalence/metaprogramming.propan",
-    "tests/propan/equivalence/io.propan",
-    "tests/propan/equivalence/branching.propan",
-    "tests/propan/equivalence/memory.propan",
-    "tests/propan/equivalence/cordic.propan",
-    "tests/propan/equivalence/aux.propan",
-    "tests/propan/equivalence/flags.propan",
-    "tests/propan/equivalence/memory-ptr.propan",
-    "tests/propan/equivalence/cursed.propan",
-    "tests/propan/equivalence/ambigious.propan",
     "tests/propan/equivalence/aug.propan",
+    "tests/propan/equivalence/aux.propan",
+    "tests/propan/equivalence/branching.propan",
+    "tests/propan/equivalence/cordic.propan",
+    "tests/propan/equivalence/cursed.propan",
+    "tests/propan/equivalence/flags.propan",
+    "tests/propan/equivalence/io.propan",
+    "tests/propan/equivalence/memory-ptr.propan",
+    "tests/propan/equivalence/memory.propan",
+    "tests/propan/equivalence/metaprogramming.propan",
+    "tests/propan/equivalence/rdlong-selection-bug.propan",
+    "tests/propan/equivalence/special_effects.propan",
+    "tests/propan/equivalence/three_ops.propan",
 };
 
 const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
