@@ -26,6 +26,10 @@ pub const AnalyzeOptions = struct {
     } = .as_ptr_epxr,
 
     flip_augs_on_pcrel: bool = true,
+
+    /// If this is `true`, the emitted code will use relative jumps when jumping
+    /// between different `.hubexec` segments.
+    use_relative_hub_to_hub_jmp: bool = true,
 };
 
 pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions) !Module {
@@ -1008,7 +1012,7 @@ const Analyzer = struct {
 
         var sid: Segment_ID_Gen = .{};
 
-        var current_segment: SegmentBuilder = .init(0, .cog, segment_allocator);
+        var current_segment: SegmentBuilder = .init(sid.next(), 0, .cog, segment_allocator);
         defer current_segment.data.deinit();
 
         std.debug.assert(ana.line_data.items.len == 0);
@@ -1059,7 +1063,7 @@ const Analyzer = struct {
 
                     if (current_segment.data.items.len > 0) {
                         try segments.append(segment_allocator, .{
-                            .id = sid.next(),
+                            .id = current_segment.id,
                             .hub_offset = current_segment.hub_offset,
                             .data = try current_segment.data.toOwnedSlice(),
                             .exec_mode = current_segment.exec_mode,
@@ -1067,7 +1071,9 @@ const Analyzer = struct {
                     }
 
                     current_segment.deinit();
-                    current_segment = .init(hub_offset, new_mode, segment_allocator);
+                    current_segment = .init(sid.next(), hub_offset, new_mode, segment_allocator);
+
+                    std.debug.assert(instr.start_addr.?.segment_id == current_segment.id);
 
                     continue :seq_loop;
                 },
@@ -1209,15 +1215,73 @@ const Analyzer = struct {
                                 .address => |meta| enc: {
                                     // If R = 1 then PC += A, else PC = A. "\" forces R = 0.
 
-                                    switch (value.flags.addressing) {
-                                        .auto, .absolute => {
-                                            fill_extra_slot = null;
+                                    selector: switch (value.flags.addressing) {
+                                        .auto => {
+                                            // xq  — 11:29
+                                            // do you happen to know how (or where) flexspin chooses
+                                            // when to use abs/relative addressing?
+                                            //
+                                            // Wuerfel_21 — 12:02
+                                            // It's "relative unless label is in a different memory space
+                                            // OR code has explicit absolute backslash"
 
+                                            switch (value.value) {
+                                                .address => |address| {
+                                                    std.log.err("auto mode translation: segment is #{}, mode is {}, target is {}", .{
+                                                        @intFromEnum(current_segment.id),
+                                                        current_segment.exec_mode,
+                                                        address,
+                                                    });
+
+                                                    if (current_segment.id == address.segment_id) {
+                                                        // Always use relative addressing when in the *same* segment
+                                                        continue :selector .relative;
+                                                    } else if (current_segment.exec_mode == .hub and address.local == .hub) {
+                                                        // Use configurable behaviour between two hubexec sections
+                                                        if (ana.options.use_relative_hub_to_hub_jmp) {
+                                                            continue :selector .relative;
+                                                        } else {
+                                                            continue :selector .absolute;
+                                                        }
+                                                    } else {
+                                                        // Otherwise, use absolute addressing
+                                                        continue :selector .absolute;
+                                                    }
+                                                    unreachable;
+                                                },
+                                                else => {
+                                                    // always use absolute addressing for non-label targets:
+                                                    // TODO: Implement policy here to match flexspin/PASM2 behaviour and decide if the address is cog- or lut relative
+                                                    continue :selector .absolute;
+                                                },
+                                            }
+                                        },
+
+                                        .absolute => {
+                                            fill_extra_slot = null;
                                             break :enc int;
                                         },
+
                                         .relative => {
+
+                                            // "A" addressing always uses byte offsets, even if jumping in cog/lut mode:
+                                            const target_address: u32 = switch (value.value) {
+                                                .address => |addr| addr.hub_address,
+                                                else => int,
+                                            };
+
+                                            const byte_delta_i33: i33 = @as(i33, target_address) - @as(i33, hub_pc);
+
+                                            const byte_delta_i20: i20 = std.math.cast(i20, byte_delta_i33) orelse delta: {
+                                                try ana.emit_error(location, "branch too far. Cannot jump by {} bytes", .{byte_delta_i33});
+                                                break :delta 0;
+                                            };
+
+                                            const byte_delta_u20: u20 = @bitCast(byte_delta_i20);
+
                                             fill_extra_slot = meta.rel;
-                                            break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int, value.flags.augment);
+                                            fill_extra_slot = meta.rel;
+                                            break :enc byte_delta_u20;
                                         },
                                     }
                                 },
@@ -1249,7 +1313,10 @@ const Analyzer = struct {
 
                                     if (meta.pcrel) {
                                         aug.flip = true; // flexspin flips the operands here for some reason
-                                        break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int, value.flags.augment);
+                                        break :enc try ana.compute_rel(location, current_segment.exec_mode, cog_pc, hub_pc, int, if (value.flags.augment)
+                                            .augmented
+                                        else
+                                            .default);
                                     } else {
                                         break :enc int;
                                     }
@@ -1368,7 +1435,12 @@ const Analyzer = struct {
         return segments.toOwnedSlice(segment_allocator);
     }
 
-    fn compute_rel(ana: *Analyzer, loc: ast.Location, exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32, allow_aug: bool) !u32 {
+    const RelativeAddressing = enum {
+        default, // 9 bit, counts instructions
+        augmented, // 20 bit, counts instructions
+    };
+
+    fn compute_rel(ana: *Analyzer, loc: ast.Location, exec_mode: eval.ExecMode, cog_pc: u32, hub_pc: u32, int: u32, mode: RelativeAddressing) !u32 {
         const delta33: i33 = switch (exec_mode) {
             .cog, .lut => @as(i33, int) - @as(i33, cog_pc),
             .hub => @divTrunc(@as(i33, int) - @as(i33, 0x400 + (hub_pc -| 0x400)), 4),
@@ -1376,26 +1448,29 @@ const Analyzer = struct {
 
         logger.info("pcrel: cog={} hub={} target={}:{s} => rel {}", .{ cog_pc, hub_pc, int, @tagName(exec_mode), delta33 });
 
-        if (allow_aug) {
-            // somehow the augmented delta only uses 18 bits of PC ?
+        switch (mode) {
+            .default => {
+                const delta9: i9 = std.math.cast(i9, delta33) orelse {
+                    try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
+                    return 0;
+                };
 
-            const delta20: i20 = std.math.cast(i20, delta33) orelse {
-                try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
-                return 0;
-            };
+                const udelta9: u9 = @bitCast(delta9);
 
-            const udelta20: u20 = @bitCast(delta20);
+                return udelta9;
+            },
+            .augmented => {
+                // somehow the augmented delta only uses 18 bits of PC ?
 
-            return udelta20;
-        } else {
-            const delta9: i9 = std.math.cast(i9, delta33) orelse {
-                try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
-                return 0;
-            };
+                const delta20: i20 = std.math.cast(i20, delta33) orelse {
+                    try ana.emit_error(loc, "branch too far. Cannot jump by {} instructions", .{delta33});
+                    return 0;
+                };
 
-            const udelta9: u9 = @bitCast(delta9);
+                const udelta20: u20 = @bitCast(delta20);
 
-            return udelta9;
+                return udelta20;
+            },
         }
     }
 
@@ -1863,7 +1938,7 @@ const Analyzer = struct {
                     .nrel => {
                         std.debug.assert(argv.len == 1);
                         if (nesting != 0) {
-                            try ana.emit_error(fncall.arguments[0].location, "aug() must be the root of an expression.", .{});
+                            try ana.emit_error(fncall.arguments[0].location, "nrel() must be the root of an expression.", .{});
                         }
                         var value = argv[0];
                         value.flags.addressing = .absolute;
@@ -2149,12 +2224,14 @@ const Analyzer = struct {
 };
 
 const SegmentBuilder = struct {
+    id: Segment_ID,
     hub_offset: u20,
     exec_mode: eval.ExecMode,
     data: std.ArrayList(u8),
 
-    fn init(hub_offset: u20, exec_mode: eval.ExecMode, allocator: std.mem.Allocator) SegmentBuilder {
+    fn init(id: Segment_ID, hub_offset: u20, exec_mode: eval.ExecMode, allocator: std.mem.Allocator) SegmentBuilder {
         return .{
+            .id = id,
             .hub_offset = hub_offset,
             .exec_mode = exec_mode,
             .data = .init(allocator),
