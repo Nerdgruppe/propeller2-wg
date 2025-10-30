@@ -6,9 +6,9 @@
 
     .dependencies = .{
         .ptk = .{
-            // .url = "git+https://github.com/ikskuh/parser-toolkit.git#7817ed5d9096b40039c49498ddf7f11fa7a2fc4e",
-            // .hash = "parser_toolkit-0.1.0-baYGPbJAEwB2mV9PHH9LFc5yZTx3Ox5rkcJp87Fh8ECO",
-            .path = "vendor/parser-toolkit",
+            .url = "git+https://github.com/ikskuh/parser-toolkit.git#0d5e00d4830bca53d10fee5d562152f1329d5784",
+            .hash = "parser_toolkit-0.1.0-baYGPS1CEwDuQk1W_5QEfKF_BWU5lN4qb8kVZoQ6Id9k",
+            // .path = "vendor/parser-toolkit",
         },
         .args = .{
             .url = "git+https://github.com/ikskuh/zig-args.git#9425b94c103a031777fdd272c555ce93a7dea581",
