@@ -86,6 +86,23 @@ pub const OptionalBoolean = enum {
 };
 
 pub const functions = define.namespace(.{
+    .regoffset = define.function(struct {
+        pub const docs = "Computes a bit range including low and high.";
+
+        pub const params = .{
+            .reg = .{ .docs = "The base register to be used" },
+            .offset = .{ .docs = "Relative offset between -512 and +511" },
+        };
+
+        pub fn invoke(reg: eval.Register, offset: i10) !eval.Register {
+            const new: u9 = @intCast(
+                @mod(@as(i10, @intFromEnum(reg)) +% offset, std.math.maxInt(u9)),
+            );
+
+            return @enumFromInt(new);
+        }
+    }),
+
     .bitrange = define.function(struct {
         pub const docs = "Computes a bit range including low and high.";
 

@@ -64,3 +64,10 @@
 .assert 0x0007_8007 == SmartPin.UartTx.config(baud=2, bits=8, clk=15) // 7.5 clocks must be 0x00078000+7
 .assert 0x0007_8007 == SmartPin.UartTx.config(baud=2, clk=15) // bits should default to 8
 .assert 0x0021_540F == SmartPin.UartRx.config(baud=3, bits=16, clk=100) // 33.33 clocks must be 0x00215400+15
+
+
+.assert cogaddr(regoffset(reg1, 1)) == cogaddr(reg2) // TODO: Implement peer type resolution between reg and label
+.assert cogaddr(regoffset(reg2, -1)) == cogaddr(reg1) // TODO: Implement peer type resolution between reg and label
+
+var reg1: long 0
+var reg2: long 0 

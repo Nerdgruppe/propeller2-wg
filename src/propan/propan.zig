@@ -147,6 +147,9 @@ pub fn main() !u8 {
     var output: std.ArrayListUnmanaged(u8) = .empty;
     defer output.deinit(allocator);
 
+    // this compile without exit code 1!
+    // TODO: ADDCT1 tmp, ticks(CLK, us=15000)
+
     var mod: ?Module = null;
     for (cli.positionals, loaded_files) |input_path, parsed_file| {
         std.log.debug("analyzing {s}...", .{input_path});
