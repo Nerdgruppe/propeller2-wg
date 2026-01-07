@@ -11,7 +11,7 @@ cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
 
-debug_stream: ?*DebugFifo = null,
+// debug_stream: ?*DebugFifo = null,
 
 pub fn init(hub: *Hub) void {
     hub.* = .{

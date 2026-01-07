@@ -202,9 +202,9 @@ pub const functions = define.namespace(.{
             }
 
             return std.math.cast(u32, clocks_u64) orelse {
-                try ctx.emit_error("A delay of {} periods ({:.3}) cannot be represented with 32 bits.", .{
+                try ctx.emit_error("A delay of {} periods ({D:.3}) cannot be represented with 32 bits.", .{
                     clocks_u64,
-                    std.fmt.fmtDuration(delay_ns),
+                    delay_ns,
                 });
                 return std.math.maxInt(u32);
             };

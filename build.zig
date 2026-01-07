@@ -108,10 +108,10 @@ pub fn build(b: *std.Build) void {
     {
         const fuzz_corpus_files = b.addWriteFiles();
 
-        var fuzz_corpus_index: std.ArrayList(u8) = .init(b.allocator);
-        defer fuzz_corpus_index.deinit();
+        var fuzz_corpus_index: std.ArrayList(u8) = .empty;
+        defer fuzz_corpus_index.deinit(b.allocator);
 
-        fuzz_corpus_index.writer().writeAll(
+        fuzz_corpus_index.writer(b.allocator).writeAll(
             \\pub const files: []const []const u8 = &.{
             \\
         ) catch @panic("oom");
@@ -121,15 +121,15 @@ pub fn build(b: *std.Build) void {
 
             _ = fuzz_corpus_files.addCopyFile(b.path(path), filename);
 
-            fuzz_corpus_index.writer().print(
-                \\    @embedFile("{}"),
+            fuzz_corpus_index.writer(b.allocator).print(
+                \\    @embedFile("{f}"),
                 \\
             ,
-                .{std.zig.fmtEscapes(filename)},
+                .{std.zig.fmtString(filename)},
             ) catch @panic("oom");
         }
 
-        fuzz_corpus_index.writer().writeAll(
+        fuzz_corpus_index.writer(b.allocator).writeAll(
             \\};
             \\
         ) catch @panic("oom");
@@ -270,7 +270,7 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/arithmetic1.propan",
     "tests/propan/equivalence/arithmetic2.propan",
     "tests/propan/equivalence/aug.propan",
-    "tests/propan/equivalence/aux.propan",
+    "tests/propan/equivalence/auxilary.propan",
     "tests/propan/equivalence/branching.propan",
     "tests/propan/equivalence/cordic.propan",
     "tests/propan/equivalence/cursed.propan",

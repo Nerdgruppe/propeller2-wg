@@ -18,7 +18,9 @@ pub fn main() !u8 {
     // Validate CLI args:
 
     if (cli.options.help) {
-        try args_parser.printHelp(CliArgs, cli.executable_name orelse "turboprop", std.io.getStdOut().writer());
+        var buffer: [4096]u8 = undefined;
+        var writer = std.fs.File.stdout().writer(&buffer);
+        try args_parser.printHelp(CliArgs, cli.executable_name orelse "turboprop", &writer.interface);
         return 0;
     }
 
@@ -45,15 +47,15 @@ pub fn main() !u8 {
         std.debug.assert(load_file.len <= p2_ram);
 
         if ((load_file.len % 4) != 0) {
-            std.log.err("{} is not loadable: length not divisible by 4!", .{
-                std.zig.fmtEscapes(load_file_path),
+            std.log.err("\"{f}\" is not loadable: length not divisible by 4!", .{
+                std.zig.fmtString(load_file_path),
             });
             return 1;
         }
 
         if (load_file.len == 0) {
-            std.log.warn("{} is empty!", .{
-                std.zig.fmtEscapes(load_file_path),
+            std.log.warn("\"{f}\" is empty!", .{
+                std.zig.fmtString(load_file_path),
             });
         }
 
@@ -99,12 +101,12 @@ pub fn main() !u8 {
             .dtr = optional_value(cli.options.reset == .dtr, true),
             .rts = optional_value(cli.options.reset == .rts, true),
         });
-        std.time.sleep(5 * std.time.ns_per_ms);
+        std.Thread.sleep(5 * std.time.ns_per_ms);
         try serial_utils.changeControlPins(port, .{
             .dtr = optional_value(cli.options.reset == .dtr, false),
             .rts = optional_value(cli.options.reset == .rts, false),
         });
-        std.time.sleep(20 * std.time.ns_per_ms);
+        std.Thread.sleep(20 * std.time.ns_per_ms);
     }
 
     // perform auto-baud configuration:
@@ -118,7 +120,8 @@ pub fn main() !u8 {
         try port.writeAll("Prop_Chk 0 0 0 0\r");
 
         // response will be [ CR, LF, "Prop_Ver G", CR, LF]
-        const reader = port.reader();
+        var buffer: [256]u8 = undefined;
+        var reader = port.reader(&buffer);
 
         try reader.skipUntilDelimiterOrEof('\n');
 

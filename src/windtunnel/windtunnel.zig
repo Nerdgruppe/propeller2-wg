@@ -81,18 +81,22 @@ pub fn main() !u8 {
     }
 
     if (cli.options.help) {
+        var buffer: [256]u8 = undefined;
+        var stdout = std.fs.File.stdout().writer(&buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "windtunnel",
-            std.io.getStdOut().writer(),
+            &stdout.interface,
         );
         return 0;
     }
     if (cli.positionals.len != 0) {
+        var buffer: [256]u8 = undefined;
+        var stderr = std.fs.File.stdout().writer(&buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "windtunnel",
-            std.io.getStdErr().writer(),
+            &stderr.interface,
         );
         return 1;
     }

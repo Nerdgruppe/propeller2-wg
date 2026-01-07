@@ -81,10 +81,12 @@ pub fn main() !u8 {
     }
 
     if (cli.options.help) {
+        var buffer: [4096]u8 = undefined;
+        var stdout = std.fs.File.stdout().writer(&buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "propan",
-            std.io.getStdOut().writer(),
+            &stdout.interface,
         );
         return 0;
     }
