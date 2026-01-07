@@ -809,14 +809,15 @@ const Analyzer = struct {
             };
             std.debug.assert(mnemonic.variants.items.len > 0);
 
-            var alternatives: std.BoundedArray(*const EncodedInstruction, 8) = .{};
+            var alternatives_buffer: [8]*const EncodedInstruction = undefined;
+            var alternatives: std.ArrayList(*const EncodedInstruction) = .initBuffer(&alternatives_buffer);
 
             for (mnemonic.variants.items) |*option| {
                 if (option.operands.len != instr.arguments.len)
                     continue;
-                alternatives.append(option) catch @panic("array too small");
+                alternatives.appendBounded(option) catch @panic("array too small");
             }
-            if (alternatives.len == 0) {
+            if (alternatives.items.len == 0) {
                 try ana.emit_error(instr.ast_node.location, "Could not find a matching instruction for {s}: No variant expects {} operands.", .{
                     instr.ast_node.mnemonic,
                     instr.arguments.len,
@@ -828,7 +829,7 @@ const Analyzer = struct {
                 instr.ast_node.mnemonic,
                 instr.arguments.len,
                 mnemonic.variants.items.len,
-                alternatives.len,
+                alternatives.items.len,
             });
 
             logger.debug("  args:", .{});
@@ -838,7 +839,7 @@ const Analyzer = struct {
             logger.debug("  alts:", .{});
 
             var selection: ?*const EncodedInstruction = null;
-            match_alternative: for (alternatives.constSlice()) |alt| {
+            match_alternative: for (alternatives.items) |alt| {
                 logger.debug("  - {s}", .{alt.mnemonic});
 
                 var can_assign = true;
@@ -2258,7 +2259,7 @@ const SegmentBuilder = struct {
     id: Segment_ID,
     hub_offset: u20,
     exec_mode: eval.ExecMode,
-    data: std.ArrayList(u8),
+    data: std.array_list.Managed(u8),
 
     fn init(id: Segment_ID, hub_offset: u20, exec_mode: eval.ExecMode, allocator: std.mem.Allocator) SegmentBuilder {
         return .{
