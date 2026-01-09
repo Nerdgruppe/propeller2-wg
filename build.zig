@@ -1,11 +1,25 @@
 const std = @import("std");
 
+const FastBuild = struct {
+    b: *std.Build,
+    no_emit_bin: bool,
+
+    fn installArtifact(fb: FastBuild, step: *std.Build.Step.Compile) void {
+        if (fb.no_emit_bin) {
+            fb.b.getInstallStep().dependOn(&step.step);
+        } else {
+            fb.b.installArtifact(step);
+        }
+    }
+};
+
 pub fn build(b: *std.Build) void {
     // Steps:
     const run_step = b.step("run", "Runs propan");
     const test_step = b.step("test", "Runs the test suite");
 
     // Options:
+    const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -22,13 +36,18 @@ pub fn build(b: *std.Build) void {
     const ptk_mod = ptk_dep.module("parser-toolkit");
     const args_mod = args_dep.module("args");
 
+    const fb: FastBuild = .{
+        .b = b,
+        .no_emit_bin = no_emit_bin,
+    };
+
     // Exports:
 
     const flexspin = p2dev_dep.artifact("flexspin");
-    b.installArtifact(flexspin);
+    fb.installArtifact(flexspin);
 
     const loadp2_exe = p2dev_dep.artifact("loadp2");
-    b.installArtifact(loadp2_exe);
+    fb.installArtifact(loadp2_exe);
 
     // Build:
 
@@ -66,7 +85,7 @@ pub fn build(b: *std.Build) void {
             .name = "turboprop",
             .root_module = turboprop_mod,
         });
-        b.installArtifact(exe);
+        fb.installArtifact(exe);
     }
 
     const propan_exe = blk: {
@@ -75,7 +94,7 @@ pub fn build(b: *std.Build) void {
             .root_module = propan_mod,
         });
 
-        b.installArtifact(exe);
+        fb.installArtifact(exe);
 
         break :blk exe;
     };
@@ -86,7 +105,7 @@ pub fn build(b: *std.Build) void {
             .root_module = windtunnel_mod,
         });
 
-        b.installArtifact(exe);
+        fb.installArtifact(exe);
 
         break :blk exe;
     };

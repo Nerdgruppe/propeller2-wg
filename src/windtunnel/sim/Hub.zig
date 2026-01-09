@@ -3,15 +3,16 @@ const std = @import("std");
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
 const Hub = @This();
+const RingBuffer = @import("../ringbuffer.zig").RingBuffer;
 
-pub const DebugFifo = std.fifo.LinearFifo(u32, .{ .Static = 512 });
+pub const DebugFifo = RingBuffer(u32, 512);
 
 memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
 
-// debug_stream: ?*DebugFifo = null,
+debug_stream: ?*DebugFifo = null,
 
 pub fn init(hub: *Hub) void {
     hub.* = .{

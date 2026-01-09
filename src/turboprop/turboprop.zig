@@ -121,20 +121,20 @@ pub fn main() !u8 {
 
         // response will be [ CR, LF, "Prop_Ver G", CR, LF]
         var buffer: [256]u8 = undefined;
-        var reader = port.reader(&buffer);
+        var reader = port.readerStreaming(&buffer);
 
-        try reader.skipUntilDelimiterOrEof('\n');
+        _ = try reader.interface.discardDelimiterInclusive('\n');
 
-        var fbs = std.io.fixedBufferStream(&magic_buf);
+        var fbs: std.Io.Writer = .fixed(&magic_buf);
 
-        try reader.streamUntilDelimiter(fbs.writer(), '\n', null);
+        _ = try reader.interface.streamDelimiter(&fbs, '\n');
 
-        const magic = std.mem.trim(u8, fbs.getWritten(), " \r\n");
+        const magic = std.mem.trim(u8, fbs.buffered(), " \r\n");
 
         if (!std.mem.eql(u8, magic, p2_version)) {
-            std.log.warn("Device identifies as '{}', but epxected '{}'", .{
-                std.zig.fmtEscapes(magic),
-                std.zig.fmtEscapes(p2_version),
+            std.log.warn("Device identifies as \"{f}\", but epxected \"{f}\"", .{
+                std.zig.fmtString(magic),
+                std.zig.fmtString(p2_version),
             });
         }
     }
@@ -167,7 +167,10 @@ pub fn main() !u8 {
 
             try port.writeAll(" ?\r");
 
-            const response = try port.reader().readByte();
+            var response_buf: [1]u8 = undefined;
+            var reader = port.readerStreaming(&response_buf);
+
+            const response = try reader.interface.takeByte();
             switch (response) {
                 '.' => {},
                 '!' => {
@@ -202,8 +205,8 @@ pub fn main() !u8 {
         while (true) {
             var buffer: [64]u8 = undefined;
             const len = try port.read(&buffer);
-            std.debug.print("{}\n", .{
-                std.zig.fmtEscapes(buffer[0..len]),
+            std.debug.print("{f}\n", .{
+                std.zig.fmtString(buffer[0..len]),
             });
         }
     }

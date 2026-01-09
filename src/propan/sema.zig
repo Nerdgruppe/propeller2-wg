@@ -94,8 +94,8 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     const segments = try analyzer.emit_code(output_arena.allocator());
 
-    var symbols: std.ArrayList(Module.Symbol) = .init(output_arena.allocator());
-    defer symbols.deinit();
+    var symbols: std.ArrayList(Module.Symbol) = .empty;
+    defer symbols.deinit(output_arena.allocator());
 
     for (analyzer.symbols.keys(), analyzer.symbols.values()) |name, sym| {
         const stype: Module.Symbol.Type = switch (sym.type) {
@@ -106,7 +106,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
             .builtin => continue,
         };
 
-        try symbols.append(.{
+        try symbols.append(output_arena.allocator(), .{
             .name = try output_arena.allocator().dupe(u8, name),
             .label = sym.offset.?,
             .type = stype,
@@ -117,7 +117,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
         .arena = output_arena,
         .segments = segments,
         .line_data = try analyzer.line_data.toOwnedSlice(output_arena.allocator()),
-        .symbols = try symbols.toOwnedSlice(),
+        .symbols = try symbols.toOwnedSlice(output_arena.allocator()),
     };
 }
 
@@ -126,9 +126,9 @@ fn dump_analyzer(analyzer: *Analyzer) void {
     for (analyzer.symbols.values()) |sym| {
         if (sym.type == .builtin)
             continue;
-        logger.info("  {s}: {s} => offset={?}, value={?}, referenced={}", .{
+        logger.info("  {s}: {t} => offset={?f}, value={?f}, referenced={}", .{
             sym.name,
-            @tagName(sym.type),
+            sym.type,
             sym.offset,
             sym.value,
             sym.referenced,
@@ -137,7 +137,7 @@ fn dump_analyzer(analyzer: *Analyzer) void {
 
     logger.info("map file:", .{});
     for (analyzer.instructions) |instr| {
-        logger.info("  {}: {s} (+{} bytes)", .{
+        logger.info("  {f}: {s} (+{} bytes)", .{
             instr.start_addr.?,
             instr.ast_node.mnemonic,
             instr.byte_size.?,
@@ -146,12 +146,12 @@ fn dump_analyzer(analyzer: *Analyzer) void {
 
     logger.info("map file:", .{});
     for (analyzer.instructions) |instr| {
-        logger.info("  {}: {s}", .{
+        logger.info("  {f}: {s}", .{
             instr.start_addr.?,
             instr.ast_node.mnemonic,
         });
         for (instr.arguments, 0..) |arg, i| {
-            logger.info("    [{}] = {}", .{ i, arg });
+            logger.info("    [{}] = {f}", .{ i, arg });
         }
     }
 }
@@ -222,12 +222,12 @@ const Analyzer = struct {
 
     fn emit_error(ana: *Analyzer, location: ?ast.Location, comptime fmt: []const u8, args: anytype) !void {
         ana.ok = false;
-        std.log.err("{?}: " ++ fmt, .{location} ++ args);
+        std.log.err("{?f}: " ++ fmt, .{location} ++ args);
     }
 
     fn emit_warning(ana: *Analyzer, location: ?ast.Location, comptime fmt: []const u8, args: anytype) !void {
         _ = ana;
-        std.log.warn("{?}: " ++ fmt, .{location} ++ args);
+        std.log.warn("{?f}: " ++ fmt, .{location} ++ args);
     }
 
     fn emit_eval_error(ana: *Analyzer, location: ast.Location, comptime prefix: []const u8, err: EvalError) !void {
@@ -283,7 +283,7 @@ const Analyzer = struct {
         for (constants.keys(), constants.values()) |name, value| {
             const gop = ana.symbols.getOrPutAssumeCapacity(name);
             if (gop.found_existing) {
-                try ana.emit_error(null, "duplicate predefined symbol: {s} {}", .{ name, gop.value_ptr.type });
+                try ana.emit_error(null, "duplicate predefined symbol: {s} {any}", .{ name, gop.value_ptr.type });
                 return error.DuplicateSymbol;
             }
             gop.value_ptr.* = SymbolInfo{
@@ -411,7 +411,7 @@ const Analyzer = struct {
                 const sym = try ana.get_symbol_info(symref.symbol_name);
                 sym.referenced = true;
                 if (sym.type == .undefined) {
-                    try ana.emit_error(symref.location, "undefined reference to symbol {s} at {}", .{ sym.name, symref.location });
+                    try ana.emit_error(symref.location, "undefined reference to symbol {s} at {f}", .{ sym.name, symref.location });
                 }
             },
 
@@ -1006,7 +1006,8 @@ const Analyzer = struct {
                         const lhs = try ana.evaluate_root_expr(arg_expr.binary_transform.lhs.*, null);
                         const rhs = try ana.evaluate_root_expr(arg_expr.binary_transform.rhs.*, null);
 
-                        message = try std.fmt.allocPrint(ana.arena.allocator(), "{nice} {s} {nice}!", .{ lhs, relation, rhs });
+                        // TODO(0.15.2): Use "nice" formatting again:
+                        message = try std.fmt.allocPrint(ana.arena.allocator(), "{f} {s} {f}!", .{ lhs, relation, rhs });
                     }
                 }
             }
@@ -1031,7 +1032,7 @@ const Analyzer = struct {
         }
 
         seq_loop: for (ana.file.sequence, 0..) |seq, i| {
-            const segment_end_hub_offset: u32 = @intCast(current_segment.hub_offset + current_segment.data.items.len);
+            const segment_end_hub_offset: u32 = @intCast(current_segment.hub_offset + current_segment.len());
 
             const instr: *InstructionInfo = switch (seq) {
                 .constant, .empty => continue :seq_loop,
@@ -1070,11 +1071,11 @@ const Analyzer = struct {
                         else => unreachable,
                     };
 
-                    if (current_segment.data.items.len > 0) {
+                    if (current_segment.len() > 0) {
                         try segments.append(segment_allocator, .{
                             .id = current_segment.id,
                             .hub_offset = current_segment.hub_offset,
-                            .data = try current_segment.data.toOwnedSlice(),
+                            .data = try current_segment.toOwnedSlice(),
                             .exec_mode = current_segment.exec_mode,
                         });
                     }
@@ -1092,7 +1093,7 @@ const Analyzer = struct {
 
             if (hub_offset > segment_end_hub_offset) {
                 // insert alignment padding
-                try current_segment.writer().writeByteNTimes(0xFF, hub_offset - segment_end_hub_offset);
+                try current_segment.writer().splatByteAll(0xFF, hub_offset - segment_end_hub_offset);
             }
 
             const line_info = try ana.line_data.addOne(segment_allocator);
@@ -1101,7 +1102,7 @@ const Analyzer = struct {
                 .length = 0,
                 .location = instr.ast_node.location,
             };
-            defer line_info.length = @intCast((current_segment.hub_offset + current_segment.data.items.len) - hub_offset);
+            defer line_info.length = @intCast((current_segment.hub_offset + current_segment.len()) - hub_offset);
 
             logger.debug("emit {s}", .{@tagName(mnemonic)});
 
@@ -1180,8 +1181,8 @@ const Analyzer = struct {
                             pc_delta += 1;
                     }
 
-                    const hub_pc: u32 = @intCast(current_segment.hub_offset + current_segment.data.items.len + 4 * pc_delta);
-                    const cog_pc: u32 = @intCast(current_segment.data.items.len / 4 + pc_delta);
+                    const hub_pc: u32 = @intCast(current_segment.hub_offset + current_segment.len() + 4 * pc_delta);
+                    const cog_pc: u32 = @intCast(current_segment.len() / 4 + pc_delta);
 
                     const Augments = struct {
                         d: ?u23 = null,
@@ -1236,7 +1237,7 @@ const Analyzer = struct {
 
                                         switch (value.value) {
                                             .address => |address| {
-                                                std.log.debug("#{{/}}A auto mode translation: segment is #{}, mode is {}, target is {}", .{
+                                                std.log.debug("#{{/}}A auto mode translation: segment is #{}, mode is {}, target is {f}", .{
                                                     @intFromEnum(current_segment.id),
                                                     current_segment.exec_mode,
                                                     address,
@@ -1266,7 +1267,7 @@ const Analyzer = struct {
                                                 };
 
                                                 if (current_segment.exec_mode == target_mode) {
-                                                    std.log.debug("#{{/}}A: src mode={} address={} address:int=0x{X:0>6} cog={} lut={} hub={}", .{
+                                                    std.log.debug("#{{/}}A: src mode={} address={f} address:int=0x{X:0>6} cog={} lut={} hub={}", .{
                                                         current_segment.exec_mode,
                                                         value,
                                                         int,
@@ -1455,11 +1456,11 @@ const Analyzer = struct {
             }
         }
 
-        if (current_segment.data.items.len > 0) {
+        if (current_segment.len() > 0) {
             try segments.append(segment_allocator, .{
                 .id = sid.next(),
                 .hub_offset = current_segment.hub_offset,
-                .data = try current_segment.data.toOwnedSlice(),
+                .data = try current_segment.toOwnedSlice(),
                 .exec_mode = current_segment.exec_mode,
             });
         }
@@ -1508,7 +1509,7 @@ const Analyzer = struct {
 
     fn cast_value_to(ana: *Analyzer, location: ast.Location, exec_mode: eval.ExecMode, value: Value, comptime U: type) !U {
         const cast = try ana.cast_value_to_2(location, exec_mode, value, U);
-        logger.debug("cast {} to {}", .{ value, cast });
+        logger.debug("cast {f} to {}", .{ value, cast });
         return cast;
     }
 
@@ -2055,7 +2056,7 @@ const Analyzer = struct {
                 PTRA => .PTRA,
                 PTRB => .PTRB,
                 else => blk: {
-                    try ana.emit_error(location, "Only registers PTRA ({}) or PTRB ({}) can be used for pointer expressions, but not {}", .{
+                    try ana.emit_error(location, "Only registers PTRA ({f}) or PTRB ({f}) can be used for pointer expressions, but not {f}", .{
                         PTRA,
                         PTRB,
                         reg,
@@ -2104,7 +2105,7 @@ const Analyzer = struct {
         params: []const Function.Parameter,
         maybe_current_address: ?TaggedAddress,
         nesting: usize,
-    ) !std.BoundedArray(Value, max_supported_parameters) {
+    ) !BoundedArray(Value, max_supported_parameters) {
         if (params.len > max_supported_parameters)
             @panic("BUG: argument storage buffer is too small");
 
@@ -2145,7 +2146,7 @@ const Analyzer = struct {
                 return error.InvalidFunctionCall;
         }
 
-        var argv: std.BoundedArray(Value, max_supported_parameters) = .{};
+        var argv: BoundedArray(Value, max_supported_parameters) = .{};
         var argv_ok: std.bit_set.IntegerBitSet(max_supported_parameters) = .initEmpty();
 
         argv.resize(params.len) catch unreachable; // we asserted capacity above
@@ -2203,7 +2204,7 @@ const Analyzer = struct {
                 for (kw_argin[i + 1 ..]) |arg2| {
                     if (std.mem.eql(u8, arg1.name.?, arg2.name.?)) {
                         ok = false;
-                        try ana.emit_error(arg2.location, "Parameter {s} passed to {s}() was already given as a named argument here: {}", .{
+                        try ana.emit_error(arg2.location, "Parameter {s} passed to {s}() was already given as a named argument here: {f}", .{
                             arg1.name.?,
                             fncall.function,
                             arg1.location,
@@ -2259,7 +2260,7 @@ const SegmentBuilder = struct {
     id: Segment_ID,
     hub_offset: u20,
     exec_mode: eval.ExecMode,
-    data: std.array_list.Managed(u8),
+    data: std.Io.Writer.Allocating,
 
     fn init(id: Segment_ID, hub_offset: u20, exec_mode: eval.ExecMode, allocator: std.mem.Allocator) SegmentBuilder {
         return .{
@@ -2275,21 +2276,25 @@ const SegmentBuilder = struct {
         sb.* = undefined;
     }
 
+    fn len(sb: *SegmentBuilder) usize {
+        return sb.data.written().len;
+    }
+
+    fn slice(sb: *SegmentBuilder) []u8 {
+        return sb.data.written();
+    }
+
+    fn toOwnedSlice(sb: *SegmentBuilder) error{OutOfMemory}![]u8 {
+        return sb.data.toOwnedSlice();
+    }
+
     fn seek_forward(sb: *SegmentBuilder, hub_offset: u20) !void {
         std.debug.assert(hub_offset >= sb.hub_offset);
         try sb.writer().writeByteNTimes(sb.hub_offset < hub_offset);
     }
 
-    fn writer(sb: *SegmentBuilder) Writer {
-        return .{ .context = sb };
-    }
-
-    const Error = error{OutOfMemory};
-    const Writer = std.io.Writer(*SegmentBuilder, Error, append);
-
-    fn append(sb: *SegmentBuilder, buffer: []const u8) Error!usize {
-        try sb.data.appendSlice(buffer);
-        return buffer.len;
+    fn writer(sb: *SegmentBuilder) *std.Io.Writer {
+        return &sb.data.writer;
     }
 };
 
@@ -2785,3 +2790,31 @@ const CaseInsensitiveStringContext = struct {
         return std.ascii.eqlIgnoreCase(a, b);
     }
 };
+
+fn BoundedArray(comptime T: type, comptime cap: usize) type {
+    return struct {
+        items: [cap]T = undefined,
+        len: usize = 0,
+
+        pub fn resize(arr: *@This(), size: usize) error{OutOfMemory}!void {
+            if (size >= cap)
+                return error.OutOfMemory;
+            arr.len = size;
+        }
+
+        pub fn append(arr: *@This(), item: T) error{OutOfMemory}!void {
+            if (arr.len >= cap)
+                return error.OutOfMemory;
+            arr.items[arr.len] = item;
+            arr.len += 1;
+        }
+
+        pub fn slice(arr: *@This()) []T {
+            return arr.items[0..arr.len];
+        }
+
+        pub fn constSlice(arr: *const @This()) []const T {
+            return arr.items[0..arr.len];
+        }
+    };
+}
