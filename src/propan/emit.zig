@@ -44,12 +44,12 @@ fn emit_flat(file: std.fs.File, module: Module) !void {
 }
 
 fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {
-    var buf: std.ArrayList(u8) = .init(allocator);
-    defer buf.deinit();
+    var writer: std.Io.Writer.Allocating = .init(allocator);
+    defer writer.deinit();
 
-    try std.base64.standard.Encoder.encodeWriter(buf.writer(), buffer);
+    try std.base64.standard.Encoder.encodeWriter(&writer.writer, buffer);
 
-    return try buf.toOwnedSlice();
+    return try writer.toOwnedSlice();
 }
 
 fn emit_json(allocator: std.mem.Allocator, file: std.fs.File, module: Module) !void {
@@ -141,12 +141,16 @@ fn emit_json(allocator: std.mem.Allocator, file: std.fs.File, module: Module) !v
         };
     }
 
-    try std.json.stringify(mod, .{
+    var buffer: [4096]u8 = undefined;
+    var writer = file.writer(&buffer);
+
+    try std.json.Stringify.value(mod, .{
         .whitespace = .indent_2,
         .escape_unicode = false,
         .emit_null_optional_fields = true,
         .emit_strings_as_arrays = false,
         .emit_nonportable_numbers_as_strings = false,
-    }, file.writer());
-    try file.writeAll("\n");
+    }, &writer.interface);
+    try writer.interface.writeAll("\n");
+    try writer.interface.flush();
 }

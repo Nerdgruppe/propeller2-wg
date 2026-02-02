@@ -81,23 +81,27 @@ pub fn main() !u8 {
     }
 
     if (cli.options.help) {
+        var buffer: [256]u8 = undefined;
+        var stdout = std.fs.File.stdout().writer(&buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "windtunnel",
-            std.io.getStdOut().writer(),
+            &stdout.interface,
         );
         return 0;
     }
     if (cli.positionals.len != 0) {
+        var buffer: [256]u8 = undefined;
+        var stderr = std.fs.File.stdout().writer(&buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "windtunnel",
-            std.io.getStdErr().writer(),
+            &stderr.interface,
         );
         return 1;
     }
 
-    var debug_stream: Hub.DebugFifo = .init();
+    var debug_stream: Hub.DebugFifo = .{};
 
     var hub: Hub = undefined;
     hub.init();
@@ -113,13 +117,13 @@ pub fn main() !u8 {
         std.debug.assert(count <= hub.memory.len);
 
         if (stat.size > count) {
-            std.log.warn("hub image exceeds hub size. expected {:.3} or less bytes, but got {:.3}", .{
-                std.fmt.fmtIntSizeBin(hub.memory.len),
-                std.fmt.fmtIntSizeBin(stat.size),
+            std.log.warn("hub image exceeds hub size. expected {Bi:.3} or less bytes, but got {Bi:.3}", .{
+                hub.memory.len,
+                stat.size,
             });
         } else {
-            std.log.info("loaded {:.2} into hub memory", .{
-                std.fmt.fmtIntSizeBin(count),
+            std.log.info("loaded {Bi:.2} into hub memory", .{
+                count,
             });
         }
     }
@@ -154,7 +158,7 @@ pub fn main() !u8 {
                 .output => {
                     while (cmd_iter.next()) |value_str| {
                         const expected: u32 = try std.fmt.parseInt(u32, value_str, 0);
-                        const actual: u32 = debug_stream.readItem() orelse return error.MissingStreamValue;
+                        const actual: u32 = debug_stream.pull() orelse return error.MissingStreamValue;
 
                         if (expected != actual) {
                             std.log.err("expected output value 0x{X:0>8}, but found 0x{X:0>8}", .{ expected, actual });

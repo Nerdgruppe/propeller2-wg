@@ -115,7 +115,7 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
             const field = comptime decode.instruction_type.get(opc);
             const params = @field(enc, field);
 
-            logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {}", .{ state.pc, state.instr, @tagName(opc), params });
+            logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {f}", .{ state.pc, state.instr, @tagName(opc), params });
 
             return @field(@This(), @tagName(opc))(cog, params);
         },
@@ -191,7 +191,7 @@ fn execute_simple(
         }
     } else null;
 
-    logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {}", .{ state.pc, state.instr, opcode, operands });
+    logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {f}", .{ state.pc, state.instr, opcode, operands });
 
     const function = @field(@This(), opcode);
     const result: SimpleResult = if (has_s)
@@ -6064,9 +6064,9 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     const chr: u8 = @truncate(d);
 
     switch (s) {
-        1 => std.io.getStdIn().writer().writeByte(chr) catch @panic("i/o error"),
-        2 => std.io.getStdOut().writer().writeByte(chr) catch @panic("i/o error"),
-        3 => std.io.getStdErr().writer().writeByte(chr) catch @panic("i/o error"),
+        1 => _ = std.fs.File.stdin().write(&.{chr}) catch @panic("i/o error"),
+        2 => _ = std.fs.File.stdout().write(&.{chr}) catch @panic("i/o error"),
+        3 => _ = std.fs.File.stderr().write(&.{chr}) catch @panic("i/o error"),
         else => @panic("invalid S operand to WXPIN!"),
     }
 
@@ -6092,15 +6092,22 @@ pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     const s = cog.resolve_operand(args.s, args.s_imm); // pin/file
 
     if (cog.hub.debug_stream) |debug_stream| {
-        debug_stream.writeItem(d) catch @panic("debug stream overflow!");
+        if (debug_stream.full())
+            @panic("debug stream overflow!");
+        debug_stream.push(d);
     }
 
-    switch (s) {
-        1 => std.io.getStdIn().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),
-        2 => std.io.getStdOut().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),
-        3 => std.io.getStdErr().writer().print("0x{X:0>8}", .{d}) catch @panic("i/o error"),
+    const file: std.fs.File = switch (s) {
+        1 => .stdin(),
+        2 => .stdout(),
+        3 => .stderr(),
         else => @panic("invalid S operand to WXPIN!"),
-    }
+    };
+
+    var buffer: [32]u8 = undefined;
+    var writer = file.writerStreaming(&buffer);
+
+    writer.interface.print("0x{X:0>8}", .{d}) catch @panic("i/o error");
 
     return .next;
     // codegen: end:wypin

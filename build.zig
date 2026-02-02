@@ -1,11 +1,25 @@
 const std = @import("std");
 
+const FastBuild = struct {
+    b: *std.Build,
+    no_emit_bin: bool,
+
+    fn installArtifact(fb: FastBuild, step: *std.Build.Step.Compile) void {
+        if (fb.no_emit_bin) {
+            fb.b.getInstallStep().dependOn(&step.step);
+        } else {
+            fb.b.installArtifact(step);
+        }
+    }
+};
+
 pub fn build(b: *std.Build) void {
     // Steps:
     const run_step = b.step("run", "Runs propan");
     const test_step = b.step("test", "Runs the test suite");
 
     // Options:
+    const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -22,13 +36,18 @@ pub fn build(b: *std.Build) void {
     const ptk_mod = ptk_dep.module("parser-toolkit");
     const args_mod = args_dep.module("args");
 
+    const fb: FastBuild = .{
+        .b = b,
+        .no_emit_bin = no_emit_bin,
+    };
+
     // Exports:
 
     const flexspin = p2dev_dep.artifact("flexspin");
-    b.installArtifact(flexspin);
+    fb.installArtifact(flexspin);
 
     const loadp2_exe = p2dev_dep.artifact("loadp2");
-    b.installArtifact(loadp2_exe);
+    fb.installArtifact(loadp2_exe);
 
     // Build:
 
@@ -66,7 +85,7 @@ pub fn build(b: *std.Build) void {
             .name = "turboprop",
             .root_module = turboprop_mod,
         });
-        b.installArtifact(exe);
+        fb.installArtifact(exe);
     }
 
     const propan_exe = blk: {
@@ -75,7 +94,7 @@ pub fn build(b: *std.Build) void {
             .root_module = propan_mod,
         });
 
-        b.installArtifact(exe);
+        fb.installArtifact(exe);
 
         break :blk exe;
     };
@@ -86,7 +105,7 @@ pub fn build(b: *std.Build) void {
             .root_module = windtunnel_mod,
         });
 
-        b.installArtifact(exe);
+        fb.installArtifact(exe);
 
         break :blk exe;
     };
@@ -108,10 +127,10 @@ pub fn build(b: *std.Build) void {
     {
         const fuzz_corpus_files = b.addWriteFiles();
 
-        var fuzz_corpus_index: std.ArrayList(u8) = .init(b.allocator);
-        defer fuzz_corpus_index.deinit();
+        var fuzz_corpus_index: std.ArrayList(u8) = .empty;
+        defer fuzz_corpus_index.deinit(b.allocator);
 
-        fuzz_corpus_index.writer().writeAll(
+        fuzz_corpus_index.writer(b.allocator).writeAll(
             \\pub const files: []const []const u8 = &.{
             \\
         ) catch @panic("oom");
@@ -121,15 +140,15 @@ pub fn build(b: *std.Build) void {
 
             _ = fuzz_corpus_files.addCopyFile(b.path(path), filename);
 
-            fuzz_corpus_index.writer().print(
-                \\    @embedFile("{}"),
+            fuzz_corpus_index.writer(b.allocator).print(
+                \\    @embedFile("{f}"),
                 \\
             ,
-                .{std.zig.fmtEscapes(filename)},
+                .{std.zig.fmtString(filename)},
             ) catch @panic("oom");
         }
 
-        fuzz_corpus_index.writer().writeAll(
+        fuzz_corpus_index.writer(b.allocator).writeAll(
             \\};
             \\
         ) catch @panic("oom");
@@ -270,7 +289,7 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/arithmetic1.propan",
     "tests/propan/equivalence/arithmetic2.propan",
     "tests/propan/equivalence/aug.propan",
-    "tests/propan/equivalence/aux.propan",
+    "tests/propan/equivalence/auxilary.propan",
     "tests/propan/equivalence/branching.propan",
     "tests/propan/equivalence/cordic.propan",
     "tests/propan/equivalence/cursed.propan",

@@ -85,38 +85,37 @@ pub const Value = struct {
         pointer_expr: PointerExpression,
     };
 
-    pub fn format(val: Value, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = opt;
-
-        if (std.mem.eql(u8, fmt, "nice")) {
-            switch (val.value) {
-                .int => |v| try writer.print("{}", .{v}),
-                .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
-                .address => |v| try writer.print("{}", .{v}),
-                .register => |v| try writer.print("{}", .{v}),
-                .enumerator => |v| try writer.print("#{s}", .{v}),
-                .pointer_expr => |v| try writer.print("{}", .{v}),
-            }
-        } else {
-            try writer.writeAll("Value(");
-            if (val.flags.augment) {
-                try writer.writeAll("AUG,");
-            }
-            switch (val.flags.addressing) {
-                .auto => {},
-                .relative => try writer.writeAll("REL,"),
-                .absolute => try writer.writeAll("ABS,"),
-            }
-            switch (val.value) {
-                .int => |v| try writer.print("{}", .{v}),
-                .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
-                .address => |v| try writer.print("{}", .{v}),
-                .register => |v| try writer.print("{}", .{v}),
-                .enumerator => |v| try writer.print("#{s}", .{v}),
-                .pointer_expr => |v| try writer.print("{}", .{v}),
-            }
-            try writer.print(", {s})", .{@tagName(val.flags.usage)});
+    pub fn format(val: Value, writer: *std.Io.Writer) !void {
+        // TODO:
+        // if (std.mem.eql(u8, fmt, "nice")) {
+        //     switch (val.value) {
+        //         .int => |v| try writer.print("{}", .{v}),
+        //         .string => |v| try writer.print("\"{}\"", .{std.zig.fmtEscapes(v)}),
+        //         .address => |v| try writer.print("{}", .{v}),
+        //         .register => |v| try writer.print("{}", .{v}),
+        //         .enumerator => |v| try writer.print("#{s}", .{v}),
+        //         .pointer_expr => |v| try writer.print("{}", .{v}),
+        //     }
+        // } else {
+        try writer.writeAll("Value(");
+        if (val.flags.augment) {
+            try writer.writeAll("AUG,");
         }
+        switch (val.flags.addressing) {
+            .auto => {},
+            .relative => try writer.writeAll("REL,"),
+            .absolute => try writer.writeAll("ABS,"),
+        }
+        switch (val.value) {
+            .int => |v| try writer.print("{d}", .{v}),
+            .string => |v| try writer.print("\"{f}\"", .{std.zig.fmtString(v)}),
+            .address => |v| try writer.print("{f}", .{v}),
+            .register => |v| try writer.print("{f}", .{v}),
+            .enumerator => |v| try writer.print("#{s}", .{v}),
+            .pointer_expr => |v| try writer.print("{f}", .{v}),
+        }
+        try writer.print(", {s})", .{@tagName(val.flags.usage)});
+        // }
     }
 };
 
@@ -136,10 +135,7 @@ pub const PointerExpression = struct {
     },
     index: ?i64,
 
-    pub fn format(ptr_expr: PointerExpression, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = opt;
-
+    pub fn format(ptr_expr: PointerExpression, writer: anytype) !void {
         switch (ptr_expr.increment) {
             .none => {},
             .pre_increment => try writer.writeAll("++"),
@@ -167,9 +163,7 @@ pub const PointerExpression = struct {
 pub const Register = enum(u9) {
     _,
 
-    pub fn format(reg: Register, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = opt;
+    pub fn format(reg: Register, writer: anytype) !void {
         try writer.print("r{}", .{@intFromEnum(reg)});
     }
 };
@@ -221,9 +215,7 @@ pub const TaggedAddress = struct {
         return .{ .segment_id = segment, .hub_address = hub, .local = .{ .lut = lut } };
     }
 
-    pub fn format(offset: TaggedAddress, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
-        _ = fmt;
-        _ = opt;
+    pub fn format(offset: TaggedAddress, writer: *std.Io.Writer) !void {
         switch (offset.local) {
             .cog => |cog| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, cog=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, cog }),
             .lut => |lut| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, lut=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, lut }),

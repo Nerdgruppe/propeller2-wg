@@ -41,22 +41,22 @@ pub const Parser = struct {
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
         lf_is_whitespace: bool = false,
 
-        fn emit_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
-            _ = core;
-            if (!builtin.is_test) {
-                std.log.err("{}: " ++ fmt, .{location} ++ args);
-            }
-        }
-
         fn emit_fatal_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) error{SyntaxError} {
             try core.emit_error(location, fmt, args);
             return error.SyntaxError;
         }
 
+        fn emit_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
+            _ = core;
+            if (!builtin.is_test) {
+                std.log.err("{f}: " ++ fmt, .{location} ++ args);
+            }
+        }
+
         fn emit_warning(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
             _ = core;
             if (!builtin.is_test) {
-                std.log.warn("{}: " ++ fmt, .{location} ++ args);
+                std.log.warn("{f}: " ++ fmt, .{location} ++ args);
             }
         }
 
@@ -625,7 +625,7 @@ pub const Parser = struct {
                             try output.appendSlice(allocator, buf[0..len]);
                         },
                         else => {
-                            try core.emit_warning(location, "invalid escape sequence: \\x{c}", .{body[i .. i + 1]});
+                            try core.emit_warning(location, "invalid escape sequence: \\{c}", .{body[i]});
                             try output.append(allocator, char);
                         },
                     }
@@ -840,7 +840,7 @@ pub const Parser = struct {
                 };
                 if (c.lf_is_whitespace and tok.type == .linefeed)
                     continue;
-                logger.debug("next_token() => {}", .{tok});
+                logger.debug("next_token() => {f}", .{tok});
                 return tok;
             }
         }

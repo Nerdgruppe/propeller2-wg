@@ -6,20 +6,20 @@
 
     .dependencies = .{
         .ptk = .{
-            .url = "git+https://github.com/ikskuh/parser-toolkit.git#0d5e00d4830bca53d10fee5d562152f1329d5784",
-            .hash = "parser_toolkit-0.1.0-baYGPS1CEwDuQk1W_5QEfKF_BWU5lN4qb8kVZoQ6Id9k",
+            .url = "git+https://github.com/ikskuh/parser-toolkit.git#62e0a3dca3632bb361df59407b2d7805280ab1b9",
+            .hash = "parser_toolkit-0.1.0-baYGPUVCEwBaVmu09ORh0lLlVjRaJ489TdSIdTa_8VWg",
         },
         .args = .{
-            .url = "git+https://github.com/ikskuh/zig-args.git#9425b94c103a031777fdd272c555ce93a7dea581",
-            .hash = "args-0.0.0-CiLiqv_NAAC97fGpk9hS2K681jkiqPsWP6w3ucb_ctGH",
+            .url = "git+https://github.com/ikskuh/zig-args.git#e060ac80c244e9675471b6d213b22ddc83cc8f98",
+            .hash = "args-0.0.0-CiLiqo_RAADz2TiHUzG5-0Mk7IZHR-h1SZgUrb_k4c7d",
         },
         .serial = .{
-            .url = "git+https://github.com/ZigEmbeddedGroup/serial.git?ref=master#25b7054870697cdf97c2b0baa95509dd3b371ace",
-            .hash = "serial-0.0.1-AAAAAFaxAABO1ki0alruuTNj6KNsVUxL25yyey7SkGb1",
+            .url = "git+https://github.com/ZigEmbeddedGroup/serial.git?ref=master#fbd7389ff8bbc9fa362aa74081588755b5d028a0",
+            .hash = "serial-0.0.1-PoeRzF60AAAN8Iu0yXTIX-t3DVzsnmN7vWHKM2HA2Zbq",
         },
         .p2devsuite = .{
-            .url = "git+https://github.com/ikskuh/p2-devsuite.git#4aa03f279454ce7ac83300518cb9703619ae0572",
-            .hash = "p2_devsuite-0.0.0-JopzWDFfAADjUYTLJJwRo4SK3X8Ugiq6ENq8pbchAUqd",
+            .url = "git+https://github.com/ikskuh/p2-devsuite.git#43143c73c4cc51a905faf33be0725d848bdaaf0e",
+            .hash = "p2_devsuite-0.0.0-JopzWP1hAAA0qgcu5c7psAYfuBia-nZKBBw_xymJ6pZE",
         },
     },
 

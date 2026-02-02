@@ -81,11 +81,14 @@ pub fn main() !u8 {
     }
 
     if (cli.options.help) {
+        var buffer: [4096]u8 = undefined;
+        var stdout = std.fs.File.stdout().writer(&buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "propan",
-            std.io.getStdOut().writer(),
+            &stdout.interface,
         );
+        try stdout.interface.flush();
         return 0;
     }
 
@@ -215,31 +218,36 @@ pub fn main() !u8 {
             return 0;
         }
 
-        const out = std.io.getStdOut();
+        var buffer: [4096]u8 = undefined;
+        var stdout_writer = std.fs.File.stdout().writer(&buffer);
 
-        try out.writer().print("OUTPUT DOES NOT MATCH '{s}'.\n", .{
+        const writer = &stdout_writer.interface;
+
+        try writer.print("OUTPUT DOES NOT MATCH '{s}'.\n", .{
             cli.options.@"compare-to",
         });
 
         if (ref.len == output.items.len) {
-            try out.writer().print("binary length: {}\n", .{ref.len});
+            try writer.print("binary length: {}\n", .{ref.len});
         } else {
-            try out.writer().print("expected binary length: {}\n", .{
+            try writer.print("expected binary length: {}\n", .{
                 ref.len,
             });
-            try out.writer().print("actual binary length:   {}\n", .{
+            try writer.print("actual binary length:   {}\n", .{
                 output.items.len,
             });
         }
 
-        try out.writer().print("<diff>\n", .{});
+        try writer.print("<diff>\n", .{});
         try render_bin_diff(
-            out,
+            writer,
             ref,
             output.items,
             mod.?,
         );
-        try out.writer().print("</diff>\n", .{});
+        try writer.print("</diff>\n", .{});
+
+        try writer.flush();
 
         return 1;
     }
@@ -248,21 +256,29 @@ pub fn main() !u8 {
         return 0;
 
     if (cli.options.output.len > 0 and !std.mem.eql(u8, cli.options.output, "-")) {
-        var file = try std.fs.cwd().atomicFile(cli.options.output, .{});
+        var buffer: [4096]u8 = undefined;
+        var file = try std.fs.cwd().atomicFile(cli.options.output, .{
+            .write_buffer = &buffer,
+        });
         defer file.deinit();
 
-        try emit.emit(allocator, file.file, mod.?, output_format);
+        try emit.emit(allocator, file.file_writer.file, mod.?, output_format);
 
         try file.finish();
     } else {
-        try emit.emit(allocator, std.io.getStdOut(), mod.?, output_format);
+        try emit.emit(allocator, std.fs.File.stdout(), mod.?, output_format);
     }
 
     return 0;
 }
 
 fn usage_mistake(comptime fmt: []const u8, args: anytype) !noreturn {
-    try std.io.getStdErr().writer().print("usage error: " ++ fmt ++ "\n", args);
+    var buffer: [256]u8 = undefined;
+    var writer = std.fs.File.stdout().writerStreaming(&buffer);
+
+    try writer.interface.print("usage error: " ++ fmt ++ "\n", args);
+    try writer.interface.flush();
+
     std.process.exit(1);
 }
 
@@ -271,8 +287,7 @@ test {
     _ = sema;
 }
 
-fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: []const u8, mod: ?Module) !void {
-    const writer = stream.writer();
+fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_data: []const u8, mod: ?Module) !void {
     const common_len = @max(expected_data.len, actual_data.len);
 
     std.log.info("{}", .{common_len});
@@ -293,7 +308,7 @@ fn render_bin_diff(stream: std.fs.File, expected_data: []const u8, actual_data: 
             continue;
 
         const instr_groups: []const u32 = &.{ 9, 9, 3, 7, 4 };
-        try writer.print("@{X:0>5}: expected: 0x{X:0>8} ({s}), actual: 0x{X:0>8} ({s}) | {?}\n", .{
+        try writer.print("@{X:0>5}: expected: 0x{X:0>8} ({s}), actual: 0x{X:0>8} ({s}) | {?f}\n", .{
             offset,
             expected,
             bitdiff(u32, expected, actual, instr_groups),
