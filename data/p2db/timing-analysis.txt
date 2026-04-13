@@ -1,0 +1,59 @@
+
+timing:
+  base_cog: int
+  base_hub: int | null # if null the instruction cannot be used in hubexec
+
+  factors:
+    - type: string          # see Factor Type Vocabulary below
+      condition: string | null # expression syntax for when the conditin triggers
+      cog: int | "0..N" | null   # additional clocks in cog mode; 0 if no contribution
+      hub: int | "0..N" | null   # additional clocks in hub mode
+
+# Factor Type Vocabulary (closed enum — the P2 instruction set is fixed):
+#
+#   hub_phase         Hub-window alignment wait for hub-bus-bound operations.
+#                     Always 0..7 (one full hub rotation = 8 cog clocks).
+#                     After an instruction with this factor, the cog's hub
+#                     phase is deterministic (see open question on hub phase).
+#                     cog: "0..7"   hub: "0..7"
+#
+#   hub_long_cross    +1 clock if the hub access crosses a hub-long boundary.
+#                     Documented as footnote "1" in the PASM2 manual timing table
+#                     for RDLONG/WRLONG/WMLONG/RDWORD/WRWORD/PUSHA/PUSHB/POPA/POPB.
+#                     Only possible for byte/word/unaligned accesses.
+#                     cog: 1        hub: 1
+#
+#   block_per_long    Per additional long transferred in a SETQ/SETQ2 block.
+#                     The hub bus sustains one long per clock once in-phase.
+#                     Total for Q[7:0]+1 longs = base + Q[7:0] × block_per_long.
+#                     cog: 1        hub: 1
+#
+#   hub_result        Extra 2 clocks when COGINIT/LOCKREL/LOCKTRY requests register
+#                     readback (D is register and WC present).
+#                     cog: 2        hub: 2
+#
+#   branch_taken      Extra clocks when a conditional branch is taken vs
+#                     fall-through (2 clocks in cog, hub-fetch window in hub).
+#                     Not-taken = 0 additional clocks (already in base).
+#                     cog: 2        hub: "0..7"
+
+
+
+
+11...18*    20...40*        RET{A,B}
+    11    20
+    hub_phase
+    0     27..40
+
+2           FIFO IN USE     FIFO/SKIPF Commands
+    2     null
+
+2 or 4      2 or 13...20    Conditional Branches
+    2     2
+    +2    
+2 or WRFAST finish + 10...17    FIFO IN USE     RDFAST  {#}D,{#}S
+2 or WRFAST finish + 3          FIFO IN USE     WRFAST  {#}D,{#}S
+3...10      3...20      WRBYTE/PUSH{A,B}  {#}D,{#}S/P
+4           13...20     CALL{,PA,PB,D},JMP,...
+5...12*	    14...32*    CALL{A,B}
+9...16      9...26      RD{BYTE,LONG,WORD},POP{A,B}

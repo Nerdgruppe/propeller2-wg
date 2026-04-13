@@ -1,0 +1,368 @@
+
+# Ordered list matching left-to-right assembly syntax order.
+# Only include programmer-visible operands (not fixed encoding constants).
+
+operands:
+  - name: string
+      # Assembly-level name displayed to the programmer.
+      # Standard names: D, S, N, A, n, PA/PB/PTRA/PTRB
+      # Use exactly the token that appears in mnemonic_form.
+
+    stored_in: string
+      # The name of the associated field from the encoding
+
+    immediate_in: string|null
+      # If not null, the associated field encodes whether this
+      # operand received an immediate value (field=1) or a register (field=0)
+
+    relative_in: string|null
+      # If not null, the associated field encodes whether this
+      # operand received an absolute address (field=0) or a relative address (field=1)
+
+    role: string
+      # Encoding role — describes how the field is assembled/disassembled.
+      #
+      # reg               Must be a cog register (9-bit address). No literal.
+      # reg_or_imm9       Register or 9-bit literal ("immediate_in" controls reg/imm)
+      # address           Absolute or PC-relative address in the A_field
+      #                   (#{\}A encoding; "relative_in" bit controls rel/abs).
+      # preg              PA/PB/PTRA/PTRB selector in WW_field.
+      # imm9              Always 9-bit literal; no register option.
+      # imm23_msb         The upper 23-bit of a literal for AUGS/AUGD.
+      # selector          Small N literal embedded in opcode/FX bits.
+
+    format: string | null
+      # Semantic encoding format — how the raw bits should be interpreted
+      # by an assembler, disassembler, or IDE.
+      #
+      # raw               Opaque bit pattern; no interpretation.
+      # raw9              A 9-bit opaque bit pattern; no interpretation.
+      # unsigned32        Unsigned integer (32 bit).
+      # signed32          Signed integer (32 bit, two's complement).
+      # pcstate           Packed return context {C, Z, 10'b0, PC[19:0]}.
+      # ptrexpr           Register 32 bit absolute value or 8 bit unsigned absolute value or PTRx with optional offset/auto-increment expression.
+      # address_any       Absolute or PC-relative cog/hub address.
+      # address_pcrel     PC-relative signed offset.
+      # pinrange          Pin number 0..63 and optional pin range.
+      # bitrange          Bit number 0..31 and optional bit range.
+      # locknum           Lock number 0..15.
+      # cogid             Cog ID 0..7.
+      # vec4_byte_sel     4×2-bit byte-selector (MOVBYTS S field).
+      # alti_config       ALTI 18-bit configuration word (6×3-bit sub-fields).
+      # nits              16 packed 2-bit values.
+      # nibs              8 packed 4-bit values.
+      # bytes             4 packed 8-bit values.
+      # words             2 packed 16-bit values.
+      # nit_index         Index of a nit (0..15).
+      # nib_index         Index of a nibble (0..7).
+      # byte_index        Index of a byte (0..3).
+      # word_index        Index of a word (0..1).
+      # sca_product       Upper-16 of 16×16 unsigned product (SCA).
+      # scas_product      Upper-18 of 16×16 signed product shifted right 14 (SCAS).
+      # modcz             One of the 16 MODCZ operand values
+
+    augmentable: null | "AUGS" | "AUGD"
+      # Can AUGS or AUGD extend this literal?
+
+    sub_fields:
+      # Describes semantic sub-fields within this operand's bits.
+      # Omit if the operand is atomic (no internal structure).
+      - {bits: "[HI:LO]", name: string, description: string}
+
+# ───────────────────────────────────────────────────────────────────
+# FLAGS
+# ───────────────────────────────────────────────────────────────────
+
+flags:
+  allowed_modifiers: [string]
+    # Syntactically legal flag-modifier suffixes.
+    # Subset of: none WC WZ WCZ
+    # "none" = no modifier is a valid option.
+
+  C:
+    read: bool              # true if C is consumed as an input
+    written: bool           # true if C can be updated (needs WC or WCZ in allowed_modifiers)
+    source: string | null   # expression for the new C value when written
+    note: string | null
+
+  Z:
+    read: bool
+    written: bool
+    source: string | null
+    note: string | null
+
+# ───────────────────────────────────────────────────────────────────
+# REGISTERS
+# ───────────────────────────────────────────────────────────────────
+#
+# Side-effects on named registers beyond the operand fields themselves.
+# C and Z are captured in `flags`. PC is implicit for branches (omit unless
+# the update is non-obvious). The hardware stack K is captured in `stack`.
+#
+# Named registers (non-exhaustive):
+#   PA PB PTRA PTRB
+#   INA INB OUTA OUTB DIRA DIRB
+#   Q
+#   IJMP1 IRET1 IJMP2 IRET2 IJMP3 IRET3
+#   (cog special-purpose registers by name or address $1Fxx)
+#
+# Operand-addressed registers are referenced by the operand name in quotes:
+#   "D"  means "the register whose 9-bit address is in the D field"
+#   "S"  means "the register whose 9-bit address is in the S field"
+#
+# Conditional writes use a structured condition, not an inline annotation.
+
+registers:
+  read: [string]
+
+  written:
+    - reg: string           # register name, or "D" / "S"
+      condition: string
+        # When this write actually occurs. One of:
+        #   always
+        #   if_wc               WC or WCZ modifier is present
+        #   if_wz               WZ or WCZ modifier is present
+        #   if_wcz              WCZ modifier is present
+        #   if_reg_D            D operand is a register (not immediate)
+        #   if_reg_S            S operand is a register (not immediate)
+        #   if_reg_D_and_wc     D is register AND WC present
+        #   if_reg_D_and_wz     D is register AND WZ present
+
+# ───────────────────────────────────────────────────────────────────
+# Q REGISTER
+# ───────────────────────────────────────────────────────────────────
+#
+# Omit entirely if instruction has no Q interaction.
+
+q_effect:
+  sets_q_state: null | "regular" | "alternative"
+    # SETQ  → regular   (Q = D; activates block-transfer count + other uses)
+    # SETQ2 → alternative (Q = D; additionally tags block source as LUT)
+
+  reads_q_value: bool
+    # True if Q's numeric value is consumed (MUXQ, CRCNIB, COGINIT, etc.)
+    # Even if reads_q_value is true, the Q state (regular/alternative) may
+    # alter *how* the value is interpreted (see q_behavior below).
+
+  resets_q_state: bool
+    # True if execution of this instruction clears the Q state back to "unset".
+    # Hub-access instructions and CORDIC launchers consume Q and reset state.
+
+  q_behavior:
+    # Optional — only when behaviour differs per Q state.
+    # Omit states that are identical to "unset".
+    unset:
+      description: string
+    regular:
+      description: string
+    alternative:
+      description: string
+
+# ───────────────────────────────────────────────────────────────────
+# TIMING
+# ───────────────────────────────────────────────────────────────────
+#
+# Final clock count = base_{cog|hub} + sum of applicable factor.{cog|hub}
+# All values are integers. "0..N" means a range of 0 to N (inclusive).
+
+timing:
+  base_cog: int
+  base_hub: int | null # if null the instruction cannot be used in hubexec
+
+  factors:
+    - type: string          # see Factor Type Vocabulary below
+      condition: string | null # expression syntax for when the conditin triggers
+      cog: int | "0..N" | null   # additional clocks in cog mode; 0 if no contribution
+      hub: int | "0..N" | null   # additional clocks in hub mode
+
+# Factor Type Vocabulary (closed enum — the P2 instruction set is fixed):
+#
+#   hub_phase         Hub-window alignment wait for hub-bus-bound operations.
+#                     Always 0..7 (one full hub rotation = 8 cog clocks).
+#                     After an instruction with this factor, the cog's hub
+#                     phase is deterministic (see open question on hub phase).
+#                     cog: "0..7"   hub: "0..7"
+#
+#   hub_long_cross    +1 clock if the hub access crosses a hub-long boundary.
+#                     Documented as footnote "1" in the PASM2 manual timing table
+#                     for RDLONG/WRLONG/WMLONG/RDWORD/WRWORD/PUSHA/PUSHB/POPA/POPB.
+#                     Only possible for byte/word/unaligned accesses.
+#                     cog: 1        hub: 1
+#
+#   block_per_long    Per additional long transferred in a SETQ/SETQ2 block.
+#                     The hub bus sustains one long per clock once in-phase.
+#                     Total for Q[7:0]+1 longs = base + Q[7:0] × block_per_long.
+#                     cog: 1        hub: 1
+#
+#   hub_result        Extra 2 clocks when COGINIT/LOCKREL/LOCKTRY requests register
+#                     readback (D is register and WC present).
+#                     cog: 2        hub: 2
+#
+#   branch_taken      Extra clocks when a conditional branch is taken vs
+#                     fall-through (2 clocks in cog, hub-fetch window in hub).
+#                     Not-taken = 0 additional clocks (already in base).
+#                     cog: 2        hub: "0..7"
+
+# ───────────────────────────────────────────────────────────────────
+# MEMORY
+# ───────────────────────────────────────────────────────────────────
+# Omit if no memory access.
+
+memory:
+  hub:
+    access: "read" | "write"
+    width: "byte" | "word" | "long"
+    address_source: string    # e.g. "{#}S or PTRx", "PTRA++"
+  lut:
+    access: "read" | "write"
+    address_source: string
+
+# ───────────────────────────────────────────────────────────────────
+# CORDIC
+# ───────────────────────────────────────────────────────────────────
+# Omit if no CORDIC interaction.
+
+cordic:
+  initiates: bool
+  operation: string | null    # e.g. "D × S (unsigned 32×32 → 64-bit)"
+  result_QX: string | null
+  result_QY: string | null
+  reads_result: bool
+
+# ───────────────────────────────────────────────────────────────────
+# STACK
+# ───────────────────────────────────────────────────────────────────
+# Omit if no push/pop. Only models the internal 8-entry hardware stack.
+
+stack:
+  operation: "push" | "pop"
+  expression: string | null # bit layout, always required for "push"; e.g. "{C, Z, 10'b0, PC_next[19:0]}"
+
+# ───────────────────────────────────────────────────────────────────
+# BRANCH
+# ───────────────────────────────────────────────────────────────────
+# Omit entirely for non-branching instructions.
+
+branch:
+  type: "jump" | "branch" | "call" | "return"
+    # jump   — unconditional; no call/return stack semantics (JMP, CALLA, RETA)
+    # branch — conditional on C/Z or an event flag; no stack semantics
+    # call   — saves return context; callee eventually returns
+    # return — restores PC (and optionally C/Z) from saved context
+
+  condition_source: string | null
+    # Only when type == branch. E.g. "SE1 event flag clear".
+
+  target_source: string | null   # e.g. "S", "A", "D[19:0]"
+  target_type: "absolute" | "relative" | "either"
+  relative_range: string | null  # e.g. "±256 instr (9-bit) or ±524287 (with AUGS)"
+
+  return_context:
+    # Only for call / return.
+    format: string | null       # e.g. "{C, Z, 10'b0, PC_next[19:0]}"
+    location: string
+      # Where the context is stored (call) or read from (return).
+      # Enum: D | stack | PA | PB | PTRA | PTRB
+
+# ───────────────────────────────────────────────────────────────────
+# PIPELINE (NEXT-INSTRUCTION MODIFIER)
+# ───────────────────────────────────────────────────────────────────
+# Omit if instruction has no next-instruction side-effect.
+#
+# NOTE: This section is intentionally under-specified in v3.
+# The ALT family (ALTS, ALTD, ALTR, ALTB, ALTI, ALTSB, ALTSN, ...)
+# and the SCA/SCAS instructions all modify the next instruction's pipeline
+# value in different ways. Full modelling is deferred to a future turn.
+# See open questions.
+
+pipeline:
+  next_instr_modifier: string
+    # What the following instruction's pipeline slot is modified to.
+    # One of:
+    #   next_S       - next instruction's S field is replaced (ALTS, SCA, SCAS)
+    #   next_D       - next instruction's D field is replaced (ALTD)
+    #   next_R       - next instruction's Result register is replaced (ALTR)
+    #   next_B       - next instruction's branch target is replaced (ALTB)
+    #   next_dep     - next instruction's fields are replaced with a operand-dependend version
+    #   next_imm_S   - extends the next immediate S value (AUGS)
+    #   next_imm_D   - extends the next immediate D value (AUGD)
+  note: string | null
+
+# ───────────────────────────────────────────────────────────────────
+# INTERRUPT SHIELD
+# ───────────────────────────────────────────────────────────────────
+# Omit if the instruction provides no shielding.
+
+interrupt_shield:
+  type: "next" | "next_if_wc" | "loop_body"
+    # next        - No interrupt can be scheduled after this instruction
+    # next_if_wc  - No interrupt can be scheduled after this instruction if WC effect is provided
+    # loop_body   - No interrupt can be scheduled until the execution of the loop is complete
+  note: string | null
+
+# ───────────────────────────────────────────────────────────────────
+# EVENTS
+# ───────────────────────────────────────────────────────────────────
+# Omit if all lists are empty.
+
+events:
+  reads: [string]       # event flags checked (branch/poll condition)
+  clears: [string]      # event flags cleared unconditionally
+  sets: [string]        # event flags set (rare)
+  configures: [string]  # event flags re-armed with new parameters
+
+# Named event flags:
+#   PAT SE1 SE2 SE3 SE4 INT FBW XMT XFI XRL XRO QMT ATN CT1 CT2 CT3
+
+# ───────────────────────────────────────────────────────────────────
+# SMART PIN
+# ───────────────────────────────────────────────────────────────────
+# Omit if not involved.
+
+smart_pin:
+  pin_source: string    # field encoding the pin number, e.g. "S[5:0]"
+  operation: "read_Z" | "read_Z_nr" | "write_X" | "write_Y" | "configure"
+    # read_Z    — reads smart pin Z register AND acknowledges (RDPIN)
+    # read_Z_nr — reads Z register, no acknowledge (RQPIN)
+    # write_X   — writes smart pin X register (WXPIN; or AKPIN = write_X + acknowledge)
+    # write_Y   — writes smart pin Y register (WYPIN)
+    # configure — writes smart pin mode register (WRPIN)
+  acknowledges: bool    # clears the pin's Z-ready flag (RDPIN, AKPIN)
+  modal_result_in_C: bool  # C = pin's modal result when WC (RDPIN)
+
+# ───────────────────────────────────────────────────────────────────
+# SEMANTICS
+# ───────────────────────────────────────────────────────────────────
+#
+# Verilog-like subset. NOT Turing-complete.
+# Purpose: transfer formal expressions from the specification verbatim,
+# not model complex sequencing (REP, CORDIC scheduling).
+#
+# Named entities:
+#   D   — value read from the register addressed by the D field
+#   S   — value of the S operand (register or immediate, per I bit)
+#   R   — result destination (the register written by this instruction;
+#          normally the same register as D, but ALTR can redirect it)
+#   C Z — flag values
+#   PC  — program counter
+#   PC_next — address of following instruction (PC+1 cog/LUT, PC+4 hub)
+#   PA PB PTRA PTRB INA INB Q
+#   n   — value of the N selector literal
+#   #D  — D field as an immediate literal value (when $is_imm(D))
+#   #S  — S field as an immediate literal value (when $is_imm(S))
+#   WW  — 2-bit sub-selector field value (0=PA, 1=PB, 2=PTRA, 3=PTRB)
+#   target(S) — resolved branch target (abs or PC+$signed(S) per I bit)
+#
+# Predicates:
+#   $is_imm(D)  — true if L bit is 1 (D operand is an immediate)
+#   $is_imm(S)  — true if I bit is 1 (S operand is an immediate)
+#   $is_reg(D)  — !$is_imm(D)
+#   $is_reg(S)  — !$is_imm(S)
+#
+# Constructs: = (assign), if/else, {a,b} (concat), [h:l] (slice), [n] (bit),
+#   + - * (arithmetic), & | ^ ~ (bitwise), == != < > <= >= (compare),
+#   ?: (ternary), $signed() (sign-extend), {N{x}} (replicate).
+# No loops, no recursion, no function calls.
+
+semantics:
+  expression: string | null

@@ -1,0 +1,57 @@
+---
+
+instructions:
+  - id: rep
+    mnemonic: REP
+    context:
+      group: "Branch - Loop Control"
+      tags: [loop, control]
+      related: [skipf, skip]
+    description:
+      short: "Repeat the next D[8:0] instructions S times"
+      full: |
+        Programs the hardware repeat engine. The instruction immediately following
+        REP is the first instruction of the loop body; the body spans D[8:0]
+        instructions and executes S times. S=0 produces an infinite loop.
+        D[8:0]=0 causes nothing to repeat. The loop counter and end-address are
+        hardware registers; no programmer-visible register is consumed or produced.
+
+    encoding:
+      pattern: "EEEE 1100110 1LI DDDDDDDDD SSSSSSSSS"
+      fields:
+        - name: L
+          description: "D immediate: 1 = D is literal loop-body length"}
+        - name: I
+          description: "S immediate: 1 = S is literal repeat count"}
+        - name: D
+          description: "Loop body length (instruction count); only [8:0] used"}
+        - name: S
+          description: "Repeat count (0 = infinite)"}
+
+    timing:
+      base_cog: 2
+      base_hub: 2
+
+    operands:
+      - name: D
+        stored_in: D_field
+        role: reg_or_imm9
+        format: unsigned
+        augmentable: true
+        sub_fields:
+          - {bits: "[8:0]", name: count, description: "Number of instructions in loop body (0..511)"}
+      - name: S
+        stored_in: S_field
+        role: reg_or_imm9
+        format: unsigned
+        augmentable: true
+
+    flags:
+      allowed_modifiers: [none]
+
+    registers:
+      read: ["D", "S"]
+
+    interrupt_shield:
+      type: loop_body
+      note: "Interrupts are deferred for all instructions within the loop body"
