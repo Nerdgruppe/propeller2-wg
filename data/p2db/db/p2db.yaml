@@ -3,10 +3,6 @@
 instructions:
   - id: rdlut
     mnemonic: RDLUT
-    context:
-      group: "Lookup Table"
-      tags: [lut, memory]
-      related: [wrlut]
     description:
       short: "Read data from LUT address {#}S/PTRx into D. C = MSB of data, Z = (result == 0)"
       full: |
@@ -19,6 +15,10 @@ instructions:
 
         If the WZ or WCZ effect is specified, the Z flag is set (1) if the read value equals
         zero, or is cleared (0) if it is non-zero.
+    context:
+      group: "Lookup Table"
+      tags: [lut, memory]
+      related: [wrlut]
     encoding:
       pattern: "EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS"
       fields:
@@ -36,11 +36,11 @@ instructions:
           role: operand
     operands:
       - name: D
-        role: lut_value
+        role: reg_out
         stored_in: D
-        format: raw32
+        format: data32
       - name: S
-        role: lut_addr
+        role: input
         stored_in: S
         immediate_in: I
         register_mode:
@@ -79,14 +79,14 @@ instructions:
 
   - id: call-addr
     mnemonic: CALL
-    context:
-      group: Branch A - Call
-      tags: [addr-instr, branching]
-      related: [call-reg, jmp-addr, calla-addr, callb-addr, calld-addr, loc-addr, pop]
     description:
       short: Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack. If R = 1 then PC += A, else PC = A. "\" forces R = 0.
       full: |
         To be done
+    context:
+      group: Branch A - Call
+      tags: [addr-instr, branching]
+      related: [call-reg, jmp-addr, calla-addr, callb-addr, calld-reg, calld-addr, loc-addr, pop]
     encoding:
       pattern: "EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA"
       fields:
@@ -98,7 +98,7 @@ instructions:
           role: operand
     operands:
       - name: A
-        role: branch_target
+        role: input
         stored_in: A
         relative_in: R
         absolute_mode:
@@ -112,15 +112,15 @@ instructions:
       - type: hub_access_window # 0..7
         condition: $is_hub_pc(target(A))
         address: target(A)
+      - type: hub_long_cross # 0..1
+        condition: $is_hub_pc(target(A))
+        address: target(A)
+        width: long
       - type: static # branch taken slot
         cog: 2
         hub: 11 # TODO: Validate that the 11 clocks are *before* or *after* the hub access window!
-    memory:
-      hub:
-        access: read
-        width: long
-        address: target(A)
-        destination: PC
+    flags:
+      allowed_modifiers: [none]
     stack:
       operation: push
       value: "{C, Z, 10'b0, PC[19:0]}"
@@ -130,3 +130,232 @@ instructions:
       addressing: dependent
       return_context:
         location: stack
+
+  - id: calld-reg # CALLD D,{#}S {WC/WZ/WCZ}
+    mnemonic: CALLD
+    description:
+      short: Call to S** by writing {C, Z, 10'b0, PC[19:0]} to D. C = S[31], Z = S[30].
+      full: |
+        TODO: Write "CALLD D" documentation
+    context:
+      group: Branch A - Call
+      tags: [branching]
+      related: [calld-raddr, call-addr, call-reg, jmp-addr, calla-addr, callb-addr, loc-addr, pop]
+    encoding:
+      pattern: "EEEE 1011001 CZI DDDDDDDDD SSSSSSSSS"
+      fields:
+        - name: E
+          role: condition
+        - name: C
+          role: c-flag
+        - name: Z
+          role: z-flag
+        - name: I
+          role: operand-mode
+        - name: D
+          role: operand
+        - name: S
+          role: operand
+    operands:
+      - name: D
+        role: reg_out
+        stored_in: S
+        format: cpu_state
+      - name: S
+        role: input
+        stored_in: S
+        immediate_in: I
+        register_mode:
+          format: abs20
+        immediate_mode:
+          format: pcrel20
+    aliases:
+      - mnemonic: RESI3
+        description:
+          short: Resume from INT3.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111110000
+          S: 0b111110001
+      - mnemonic: RESI2
+        description:
+          short: Resume from INT2.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111110010
+          S: 0b111110011
+      - mnemonic: RESI1
+        description:
+          short: Resume from INT1.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111110100
+          S: 0b111110101
+      - mnemonic: RESI0
+        description:
+          short: Resume from INT0.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111111110
+          S: 0b111111111
+      - mnemonic: RETI3
+        description:
+          short: Return from INT3.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111111111
+          S: 0b111110001
+      - mnemonic: RETI2
+        description:
+          short: Return from INT2.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111111111
+          S: 0b111110011
+      - mnemonic: RETI1
+        description:
+          short: Return from INT1.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111111111
+          S: 0b111110101
+      - mnemonic: RETI0
+        description:
+          short: Return from INT0.
+        fixed_fields:
+          C: 1
+          Z: 1
+          I: 0
+          D: 0b111111111
+          S: 0b111111111
+
+    timing: # 4	13...20
+      - type: static
+        cog: 2
+        hub: 2
+      - type: hub_access_window # 0..7
+        condition: $is_hub_pc(target(A))
+        address: target(A)
+      - type: hub_long_cross # 0..1
+        condition: $is_hub_pc(target(A))
+        address: target(A)
+        width: long
+      - type: static
+        cog: 2
+        hub: 10 # TODO: Verify if the static +8 offset is before or after the branching
+    
+    flags:
+      allowed_modifiers: [ none, WC, WZ, WCZ ]
+      C:
+        consumed: true
+        emitted: true
+        source: value_of(S)[31]
+      Z:
+        consumed: true
+        emitted: true
+        source: value_of(S)[30]
+    registers:
+      reads:
+        - reg: D
+        - reg: S
+          condition: $is_reg(S)
+      writes:
+        - reg: D
+          value: "{C, Z, 10'b0, PC[19:0]}"
+    branch:
+      type: call
+      target: value_of(S)
+      addressing: dependent
+      return_context:
+        location: D
+
+  # - id: calld-addr # CALLD PA/PB/PTRA/PTRB,#{\}A
+  #   mnemonic: CALLD
+  #   description:
+  #     short: Call to A by writing {C, Z, 10'b0, PC[19:0]} to PA/PB/PTRA/PTRB (per W). If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+  #     full: |
+  #       TODO: Write "CALLD D" documentation
+  #   context:
+  #     group: Branch S - Call
+  #     tags: [branching]
+  #     related: [calld-reg, call-addr, call-reg, jmp-addr, calla-addr, callb-addr, loc-addr, pop]
+
+  #   encoding:
+  #     pattern: "EEEE 11100WW RAA AAAAAAAAA AAAAAAAAA"
+
+  #   timing: # 4	13...20
+  
+
+  # - id: template
+  #   mnemonic: ABC
+  #   description:
+  #     short: bla
+  #     full: |
+  #       asdsad
+  #   family:
+  #   context:
+  #   encoding:
+  #     pattern:
+  #     fields:
+  #     - name: E
+  #       role: condition
+  #   operands:
+  #     - name: D
+  #       stored_in: D
+  #     - name: S
+  #       stored_in: S
+  #   aliases:
+  #   timing:
+  #     - type: static
+  #       cog: 2
+  #       hub: 2
+  #   registers:
+  #     reads:
+  #       - reg:
+  #     writes:
+  #       - reg:
+  #         value:
+  #   q_effect:
+  #     sets_q:
+  #       mode:
+  #       value:
+  #     reads_q_value:
+  #     resets_q_state:
+  #     q_behavior:
+  #   memory:
+  #     hub:
+  #       access:
+  #       width:
+  #       address:
+  #     lut:
+  #       access:
+  #       address:
+  #   stack:
+  #     operation:
+  #     value:
+  #   branch:
+  #     type:
+  #     condition:
+  #     target:
+  #     addressing:
+  #     return_context:
+  #       location:
+  #   cordic:
+  #   pipeline:
+  #   interrupt_shield:
+  #   events:
+  #   smart_pin:

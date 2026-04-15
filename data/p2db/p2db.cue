@@ -42,13 +42,11 @@ package p2db
 #FieldName: =~"^[AcCDEILnNRSWzZ]$"
 
 #Integer: int | (string & =~"^0b[01]+$" )
+#Binary:  int
 
 #Family: {
 	// Root name of the family, e.g. "jse_jnse"
 	name: string
-
-	// Index inside the family, must be unique for each family.
-	index: int & >=1
 }
 
 #Context: {
@@ -58,8 +56,8 @@ package p2db
 }
 
 #Description: {
-	short: string & !~"\n" // One-liner description, plaintext
-	full:  string          // Markdown, multi-paragraph
+	short!: string & !~"\n" // One-liner description, plaintext
+	full?:  string | *""    // Markdown, multi-paragraph
 }
 
 // Aliases are syntactic shorthands: some programmer-visible operands of the
@@ -68,11 +66,11 @@ package p2db
 //
 // An alias does NOT get a root-level entry.
 #Alias: {
-	mnemonic:    #Mnemonic
+	mnemonic!:   #Mnemonic
 	description: #Description
 
 	// Keys point to #InstrField.name
-	fixed_fields: [#FieldName]: int // TODO: Also allow binary/hexadecimal, constrain to parent encoding fields
+	fixed_fields!: [#FieldName]: #Binary // TODO: Also allow binary/hexadecimal, constrain to parent encoding fields
 }
 
 // The role of an instruction field.
@@ -125,7 +123,7 @@ package p2db
 
 #OperandFormat: (
 		// A 32 bit value without concrete interpretation
-		"raw32" |
+		"data32" |
 
 	// One of the 16 condition codes
 	"condition_code" |
@@ -133,24 +131,29 @@ package p2db
 	// A 9 bit address in the LUT
 	"lut_addr" |
 
-	// A 8 bit address into the LUT or a pointer expression
+	// A 9 bit encoding of either an 8 bit LUT address or a pointer expression
 	"lut_addr_expr" |
 
-	// A 20 bit absolute address
+	// A 20 bit absolute address (memory space address)
 	"abs20" |
 
-	// A 20 bit pc-relative addressing (number of instructions).
-	"pcrel20")
+	// A 20 bit pc-relative offset (number of instructions).
+	"pcrel20" |
+
+	// A packed value encoding C, Z and PC in the form of '{C, Z, 10'b0, PC[19:0]}'
+	"cpu_state")
 
 #OperandRole: (
-		// The operand encodes the conditional code of the instruction
-		"condition" |
-	// The operand encodes an address in the LUT
-	"lut_addr" |
+		// The operand consumes a value, either from a register or an immediate.
+		"input" |
+	// The operand writes the register value.
+	"reg_out" |
+	// The operand first reads, then writes the register value.
+	"reg_in_out" |
 	//  The operand encodes a value read/written from/to the LUT
 	"lut_value" |
 	// The operand encodes a target address for a branch
-	"branch_target" )
+	"branch_target")
 
 #OperandProperties: {
 	// Describes the expected format of the value.
@@ -174,6 +177,7 @@ package p2db
 	// When the operand stores a 20 bit address value, the relative_in field
 	// marks which bit of the encoding tells the cpu whether the address is 
 	// relative=1 or absolute=0.
+	// TODO: Validate "R=1 ~ relative" (documentation inconsistency)!
 	//
 	// If `null`, the operand does not use the relative-style addressing
 	relative_in: #FieldName | *null
@@ -213,7 +217,15 @@ package p2db
 		// A dynamic timing offset based on the availability of a hub access window
 		// for a certain address.
 		// Adds a delay of 0..7 clocks based on `condition` and `address`.
-		"hub_access_window")
+		"hub_access_window" |
+
+		// +1 clock if the hub access crosses a hub-long boundary.
+		// Documented as footnote "1" in the PASM2 manual timing table
+		// for RDLONG/WRLONG/WMLONG/RDWORD/WRWORD/PUSHA/PUSHB/POPA/POPB/....
+		// Only possible for byte/word/unaligned accesses.
+		// Uses the address+width to compute if the long cross is applied.
+		// cog: 1        hub: 1
+		"hub_long_cross" )
 
 	// The condition when the timing factor is enabled.
 	// If not present, will always apply.
@@ -227,9 +239,14 @@ package p2db
 		hub: int & >=0
 	}
 
-	if (type == "hub_access_window") {
+	if (type == "hub_access_window" || type == "hub_long_cross") {
 		// The address that shall be accessed.
 		address!: #Expression
+	}
+
+	if (type == "hub_long_cross") {
+		// The size of the memory access.
+		width: #MemorySize
 	}
 }
 
@@ -250,7 +267,7 @@ package p2db
 #Flags: {
 	// Which flag modifiers are allowed on the instruction.
 	// These modifiers must match the existence of a  "c-flag" or "z-flag" encoding field.
-	allowed_modifiers: [...#FlagModifier]
+	allowed_modifiers!: [...#FlagModifier]
 
 	// How is the C flag processed by the instruction
 	C?: #FlagSpec | *null
@@ -279,7 +296,7 @@ package p2db
 
 #RegisterRead: {
 	reg:       #RegisterName
-	condition: #Expression
+	condition: #Expression | *"always"
 }
 
 #RegisterWrite: {
@@ -403,14 +420,15 @@ package p2db
 	// primary assembler mnemonic, UPPERCASE
 	mnemonic!: #Mnemonic
 
+	// Human-readable description of the instruction
+	description!: #Description
+
 	family?: #Family
 
 	context?: #Context
 
-	description: #Description
-
 	// The raw instruction encoding
-	encoding: #Encoding
+	encoding!: #Encoding
 
 	// The list of semantic operands this instruction has.
 	// Operands map their values into to fields of `encoding`.
@@ -418,7 +436,7 @@ package p2db
 
 	// Optional list of instruction aliases that have different syntax,
 	// but are mapping to the same underlying instruction.
-	aliases?: [...#Alias] | *[]
+	aliases?: [...#Alias]
 
 	// The timing spec is a ordered sequence of factors that 
 	// together form the final timing rules for an instruction.
@@ -442,11 +460,11 @@ package p2db
 	// If set, describes the branching behavior of the instruction.
 	branch?: #Branching
 
-	// TODO: cordic?:
-	// TODO: pipeline?:
-	// TODO: interrupt_shield?:
-	// TODO: events?:
-	// TODO: smart_pin?:
+	cordic?: {}
+	pipeline?: {}
+	interrupt_shield?: {}
+	events?: {}
+	smart_pin?: {}
 
 	// True only for BRK and similar instructions that execute regardless of
 	// the EEEE condition-code field. Default false.
@@ -489,8 +507,8 @@ package p2db
 // - <op>: Alias of the operand with .name = "<op>"
 // - R: The result register (typically the "D" operand, unless altered in the pipeline)
 // - C/Z: The 1-bit flag values
-// - PC: Current program counter
-// - PC_next: Address of the following instruction (PC+1 cog/LUT, PC+4 hub)
+// - PC_curr: The address of the instruction currently executed.
+// - PC: Address of the instruction following the current one (PC_curr+1 cog/LUT, PC_curr+4 hub)
 // - PA/PB/PTRA/PTRB/...: Value of the named register (#RegisterName)
 // - REG[…]: The register memory for the executing cog
 // - LUT[…]: The LUT memory for the executing cog
