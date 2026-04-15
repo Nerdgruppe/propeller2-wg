@@ -221,7 +221,7 @@ def main():
                         {
                             "offset": res.offset,
                             "duration": res.duration,
-                            "launch_ct": hex(res.launch_ct),
+                            # "launch_ct": hex(res.launch_ct),
                             "result": res.result,
                         }
                         for res in results

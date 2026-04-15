@@ -3,373 +3,285 @@ test-results:
   results:
   - offset: 0
     duration: 0
-    launch_ct: '0x246e00'
     result: 0
   - offset: 1
     duration: 0
-    launch_ct: '0x2e8001'
     result: 0
   - offset: 2
     duration: 0
-    launch_ct: '0x389002'
     result: 0
   - offset: 3
     duration: 0
-    launch_ct: '0x42a003'
     result: 0
   - offset: 4
     duration: 0
-    launch_ct: '0x4cb204'
     result: 0
   - offset: 5
     duration: 0
-    launch_ct: '0x56c205'
     result: 0
   - offset: 6
     duration: 0
-    launch_ct: '0x60d406'
     result: 0
   - offset: 7
     duration: 0
-    launch_ct: '0x6ae407'
     result: 0
 - test: Baseline (NOP)
   results:
   - offset: 0
     duration: 2
-    launch_ct: '0x259800'
     result: 0
   - offset: 1
     duration: 2
-    launch_ct: '0x2fa801'
     result: 0
   - offset: 2
     duration: 2
-    launch_ct: '0x39ba02'
     result: 0
   - offset: 3
     duration: 2
-    launch_ct: '0x43ca03'
     result: 0
   - offset: 4
     duration: 2
-    launch_ct: '0x4dda04'
     result: 0
   - offset: 5
     duration: 2
-    launch_ct: '0x57ec05'
     result: 0
   - offset: 6
     duration: 2
-    launch_ct: '0x61fc06'
     result: 0
   - offset: 7
     duration: 2
-    launch_ct: '0x6c0e07'
     result: 0
 - test: Pixelmixer (ADDPIX)
   results:
   - offset: 0
     duration: 7
-    launch_ct: '0x255800'
     result: 0
   - offset: 1
     duration: 7
-    launch_ct: '0x2f6a01'
     result: 0
   - offset: 2
     duration: 7
-    launch_ct: '0x397a02'
     result: 0
   - offset: 3
     duration: 7
-    launch_ct: '0x438c03'
     result: 0
   - offset: 4
     duration: 7
-    launch_ct: '0x4d9c04'
     result: 0
   - offset: 5
     duration: 7
-    launch_ct: '0x57ae05'
     result: 0
   - offset: 6
     duration: 7
-    launch_ct: '0x61be06'
     result: 0
   - offset: 7
     duration: 7
-    launch_ct: '0x6bce07'
     result: 0
 - test: Cordic Schedule (QMUL)
   results:
   - offset: 0
     duration: 2
-    launch_ct: '0x251600'
     result: 0
   - offset: 1
     duration: 9
-    launch_ct: '0x2f2601'
     result: 0
   - offset: 2
     duration: 8
-    launch_ct: '0x393602'
     result: 0
   - offset: 3
     duration: 7
-    launch_ct: '0x434803'
     result: 0
   - offset: 4
     duration: 6
-    launch_ct: '0x4d5804'
     result: 0
   - offset: 5
     duration: 5
-    launch_ct: '0x576a05'
     result: 0
   - offset: 6
     duration: 4
-    launch_ct: '0x617a06'
     result: 0
   - offset: 7
     duration: 3
-    launch_ct: '0x6b8c07'
     result: 0
 - test: 'Waiting (WAITX #0)'
   results:
   - offset: 0
     duration: 2
-    launch_ct: '0x258a00'
     result: 0
   - offset: 1
     duration: 2
-    launch_ct: '0x2f9c01'
     result: 0
   - offset: 2
     duration: 2
-    launch_ct: '0x39ac02'
     result: 0
   - offset: 3
     duration: 2
-    launch_ct: '0x43be03'
     result: 0
   - offset: 4
     duration: 2
-    launch_ct: '0x4dce04'
     result: 0
   - offset: 5
     duration: 2
-    launch_ct: '0x57e005'
     result: 0
   - offset: 6
     duration: 2
-    launch_ct: '0x61f006'
     result: 0
   - offset: 7
     duration: 2
-    launch_ct: '0x6c0207'
     result: 0
 - test: 'Waiting (WAITX #3)'
   results:
   - offset: 0
     duration: 5
-    launch_ct: '0x25b600'
     result: 0
   - offset: 1
     duration: 5
-    launch_ct: '0x2fc801'
     result: 0
   - offset: 2
     duration: 5
-    launch_ct: '0x39d802'
     result: 0
   - offset: 3
     duration: 5
-    launch_ct: '0x43ea03'
     result: 0
   - offset: 4
     duration: 5
-    launch_ct: '0x4dfa04'
     result: 0
   - offset: 5
     duration: 5
-    launch_ct: '0x580a05'
     result: 0
   - offset: 6
     duration: 5
-    launch_ct: '0x621c06'
     result: 0
   - offset: 7
     duration: 5
-    launch_ct: '0x6c2c07'
     result: 0
 - test: Cordic Fetch Result (GETXY)
   results:
   - offset: 0
     duration: 2
-    launch_ct: '0x258800'
     result: 0
   - offset: 1
     duration: 2
-    launch_ct: '0x2f9801'
     result: 0
   - offset: 2
     duration: 2
-    launch_ct: '0x39aa02'
     result: 0
   - offset: 3
     duration: 2
-    launch_ct: '0x43ba03'
     result: 0
   - offset: 4
     duration: 2
-    launch_ct: '0x4dcc04'
     result: 0
   - offset: 5
     duration: 2
-    launch_ct: '0x57dc05'
     result: 0
   - offset: 6
     duration: 2
-    launch_ct: '0x61ec06'
     result: 0
   - offset: 7
     duration: 2
-    launch_ct: '0x6bfe07'
     result: 0
 - test: Cordic Schedule and Fetch Result (GETXY)
   results:
   - offset: 0
     duration: 60
-    launch_ct: '0x258200'
     result: 0
   - offset: 1
     duration: 67
-    launch_ct: '0x2f9401'
     result: 0
   - offset: 2
     duration: 66
-    launch_ct: '0x39a402'
     result: 0
   - offset: 3
     duration: 65
-    launch_ct: '0x43b603'
     result: 0
   - offset: 4
     duration: 64
-    launch_ct: '0x4dc604'
     result: 0
   - offset: 5
     duration: 63
-    launch_ct: '0x57d805'
     result: 0
   - offset: 6
     duration: 62
-    launch_ct: '0x61e806'
     result: 0
   - offset: 7
     duration: 61
-    launch_ct: '0x6bf807'
     result: 0
 - test: 'Jump Timing (JMP #A)'
   results:
   - offset: 0
     duration: 4
-    launch_ct: '0x261a00'
     result: 0
   - offset: 1
     duration: 4
-    launch_ct: '0x302a01'
     result: 0
   - offset: 2
     duration: 4
-    launch_ct: '0x3a3c02'
     result: 0
   - offset: 3
     duration: 4
-    launch_ct: '0x444c03'
     result: 0
   - offset: 4
     duration: 4
-    launch_ct: '0x4e5e04'
     result: 0
   - offset: 5
     duration: 4
-    launch_ct: '0x586e05'
     result: 0
   - offset: 6
     duration: 4
-    launch_ct: '0x628006'
     result: 0
   - offset: 7
     duration: 4
-    launch_ct: '0x6c9007'
     result: 0
 - test: 'Jump Timing (JMP #\A)'
   results:
   - offset: 0
     duration: 4
-    launch_ct: '0x25ac00'
     result: 0
   - offset: 1
     duration: 4
-    launch_ct: '0x2fbe01'
     result: 0
   - offset: 2
     duration: 4
-    launch_ct: '0x39ce02'
     result: 0
   - offset: 3
     duration: 4
-    launch_ct: '0x43e003'
     result: 0
   - offset: 4
     duration: 4
-    launch_ct: '0x4df004'
     result: 0
   - offset: 5
     duration: 4
-    launch_ct: '0x580005'
     result: 0
   - offset: 6
     duration: 4
-    launch_ct: '0x621206'
     result: 0
   - offset: 7
     duration: 4
-    launch_ct: '0x6c2207'
     result: 0
 - test: Cog Startup (cogexec)
   results:
   - offset: 0
     duration: 535
-    launch_ct: '0x25ac00'
     result: 0
   - offset: 1
     duration: 542
-    launch_ct: '0x2fbc01'
     result: 0
   - offset: 2
     duration: 541
-    launch_ct: '0x39ce02'
     result: 0
   - offset: 3
     duration: 540
-    launch_ct: '0x43de03'
     result: 0
   - offset: 4
     duration: 539
-    launch_ct: '0x4df004'
     result: 0
   - offset: 5
     duration: 538
-    launch_ct: '0x580005'
     result: 0
   - offset: 6
     duration: 537
-    launch_ct: '0x621006'
     result: 0
   - offset: 7
     duration: 536
-    launch_ct: '0x6c2207'
     result: 0
