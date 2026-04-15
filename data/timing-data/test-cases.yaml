@@ -1,0 +1,52 @@
+---
+
+test-cases:
+  - name: Baseline (empty)
+    measure: ""
+    expect: 0
+  - name: Baseline (NOP)
+    measure: NOP
+    expect: 2
+  - name: Pixelmixer (ADDPIX)
+    measure: "ADDPIX tmp, #0"
+    data: tmp  LONG 0
+    expect: 7
+  - name: Cordic Schedule (QMUL)
+    measure: "QMUL #0, #0"
+    expect: [2,9,8,7,6,5,4,3]
+  - name: "Waiting (WAITX #0)"
+    measure: "WAITX #0"
+    expect: 2
+  - name: "Waiting (WAITX #3)"
+    measure: "WAITX #3"
+    expect: 5
+  - name: Cordic Fetch Result (GETXY)
+    prepare: "QMUL #0, #0"
+    measure: "GETQX tmp"
+    data: tmp LONG 0
+    expect: 2
+  - name: Cordic Schedule and Fetch Result (GETXY)
+    measure: |
+      QMUL  #0, #0 ' takes 2..9
+      GETQX tmp    ' takes 58
+    data: tmp LONG 0
+    expect: [60, 67, 66, 65, 64, 63, 62, 61]
+  - name: "Jump Timing (JMP #A)"
+    measure: |
+      JMP #nextline
+      nextline:
+    expect: 4
+  - name: "Jump Timing (JMP #\\A)"
+    measure: |
+      JMP #\nextline
+      nextline:
+    expect: 4
+  - name: "Cog Startup (cogexec)"
+    measure: |
+      COGINIT #%0_0_0001, #@@@cog2code ' start "COG 1"
+      WAITATN                          ' wait until we're called
+    data: |
+      cog2code
+        COGATN #1 ' call back to the main system
+        COGSTOP #1 ' halt ourselves
+    expect: [535, 542, 541, 540, 539, 538, 537, 536]
