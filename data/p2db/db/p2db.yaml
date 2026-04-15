@@ -1,0 +1,132 @@
+---
+
+instructions:
+  - id: rdlut
+    mnemonic: RDLUT
+    context:
+      group: "Lookup Table"
+      tags: [lut, memory]
+      related: [wrlut]
+    description:
+      short: "Read data from LUT address {#}S/PTRx into D. C = MSB of data, Z = (result == 0)"
+      full: |
+        RDLUT reads the LUT memory location addressed by Source or a pointer expression into
+        Destination (and as a side effect, also the Q Register). Only the bottom 9 bits of
+        the effective address are considered, the rest are ignored.
+
+        If the WC or WCZ effect is specified, the C flag is set to the MSB (bit 31) of the
+        read value.
+
+        If the WZ or WCZ effect is specified, the Z flag is set (1) if the read value equals
+        zero, or is cleared (0) if it is non-zero.
+    encoding:
+      pattern: "EEEE 1010101 CZI DDDDDDDDD SSSSSSSSS"
+      fields:
+        - name: E
+          role: condition
+        - name: C
+          role: c-flag
+        - name: Z
+          role: z-flag
+        - name: I
+          role: operand-mode
+        - name: D
+          role: operand
+        - name: S
+          role: operand
+    operands:
+      - name: D
+        role: lut_value
+        stored_in: D
+        format: raw32
+      - name: S
+        role: lut_addr
+        stored_in: S
+        immediate_in: I
+        register_mode:
+          format: lut_addr
+        immediate_mode:
+          format: lut_addr_expr
+          augmentable: AUGS
+    timing:
+      - type: static
+        cog: 3
+        hub: 3
+    flags:
+      allowed_modifiers: [none, WC, WZ, WCZ]
+      C:
+        emitted: true
+        source: "D[31]"
+      Z:
+        emitted: true
+        source: "D == 0"
+    registers:
+      reads:
+        - reg: S
+          condition: $is_reg(S)
+      writes:
+        - reg: D
+          value: LUT[value_of(S) & 0x1FF]
+    q_effect:
+      sets_q:
+        mode: regular
+        value: LUT[value_of(S) & 0x1FF]
+    memory:
+      lut:
+        access: "read"
+        address: value_of(S) & 0x1FF
+        destination: D
+
+  - id: call-addr
+    mnemonic: CALL
+    context:
+      group: Branch A - Call
+      tags: [addr-instr, branching]
+      related: [call-reg, jmp-addr, calla-addr, callb-addr, calld-addr, loc-addr, pop]
+    description:
+      short: Call to A by pushing {C, Z, 10'b0, PC[19:0]} onto stack. If R = 1 then PC += A, else PC = A. "\" forces R = 0.
+      full: |
+        To be done
+    encoding:
+      pattern: "EEEE 1101101 RAA AAAAAAAAA AAAAAAAAA"
+      fields:
+        - name: E
+          role: condition
+        - name: R
+          role: operand-mode
+        - name: A
+          role: operand
+    operands:
+      - name: A
+        role: branch_target
+        stored_in: A
+        relative_in: R
+        absolute_mode:
+          format: abs20
+        relative_mode:
+          format: pcrel20
+    timing: # from docs: "4 / 13...20"
+      - type: static # regular instruction timing
+        cog: 2
+        hub: 2
+      - type: hub_access_window # 0..7
+        condition: $is_hub_pc(target(A))
+        address: target(A)
+      - type: static # branch taken slot
+        cog: 2
+        hub: 11 # TODO: Validate that the 11 clocks are *before* or *after* the hub access window!
+    memory:
+      hub:
+        access: read
+        width: long
+        address: target(A)
+        destination: PC
+    stack:
+      operation: push
+      value: "{C, Z, 10'b0, PC[19:0]}"
+    branch:
+      type: call
+      target: target(A)
+      addressing: dependent
+      return_context:
+        location: stack

@@ -3,3 +3,4 @@ __pycache__/
 .vscode/
 zig-out/
 .zig-cache/
+.codex

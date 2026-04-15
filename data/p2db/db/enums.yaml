@@ -1,0 +1,65 @@
+---
+
+# This file contains the definitions for all enumerations used throughout the 
+# Propeller 2 instruction set.
+
+enumerations:
+  condition_code:
+    size: 4
+    items:
+      - name: _RET_
+        value: 0b0000
+        description: Execute <inst> and return if no branch. If <inst> is not branching then return by popping stack[19:0] into PC.
+      - name: IF_NC_AND_NZ
+        value: 0b0001
+        description: Execute <inst> if C = 0 and Z = 0.
+      - name: IF_NC_AND_Z
+        value: 0b0010
+        description: Execute <inst> if C = 0 and Z = 1.
+      - name: IF_NC
+        value: 0b0011
+        description: Execute <inst> if C = 0.
+      - name: IF_C_AND_NZ
+        value: 0b0100
+        description: Execute <inst> if C = 1 and Z = 0.
+      - name: IF_NZ
+        value: 0b0101
+        description: Execute <inst> if Z = 0.
+      - name: IF_C_NE_Z
+        value: 0b0110
+        description: Execute <inst> if C != Z.
+      - name: IF_NC_OR_NZ
+        value: 0b0111
+        description: Execute <inst> if C = 0 or Z = 0.
+      - name: IF_C_AND_Z
+        value: 0b1000
+        description: Execute <inst> if C = 1 and Z = 1.
+      - name: IF_C_EQ_Z
+        value: 0b1001
+        description: Execute <inst> if C = Z.
+      - name: IF_Z
+        value: 0b1010
+        description: Execute <inst> if Z = 1.
+      - name: IF_NC_OR_Z
+        value: 0b1011
+        description: Execute <inst> if C = 0 or Z = 1.
+      - name: IF_C
+        value: 0b1100
+        description: Execute <inst> if C = 1.
+      - name: IF_C_OR_NZ
+        value: 0b1101
+        description: Execute <inst> if C = 1 or Z = 0.
+      - name: IF_C_OR_Z
+        value: 0b1110
+        description: Execute <inst> if C = 1 or Z = 1.
+      - name: IF_ALWAYS
+        value: 0b1111
+        description: Execute <inst> always. This is the default when no instruction prefix is expressed.
+
+  flag_modifier:
+    size: 4
+    items:
+      - name: _CLR
+        value: 0b0000
+        description: C/Z = 0
+      # TODO: Complete this enumeration

@@ -70,110 +70,9 @@ operands:
       - {bits: "[HI:LO]", name: string, description: string}
 
 # ───────────────────────────────────────────────────────────────────
-# FLAGS
-# ───────────────────────────────────────────────────────────────────
-
-flags:
-  allowed_modifiers: [string]
-    # Syntactically legal flag-modifier suffixes.
-    # Subset of: none WC WZ WCZ
-    # "none" = no modifier is a valid option.
-
-  C:
-    read: bool              # true if C is consumed as an input
-    written: bool           # true if C can be updated (needs WC or WCZ in allowed_modifiers)
-    source: string | null   # expression for the new C value when written
-    note: string | null
-
-  Z:
-    read: bool
-    written: bool
-    source: string | null
-    note: string | null
-
-# ───────────────────────────────────────────────────────────────────
-# REGISTERS
-# ───────────────────────────────────────────────────────────────────
-#
-# Side-effects on named registers beyond the operand fields themselves.
-# C and Z are captured in `flags`. PC is implicit for branches (omit unless
-# the update is non-obvious). The hardware stack K is captured in `stack`.
-#
-# Named registers (non-exhaustive):
-#   PA PB PTRA PTRB
-#   INA INB OUTA OUTB DIRA DIRB
-#   Q
-#   IJMP1 IRET1 IJMP2 IRET2 IJMP3 IRET3
-#   (cog special-purpose registers by name or address $1Fxx)
-#
-# Operand-addressed registers are referenced by the operand name in quotes:
-#   "D"  means "the register whose 9-bit address is in the D field"
-#   "S"  means "the register whose 9-bit address is in the S field"
-#
-# Conditional writes use a structured condition, not an inline annotation.
-
-registers:
-  read: [string]
-
-  written:
-    - reg: string           # register name, or "D" / "S"
-      condition: string
-        # When this write actually occurs. One of:
-        #   always
-        #   if_wc               WC or WCZ modifier is present
-        #   if_wz               WZ or WCZ modifier is present
-        #   if_wcz              WCZ modifier is present
-        #   if_reg_D            D operand is a register (not immediate)
-        #   if_reg_S            S operand is a register (not immediate)
-        #   if_reg_D_and_wc     D is register AND WC present
-        #   if_reg_D_and_wz     D is register AND WZ present
-
-# ───────────────────────────────────────────────────────────────────
-# Q REGISTER
-# ───────────────────────────────────────────────────────────────────
-#
-# Omit entirely if instruction has no Q interaction.
-
-q_effect:
-  sets_q_state: null | "regular" | "alternative"
-    # SETQ  → regular   (Q = D; activates block-transfer count + other uses)
-    # SETQ2 → alternative (Q = D; additionally tags block source as LUT)
-
-  reads_q_value: bool
-    # True if Q's numeric value is consumed (MUXQ, CRCNIB, COGINIT, etc.)
-    # Even if reads_q_value is true, the Q state (regular/alternative) may
-    # alter *how* the value is interpreted (see q_behavior below).
-
-  resets_q_state: bool
-    # True if execution of this instruction clears the Q state back to "unset".
-    # Hub-access instructions and CORDIC launchers consume Q and reset state.
-
-  q_behavior:
-    # Optional — only when behaviour differs per Q state.
-    # Omit states that are identical to "unset".
-    unset:
-      description: string
-    regular:
-      description: string
-    alternative:
-      description: string
-
-# ───────────────────────────────────────────────────────────────────
 # TIMING
 # ───────────────────────────────────────────────────────────────────
-#
-# Final clock count = base_{cog|hub} + sum of applicable factor.{cog|hub}
-# All values are integers. "0..N" means a range of 0 to N (inclusive).
 
-timing:
-  base_cog: int
-  base_hub: int | null # if null the instruction cannot be used in hubexec
-
-  factors:
-    - type: string          # see Factor Type Vocabulary below
-      condition: string | null # expression syntax for when the conditin triggers
-      cog: int | "0..N" | null   # additional clocks in cog mode; 0 if no contribution
-      hub: int | "0..N" | null   # additional clocks in hub mode
 
 # Factor Type Vocabulary (closed enum — the P2 instruction set is fixed):
 #
@@ -204,20 +103,6 @@ timing:
 #                     cog: 2        hub: "0..7"
 
 # ───────────────────────────────────────────────────────────────────
-# MEMORY
-# ───────────────────────────────────────────────────────────────────
-# Omit if no memory access.
-
-memory:
-  hub:
-    access: "read" | "write"
-    width: "byte" | "word" | "long"
-    address_source: string    # e.g. "{#}S or PTRx", "PTRA++"
-  lut:
-    access: "read" | "write"
-    address_source: string
-
-# ───────────────────────────────────────────────────────────────────
 # CORDIC
 # ───────────────────────────────────────────────────────────────────
 # Omit if no CORDIC interaction.
@@ -228,41 +113,6 @@ cordic:
   result_QX: string | null
   result_QY: string | null
   reads_result: bool
-
-# ───────────────────────────────────────────────────────────────────
-# STACK
-# ───────────────────────────────────────────────────────────────────
-# Omit if no push/pop. Only models the internal 8-entry hardware stack.
-
-stack:
-  operation: "push" | "pop"
-  expression: string | null # bit layout, always required for "push"; e.g. "{C, Z, 10'b0, PC_next[19:0]}"
-
-# ───────────────────────────────────────────────────────────────────
-# BRANCH
-# ───────────────────────────────────────────────────────────────────
-# Omit entirely for non-branching instructions.
-
-branch:
-  type: "jump" | "branch" | "call" | "return"
-    # jump   — unconditional; no call/return stack semantics (JMP, CALLA, RETA)
-    # branch — conditional on C/Z or an event flag; no stack semantics
-    # call   — saves return context; callee eventually returns
-    # return — restores PC (and optionally C/Z) from saved context
-
-  condition_source: string | null
-    # Only when type == branch. E.g. "SE1 event flag clear".
-
-  target_source: string | null   # e.g. "S", "A", "D[19:0]"
-  target_type: "absolute" | "relative" | "either"
-  relative_range: string | null  # e.g. "±256 instr (9-bit) or ±524287 (with AUGS)"
-
-  return_context:
-    # Only for call / return.
-    format: string | null       # e.g. "{C, Z, 10'b0, PC_next[19:0]}"
-    location: string
-      # Where the context is stored (call) or read from (return).
-      # Enum: D | stack | PA | PB | PTRA | PTRB
 
 # ───────────────────────────────────────────────────────────────────
 # PIPELINE (NEXT-INSTRUCTION MODIFIER)
