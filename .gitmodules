@@ -1,3 +1,6 @@
 [submodule "vendor/parser-toolkit"]
 	path = vendor/parser-toolkit
 	url = git@github.com:ikskuh/parser-toolkit.git
+[submodule "docs/p2docs.github.io"]
+	path = docs/p2docs.github.io
+	url = https://github.com/p2docs/p2docs.github.io
