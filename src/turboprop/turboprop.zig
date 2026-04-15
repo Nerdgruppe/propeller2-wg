@@ -21,8 +21,11 @@ pub fn main() !u8 {
         var buffer: [4096]u8 = undefined;
         var writer = std.fs.File.stdout().writer(&buffer);
         try args_parser.printHelp(CliArgs, cli.executable_name orelse "turboprop", &writer.interface);
+        try writer.interface.flush();
         return 0;
     }
+
+    const verbose = cli.options.verbose;
 
     if (cli.options.exec == .default and cli.positionals.len == 0) {
         std.log.err("A path to a binary file is required!", .{});
@@ -67,7 +70,7 @@ pub fn main() !u8 {
             }
             break :blk cs;
         };
-        std.log.debug("file checksum is 0x{X:0>8}", .{checksum});
+        if (verbose) std.log.debug("file checksum is 0x{X:0>8}", .{checksum});
 
         // append checksum to buffer:
         const checksummed_file: []const u8 = blk: {
@@ -96,7 +99,7 @@ pub fn main() !u8 {
     // Reset device if necessary:
 
     if (cli.options.reset != .none) {
-        std.debug.print("resetting...\n", .{});
+        if (verbose) std.debug.print("resetting...\n", .{});
         try serial_utils.changeControlPins(port, .{
             .dtr = optional_value(cli.options.reset == .dtr, true),
             .rts = optional_value(cli.options.reset == .rts, true),
@@ -114,7 +117,7 @@ pub fn main() !u8 {
 
     // version check:
     if (!cli.options.@"no-version-check") {
-        std.log.info("check version...", .{});
+        if (verbose) std.log.info("check version...", .{});
         var magic_buf: [256]u8 = undefined;
 
         try port.writeAll("Prop_Chk 0 0 0 0\r");
@@ -141,7 +144,7 @@ pub fn main() !u8 {
 
     switch (cli.options.exec) {
         .default => {
-            std.log.info("load code...", .{});
+            if (verbose) std.log.info("load code...", .{});
 
             var b64_buffer: [std.base64.standard.Encoder.calcSize(load_file_buffer.len)]u8 = undefined;
             const b64_data = std.base64.standard.Encoder.encode(&b64_buffer, checksummed_file);
@@ -183,16 +186,16 @@ pub fn main() !u8 {
                 },
             }
 
-            std.log.info("code fully loaded.", .{});
+            if (verbose) std.log.info("code fully loaded.", .{});
         },
 
         .monitor => {
-            std.log.info("starting monitor...", .{});
+            if (verbose) std.log.info("starting monitor...", .{});
             try port.writeAll(&.{std.ascii.control_code.eot}); // "Ctrl-D" starts the monitor
         },
 
         .taqoz => {
-            std.log.info("starting taqoz...", .{});
+            if (verbose) std.log.info("starting taqoz...", .{});
             try port.writeAll(&.{std.ascii.control_code.esc}); // "ESC" starts the monitor
         },
     }
@@ -202,12 +205,34 @@ pub fn main() !u8 {
     }
 
     if (cli.options.monitor) {
-        while (true) {
-            var buffer: [64]u8 = undefined;
-            const len = try port.read(&buffer);
-            std.debug.print("{f}\n", .{
-                std.zig.fmtString(buffer[0..len]),
-            });
+        var stdout = std.fs.File.stdout();
+
+        var writer_buf: [256]u8 = undefined;
+        var fwriter = stdout.writer(&writer_buf);
+
+        const writer = &fwriter.interface;
+
+        switch (cli.options.@"monitor-format") {
+            .escaped => {
+                while (true) {
+                    var buffer: [64]u8 = undefined;
+                    const len = try port.read(&buffer);
+
+                    try writer.print("{f}\n", .{
+                        std.zig.fmtString(buffer[0..len]),
+                    });
+                    try writer.flush();
+                }
+            },
+            .raw => {
+                while (true) {
+                    var buffer: [64]u8 = undefined;
+                    const len = try port.read(&buffer);
+
+                    try writer.writeAll(buffer[0..len]);
+                    try writer.flush();
+                }
+            },
         }
     }
 
@@ -218,6 +243,7 @@ const CliArgs = struct {
     help: bool = false,
 
     monitor: bool = false,
+    @"monitor-format": enum { escaped, raw } = .escaped,
 
     port: []const u8 = "/dev/ttyUSB0",
     baudrate: u32 = 115200,
@@ -228,11 +254,14 @@ const CliArgs = struct {
 
     @"no-version-check": bool = false,
 
+    verbose: bool = false,
+
     pub const shorthands = .{
         .h = "help",
         .P = "port",
         .m = "monitor",
         .b = "baudrate",
+        .v = "verbose",
     };
 
     pub const meta = .{
@@ -244,11 +273,13 @@ const CliArgs = struct {
             .help = "Prints this help",
             .port = "Selects which serial port is used.",
             .monitor = "If enabled, will start a simple monitor which prints what is sent over the serial port.",
+            .@"monitor-format" = "The format that the monitor will use for printing. 'raw' outputs data as received, 'escaped' prints zig-style escapes for values.",
             .@"chunk-size" = "Defines the size of ",
             .reset = "Selects how to reset the device before starting",
             .baudrate = "Selects the baud rate used for loading",
             .@"no-version-check" = "Disables checking if the device is actually the expected Propeller 2",
             .exec = "Sets what should be started by turboprop as a chainloader.",
+            .verbose = "If given, prints more debug logs",
         },
     };
 };
