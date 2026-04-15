@@ -149,11 +149,7 @@ package p2db
 	// The operand writes the register value.
 	"reg_out" |
 	// The operand first reads, then writes the register value.
-	"reg_in_out" |
-	//  The operand encodes a value read/written from/to the LUT
-	"lut_value" |
-	// The operand encodes a target address for a branch
-	"branch_target")
+	"reg_in_out")
 
 #OperandProperties: {
 	// Describes the expected format of the value.
