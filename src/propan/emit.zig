@@ -18,14 +18,14 @@ pub const BinaryFormat = enum {
 
 pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module: Module, format: BinaryFormat) !void {
     switch (format) {
-        .flat => try emit_flat(io, file, module),
+        .flat => try emit_flat(io, allocator, file, module),
         .json => try emit_json(io, allocator, file, module),
 
         .none => {},
     }
 }
 
-fn emit_flat(io: std.Io, file: std.Io.File, module: Module) !void {
+fn emit_flat(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module: Module) !void {
     var total_size: u64 = 0;
     for (module.segments) |seg| {
         total_size = @max(total_size, seg.hub_offset + seg.data.len);
@@ -34,18 +34,16 @@ fn emit_flat(io: std.Io, file: std.Io.File, module: Module) !void {
     if (total_size == 0)
         return;
 
-    var buffer: [4096]u8 = undefined;
-    var writer = file.writer(io, &buffer);
+    var buffer: []u8 = try allocator.alloc(u8, @intCast(total_size));
+    defer allocator.free(buffer);
 
-    try writer.seekTo(total_size - 1);
-    try writer.interface.writeAll("\x00");
+    @memset(buffer, 0);
 
     for (module.segments) |seg| {
-        try writer.seekTo(seg.hub_offset);
-        try writer.interface.writeAll(seg.data);
+        @memcpy(buffer[seg.hub_offset..][0..seg.data.len], seg.data);
     }
 
-    try writer.flush();
+    try file.writeStreamingAll(io, buffer);
 }
 
 fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {

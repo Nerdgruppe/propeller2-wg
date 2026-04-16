@@ -41,7 +41,11 @@ pub fn main(init: std.process.Init) !u8 {
 
     var load_file_buffer: [p2_ram + 4]u8 = undefined;
     const checksummed_file: []const u8 = if (maybe_load_file_path) |load_file_path| cs_file: {
-        const load_file = try std.Io.Dir.cwd().readFile(init.io, load_file_path, &load_file_buffer);
+        const load_file = if (std.mem.eql(u8, load_file_path, "-")) blk: {
+            var reader = std.Io.File.stdin().readerStreaming(init.io, &.{});
+            const len = try reader.interface.readSliceShort(&load_file_buffer);
+            break :blk load_file_buffer[0..len];
+        } else try std.Io.Dir.cwd().readFile(init.io, load_file_path, &load_file_buffer);
         std.debug.assert(load_file.len <= p2_ram);
 
         if ((load_file.len % 4) != 0) {
