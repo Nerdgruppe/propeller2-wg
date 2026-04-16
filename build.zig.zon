@@ -2,7 +2,7 @@
     .name = .propeller2_wg,
     .version = "0.0.0",
     .fingerprint = 0xc073faaeeab85286,
-    .minimum_zig_version = "0.15.2",
+    .minimum_zig_version = "0.16.0",
 
     .dependencies = .{
         .ptk = .{
@@ -10,16 +10,17 @@
             .hash = "parser_toolkit-0.1.0-baYGPUVCEwBaVmu09ORh0lLlVjRaJ489TdSIdTa_8VWg",
         },
         .args = .{
-            .url = "git+https://github.com/ikskuh/zig-args.git#e060ac80c244e9675471b6d213b22ddc83cc8f98",
-            .hash = "args-0.0.0-CiLiqo_RAADz2TiHUzG5-0Mk7IZHR-h1SZgUrb_k4c7d",
+            .url = "git+https://github.com/Khitiara/zig-args.git?ref=master#4b1b1ed97d94e061c63b9843a859b9e48980b0ba",
+            .hash = "args-0.0.0-CiLiqiXSAADIQPirYU4Yefn8S48PNMprT0QOqIrfpKS6",
         },
         .serial = .{
-            .url = "git+https://github.com/ZigEmbeddedGroup/serial.git?ref=master#fbd7389ff8bbc9fa362aa74081588755b5d028a0",
-            .hash = "serial-0.0.1-PoeRzF60AAAN8Iu0yXTIX-t3DVzsnmN7vWHKM2HA2Zbq",
+            .url = "git+https://github.com/ZigEmbeddedGroup/serial.git#4b1b1ed97d94e061c63b9843a859b9e48980b0ba",
+            .hash = "serial-0.0.1-PoeRzEG3AACu3kynEWOamZSgaSjjtPkXmWlhGjarG0dE",
         },
         .p2devsuite = .{
             .url = "git+https://github.com/ikskuh/p2-devsuite.git#43143c73c4cc51a905faf33be0725d848bdaaf0e",
             .hash = "p2_devsuite-0.0.0-JopzWP1hAAA0qgcu5c7psAYfuBia-nZKBBw_xymJ6pZE",
+            .lazy = true,
         },
     },
 

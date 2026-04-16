@@ -61,18 +61,8 @@ const CliArgs = struct {
     };
 };
 
-pub fn main() !u8 {
-    // try std.io.getStdOut().writeAll("\x1B[2J\x1B[H");
-
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-
-    const allocator = if (builtin.mode == .Debug)
-        debug_allocator.allocator()
-    else
-        std.heap.smp_allocator;
-
-    var arena: std.heap.ArenaAllocator = .init(allocator);
-    defer arena.deinit();
+pub fn main(init: std.process.Init) !u8 {
+    const allocator = init.gpa;
 
     var diagnostics_collection: diagnostics.Collection = .init(allocator);
     defer diagnostics_collection.deinit();
@@ -80,12 +70,12 @@ pub fn main() !u8 {
     var diagnostic_render_options: diagnostics.RenderOptions = .{};
     defer {
         var buffer: [4096]u8 = undefined;
-        var stderr_writer = std.fs.File.stderr().writer(&buffer);
+        var stderr_writer = std.Io.File.stderr().writer(init.io, &buffer);
         diagnostics_collection.render(&stderr_writer.interface, diagnostic_render_options) catch {};
         stderr_writer.interface.flush() catch {};
     }
 
-    var cli = args_parser.parseForCurrentProcess(CliArgs, allocator, .print) catch return 1;
+    var cli = args_parser.parseForCurrentProcess(CliArgs, init.gpa, init.minimal.args, .print) catch return 1;
     defer cli.deinit();
 
     if (cli.options.@"test-mode" != null) {
@@ -99,7 +89,7 @@ pub fn main() !u8 {
 
     if (cli.options.help) {
         var buffer: [4096]u8 = undefined;
-        var stdout = std.fs.File.stdout().writer(&buffer);
+        var stdout = std.Io.File.stdout().writer(init.io, &buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "propan",
@@ -118,14 +108,14 @@ pub fn main() !u8 {
         return try usage_mistake(&diagnostics_collection, "missing input files.", .{});
     }
 
-    const source_files = try arena.allocator().alloc([]const u8, cli.positionals.len);
+    const source_files = try init.arena.allocator().alloc([]const u8, cli.positionals.len);
     for (source_files, cli.positionals) |*buffer, input_path| {
         std.log.debug("loading {s}...", .{input_path});
-        buffer.* = try std.fs.cwd().readFileAlloc(arena.allocator(), input_path, 1 << 20);
+        buffer.* = try std.Io.Dir.cwd().readFileAlloc(init.io, input_path, init.arena.allocator(), .limited(1 << 20));
         try diagnostics_collection.register_source(input_path, buffer.*);
     }
 
-    const loaded_files = try arena.allocator().alloc(frontend.ParsedFile, cli.positionals.len);
+    const loaded_files = try init.arena.allocator().alloc(frontend.ParsedFile, cli.positionals.len);
     for (cli.positionals, loaded_files, source_files, 0..) |input_path, *parsed_file, source_code, i| {
         errdefer for (loaded_files[0..i]) |*file|
             file.deinit();
@@ -171,7 +161,7 @@ pub fn main() !u8 {
     // this compile without exit code 1!
     // TODO: ADDCT1 tmp, ticks(CLK, us=15000)
 
-    const modules = try arena.allocator().alloc(Module, loaded_files.len);
+    const modules = try init.arena.allocator().alloc(Module, loaded_files.len);
     var module_count: usize = 0;
     defer for (modules[0..module_count]) |*module|
         module.deinit();
@@ -216,24 +206,24 @@ pub fn main() !u8 {
 
                 var chunk_buffer: [4 * chunk_size]u8 = undefined;
 
-                var fbs = std.io.fixedBufferStream(&chunk_buffer);
+                var fbs: std.Io.Writer = .fixed(&chunk_buffer);
                 for (segment, 0..) |byte, off| {
                     if (off > 0) {
-                        try fbs.writer().writeAll(" ");
+                        try fbs.writeAll(" ");
                         if ((off % 4) == 0) {
-                            try fbs.writer().writeAll(" ");
+                            try fbs.writeAll(" ");
                         }
                     }
-                    try fbs.writer().print("{X:0>2}", .{byte});
+                    try fbs.print("{X:0>2}", .{byte});
                 }
 
-                std.log.debug("    0x{X:0>5}: {s}", .{ seg.hub_offset + i, fbs.getWritten() });
+                std.log.debug("    0x{X:0>5}: {s}", .{ seg.hub_offset + i, fbs.buffered() });
             }
         }
     }
 
     if (cli.options.@"list-file".len > 0) {
-        const list_inputs = try arena.allocator().alloc(listfile.Input, module_count);
+        const list_inputs = try init.arena.allocator().alloc(listfile.Input, module_count);
         for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, parsed_file, module| {
             input.* = .{
                 .path = path,
@@ -245,20 +235,20 @@ pub fn main() !u8 {
 
         if (std.mem.eql(u8, cli.options.@"list-file", "-")) {
             var buffer: [4096]u8 = undefined;
-            var stdout_writer = std.fs.File.stdout().writer(&buffer);
+            var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
 
             try listfile.render(&stdout_writer.interface, list_inputs);
             try stdout_writer.interface.flush();
         } else {
             var buffer: [4096]u8 = undefined;
-            var file = try std.fs.cwd().atomicFile(cli.options.@"list-file", .{
-                .write_buffer = &buffer,
-            });
-            defer file.deinit();
+            var file = try std.Io.Dir.cwd().createFileAtomic(init.io, cli.options.@"list-file", .{ .replace = true });
+            defer file.deinit(init.io);
+            var file_writer = file.file.writer(init.io, &buffer);
 
-            try listfile.render(&file.file_writer.interface, list_inputs);
+            try listfile.render(&file_writer.interface, list_inputs);
+            try file_writer.flush();
 
-            try file.finish();
+            try file.replace(init.io);
         }
     }
 
@@ -268,7 +258,7 @@ pub fn main() !u8 {
 
     // Stop after having each file parsed successfully:
     if (cli.options.@"test-mode" == .compare) {
-        const ref = try std.fs.cwd().readFileAlloc(arena.allocator(), cli.options.@"compare-to", 512 * 1024);
+        const ref = try std.Io.Dir.cwd().readFileAlloc(init.io, cli.options.@"compare-to", init.arena.allocator(), .limited(512 * 1024));
 
         if (std.mem.eql(u8, ref, output.items)) {
             // boring case: our files are identical
@@ -276,7 +266,7 @@ pub fn main() !u8 {
         }
 
         var buffer: [4096]u8 = undefined;
-        var stdout_writer = std.fs.File.stdout().writer(&buffer);
+        var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
 
         const writer = &stdout_writer.interface;
 
@@ -313,17 +303,14 @@ pub fn main() !u8 {
         return 0;
 
     if (cli.options.output.len > 0 and !std.mem.eql(u8, cli.options.output, "-")) {
-        var buffer: [4096]u8 = undefined;
-        var file = try std.fs.cwd().atomicFile(cli.options.output, .{
-            .write_buffer = &buffer,
-        });
-        defer file.deinit();
+        var file = try std.Io.Dir.cwd().createFileAtomic(init.io, cli.options.output, .{ .replace = true });
+        defer file.deinit(init.io);
 
-        try emit.emit(allocator, file.file_writer.file, last_module.?.*, output_format);
+        try emit.emit(init.io, allocator, file.file, last_module.?.*, output_format);
 
-        try file.finish();
+        try file.replace(init.io);
     } else {
-        try emit.emit(allocator, std.fs.File.stdout(), last_module.?.*, output_format);
+        try emit.emit(init.io, allocator, std.Io.File.stdout(), last_module.?.*, output_format);
     }
 
     return 0;
@@ -346,14 +333,10 @@ fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_dat
 
     std.log.info("{}", .{common_len});
 
-    var fbs_exp = std.io.fixedBufferStream(expected_data);
-    var fbs_act = std.io.fixedBufferStream(actual_data);
-
-    while (fbs_exp.pos < expected_data.len or fbs_act.pos < actual_data.len) {
-        const offset: u32 = @intCast(@max(fbs_exp.pos, fbs_act.pos));
-
-        const expected = fbs_exp.reader().readInt(u32, .little) catch 0;
-        const actual = fbs_act.reader().readInt(u32, .little) catch 0;
+    var offset: usize = 0;
+    while (offset < common_len) : (offset += @sizeOf(u32)) {
+        const expected = read_diff_word(expected_data, offset);
+        const actual = read_diff_word(actual_data, offset);
 
         // const expected: ?u8 = if (offset < expected_data.len) expected_data[offset] else null;
         // const actual: ?u8 = if (offset < actual_data.len) actual_data[offset] else null;
@@ -363,17 +346,23 @@ fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_dat
 
         const instr_groups: []const u32 = &.{ 9, 9, 3, 7, 4 };
         try writer.print("@{X:0>5}: expected: 0x{X:0>8} ({s}), actual: 0x{X:0>8} ({s}) | {?f}\n", .{
-            offset,
+            @as(u32, @intCast(offset)),
             expected,
             bitdiff(u32, expected, actual, instr_groups),
             actual,
             bitdiff(u32, actual, expected, instr_groups),
-            if (mod) |m| m.line_for_address(offset) else null,
+            if (mod) |m| m.line_for_address(@intCast(offset)) else null,
         });
         var dis_buf: [256]u8 = undefined;
         try writer.print("  expected: {!s}\n", .{disasm(&dis_buf, expected)});
         try writer.print("  actual:   {!s}\n", .{disasm(&dis_buf, actual)});
     }
+}
+
+fn read_diff_word(data: []const u8, offset: usize) u32 {
+    if (offset + @sizeOf(u32) > data.len)
+        return 0;
+    return std.mem.readInt(u32, data[offset..][0..@sizeOf(u32)], .little);
 }
 
 fn bitdiff(comptime T: type, comp: T, ref: T, comptime groups: []const u32) [@bitSizeOf(T) + groups.len]u8 {
@@ -434,8 +423,7 @@ fn writeLog(
 }
 
 fn disasm(buffer: []u8, encoded: u32) ![]const u8 {
-    var fbs = std.io.fixedBufferStream(buffer);
-    const writer = fbs.writer();
+    var writer: std.Io.Writer = .fixed(buffer);
 
     for (stdlib.p2.instructions) |instr| {
         var ignore_mask: u32 = 0xF000_0000; // we mask the condition by default
@@ -492,7 +480,7 @@ fn disasm(buffer: []u8, encoded: u32) ![]const u8 {
         break;
     }
 
-    return fbs.getWritten();
+    return writer.buffered();
 }
 
 fn condition_str(cond: frontend.ast.Condition.Code) []const u8 {

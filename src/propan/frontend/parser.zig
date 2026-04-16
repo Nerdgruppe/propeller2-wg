@@ -776,21 +776,13 @@ pub const Parser = struct {
         }
 
         fn AcceptKey(comptime options: []const TokenType) type {
-            var fields: [options.len]std.builtin.Type.EnumField = undefined;
-            for (&fields, options, 0..) |*fld, opt, i| {
-                fld.* = .{
-                    .name = @tagName(opt),
-                    .value = i,
-                };
+            var names: [options.len][]const u8 = undefined;
+            var values: [options.len]u8 = undefined;
+            for (options, 0..) |opt, i| {
+                names[i] = @tagName(opt);
+                values[i] = i;
             }
-            return @Type(.{
-                .@"enum" = .{
-                    .is_exhaustive = true,
-                    .tag_type = u8,
-                    .fields = &fields,
-                    .decls = &.{},
-                },
-            });
+            return @Enum(u8, .exhaustive, &names, &values);
         }
 
         fn accept_any(c: *Core, comptime options: []const TokenType) !struct { AcceptKey(options), Token } {

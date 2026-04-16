@@ -11,10 +11,11 @@ memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
+std_io: std.Io,
 
 debug_stream: ?*DebugFifo = null,
 
-pub fn init(hub: *Hub) void {
+pub fn init(hub: *Hub, std_io: std.Io) void {
     hub.* = .{
         .cogs = .{
             .init(hub, 0),
@@ -27,6 +28,7 @@ pub fn init(hub: *Hub) void {
             .init(hub, 7),
         },
         .io = .{},
+        .std_io = std_io,
     };
 }
 

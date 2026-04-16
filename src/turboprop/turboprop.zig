@@ -6,20 +6,17 @@ const serial_utils = @import("serial");
 const p2_ram = 512 * 1024;
 const p2_version = "Prop_Ver G";
 
-pub fn main() !u8 {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+pub fn main(init: std.process.Init) !u8 {
+    const allocator = init.gpa;
 
-    const allocator = gpa.allocator();
-
-    var cli = args_parser.parseForCurrentProcess(CliArgs, allocator, .print) catch return 1;
+    var cli = args_parser.parseForCurrentProcess(CliArgs, allocator, init.minimal.args, .print) catch return 1;
     defer cli.deinit();
 
     // Validate CLI args:
 
     if (cli.options.help) {
         var buffer: [4096]u8 = undefined;
-        var writer = std.fs.File.stdout().writer(&buffer);
+        var writer = std.Io.File.stdout().writer(init.io, &buffer);
         try args_parser.printHelp(CliArgs, cli.executable_name orelse "turboprop", &writer.interface);
         try writer.interface.flush();
         return 0;
@@ -46,7 +43,7 @@ pub fn main() !u8 {
 
     var load_file_buffer: [p2_ram + 4]u8 = undefined;
     const checksummed_file: []const u8 = if (maybe_load_file_path) |load_file_path| cs_file: {
-        const load_file = try std.fs.cwd().readFile(load_file_path, &load_file_buffer);
+        const load_file = try std.Io.Dir.cwd().readFile(init.io, load_file_path, &load_file_buffer);
         std.debug.assert(load_file.len <= p2_ram);
 
         if ((load_file.len % 4) != 0) {
@@ -86,8 +83,8 @@ pub fn main() !u8 {
 
     // Open and configure serial port:
 
-    var port = try std.fs.cwd().openFile(cli.options.port, .{ .mode = .read_write });
-    defer port.close();
+    var port = try std.Io.Dir.cwd().openFile(init.io, cli.options.port, .{ .mode = .read_write });
+    defer port.close(init.io);
 
     try serial_utils.configureSerialPort(port, .{
         .baud_rate = cli.options.baudrate,
@@ -104,100 +101,113 @@ pub fn main() !u8 {
             .dtr = optional_value(cli.options.reset == .dtr, true),
             .rts = optional_value(cli.options.reset == .rts, true),
         });
-        std.Thread.sleep(5 * std.time.ns_per_ms);
+        try init.io.sleep(.fromMilliseconds(5), .awake);
         try serial_utils.changeControlPins(port, .{
             .dtr = optional_value(cli.options.reset == .dtr, false),
             .rts = optional_value(cli.options.reset == .rts, false),
         });
-        std.Thread.sleep(20 * std.time.ns_per_ms);
+        try init.io.sleep(.fromMilliseconds(20), .awake);
     }
 
-    // perform auto-baud configuration:
-    try port.writeAll("> ");
+    {
+        var fileWriter = port.writer(init.io, &.{});
+        const writer = &fileWriter.interface;
 
-    // version check:
-    if (!cli.options.@"no-version-check") {
-        if (verbose) std.log.info("check version...", .{});
-        var magic_buf: [256]u8 = undefined;
+        // perform auto-baud configuration:
+        try writer.writeAll("> ");
+        try writer.flush();
 
-        try port.writeAll("Prop_Chk 0 0 0 0\r");
+        // version check:
+        if (!cli.options.@"no-version-check") {
+            if (verbose) std.log.info("check version...", .{});
+            var magic_buf: [256]u8 = undefined;
 
-        // response will be [ CR, LF, "Prop_Ver G", CR, LF]
-        var buffer: [256]u8 = undefined;
-        var reader = port.readerStreaming(&buffer);
+            try writer.writeAll("Prop_Chk 0 0 0 0\r");
+            try writer.flush();
 
-        _ = try reader.interface.discardDelimiterInclusive('\n');
+            // response will be [ CR, LF, "Prop_Ver G", CR, LF]
+            var buffer: [256]u8 = undefined;
+            var reader = port.readerStreaming(init.io, &buffer);
 
-        var fbs: std.Io.Writer = .fixed(&magic_buf);
+            _ = try reader.interface.discardDelimiterInclusive('\n');
 
-        _ = try reader.interface.streamDelimiter(&fbs, '\n');
+            var fbs: std.Io.Writer = .fixed(&magic_buf);
 
-        const magic = std.mem.trim(u8, fbs.buffered(), " \r\n");
+            _ = try reader.interface.streamDelimiter(&fbs, '\n');
 
-        if (!std.mem.eql(u8, magic, p2_version)) {
-            std.log.warn("Device identifies as \"{f}\", but epxected \"{f}\"", .{
-                std.zig.fmtString(magic),
-                std.zig.fmtString(p2_version),
-            });
+            const magic = std.mem.trim(u8, fbs.buffered(), " \r\n");
+
+            if (!std.mem.eql(u8, magic, p2_version)) {
+                std.log.warn("Device identifies as \"{f}\", but epxected \"{f}\"", .{
+                    std.zig.fmtString(magic),
+                    std.zig.fmtString(p2_version),
+                });
+            }
         }
-    }
 
-    switch (cli.options.exec) {
-        .default => {
-            if (verbose) std.log.info("load code...", .{});
+        switch (cli.options.exec) {
+            .default => {
+                if (verbose) std.log.info("load code...", .{});
 
-            var b64_buffer: [std.base64.standard.Encoder.calcSize(load_file_buffer.len)]u8 = undefined;
-            const b64_data = std.base64.standard.Encoder.encode(&b64_buffer, checksummed_file);
+                var b64_buffer: [std.base64.standard.Encoder.calcSize(load_file_buffer.len)]u8 = undefined;
+                const b64_data = std.base64.standard.Encoder.encode(&b64_buffer, checksummed_file);
 
-            const chunk_size: usize = cli.options.@"chunk-size";
+                const chunk_size: usize = cli.options.@"chunk-size";
 
-            try port.writeAll("Prop_Txt 0 0 0 0 ");
-            {
-                var rest: []const u8 = b64_data;
-                while (rest.len > 0) {
-                    const chunk = rest[0..@min(rest.len, chunk_size)];
+                try writer.writeAll("Prop_Txt 0 0 0 0 ");
+                try writer.flush();
+                {
+                    var rest: []const u8 = b64_data;
+                    while (rest.len > 0) {
+                        const chunk = rest[0..@min(rest.len, chunk_size)];
 
-                    try port.writeAll(chunk);
+                        try writer.writeAll(chunk);
+                        try writer.flush();
 
-                    rest = rest[chunk.len..];
+                        rest = rest[chunk.len..];
 
-                    if (rest.len > 0) {
-                        // Resynchronize after each transferred chunk:
-                        try port.writeAll("\r> ");
+                        if (rest.len > 0) {
+                            // Resynchronize after each transferred chunk:
+                            try writer.writeAll("\r> ");
+                            try writer.flush();
+                        }
                     }
                 }
-            }
 
-            try port.writeAll(" ?\r");
+                try writer.writeAll(" ?\r");
+                try writer.flush();
 
-            var response_buf: [1]u8 = undefined;
-            var reader = port.readerStreaming(&response_buf);
+                var response_buf: [1]u8 = undefined;
+                var reader = port.readerStreaming(init.io, &response_buf);
 
-            const response = try reader.interface.takeByte();
-            switch (response) {
-                '.' => {},
-                '!' => {
-                    std.log.err("invalid checksum!", .{});
-                    return 1;
-                },
-                else => {
-                    std.log.err("unexpected response from Prop_Txt: 0x{X:0>8}!", .{response});
-                    return 1;
-                },
-            }
+                const response = try reader.interface.takeByte();
+                switch (response) {
+                    '.' => {},
+                    '!' => {
+                        std.log.err("invalid checksum!", .{});
+                        return 1;
+                    },
+                    else => {
+                        std.log.err("unexpected response from Prop_Txt: 0x{X:0>8}!", .{response});
+                        return 1;
+                    },
+                }
 
-            if (verbose) std.log.info("code fully loaded.", .{});
-        },
+                if (verbose) std.log.info("code fully loaded.", .{});
+            },
 
-        .monitor => {
-            if (verbose) std.log.info("starting monitor...", .{});
-            try port.writeAll(&.{std.ascii.control_code.eot}); // "Ctrl-D" starts the monitor
-        },
+            .monitor => {
+                if (verbose) std.log.info("starting monitor...", .{});
+                try writer.writeByte(std.ascii.control_code.eot); // "Ctrl-D" starts the monitor
+                try writer.flush();
+            },
 
-        .taqoz => {
-            if (verbose) std.log.info("starting taqoz...", .{});
-            try port.writeAll(&.{std.ascii.control_code.esc}); // "ESC" starts the monitor
-        },
+            .taqoz => {
+                if (verbose) std.log.info("starting taqoz...", .{});
+                try writer.writeByte(std.ascii.control_code.esc); // "ESC" starts the monitor
+                try writer.flush();
+            },
+        }
     }
 
     if (chainloader_argv.len > 0) {
@@ -205,18 +215,19 @@ pub fn main() !u8 {
     }
 
     if (cli.options.monitor) {
-        var stdout = std.fs.File.stdout();
-
         var writer_buf: [256]u8 = undefined;
-        var fwriter = stdout.writer(&writer_buf);
+        var fwriter = std.Io.File.stdout().writer(init.io, &writer_buf);
+        var reader_buf: [256]u8 = undefined;
+        var freader = port.readerStreaming(init.io, &reader_buf);
 
         const writer = &fwriter.interface;
+        const reader = &freader.interface;
 
         switch (cli.options.@"monitor-format") {
             .escaped => {
                 while (true) {
                     var buffer: [64]u8 = undefined;
-                    const len = try port.read(&buffer);
+                    const len = try reader.readSliceShort(&buffer);
 
                     try writer.print("{f}\n", .{
                         std.zig.fmtString(buffer[0..len]),
@@ -227,7 +238,7 @@ pub fn main() !u8 {
             .raw => {
                 while (true) {
                     var buffer: [64]u8 = undefined;
-                    const len = try port.read(&buffer);
+                    const len = try reader.readSliceShort(&buffer);
 
                     try writer.writeAll(buffer[0..len]);
                     try writer.flush();

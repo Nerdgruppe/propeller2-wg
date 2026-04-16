@@ -4,3 +4,4 @@ __pycache__/
 zig-out/
 .zig-cache/
 .codex
+zig-pkg/

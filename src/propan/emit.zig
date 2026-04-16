@@ -16,16 +16,16 @@ pub const BinaryFormat = enum {
     }
 };
 
-pub fn emit(allocator: std.mem.Allocator, file: std.fs.File, module: Module, format: BinaryFormat) !void {
+pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module: Module, format: BinaryFormat) !void {
     switch (format) {
-        .flat => try emit_flat(file, module),
-        .json => try emit_json(allocator, file, module),
+        .flat => try emit_flat(io, file, module),
+        .json => try emit_json(io, allocator, file, module),
 
         .none => {},
     }
 }
 
-fn emit_flat(file: std.fs.File, module: Module) !void {
+fn emit_flat(io: std.Io, file: std.Io.File, module: Module) !void {
     var total_size: u64 = 0;
     for (module.segments) |seg| {
         total_size = @max(total_size, seg.hub_offset + seg.data.len);
@@ -34,13 +34,18 @@ fn emit_flat(file: std.fs.File, module: Module) !void {
     if (total_size == 0)
         return;
 
-    try file.seekTo(total_size - 1);
-    try file.writeAll("\x00");
+    var buffer: [4096]u8 = undefined;
+    var writer = file.writer(io, &buffer);
+
+    try writer.seekTo(total_size - 1);
+    try writer.interface.writeAll("\x00");
 
     for (module.segments) |seg| {
-        try file.seekTo(seg.hub_offset);
-        try file.writeAll(seg.data);
+        try writer.seekTo(seg.hub_offset);
+        try writer.interface.writeAll(seg.data);
     }
+
+    try writer.flush();
 }
 
 fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {
@@ -52,7 +57,7 @@ fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {
     return try writer.toOwnedSlice();
 }
 
-fn emit_json(allocator: std.mem.Allocator, file: std.fs.File, module: Module) !void {
+fn emit_json(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module: Module) !void {
     var arena_allocator: std.heap.ArenaAllocator = .init(allocator);
     defer arena_allocator.deinit();
 
@@ -142,7 +147,7 @@ fn emit_json(allocator: std.mem.Allocator, file: std.fs.File, module: Module) !v
     }
 
     var buffer: [4096]u8 = undefined;
-    var writer = file.writer(&buffer);
+    var writer = file.writer(io, &buffer);
 
     try std.json.Stringify.value(mod, .{
         .whitespace = .indent_2,
