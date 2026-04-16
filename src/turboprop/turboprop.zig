@@ -215,17 +215,14 @@ pub fn main(init: std.process.Init) !u8 {
     if (cli.options.monitor) {
         var writer_buf: [256]u8 = undefined;
         var fwriter = std.Io.File.stdout().writer(init.io, &writer_buf);
-        var reader_buf: [256]u8 = undefined;
-        var freader = port.readerStreaming(init.io, &reader_buf);
 
         const writer = &fwriter.interface;
-        const reader = &freader.interface;
 
         switch (cli.options.@"monitor-format") {
             .escaped => {
                 while (true) {
                     var buffer: [64]u8 = undefined;
-                    const len = try reader.readSliceShort(&buffer);
+                    const len = try port.readStreaming(init.io, &.{&buffer});
 
                     try writer.print("{f}\n", .{
                         std.zig.fmtString(buffer[0..len]),
@@ -236,7 +233,7 @@ pub fn main(init: std.process.Init) !u8 {
             .raw => {
                 while (true) {
                     var buffer: [64]u8 = undefined;
-                    const len = try reader.readSliceShort(&buffer);
+                    const len = try port.readStreaming(init.io, &.{&buffer});
 
                     try writer.writeAll(buffer[0..len]);
                     try writer.flush();
