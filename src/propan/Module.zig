@@ -13,6 +13,7 @@ arena: std.heap.ArenaAllocator,
 segments: []const Segment,
 line_data: []const LineData,
 symbols: []const Symbol,
+constants: []const Constant,
 
 pub fn deinit(mod: *Module) void {
     mod.arena.deinit();
@@ -36,6 +37,12 @@ pub const Symbol = struct {
         code,
         data,
     };
+};
+
+pub const Constant = struct {
+    name: []const u8,
+    value: eval.Value,
+    location: ast.Location,
 };
 
 pub const Segment = struct {

@@ -92,10 +92,15 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     var output_arena: std.heap.ArenaAllocator = .init(allocator);
     errdefer output_arena.deinit();
 
-    const segments = try analyzer.emit_code(output_arena.allocator());
+    const output_allocator = output_arena.allocator();
+
+    const segments = try analyzer.emit_code(output_allocator);
 
     var symbols: std.ArrayList(Module.Symbol) = .empty;
-    defer symbols.deinit(output_arena.allocator());
+    defer symbols.deinit(output_allocator);
+
+    var constants: std.ArrayList(Module.Constant) = .empty;
+    defer constants.deinit(output_allocator);
 
     for (analyzer.symbols.keys(), analyzer.symbols.values()) |name, sym| {
         const stype: Module.Symbol.Type = switch (sym.type) {
@@ -106,19 +111,45 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
             .builtin => continue,
         };
 
-        try symbols.append(output_arena.allocator(), .{
-            .name = try output_arena.allocator().dupe(u8, name),
+        try symbols.append(output_allocator, .{
+            .name = try output_allocator.dupe(u8, name),
             .label = sym.offset.?,
             .type = stype,
+        });
+    }
+
+    for (analyzer.file.sequence) |seq| {
+        if (seq != .constant)
+            continue;
+
+        const con = seq.constant;
+        const sym = analyzer.symbols.get(con.identifier) orelse unreachable;
+        std.debug.assert(sym.type == .constant);
+
+        try constants.append(output_allocator, .{
+            .name = try output_allocator.dupe(u8, con.identifier),
+            .value = try copy_value(output_allocator, sym.value.?),
+            .location = con.location,
         });
     }
 
     return .{
         .arena = output_arena,
         .segments = segments,
-        .line_data = try analyzer.line_data.toOwnedSlice(output_arena.allocator()),
-        .symbols = try symbols.toOwnedSlice(output_arena.allocator()),
+        .line_data = try analyzer.line_data.toOwnedSlice(output_allocator),
+        .symbols = try symbols.toOwnedSlice(output_allocator),
+        .constants = try constants.toOwnedSlice(output_allocator),
     };
+}
+
+fn copy_value(allocator: std.mem.Allocator, value: Value) !Value {
+    var copied = value;
+    switch (value.value) {
+        .string => |text| copied.value = .{ .string = try allocator.dupe(u8, text) },
+        .enumerator => |text| copied.value = .{ .enumerator = try allocator.dupe(u8, text) },
+        .int, .address, .register, .pointer_expr => {},
+    }
+    return copied;
 }
 
 fn dump_analyzer(analyzer: *Analyzer) void {

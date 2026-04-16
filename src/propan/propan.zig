@@ -4,6 +4,7 @@ const builtin = @import("builtin");
 const frontend = @import("frontend.zig");
 const sema = @import("sema.zig");
 const emit = @import("emit.zig");
+const listfile = @import("listfile.zig");
 const stdlib = @import("stdlib/stdlib.zig");
 const Module = @import("Module.zig");
 
@@ -29,6 +30,7 @@ const CliArgs = struct {
     verbose: bool = false,
     format: emit.BinaryFormat = .flat,
     @"fill-byte": u8 = 0x00,
+    @"list-file": []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
@@ -51,6 +53,7 @@ const CliArgs = struct {
             .verbose = "Enables debug logging",
             .format = "Selects the binary format to use",
             .@"fill-byte" = "The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.",
+            .@"list-file" = "Writes a list file to the given path. Use '-' to write to stdout.",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -153,16 +156,22 @@ pub fn main() !u8 {
     // this compile without exit code 1!
     // TODO: ADDCT1 tmp, ticks(CLK, us=15000)
 
-    var mod: ?Module = null;
+    const modules = try arena.allocator().alloc(Module, loaded_files.len);
+    var module_count: usize = 0;
+    defer for (modules[0..module_count]) |*module|
+        module.deinit();
+
+    var last_module: ?*Module = null;
     for (cli.positionals, loaded_files) |input_path, parsed_file| {
         std.log.debug("analyzing {s}...", .{input_path});
 
-        var module = try sema.analyze(allocator, parsed_file.file, .{
+        const module = try sema.analyze(allocator, parsed_file.file, .{
             .blank_pointer_expr = .as_ptr_epxr,
         });
-        errdefer module.deinit();
 
-        mod = module;
+        modules[module_count] = module;
+        last_module = &modules[module_count];
+        module_count += 1;
 
         for (module.segments) |segment| {
             const previous_end = output.items.len;
@@ -205,6 +214,36 @@ pub fn main() !u8 {
         }
     }
 
+    if (cli.options.@"list-file".len > 0) {
+        const list_inputs = try arena.allocator().alloc(listfile.Input, module_count);
+        for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, parsed_file, module| {
+            input.* = .{
+                .path = path,
+                .source = source,
+                .ast_file = parsed_file.file,
+                .module = module,
+            };
+        }
+
+        if (std.mem.eql(u8, cli.options.@"list-file", "-")) {
+            var buffer: [4096]u8 = undefined;
+            var stdout_writer = std.fs.File.stdout().writer(&buffer);
+
+            try listfile.render(&stdout_writer.interface, list_inputs);
+            try stdout_writer.interface.flush();
+        } else {
+            var buffer: [4096]u8 = undefined;
+            var file = try std.fs.cwd().atomicFile(cli.options.@"list-file", .{
+                .write_buffer = &buffer,
+            });
+            defer file.deinit();
+
+            try listfile.render(&file.file_writer.interface, list_inputs);
+
+            try file.finish();
+        }
+    }
+
     // Stop after having each file parsed successfully:
     if (cli.options.@"test-mode" == .sema)
         return 0;
@@ -243,7 +282,7 @@ pub fn main() !u8 {
             writer,
             ref,
             output.items,
-            mod.?,
+            last_module.?.*,
         );
         try writer.print("</diff>\n", .{});
 
@@ -262,11 +301,11 @@ pub fn main() !u8 {
         });
         defer file.deinit();
 
-        try emit.emit(allocator, file.file_writer.file, mod.?, output_format);
+        try emit.emit(allocator, file.file_writer.file, last_module.?.*, output_format);
 
         try file.finish();
     } else {
-        try emit.emit(allocator, std.fs.File.stdout(), mod.?, output_format);
+        try emit.emit(allocator, std.fs.File.stdout(), last_module.?.*, output_format);
     }
 
     return 0;
@@ -285,6 +324,7 @@ fn usage_mistake(comptime fmt: []const u8, args: anytype) !noreturn {
 test {
     _ = frontend;
     _ = sema;
+    _ = listfile;
 }
 
 fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_data: []const u8, mod: ?Module) !void {
