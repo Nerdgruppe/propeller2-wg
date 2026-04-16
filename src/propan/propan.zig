@@ -110,8 +110,24 @@ pub fn main(init: std.process.Init) !u8 {
 
     const source_files = try init.arena.allocator().alloc([]const u8, cli.positionals.len);
     for (source_files, cli.positionals) |*buffer, input_path| {
-        std.log.debug("loading {s}...", .{input_path});
-        buffer.* = try std.Io.Dir.cwd().readFileAlloc(init.io, input_path, init.arena.allocator(), .limited(1 << 20));
+        if (std.mem.eql(u8, input_path, "-")) {
+            std.log.debug("loading stdin...", .{});
+            var buf: [8192]u8 = undefined;
+
+            var reader = std.Io.File.stdin().reader(init.io, &buf);
+
+            var writer: std.Io.Writer.Allocating = .init(init.arena.allocator());
+            defer writer.deinit();
+
+            _ = try reader.interface.streamRemaining(&writer.writer);
+
+            buffer.* = try writer.toOwnedSlice();
+        } else {
+            std.log.debug("loading {s}...", .{input_path});
+
+            buffer.* = try std.Io.Dir.cwd().readFileAlloc(init.io, input_path, init.arena.allocator(), .limited(1 << 20));
+        }
+
         try diagnostics_collection.register_source(input_path, buffer.*);
     }
 
