@@ -8,7 +8,9 @@ from tempfile import NamedTemporaryFile
 from subprocess import CalledProcessError, run, Popen, PIPE
 from contextlib import contextmanager
 import textwrap
+from typing import Generic, Iterable, TypeVar
 
+import yaml
 from yaml import safe_load, safe_dump
 
 SELF_DIR = Path(__file__).absolute().parent
@@ -21,12 +23,14 @@ FIXTURE_PREFIX = FIXTURE_FILE.read_text(encoding="utf-8")
 
 PORT = "/dev/serial/by-id/usb-FTDI_FT231X_USB_UART_DUAB9RPU-if00-port0"
 
+
 def patch_code(code: str) -> str:
-    
+
     return "\n".join(
-        ("" if line.endswith(":") else " "*8) +  line.rstrip(":")
+        ("" if line.endswith(":") else " " * 8) + line.rstrip(":")
         for line in code.splitlines()
     )
+
 
 def compile_fixture(
     output_file: str, *, prepare_code: str, dut_code: str, data_segment: str
@@ -35,21 +39,26 @@ def compile_fixture(
     with NamedTemporaryFile(mode="w+t", suffix=".spin2", encoding="utf-8") as spin_file:
         fixture_text = FIXTURE_PREFIX
 
-        fixture_text.replace("' <<FIXTURE:PREPARE>>", patch_code( prepare_code))
+        fixture_text.replace("' <<FIXTURE:PREPARE>>", patch_code(prepare_code))
         fixture_text = fixture_text.replace("' <<FIXTURE:DUT>>", patch_code(dut_code))
         fixture_text = fixture_text.replace("' <<FIXTURE:DATA>>", data_segment)
 
         spin_file.write(fixture_text)
 
         spin_file.flush()
+
+        list_file = Path(output_file).with_suffix(".lst")
+
         try:
             run(
                 args=[
                     "flexspin",
                     "-2",  # target propeller 2
                     "-Wall",  # enable all warnings
+                    "-Wabs-paths",  # print absolute paths for file names in errors/warnings
                     "-b",  # binary output
                     "-q",  # quiet mode
+                    "-l",  # listing
                     "-o",  # output file
                     output_file,
                     spin_file.name,
@@ -58,8 +67,10 @@ def compile_fixture(
             )
         except CalledProcessError as err:
             print(repr(err), file=sys.stderr)
-            input("?")
-            raise 
+            input(spin_file.name)
+            raise
+        finally:
+            list_file.unlink(missing_ok=True)
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -152,7 +163,7 @@ def run_fixture(file: str) -> list[Result]:
 
 def execute_fixture(*, measure: str, prepare: str = "", data: str = "") -> list[Result]:
 
-    with NamedTemporaryFile("rb+") as file:
+    with NamedTemporaryFile("rb+", suffix=".bin") as file:
         compile_fixture(
             file.name,
             prepare_code=prepare,
@@ -167,9 +178,34 @@ def execute_fixture(*, measure: str, prepare: str = "", data: str = "") -> list[
 class TestCase:
     name: str
     measure: str
-    expect: int | None = field(default=None)
+    expect: int | list[int] | None = field(default=None)
+    expect_result: int | list[int] | None = field(default=None)
     prepare: str = field(default="")
     data: str = field(default="")
+
+
+T = TypeVar("T")
+
+
+class TerseList(list[T], Generic[T]): ...
+
+
+class FlowSeqDumper(yaml.SafeDumper): ...
+
+
+FlowSeqDumper.add_representer(
+    TerseList,
+    lambda d, x: d.represent_sequence("tag:yaml.org,2002:seq", x, flow_style=True),
+)
+
+
+def compact_list(seq: Iterable[T]) -> TerseList[T] | T:
+    args = tuple(seq)
+    if len(args) == 0:
+        return TerseList()
+    if all(arg == args[0] for arg in args):
+        return args[0]
+    return TerseList(args)
 
 
 def main():
@@ -204,9 +240,16 @@ def main():
             except AssertionError as err:
                 stdout.write(f"FAIL: {err}\n")
 
+    all_ok = True
     test_results: list = list()
 
     for testcase in testcases:
+        test_output = {
+            "test": testcase.name,
+            "pass": False,
+            "results": None,
+        }
+        test_results.append(test_output)
         with wrap_test(testcase.name):
             results = execute_fixture(
                 prepare=testcase.prepare,
@@ -214,41 +257,50 @@ def main():
                 data=testcase.data,
             )
 
-            test_results.append(
-                {
-                    "test": testcase.name,
-                    "results": [
-                        {
-                            "offset": res.offset,
-                            "duration": res.duration,
-                            # "launch_ct": hex(res.launch_ct),
-                            "result": res.result,
-                        }
-                        for res in results
-                    ],
-                }
-            )
+            test_output["results"] = {
+                "offsets": compact_list(res.offset for res in results),
+                "durations": compact_list(res.duration for res in results),
+                "results": compact_list(res.result for res in results),
+            }
 
             if testcase.expect is not None:
+                expected_results: list[int]
                 if isinstance(testcase.expect, int):
-                    for res in results:
-                        assert testcase.expect == res.duration, (
-                            f"Expected a duration of {testcase.expect}, but got {res.duration}"
-                        )
+                    expected_results = [testcase.expect] * 8
                 else:
-                    for offset, (res, expect) in enumerate(
-                        zip(results, testcase.expect)
-                    ):
-                        assert expect == res.duration, (
-                            f"Expected a duration of {expect}, but got {res.duration} for offset {offset}"
-                        )
+                    expected_results = testcase.expect
+
+                for offset, (res, expect) in enumerate(zip(results, expected_results)):
+                    assert expect == res.duration, (
+                        f"Expected a duration of {expect}, but got {res.duration} for offset {offset}"
+                    )
+
+            if testcase.expect_result is not None:
+                expected_results: list[int]
+                if isinstance(testcase.expect_result, int):
+                    expected_results = [testcase.expect_result] * 8
+                else:
+                    expected_results = testcase.expect_result
+
+                for offset, (res, expect) in enumerate(zip(results, expected_results)):
+                    assert expect == res.result, (
+                        f"Expected a result of {expect}, but got {res.result} for offset {offset}"
+                    )
+
+            test_output["pass"] = True
+        if not test_output["pass"]:
+            all_ok = False
 
     with TESTRESULT_FILE.open("w", encoding="utf-8") as fp:
-        safe_dump(
+        yaml.dump(
             data={"test-results": test_results},
             stream=fp,
             sort_keys=False,
+            Dumper=FlowSeqDumper,
         )
+
+    if not all_ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

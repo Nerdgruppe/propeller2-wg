@@ -59,6 +59,7 @@ It's a unique microcontroller with a one-of-a-kind architecture:
 The following projects are managed in this repository:
 
 - [P2DB](data/p2db/) - A formalized semantic instruction database
+- [Timing Data](data/timing-data/) - A project to extract reproducible timing data from the chip
 - [Propan](src/propan/) - A new, modern assembler for the Propeller 2
 - [Turboprop](src/turboprop/) - A tiny application loader that allows launching programs on the Propeller 2 over serial port
 - [Windtunnel](src/windtunnel/) - A clock cycle-exact simulator for the Propeller 2
@@ -115,3 +116,10 @@ Typical workflows in that folder:
 - `cue vet isa.cue`: Check the syntax of the schema for errors.
 - `cue vet -c isa.cue examples.yml`: Check the example file for errors.
 
+### Timing Data
+
+The timing data project is meant to collect timing data from a system-attached Propeller 2-Board.
+
+Typical workflows in that folder:
+
+- `python data/timing-data/run_tests.py`

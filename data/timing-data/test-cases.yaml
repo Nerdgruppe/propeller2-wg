@@ -41,12 +41,18 @@ test-cases:
       JMP #\nextline
       nextline:
     expect: 4
-  - name: "Cog Startup (cogexec)"
+  - name: "Cog Startup (cogexec, cog 1)"
     measure: |
       COGINIT #%0_0_0001, #@@@cog2code ' start "COG 1"
       WAITATN                          ' wait until we're called
+      RDLONG rt_result, #@@@shared_global
+      SUB rt_result, rt_start_ct
     data: |
       cog2code
+        GETCT shared_global
+        WRLONG shared_global, #@@@shared_global
         COGATN #1 ' call back to the main system
         COGSTOP #1 ' halt ourselves
-    expect: [535, 542, 541, 540, 539, 538, 537, 536]
+      shared_global LONG 0
+    # NOTE: This values are not only depending on our own cog phase but also COG 1 phase!
+    expect_result: [534, 541, 540, 539, 538, 537, 536, 535]

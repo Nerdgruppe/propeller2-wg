@@ -32,12 +32,6 @@ rt_start
 
         WAITX ##1_000_000
 
-        ' Initialize hub stack pointer (PTRB) for rec fn (CALLB/RETB/PUSHB/POPB).
-        ' Point well above the program binary so the stack does not clobber code/data.
-        MOV PTRB, ##$10000
-
-        ' First write must be without the "wait busy" logic as the pin would never trigger this!
-
 fixture_loop
         CALLPA #RT_START_MARKER, #rt_write_byte
         JMP #fixture_entry
@@ -57,9 +51,16 @@ fixture_halt
         CALLPB rt_result, #rt_write_hex_long
         CALLPA #$0A, #rt_write_byte
 
-        INCMOD rt_round, #8 WC
+        INCMOD rt_round, #7 WC
 IF_NC   JMP    #fixture_loop
-        
+
+        ' Write a dummy byte so we'll wait until the transfer
+        ' of the previous '$0A' is actually performed
+        CALLPA #$00, #rt_write_byte
+
+        ' TODO: Implement relaunching the code in Hub space.
+
+.halt
         COGID   rt_tmp0
         COGSTOP rt_tmp0
         ' fin
@@ -83,6 +84,7 @@ rt_write_byte ' (chr: PA)
 IF_NC   JMP     #.wait                  ' if not empty, test again
         RET
 
+' data section
 rt_round    LONG 0
 rt_tmp0     LONG 0
 rt_tmp1     LONG 0
