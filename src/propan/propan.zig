@@ -5,6 +5,7 @@ const frontend = @import("frontend.zig");
 const sema = @import("sema.zig");
 const emit = @import("emit.zig");
 const listfile = @import("listfile.zig");
+const diagnostics = @import("diagnostics.zig");
 const stdlib = @import("stdlib/stdlib.zig");
 const Module = @import("Module.zig");
 
@@ -73,11 +74,24 @@ pub fn main() !u8 {
     var arena: std.heap.ArenaAllocator = .init(allocator);
     defer arena.deinit();
 
+    var diagnostics_collection: diagnostics.Collection = .init(allocator);
+    defer diagnostics_collection.deinit();
+
+    var diagnostic_render_options: diagnostics.RenderOptions = .{};
+    defer {
+        var buffer: [4096]u8 = undefined;
+        var stderr_writer = std.fs.File.stderr().writer(&buffer);
+        diagnostics_collection.render(&stderr_writer.interface, diagnostic_render_options) catch {};
+        stderr_writer.interface.flush() catch {};
+    }
+
     var cli = args_parser.parseForCurrentProcess(CliArgs, allocator, .print) catch return 1;
     defer cli.deinit();
 
     if (cli.options.@"test-mode" != null) {
         global_log_level = .err; // mute warnings in test mode
+        diagnostic_render_options.include_warnings = false;
+        diagnostic_render_options.include_infos = false;
     }
     if (cli.options.verbose) {
         global_log_level = .debug;
@@ -97,17 +111,18 @@ pub fn main() !u8 {
 
     const output_format = cli.options.format;
     if (output_format.is_binary() and cli.options.output.len == 0) {
-        try usage_mistake("Cannot emit {s} to stdio. Use \"-o -\" to force emission to stdout.", .{@tagName(output_format)});
+        return try usage_mistake(&diagnostics_collection, "Cannot emit {s} to stdio. Use \"-o -\" to force emission to stdout.", .{@tagName(output_format)});
     }
 
     if (cli.positionals.len == 0) {
-        try usage_mistake("missing input files.", .{});
+        return try usage_mistake(&diagnostics_collection, "missing input files.", .{});
     }
 
     const source_files = try arena.allocator().alloc([]const u8, cli.positionals.len);
     for (source_files, cli.positionals) |*buffer, input_path| {
         std.log.debug("loading {s}...", .{input_path});
         buffer.* = try std.fs.cwd().readFileAlloc(arena.allocator(), input_path, 1 << 20);
+        try diagnostics_collection.register_source(input_path, buffer.*);
     }
 
     const loaded_files = try arena.allocator().alloc(frontend.ParsedFile, cli.positionals.len);
@@ -116,7 +131,7 @@ pub fn main() !u8 {
             file.deinit();
         std.log.debug("parsing {s}...", .{input_path});
 
-        var parser: frontend.Parser = .init(source_code, input_path);
+        var parser: frontend.Parser = .init(source_code, input_path, &diagnostics_collection);
 
         parsed_file.* = parser.parse(allocator) catch |err| switch (err) {
             error.Overflow,
@@ -165,9 +180,12 @@ pub fn main() !u8 {
     for (cli.positionals, loaded_files) |input_path, parsed_file| {
         std.log.debug("analyzing {s}...", .{input_path});
 
-        const module = try sema.analyze(allocator, parsed_file.file, .{
+        const module = sema.analyze(allocator, parsed_file.file, .{
             .blank_pointer_expr = .as_ptr_epxr,
-        });
+        }, &diagnostics_collection) catch |err| switch (err) {
+            error.SemanticErrors => return 1,
+            else => |e| return e,
+        };
 
         modules[module_count] = module;
         last_module = &modules[module_count];
@@ -185,10 +203,10 @@ pub fn main() !u8 {
             @memcpy(output.items[segment.hub_offset..][0..segment.data.len], segment.data);
         }
 
-        std.log.info("sema yielded {} segments:", .{module.segments.len});
+        std.log.debug("sema yielded {} segments:", .{module.segments.len});
 
         for (module.segments, 0..) |seg, seg_i| {
-            std.log.info("  [{}]: offset 0x{X:0>6}, length {} bytes", .{ seg_i, seg.hub_offset, seg.data.len });
+            std.log.debug("  [{}]: offset 0x{X:0>6}, length {} bytes", .{ seg_i, seg.hub_offset, seg.data.len });
 
             var i: usize = 0;
             const chunk_size = 16;
@@ -209,7 +227,7 @@ pub fn main() !u8 {
                     try fbs.writer().print("{X:0>2}", .{byte});
                 }
 
-                std.log.info("    0x{X:0>5}: {s}", .{ seg.hub_offset + i, fbs.getWritten() });
+                std.log.debug("    0x{X:0>5}: {s}", .{ seg.hub_offset + i, fbs.getWritten() });
             }
         }
     }
@@ -311,20 +329,16 @@ pub fn main() !u8 {
     return 0;
 }
 
-fn usage_mistake(comptime fmt: []const u8, args: anytype) !noreturn {
-    var buffer: [256]u8 = undefined;
-    var writer = std.fs.File.stdout().writerStreaming(&buffer);
-
-    try writer.interface.print("usage error: " ++ fmt ++ "\n", args);
-    try writer.interface.flush();
-
-    std.process.exit(1);
+fn usage_mistake(diagnostics_collection: *diagnostics.Collection, comptime fmt: []const u8, args: anytype) !u8 {
+    try diagnostics_collection.emit_error(null, "usage error: " ++ fmt, args);
+    return 1;
 }
 
 test {
     _ = frontend;
     _ = sema;
     _ = listfile;
+    _ = diagnostics;
 }
 
 fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_data: []const u8, mod: ?Module) !void {

@@ -2,7 +2,9 @@ const std = @import("std");
 
 const stdlib = @import("stdlib/stdlib.zig");
 const eval = @import("stdlib/eval.zig");
-const ast = @import("frontend.zig").ast;
+const frontend = @import("frontend.zig");
+const ast = frontend.ast;
+const diagnostics = @import("diagnostics.zig");
 
 const logger = std.log.scoped(.sema);
 
@@ -40,8 +42,8 @@ pub const AnalyzeOptions = struct {
     use_relative_jmp_for_same_mode_nonlabel_address: bool = true,
 };
 
-pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions) !Module {
-    var analyzer: Analyzer = try .init(allocator, file, options);
+pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions, diagnostics_collection: *diagnostics.Collection) !Module {
+    var analyzer: Analyzer = try .init(allocator, file, options, diagnostics_collection);
     defer analyzer.deinit();
 
     errdefer dump_analyzer(&analyzer);
@@ -201,6 +203,7 @@ const Analyzer = struct {
     arena: std.heap.ArenaAllocator,
     file: ast.File,
     options: AnalyzeOptions,
+    diagnostics: *diagnostics.Collection,
 
     symbols: std.StringArrayHashMapUnmanaged(SymbolInfo) = .empty,
 
@@ -213,12 +216,13 @@ const Analyzer = struct {
 
     ok: bool = true,
 
-    fn init(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions) !Analyzer {
+    fn init(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions, diagnostics_collection: *diagnostics.Collection) !Analyzer {
         var ana: Analyzer = .{
             .allocator = allocator,
             .arena = .init(allocator),
             .file = file,
             .options = options,
+            .diagnostics = diagnostics_collection,
         };
         try ana.functions.ensureUnusedCapacity(allocator, 6);
 
@@ -253,12 +257,11 @@ const Analyzer = struct {
 
     fn emit_error(ana: *Analyzer, location: ?ast.Location, comptime fmt: []const u8, args: anytype) !void {
         ana.ok = false;
-        std.log.err("{?f}: " ++ fmt, .{location} ++ args);
+        try ana.diagnostics.emit_error(location, fmt, args);
     }
 
     fn emit_warning(ana: *Analyzer, location: ?ast.Location, comptime fmt: []const u8, args: anytype) !void {
-        _ = ana;
-        std.log.warn("{?f}: " ++ fmt, .{location} ++ args);
+        try ana.diagnostics.emit_warning(location, fmt, args);
     }
 
     fn emit_eval_error(ana: *Analyzer, location: ast.Location, comptime prefix: []const u8, err: EvalError) !void {
@@ -865,7 +868,7 @@ const Analyzer = struct {
 
             logger.debug("  args:", .{});
             for (instr.arguments) |arg| {
-                logger.info("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.flags.usage), arg.flags.augment });
+                logger.debug("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.flags.usage), arg.flags.augment });
             }
             logger.debug("  alts:", .{});
 
@@ -1510,7 +1513,7 @@ const Analyzer = struct {
             .hub => @divTrunc(@as(i33, int) - @as(i33, 0x400 + (hub_pc -| 0x400)), 4),
         };
 
-        logger.info("pcrel: cog={} hub={} target={}:{s} => rel {}", .{ cog_pc, hub_pc, int, @tagName(exec_mode), delta33 });
+        logger.debug("pcrel: cog={} hub={} target={}:{s} => rel {}", .{ cog_pc, hub_pc, int, @tagName(exec_mode), delta33 });
 
         switch (mode) {
             .default => {
@@ -2395,6 +2398,67 @@ const Cursor = struct {
     }
 };
 
+test "semantic errors are collected" {
+    const source =
+        \\LONG missing
+        \\
+    ;
+
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+    try diagnostics_collection.register_source("test.propan", source);
+
+    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    var parsed = try parser.parse(std.testing.allocator);
+    defer parsed.deinit();
+
+    const result = analyze(std.testing.allocator, parsed.file, .{}, &diagnostics_collection);
+    try std.testing.expectError(error.SemanticErrors, result);
+    try std.testing.expect(diagnostics_collection.has_errors());
+
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+
+    try diagnostics_collection.render(&output.writer, .{});
+
+    const actual = try output.toOwnedSlice();
+    defer std.testing.allocator.free(actual);
+
+    try std.testing.expect(std.mem.indexOf(u8, actual, "test.propan:1:6: error: undefined reference to symbol missing") != null);
+}
+
+test "semantic warnings are collected without failing analysis" {
+    const source =
+        \\_start:
+        \\NOP
+        \\
+    ;
+
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+    try diagnostics_collection.register_source("test.propan", source);
+
+    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    var parsed = try parser.parse(std.testing.allocator);
+    defer parsed.deinit();
+
+    var module = try analyze(std.testing.allocator, parsed.file, .{}, &diagnostics_collection);
+    defer module.deinit();
+
+    try std.testing.expect(!diagnostics_collection.has_errors());
+    try std.testing.expect(diagnostics_collection.has_warnings());
+
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+
+    try diagnostics_collection.render(&output.writer, .{});
+
+    const actual = try output.toOwnedSlice();
+    defer std.testing.allocator.free(actual);
+
+    try std.testing.expect(std.mem.indexOf(u8, actual, "warning: symbol _start has no references") != null);
+}
+
 test Cursor {
     const seg: Segment_ID = @enumFromInt(0x1234_5678);
 
@@ -2546,7 +2610,7 @@ pub const FunctionCallContext = struct {
     ana: *Analyzer,
     location: ast.Location,
 
-    pub fn fatal_error(ctx: FunctionCallContext, comptime msg: []const u8, args: anytype) error{DiagnosedFailure} {
+    pub fn fatal_error(ctx: FunctionCallContext, comptime msg: []const u8, args: anytype) error{ OutOfMemory, DiagnosedFailure } {
         try ctx.ana.emit_error(ctx.location, msg, args);
         return error.DiagnosedFailure;
     }

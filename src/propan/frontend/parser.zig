@@ -1,17 +1,19 @@
 const std = @import("std");
 const ptk = @import("ptk");
-const builtin = @import("builtin");
 
 const ast = @import("ast.zig");
+const diagnostics = @import("../diagnostics.zig");
 
 const logger = std.log.scoped(.parser);
 
 pub const Parser = struct {
     tokenizer: Tokenizer,
+    diagnostics: *diagnostics.Collection,
 
-    pub fn init(source_code: []const u8, file_name: ?[]const u8) Parser {
+    pub fn init(source_code: []const u8, file_name: ?[]const u8, diagnostics_collection: *diagnostics.Collection) Parser {
         return .{
             .tokenizer = .init(source_code, file_name),
+            .diagnostics = diagnostics_collection,
         };
     }
 
@@ -24,6 +26,7 @@ pub const Parser = struct {
         var core: Core = .{
             .arena = arena.allocator(),
             .core = .init(&parser.tokenizer),
+            .diagnostics = parser.diagnostics,
         };
 
         try core.accept_file(&sequence);
@@ -39,25 +42,20 @@ pub const Parser = struct {
     const Core = struct {
         arena: std.mem.Allocator,
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
+        diagnostics: *diagnostics.Collection,
         lf_is_whitespace: bool = false,
 
-        fn emit_fatal_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) error{SyntaxError} {
+        fn emit_fatal_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) error{ OutOfMemory, SyntaxError } {
             try core.emit_error(location, fmt, args);
             return error.SyntaxError;
         }
 
         fn emit_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
-            _ = core;
-            if (!builtin.is_test) {
-                std.log.err("{f}: " ++ fmt, .{location} ++ args);
-            }
+            try core.diagnostics.emit_error(location, fmt, args);
         }
 
         fn emit_warning(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
-            _ = core;
-            if (!builtin.is_test) {
-                std.log.warn("{f}: " ++ fmt, .{location} ++ args);
-            }
+            try core.diagnostics.emit_warning(location, fmt, args);
         }
 
         fn move_to_heap(core: *Core, comptime T: type, value: T) !*T {
@@ -1088,7 +1086,10 @@ test "fuzz tokenizer" {
 }
 
 fn fuzz_parser(_: void, input: []const u8) !void {
-    var parser: Parser = .init(input, null);
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+
+    var parser: Parser = .init(input, null, &diagnostics_collection);
 
     var parsed = parser.parse(std.testing.allocator) catch {
         // parser errors are oke
@@ -1105,7 +1106,34 @@ test "fuzz parser" {
     });
 }
 
+test "parser records syntax diagnostics" {
+    const source = "@\n";
+
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+    try diagnostics_collection.register_source("test.propan", source);
+
+    var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+    const result = parser.parse(std.testing.allocator);
+
+    try std.testing.expectError(error.SyntaxError, result);
+    try std.testing.expect(diagnostics_collection.has_errors());
+
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+
+    try diagnostics_collection.render(&output.writer, .{});
+
+    const actual = try output.toOwnedSlice();
+    defer std.testing.allocator.free(actual);
+
+    try std.testing.expect(std.mem.indexOf(u8, actual, "test.propan:1:1: error: unrecognized token") != null);
+}
+
 test "parse conditions (positive)" {
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+
     const Expect = struct {
         expected: ast.Condition,
         input: []const u8,
@@ -1162,6 +1190,7 @@ test "parse conditions (positive)" {
         var core: Parser.Core = .{
             .arena = arena.allocator(),
             .core = .init(&tok),
+            .diagnostics = &diagnostics_collection,
         };
 
         const cond = try core.accept_condition();
@@ -1171,6 +1200,9 @@ test "parse conditions (positive)" {
 }
 
 test "parse effect (positive)" {
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+
     const Expect = struct {
         expected: ast.Effect,
         input: []const u8,
@@ -1216,6 +1248,7 @@ test "parse effect (positive)" {
             var core: Parser.Core = .{
                 .arena = arena.allocator(),
                 .core = .init(&tok),
+                .diagnostics = &diagnostics_collection,
             };
 
             const identifier = try core.accept_one(.identifier);
