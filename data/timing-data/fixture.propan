@@ -1,0 +1,113 @@
+const RT_F_CPU = 200_000_000
+const RT_BAUD = 115_200
+
+const RT_TXD_PIN = 62
+const RT_RXD_PIN = 63
+
+const RT_CLOCK_MODE = Hub.clockMode(
+    pll     = #on,
+    in_div  = 1,
+    mul     = 10,
+    out_div = 1,
+    xi      = #15pF,
+    sysclk  = #pll,
+)
+const RT_UART_CFG = SmartPin.UartTx.config(
+    baud=RT_BAUD,
+    bits=8,
+    clk=RT_F_CPU,
+)
+
+const RT_START_MARKER = 0x02
+const RT_END_MARKER = 0x03
+
+.cogexec 0x0000
+
+rt_start:
+        HUBSET aug(RT_CLOCK_MODE)
+
+        WRPIN  P_TT_01 | P_ASYNC_TX, RT_TXD_PIN
+        WXPIN  aug(RT_UART_CFG), RT_TXD_PIN
+
+        DIRH   RT_TXD_PIN
+
+        WAITX  aug(1_000_000)
+
+fixture_loop:
+        CALLPA RT_START_MARKER, rt_write_byte
+        JMP    fixture_entry
+
+fixture_halt:
+        CALLPA RT_END_MARKER, rt_write_byte
+
+        CALLPB rt_round, rt_write_hex_long
+        CALLPA '\n', rt_write_byte
+
+        CALLPB rt_start_ct, rt_write_hex_long
+        CALLPA '\n', rt_write_byte
+
+        CALLPB rt_stop_ct, rt_write_hex_long
+        CALLPA '\n', rt_write_byte
+
+        CALLPB rt_result, rt_write_hex_long
+        CALLPA '\n', rt_write_byte
+
+        INCMOD rt_round, 7 :wc
+if(!C)  JMP    fixture_loop
+
+        CALLPA 0x00, rt_write_byte
+
+.halt:
+        COGID   rt_tmp0
+        COGSTOP rt_tmp0
+
+rt_write_hex_long:
+        MOV     rt_tmp0, 8
+.nib_loop:
+        GETNIB  rt_tmp1, PB, 7
+        CMP     rt_tmp1, 10 :wcz
+if(>=)  ADD     rt_tmp1, 'A' - 10
+if(<)   ADD     rt_tmp1, '0'
+        CALLPA  rt_tmp1, rt_write_byte
+        SHL     PB, 4
+        DJNZ    rt_tmp0, .nib_loop
+        RET
+
+rt_write_byte:
+        WYPIN   PA, RT_TXD_PIN
+        WAITX   1
+.wait:
+        TESTP   RT_TXD_PIN :wc
+if(!C)  JMP     .wait
+        RET
+
+var rt_round:    LONG 0
+var rt_tmp0:     LONG 0
+var rt_tmp1:     LONG 0
+var rt_result:   LONG 0
+
+var rt_start_ct: LONG 0
+var rt_stop_ct:  LONG 0
+
+fixture_entry:
+        // <<FIXTURE:PREPARE>>
+
+        GETCT rt_tmp0
+
+        ADD rt_tmp0, 0x100
+        ADD rt_tmp0, 0x100
+        OR  rt_tmp0, 0x1FF
+        SUB rt_tmp0, 6
+        ADD rt_tmp0, rt_round
+
+        ADDCT1 rt_tmp0, 1
+
+        WAITCT1
+
+        GETCT rt_start_ct
+        // <<FIXTURE:DUT>>
+        GETCT rt_stop_ct
+        JMP   fixture_halt
+
+fixture_data:
+        // <<FIXTURE:DATA>>

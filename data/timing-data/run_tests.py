@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 
-from argparse import Namespace
 from dataclasses import dataclass, field
 from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
 from subprocess import CalledProcessError, run, Popen, PIPE
 from contextlib import contextmanager
-import textwrap
 from typing import Generic, Iterable, TypeVar
 
 import yaml
-from yaml import safe_load, safe_dump
+from yaml import safe_load
 
 SELF_DIR = Path(__file__).absolute().parent
+REPO_ROOT = SELF_DIR.parent.parent
 
-FIXTURE_FILE = SELF_DIR / "Fixture.spin2"
+FIXTURE_FILE = SELF_DIR / "fixture.propan"
 TESTCASE_FILE = SELF_DIR / "test-cases.yaml"
 TESTRESULT_FILE = SELF_DIR / "test-results.yaml"
+PROPAN_EXE = REPO_ROOT / "zig-out" / "bin" / "propan"
 
 FIXTURE_PREFIX = FIXTURE_FILE.read_text(encoding="utf-8")
 
@@ -27,50 +27,48 @@ PORT = "/dev/serial/by-id/usb-FTDI_FT231X_USB_UART_DUAB9RPU-if00-port0"
 def patch_code(code: str) -> str:
 
     return "\n".join(
-        ("" if line.endswith(":") else " " * 8) + line.rstrip(":")
+        ("" if line.endswith(":") else " " * 8) + line.rstrip()
         for line in code.splitlines()
     )
 
 
 def compile_fixture(
-    output_file: str, *, prepare_code: str, dut_code: str, data_segment: str
-):
+    *,
+    prepare_code: str,
+    dut_code: str,
+    data_segment: str,
+) -> bytes:
 
-    with NamedTemporaryFile(mode="w+t", suffix=".spin2", encoding="utf-8") as spin_file:
-        fixture_text = FIXTURE_PREFIX
+    fixture_text = FIXTURE_PREFIX
 
-        fixture_text.replace("' <<FIXTURE:PREPARE>>", patch_code(prepare_code))
-        fixture_text = fixture_text.replace("' <<FIXTURE:DUT>>", patch_code(dut_code))
-        fixture_text = fixture_text.replace("' <<FIXTURE:DATA>>", data_segment)
+    fixture_text = fixture_text.replace(
+        "// <<FIXTURE:PREPARE>>", patch_code(prepare_code)
+    )
+    fixture_text = fixture_text.replace("// <<FIXTURE:DUT>>", patch_code(dut_code))
+    fixture_text = fixture_text.replace("// <<FIXTURE:DATA>>", patch_code(data_segment))
 
-        spin_file.write(fixture_text)
-
-        spin_file.flush()
-
-        list_file = Path(output_file).with_suffix(".lst")
-
-        try:
-            run(
-                args=[
-                    "flexspin",
-                    "-2",  # target propeller 2
-                    "-Wall",  # enable all warnings
-                    "-Wabs-paths",  # print absolute paths for file names in errors/warnings
-                    "-b",  # binary output
-                    "-q",  # quiet mode
-                    "-l",  # listing
-                    "-o",  # output file
-                    output_file,
-                    spin_file.name,
-                ],
-                check=True,
-            )
-        except CalledProcessError as err:
-            print(repr(err), file=sys.stderr)
-            input(spin_file.name)
-            raise
-        finally:
-            list_file.unlink(missing_ok=True)
+    try:
+        output = run(
+            args=[
+                str(PROPAN_EXE),
+                "-o",
+                "-",
+                "-",
+            ],
+            input=fixture_text.encode('utf-8'),
+            capture_output=True,
+            text=False,
+            check=True,
+        )
+        return output.stdout
+    except CalledProcessError as err:
+        if err.stdout:
+            print(err.stdout, file=sys.stderr, end="")
+        if err.stderr:
+            print(err.stderr.decode(), file=sys.stderr, end="")
+        print(repr(err), file=sys.stderr)
+        # print(f"fixture source: {source_file.name}", file=sys.stderr)
+        raise
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -88,7 +86,7 @@ class Result:
     "The result written to rt_result, may be useful for additional validation"
 
 
-def run_fixture(file: str) -> list[Result]:
+def run_fixture(fixture: bytes) -> list[Result]:
 
     args = [
         "turboprop",
@@ -97,7 +95,7 @@ def run_fixture(file: str) -> list[Result]:
         "--reset=dtr",
         "--monitor",
         "--monitor-format=raw",
-        file,
+        "-",
     ]
 
     with Popen(
@@ -110,6 +108,9 @@ def run_fixture(file: str) -> list[Result]:
 
         assert stdin is not None
         assert stdout is not None
+
+        stdin.write(fixture)
+        stdin.close()
 
         results: list[Result] = list()
         try:
@@ -163,15 +164,13 @@ def run_fixture(file: str) -> list[Result]:
 
 def execute_fixture(*, measure: str, prepare: str = "", data: str = "") -> list[Result]:
 
-    with NamedTemporaryFile("rb+", suffix=".bin") as file:
-        compile_fixture(
-            file.name,
-            prepare_code=prepare,
-            dut_code=measure,
-            data_segment=data,
-        )
+    fixture = compile_fixture(
+        prepare_code=prepare,
+        dut_code=measure,
+        data_segment=data,
+    )
 
-        return run_fixture(file.name)
+    return run_fixture(fixture)
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)

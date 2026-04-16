@@ -23,13 +23,13 @@ test-results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
     durations: [2, 9, 8, 7, 6, 5, 4, 3]
     results: 0
-- test: 'Waiting (WAITX #0)'
+- test: Waiting (WAITX 0)
   pass: true
   results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
     durations: 2
     results: 0
-- test: 'Waiting (WAITX #3)'
+- test: Waiting (WAITX 3)
   pass: true
   results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
@@ -47,13 +47,13 @@ test-results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
     durations: [60, 67, 66, 65, 64, 63, 62, 61]
     results: 0
-- test: 'Jump Timing (JMP #A)'
+- test: Jump Timing (JMP A)
   pass: true
   results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
     durations: 4
     results: 0
-- test: 'Jump Timing (JMP #\A)'
+- test: Jump Timing (JMP nrel(A))
   pass: true
   results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
