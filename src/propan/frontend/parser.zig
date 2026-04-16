@@ -1063,11 +1063,17 @@ const allowed_effect_names: []const struct { []const u8, ast.Effect } = &.{
     .{ ":wz", .wz },
 };
 
-fn fuzz_tokenizer(_: void, input: []const u8) !void {
+fn fuzz_tokenizer_bytes(input: []const u8) !void {
     var tokenizer: Tokenizer = .init(input, null);
     while (try tokenizer.next()) |item| {
         _ = item;
     }
+}
+
+fn fuzz_tokenizer(_: void, smith: *std.testing.Smith) !void {
+    var input_buffer: [8192]u8 = undefined;
+    const input = input_buffer[0..smith.slice(&input_buffer)];
+    try fuzz_tokenizer_bytes(input);
 }
 
 test "fuzz tokenizer" {
@@ -1077,7 +1083,7 @@ test "fuzz tokenizer" {
     });
 }
 
-fn fuzz_parser(_: void, input: []const u8) !void {
+fn fuzz_parser_bytes(input: []const u8) !void {
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
 
@@ -1088,6 +1094,12 @@ fn fuzz_parser(_: void, input: []const u8) !void {
         return;
     };
     parsed.deinit();
+}
+
+fn fuzz_parser(_: void, smith: *std.testing.Smith) !void {
+    var input_buffer: [8192]u8 = undefined;
+    const input = input_buffer[0..smith.slice(&input_buffer)];
+    try fuzz_parser_bytes(input);
 }
 
 test "fuzz parser" {

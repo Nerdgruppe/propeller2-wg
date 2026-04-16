@@ -6063,8 +6063,8 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 
     const chr: u8 = @truncate(d);
     var writer = switch (s) {
-        1 => std.Io.File.stdin().writerStreaming(cog.hub.std_io, &.{}),
-        2 => std.Io.File.stdout().writerStreaming(cog.hub.std_io, &.{}),
+        1 => std.Io.File.stdout().writerStreaming(cog.hub.std_io, &.{}),
+        2 => std.Io.File.stderr().writerStreaming(cog.hub.std_io, &.{}),
         3 => std.Io.File.stderr().writerStreaming(cog.hub.std_io, &.{}),
         else => @panic("invalid S operand to WXPIN!"),
     };
@@ -6098,8 +6098,8 @@ pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     }
 
     const file: std.Io.File = switch (s) {
-        1 => .stdin(),
-        2 => .stdout(),
+        1 => .stdout(),
+        2 => .stderr(),
         3 => .stderr(),
         else => @panic("invalid S operand to WXPIN!"),
     };

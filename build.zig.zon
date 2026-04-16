@@ -18,8 +18,8 @@
             .hash = "serial-0.0.1-PoeRzEG3AACu3kynEWOamZSgaSjjtPkXmWlhGjarG0dE",
         },
         .p2devsuite = .{
-            .url = "git+https://github.com/ikskuh/p2-devsuite.git#43143c73c4cc51a905faf33be0725d848bdaaf0e",
-            .hash = "p2_devsuite-0.0.0-JopzWP1hAAA0qgcu5c7psAYfuBia-nZKBBw_xymJ6pZE",
+            .url = "git+https://github.com/ikskuh/p2-devsuite.git?ref=zig-0.16.0#1fed4ac69e9266dbfec90f2497c36ff246130532",
+            .hash = "p2_devsuite-0.0.0-JopzWOBkAAAkFgjK0rkSKY7AYbYyAHuVSCFJgM5C1TsQ",
             .lazy = true,
         },
     },
