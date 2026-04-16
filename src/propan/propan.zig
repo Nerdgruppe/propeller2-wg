@@ -75,7 +75,7 @@ pub fn main(init: std.process.Init) !u8 {
         stderr_writer.interface.flush() catch {};
     }
 
-    var cli = args_parser.parseForCurrentProcess(CliArgs, init.gpa, init.minimal.args, .print) catch return 1;
+    var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
     defer cli.deinit();
 
     if (cli.options.@"test-mode" != null) {

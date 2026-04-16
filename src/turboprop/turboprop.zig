@@ -7,9 +7,7 @@ const p2_ram = 512 * 1024;
 const p2_version = "Prop_Ver G";
 
 pub fn main(init: std.process.Init) !u8 {
-    const allocator = init.gpa;
-
-    var cli = args_parser.parseForCurrentProcess(CliArgs, allocator, init.minimal.args, .print) catch return 1;
+    var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
     defer cli.deinit();
 
     // Validate CLI args:

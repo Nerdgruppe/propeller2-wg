@@ -10,8 +10,8 @@
             .hash = "parser_toolkit-0.1.0-baYGPUVCEwBaVmu09ORh0lLlVjRaJ489TdSIdTa_8VWg",
         },
         .args = .{
-            .url = "git+https://github.com/Khitiara/zig-args.git?ref=master#4b1b1ed97d94e061c63b9843a859b9e48980b0ba",
-            .hash = "args-0.0.0-CiLiqiXSAADIQPirYU4Yefn8S48PNMprT0QOqIrfpKS6",
+            .url = "git+https://github.com/Khitiara/zig-args.git#9275f6ff183f9292eef802293123b1534b017513",
+            .hash = "args-0.0.0-CiLiqv_RAABGE-NXmtaYrZzHJcAD5t71_Bp5-_IVud6g",
         },
         .serial = .{
             .url = "git+https://github.com/ZigEmbeddedGroup/serial.git#4b1b1ed97d94e061c63b9843a859b9e48980b0ba",
