@@ -57,20 +57,8 @@ const CliArgs = struct {
     };
 };
 
-pub fn main() !u8 {
-    // try std.io.getStdOut().writeAll("\x1B[2J\x1B[H");
-
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-
-    const allocator = if (builtin.mode == .Debug)
-        debug_allocator.allocator()
-    else
-        std.heap.smp_allocator;
-
-    var arena: std.heap.ArenaAllocator = .init(allocator);
-    defer arena.deinit();
-
-    var cli = args_parser.parseForCurrentProcess(CliArgs, allocator, .print) catch return 1;
+pub fn main(init: std.process.Init) !u8 {
+    var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
     defer cli.deinit();
 
     if (cli.options.@"test-mode" != null) {
@@ -82,7 +70,7 @@ pub fn main() !u8 {
 
     if (cli.options.help) {
         var buffer: [256]u8 = undefined;
-        var stdout = std.fs.File.stdout().writer(&buffer);
+        var stdout = std.Io.File.stdout().writer(init.io, &buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "windtunnel",
@@ -92,7 +80,7 @@ pub fn main() !u8 {
     }
     if (cli.positionals.len != 0) {
         var buffer: [256]u8 = undefined;
-        var stderr = std.fs.File.stdout().writer(&buffer);
+        var stderr = std.Io.File.stdout().writer(init.io, &buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "windtunnel",
@@ -104,16 +92,16 @@ pub fn main() !u8 {
     var debug_stream: Hub.DebugFifo = .{};
 
     var hub: Hub = undefined;
-    hub.init();
+    hub.init(init.io);
     hub.debug_stream = &debug_stream;
 
     if (cli.options.image.len != 0) {
-        var file = try std.fs.cwd().openFile(cli.options.image, .{});
-        defer file.close();
+        var file = try std.Io.Dir.cwd().openFile(init.io, cli.options.image, .{});
+        defer file.close(init.io);
 
-        const stat = try file.stat();
+        const stat = try file.stat(init.io);
 
-        const count = try file.readAll(&hub.memory);
+        const count = try file.readPositionalAll(init.io, &hub.memory, 0);
         std.debug.assert(count <= hub.memory.len);
 
         if (stat.size > count) {
@@ -141,8 +129,8 @@ pub fn main() !u8 {
     if (cli.options.tests.len != 0) {
         var tests_ok = true;
 
-        const test_script = try std.fs.cwd().readFileAlloc(arena.allocator(), cli.options.tests, 1 << 20);
-        defer arena.allocator().free(test_script);
+        const test_script = try std.Io.Dir.cwd().readFileAlloc(init.io, cli.options.tests, init.arena.allocator(), .limited(1 << 20));
+        defer init.arena.allocator().free(test_script);
 
         var line_iter = std.mem.tokenizeScalar(u8, test_script, '\n');
 

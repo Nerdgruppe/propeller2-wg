@@ -19,6 +19,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Runs the test suite");
 
     // Options:
+    const with_flexspin = b.option(bool, "with-flexspin", "Includes the flexspin dependency required for running the testsuite.") orelse false;
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
 
     const target = b.standardTargetOptions(.{});
@@ -26,8 +27,6 @@ pub fn build(b: *std.Build) void {
 
     // Dependencies:
     const serial_dep = b.dependency("serial", .{});
-
-    const p2dev_dep = b.dependency("p2devsuite", .{});
 
     const ptk_dep = b.dependency("ptk", .{});
     const args_dep = b.dependency("args", .{});
@@ -40,14 +39,6 @@ pub fn build(b: *std.Build) void {
         .b = b,
         .no_emit_bin = no_emit_bin,
     };
-
-    // Exports:
-
-    const flexspin = p2dev_dep.artifact("flexspin");
-    fb.installArtifact(flexspin);
-
-    const loadp2_exe = p2dev_dep.artifact("loadp2");
-    fb.installArtifact(loadp2_exe);
 
     // Build:
 
@@ -127,10 +118,10 @@ pub fn build(b: *std.Build) void {
     {
         const fuzz_corpus_files = b.addWriteFiles();
 
-        var fuzz_corpus_index: std.ArrayList(u8) = .empty;
-        defer fuzz_corpus_index.deinit(b.allocator);
+        var fuzz_corpus_index: std.Io.Writer.Allocating = .init(b.allocator);
+        defer fuzz_corpus_index.deinit();
 
-        fuzz_corpus_index.writer(b.allocator).writeAll(
+        fuzz_corpus_index.writer.writeAll(
             \\pub const files: []const []const u8 = &.{
             \\
         ) catch @panic("oom");
@@ -140,7 +131,7 @@ pub fn build(b: *std.Build) void {
 
             _ = fuzz_corpus_files.addCopyFile(b.path(path), filename);
 
-            fuzz_corpus_index.writer(b.allocator).print(
+            fuzz_corpus_index.writer.print(
                 \\    @embedFile("{f}"),
                 \\
             ,
@@ -148,12 +139,12 @@ pub fn build(b: *std.Build) void {
             ) catch @panic("oom");
         }
 
-        fuzz_corpus_index.writer(b.allocator).writeAll(
+        fuzz_corpus_index.writer.writeAll(
             \\};
             \\
         ) catch @panic("oom");
 
-        const fuzz_corpus_file = fuzz_corpus_files.add("corpus.zig", fuzz_corpus_index.items);
+        const fuzz_corpus_file = fuzz_corpus_files.add("corpus.zig", fuzz_corpus_index.written());
 
         const fuzz_corpus_mod = b.createModule(.{ .root_source_file = fuzz_corpus_file });
 
@@ -168,60 +159,75 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run_tests_step.step);
     }
 
-    // Propan Behaviour Tests
-    {
-        const parser_tests = make_sequencing_step(b, "parser tests");
-        test_step.dependOn(parser_tests);
+    // Exports:
 
-        for (parser_accept_tests) |accept_file| {
-            const run = b.addRunArtifact(propan_exe);
-            run.addArg("--format=none");
-            run.addArg("--test-mode=parser");
-            run.addFileArg(b.path(accept_file));
-            run.has_side_effects = true;
-            parser_tests.dependOn(&run.step);
+    if (with_flexspin) blk: {
+        const p2dev_dep = b.lazyDependency("p2devsuite", .{}) orelse break :blk;
+
+        const flexspin = p2dev_dep.artifact("flexspin");
+        fb.installArtifact(flexspin);
+
+        const loadp2_exe = p2dev_dep.artifact("loadp2");
+        fb.installArtifact(loadp2_exe);
+
+        // Propan Behaviour Tests
+        {
+            const parser_tests = make_sequencing_step(b, "parser tests");
+            test_step.dependOn(parser_tests);
+
+            for (parser_accept_tests) |accept_file| {
+                const run = b.addRunArtifact(propan_exe);
+                run.addArg("--format=none");
+                run.addArg("--test-mode=parser");
+                run.addFileArg(b.path(accept_file));
+                run.has_side_effects = true;
+                parser_tests.dependOn(&run.step);
+            }
+
+            const sema_tests = make_sequencing_step(b, "parser tests");
+            sema_tests.dependOn(parser_tests);
+            test_step.dependOn(sema_tests);
+
+            for (sema_accept_tests) |accept_file| {
+                const run = b.addRunArtifact(propan_exe);
+                run.addArg("--format=none");
+                run.addArg("--test-mode=sema");
+                run.addFileArg(b.path(accept_file));
+                run.has_side_effects = true;
+                sema_tests.dependOn(&run.step);
+            }
+
+            const equivalence_tests = make_sequencing_step(b, "parser tests");
+            equivalence_tests.dependOn(sema_tests);
+            test_step.dependOn(equivalence_tests);
+
+            for (emit_compare_tests) |accept_file| {
+                const suffix = std.fs.path.extension(accept_file);
+
+                const spin2_file = b.fmt("{s}.spin2", .{accept_file[0 .. accept_file.len - suffix.len]});
+
+                const convert = b.addRunArtifact(flexspin);
+                convert.addArg("-2");
+                convert.addArg("-o");
+
+                const ref_file = convert.addOutputFileArg(b.fmt("{s}.bin", .{
+                    std.fs.path.basename(accept_file),
+                }));
+
+                convert.addFileArg(b.path(spin2_file));
+
+                const run = b.addRunArtifact(propan_exe);
+                run.addArg("--format=none");
+                run.addArg("--test-mode=compare");
+                run.addPrefixedFileArg("--compare-to=", ref_file);
+                run.addFileArg(b.path(accept_file));
+                run.has_side_effects = true;
+                equivalence_tests.dependOn(&run.step);
+            }
         }
-
-        const sema_tests = make_sequencing_step(b, "parser tests");
-        sema_tests.dependOn(parser_tests);
-        test_step.dependOn(sema_tests);
-
-        for (sema_accept_tests) |accept_file| {
-            const run = b.addRunArtifact(propan_exe);
-            run.addArg("--format=none");
-            run.addArg("--test-mode=sema");
-            run.addFileArg(b.path(accept_file));
-            run.has_side_effects = true;
-            sema_tests.dependOn(&run.step);
-        }
-
-        const equivalence_tests = make_sequencing_step(b, "parser tests");
-        equivalence_tests.dependOn(sema_tests);
-        test_step.dependOn(equivalence_tests);
-
-        for (emit_compare_tests) |accept_file| {
-            const suffix = std.fs.path.extension(accept_file);
-
-            const spin2_file = b.fmt("{s}.spin2", .{accept_file[0 .. accept_file.len - suffix.len]});
-
-            const convert = b.addRunArtifact(flexspin);
-            convert.addArg("-2");
-            convert.addArg("-o");
-
-            const ref_file = convert.addOutputFileArg(b.fmt("{s}.bin", .{
-                std.fs.path.basename(accept_file),
-            }));
-
-            convert.addFileArg(b.path(spin2_file));
-
-            const run = b.addRunArtifact(propan_exe);
-            run.addArg("--format=none");
-            run.addArg("--test-mode=compare");
-            run.addPrefixedFileArg("--compare-to=", ref_file);
-            run.addFileArg(b.path(accept_file));
-            run.has_side_effects = true;
-            equivalence_tests.dependOn(&run.step);
-        }
+    } else {
+        const fail_step = b.addFail("Cannot run test suite without flexspin! Use -Dwith-flexspin to enable it.");
+        test_step.dependOn(&fail_step.step);
     }
 
     // Windtunnel behaviour tests

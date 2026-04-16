@@ -175,11 +175,17 @@ fn IndentingStream(InnerWriter: type) type {
         indent_str: []const u8 = "    ",
 
         head_of_line: bool = true,
+        interface: std.Io.Writer = .{
+            .vtable = &.{
+                .drain = drain,
+                .flush = std.Io.Writer.noopFlush,
+                .rebase = std.Io.Writer.failingRebase,
+            },
+            .buffer = &.{},
+        },
 
-        pub const Writer = std.io.Writer(*@This(), InnerWriter.Error, write);
-
-        pub fn writer(is: *@This()) Writer {
-            return .{ .context = is };
+        pub fn writer(is: *@This()) *std.Io.Writer {
+            return &is.interface;
         }
 
         pub fn push(is: *@This()) void {
@@ -198,7 +204,22 @@ fn IndentingStream(InnerWriter: type) type {
             try is.writer().print(fmt, args);
         }
 
-        fn write(is: *@This(), buffer: []const u8) InnerWriter.Error!usize {
+        fn drain(io_writer: *std.Io.Writer, data: []const []const u8, splat: usize) std.Io.Writer.Error!usize {
+            const is: *@This() = @alignCast(@fieldParentPtr("interface", io_writer));
+            var written: usize = 0;
+            for (data[0 .. data.len - 1]) |buffer| {
+                try is.write(buffer);
+                written += buffer.len;
+            }
+            for (0..splat) |_| {
+                const buffer = data[data.len - 1];
+                try is.write(buffer);
+                written += buffer.len;
+            }
+            return written;
+        }
+
+        fn write(is: *@This(), buffer: []const u8) std.Io.Writer.Error!usize {
             var pos: usize = 0;
             while (std.mem.indexOfScalarPos(u8, buffer, pos, '\n')) |index| {
                 try is.append(buffer[pos..index], true);
@@ -210,7 +231,7 @@ fn IndentingStream(InnerWriter: type) type {
             return buffer.len;
         }
 
-        fn append(is: *@This(), buffer: []const u8, eol: bool) InnerWriter.Error!void {
+        fn append(is: *@This(), buffer: []const u8, eol: bool) std.Io.Writer.Error!void {
             if (buffer.len == 0 and !eol)
                 return;
             if (is.head_of_line) {

@@ -6062,13 +6062,13 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     const s = cog.resolve_operand(args.s, args.s_imm); // pin/file
 
     const chr: u8 = @truncate(d);
-
-    switch (s) {
-        1 => _ = std.fs.File.stdin().write(&.{chr}) catch @panic("i/o error"),
-        2 => _ = std.fs.File.stdout().write(&.{chr}) catch @panic("i/o error"),
-        3 => _ = std.fs.File.stderr().write(&.{chr}) catch @panic("i/o error"),
+    var writer = switch (s) {
+        1 => std.Io.File.stdout().writerStreaming(cog.hub.std_io, &.{}),
+        2 => std.Io.File.stderr().writerStreaming(cog.hub.std_io, &.{}),
+        3 => std.Io.File.stderr().writerStreaming(cog.hub.std_io, &.{}),
         else => @panic("invalid S operand to WXPIN!"),
-    }
+    };
+    writer.interface.writeByte(chr) catch @panic("i/o error");
 
     return .next;
     // codegen: end:wxpin
@@ -6097,17 +6097,18 @@ pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
         debug_stream.push(d);
     }
 
-    const file: std.fs.File = switch (s) {
-        1 => .stdin(),
-        2 => .stdout(),
+    const file: std.Io.File = switch (s) {
+        1 => .stdout(),
+        2 => .stderr(),
         3 => .stderr(),
         else => @panic("invalid S operand to WXPIN!"),
     };
 
     var buffer: [32]u8 = undefined;
-    var writer = file.writerStreaming(&buffer);
+    var writer = file.writerStreaming(cog.hub.std_io, &buffer);
 
     writer.interface.print("0x{X:0>8}", .{d}) catch @panic("i/o error");
+    writer.flush() catch @panic("i/o error");
 
     return .next;
     // codegen: end:wypin
