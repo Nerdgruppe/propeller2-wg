@@ -2,6 +2,156 @@
 
 Propan is an alternative assembler and assembly syntax that is catered for a more strict and well-defined behaviour.
 
+## Building
+
+Install [Zig 0.16](https://ziglang.org/download/#release-0.16.0), then build the project:
+
+```sh-session
+[user@machine propeller2-wg]$ zig build -Doptimize=ReleaseSafe
+[user@machine propeller2-wg]$
+[user@machine propeller2-wg]$ ls ./zig-out/bin/
+propan  turboprop  windtunnel
+[user@machine propeller2-wg]$ ./zig-out/bin/propan --help
+Usage: ./zig-out/bin/propan [-h] [-o <output>] <sources...>
+
+Propan is an assembler for the Propeller 2 architecture.
+
+Options:
+  -h, --help         Prints this help text
+  -o, --output       Sets the path of the output file.
+      --test-mode    <internal use only>
+      --compare-to   <internal use only>
+  -v, --verbose      Enables debug logging
+  -f, --format       Selects the binary format to use
+  -F, --fill-byte    The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.
+      --list-file    Writes a list file to the given path. Use '-' to write to stdout.
+[user@machine propeller2-wg]$ 
+```
+
+If you want to also have the tools [loadp2](https://github.com/totalspectrum/loadp2) and [flexspin](https://github.com/totalspectrum/flexprop), you can use `-Dwith-flexspin` on the `zig build` invocation:
+
+```sh-session
+[user@machine propeller2-wg]$ zig-0.16.0 build -Dwith-flexspin -Doptimize=ReleaseSafe
+install
+└─ install flexspin
+   └─ compile exe flexspin Debug native
+      └─ run exe byacc (cgram) w
+./.zig-cache/o/acb1656cfd74dec78085048b417c27f6/byacc: 4 shift/reduce conflicts.
+failed command: ./.zig-cache/o/acb1656cfd74dec78085048b417c27f6/byacc -s -p cgramyy -t -l -b /home/felix/projects/nerdgruppe/propeller2-wg/.zig-cache/o/26f59ccb55c72d171707406b90d1ecfc/cgram -d /home/felix/projects/nerdgruppe/propeller2-wg/zig-pkg/N-V-__8AAOUErQDX6Zwe1aeK_COII7E566nhOgG8bC4qX88S/frontends/c/cgram.y
+
+install
+└─ install flexspin
+   └─ compile exe flexspin Debug native
+      └─ run exe byacc (basic) w
+./.zig-cache/o/acb1656cfd74dec78085048b417c27f6/byacc: 52 shift/reduce conflicts.
+failed command: ./.zig-cache/o/acb1656cfd74dec78085048b417c27f6/byacc -s -p basicyy -t -l -b /home/felix/projects/nerdgruppe/propeller2-wg/.zig-cache/o/21a5fbee1365a1862eba4373e37552fb/basic -d /home/felix/projects/nerdgruppe/propeller2-wg/zig-pkg/N-V-__8AAOUErQDX6Zwe1aeK_COII7E566nhOgG8bC4qX88S/frontends/basic/basic.y
+
+install
+└─ install flexspin
+   └─ compile exe flexspin Debug native
+      └─ run exe byacc (spin) w
+./.zig-cache/o/acb1656cfd74dec78085048b417c27f6/byacc: 44 shift/reduce conflicts.
+failed command: ./.zig-cache/o/acb1656cfd74dec78085048b417c27f6/byacc -s -p spinyy -t -l -b /home/felix/projects/nerdgruppe/propeller2-wg/.zig-cache/o/7d79a20a5a7e5cb0883d16882f4252b7/spin -d /home/felix/projects/nerdgruppe/propeller2-wg/zig-pkg/N-V-__8AAOUErQDX6Zwe1aeK_COII7E566nhOgG8bC4qX88S/frontends/spin/spin.y
+
+[user@machine propeller2-wg]$ ls zig-out/bin/
+flexspin  loadp2  propan  turboprop  windtunnel
+[user@machine propeller2-wg]$ ./zig-out/bin/flexspin -h
+Propeller Spin/PASM Compiler 'FlexSpin' (c) 2011-2025 Total Spectrum Software Inc. and contributors
+Version 7.1.1 Compiled on: Sep 13 2026
+usage: ./zig-out/bin/flexspin [options] filename.spin | filename.bas
+  [ -h ]              display this help
+  [ -L or -I <path> ] add a directory to the include path
+  [ -o <name> ]      set output filename to <name>
+  [ -b ]             output binary file format
+  [ -e ]             output eeprom file format
+  [ -c ]             output only DAT sections
+  [ -l ]             output DAT as a listing file
+  [ -f ]             output list of file names
+  [ -g ]             enable debug statements
+  [ -q ]             quiet mode (suppress banner and non-error text)
+  [ -p ]             disable the preprocessor
+  [ -D <define> ]    add a define
+  [ -u ]             ignore for openspin compatibility (unused method elimination always enabled)
+  [ -2 ]             compile for Prop2
+  [ -2nu ]           compile for Prop2 with Nu interpreter
+  [ -O# ]            set optimization level:
+          -O0 = no optimization
+          -O1 = basic optimization
+          -O2 = all optimization
+  [ -H nnnn ]        set starting hub address
+  [ -E ]             skip initial coginit code (usually used with -H)
+  [ -w ]             compile for COG with Spin wrappers
+  [ -Wall ]          enable warnings for language extensions and other features
+  [ -Werror ]        make warnings into errors
+  [ -Wabs-paths ]    print absolute paths for file names in errors/warnings
+  [ -Wmax-errors=N ] allow at most N errors in a pass before stopping
+  [ -C ]             enable case sensitive mode
+  [ -x ]             capture program exit code (for testing)
+  [ --charset=xxx ]  set character set for runtime
+           xxx is one of utf8, latin1, shiftjis, or parallax
+  [ --code=cog ]     compile for COG mode instead of LMM
+  [ --compress ]     compress output binary for faster download
+  [ --interp=rom ]   compile bytecodes for P1 ROM interpreter (alpha feature!)
+  [ --interp=nu ]    compile bytecodes for NuCode interpreter (alpha feature!)
+  [ --fcache=N ]     set FCACHE size to N (0 to disable)
+  [ --fixedreal ]    use 16.16 fixed point in place of floats
+  [ --lmm=xxx ]      use alternate LMM implementation for P1
+           xxx = orig uses original flexspin LMM
+           xxx = slow uses traditional (slow) LMM
+  [ --nostdlib]      skip searching in the standard library location for include files
+  [ --sizes]         print code and interpreter sizes
+  [ --tabs=N ]       assume tabs are set every N spaces for indentation purposes
+  [ --verbose ]      print additional diagnostic messages (for debugging the compiler)
+  [ --version ]      just show compiler version
+  [ --zip ]          create zip archive of source files
+[user@machine propeller2-wg]$ ./zig-out/bin/loadp2
+Must specify a file name or -t or -x
+loadp2 - a loader for the propeller 2 - version 0.075 Sep 13 2026
+usage: loadp2
+         [ -p port ]               serial port
+         [ -b baud ]               user baud rate (default is 115200)
+         [ -l baud ]               loader baud rate (default is 2000000)
+         [ -f clkfreq ]            clock frequency (default is 80000000)
+         [ -m clkmode ]            clock mode in hex (default is ffffffff)
+         [ -s address ]            starting address in hex (default is 0)
+         [ -t ]                    enter terminal mode after running the program
+         [ -T ]                    enter PST-compatible terminal mode
+         [ -v ]                    enable verbose mode
+         [ -k ]                    wait for user input before exit
+         [ -q ]                    quiet mode: also checks for exit sequence
+         [ -n ]                    no reset; skip any hardware reset
+         [ -9 dir ]                serve 9p remote filesystem from dir
+         [ -FIFO bytes]            modify serial FIFO size (default is 2048 bytes)
+         [ -? ]                    display a usage message and exit
+         [ -DTR ]                  use DTR for reset (default)
+         [ -RTS ]                  use RTS for reset
+         [ -xDEBUG ]               enter ROM debug monitor
+         [ -xTAQOZ ]               enter ROM version of TAQOZ
+         [ -xTERM ]                enter terminal, avoid reset
+         [ -NOZERO ]               do not clear memory before download (default)
+         [ -ZERO ]                 clear memory before download
+         [ -PATCH ]                patch in clock frequency and serial parms
+         [ -SINGLE ]               set load mode for single stage
+         [ -FLASH ]                program application to SPI flash
+         [ -NOEOF ]                ignore EOF on input
+         [ -HIMEM=flash ]          addresses 0x8000000 and up refer to flash
+         filespec                  file to load
+         [ -e script ]             send a sequence of characters after starting P2
+         [ -a arg1 [arg2 ...] ]    put arguments for program into memory
+
+In -CHIP mode, filespec may optionally be multiple files with address
+specifiers, such as:
+    @ADDR=file1,@ADDR=file2,@ADDR+file3
+Here ADDR is a hex address at which to load the next file, followed by = or +
+If it is followed by + then the size of the file is put in memory followed by
+the file data. This feature is useful for loading data that a program wishes
+to act on. For example, a VGA program which displays data from $1000 may be
+loaded with:
+    @0=vgacode.bin,@1000=picture.bmp
+The main executable code must always be specified first
+[user@machine propeller2-wg]$ 
+```
+
 ## Syntax
 
 ### Constants
