@@ -64,6 +64,9 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     try analyzer.prepare_instruction_stream();
     try analyzer.select_instruction_mnemonic();
 
+    if (!analyzer.ok)
+        return error.SemanticErrors;
+
     try analyzer.assign_locations();
 
     if (!analyzer.ok)
@@ -170,17 +173,17 @@ fn dump_analyzer(analyzer: *Analyzer) void {
 
     logger.info("map file:", .{});
     for (analyzer.instructions) |instr| {
-        logger.info("  {f}: {s} (+{} bytes)", .{
-            instr.start_addr.?,
+        logger.info("  {?f}: {s} (+{?} bytes)", .{
+            instr.start_addr,
             instr.ast_node.mnemonic,
-            instr.byte_size.?,
+            instr.byte_size,
         });
     }
 
     logger.info("map file:", .{});
     for (analyzer.instructions) |instr| {
-        logger.info("  {f}: {s}", .{
-            instr.start_addr.?,
+        logger.info("  {?f}: {s}", .{
+            instr.start_addr,
             instr.ast_node.mnemonic,
         });
         for (instr.arguments, 0..) |arg, i| {

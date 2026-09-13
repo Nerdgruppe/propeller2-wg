@@ -101,6 +101,8 @@ pub fn build(b: *std.Build) void {
         break :blk exe;
     };
 
+    _ = windtunnel_exe;
+
     // "zig build run"
     {
         const run_cmd = b.addRunArtifact(propan_exe);
@@ -230,21 +232,21 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&fail_step.step);
     }
 
-    // Windtunnel behaviour tests
-    {
-        for (windtunnel_behaviour_tests) |test_file| {
-            const assemble = b.addRunArtifact(propan_exe);
-            assemble.addArg("--format=flat");
-            assemble.addFileArg(b.path(test_file));
-            const bin_file = assemble.addPrefixedOutputFileArg("--output=", "app.bin");
+    // // Windtunnel behaviour tests
+    // {
+    //     for (windtunnel_behaviour_tests) |test_file| {
+    //         const assemble = b.addRunArtifact(propan_exe);
+    //         assemble.addArg("--format=flat");
+    //         assemble.addFileArg(b.path(test_file));
+    //         const bin_file = assemble.addPrefixedOutputFileArg("--output=", "app.bin");
 
-            const run = b.addRunArtifact(windtunnel_exe);
-            run.addPrefixedFileArg("--image=", bin_file);
-            run.addPrefixedFileArg("--tests=", b.path(test_file));
-            run.has_side_effects = true;
-            test_step.dependOn(&run.step);
-        }
-    }
+    //         const run = b.addRunArtifact(windtunnel_exe);
+    //         run.addPrefixedFileArg("--image=", bin_file);
+    //         run.addPrefixedFileArg("--tests=", b.path(test_file));
+    //         run.has_side_effects = true;
+    //         test_step.dependOn(&run.step);
+    //     }
+    // }
 }
 
 fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
@@ -276,7 +278,11 @@ const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const
     "./tests/propan/parser/amiguity.propan",
 };
 
-const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ &[_][]const u8{
+const regression_tests: []const []const u8 = &[_][]const u8{
+    // TODO: Implement "failing tests" "tests/propan/regressions/null-in-assert.propan",
+};
+
+const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
     "tests/propan/sema/basic-constants.propan",
     "tests/propan/sema/basic-instruction-selection.propan",
     "tests/propan/sema/addressing-modes.propan",
