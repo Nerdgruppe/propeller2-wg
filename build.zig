@@ -358,7 +358,7 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/value-hint-converter.propan",
     "tests/propan/sema/stdlib.propan",
     "tests/propan/sema/char-literals.propan",
-    // TODO: "tests/propan/sema/align.propan",
+    "tests/propan/sema/align.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{

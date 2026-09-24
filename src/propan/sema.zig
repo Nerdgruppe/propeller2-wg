@@ -674,6 +674,7 @@ const Analyzer = struct {
                                                 try ana.emit_error(coded.ast_node.location, ".align value {} must be a nonzero power of two.", .{alignment});
                                             } else {
                                                 cursor.alignas(alignment);
+                                                coded.start_addr = cursor.offset;
                                             }
                                         } else {
                                             try ana.emit_error(coded.ast_node.location, ".align value {} is out of range.", .{
