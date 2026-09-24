@@ -1,0 +1,18 @@
+start:
+        .assert 0x10009FB == Hub.clockMode(
+                pll=#on,
+                in_div=1,
+                mul=10,
+                out_div=1,
+                xi=#15pF,
+                sysclk=#pll,
+        )
+        HUBSET aug(0x10009FB)
+        HUBSET aug(Hub.clockMode(
+                pll=#on,
+                in_div=1,
+                mul=10,
+                out_div=1,
+                xi=#15pF,
+                sysclk=#pll,
+        ))

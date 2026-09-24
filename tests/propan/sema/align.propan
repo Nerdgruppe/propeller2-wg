@@ -1,0 +1,5 @@
+    byte 0
+.align 4
+this:
+.assert hubaddr(this) == 4
+    long 0

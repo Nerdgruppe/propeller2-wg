@@ -292,6 +292,7 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/value-hint-converter.propan",
     "tests/propan/sema/stdlib.propan",
     "tests/propan/sema/char-literals.propan",
+    // TODO: "tests/propan/sema/align.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{
@@ -313,6 +314,7 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/rdlong-selection-bug.propan",
     "tests/propan/equivalence/special_effects.propan",
     "tests/propan/equivalence/three_ops.propan",
+    "tests/propan/equivalence/hubset.propan",
 };
 
 const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{

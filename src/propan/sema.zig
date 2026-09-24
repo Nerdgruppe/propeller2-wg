@@ -691,7 +691,7 @@ const Analyzer = struct {
                                 }
                             }
 
-                            @panic("not implemented yet.");
+                            // @panic("not implemented yet.");
                         },
 
                         .long => for (coded.ast_node.arguments) |_| {
@@ -1098,7 +1098,9 @@ const Analyzer = struct {
             std.debug.assert(hub_offset >= segment_end_hub_offset);
 
             switch (mnemonic) {
-                .assert, .@"align" => continue :seq_loop,
+                .assert => continue :seq_loop,
+
+                .@"align" => {},
 
                 .cogexec, .lutexec, .hubexec => {
                     const new_mode: eval.ExecMode = switch (mnemonic) {
@@ -1144,8 +1146,9 @@ const Analyzer = struct {
             logger.debug("emit {s}", .{@tagName(mnemonic)});
 
             switch (mnemonic) {
+                .@"align" => {},
+
                 .assert,
-                .@"align",
                 .cogexec,
                 .lutexec,
                 .hubexec,
