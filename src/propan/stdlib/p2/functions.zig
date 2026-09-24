@@ -171,7 +171,7 @@ pub const functions = define.namespace(.{
         pub const docs = "Computes the number of clock periods required to delay a certain amount of time based on a 'clk' frequency.";
 
         pub const params = .{
-            .clk = .{ .docs = "The frequency used to calculated the number of clock periods.", .default = 0 },
+            .clk = .{ .docs = "The frequency used to calculated the number of clock periods." },
             .s = .{ .docs = "The integer number of seconds to wait.", .default = 0 },
             .ms = .{ .docs = "The integer number of milli seconds to wait.", .default = 0 },
             .us = .{ .docs = "The integer number of micro seconds to wait.", .default = 0 },

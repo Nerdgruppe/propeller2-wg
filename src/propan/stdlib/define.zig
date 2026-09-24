@@ -170,6 +170,7 @@ fn derive_value_type(comptime T: type) Parameter.Type {
 
     const info = @typeInfo(T);
     switch (info) {
+        // TODO: Encode additional type information like range, enum values, ...
         .int, .bool => return .int,
         .@"enum" => return .enumerator,
         else => @compileError("unsupported parameter type " ++ @typeName(T)),
