@@ -322,11 +322,11 @@ pub fn main(init: std.process.Init) !u8 {
         var file = try std.Io.Dir.cwd().createFileAtomic(init.io, cli.options.output, .{ .replace = true });
         defer file.deinit(init.io);
 
-        try emit.emit(init.io, allocator, file.file, last_module.?.*, output_format);
+        try emit.emit(init.io, allocator, file.file, modules[0..module_count], output.items, output_format);
 
         try file.replace(init.io);
     } else {
-        try emit.emit(init.io, allocator, std.Io.File.stdout(), last_module.?.*, output_format);
+        try emit.emit(init.io, allocator, std.Io.File.stdout(), modules[0..module_count], output.items, output_format);
     }
 
     return 0;
