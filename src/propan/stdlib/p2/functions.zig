@@ -65,6 +65,39 @@ pub const PinField = packed struct(u11) {
     extra_pins: u5,
 };
 
+pub const AdcMode = enum(u2) {
+    sample = 0,
+    sinc2 = 1,
+    sinc3 = 2,
+    bits = 3,
+};
+
+pub const ScopeFilter = enum(u2) {
+    tukey68 = 0,
+    tukey45 = 1,
+    hann28 = 2,
+};
+
+pub const MeasureSensitivity = enum(u2) {
+    high = 0,
+    rise = 1,
+    edge = 2,
+};
+
+pub const PinEvent = enum(u3) {
+    rise = 1,
+    fall = 2,
+    change = 3,
+    low = 4,
+    high = 6,
+};
+
+pub const LockEvent = enum(u2) {
+    rise = 1,
+    fall = 2,
+    change = 3,
+};
+
 pub const OptionalBoolean = enum {
     unset,
     true,
@@ -288,7 +321,7 @@ pub const functions = define.namespace(.{
         }),
 
         .clockMode = define.function(struct {
-            pub const docs = "Computes a hub clock configuration";
+            pub const docs = "Compute a HUBSET clock word. Enable a crystal/PLL while still using RCFAST, allow it to stabilize, then select XI or PLL as the source.";
 
             pub const params = .{
                 .pll = .{ .docs = "If true, the PLL will be enabled" },
@@ -307,6 +340,11 @@ pub const functions = define.namespace(.{
                 xi: CrystalMode,
                 sysclk: ClockSource,
             ) !u32 {
+                if ((pll or sysclk == .xi) and xi == .float)
+                    return error.InvalidArg;
+                if (sysclk == .pll and !pll)
+                    return error.InvalidArg;
+
                 const vco_div: u4 = switch (out_div) {
                     2 => 0,
                     4 => 1,
@@ -322,7 +360,7 @@ pub const functions = define.namespace(.{
                     24 => 11,
                     26 => 12,
                     28 => 13,
-                    3 => 14,
+                    30 => 14,
                     1 => 15,
                     else => return error.InvalidArg, // TODO: Diagnostic
                 };
@@ -337,9 +375,176 @@ pub const functions = define.namespace(.{
                 });
             }
         }),
+
+        .fifoConfig = define.function(struct {
+            pub const docs = "Pack RDFAST/WRFAST D: 64-byte wrap blocks in bits 13:0 and optional no-wait in bit 31. Zero blocks disables wrapping. With no-wait, allow setup time before using the FIFO.";
+            pub const params = .{
+                .blocks = .{ .docs = "Number of 64-byte blocks before wrapping; zero disables wrapping." },
+                .no_wait = .{ .docs = "Return without waiting for FIFO setup.", .default = false },
+            };
+
+            pub fn invoke(blocks: u14, no_wait: bool) u32 {
+                return @as(u32, blocks) | (@as(u32, @intFromBool(no_wait)) << 31);
+            }
+        }),
     }),
 
     .SmartPin = define.namespace(.{
+        .Pulse = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack pulse-mode X: base period in bits 15:0 and high-time threshold in bits 31:16.";
+                pub const params = .{
+                    .base = .{ .docs = "Base period in clocks." },
+                    .threshold = .{ .docs = "High-time comparison threshold." },
+                };
+                pub fn invoke(base: u16, threshold: u16) u32 {
+                    return pack_x_halves(base, threshold);
+                }
+            }),
+        }),
+
+        .Pwm = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack PWM triangle, sawtooth, or SMPS X: base period and frame count.";
+                pub const params = .{
+                    .base = .{ .docs = "Clocks per base period." },
+                    .frame = .{ .docs = "Base periods per PWM frame." },
+                };
+                pub fn invoke(base: u16, frame: u16) u32 {
+                    return pack_x_halves(base, frame);
+                }
+            }),
+        }),
+
+        .Nco = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack NCO frequency or duty X: base period and initial phase.";
+                pub const params = .{
+                    .base = .{ .docs = "Clocks per base period." },
+                    .phase = .{ .docs = "Initial upper 16 phase bits." },
+                };
+                pub fn invoke(base: u16, phase: u16) u32 {
+                    return pack_x_halves(base, phase);
+                }
+            }),
+        }),
+
+        .SyncTx = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack synchronous TX X: word length and optional start-stop mode.";
+                pub const params = .{
+                    .bits = .{ .docs = "Bits per word, 1 through 32.", .min = 1, .max = 32 },
+                    .start_stop = .{ .docs = "Use start-stop instead of continuous mode.", .default = false },
+                };
+                pub fn invoke(bits: u6, start_stop: bool) u32 {
+                    return (bits - 1) | (@as(u32, @intFromBool(start_stop)) << 5);
+                }
+            }),
+        }),
+
+        .SyncRx = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack synchronous RX X: word length and input sample position.";
+                pub const params = .{
+                    .bits = .{ .docs = "Bits per word, 1 through 32.", .min = 1, .max = 32 },
+                    .on_edge = .{ .docs = "Sample on the registered B edge instead of just before it.", .default = false },
+                };
+                pub fn invoke(bits: u6, on_edge: bool) u32 {
+                    return (bits - 1) | (@as(u32, @intFromBool(on_edge)) << 5);
+                }
+            }),
+        }),
+
+        .Adc = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack ADC X: acquisition mode in bits 5:4 and log2 sample period in bits 3:0.";
+                pub const params = .{
+                    .mode = .{ .docs = "Sampling, SINC2, SINC3, or raw bit capture." },
+                    .period_exp = .{ .docs = "Log2 of the initial sample period in clocks." },
+                };
+                pub fn invoke(mode: AdcMode, period_exp: u4) !u32 {
+                    const max_exp: u4 = switch (mode) {
+                        .sample, .sinc2 => 13,
+                        .sinc3 => 9,
+                        .bits => 5,
+                    };
+                    if (period_exp > max_exp) return error.InvalidArg;
+                    return (@as(u32, @intFromEnum(mode)) << 4) | period_exp;
+                }
+            }),
+        }),
+
+        .Scope = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack ADC scope X: B trigger in bits 15:10, A trigger in bits 7:2, and filter in bits 1:0.";
+                pub const params = .{
+                    .b = .{ .docs = "B trigger level, 0 through 63." },
+                    .a = .{ .docs = "A trigger level, 0 through 63." },
+                    .filter = .{ .docs = "Scope sample filter." },
+                };
+                pub fn invoke(b: u6, a: u6, filter: ScopeFilter) u32 {
+                    return (@as(u32, b) << 10) | (@as(u32, a) << 2) | @intFromEnum(filter);
+                }
+            }),
+
+            .pipeConfig = define.function(struct {
+                pub const docs = "Pack SETSCP D for a four-pin-aligned scope block.";
+                pub const params = .{
+                    .base_pin = .{ .docs = "First pin of the four-pin block, 0, 4, ..., 60." },
+                    .enabled = .{ .docs = "Enable the scope data pipe.", .default = true },
+                };
+                pub fn invoke(base_pin: u6, enabled: bool) !u32 {
+                    if (base_pin % 4 != 0) return error.InvalidArg;
+                    return @as(u32, base_pin) | (@as(u32, @intFromBool(enabled)) << 6);
+                }
+            }),
+        }),
+
+        .Usb = define.namespace(.{
+            .config = define.function(struct {
+                pub const docs = "Pack USB pair X for the lower even pin: host/full-speed flags and a 16-bit clock fraction.";
+                pub const params = .{
+                    .baud = .{ .docs = "USB symbol rate in symbols per second." },
+                    .clk = .{ .docs = "System clock in Hz." },
+                    .host = .{ .docs = "Select host mode.", .default = false },
+                    .full_speed = .{ .docs = "Select full-speed instead of low-speed.", .default = false },
+                };
+                pub fn invoke(baud: u32, clk: u32, host: bool, full_speed: bool) !u32 {
+                    if (baud == 0 or clk == 0 or @as(u64, baud) * 4 >= clk)
+                        return error.InvalidArg;
+                    const fraction = (@as(u64, baud) << 16) / clk;
+                    if (fraction == 0) return error.InvalidArg;
+                    return @as(u32, @intCast(fraction)) |
+                        (@as(u32, @intFromBool(full_speed)) << 14) |
+                        (@as(u32, @intFromBool(host)) << 15);
+                }
+            }),
+        }),
+
+        .Measure = define.namespace(.{
+            .eventY = define.function(struct {
+                pub const docs = "Pack P_EVENTS_TICKS Y: A-input sensitivity and optional timeout mode.";
+                pub const params = .{
+                    .sensitivity = .{ .docs = "Count A highs, rises, or edges." },
+                    .timeout = .{ .docs = "Raise IN after X clocks without an event.", .default = false },
+                };
+                pub fn invoke(sensitivity: MeasureSensitivity, timeout: bool) u32 {
+                    return @as(u32, @intFromEnum(sensitivity)) | (@as(u32, @intFromBool(timeout)) << 2);
+                }
+            }),
+
+            .periodY = define.function(struct {
+                pub const docs = "Pack measurement Y for P_PERIODS_* and P_COUNTER_*: select rises or either edge for A and B.";
+                pub const params = .{
+                    .a_edge = .{ .docs = "Trigger A on either edge instead of rises.", .default = false },
+                    .b_edge = .{ .docs = "Trigger B on either edge instead of rises.", .default = false },
+                };
+                pub fn invoke(a_edge: bool, b_edge: bool) u32 {
+                    return (@as(u32, @intFromBool(a_edge)) << 1) | @intFromBool(b_edge);
+                }
+            }),
+        }),
+
         .UartTx = define.namespace(.{
             .config = config_uart_rx_tx,
         }),
@@ -348,7 +553,49 @@ pub const functions = define.namespace(.{
             .config = config_uart_rx_tx,
         }),
     }),
+
+    .Event = define.namespace(.{
+        .pin = define.function(struct {
+            pub const docs = "Pack a pin event selector for SETSE1 through SETSE4.";
+            pub const params = .{
+                .pin = .{ .docs = "Pin number, 0 through 63." },
+                .kind = .{ .docs = "Rise, fall, change, low, or high." },
+            };
+            pub fn invoke(pin: u6, kind: PinEvent) u32 {
+                return (@as(u32, @intFromEnum(kind)) << 6) | pin;
+            }
+        }),
+
+        .lock = define.function(struct {
+            pub const docs = "Pack a hub-lock event selector for SETSE1 through SETSE4.";
+            pub const params = .{
+                .lock = .{ .docs = "Hub lock number, 0 through 15." },
+                .kind = .{ .docs = "Rise, fall, or change." },
+            };
+            pub fn invoke(lock: u4, kind: LockEvent) u32 {
+                return (@as(u32, @intFromEnum(kind)) << 4) | lock;
+            }
+        }),
+
+        .lut = define.function(struct {
+            pub const docs = "Pack a LUT read/write event selector for addresses $1FC through $1FF.";
+            pub const params = .{
+                .address = .{ .docs = "LUT address $1FC through $1FF.", .min = 0x1FC, .max = 0x1FF },
+                .write = .{ .docs = "Select writes instead of reads.", .default = false },
+                .companion = .{ .docs = "Observe the odd/even companion cog instead of this cog.", .default = false },
+            };
+            pub fn invoke(address: u9, write: bool, companion: bool) u32 {
+                return @as(u32, address & 3) |
+                    (@as(u32, @intFromBool(write)) << 2) |
+                    (@as(u32, @intFromBool(companion)) << 3);
+            }
+        }),
+    }),
 });
+
+fn pack_x_halves(low: u16, high: u16) u32 {
+    return @as(u32, low) | (@as(u32, high) << 16);
+}
 
 const config_uart_rx_tx = define.function(struct {
     pub const docs = "Computes a UART smart mode configuration for register X";
@@ -360,26 +607,36 @@ const config_uart_rx_tx = define.function(struct {
     };
 
     pub fn invoke(baud: u64, clk: u64, bits: u6) !u32 {
-        std.debug.assert(bits >= 1 and bits <= 32);
+        if (baud == 0 or clk == 0)
+            return error.InvalidArg;
 
-        // X[31:16] establishes the number of clocks in a bit period, and in case X[31:26] is zero, X[15:10]
-        // establishes the number of fractional clocks in a bit period. The X bit period value can be simply computed
-        // as: (clocks * $1_0000) & $FFFFFC00. For example, 7.5 clocks would be $00078000, and 33.33 clocks
-        // would be $00215400.
-
-        // Use float here to support fractional divisions:
-        const clk_f: f64 = @floatFromInt(clk);
-        const baud_f: f64 = @floatFromInt(baud);
-
-        const clocks_f = clk_f / baud_f;
-
-        const fract_clocks_f = clocks_f * 0x1_0000;
-        if (fract_clocks_f < 0 or fract_clocks_f > std.math.maxInt(u32))
+        // X[31:16] is the whole clocks per bit; X[15:10] supplies fractional clocks.
+        const scaled = (@as(u128, clk) << 16) / baud;
+        if (scaled == 0 or scaled > std.math.maxInt(u32))
             return error.Overflow;
-
-        const fract_clocks: u32 = @intFromFloat(fract_clocks_f);
-
-        // Cast back after multiplying with the hex value:
-        return (fract_clocks & 0xFFFFFC00) | (bits - 1);
+        return (@as(u32, @intCast(scaled)) & 0xFFFF_FC00) | (bits - 1);
     }
 });
+
+test "invalid P2 configuration words are rejected" {
+    try expect_invalid_config("Hub.clockMode", &.{
+        .int(0), .int(1), .int(1), .int(3), .enumerator("float"), .enumerator("rcfast"),
+    });
+    try expect_invalid_config("Hub.clockMode", &.{
+        .int(0), .int(1), .int(1), .int(1), .enumerator("float"), .enumerator("pll"),
+    });
+    try expect_invalid_config("SmartPin.UartTx.config", &.{ .int(0), .int(80_000_000), .int(8) });
+    try expect_invalid_config("SmartPin.Usb.config", &.{ .int(20_000_000), .int(80_000_000), .int(1), .int(1) });
+    try expect_invalid_config("SmartPin.Adc.config", &.{ .enumerator("bits"), .int(6) });
+    try expect_invalid_config("SmartPin.Scope.pipeConfig", &.{ .int(3), .int(1) });
+    try expect_invalid_config("Event.lut", &.{ .int(0x1FB), .int(0), .int(0) });
+    try expect_invalid_config("SmartPin.SyncTx.config", &.{ .int(0), .int(0) });
+
+    const uart = functions.get("SmartPin.UartTx.config").?;
+    try std.testing.expectError(error.Overflow, uart.invoke(undefined, &.{ .int(1), .int(100_000_000), .int(8) }));
+}
+
+fn expect_invalid_config(name: []const u8, args: []const eval.Value) !void {
+    const function = functions.get(name).?;
+    try std.testing.expectError(error.InvalidArg, function.invoke(undefined, args));
+}

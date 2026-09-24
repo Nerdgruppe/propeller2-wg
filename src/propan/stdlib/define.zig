@@ -129,6 +129,7 @@ pub fn function(comptime T: type) Function {
 pub const Namespace = std.StaticStringMap(Function);
 
 pub fn namespace(comptime ns: anytype) Namespace {
+    @setEvalBranchQuota(10_000);
     const Container = @TypeOf(ns);
     const info = @typeInfo(Container).@"struct";
 
