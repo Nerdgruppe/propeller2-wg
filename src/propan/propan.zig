@@ -32,6 +32,7 @@ const CliArgs = struct {
     format: emit.BinaryFormat = .flat,
     @"fill-byte": u8 = 0x00,
     @"list-file": []const u8 = "",
+    @"render-stdlib-docs": []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
@@ -55,6 +56,7 @@ const CliArgs = struct {
             .format = "Selects the binary format to use",
             .@"fill-byte" = "The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.",
             .@"list-file" = "Writes a list file to the given path. Use '-' to write to stdout.",
+            .@"render-stdlib-docs" = "Renders the standard library documentation as an HTML file",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -77,6 +79,26 @@ pub fn main(init: std.process.Init) !u8 {
 
     var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
     defer cli.deinit();
+
+    if (cli.options.@"render-stdlib-docs".len > 0) {
+        var file = if (std.mem.eql(u8, cli.options.@"render-stdlib-docs", "-"))
+            std.Io.File.stdout()
+        else
+            try std.Io.Dir.cwd().createFile(init.io, cli.options.@"render-stdlib-docs", .{});
+        defer file.close(init.io);
+
+        var buffer: [8192]u8 = undefined;
+        var fileWriter = file.writer(init.io, &buffer);
+
+        try stdlib.render.write_html(
+            &fileWriter.interface,
+            stdlib.p2.constants,
+            stdlib.p2.functions,
+        );
+
+        try fileWriter.interface.flush();
+        return 0;
+    }
 
     if (cli.options.@"test-mode" != null) {
         global_log_level = .err; // mute warnings in test mode
@@ -322,11 +344,11 @@ pub fn main(init: std.process.Init) !u8 {
         var file = try std.Io.Dir.cwd().createFileAtomic(init.io, cli.options.output, .{ .replace = true });
         defer file.deinit(init.io);
 
-        try emit.emit(init.io, allocator, file.file, last_module.?.*, output_format);
+        try emit.emit(init.io, allocator, file.file, modules[0..module_count], output.items, output_format);
 
         try file.replace(init.io);
     } else {
-        try emit.emit(init.io, allocator, std.Io.File.stdout(), last_module.?.*, output_format);
+        try emit.emit(init.io, allocator, std.Io.File.stdout(), modules[0..module_count], output.items, output_format);
     }
 
     return 0;

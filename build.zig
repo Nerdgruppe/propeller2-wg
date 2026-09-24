@@ -161,6 +161,70 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run_tests_step.step);
     }
 
+    const flat_checker = b.addExecutable(.{
+        .name = "check-flat-output",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tests/propan/regressions/check-flat-output.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+
+    // Flat output must preserve the configured byte in segment gaps.
+    {
+        const expected_files = b.addWriteFiles();
+        const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA });
+
+        const run = b.addRunArtifact(propan_exe);
+        run.addArg("--format=flat");
+        run.addArg("--fill-byte=126");
+        const actual = run.addPrefixedOutputFileArg("--output=", "fill-byte.bin");
+        run.addFileArg(b.path("tests/propan/regressions/fill-byte.propan"));
+
+        const compare = b.addRunArtifact(flat_checker);
+        compare.addFileArg(expected);
+        compare.addFileArg(actual);
+        test_step.dependOn(&compare.step);
+    }
+
+    // Later source files overwrite only the bytes they emit.
+    {
+        const expected_files = b.addWriteFiles();
+        const expected = expected_files.add("multi-file.bin", &.{ 3, 2 });
+
+        const run = b.addRunArtifact(propan_exe);
+        run.addArg("--format=flat");
+        const actual = run.addPrefixedOutputFileArg("--output=", "multi-file.bin");
+        run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
+        run.addFileArg(b.path("tests/propan/regressions/multi-file-second.propan"));
+
+        const compare = b.addRunArtifact(flat_checker);
+        compare.addFileArg(expected);
+        compare.addFileArg(actual);
+        test_step.dependOn(&compare.step);
+    }
+
+    // JSON metadata includes every input module with distinct segment IDs.
+    {
+        const run = b.addRunArtifact(propan_exe);
+        run.addArg("--format=json");
+        const actual = run.addPrefixedOutputFileArg("--output=", "multi-file.json");
+        run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
+        run.addFileArg(b.path("tests/propan/regressions/multi-file-second.propan"));
+
+        const checker = b.addExecutable(.{
+            .name = "check-multi-file-json",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("tests/propan/regressions/check-multi-file-json.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        const check = b.addRunArtifact(checker);
+        check.addFileArg(actual);
+        test_step.dependOn(&check.step);
+    }
+
     // Exports:
 
     if (with_flexspin) blk: {
@@ -289,10 +353,12 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/ambigious-selection.propan",
     "tests/propan/sema/basic-label-addressing.propan",
     "tests/propan/sema/operators.propan",
+    "tests/propan/sema/unary-plus.propan",
+    "tests/propan/sema/operator-associativity.propan",
     "tests/propan/sema/value-hint-converter.propan",
     "tests/propan/sema/stdlib.propan",
     "tests/propan/sema/char-literals.propan",
-    // TODO: "tests/propan/sema/align.propan",
+    "tests/propan/sema/align.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{

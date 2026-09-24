@@ -58,12 +58,48 @@
 .assert 0x0000_00F0 == Hub.clockMode(pll=#off, in_div=1,  mul=1,   out_div=1, xi=#float, sysclk=#rcfast) // set 20 MHz+ (RCFAST) mode
 .assert 0x019D_28F8 == Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#rcfast) // enable crystal+PLL, stay in RCFAST mode
 .assert 0x019D_28FB == Hub.clockMode(pll=#on,  in_div=40, mul=297, out_div=1, xi=#15pF,  sysclk=#pll)    // now switch to PLL running at 148.5 MHz
+.assert 0x0000_00E0 == Hub.clockMode(pll=#off, in_div=1, mul=1, out_div=30, xi=#float, sysclk=#rcfast) // VCO / 30 selector
+.assert 0x0000_0010 == Hub.fifoConfig(blocks=16)
+.assert 0x8000_0010 == Hub.fifoConfig(blocks=16, no_wait=#on)
+
+// WRPIN fields remain composable; both official output-polarity names are available.
+.assert P_TRUE_OUTPUT == P_TRUE_OUT
+.assert P_INVERT_OUTPUT == P_INVERT_OUT
+.assert 0x0006_807E == P_SCHMITT_A | P_INVERT_IN | P_OE | P_ASYNC_RX
+
+// WXPIN and WYPIN configuration words.
+.assert 0x0002_0003 == SmartPin.Pulse.config(base=3, threshold=2)
+.assert 0x0064_000A == SmartPin.Pwm.config(base=10, frame=100)
+.assert 0x1234_0001 == SmartPin.Nco.config(base=1, phase=0x1234)
+.assert 0x0000_0007 == SmartPin.SyncTx.config(bits=8)
+.assert 0x0000_0027 == SmartPin.SyncTx.config(bits=8, start_stop=#on)
+.assert 0x0000_002F == SmartPin.SyncRx.config(bits=16, on_edge=#on)
+.assert 0x0000_0007 == SmartPin.Adc.config(mode=#sample, period_exp=7)
+.assert 0x0000_0017 == SmartPin.Adc.config(mode=#sinc2, period_exp=7)
+.assert 0x0000_0027 == SmartPin.Adc.config(mode=#sinc3, period_exp=7)
+.assert 0x0000_0035 == SmartPin.Adc.config(mode=#bits, period_exp=5)
+.assert 0x0000_A856 == SmartPin.Scope.config(b=42, a=21, filter=#hann28)
+.assert 0x0000_004C == SmartPin.Scope.pipeConfig(base_pin=12)
+.assert 0x0000_000C == SmartPin.Scope.pipeConfig(base_pin=12, enabled=#off)
+.assert 0x0000_E666 == SmartPin.Usb.config(baud=12_000_000, clk=80_000_000, host=#on, full_speed=#on)
+.assert 0x0000_0006 == SmartPin.Measure.eventY(sensitivity=#edge, timeout=#on)
+.assert 0x0000_0003 == SmartPin.Measure.periodY(a_edge=#on, b_edge=#on)
+
+// SETSE event selectors.
+.assert 0x047 == Event.pin(pin=7, kind=#rise)
+.assert 0x0BF == Event.pin(pin=63, kind=#fall)
+.assert 0x1B8 == Event.pin(pin=56, kind=#high)
+.assert 0x013 == Event.lock(lock=3, kind=#rise)
+.assert 0x03F == Event.lock(lock=15, kind=#change)
+.assert 0x000 == Event.lut(address=0x1FC)
+.assert 0x00F == Event.lut(address=0x1FF, write=#on, companion=#on)
 
 
 // Test the two examples from the datasheet:
 .assert 0x0007_8007 == SmartPin.UartTx.config(baud=2, bits=8, clk=15) // 7.5 clocks must be 0x00078000+7
 .assert 0x0007_8007 == SmartPin.UartTx.config(baud=2, clk=15) // bits should default to 8
 .assert 0x0021_540F == SmartPin.UartRx.config(baud=3, bits=16, clk=100) // 33.33 clocks must be 0x00215400+15
+.assert 0x0007_8007 == SmartPin.UartTx.config(baud=2, bits=8, clk=15) // exact integer fraction
 
 
 .assert cogaddr(regoffset(reg1, 1)) == cogaddr(reg2) // TODO: Implement peer type resolution between reg and label
