@@ -110,7 +110,7 @@ The difference must be divisible by four. `@` requires a current location, so it
 
 Prefix and postfix increment/decrement operators are not general integer increment/decrement operators. They construct PTRA/PTRB pointer-expression update modes and reject ordinary non-pointer values.
 
-See the future pointer-addressing reference for encoding ranges and hardware behavior.
+See [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md) for encoded ranges and pre/post-update behavior.
 
 ## Indexing
 
@@ -120,7 +120,7 @@ See the future pointer-addressing reference for encoding ranges and hardware beh
 - the index must be an integer;
 - applying a second index to a pointer expression is diagnosed.
 
-The exact legal encoded range is checked later during pointer encoding.
+The exact legal encoded range is checked later during pointer encoding and documented in [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md).
 
 ## Address conversion and encoding-control functions
 
@@ -135,9 +135,9 @@ These functions are implemented directly by semantic analysis:
 | `aug(value)` | requests operand augmentation; must be the root expression |
 | `nrel(value)` | forces absolute rather than automatically relative addressing; must be the root expression |
 
-`cogaddr()`/`localaddr()` also contain register-handling paths. `lutaddr()` rejects register values. The `localaddr(register)` path currently emits an error indicating it is only valid in COG-exec scope while also containing a TODO for execution-mode validation; treat register use here as unsettled behavior rather than a stable interface.
+`cogaddr()`/`localaddr()` also contain register-handling paths. `lutaddr()` rejects register values. The current `localaddr(register)` path always emits an error saying it is only valid for registers in COG-exec scope; an implementation TODO suggests intended COG-scope handling that is not currently implemented. The current behavior and open intent are tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
 
-The P2 standard-library functions (`abs`, rotates, floating helpers, clock helpers, etc.) are separate user-function definitions loaded from `src/propan/stdlib/`; their complete signatures and edge behavior are not yet covered by this page.
+The complete active callable namespace is documented in [/projects/propan/stdlib.md](/projects/propan/stdlib.md). The six address/encoding helpers above are semantic builtins; the remaining currently loaded callable functions are the P2 definitions described there. The current analyzer does not expose a separate generic Spin-style `abs`/rotate/floating-helper family.
 
 ## Type checking and failure behavior
 
