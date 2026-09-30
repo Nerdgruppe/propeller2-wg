@@ -39,3 +39,7 @@ source_confidence: "high"
 - Recorded that the six core address/encoding helpers are semantic builtins rather than generated stdlib functions, and that the current analyzer exposes no additional Spin-style `abs`/rotate/floating-point builtin set.
 - Documented the existing `--render-stdlib-docs` path as the preferred exhaustive generated reference mechanism.
 - Updated `/TODO.md` to mark the standard-library, function-type, and standard-library enumerator documentation tranche complete.
+- Added the current CLI/output reference covering multi-file input, overlay order, flat/JSON formats, fill-byte behavior, list files, diagnostics, and exit status.
+- Documented that positional input modules are analyzed independently and later overlapping segment writes overwrite earlier flat-output bytes because cross-module overlap rejection is currently absent.
+- Recorded that `.propan` is conventional but not CLI-enforced and that no source-level include/import mechanism is currently implemented.
+- Updated `/TODO.md` to mark the source-file/output/tooling tranche and cross-module overlay documentation complete.

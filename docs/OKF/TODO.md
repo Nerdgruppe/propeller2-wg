@@ -60,7 +60,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Classify `.huborg`, `.cogorg`, `.lutorg`, `.org`, `.reserve`, `.regspace`, `.data`, and related names as non-current until semantic support is independently verified.
 - [x] Document current cursor relocation behavior exposed through exec-mode directives and the warning on backwards HUB movement.
 - [ ] Document COG/LUT register allocation and its relationship to HUB emission in enough detail for reserved-register/data workflows.
-- [ ] Explain how multiple source files contribute segments and how overlapping emitted ranges are handled across modules.
+- [x] Explain how multiple source files contribute segments and how overlapping emitted ranges are handled across modules.
 - [ ] Include one complete worked layout combining COG code, LUT code if supported, HUB data, and reserved registers.
 - [ ] Determine the intended future status of the broader segment model described in `tests/propan/sema/segment_management.propan`.
 - [ ] Decide whether layout directives should be able to use ordinary user `const` values; current evaluation order makes those values unavailable during layout.
@@ -108,12 +108,12 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 ## 11. Source-file and assembler behavior
 
-- [ ] Document how multiple input files are assembled and overlaid into a single output.
-- [ ] Document flat and JSON output formats and the role of `--fill-byte`.
-- [ ] Document list-file behavior sufficiently for users interpreting addresses and segment ownership.
-- [ ] Document warning versus error behavior and assembler exit status at a user-facing level.
-- [ ] Document the expected file extension and any include/import mechanism if one exists; explicitly state if source inclusion is not supported.
-- [ ] Explicitly document that segment-overlap rejection is currently disabled and distinguish intended future validation from current output behavior.
+- [x] Document how multiple input files are assembled and overlaid into a single output.
+- [x] Document flat and JSON output formats and the role of `--fill-byte`.
+- [x] Document list-file behavior sufficiently for users interpreting addresses and segment ownership.
+- [x] Document warning versus error behavior and assembler exit status at a user-facing level.
+- [x] Document the expected file extension and include/import behavior: `.propan` is conventional but not CLI-enforced, and no source inclusion mechanism is currently implemented.
+- [x] Explicitly document that segment-overlap rejection is currently absent in output composition and distinguish observed overwrite behavior from intended future validation.
 
 ## 12. Examples and migration aids
 
@@ -161,7 +161,7 @@ Current/planned compact set:
 - `/projects/propan/instruction-syntax.md` — created
 - `/projects/propan/pointer-addressing.md` — created
 - `/projects/propan/stdlib.md` — created
-- `/projects/propan/tooling.md`
+- `/projects/propan/tooling.md` — created
 - `/projects/propan/pasm2-differences.md`
 - `/projects/propan/examples.md`
 - `/projects/propan/documentation-discrepancies.md` — created
