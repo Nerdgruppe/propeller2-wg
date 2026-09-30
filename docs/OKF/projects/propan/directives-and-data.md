@@ -23,6 +23,14 @@ The current semantic mnemonic table defines these assembler directives/pseudo-in
 
 Mnemonic lookup is case-insensitive, so `long`, `LONG`, and mixed-case spellings resolve to the same directive.
 
+### Conditions and effects are not directive modifiers
+
+The parser uses the same instruction-shaped line form for directives and generated P2 instructions, so it can attach an `if(...)`/`return` condition or a recognized `:effect` token to a directive AST node.
+
+Current directive semantic paths do not validate or apply those fields. For example, a condition on `BYTE` does not make the emitted byte conditional, and an effect on `.assert` has no assertion meaning. Such modifiers are currently ignored rather than rejected.
+
+Do not use conditions/effects on assembler directives. The implementation finding is tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md); generated-instruction condition/effect syntax is documented in [/projects/propan/instruction-syntax.md](/projects/propan/instruction-syntax.md).
+
 ## Data emission: `BYTE`, `WORD`, `LONG`
 
 General form:

@@ -26,7 +26,7 @@ Examples:
 ADD DIRA, 1
 ADD DIRA, 1 :wc
 if(!Z) ADD DIRA, 1 :wcz
-return JMPRET PA, target
+return MOV DIRA, 0
 ```
 
 The mnemonic is parsed as an identifier and looked up case-insensitively during semantic analysis. Operand expressions use the ordinary Propan expression grammar. An effect, when present, is a final `:name` token after the operands.
@@ -151,9 +151,9 @@ An enumerator is written as:
 
 The tokenizer permits identifier-suffix characters after `#`, including a leading digit, so forms such as `#15pF` can be valid enumerator tokens.
 
-Enumerator names are not global integer constants. For an encoded instruction operand of type `enumeration`, the selected generated variant provides a lookup table mapping legal names to encoded numeric values. A name that is not present in that operand's table is rejected.
+For encoded instruction operands of type `enumeration`, the selected generated variant provides a lookup table mapping legal names to encoded numeric values. A name that is not present in that operand's table is rejected.
 
-This is distinct from ordinary symbols and from builtin constants.
+Enumerators are also used by typed standard-library function parameters. Their complete target-specific namespaces and function use sites are covered by the separate standard-library work; they are not global integer symbols.
 
 ## Address operands and automatic relative selection
 

@@ -17,7 +17,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document identifier syntax completely, including the current absence of special local-label scoping and special identifier forms.
 - [x] Document decimal, hexadecimal, binary, quaternary, and implemented octal integer literals plus `_` separators.
 - [x] Document character literals, string literals, escape sequences, and encoding expectations currently implemented by the parser.
-- [ ] Document enumerator/value-token syntax such as `#15pF` and explain where such values are defined/usable.
+- [ ] Document enumerator/value-token syntax such as `#15pF` and explain where such values are defined/usable; encoded-instruction enumerators are now covered, but standard-library enum namespaces/use sites remain.
 - [x] Document integer width, signedness model, wrapping arithmetic, shift limits, and narrowing/truncation behavior used by semantic evaluation.
 - [x] Document whether boolean values are user-visible language concepts or integer results; current implementation has no separate boolean semantic type.
 - [ ] Verify and document the exact recovery result for unknown escape sequences; current code inspection suggests the escaped character may be dropped.
@@ -48,7 +48,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Define a label's tagged/native address and how its containing segment/execution mode affects interpretation.
 - [x] Define the current semantics and legal contexts of `label`, `&label`, `*label`, `@label`, `hubaddr(label)`, `cogaddr(label)`, `lutaddr(label)`, and `localaddr(label)`.
 - [x] Explain HUB byte addresses versus COG/LUT long/register addresses and where conversion occurs.
-- [ ] Document relative versus absolute branch/call selection and augmentation behavior completely, including `aug()`/`nrel()` and automatic instruction-selection rules.
+- [ ] Document relative versus absolute branch/call selection and augmentation behavior completely. Generic `address` auto-selection plus `aug()`/`nrel()` are now documented; PC-relative register-or-immediate/CALLD-specific behavior remains.
 - [x] Document current warnings/errors for crossing execution modes or segments, including explicitly incomplete segment validation.
 - [x] Provide examples that contrast local and HUB interpretations of the same label.
 - [ ] Resolve/document the intended behavior of `localaddr(register)`; current code emits an error while also containing a TODO about execution-mode validation.
@@ -73,17 +73,19 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Clarify preferred current syntax and state that no current compatibility aliases for the implemented directive set have been established.
 - [x] Document data emission endianness and current string/enumerator emission limitations.
 - [ ] Decide intended string-data syntax; current direct `BYTE`/`WORD`/`LONG` string emission reaches a panic rather than expanding or diagnosing the value.
+- [ ] Decide whether conditions/effects on assembler directives should be rejected or defined; they are currently parsed and then ignored.
 
 ## 8. Instruction syntax
 
-- [ ] State the full semantic instruction grammar: optional condition, mnemonic, operands, optional effects.
-- [ ] Document all condition forms and their exact P2 condition-code mapping.
-- [ ] Document all effect suffixes (`:wc`, `:wz`, `:wcz`, TESTxx effects, aliases, etc.) and which instruction classes permit them.
-- [ ] Define destination/source operand categories used by Propan and map them to PASM2 terminology.
-- [ ] Document immediate values, addresses, pointer-register forms, augmented immediates, and special-register operands.
+- [x] State the full semantic instruction grammar: optional condition, mnemonic, operands, optional effects.
+- [x] Document all condition forms and their exact current P2 condition-code mapping.
+- [x] Document all accepted effect suffixes and aliases, the main generated effect classes, and per-variant effect validation.
+- [x] Define destination/source operand categories used by Propan and map them to PASM2 terminology.
+- [x] Document immediate values, address operands, pointer-expression/pointer-register forms, augmentation, enumerated operands, and special-register selectors at the generic instruction-model level.
 - [ ] Document the ambiguous instruction families where selection rules matter, especially CALLD and pointer-register cases.
-- [ ] Decide whether the instruction reference should be generated from the assembler's instruction database; prefer generated/verifiable material over a manually duplicated 400+ instruction table.
+- [x] Decide that the complete instruction reference should be generated/verified from the assembler instruction database rather than maintained as a handwritten 400+ instruction table.
 - [ ] Add or generate a concise list of Propan-specific instruction-form deviations from canonical PASM2.
+- [ ] Verify the intended semantics/support of explicitly conditioned `NOP`; no-condition NOP is currently special-cased to condition code `0000`.
 
 ## 9. Pointer addressing
 
@@ -129,7 +131,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Ensure an agent can determine the current HUB/COG/LUT address-domain model without reading `sema.zig`.
 - [x] Ensure all currently supported assembler directives are discoverable from documentation alone.
 - [x] Ensure preferred current directive syntax is explicit where historical/proposed alternatives exist.
-- [ ] Add compact tables for conditions, effects, pointer encodings, and PASM2 differences; grammar, operators, address helpers, and directives are already tabulated.
+- [ ] Add compact tables for pointer encodings and PASM2 differences; grammar, operators, address helpers, directives, conditions, and effects are already tabulated.
 - [ ] Keep examples syntactically valid and testable; where practical, make documentation examples part of automated validation.
 - [x] Avoid AI-specific prose where ordinary precise language documentation serves both humans and agents better.
 
@@ -155,7 +157,7 @@ Current/planned compact set:
 - `/projects/propan/symbols-and-declarations.md` — created
 - `/projects/propan/addresses-and-segments.md` — created
 - `/projects/propan/directives-and-data.md` — created
-- `/projects/propan/instruction-syntax.md`
+- `/projects/propan/instruction-syntax.md` — created
 - `/projects/propan/stdlib.md`
 - `/projects/propan/tooling.md`
 - `/projects/propan/pasm2-differences.md`

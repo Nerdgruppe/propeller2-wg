@@ -34,6 +34,16 @@ Do not resolve these by assumption. Until the project explicitly chooses an inte
 
 **Action:** include octal syntax in the canonical language reference; later update the root README if octal support is intended to remain.
 
+### Root README: effect aliases omitted
+
+**External documentation:** the effect table lists `:and_c`, `:and_z`, `:or_c`, `:or_z`, `:xor_c`, `:xor_z`, `:wc`, `:wcz`, and `:wz`.
+
+**Current implementation:** the parser additionally accepts the compact aliases `:andc`, `:andz`, `:orc`, `:orz`, `:xorc`, and `:xorz`, plus `:wzc` as an alias of `:wcz`. Effect matching is case-insensitive.
+
+**Classification:** implemented aliases are under-documented, not an implementation conflict.
+
+**Action:** keep the full accepted spelling set in the OKF instruction reference; later decide whether the README should list aliases or only point to the canonical reference.
+
 ### `docs/propan/semantics.md`: directive model does not match current implementation
 
 **External documentation/design note:** `docs/propan/semantics.md` describes mappings involving `.section`, `.org`, `.cogexec [hub_address]`, `.lutexec [hub_address]`, and `.hubexec [hub_address]`.

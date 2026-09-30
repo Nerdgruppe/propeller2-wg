@@ -46,6 +46,14 @@ As a result, a declared user constant cannot currently be used for those layout 
 
 **Documentation impact:** directive documentation must distinguish expressions accepted grammatically from values available during layout. This ordering may warrant implementation changes if user constants are intended for layout directives.
 
+### Conditions/effects on assembler directives are silently ignored
+
+The parser stores optional conditions and effects on every instruction-shaped line, including assembler directives. Semantic encoding validates and applies those fields only for generated encoded instructions; directive paths such as `BYTE`, `.align`, and `.assert` bypass that handling.
+
+As a result, source such as `if(C) BYTE 1` or `.assert 1 :wc` can be accepted while the condition/effect has no directive meaning and is ignored.
+
+**Documentation impact:** conditions/effects are documented as generated-instruction syntax only. Directive modifiers should not be recommended until the assembler rejects them or defines explicit semantics.
+
 ### Segment-overlap validation is disabled
 
 Location assignment contains a commented-out overlap check with a `TODO: Reinclude the overlap check!`. Moving a new HUB segment backwards emits a warning, but the intended overlap error is not active there.
@@ -83,6 +91,12 @@ The evaluator contains an explicit TODO to verify that the current location and 
 `get_offset_for_exec_mode()` rejects COG↔LUT execution-domain transitions and warns for HUB↔local transitions, but its own comment notes that segment identity still needs to be incorporated into the protection logic so unrelated local-exec segments cannot be confused merely because their local addresses overlap.
 
 **Documentation impact:** address-domain diagnostics should be described as current safeguards, not as complete segment-safety validation.
+
+### Explicitly conditioned `NOP` bypasses the no-condition NOP special case
+
+Emission special-cases a `NOP` with no explicit condition to condition code `0000`, with a code TODO saying that this should instead be represented by instruction metadata. If the source supplies an explicit condition, that special case is bypassed and the requested condition bits are written into the otherwise zero NOP encoding.
+
+**Next step:** verify the resulting hardware semantics against the canonical P2 instruction definition and decide whether conditional `NOP` should be supported, rejected, or encoded through dedicated metadata.
 
 ## Documentation policy for findings
 

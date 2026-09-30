@@ -25,3 +25,8 @@ source_confidence: "high"
 - Added the current directive/data reference for `BYTE`, `WORD`, `LONG`, `.align`, `.assert`, `.cogexec`, `.lutexec`, and `.hubexec`.
 - Recorded layout-phase constant limitations and raw string/enumerator data-emission panic paths discovered while documenting directives.
 - Updated `/TODO.md` to mark the completed symbol and directive-reference work and retain follow-up tasks for unresolved implementation intent.
+- Added the current generated-instruction grammar, complete condition-code table, accepted effect spellings, semantic operand categories, augmentation model, and generic instruction-variant selection behavior.
+- Recorded effect aliases accepted by the parser but omitted from the root README.
+- Recorded that conditions/effects attached to assembler directives are currently parsed and silently ignored, and added a verification task for explicitly conditioned `NOP`.
+- Chose generated/verifiable instruction metadata as the basis for a complete per-instruction reference rather than maintaining a handwritten duplicate of the P2 instruction table.
+- Updated `/TODO.md` to mark the completed instruction-language work while retaining CALLD/PC-relative, pointer-addressing, PASM2-difference, and conditioned-NOP follow-up tasks.
