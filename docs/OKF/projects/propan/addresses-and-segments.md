@@ -51,6 +51,8 @@ They do not relocate the label or change its tagged address.
 
 The semantic tests demonstrate the distinction directly. In the initial COG segment, a label at HUB byte address `8` has local COG address `2`; `localaddr(data)` therefore emits `2` while `hubaddr(data)` emits `8`.
 
+`localaddr(register)` is not currently a successful interface: the evaluator unconditionally emits an error for register input even though its TODO suggests intended COG-only acceptance. See [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
+
 ## Address units
 
 HUB addresses are byte addresses.
@@ -83,6 +85,32 @@ Starts a new HUB-exec segment. Local execution address and HUB byte address are 
 
 All three forms currently accept zero or one operand. Supplying more operands is diagnosed.
 
+## COG/LUT allocation versus HUB emission
+
+The current implementation does not have a separate COG/LUT reservation allocator. Local register/PC movement is derived directly from emitted byte count inside a COG- or LUT-exec segment.
+
+For COG/LUT segments:
+
+- four emitted HUB bytes advance the local address by one;
+- an ordinary encoded instruction is four bytes and therefore advances the local PC by one;
+- `LONG` emits four bytes and advances the local address by one;
+- `WORD`/`BYTE` advance HUB by their byte size; local-address calculation is still derived from the segment's HUB-byte offset, so layouts intended to represent register/instruction slots should remain longword-aligned;
+- `var name:` only records the current tagged address and gives the symbol register-oriented default usage; it does **not** reserve a register or emit bytes.
+
+Consequently a current source pattern such as:
+
+```propan
+.cogexec
+var temp:
+    LONG 0
+```
+
+places `temp` at local COG register `0` and emits a four-byte initialized slot into the segment's HUB image. A following `var next:` would be at local COG register `1` only after that `LONG` has advanced the cursor.
+
+There is currently no implemented equivalent of a non-emitting `.RES`/`.reserve` directive. Historical examples using `.RES`, `.regs`, `.reserve`, or `.regspace` must not be interpreted as current reservation syntax. Under the current directive set, representing register/data slots means emitting their backing bytes with `BYTE`/`WORD`/`LONG` or arranging layout externally.
+
+The same rule applies to LUT-exec, except the local address starts at `0x200`.
+
 ## Segment identity
 
 Each execution-mode transition creates a distinct segment identifier. The tag survives on labels so the implementation can distinguish addresses that happen to have similar local values but originate in different logical emitted regions.
@@ -103,16 +131,57 @@ An explicit HUB address supplied to `.cogexec`, `.lutexec`, or `.hubexec` can mo
 
 The code contains a disabled overlap-validation block (`TODO: Reinclude the overlap check!`). Therefore the OKF must **not** claim that overlapping segments are rejected. Accidental overlap remains an implementation risk.
 
-## Current examples
+## Verified sequential-segment example
 
-The semantic addressing fixture demonstrates four sequential segments:
+`tests/propan/sema/addressing-modes.propan` exercises four sequential segments. Each segment emits three `LONG` values followed by a two-argument `LONG`, for 20 HUB bytes total per segment.
 
-1. COG-exec segment at HUB `0`, local COG `0`;
-2. another COG-exec segment later in HUB memory, again local COG `0`;
-3. LUT-exec segment later in HUB memory, local LUT `0x200`;
-4. HUB-exec segment where local and HUB addresses match.
+With no explicit HUB relocation, the resulting layout is:
 
-This is important: local COG/LUT addresses restart according to execution mode when a new segment begins even though HUB emission continues elsewhere.
+| Segment | HUB start | Local start | `_endN` after three LONGs | HUB `_endN` |
+|---|---:|---:|---:|---:|
+| first COG | `0x00000` | COG `0x000` | COG `0x003` | `0x0000C` |
+| second COG | `0x00014` | COG `0x000` | COG `0x003` | `0x00020` |
+| LUT | `0x00028` | LUT `0x200` | LUT `0x203` | `0x00034` |
+| HUB | `0x0003C` | HUB `0x0003C` | HUB `0x00048` | `0x00048` |
+
+This demonstrates two important current rules:
+
+1. HUB emission continues sequentially unless a new exec directive supplies an explicit HUB address;
+2. each new COG segment restarts local addressing at `0`, each new LUT segment at `0x200`, while HUB-exec local addresses equal HUB byte addresses.
+
+## Complete mixed-layout example
+
+The following example combines COG code/register-like data, LUT code/data, and HUB-resident data using only currently implemented directives:
+
+```propan
+.cogexec 0x1000
+cog_start:
+    NOP
+var cog_temp:
+    LONG 0
+
+.lutexec
+lut_start:
+    NOP
+var lut_temp:
+    LONG 0
+
+.hubexec
+hub_data:
+    LONG 0x12345678
+```
+
+Its layout is:
+
+| Symbol | Domain/local address | HUB address | Why |
+|---|---:|---:|---|
+| `cog_start` | COG `0x000` | `0x1000` | COG segment starts at local zero |
+| `cog_temp` | COG `0x001` | `0x1004` | one 4-byte NOP precedes it |
+| `lut_start` | LUT `0x200` | `0x1008` | new LUT segment restarts local PC at `0x200` |
+| `lut_temp` | LUT `0x201` | `0x100C` | one 4-byte NOP precedes it |
+| `hub_data` | HUB `0x1010` | `0x1010` | HUB segment begins at current HUB cursor |
+
+The two `var` declarations themselves consume no space; their following `LONG 0` directives create the emitted slots. This is the current replacement for examples that only need initialized register-like storage. It is **not** equivalent to a non-emitting reservation directive, because the four zero bytes are part of the HUB image.
 
 ## Planned/historical directive syntax is not current language
 
@@ -131,6 +200,6 @@ See [/projects/propan/documentation-discrepancies.md](/projects/propan/documenta
 - `@label` does not yet validate same-segment identity.
 - cross-local-segment protection is explicitly incomplete in `get_offset_for_exec_mode()` comments.
 - segment-overlap rejection is disabled.
-- the generic `TaggedAddress.init()` helper appears to initialize a non-existent `.hub` field instead of `.hub_address`; no current call site was found in repository search, so this is a latent helper defect unless the function remains unused.
+- the generic `TaggedAddress.init()` helper is unused and malformed (`.hub` instead of `.hub_address`).
 
 These findings are tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).

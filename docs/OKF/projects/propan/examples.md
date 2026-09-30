@@ -47,6 +47,30 @@ The first segment executes in COG mode while its encoded bytes are emitted into 
 
 This example intentionally does not imply that the assembler reserves or uploads COG RAM automatically; execution-mode segments describe addressing/encoding and HUB emission as documented in [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
 
+## COG/LUT/HUB layout and register-like slots
+
+```propan
+.cogexec 0x1000
+cog_start:
+    NOP
+var cog_temp:
+    LONG 0
+
+.lutexec
+lut_start:
+    NOP
+var lut_temp:
+    LONG 0
+
+.hubexec
+hub_data:
+    LONG 0x12345678
+```
+
+COG local addressing starts at `0`, LUT local addressing starts at `0x200`, and HUB addressing uses the HUB byte address directly. Each `NOP` or `LONG` is four emitted bytes, so it advances a COG/LUT local address by one.
+
+`var` only marks the current address; the following `LONG` creates the storage and advances both HUB and local cursors. Current Propan has no implemented non-emitting `.RES`/`.reserve` equivalent. See the complete address table in [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
+
 ## Pointer memory access
 
 ```propan
@@ -85,14 +109,14 @@ Effects follow the operand list as `:name`. Conditions precede the mnemonic as `
 The parser also accepts the complete C/Z condition algebra documented in [/projects/propan/instruction-syntax.md](/projects/propan/instruction-syntax.md), for example:
 
 ```propan
-if(C & !Z) NOP
-if(C == Z) NOP
-if(>=) NOP
+if(C & !Z) ADD DIRA, 1
+if(C == Z) ADD DIRA, 1
+if(>=) ADD DIRA, 1
 ```
 
-Whether a particular effect is legal is determined by the selected generated instruction variant. A recognized effect token is not automatically valid on every instruction.
+Do not use an explicitly conditioned `NOP`. The current assembler accepts it syntactically but the nonzero condition field transforms the special all-zero NOP word into a zero-field ROR-form instruction rather than a NOP.
 
-Explicitly conditioned `NOP` currently encodes the requested condition bits, but its intended hardware-facing support remains a tracked verification item. It is shown above only because the current parser fixture exercises the syntax.
+Whether a particular effect is legal is determined by the selected generated instruction variant. A recognized effect token is not automatically valid on every instruction.
 
 ## REP with a relative label
 

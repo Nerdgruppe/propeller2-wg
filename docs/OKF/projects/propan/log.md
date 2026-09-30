@@ -24,3 +24,5 @@ source_confidence: "high"
 - Verified that explicitly conditioned `NOP` does not remain the special all-zero NOP encoding; nonzero condition bits produce a conditional zero-field ROR-form word, so conditional NOP source is documented as an implementation hazard.
 - Verified `localaddr(register)` currently always emits an error despite its COG-scope TODO, and recorded that intended COG-only acceptance remains a design/implementation question.
 - Verified the unused `TaggedAddress.init()` helper has no repository call site and initializes nonexistent field `.hub` rather than `hub_address`; cleanup is left outside the docs-only scope.
+- Documented the current COG/LUT local-address allocation model: local addresses advance from emitted byte count, `var` does not allocate storage, and no non-emitting reservation directive is implemented.
+- Added a verified sequential-segment address table from the semantic fixture and a complete mixed COG/LUT/HUB example showing local addresses alongside HUB emission addresses.

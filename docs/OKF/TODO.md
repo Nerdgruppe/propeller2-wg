@@ -59,9 +59,9 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document `.hubexec`, `.cogexec`, and `.lutexec` as currently implemented, including optional HUB-address arguments.
 - [x] Classify `.huborg`, `.cogorg`, `.lutorg`, `.org`, `.reserve`, `.regspace`, `.data`, and related names as non-current until semantic support is independently verified.
 - [x] Document current cursor relocation behavior exposed through exec-mode directives and the warning on backwards HUB movement.
-- [ ] Document COG/LUT register allocation and its relationship to HUB emission in enough detail for reserved-register/data workflows.
+- [x] Document current COG/LUT register/PC allocation versus HUB emission, including that `var` marks but does not reserve storage and no non-emitting `.RES`/reservation directive is implemented.
 - [x] Explain how multiple source files contribute segments and how overlapping emitted ranges are handled across modules.
-- [ ] Include one complete worked layout combining COG code, LUT code if supported, HUB data, and reserved registers.
+- [x] Include a complete worked layout combining COG code/register-like data, LUT code/data, and HUB data using only currently implemented directives.
 - [ ] Determine the intended future status of the broader segment model described in `tests/propan/sema/segment_management.propan`.
 - [ ] Decide whether layout directives should be able to use ordinary user `const` values; current evaluation order makes those values unavailable during layout.
 
