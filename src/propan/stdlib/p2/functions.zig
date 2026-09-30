@@ -129,7 +129,7 @@ pub const functions = define.namespace(.{
 
         pub fn invoke(base: eval.Register, offset: i10) !eval.Register {
             const new: u9 = @intCast(
-                @mod(@as(i10, @intFromEnum(base)) +% offset, 512),
+                (@as(i10, @intFromEnum(base)) +% offset) & std.math.maxInt(i9),
             );
             return @enumFromInt(new);
         }
