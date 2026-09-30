@@ -6,7 +6,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 - [x] Define which documents under `docs/OKF/` are current-state descriptions of Propan behavior and clearly mark design notes, historical notes, and proposals as non-normative.
 - [ ] Inventory the current syntax and semantics from `src/propan/`, parser/sema tests, equivalence tests, examples, the root `README.md`, and `docs/propan/semantics.md`.
-- [ ] Identify stale syntax in examples or older documentation and decide whether it remains supported, is an alias, or should be removed from documentation.
+- [x] Identify stale syntax in existing `.propan` examples and classify current/legacy/unverified status in the discrepancy register; `rgbx.propan` is confirmed legacy due to unsupported directives, while the other examples remain current-looking or semantically unverified rather than canonical tests.
 - [x] Document the relationship between Propan and PASM2: generated mnemonics/operand order and encodings are inherited from canonical P2 data while source expression, condition/effect, address-control, and directive syntax intentionally differs.
 - [x] State case-sensitivity rules for mnemonics, identifiers, directives, effects, constants, and standard-library names.
 - [x] State whitespace/newline rules, including multiline instruction arguments and multiline function calls.
@@ -124,7 +124,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Add a REP/relative-label example.
 - [x] Add a data-layout/alignment example.
 - [x] Add a PASM2 → Propan syntax-difference cheat sheet focused on common accidental carry-over from Spin2/PASM2.
-- [ ] Review existing `examples/*.propan` and either modernize them or explicitly label legacy/compatibility syntax.
+- [x] Review existing `examples/*.propan` and classify them as current-looking, legacy/stale, or semantically unverified in the discrepancy register; source files remain unchanged because the current documentation work is restricted to `docs/OKF/`.
 
 ## 13. Agent-oriented usability
 

@@ -74,15 +74,37 @@ Do not resolve these by assumption. Until the project explicitly chooses an inte
 
 **Action:** determine whether the unsupported forms are planned language features, obsolete names, or unfinished implementation. Until then, only the independently verified forms belong in the current-state reference.
 
-### Examples use legacy-looking directives
+### Repository `examples/*.propan` have mixed current/legacy status
 
-**External examples:** existing `.propan` examples include forms such as `.org`, `.RES`, and `.fit`.
+The current `examples/` directory contains three `.propan` files. They should not be treated as a uniform current-language conformance suite.
 
-**Current implementation:** these names are not present in the current hard-coded semantic directive table. They may be historical syntax, aliases generated elsewhere, or currently invalid; this needs explicit verification before examples are treated as canonical.
+#### `examples/rgbx.propan`
 
-**Classification:** open conflict.
+This file uses `.org`, `.RES`, and `.fit`. None of those names is registered by the current semantic directive table.
 
-**Action:** run/inspect example coverage and classify each spelling as supported, legacy, or stale.
+**Classification:** confirmed legacy/stale syntax relative to the current Zig semantic implementation.
+
+**Action:** do not use this file as canonical current syntax. If the example is retained, it should eventually be migrated to the current segment/data model or explicitly marked as a legacy example outside the OKF.
+
+#### `examples/propio-client.propan`
+
+The file does not use the unsupported origin/reservation directives above and its active source uses current-looking constructs such as `const`, `var`, `aug()`, current smart-pin helper calls, `if(...)`, effect suffixes, `REP @label`, and current instruction mnemonics.
+
+It also uses dotted identifiers such as `.end`. In the current language these are ordinary global identifiers, not specially scoped local labels. The example happens to use such names without demonstrating reusable local-label scope.
+
+**Classification:** broadly aligned with current source syntax, but not established as a current conformance example because `examples/` is not part of the semantic/equivalence regression suite.
+
+**Action:** retain as an implementation example only with that caveat until an automated assembly regression validates it on the current branch.
+
+#### `examples/sumloop.propan`
+
+The file uses current directive names (`LONG`, `.align`) and generated instructions, with no obsolete origin/reservation directive spellings. It also forms packed values using label-valued expressions such as `buf_c << 18`, `buf_b << 9`, and `buf_a << 0`.
+
+The current documentation does not establish those mixed address/integer binary-expression forms as a supported general arithmetic interface. Without a dedicated regression run, this file should therefore not be promoted as a canonical current-language example solely because its directive spellings are current.
+
+**Classification:** compatibility/unverified example: no confirmed stale directive syntax, but semantic validity of all expressions is not established by the reviewed evidence.
+
+**Action:** add a current assembler regression or rewrite the packed-address construction using explicitly supported address conversion once intended semantics are confirmed.
 
 ## Maintenance rule
 

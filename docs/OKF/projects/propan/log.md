@@ -50,3 +50,5 @@ source_confidence: "high"
 - Kept unresolved behavior/design questions explicitly listed as validation gaps rather than treating neighboring test coverage as proof.
 - Added a worked-example reference using current syntax for HUB/COG execution, pointer addressing, conditions/effects, REP-relative labels, alignment, and explicit address-domain conversion.
 - Marked the planned first-pass worked-example items complete while retaining automated example validation and legacy `examples/*.propan` review as separate follow-up work.
+- Reviewed all current `examples/*.propan` files and classified their documentation status: `rgbx.propan` is confirmed legacy against the current semantic directive table, `propio-client.propan` is current-looking but not regression-validated, and `sumloop.propan` remains semantically unverified for its packed label expressions.
+- Replaced the previous generic example discrepancy with per-file evidence and kept the example source files unchanged under the docs-only work scope.
