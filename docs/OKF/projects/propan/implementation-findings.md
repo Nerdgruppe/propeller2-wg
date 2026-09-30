@@ -56,6 +56,30 @@ As a result, source such as `if(C) BYTE 1` or `.assert 1 :wc` can be accepted wh
 
 **Documentation impact:** conditions/effects are documented as generated-instruction syntax only. Directive modifiers should not be recommended until the assembler rejects them or defines explicit semantics.
 
+### Explicitly conditioned `NOP` encodes a different instruction form
+
+The generated `NOP` entry is the special all-zero P2 word. Emission forces condition code `0000` only when the source has no explicit condition. If a condition is supplied, the requested condition code replaces the high four bits while the lower 28 bits remain zero.
+
+Those lower 28 bits are also the base encoding of `ROR D,{#}S` with C/Z/I, D, and S all zero. A source form such as `if(Z) NOP` therefore does not remain a NOP word; it produces a conditionally executed zero-field ROR form (`ROR r0, r0` in register interpretation).
+
+**Documentation impact:** explicitly conditioned NOP must not be recommended. Parser acceptance is an encoding defect/hazard until the assembler rejects such source or models NOP as a fixed complete word that cannot accept a condition.
+
+### Unknown escape recovery drops the unrecognized escaped character
+
+The string unescaper stores the current byte as `char`. When `char` is a backslash it increments the input index to inspect the escaped character. In the invalid-escape branch it emits a warning using that following byte but appends the saved `char`, which is still the original backslash. The loop then advances past the inspected byte.
+
+Thus `\q` currently recovers as a single backslash byte while `q` is discarded.
+
+**Documentation impact:** the exact recovery is now documented, but invalid escapes should not be relied on as intentional language syntax. A regression test would still be useful to lock down the behavior if recovery semantics are intended to remain stable.
+
+### `localaddr(register)` always diagnoses an error
+
+The evaluator has a register branch for `cogaddr()`, `lutaddr()`, and `localaddr()`. `lutaddr(register)` is rejected directly. The `localaddr(register)` branch contains a TODO to check whether execution mode is COG, but currently emits `localaddr() is only valid for registers in a cogexec scope` unconditionally, then also emits the generic warning before returning the numeric register index internally.
+
+Because an error diagnostic marks semantic analysis unsuccessful, `localaddr(register)` is not currently a successful interface even in COG-exec scope.
+
+**Documentation impact:** document register use as unsettled/invalid current behavior. The TODO suggests intended COG-only acceptance, but that intent is not implemented and should not be promoted to language contract without a project decision.
+
 ### Segment-overlap validation is disabled
 
 Location assignment contains a commented-out overlap check with a `TODO: Reinclude the overlap check!`. Moving a new HUB segment backwards emits a warning, but the intended overlap error is not active there.
@@ -72,15 +96,9 @@ When a second `.assert` argument is present but is not a string, the diagnostic 
 
 `TaggedAddress` contains a `hub_address` field, but its generic `init()` helper currently returns a struct literal using `.hub = hub`. Repository search found no current `TaggedAddress.init(` call site, so Zig's lazy function analysis can allow this latent defect to remain unnoticed while the helper is unused.
 
-**Documentation impact:** none for currently exercised address construction, which uses the specialized `init_hub`/`init_cog`/`init_lut` helpers. Treat the generic helper as broken until corrected or removed.
+**Documentation impact:** none for currently exercised address construction, which uses the specialized `init_hub`/`init_cog`/`init_lut` helpers. The generic helper is verified unused by repository search and malformed as written; it should be corrected or removed before use.
 
 ## Findings requiring verification
-
-### Unknown escape recovery may drop the escaped character
-
-The string unescaper warns for an invalid escape but appends the variable holding the original backslash rather than the unrecognized escape character. A source such as `"\\q"` therefore appears likely to retain `\` while dropping `q` during recovery.
-
-**Next step:** add a focused regression test or otherwise execute the current assembler before classifying the exact output behavior as confirmed.
 
 ### `@` relative-offset operator does not validate segment identity
 
@@ -94,14 +112,8 @@ The evaluator contains an explicit TODO to verify that the current location and 
 
 **Documentation impact:** address-domain diagnostics should be described as current safeguards, not as complete segment-safety validation.
 
-### Explicitly conditioned `NOP` bypasses the no-condition NOP special case
-
-Emission special-cases a `NOP` with no explicit condition to condition code `0000`, with a code TODO saying that this should instead be represented by instruction metadata. If the source supplies an explicit condition, that special case is bypassed and the requested condition bits are written into the otherwise zero NOP encoding.
-
-**Next step:** verify the resulting hardware semantics against the canonical P2 instruction definition and decide whether conditional `NOP` should be supported, rejected, or encoded through dedicated metadata.
-
 ## Documentation policy for findings
 
 - Describe current behavior, not desired behavior.
-- Mark unexecuted code-reading conclusions as potential until verified by a test or reproducible invocation.
+- Mark unexecuted code-reading conclusions as potential until sufficiently determined by explicit control flow or a test/reproducible invocation.
 - If a finding is fixed, retain a short historical note only if it explains documentation/version differences; otherwise remove it from the current-state reference and note the change in `log.md`.

@@ -75,9 +75,19 @@ The comparison shorthands inside `if(...)` are condition syntax, not general com
 
 ### `NOP` condition special case
 
-When a source `NOP` has no explicit condition, emission currently forces condition code `0000` instead of using the generated default `1111`. The implementation contains a TODO to move this special handling into instruction metadata.
+The generated P2 table records `NOP` as the all-zero word:
 
-Explicitly conditioned `NOP` source bypasses that no-condition special case and writes the requested condition bits. The hardware meaning and intended support of such conditional `NOP` forms should be verified before they are recommended; this is tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
+```text
+0000 0000000 000 000000000 000000000
+```
+
+Emission therefore special-cases a source `NOP` with no explicit condition to condition code `0000`; otherwise the ordinary instruction path would replace its top condition field. The implementation contains a TODO to represent this special behavior in instruction metadata instead.
+
+An explicitly conditioned `NOP` currently bypasses that protection. For example `if(Z) NOP` writes the requested nonzero condition code into the high four bits while leaving the lower 28 bits zero.
+
+That resulting word is **not a NOP encoding**. The canonical/generated `ROR D,{#}S` instruction uses the same zero lower opcode bits (`EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS`). With C/Z/I, D, and S all zero, a nonzero condition field therefore represents a conditionally executed `ROR r0, r0`-form word rather than the special all-zero NOP.
+
+Do not use conditions on `NOP` in current Propan source. Parser acceptance is an implementation defect/encoding hazard, not supported conditional-NOP semantics. The finding is tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
 
 ## Effects
 
@@ -153,7 +163,7 @@ The tokenizer permits identifier-suffix characters after `#`, including a leadin
 
 For encoded instruction operands of type `enumeration`, the selected generated variant provides a lookup table mapping legal names to encoded numeric values. A name that is not present in that operand's table is rejected.
 
-Enumerators are also used by typed standard-library function parameters. Their complete target-specific namespaces and function use sites are covered by the separate standard-library work; they are not global integer symbols.
+Enumerators are also used by typed standard-library function parameters. Their complete target-specific namespaces and function use sites are covered by the standard-library reference; they are not global integer symbols.
 
 ## Address operands and automatic relative selection
 
@@ -171,7 +181,7 @@ For a non-label numeric value, the encoder infers a target execution domain from
 
 For a relative `address` operand, the current encoder calculates a signed HUB-byte displacement from the PC after the instruction and any augmentation prefixes. The displacement must fit the encoded address field.
 
-Some generated register-or-immediate operands have separate PC-relative metadata and use `compute_rel()` rather than the `address` path. Detailed CALLD/PC-relative variant behavior remains part of the unresolved instruction-selection work and should not be inferred solely from the generic address rule above.
+Some generated register-or-immediate operands have separate PC-relative metadata and use `compute_rel()` rather than the `address` path. CALLD/PC-relative details are documented in [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md).
 
 ## Augmented operands
 
@@ -185,7 +195,7 @@ During layout, each top-level augmented operand increases the encoded instructio
 
 Attempting to augment an operand whose generated slot is not D or S is diagnosed.
 
-PC-relative register-or-immediate operands have additional augmentation ordering and displacement behavior. That behavior is intentionally left with the CALLD/PC-relative selection work rather than generalized here.
+PC-relative register-or-immediate operands have additional augmentation ordering and displacement behavior documented with pointer/branch selection.
 
 ## Variant selection
 
@@ -199,7 +209,7 @@ For a recognized generated mnemonic, semantic analysis currently selects an enco
 
 When the selected operand category is `pointer_expr`, a bare PTRA/PTRB register value is converted to the corresponding no-update pointer expression under the default analyzer option.
 
-The current pointer-register ambiguity preference contains a known copy/paste defect that can panic instead of reliably resolving competing variants. See [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md). CALLD and related ambiguous families therefore require separate documentation before their selection rules can be considered complete.
+The current pointer-register ambiguity preference contains a known copy/paste defect that can panic instead of reliably resolving competing variants. See [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
 
 ## Conditions/effects on assembler directives
 

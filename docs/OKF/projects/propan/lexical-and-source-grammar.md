@@ -122,13 +122,17 @@ Character literals evaluate to the Unicode code point of exactly one character. 
 
 Raw control characters are rejected inside string/character literals.
 
-### Potential implementation issue: unknown escape handling
+### Unknown escape recovery
 
-For an unrecognized escape sequence the current implementation emits a warning but appends the original backslash rather than the escaped character. For example, the recovery path for `\q` appears to preserve `\` while dropping `q`. This behavior should be verified with a regression test before it is intentionally documented as language behavior.
+For an unrecognized escape sequence the current implementation emits a warning, preserves the original backslash byte, and drops the unrecognized escaped character. The behavior follows directly from the current unescaper loop: when the backslash is read, the parser advances to inspect the following character, emits `invalid escape sequence`, then appends the saved backslash rather than that following character.
+
+For example, source text containing `"\q"` currently recovers as a one-character string containing `\`; the `q` is discarded.
+
+This is documented as current recovery behavior, not as recommended source syntax. A focused regression test would still be useful to prevent accidental changes to the diagnostic/recovery path.
 
 ## Enumerators
 
-`#name` is tokenized as an enumerator expression. Enumerator meaning is resolved later by semantic analysis and standard-library/instruction operand handling. This page does not yet define the complete enumerator namespace or legal use sites.
+`#name` is tokenized as an enumerator expression. Enumerator meaning is resolved later by semantic analysis and standard-library/instruction operand handling. Standard-library enum domains and instruction enumerators are documented in the corresponding semantic references.
 
 ## Expressions: parser-level precedence
 
@@ -169,15 +173,4 @@ Semantic validity, parameter names, and argument types depend on the resolved bu
 
 The root README currently lists `? :` as a Propan ternary operator. The Zig tokenizer has `?` and `:` tokens, but the current expression parser has no ternary-expression production. Consequently this is **not currently established as supported Zig-frontend syntax** and should be treated as an external-documentation conflict until implementation or tests demonstrate otherwise.
 
-## Still to document
-
-This page intentionally does not yet claim completeness for:
-
-- semantic expression types and conversions;
-- complete condition grammar;
-- address operators and segment-dependent label semantics;
-- directive semantics;
-- stdlib function signatures;
-- instruction operand selection.
-
-Those areas are tracked in `/TODO.md`.
+Semantic expression types, address behavior, directives, standard-library signatures, conditions/effects, and instruction operand selection are documented in the neighboring current-state pages.

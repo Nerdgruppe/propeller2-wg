@@ -20,7 +20,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document enumerator/value-token syntax such as `#15pF` and explain where such values are defined/usable, including encoded-instruction enumerators and standard-library function enum domains.
 - [x] Document integer width, signedness model, wrapping arithmetic, shift limits, and narrowing/truncation behavior used by semantic evaluation.
 - [x] Document whether boolean values are user-visible language concepts or integer results; current implementation has no separate boolean semantic type.
-- [ ] Verify and document the exact recovery result for unknown escape sequences; current code inspection suggests the escaped character may be dropped.
+- [x] Verify and document exact unknown-escape recovery: the parser warns, preserves the original backslash byte, and drops the unrecognized escaped character.
 
 ## 3. Expressions
 
@@ -51,7 +51,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document current relative versus absolute branch/call selection and augmentation behavior, including generic `A` operands, PC-relative `S**` operands, `aug()`/`nrel()`, and CALLD overlap rules.
 - [x] Document current warnings/errors for crossing execution modes or segments, including explicitly incomplete segment validation.
 - [x] Provide examples that contrast local and HUB interpretations of the same label.
-- [ ] Resolve/document the intended behavior of `localaddr(register)`; current code emits an error while also containing a TODO about execution-mode validation.
+- [ ] Resolve intended `localaddr(register)` semantics; current behavior is now documented as always erroring, while the implementation TODO suggests but does not implement COG-only acceptance.
 
 ## 6. Segments, cursors, and execution modes
 
@@ -85,7 +85,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document current ambiguous instruction-selection behavior, especially the overlapping CALLD regular/pointer-register forms and the known ambiguity-guard defect.
 - [x] Decide that the complete instruction reference should be generated/verified from the assembler instruction database rather than maintained as a handwritten 400+ instruction table.
 - [x] Add a concise list of Propan-specific instruction/source-form deviations from canonical PASM2.
-- [ ] Verify the intended semantics/support of explicitly conditioned `NOP`; no-condition NOP is currently special-cased to condition code `0000`.
+- [x] Verify explicitly conditioned `NOP`: it is accepted by the parser but replaces the condition field of the all-zero NOP word, producing a conditional zero-field `ROR` encoding rather than a NOP; treat the source form as an implementation defect/hazard.
 
 ## 9. Pointer addressing
 
@@ -146,7 +146,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Move implementation defects into the dedicated `/projects/propan/implementation-findings.md` register instead of leaving them as undifferentiated documentation TODOs; retain specific verification/documentation tasks here when they still block accurate docs.
 - [ ] Retire or rewrite `docs/propan/semantics.md` once its still-valid concepts have been incorporated into current-state OKF pages and project intent is confirmed.
 - [ ] Rework the Propan portion of the root `README.md` after the OKF language reference is sufficiently complete, keeping the README concise and linking to the current-state reference.
-- [ ] Verify whether the unused `TaggedAddress.init()` helper should be fixed or removed; it currently initializes `.hub` although the struct field is named `hub_address`.
+- [x] Verify the unused `TaggedAddress.init()` helper: repository search finds no call site and the helper initializes nonexistent field `.hub` instead of `hub_address`; implementation cleanup remains outside the docs-only scope.
 
 ## Suggested first-pass document set
 
