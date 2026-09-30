@@ -48,7 +48,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Define a label's tagged/native address and how its containing segment/execution mode affects interpretation.
 - [x] Define the current semantics and legal contexts of `label`, `&label`, `*label`, `@label`, `hubaddr(label)`, `cogaddr(label)`, `lutaddr(label)`, and `localaddr(label)`.
 - [x] Explain HUB byte addresses versus COG/LUT long/register addresses and where conversion occurs.
-- [ ] Document relative versus absolute branch/call selection and augmentation behavior completely. Generic `address` auto-selection plus `aug()`/`nrel()` are now documented; PC-relative register-or-immediate/CALLD-specific behavior remains.
+- [x] Document current relative versus absolute branch/call selection and augmentation behavior, including generic `A` operands, PC-relative `S**` operands, `aug()`/`nrel()`, and CALLD overlap rules.
 - [x] Document current warnings/errors for crossing execution modes or segments, including explicitly incomplete segment validation.
 - [x] Provide examples that contrast local and HUB interpretations of the same label.
 - [ ] Resolve/document the intended behavior of `localaddr(register)`; current code emits an error while also containing a TODO about execution-mode validation.
@@ -82,19 +82,20 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document all accepted effect suffixes and aliases, the main generated effect classes, and per-variant effect validation.
 - [x] Define destination/source operand categories used by Propan and map them to PASM2 terminology.
 - [x] Document immediate values, address operands, pointer-expression/pointer-register forms, augmentation, enumerated operands, and special-register selectors at the generic instruction-model level.
-- [ ] Document the ambiguous instruction families where selection rules matter, especially CALLD and pointer-register cases.
+- [x] Document current ambiguous instruction-selection behavior, especially the overlapping CALLD regular/pointer-register forms and the known ambiguity-guard defect.
 - [x] Decide that the complete instruction reference should be generated/verified from the assembler instruction database rather than maintained as a handwritten 400+ instruction table.
 - [ ] Add or generate a concise list of Propan-specific instruction-form deviations from canonical PASM2.
 - [ ] Verify the intended semantics/support of explicitly conditioned `NOP`; no-condition NOP is currently special-cased to condition code `0000`.
 
 ## 9. Pointer addressing
 
-- [ ] Document `PTRA`/`PTRB` direct forms.
-- [ ] Document `PTRA++`, `PTRA--`, `++PTRA`, `--PTRA` and corresponding PTRB forms.
-- [ ] Document indexed pointer forms and legal index ranges: current encoder uses signed 6-bit index for non-updating forms and magnitude `1...16` for updating forms.
-- [ ] Explain pre/post update timing in terms of the hardware addressing operation.
+- [x] Document `PTRA`/`PTRB` direct forms and their contextual conversion from predefined register values to pointer expressions.
+- [x] Document `PTRA++`, `PTRA--`, `++PTRA`, `--PTRA` and corresponding PTRB forms.
+- [x] Document indexed pointer forms and legal index ranges: signed `-32...31` for non-updating forms and positive magnitude `1...16` for updating forms.
+- [x] Explain pre/post update timing using the canonical P2 pointer operation and POPA/PUSHA alias evidence.
 - [x] Explain at the expression-model level that pointer syntax becomes a dedicated encoded PTRA/PTRB pointer expression rather than a general arithmetic expression.
-- [ ] Reconcile/document pointer-register instruction-selection ambiguity after the existing copy/paste defect is fixed or explicitly accepted as current limitation.
+- [x] Reconcile/document pointer-register instruction-selection ambiguity as a current limitation pending correction of the existing copy/paste defect.
+- [ ] Add focused regression coverage for CALLD pointer-register overlap cases when the ambiguity guard is corrected; the current equivalence fixture leaves several auto-relative special-destination cases commented out.
 
 ## 10. Standard library
 
@@ -131,7 +132,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Ensure an agent can determine the current HUB/COG/LUT address-domain model without reading `sema.zig`.
 - [x] Ensure all currently supported assembler directives are discoverable from documentation alone.
 - [x] Ensure preferred current directive syntax is explicit where historical/proposed alternatives exist.
-- [ ] Add compact tables for pointer encodings and PASM2 differences; grammar, operators, address helpers, directives, conditions, and effects are already tabulated.
+- [ ] Add a compact PASM2-differences table; grammar, operators, address helpers, directives, conditions, effects, and pointer encodings are already tabulated.
 - [ ] Keep examples syntactically valid and testable; where practical, make documentation examples part of automated validation.
 - [x] Avoid AI-specific prose where ordinary precise language documentation serves both humans and agents better.
 
@@ -158,6 +159,7 @@ Current/planned compact set:
 - `/projects/propan/addresses-and-segments.md` — created
 - `/projects/propan/directives-and-data.md` — created
 - `/projects/propan/instruction-syntax.md` — created
+- `/projects/propan/pointer-addressing.md` — created
 - `/projects/propan/stdlib.md`
 - `/projects/propan/tooling.md`
 - `/projects/propan/pasm2-differences.md`

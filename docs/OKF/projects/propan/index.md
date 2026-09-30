@@ -21,6 +21,7 @@ Propan is under active development. These pages describe the repository state th
 - [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md) — HUB/COG/LUT address domains, segment identity, and exec-mode directives.
 - [/projects/propan/directives-and-data.md](/projects/propan/directives-and-data.md) — currently implemented assembler directives, data emission, alignment, and assertions.
 - [/projects/propan/instruction-syntax.md](/projects/propan/instruction-syntax.md) — instruction grammar, conditions, effects, operand categories, and variant selection.
+- [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md) — PTRA/PTRB pointer expressions, update/index ranges, branch-S relative operands, and CALLD overlap rules.
 - [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md) — known conflicts with README, old docs, parser-only examples, semantic fixtures, and repository examples.
 - [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md) — assembler issues/limitations found while documenting behavior.
 - [/references/propan-sources.md](/references/propan-sources.md) — source inventory and evidence roles.
@@ -29,8 +30,7 @@ Propan is under active development. These pages describe the repository state th
 
 The remaining work includes:
 
-- ambiguous/PC-relative instruction-selection details and PASM2 differences;
-- detailed pointer-addressing reference;
+- Propan-specific PASM2 differences and migration guidance;
 - standard-library constants/functions;
 - multi-file/output/tooling behavior;
 - worked examples and migration aids.

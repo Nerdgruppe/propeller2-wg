@@ -30,3 +30,7 @@ source_confidence: "high"
 - Recorded that conditions/effects attached to assembler directives are currently parsed and silently ignored, and added a verification task for explicitly conditioned `NOP`.
 - Chose generated/verifiable instruction metadata as the basis for a complete per-instruction reference rather than maintaining a handwritten duplicate of the P2 instruction table.
 - Updated `/TODO.md` to mark the completed instruction-language work while retaining CALLD/PC-relative, pointer-addressing, PASM2-difference, and conditioned-NOP follow-up tasks.
+- Added a dedicated PTRA/PTRB pointer-addressing reference covering direct, indexed, pre/post-update, and encoded range behavior verified against the equivalence suite and canonical P2 instruction data.
+- Documented the distinction between P2 `S**` PC-relative branch operands and `A` relative/absolute address operands, including the scope of `aug()` and `nrel()`.
+- Documented the two overlapping CALLD families and expanded the pointer-register ambiguity finding with current generated-table and equivalence-test evidence.
+- Updated `/TODO.md` to mark the current pointer-addressing and branch-selection reference work complete while retaining focused regression work for the known CALLD ambiguity defect.

@@ -24,7 +24,9 @@ if (any_ptrreg_prev == true and any_ptrreg_prev == true) {
 
 This means the guard does not express the apparent intended condition of both competing variants being pointer-register variants. It can also terminate the assembler with a process panic rather than a source diagnostic if reached.
 
-**Documentation impact:** ambiguous instruction families, especially CALLD/pointer-register forms, should not yet be presented as fully hardened selection behavior.
+The generated table makes this relevant to `CALLD`: the ordinary `CALLD D,{#}S**` form overlaps in source type space with `CALLD PA/PB/PTRA/PTRB,#{\}A`. The intended selector preference is to choose a matching `pointer_reg` variant over an ordinary register variant. Existing equivalence material exercises several cases but leaves some special-destination label/numeric forms commented out, so the complete overlap surface is not regression-proven.
+
+**Documentation impact:** the current selection rule and CALLD forms can be described, but pointer-register overlap should be treated as a known current limitation rather than fully hardened behavior. Add focused regression coverage when the ambiguity guard is corrected.
 
 ### Binary operations on address values and strings can panic
 
