@@ -26,4 +26,6 @@ source_confidence: "high"
 - Verified the unused `TaggedAddress.init()` helper has no repository call site and initializes nonexistent field `.hub` rather than `hub_address`; cleanup is left outside the docs-only scope.
 - Documented the current COG/LUT local-address allocation model: local addresses advance from emitted byte count, `var` does not allocate storage, and no non-emitting reservation directive is implemented.
 - Added a verified sequential-segment address table from the semantic fixture and a complete mixed COG/LUT/HUB example showing local addresses alongside HUB emission addresses.
+- Refreshed the Propan source inventory and coverage map to reflect the completed first-pass references, example review, verified escape/NOP findings, segment allocation work, CLI/output coverage, and remaining narrowly scoped validation/design gaps.
+- Marked the broad current-syntax/semantics inventory task complete; remaining TODO items now represent unresolved design choices, focused regressions, validation automation, or cleanup of older non-OKF documentation.
 - Completed an OKF-only consistency cleanup: removed stale forward-looking pointer/stdlib wording from the expression reference and updated the scope index so completed example review is no longer listed as remaining work.
