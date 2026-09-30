@@ -17,7 +17,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document identifier syntax completely, including the current absence of special local-label scoping and special identifier forms.
 - [x] Document decimal, hexadecimal, binary, quaternary, and implemented octal integer literals plus `_` separators.
 - [x] Document character literals, string literals, escape sequences, and encoding expectations currently implemented by the parser.
-- [ ] Document enumerator/value-token syntax such as `#15pF` and explain where such values are defined/usable; encoded-instruction enumerators are now covered, but standard-library enum namespaces/use sites remain.
+- [x] Document enumerator/value-token syntax such as `#15pF` and explain where such values are defined/usable, including encoded-instruction enumerators and standard-library function enum domains.
 - [x] Document integer width, signedness model, wrapping arithmetic, shift limits, and narrowing/truncation behavior used by semantic evaluation.
 - [x] Document whether boolean values are user-visible language concepts or integer results; current implementation has no separate boolean semantic type.
 - [ ] Verify and document the exact recovery result for unknown escape sequences; current code inspection suggests the escaped character may be dropped.
@@ -27,9 +27,9 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Produce the current implemented binary-operator table with precedence and associativity.
 - [x] Document unary `+`, unary `-`, boolean `!`, bitwise `~`, `@`, `&`, `*`, pointer pre/post increment/decrement, and indexing at the current semantic level.
 - [x] Document boolean `and`, `or`, `xor`, comparisons, arithmetic, bitwise operators, shifts, and the current ternary-syntax conflict.
-- [ ] Document all builtin/stdlib expression functions such as `abs`, shifts/rotates, bit helpers, floating-point helpers, clock helpers, and target-specific helpers.
+- [x] Document all currently available builtin/stdlib expression functions and explicitly distinguish absent Spin-style helper families from the active callable set.
 - [x] Separate current Propan operators from PASM/Spin spellings used only as comparison material.
-- [ ] Define which operand types each standard-library function accepts and how invalid argument combinations are diagnosed.
+- [x] Define which operand types each standard-library function accepts and how invalid argument combinations are diagnosed.
 - [x] Document expression forms that are tokenized/documented externally but not currently implemented semantically.
 - [ ] Decide intended negative-operand semantics for `/` and `%` and verify that current `@divFloor`/`@mod` behavior matches the desired Propan contract.
 
@@ -99,12 +99,12 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 ## 10. Standard library
 
-- [ ] Inventory all built-in constants and functions from `src/propan/stdlib/`.
-- [ ] Separate common language builtins from P1/P2-target-specific names.
-- [ ] Document argument names, allowed arities, default/named arguments if any, return/value types, and edge behavior.
-- [ ] Document target-defined constants such as smart-pin modes, clock-mode helpers, register names, and enumerated configuration values.
-- [ ] Mark unverified or experimental standard-library extensions as such until checked against authoritative hardware documentation.
-- [ ] Prefer generated standard-library reference material if the definitions already contain sufficient metadata/doc text.
+- [x] Inventory all built-in constants and functions from `src/propan/stdlib/`, distinguishing definitions present in-tree from symbols actually loaded by the P2 analyzer.
+- [x] Separate common language builtins from P1/P2-target-specific names.
+- [x] Document argument names, allowed arities, defaults/named arguments, return/value types, and edge behavior for the current P2 function namespace.
+- [x] Document target-defined constants such as smart-pin modes, clock/configuration helpers, register names, and enumerated configuration values.
+- [x] Mark hardware-facing helper behavior as current implementation behavior unless independently verified against authoritative hardware documentation.
+- [x] Prefer generated standard-library reference material where definitions contain metadata/doc text; the existing `--render-stdlib-docs` path is the exhaustive reference mechanism.
 
 ## 11. Source-file and assembler behavior
 
@@ -160,7 +160,7 @@ Current/planned compact set:
 - `/projects/propan/directives-and-data.md` — created
 - `/projects/propan/instruction-syntax.md` — created
 - `/projects/propan/pointer-addressing.md` — created
-- `/projects/propan/stdlib.md`
+- `/projects/propan/stdlib.md` — created
 - `/projects/propan/tooling.md`
 - `/projects/propan/pasm2-differences.md`
 - `/projects/propan/examples.md`

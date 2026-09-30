@@ -34,3 +34,8 @@ source_confidence: "high"
 - Documented the distinction between P2 `S**` PC-relative branch operands and `A` relative/absolute address operands, including the scope of `aug()` and `nrel()`.
 - Documented the two overlapping CALLD families and expanded the pointer-register ambiguity finding with current generated-table and equivalence-test evidence.
 - Updated `/TODO.md` to mark the current pointer-addressing and branch-selection reference work complete while retaining focused regression work for the known CALLD ambiguity defect.
+- Added the current standard-library reference, distinguishing active common/P2 symbols from inactive P1 definitions.
+- Documented all currently loaded P2 standard-library functions, parameter/default behavior, enumerator domains, diagnostics, and constant families.
+- Recorded that the six core address/encoding helpers are semantic builtins rather than generated stdlib functions, and that the current analyzer exposes no additional Spin-style `abs`/rotate/floating-point builtin set.
+- Documented the existing `--render-stdlib-docs` path as the preferred exhaustive generated reference mechanism.
+- Updated `/TODO.md` to mark the standard-library, function-type, and standard-library enumerator documentation tranche complete.
