@@ -24,15 +24,11 @@ Propan is under active development. These pages describe the repository state th
 - [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md) — PTRA/PTRB pointer expressions, update/index ranges, branch-S relative operands, and CALLD overlap rules.
 - [/projects/propan/stdlib.md](/projects/propan/stdlib.md) — active predefined constants, builtin helpers, P2 configuration functions, enumerator domains, and generated-reference support.
 - [/projects/propan/tooling.md](/projects/propan/tooling.md) — CLI inputs, multi-file overlay, flat/JSON output, fill behavior, list files, and exit status.
+- [/projects/propan/pasm2-differences.md](/projects/propan/pasm2-differences.md) — compact PASM2-to-Propan migration table covering immediates, conditions/effects, addressing, directives, expressions, and source structure.
 - [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md) — known conflicts with README, old docs, parser-only examples, semantic fixtures, and repository examples.
 - [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md) — assembler issues/limitations found while documenting behavior.
 - [/references/propan-sources.md](/references/propan-sources.md) — source inventory and evidence roles.
 
 ## Planned coverage
 
-The remaining work includes:
-
-- Propan-specific PASM2 differences and migration guidance;
-- worked examples and migration aids.
-
-See [/TODO.md](/TODO.md) for the temporary worklist.
+The remaining work includes worked examples and migration aids plus the unresolved verification/design items tracked in `/TODO.md`.

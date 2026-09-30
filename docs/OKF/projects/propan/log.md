@@ -43,3 +43,6 @@ source_confidence: "high"
 - Documented that positional input modules are analyzed independently and later overlapping segment writes overwrite earlier flat-output bytes because cross-module overlap rejection is currently absent.
 - Recorded that `.propan` is conventional but not CLI-enforced and that no source-level include/import mechanism is currently implemented.
 - Updated `/TODO.md` to mark the source-file/output/tooling tranche and cross-module overlay documentation complete.
+- Added a compact PASM2-to-Propan migration reference grounded in the generated P2 instruction mapping and current Propan grammar.
+- Documented that generated mnemonics and operand order are inherited from canonical P2 data while immediacy, conditions/effects, address controls, expressions, labels, and assembler directives use Propan syntax/semantics.
+- Added a migration checklist and marked the PASM2 relationship/deviation/agent-oriented cheat-sheet tasks complete.

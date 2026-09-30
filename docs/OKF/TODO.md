@@ -7,7 +7,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Define which documents under `docs/OKF/` are current-state descriptions of Propan behavior and clearly mark design notes, historical notes, and proposals as non-normative.
 - [ ] Inventory the current syntax and semantics from `src/propan/`, parser/sema tests, equivalence tests, examples, the root `README.md`, and `docs/propan/semantics.md`.
 - [ ] Identify stale syntax in examples or older documentation and decide whether it remains supported, is an alias, or should be removed from documentation.
-- [ ] Document the relationship between Propan and PASM2: which mnemonics/operand orders are inherited directly and which syntax intentionally differs.
+- [x] Document the relationship between Propan and PASM2: generated mnemonics/operand order and encodings are inherited from canonical P2 data while source expression, condition/effect, address-control, and directive syntax intentionally differs.
 - [x] State case-sensitivity rules for mnemonics, identifiers, directives, effects, constants, and standard-library names.
 - [x] State whitespace/newline rules, including multiline instruction arguments and multiline function calls.
 - [x] Document comment syntax and lexical edge cases currently established by the Zig frontend.
@@ -84,7 +84,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Document immediate values, address operands, pointer-expression/pointer-register forms, augmentation, enumerated operands, and special-register selectors at the generic instruction-model level.
 - [x] Document current ambiguous instruction-selection behavior, especially the overlapping CALLD regular/pointer-register forms and the known ambiguity-guard defect.
 - [x] Decide that the complete instruction reference should be generated/verified from the assembler instruction database rather than maintained as a handwritten 400+ instruction table.
-- [ ] Add or generate a concise list of Propan-specific instruction-form deviations from canonical PASM2.
+- [x] Add a concise list of Propan-specific instruction/source-form deviations from canonical PASM2.
 - [ ] Verify the intended semantics/support of explicitly conditioned `NOP`; no-condition NOP is currently special-cased to condition code `0000`.
 
 ## 9. Pointer addressing
@@ -123,7 +123,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [ ] Add a conditions/effects example that demonstrates flag flow.
 - [ ] Add a REP/relative-label example.
 - [ ] Add a data-layout/alignment example.
-- [ ] Add a PASM2 → Propan syntax-difference cheat sheet focused on common accidental carry-over from Spin2/PASM2.
+- [x] Add a PASM2 → Propan syntax-difference cheat sheet focused on common accidental carry-over from Spin2/PASM2.
 - [ ] Review existing `examples/*.propan` and either modernize them or explicitly label legacy/compatibility syntax.
 
 ## 13. Agent-oriented usability
@@ -132,7 +132,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Ensure an agent can determine the current HUB/COG/LUT address-domain model without reading `sema.zig`.
 - [x] Ensure all currently supported assembler directives are discoverable from documentation alone.
 - [x] Ensure preferred current directive syntax is explicit where historical/proposed alternatives exist.
-- [ ] Add a compact PASM2-differences table; grammar, operators, address helpers, directives, conditions, effects, and pointer encodings are already tabulated.
+- [x] Add a compact PASM2-differences table covering instruction inheritance and Propan source-level deviations.
 - [ ] Keep examples syntactically valid and testable; where practical, make documentation examples part of automated validation.
 - [x] Avoid AI-specific prose where ordinary precise language documentation serves both humans and agents better.
 
@@ -162,7 +162,7 @@ Current/planned compact set:
 - `/projects/propan/pointer-addressing.md` — created
 - `/projects/propan/stdlib.md` — created
 - `/projects/propan/tooling.md` — created
-- `/projects/propan/pasm2-differences.md`
+- `/projects/propan/pasm2-differences.md` — created
 - `/projects/propan/examples.md`
 - `/projects/propan/documentation-discrepancies.md` — created
 - `/projects/propan/implementation-findings.md` — created
