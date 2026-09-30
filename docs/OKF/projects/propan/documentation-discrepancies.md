@@ -5,7 +5,7 @@ description: "Tracks known conflicts between current Propan implementation and r
 tags: ["propan", "documentation", "conflicts", "migration"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
+timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan documentation discrepancies
 
@@ -54,6 +54,16 @@ Do not resolve these by assumption. Until the project explicitly chooses an inte
 **Classification:** test-scope mismatch, not necessarily a test bug.
 
 **Action:** document parser tests as grammar evidence only. Verify semantic support separately before listing any directive in the canonical reference.
+
+### `tests/propan/sema/segment_management.propan` mixes implemented and planned semantics
+
+**External/test material:** this file describes `.org`, `.reserve`, `.regspace`, and `.data` alongside `.cogexec`, `.lutexec`, and `.hubexec`, with comments that read like intended semantics.
+
+**Current implementation:** the hard-coded semantic mnemonic table registers the three exec-mode directives but not `.org`, `.reserve`, `.regspace`, or `.data`.
+
+**Classification:** mixed design/fixture material. The file must not be interpreted as a passing semantic-conformance test for every form it contains.
+
+**Action:** determine whether the unsupported forms are planned language features, obsolete names, or unfinished implementation. Until then, only the independently verified forms belong in the current-state reference.
 
 ### Examples use legacy-looking directives
 

@@ -5,7 +5,7 @@ description: "Potential assembler issues and implementation limitations discover
 tags: ["propan", "assembler", "findings", "issues"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
+timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan implementation findings
 
@@ -29,7 +29,7 @@ This means the guard does not express the apparent intended condition of both co
 
 ### Binary operations on address values and strings can panic
 
-After type equality is established, binary expression evaluation currently handles integer/register/enumerator/pointer-expression values but uses `@panic` for `.address` and `.string` operands.
+After type equality is established, binary expression evaluation handles integer/register/enumerator/pointer-expression values but uses `@panic` for `.address` and `.string` operands.
 
 **Documentation impact:** do not imply that all syntactically accepted binary expressions are safely diagnosed. Address/string binary expressions are currently an implementation hazard.
 
@@ -45,11 +45,17 @@ When a second `.assert` argument is present but is not a string, the diagnostic 
 
 **Documentation impact:** no language-semantic impact, but diagnostics may be misleading for this error case.
 
+### `TaggedAddress.init()` initializes the wrong field name
+
+`TaggedAddress` contains a `hub_address` field, but its generic `init()` helper currently returns a struct literal using `.hub = hub`. Repository search found no current `TaggedAddress.init(` call site, so Zig's lazy function analysis can allow this latent defect to remain unnoticed while the helper is unused.
+
+**Documentation impact:** none for currently exercised address construction, which uses the specialized `init_hub`/`init_cog`/`init_lut` helpers. Treat the generic helper as broken until corrected or removed.
+
 ## Findings requiring verification
 
 ### Unknown escape recovery may drop the escaped character
 
-The string unescaper warns for an invalid escape but appends the variable holding the original backslash rather than the unrecognized escape character. A source such as `"\\q"` therefore appears likely to retain the backslash and drop `q` during recovery.
+The string unescaper warns for an invalid escape but appends the variable holding the original backslash rather than the unrecognized escape character. A source such as `"\\q"` therefore appears likely to retain `\` while dropping `q` during recovery.
 
 **Next step:** add a focused regression test or otherwise execute the current assembler before classifying the exact output behavior as confirmed.
 
@@ -57,7 +63,13 @@ The string unescaper warns for an invalid escape but appends the variable holdin
 
 The evaluator contains an explicit TODO to verify that the current location and target address belong to the same segment before calculating the longword delta from HUB addresses.
 
-**Documentation impact:** document the implemented calculation and the missing cross-segment validation separately when the address model page is written.
+**Documentation impact:** the current address reference documents the implemented HUB-address calculation and this missing validation separately.
+
+### Cross-local-segment jump checking is incomplete
+
+`get_offset_for_exec_mode()` rejects COG↔LUT execution-domain transitions and warns for HUB↔local transitions, but its own comment notes that segment identity still needs to be incorporated into the protection logic so unrelated local-exec segments cannot be confused merely because their local addresses overlap.
+
+**Documentation impact:** address-domain diagnostics should be described as current safeguards, not as complete segment-safety validation.
 
 ## Documentation policy for findings
 
