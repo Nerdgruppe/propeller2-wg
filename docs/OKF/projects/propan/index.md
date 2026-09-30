@@ -31,6 +31,8 @@ Propan is under active development. These pages describe the repository state th
 - [/references/propan-sources.md](/references/propan-sources.md) — source inventory and evidence roles.
 - [/references/propan-coverage.md](/references/propan-coverage.md) — map from reference areas to implementation, parser/sema/equivalence/regression validation, and known gaps.
 
-## Remaining work
+## Review status
 
-The first-pass current-state reference set and repository-example classification are complete. Remaining work is limited to unresolved language/design choices, focused code/test fixes or regressions, documentation-validation automation, and eventual cleanup of non-OKF documentation. These items remain tracked in `/TODO.md`.
+The first-pass current-state reference set and repository-example classification are complete and have passed an OKF-only integrity audit for internal links, navigation, front-matter consistency, terminology, and stale coordination wording. The set is ready for project review.
+
+Remaining work is limited to unresolved language/design choices, focused code/test fixes or regressions, documentation-validation automation, and eventual cleanup of non-OKF documentation. These items remain tracked in `/TODO.md`.

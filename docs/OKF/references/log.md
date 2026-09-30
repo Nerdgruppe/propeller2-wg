@@ -11,3 +11,6 @@ source_confidence: "high"
 ## 2026-09-30
 
 - Established the references scope for future provenance and coverage material.
+- Added the Propan source inventory covering implementation, tests, generated data, examples, historical documentation, and official/community P2 evidence roles.
+- Added the Propan documentation/validation coverage map.
+- Updated the references index during the final first-pass audit so all existing Propan support pages are directly discoverable.

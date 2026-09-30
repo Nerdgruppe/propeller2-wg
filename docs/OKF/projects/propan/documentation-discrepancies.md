@@ -32,7 +32,7 @@ Do not resolve these by assumption. Until the project explicitly chooses an inte
 
 **Classification:** implemented but under-documented.
 
-**Action:** include octal syntax in the canonical language reference; later update the root README if octal support is intended to remain.
+**Current handling:** the canonical OKF lexical reference includes octal syntax. When non-OKF documentation is revisited, update the root README if octal support remains part of the intended public syntax.
 
 ### Root README: effect aliases omitted
 
@@ -42,7 +42,7 @@ Do not resolve these by assumption. Until the project explicitly chooses an inte
 
 **Classification:** implemented aliases are under-documented, not an implementation conflict.
 
-**Action:** keep the full accepted spelling set in the OKF instruction reference; later decide whether the README should list aliases or only point to the canonical reference.
+**Current handling:** the OKF instruction reference carries the full accepted spelling set. When the root README is revisited, decide whether it should enumerate aliases or simply point to the canonical reference.
 
 ### `docs/propan/semantics.md`: directive model does not match current implementation
 
@@ -52,7 +52,7 @@ Do not resolve these by assumption. Until the project explicitly chooses an inte
 
 **Classification:** historical/design note with partial conceptual value, not normative syntax documentation.
 
-**Action:** preserve useful segment/address concepts in OKF current-state pages, but do not copy its proposed directive spellings without implementation verification.
+**Current handling:** the implemented segment/address concepts have been preserved in the current OKF pages. Proposed directive spellings remain classified as historical/design material unless semantic support is added.
 
 ### Parser directive examples overstate semantic support
 
@@ -62,7 +62,7 @@ Do not resolve these by assumption. Until the project explicitly chooses an inte
 
 **Classification:** test-scope mismatch, not necessarily a test bug.
 
-**Action:** document parser tests as grammar evidence only. Verify semantic support separately before listing any directive in the canonical reference.
+**Current handling:** the OKF directive reference treats parser fixtures as grammar evidence only and verifies support against the semantic mnemonic table. Unsupported names remain outside the canonical directive list unless implementation changes establish them.
 
 ### `tests/propan/sema/segment_management.propan` mixes implemented and planned semantics
 

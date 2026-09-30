@@ -13,5 +13,4 @@ This area contains source inventories, provenance notes, coverage maps, generate
 ## Propan
 
 - [/references/propan-sources.md](/references/propan-sources.md) — implementation, tests, generated data, examples, existing documentation, and official/community P2 source roles.
-
-Future work will add a feature-to-document/test coverage map once the main current-state Propan reference pages exist.
+- [/references/propan-coverage.md](/references/propan-coverage.md) — mapping from current-state Propan reference areas to implementation and test evidence, including retained validation/design gaps.
