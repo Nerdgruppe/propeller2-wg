@@ -9,7 +9,7 @@ timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan addresses and segments
 
-This page documents the current Zig implementation on `rework-documentation`. Propan is under active development. Historical design notes and parser fixtures contain additional planned syntax that is not currently implemented; those conflicts are called out explicitly below.
+Historical design notes and parser fixtures contain additional planned syntax that is not currently implemented; those conflicts are called out explicitly below.
 
 ## Tagged addresses
 
@@ -97,8 +97,6 @@ When an address is converted for instruction encoding, the current implementatio
 - HUB ↔ COG/LUT mismatches emit a warning because the transition may be intentional but needs attention.
 - COG ↔ LUT mismatches are currently rejected as errors.
 - the implementation comments that stronger segment-identity checking is still needed to prevent jumps between unrelated local-exec segments.
-
-This behavior is current implementation policy, not a claim about what future Propan syntax will allow.
 
 ## Moving the HUB cursor and overlap handling
 

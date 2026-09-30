@@ -9,8 +9,6 @@ timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan expressions and values
 
-This page documents the current Zig implementation on `rework-documentation`. Propan is under active development; the behavior described here is not a stability promise.
-
 Parser-level token syntax and lexical precedence are documented in [/projects/propan/lexical-and-source-grammar.md](/projects/propan/lexical-and-source-grammar.md).
 
 ## Runtime/semantic value categories

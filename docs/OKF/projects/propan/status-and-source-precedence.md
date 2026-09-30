@@ -1,19 +1,17 @@
 ---
 type: "Reference"
-title: "Propan status and source precedence"
-description: "Defines how current Propan behavior is documented while the assembler remains under active development."
-tags: ["propan", "status", "provenance", "source-precedence"]
+title: "Propan source precedence"
+description: "Defines documentation authority and source precedence for current Propan behavior."
+tags: ["propan", "provenance", "source-precedence"]
 status: "draft"
 source_confidence: "high"
 timestamp: "2026-09-30T11:15:00+02:00"
 ---
-# Propan status and source precedence
-
-Propan is under active development. The OKF documentation describes the behavior of a specific repository state; it is not a compatibility promise for future versions.
+# Propan source precedence
 
 ## Documentation status
 
-Documents under `/projects/propan/` marked `status: "draft"` are current-state references assembled from the implementation and tests. They should be kept synchronized with behavior changes, but they must not be read as a claim that the language or command-line interface is stable.
+Documents under `/projects/propan/` marked `status: "draft"` are current-state references assembled from the implementation and tests.
 
 When a page is incomplete, it should say so explicitly rather than filling gaps from PASM2, Spin2, historical Propan code, or design intent.
 

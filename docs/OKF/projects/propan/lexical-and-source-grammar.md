@@ -9,8 +9,6 @@ timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Propan lexical and source grammar
 
-This page documents the current Zig frontend on the `rework-documentation` branch. Propan is under active development; this is a current-state reference, not a stability guarantee.
-
 ## Top-level line forms
 
 The parser currently recognizes these source-line forms:
