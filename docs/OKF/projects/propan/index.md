@@ -28,7 +28,8 @@ Propan is under active development. These pages describe the repository state th
 - [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md) — known conflicts with README, old docs, parser-only examples, semantic fixtures, and repository examples.
 - [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md) — assembler issues/limitations found while documenting behavior.
 - [/references/propan-sources.md](/references/propan-sources.md) — source inventory and evidence roles.
+- [/references/propan-coverage.md](/references/propan-coverage.md) — map from reference areas to implementation, parser/sema/equivalence/regression validation, and known gaps.
 
 ## Planned coverage
 
-The remaining work includes worked examples and migration aids plus the unresolved verification/design items tracked in `/TODO.md`.
+The remaining work includes worked examples and unresolved verification/design items tracked in `/TODO.md`.

@@ -46,3 +46,5 @@ source_confidence: "high"
 - Added a compact PASM2-to-Propan migration reference grounded in the generated P2 instruction mapping and current Propan grammar.
 - Documented that generated mnemonics and operand order are inherited from canonical P2 data while immediacy, conditions/effects, address controls, expressions, labels, and assembler directives use Propan syntax/semantics.
 - Added a migration checklist and marked the PASM2 relationship/deviation/agent-oriented cheat-sheet tasks complete.
+- Added a documentation/validation coverage map connecting current-state pages to parser, semantic, equivalence, regression, and implementation-unit evidence.
+- Kept unresolved behavior/design questions explicitly listed as validation gaps rather than treating neighboring test coverage as proof.

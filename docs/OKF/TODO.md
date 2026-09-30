@@ -140,7 +140,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 - [x] Create a source inventory under `/references/` covering the current implementation, tests, generated instruction data, repository examples, existing Propan docs, and official P2 material used to explain hardware behavior.
 - [x] Define source precedence for disagreements between current implementation, tests, design notes, and historical examples.
-- [ ] Add a documentation coverage page mapping language features to current-state pages and validation tests.
+- [x] Add a documentation coverage page mapping language features to current-state pages and validation tests/evidence families.
 - [ ] Add link checking and, if useful, generated-reference consistency checks to the normal validation workflow.
 - [x] Record meaningful documentation changes in scope-local `log.md` files.
 - [x] Move implementation defects into the dedicated `/projects/propan/implementation-findings.md` register instead of leaving them as undifferentiated documentation TODOs; retain specific verification/documentation tasks here when they still block accurate docs.
@@ -167,4 +167,4 @@ Current/planned compact set:
 - `/projects/propan/documentation-discrepancies.md` — created
 - `/projects/propan/implementation-findings.md` — created
 - `/references/propan-sources.md` — created
-- `/references/propan-coverage.md`
+- `/references/propan-coverage.md` — created
