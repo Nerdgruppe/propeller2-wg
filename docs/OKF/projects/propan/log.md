@@ -21,3 +21,7 @@ source_confidence: "high"
 - Removed repeated development-status disclaimers and branch-specific wording from individual reference pages; the scope-level status remains at the Propan OKF entrypoint.
 - Restored the segment-management discrepancy entry accidentally removed during cleanup.
 - Removed manually maintained front-matter timestamps from OKF documentation; Git history is used for chronology.
+- Added the current symbol/declaration model, including flat symbol namespaces, `var` semantics, forward-label behavior, and source-order constant evaluation.
+- Added the current directive/data reference for `BYTE`, `WORD`, `LONG`, `.align`, `.assert`, `.cogexec`, `.lutexec`, and `.hubexec`.
+- Recorded layout-phase constant limitations and raw string/enumerator data-emission panic paths discovered while documenting directives.
+- Updated `/TODO.md` to mark the completed symbol and directive-reference work and retain follow-up tasks for unresolved implementation intent.

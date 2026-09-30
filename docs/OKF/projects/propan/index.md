@@ -17,7 +17,9 @@ Propan is under active development. These pages describe the repository state th
 - [/projects/propan/status-and-source-precedence.md](/projects/propan/status-and-source-precedence.md) — documentation authority, instability policy, and source precedence.
 - [/projects/propan/lexical-and-source-grammar.md](/projects/propan/lexical-and-source-grammar.md) — current tokenizer/parser-level language reference.
 - [/projects/propan/expressions.md](/projects/propan/expressions.md) — current semantic value model, operators, and address/encoding helper functions.
+- [/projects/propan/symbols-and-declarations.md](/projects/propan/symbols-and-declarations.md) — constants, code/data labels, `var`, namespaces, and reference/evaluation order.
 - [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md) — HUB/COG/LUT address domains, segment identity, and exec-mode directives.
+- [/projects/propan/directives-and-data.md](/projects/propan/directives-and-data.md) — currently implemented assembler directives, data emission, alignment, and assertions.
 - [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md) — known conflicts with README, old docs, parser-only examples, semantic fixtures, and repository examples.
 - [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md) — assembler issues/limitations found while documenting behavior.
 - [/references/propan-sources.md](/references/propan-sources.md) — source inventory and evidence roles.
@@ -26,11 +28,10 @@ Propan is under active development. These pages describe the repository state th
 
 The remaining work includes:
 
-- symbols, constants, labels, and variable declaration semantics;
-- complete directive and data-layout reference;
 - instruction grammar, conditions, effects, and PASM2 differences;
 - detailed pointer-addressing reference;
 - standard-library constants/functions;
-- assembler/tooling behavior and worked examples.
+- multi-file/output/tooling behavior;
+- worked examples and migration aids.
 
 See [/TODO.md](/TODO.md) for the temporary worklist.

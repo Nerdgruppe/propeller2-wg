@@ -32,6 +32,20 @@ After type equality is established, binary expression evaluation handles integer
 
 **Documentation impact:** do not imply that all syntactically accepted binary expressions are safely diagnosed. Address/string binary expressions are currently an implementation hazard.
 
+### Raw string and enumerator data emission can panic
+
+The generic value-to-data cast used by `BYTE`, `WORD`, and `LONG` contains `@panic("string emission not supported yet")` for strings and an internal-error panic for unresolved enumerators.
+
+**Documentation impact:** strings are valid expression values but are not currently supported as raw data-emission arguments. Enumerator values require a consuming instruction enumeration context rather than direct emission.
+
+### Layout directives cannot currently use ordinary user constants
+
+Location assignment runs before `evaluate_constant_values()`. `.align` and explicit `.cogexec`/`.lutexec`/`.hubexec` HUB-address operands are evaluated during that earlier layout pass, when user constant symbols exist but their values are still unset.
+
+As a result, a declared user constant cannot currently be used for those layout values. `.align` also maps the resulting `UndefinedSymbol` evaluation failure to a message saying labels cannot be referenced, which is misleading for this case.
+
+**Documentation impact:** directive documentation must distinguish expressions accepted grammatically from values available during layout. This ordering may warrant implementation changes if user constants are intended for layout directives.
+
 ### Segment-overlap validation is disabled
 
 Location assignment contains a commented-out overlap check with a `TODO: Reinclude the overlap check!`. Moving a new HUB segment backwards emits a warning, but the intended overlap error is not active there.

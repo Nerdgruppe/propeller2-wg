@@ -14,7 +14,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 ## 2. Lexical elements and values
 
-- [ ] Document identifier syntax completely, including local-label syntax/scope and any special identifier forms.
+- [x] Document identifier syntax completely, including the current absence of special local-label scoping and special identifier forms.
 - [x] Document decimal, hexadecimal, binary, quaternary, and implemented octal integer literals plus `_` separators.
 - [x] Document character literals, string literals, escape sequences, and encoding expectations currently implemented by the parser.
 - [ ] Document enumerator/value-token syntax such as `#15pF` and explain where such values are defined/usable.
@@ -35,11 +35,12 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 ## 4. Symbols, constants, labels, and variables
 
-- [ ] Document `const` declarations completely, including forward references and evaluation order.
-- [ ] Document ordinary labels and local labels, including scope and duplicate-name rules.
-- [ ] Document `var` declarations and the distinction between a symbol, storage allocation, and emitted initialization data.
-- [ ] Explain symbol namespaces and collisions between constants, labels, variables, standard-library names, and instruction names.
-- [ ] Document forward-reference behavior and undefined-symbol diagnostics.
+- [x] Document `const` declarations completely, including current source-order evaluation and forward-reference behavior.
+- [x] Document ordinary labels and the current absence of special local-label scoping, including duplicate-name rules.
+- [x] Document `var` declarations and the distinction between a symbol, storage allocation, and emitted initialization data.
+- [x] Explain symbol namespaces and collisions between constants, labels, variables, standard-library names, functions, and instruction names.
+- [x] Document forward-reference behavior and undefined-symbol diagnostics.
+- [ ] Decide whether forward references between user constants should remain unsupported or gain dependency-based/repeated evaluation.
 
 ## 5. Address model
 
@@ -62,14 +63,16 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [ ] Explain how multiple source files contribute segments and how overlapping emitted ranges are handled across modules.
 - [ ] Include one complete worked layout combining COG code, LUT code if supported, HUB data, and reserved registers.
 - [ ] Determine the intended future status of the broader segment model described in `tests/propan/sema/segment_management.propan`.
+- [ ] Decide whether layout directives should be able to use ordinary user `const` values; current evaluation order makes those values unavailable during layout.
 
 ## 7. Directives and data declaration
 
-- [ ] Create a complete directive reference generated or verified against the parser/sema implementation.
-- [ ] Document `BYTE`, `WORD`, `LONG`, `.align`, `.assert`, `.cogexec`, `.lutexec`, `.hubexec`, and classify `.regs`, `.res`/`.RES`, `.fit`/`.cogfit`, `.org` and related forms by actual support status.
-- [ ] For every supported directive, document argument grammar, allowed expression types, emitted byte count, cursor effects, alignment behavior, and failure conditions.
-- [ ] Clarify preferred modern syntax versus retained compatibility aliases, if any aliases are actually supported.
-- [ ] Document string/data emission behavior and endianness.
+- [x] Create a complete current directive reference verified against the semantic mnemonic table.
+- [x] Document `BYTE`, `WORD`, `LONG`, `.align`, `.assert`, `.cogexec`, `.lutexec`, `.hubexec`, and classify `.regs`, `.res`/`.RES`, `.fit`/`.cogfit`, `.org` and related forms by actual support status.
+- [x] For every currently supported directive, document argument grammar, allowed/effective expression types, emitted byte count, cursor effects, alignment behavior, and failure conditions.
+- [x] Clarify preferred current syntax and state that no current compatibility aliases for the implemented directive set have been established.
+- [x] Document data emission endianness and current string/enumerator emission limitations.
+- [ ] Decide intended string-data syntax; current direct `BYTE`/`WORD`/`LONG` string emission reaches a panic rather than expanding or diagnosing the value.
 
 ## 8. Instruction syntax
 
@@ -124,9 +127,9 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 - [x] Ensure an agent can determine the current top-level source-line grammar without reading `parser.zig`.
 - [x] Ensure an agent can determine the current HUB/COG/LUT address-domain model without reading `sema.zig`.
-- [ ] Ensure all currently supported directives are discoverable from documentation alone.
-- [ ] Ensure preferred syntax is explicit where multiple aliases are accepted.
-- [ ] Add compact tables for directives, conditions, effects, pointer encodings, and PASM2 differences; grammar, operators, and address helpers are already tabulated.
+- [x] Ensure all currently supported assembler directives are discoverable from documentation alone.
+- [x] Ensure preferred current directive syntax is explicit where historical/proposed alternatives exist.
+- [ ] Add compact tables for conditions, effects, pointer encodings, and PASM2 differences; grammar, operators, address helpers, and directives are already tabulated.
 - [ ] Keep examples syntactically valid and testable; where practical, make documentation examples part of automated validation.
 - [x] Avoid AI-specific prose where ordinary precise language documentation serves both humans and agents better.
 
@@ -149,8 +152,9 @@ Current/planned compact set:
 - `/projects/propan/status-and-source-precedence.md` — created
 - `/projects/propan/lexical-and-source-grammar.md` — created
 - `/projects/propan/expressions.md` — created
+- `/projects/propan/symbols-and-declarations.md` — created
 - `/projects/propan/addresses-and-segments.md` — created
-- `/projects/propan/directives-and-data.md`
+- `/projects/propan/directives-and-data.md` — created
 - `/projects/propan/instruction-syntax.md`
 - `/projects/propan/stdlib.md`
 - `/projects/propan/tooling.md`
