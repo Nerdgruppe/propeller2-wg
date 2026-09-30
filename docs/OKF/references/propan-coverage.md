@@ -23,40 +23,41 @@ A parser fixture alone is never sufficient evidence that a feature is a current 
 
 | Area | Current OKF reference | Principal implementation/evidence | Current validation examples | Coverage note |
 |---|---|---|---|---|
-| lexical/source grammar | `/projects/propan/lexical-and-source-grammar.md` | frontend tokenizer/parser | `parser/comments.propan`, `parser/escape_sequences.propan`, `parser/labels.propan`, `parser/values.propan` | good parser coverage; unknown-escape recovery still lacks a focused verified contract |
+| lexical/source grammar | `/projects/propan/lexical-and-source-grammar.md` | frontend tokenizer/parser | `parser/comments.propan`, `parser/escape_sequences.propan`, `parser/labels.propan`, `parser/values.propan` | grammar well covered; exact invalid-escape recovery is additionally established by direct parser control flow, though no focused regression locks it down |
 | expressions/value model | `/projects/propan/expressions.md` | semantic evaluator/value types | `parser/expressions.propan`, `sema/operators.propan`, `sema/operator-associativity.propan`, `sema/unary-plus.propan`, `sema/value-hint-converter.propan` | core operators covered; intended negative `/` and `%` semantics remain a design question |
 | function-call grammar | lexical reference + `/projects/propan/stdlib.md` | parser + generated function wrapper metadata | `parser/fncalls.propan`, `sema/stdlib.propan` | active P2 callable namespace documented; generated metadata remains exhaustive source |
 | symbols/constants/labels/vars | `/projects/propan/symbols-and-declarations.md` | semantic symbol declaration/evaluation | `parser/labels.propan`, `sema/basic-constants.propan`, `sema/basic-label-addressing.propan` | current source-order constant behavior documented; forward-constant policy remains open |
-| address model | `/projects/propan/addresses-and-segments.md` | tagged addresses + semantic conversion/encoding | `sema/addressing-modes.propan`, `sema/basic-label-addressing.propan`, `equivalence/absrel_sample.propan`, `equivalence/branching.propan` | current HUB/COG/LUT model covered; `localaddr(register)` remains unsettled |
-| execution segments/layout | `/projects/propan/addresses-and-segments.md`, `/projects/propan/directives-and-data.md` | semantic location assignment/segments | `sema/align.propan`, `sema/segment_management.propan` | current implemented subset documented; broader segment fixture contains non-current/design material |
+| address model | `/projects/propan/addresses-and-segments.md` | tagged addresses + semantic conversion/encoding | `sema/addressing-modes.propan`, `sema/basic-label-addressing.propan`, `equivalence/absrel_sample.propan`, `equivalence/branching.propan` | current HUB/COG/LUT model and allocation/emission relationship documented; intended `localaddr(register)` policy remains open |
+| execution segments/layout | `/projects/propan/addresses-and-segments.md`, `/projects/propan/directives-and-data.md` | semantic location assignment/segments | `sema/addressing-modes.propan`, `sema/align.propan`, `sema/segment_management.propan` | implemented COG/LUT/HUB model and mixed layout documented; broader segment fixture still contains non-current/design material |
 | data/directives | `/projects/propan/directives-and-data.md` | semantic directive table + emitter | `parser/directives.propan`, `sema/align.propan`, `regressions/null-in-assert.propan` | supported set documented; string-data and directive condition/effect policy remain open |
-| instruction grammar/selection | `/projects/propan/instruction-syntax.md` | generated instruction table + selector | `parser/basic_instruction_layout.propan`, `parser/conditions.propan`, `parser/effects.propan`, `sema/basic-instruction-selection.propan`, `sema/ambigious-selection.propan` | generated table is authority; conditional-NOP intent still needs focused verification |
+| instruction grammar/selection | `/projects/propan/instruction-syntax.md` | generated instruction table + selector | `parser/basic_instruction_layout.propan`, `parser/conditions.propan`, `parser/effects.propan`, `sema/basic-instruction-selection.propan`, `sema/ambigious-selection.propan` | generated table is authority; conditional-NOP hazard is now verified from emission logic plus overlapping NOP/ROR encoding |
 | instruction encoding breadth | instruction reference policy + `/projects/propan/pasm2-differences.md` | generated P2 instruction data | `equivalence/all_instructions.txt` plus paired `.propan`/`.spin2` equivalence groups | broad hardware-encoding comparison; not a handwritten per-instruction language spec |
 | effects/flags | `/projects/propan/instruction-syntax.md` | generated effect metadata | `equivalence/flags.propan`, `equivalence/special_effects.propan`, parser condition/effect fixtures | strong encoding-level evidence for normal/special effects |
 | augmentation | instruction/address references | semantic AUGD/AUGS emission | `equivalence/aug.propan` | direct equivalence evidence |
 | branching/relative addressing | `/projects/propan/pointer-addressing.md`, address/instruction refs | semantic relative selection and generated PC-relative metadata | `equivalence/branching.propan`, `equivalence/absrel_sample.propan` | current A vs S** distinction documented; CALLD overlap defect remains open |
 | pointer addressing | `/projects/propan/pointer-addressing.md` | pointer-expression encoder + canonical P2 data | `equivalence/memory-ptr.propan` | direct/index/update encoding coverage; focused CALLD pointer-overlap regression still needed after fix |
 | standard library | `/projects/propan/stdlib.md` | `src/propan/stdlib/` metadata/implementations | `sema/stdlib.propan`, equivalence `hubset.propan` for related configuration use | namespace/signatures documented; hardware-facing helper correctness is not universally revalidated by this map |
-| PASM2 migration | `/projects/propan/pasm2-differences.md` | generated mapping + current grammar | equivalence suite broadly | source-form translation summarized; existing examples still need legacy review |
+| PASM2 migration | `/projects/propan/pasm2-differences.md` | generated mapping + current grammar | equivalence suite broadly | source-form translation summarized; repository examples have been separately classified for current/legacy/unverified status |
+| worked examples | `/projects/propan/examples.md` | current references + parser/sema/equivalence fixtures | forms drawn from pointer, branch, condition/effect, alignment, and addressing fixtures | examples are evidence-grounded but not yet extracted into a dedicated automated doc-example test |
 | multi-file/output/JSON/fill | `/projects/propan/tooling.md` | CLI merge loop + emitter | `regressions/multi-file-first.propan`, `multi-file-second.propan`, `check-multi-file-json.zig`, `fill-byte.propan`, `check-flat-output.zig` | direct end-to-end regression coverage |
 | list files | `/projects/propan/tooling.md` | `src/propan/listfile.zig` and its unit tests | in-source `listfile.zig` tests | covered at implementation-unit level rather than `tests/propan/` fixture level |
-| implementation limitations | `/projects/propan/implementation-findings.md` | code inspection + relevant tests | varies per finding | findings deliberately distinguish confirmed behavior, defects, and unresolved intent |
+| implementation limitations | `/projects/propan/implementation-findings.md` | code inspection + relevant tests | varies per finding | findings distinguish confirmed behavior/defects from unresolved intent |
 | documentation conflicts | `/projects/propan/documentation-discrepancies.md` | comparison of current implementation with README/old docs/examples | parser/sema/equivalence evidence as applicable | prevents parser-only/historical material becoming normative accidentally |
 
-## Known validation gaps retained in TODO
+## Known validation/design gaps retained in TODO
 
 The following are intentionally **not** treated as closed merely because adjacent behavior is documented:
 
-- exact regression-verified recovery output for unknown escape sequences;
 - desired negative-operand contract for `/` and `%`;
 - desired `localaddr(register)` behavior;
 - forward references between user constants;
-- string data emission policy;
+- intended string-data syntax/semantics;
 - conditions/effects on assembler directives;
-- explicitly conditioned `NOP` intent/hardware semantics;
 - focused CALLD pointer-register overlap cases after the selector defect is corrected;
 - intended future status of the broader segment-management fixture;
-- executable validation of future documentation examples.
+- intended use of ordinary user constants during layout;
+- executable validation of documentation examples;
+- documentation link/generated-reference consistency checking.
 
 ## Maintenance rule
 

@@ -5,7 +5,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 ## 1. Establish the authoritative language contract
 
 - [x] Define which documents under `docs/OKF/` are current-state descriptions of Propan behavior and clearly mark design notes, historical notes, and proposals as non-normative.
-- [ ] Inventory the current syntax and semantics from `src/propan/`, parser/sema tests, equivalence tests, examples, the root `README.md`, and `docs/propan/semantics.md`.
+- [x] Inventory the current syntax and semantics across `src/propan/`, parser/sema/equivalence/regression tests, repository examples, the root `README.md`, and `docs/propan/semantics.md`; source roles, precedence, conflicts, and coverage are now mapped under `/references/` and the current-state Propan pages.
 - [x] Identify stale syntax in existing `.propan` examples and classify current/legacy/unverified status in the discrepancy register; `rgbx.propan` is confirmed legacy due to unsupported directives, while the other examples remain current-looking or semantically unverified rather than canonical tests.
 - [x] Document the relationship between Propan and PASM2: generated mnemonics/operand order and encodings are inherited from canonical P2 data while source expression, condition/effect, address-control, and directive syntax intentionally differs.
 - [x] State case-sensitivity rules for mnemonics, identifiers, directives, effects, constants, and standard-library names.

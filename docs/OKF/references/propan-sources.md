@@ -24,7 +24,8 @@ Use for:
 - expression precedence;
 - source-line grammar;
 - condition/effect parsing;
-- function-call grammar.
+- function-call grammar;
+- string/character unescaping and recovery behavior.
 
 Caution: parsing an instruction-shaped line does not establish that semantic analysis recognizes the mnemonic.
 
@@ -54,6 +55,19 @@ Use for:
 - special register/configuration values;
 - instruction operand/effect metadata used by Propan.
 
+### `src/propan/propan.zig`, `emit.zig`, and `listfile.zig`
+
+Role: authoritative current CLI, multi-file composition, output-format, fill-byte, and list-file behavior.
+
+Use for:
+
+- positional source processing;
+- module overlay order;
+- flat/JSON output;
+- list-file rendering;
+- exit/error behavior;
+- generated stdlib-reference entrypoint.
+
 ## Tests
 
 ### `tests/propan/parser/`
@@ -73,7 +87,9 @@ Use for:
 - segment management;
 - stdlib behavior;
 - instruction selection;
-- regression cases such as unary plus and alignment.
+- alignment and selected address/layout behavior.
+
+The `segment_management.propan` fixture mixes implemented and planned syntax and is not blanket evidence that every directive appearing in it is current.
 
 ### `tests/propan/regressions/`
 
@@ -85,7 +101,7 @@ Use for output behavior, multi-file assembly, fill byte behavior, JSON output, a
 
 Role: comparison material against PASM2/FlexSpin encodings and syntax forms.
 
-Use for instruction operand mapping and PASM2-to-Propan comparisons. Individual files are not by themselves proof that every possible variant is exhaustively covered.
+Use for instruction operand mapping, pointer/address forms, branch behavior, effects, augmentation, and PASM2-to-Propan comparisons. Individual files are not by themselves proof that every possible variant is exhaustively covered.
 
 ## Generated and canonical instruction data
 
@@ -123,9 +139,15 @@ Do not treat as a current syntax reference without implementation verification.
 
 ### `examples/*.propan`
 
-Role: realistic source examples.
+Role: realistic source examples with mixed current/legacy status.
 
-Useful for style and intended workflows, but some directive spellings appear older than the current semantic mnemonic table and require validation before reuse in normative examples.
+Current review:
+
+- `rgbx.propan` uses unsupported `.org`, `.RES`, and `.fit` and is confirmed legacy/stale relative to the current semantic directive table;
+- `propio-client.propan` is broadly aligned with current syntax but is not part of the current conformance/regression suite;
+- `sumloop.propan` avoids the known obsolete directives but still contains packed label-valued expressions whose full semantic validity is not regression-established.
+
+Use `/projects/propan/documentation-discrepancies.md` for the maintained per-file classification.
 
 ## Historical implementation/tooling
 
@@ -139,12 +161,10 @@ Useful for archaeology and design intent only. It must not override current Zig 
 
 Material under `docs/p2/` and the pinned p2docs submodule may be used to explain P2 hardware semantics. When exact PASM2 encoding/syntax is involved, prefer the repository-pinned official instruction sheet and clearly distinguish official statements from community-derived explanations.
 
-## Coverage gaps to address
+## Current coverage state
 
-- complete stdlib inventory;
-- complete directive semantics;
-- address/segment model;
-- exact instruction-selection and augmentation behavior;
-- CLI/output formats;
-- validation of existing examples against the current assembler;
-- generated documentation consistency checks.
+The first-pass source inventory has now been exercised across the current implementation, parser/sema/equivalence/regression tests, generated instruction data, examples, root README, and historical `docs/propan/semantics.md` material.
+
+The major current-state reference areas that originally motivated this inventory are now covered: lexical grammar, expressions, symbols, address/segment behavior, directives/data, instruction syntax/selection, pointer addressing, standard library, PASM2 differences, CLI/output behavior, examples, and coverage mapping.
+
+Remaining work is narrower and is tracked explicitly in `/TODO.md`: unresolved language/design choices, missing focused regressions, documentation validation automation, and eventual cleanup/replacement of older non-OKF documentation.
