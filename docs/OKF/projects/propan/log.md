@@ -48,3 +48,5 @@ source_confidence: "high"
 - Added a migration checklist and marked the PASM2 relationship/deviation/agent-oriented cheat-sheet tasks complete.
 - Added a documentation/validation coverage map connecting current-state pages to parser, semantic, equivalence, regression, and implementation-unit evidence.
 - Kept unresolved behavior/design questions explicitly listed as validation gaps rather than treating neighboring test coverage as proof.
+- Added a worked-example reference using current syntax for HUB/COG execution, pointer addressing, conditions/effects, REP-relative labels, alignment, and explicit address-domain conversion.
+- Marked the planned first-pass worked-example items complete while retaining automated example validation and legacy `examples/*.propan` review as separate follow-up work.

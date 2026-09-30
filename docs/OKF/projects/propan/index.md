@@ -25,6 +25,7 @@ Propan is under active development. These pages describe the repository state th
 - [/projects/propan/stdlib.md](/projects/propan/stdlib.md) — active predefined constants, builtin helpers, P2 configuration functions, enumerator domains, and generated-reference support.
 - [/projects/propan/tooling.md](/projects/propan/tooling.md) — CLI inputs, multi-file overlay, flat/JSON output, fill behavior, list files, and exit status.
 - [/projects/propan/pasm2-differences.md](/projects/propan/pasm2-differences.md) — compact PASM2-to-Propan migration table covering immediates, conditions/effects, addressing, directives, expressions, and source structure.
+- [/projects/propan/examples.md](/projects/propan/examples.md) — small current-syntax examples for HUB/COG execution, pointer access, flags, REP-relative labels, and data layout.
 - [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md) — known conflicts with README, old docs, parser-only examples, semantic fixtures, and repository examples.
 - [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md) — assembler issues/limitations found while documenting behavior.
 - [/references/propan-sources.md](/references/propan-sources.md) — source inventory and evidence roles.
@@ -32,4 +33,4 @@ Propan is under active development. These pages describe the repository state th
 
 ## Planned coverage
 
-The remaining work includes worked examples and unresolved verification/design items tracked in `/TODO.md`.
+The first-pass current-state reference set is now present. Remaining work is primarily verification, legacy-example review, documentation validation automation, and unresolved design/implementation questions tracked in `/TODO.md`.

@@ -117,12 +117,12 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 
 ## 12. Examples and migration aids
 
-- [ ] Add a minimal complete HUB-exec program.
-- [ ] Add a minimal COG-exec program with HUB-resident data.
-- [ ] Add a pointer-memory-access example.
-- [ ] Add a conditions/effects example that demonstrates flag flow.
-- [ ] Add a REP/relative-label example.
-- [ ] Add a data-layout/alignment example.
+- [x] Add a minimal complete HUB-exec program.
+- [x] Add a minimal COG-exec program with HUB-resident data.
+- [x] Add a pointer-memory-access example.
+- [x] Add a conditions/effects example that demonstrates flag flow.
+- [x] Add a REP/relative-label example.
+- [x] Add a data-layout/alignment example.
 - [x] Add a PASM2 → Propan syntax-difference cheat sheet focused on common accidental carry-over from Spin2/PASM2.
 - [ ] Review existing `examples/*.propan` and either modernize them or explicitly label legacy/compatibility syntax.
 
@@ -133,7 +133,7 @@ This file is a temporary worklist for the Propan documentation rework. Items sho
 - [x] Ensure all currently supported assembler directives are discoverable from documentation alone.
 - [x] Ensure preferred current directive syntax is explicit where historical/proposed alternatives exist.
 - [x] Add a compact PASM2-differences table covering instruction inheritance and Propan source-level deviations.
-- [ ] Keep examples syntactically valid and testable; where practical, make documentation examples part of automated validation.
+- [ ] Keep examples syntactically valid and testable; the worked examples are grounded in current fixtures, but they are not yet extracted into automated documentation-example tests.
 - [x] Avoid AI-specific prose where ordinary precise language documentation serves both humans and agents better.
 
 ## 14. Provenance, verification, and maintenance
@@ -163,7 +163,7 @@ Current/planned compact set:
 - `/projects/propan/stdlib.md` — created
 - `/projects/propan/tooling.md` — created
 - `/projects/propan/pasm2-differences.md` — created
-- `/projects/propan/examples.md`
+- `/projects/propan/examples.md` — created
 - `/projects/propan/documentation-discrepancies.md` — created
 - `/projects/propan/implementation-findings.md` — created
 - `/references/propan-sources.md` — created
