@@ -5,7 +5,6 @@ description: "Index for curated Propan assembler and language documentation."
 tags: ["index", "propan", "assembler", "pasm2"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan
 

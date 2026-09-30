@@ -11,6 +11,7 @@ The bundle is organized by engineering concept rather than by source-document la
 - Topic directories contain focused documents and may have their own `index.md` and `log.md`.
 - `references/` records source inventories, provenance, coverage notes, and other material used to support processed documentation.
 - Links beginning with `/` are relative to the `docs/OKF/` root.
+- Do not add manually maintained timestamps to OKF front matter; use Git history for creation and modification chronology.
 
 The initial structure intentionally stays small. Add new top-level topics when durable documentation needs them rather than creating speculative empty hierarchies.
 

@@ -5,7 +5,6 @@ description: "Index for source inventories, provenance, coverage, and supporting
 tags: ["index", "references", "provenance"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Documentation references
 

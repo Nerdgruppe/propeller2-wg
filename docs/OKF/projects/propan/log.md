@@ -5,7 +5,6 @@ description: "Maintenance notes for curated Propan documentation."
 tags: ["log", "propan", "maintenance"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Log
 
@@ -20,3 +19,5 @@ timestamp: "2026-09-30T11:15:00+02:00"
 - Added an implementation finding register for assembler defects/limitations discovered during documentation work.
 - Added expression/value and address/segment references and updated TODO progress.
 - Removed repeated development-status disclaimers and branch-specific wording from individual reference pages; the scope-level status remains at the Propan OKF entrypoint.
+- Restored the segment-management discrepancy entry accidentally removed during cleanup.
+- Removed manually maintained front-matter timestamps from OKF documentation; Git history is used for chronology.

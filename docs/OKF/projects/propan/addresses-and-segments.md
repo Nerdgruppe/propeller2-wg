@@ -5,7 +5,6 @@ description: "Current address-domain, segment, and execution-mode semantics impl
 tags: ["propan", "addresses", "segments", "cog", "lut", "hub"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan addresses and segments
 

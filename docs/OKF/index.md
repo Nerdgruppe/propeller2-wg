@@ -5,7 +5,6 @@ description: "Navigation entry point for curated project knowledge."
 tags: ["index", "navigation", "documentation"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Project knowledge index
 

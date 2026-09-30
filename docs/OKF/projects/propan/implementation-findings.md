@@ -5,7 +5,6 @@ description: "Potential assembler issues and implementation limitations discover
 tags: ["propan", "assembler", "findings", "issues"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan implementation findings
 

@@ -5,7 +5,6 @@ description: "Current lexical rules and top-level source grammar implemented by 
 tags: ["propan", "syntax", "grammar", "lexer", "parser"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Propan lexical and source grammar
 

@@ -5,7 +5,6 @@ description: "Defines documentation authority and source precedence for current 
 tags: ["propan", "provenance", "source-precedence"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Propan source precedence
 

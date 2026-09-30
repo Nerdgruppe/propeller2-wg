@@ -5,7 +5,6 @@ description: "Maintenance notes for the curated project knowledge bundle."
 tags: ["log", "maintenance", "documentation"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Log
 
@@ -15,3 +14,4 @@ timestamp: "2026-09-30T11:15:00+02:00"
 - Added project-oriented navigation, beginning with Propan.
 - Added a references area for provenance and coverage material.
 - Added a temporary Propan documentation-rework TODO.
+- Removed manually maintained front-matter timestamps; Git history is the chronology source for OKF files.

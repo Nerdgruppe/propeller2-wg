@@ -5,7 +5,6 @@ description: "Current semantic behavior of Propan expressions and value categori
 tags: ["propan", "expressions", "operators", "values", "semantics"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T12:20:00+02:00"
 ---
 # Propan expressions and values
 

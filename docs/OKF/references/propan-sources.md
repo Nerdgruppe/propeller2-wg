@@ -5,7 +5,6 @@ description: "Inventory and role classification for sources used to document the
 tags: ["propan", "sources", "provenance", "documentation"]
 status: "draft"
 source_confidence: "high"
-timestamp: "2026-09-30T11:15:00+02:00"
 ---
 # Propan documentation sources
 
