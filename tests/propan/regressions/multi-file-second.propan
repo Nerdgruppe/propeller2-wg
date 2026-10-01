@@ -1,0 +1,3 @@
+second:
+BYTE 3
+.assert hubaddr(second) == 0

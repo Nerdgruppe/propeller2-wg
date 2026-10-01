@@ -1,5 +1,7 @@
 const std = @import("std");
 
+pub const render = @import("render.zig");
+
 pub const p1 = struct {
     pub const constants = @import("p1/constants.zig").p1_constants;
 

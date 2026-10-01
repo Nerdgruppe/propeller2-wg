@@ -670,7 +670,12 @@ const Analyzer = struct {
                                 switch (value.value) {
                                     .int => |int| {
                                         if (std.math.cast(u20, int)) |alignment| {
-                                            cursor.alignas(alignment);
+                                            if (alignment == 0 or !std.math.isPowerOfTwo(alignment)) {
+                                                try ana.emit_error(coded.ast_node.location, ".align value {} must be a nonzero power of two.", .{alignment});
+                                            } else {
+                                                cursor.alignas(alignment);
+                                                coded.start_addr = cursor.offset;
+                                            }
                                         } else {
                                             try ana.emit_error(coded.ast_node.location, ".align value {} is out of range.", .{
                                                 int,
@@ -1498,7 +1503,7 @@ const Analyzer = struct {
 
         if (current_segment.len() > 0) {
             try segments.append(segment_allocator, .{
-                .id = sid.next(),
+                .id = current_segment.id,
                 .hub_offset = current_segment.hub_offset,
                 .data = try current_segment.toOwnedSlice(),
                 .exec_mode = current_segment.exec_mode,
@@ -1809,7 +1814,7 @@ const Analyzer = struct {
                             });
                             return .int(0);
                         }
-                        return .int(-value.value.int);
+                        return value;
                     },
                     .@"-" => {
                         if (value.value != .int) {
@@ -2431,6 +2436,39 @@ test "semantic errors are collected" {
     defer std.testing.allocator.free(actual);
 
     try std.testing.expect(std.mem.indexOf(u8, actual, "test.propan:1:6: error: undefined reference to symbol missing") != null);
+}
+
+test "invalid alignments produce semantic errors" {
+    for ([_][]const u8{ ".align 0\n", ".align 3\n" }) |source| {
+        var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+        defer diagnostics_collection.deinit();
+        try diagnostics_collection.register_source("test.propan", source);
+
+        var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+        var parsed = try parser.parse(std.testing.allocator);
+        defer parsed.deinit();
+
+        try std.testing.expectError(error.SemanticErrors, analyze(std.testing.allocator, parsed.file, .{}, &diagnostics_collection));
+        try std.testing.expect(diagnostics_collection.has_errors());
+    }
+}
+
+test "final segment retains the label segment ID" {
+    const source = "last:\nBYTE 1\n";
+
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+    try diagnostics_collection.register_source("test.propan", source);
+
+    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    var parsed = try parser.parse(std.testing.allocator);
+    defer parsed.deinit();
+
+    var module = try analyze(std.testing.allocator, parsed.file, .{}, &diagnostics_collection);
+    defer module.deinit();
+    try std.testing.expectEqual(@as(usize, 1), module.segments.len);
+    try std.testing.expectEqual(@as(usize, 1), module.symbols.len);
+    try std.testing.expectEqual(module.symbols[0].label.segment_id, module.segments[0].id);
 }
 
 test "semantic warnings are collected without failing analysis" {

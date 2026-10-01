@@ -16,34 +16,13 @@ pub const BinaryFormat = enum {
     }
 };
 
-pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module: Module, format: BinaryFormat) !void {
+pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules: []const Module, flat_data: []const u8, format: BinaryFormat) !void {
     switch (format) {
-        .flat => try emit_flat(io, allocator, file, module),
-        .json => try emit_json(io, allocator, file, module),
+        .flat => try file.writeStreamingAll(io, flat_data),
+        .json => try emit_json(io, allocator, file, modules, flat_data.len),
 
         .none => {},
     }
-}
-
-fn emit_flat(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module: Module) !void {
-    var total_size: u64 = 0;
-    for (module.segments) |seg| {
-        total_size = @max(total_size, seg.hub_offset + seg.data.len);
-    }
-
-    if (total_size == 0)
-        return;
-
-    var buffer: []u8 = try allocator.alloc(u8, @intCast(total_size));
-    defer allocator.free(buffer);
-
-    @memset(buffer, 0);
-
-    for (module.segments) |seg| {
-        @memcpy(buffer[seg.hub_offset..][0..seg.data.len], seg.data);
-    }
-
-    try file.writeStreamingAll(io, buffer);
 }
 
 fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {
@@ -55,7 +34,7 @@ fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {
     return try writer.toOwnedSlice();
 }
 
-fn emit_json(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module: Module) !void {
+fn emit_json(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules: []const Module, total_size: usize) !void {
     var arena_allocator: std.heap.ArenaAllocator = .init(allocator);
     defer arena_allocator.deinit();
 
@@ -97,51 +76,70 @@ fn emit_json(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module
         line_map: []JLine,
     };
 
-    var total_size: u64 = 0;
-    for (module.segments) |seg| {
-        total_size = @max(total_size, seg.hub_offset + seg.data.len);
+    var segment_count: usize = 0;
+    var symbol_count: usize = 0;
+    var line_count: usize = 0;
+    for (modules) |module| {
+        segment_count += module.segments.len;
+        symbol_count += module.symbols.len;
+        line_count += module.line_data.len;
     }
 
     const mod: JMod = .{
         .total_size = total_size,
-        .segments = try arena.alloc(JSeg, module.segments.len),
-        .symbols = try arena.alloc(JSym, module.symbols.len),
-        .line_map = try arena.alloc(JLine, module.line_data.len),
+        .segments = try arena.alloc(JSeg, segment_count),
+        .symbols = try arena.alloc(JSym, symbol_count),
+        .line_map = try arena.alloc(JLine, line_count),
     };
 
-    for (mod.segments, module.segments) |*out, in| {
-        out.* = .{
-            .id = @intFromEnum(in.id),
-            .offset = in.hub_offset,
-            .size = in.data.len,
-            .data = try create_b64(arena, in.data),
-            .mode = @tagName(in.exec_mode),
-        };
-    }
+    var segment_index: usize = 0;
+    var symbol_index: usize = 0;
+    var line_index: usize = 0;
+    var id_base: u32 = 0;
+    for (modules) |module| {
+        var max_id: u32 = 0;
+        for (module.segments) |in| {
+            const id = @intFromEnum(in.id);
+            max_id = @max(max_id, id);
+            mod.segments[segment_index] = .{
+                .id = id_base + id,
+                .offset = in.hub_offset,
+                .size = in.data.len,
+                .data = try create_b64(arena, in.data),
+                .mode = @tagName(in.exec_mode),
+            };
+            segment_index += 1;
+        }
 
-    for (mod.line_map, module.line_data) |*out, in| {
-        out.* = .{
-            .offset = in.offset,
-            .size = in.length,
-            .file = in.location.source,
-            .line = in.location.line,
-            .column = in.location.column,
-        };
-    }
+        for (module.line_data) |in| {
+            mod.line_map[line_index] = .{
+                .offset = in.offset,
+                .size = in.length,
+                .file = in.location.source,
+                .line = in.location.line,
+                .column = in.location.column,
+            };
+            line_index += 1;
+        }
 
-    for (mod.symbols, module.symbols) |*out, in| {
-        out.* = .{
-            .name = in.name,
-            .type = @tagName(in.type),
-            .segment_id = @intFromEnum(in.label.segment_id),
-            .offset = in.label.hub_address,
-            .mode = @tagName(in.label.local),
-            .jump = switch (in.label.local) {
-                .cog => |v| .{ .cog = v },
-                .lut => |v| .{ .lut = v },
-                .hub => .{ .hub = in.label.hub_address },
-            },
-        };
+        for (module.symbols) |in| {
+            const id = @intFromEnum(in.label.segment_id);
+            max_id = @max(max_id, id);
+            mod.symbols[symbol_index] = .{
+                .name = in.name,
+                .type = @tagName(in.type),
+                .segment_id = id_base + id,
+                .offset = in.label.hub_address,
+                .mode = @tagName(in.label.local),
+                .jump = switch (in.label.local) {
+                    .cog => |v| .{ .cog = v },
+                    .lut => |v| .{ .lut = v },
+                    .hub => .{ .hub = in.label.hub_address },
+                },
+            };
+            symbol_index += 1;
+        }
+        id_base += max_id + 1;
     }
 
     var buffer: [4096]u8 = undefined;

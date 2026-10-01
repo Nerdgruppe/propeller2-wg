@@ -30,6 +30,8 @@ pub const Parser = struct {
         };
 
         try core.accept_file(&sequence);
+        if (!core.ok)
+            return error.SyntaxError;
 
         return .{
             .arena = arena,
@@ -44,6 +46,7 @@ pub const Parser = struct {
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
         diagnostics: *diagnostics.Collection,
         lf_is_whitespace: bool = false,
+        ok: bool = true,
 
         fn emit_fatal_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) error{ OutOfMemory, SyntaxError } {
             try core.emit_error(location, fmt, args);
@@ -51,6 +54,7 @@ pub const Parser = struct {
         }
 
         fn emit_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
+            core.ok = false;
             try core.diagnostics.emit_error(location, fmt, args);
         }
 
@@ -181,7 +185,7 @@ pub const Parser = struct {
                 } else false;
 
                 if (!ok) {
-                    logger.info("TODO: Emit error here!", .{});
+                    return core.emit_fatal_error(effect_token.location, "unknown instruction effect: {s}", .{effect_token.text});
                 }
             } else |_| {}
 
@@ -241,28 +245,30 @@ pub const Parser = struct {
 
             return struct {
                 fn accept(core: *Core) AcceptExprError!ast.Expression {
-                    const lhs = try accept_subexpression(core);
+                    var lhs = try accept_subexpression(core);
 
-                    if (core.accept_any(&allowed_tokens)) |bundle| {
+                    while (core.accept_any(&allowed_tokens)) |bundle| {
                         const which, const token = bundle;
 
                         const op: ast.BinaryOperator = switch (which) {
                             inline else => |tag| @field(ast.BinaryOperator, @tagName(tag)),
                         };
 
-                        const rhs = try accept(core);
+                        const rhs = try accept_subexpression(core);
+                        const lhs_node = try core.move_to_heap(ast.Expression, lhs);
+                        const rhs_node = try core.move_to_heap(ast.Expression, rhs);
 
-                        return .{
+                        lhs = .{
                             .binary_transform = .{
                                 .location = token.location,
                                 .operator = op,
-                                .lhs = try core.move_to_heap(ast.Expression, lhs),
-                                .rhs = try core.move_to_heap(ast.Expression, rhs),
+                                .lhs = lhs_node,
+                                .rhs = rhs_node,
                             },
                         };
-                    } else |_| {
-                        return lhs;
-                    }
+                    } else |_| {}
+
+                    return lhs;
                 }
             };
         }
@@ -1132,6 +1138,38 @@ test "parser records syntax diagnostics" {
     defer std.testing.allocator.free(actual);
 
     try std.testing.expect(std.mem.indexOf(u8, actual, "test.propan:1:1: error: unrecognized token") != null);
+}
+
+test "unknown instruction effect is rejected" {
+    const source = "NOP :nonesuch\n";
+
+    var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer diagnostics_collection.deinit();
+    try diagnostics_collection.register_source("test.propan", source);
+
+    var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+    try std.testing.expectError(error.SyntaxError, parser.parse(std.testing.allocator));
+
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+    try diagnostics_collection.render(&output.writer, .{});
+    try std.testing.expect(std.mem.indexOf(u8, output.written(), "unknown instruction effect: :nonesuch") != null);
+}
+
+test "recoverable parser diagnostics reject the source" {
+    for ([_][]const u8{
+        "BYTE ''\n",
+        "BYTE 'ab'\n",
+        "BYTE 9223372036854775808\n",
+    }) |source| {
+        var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
+        defer diagnostics_collection.deinit();
+        try diagnostics_collection.register_source("test.propan", source);
+
+        var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+        try std.testing.expectError(error.SyntaxError, parser.parse(std.testing.allocator));
+        try std.testing.expect(diagnostics_collection.has_errors());
+    }
 }
 
 test "parse conditions (positive)" {

@@ -1,5 +1,5 @@
 
-zig := "zig-0.15.2"
+zig := "zig-0.16.0"
 
 # Builds and validates all projects and
 validate: build validate-p2db
