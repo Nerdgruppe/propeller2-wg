@@ -1,0 +1,9 @@
+//? PROPAN CHECK LIST
+//? err: err_unterminated_escape_sequence
+//? err: err_unterminated_escape_sequence
+//? err: err_unterminated_escape_sequence
+//? err: err_invalid_unicode_escape_format
+BYTE "\x"
+BYTE "\u"
+BYTE "\u12"
+BYTE "\u{12"

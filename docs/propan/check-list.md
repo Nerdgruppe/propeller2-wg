@@ -27,12 +27,15 @@ err: <code>
 ```
 
 `<code>` must be a tag of `diagnostics.Kind` at any level: error, warning, or
-info. Each `err:` line expects one occurrence, so repeated lines check the
-count. Order, message details, and source locations do not matter; missing or
-unexpected diagnostics fail the test. A matching test exits successfully
+info. The `err:` keyword is kept for compatibility; it checks diagnostics at
+all three levels. Each `err:` line expects one occurrence, so repeated lines
+check the count. Order, message details, and source locations do not matter;
+missing or unexpected diagnostics fail the test. A matching test exits successfully
 without printing the matched diagnostics. Diagnostic checks work in parser,
 semantic, and comparison test modes. If compilation stops on expected errors,
-symbol, segment, and memory checks are skipped, as is binary comparison.
+symbol, segment, and memory checks are skipped, as is binary comparison. Checklist
+check failures can also be matched with `err:`; an expected check failure skips
+binary comparison.
 
 ## Symbol Checks
 

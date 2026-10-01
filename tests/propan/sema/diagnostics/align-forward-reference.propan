@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_align_references_label
+.align target
+target:
+BYTE 1

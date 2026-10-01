@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: warn_integer_was_truncated_to_bits_expected_emitted
+LONG 0x100000000

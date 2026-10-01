@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_hubaddr_cannot_be_applied_to_an_uninitialized_register
+.regspace
+var target:
+.assert hubaddr(target) == 0

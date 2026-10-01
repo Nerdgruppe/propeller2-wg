@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? err: err_type_mismatch_operator_index_cannot_be_applied_to_and
+const x = 1
+LONG x[1]

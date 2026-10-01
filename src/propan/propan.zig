@@ -298,8 +298,10 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     if (check_lists[0]) |list| {
-        if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
         try list.evaluate(modules[0], output.items, &diagnostics_collection);
+        const check_failed = diagnostics_collection.has_errors();
+        if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+        if (check_failed) return if (diagnostics_collection.has_errors()) 1 else 0;
     }
     if (diagnostics_collection.has_errors()) return 1;
 

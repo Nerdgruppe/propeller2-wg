@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: warn_waitx_delay_too_short
+.assert 0 == ticks(ns=1, clk=300_000_000, waitx=#on)

@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_symbol_is_already_defined
+label:
+label:
+BYTE 1

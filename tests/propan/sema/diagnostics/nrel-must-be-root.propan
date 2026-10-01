@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: err_nrel_must_be_the_root_of_an_expression
+LONG 1 + nrel(2)

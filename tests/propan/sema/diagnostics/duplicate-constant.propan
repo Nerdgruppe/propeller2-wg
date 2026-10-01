@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_symbol_is_already_defined
+const X = 1
+const X = 2
+BYTE 1

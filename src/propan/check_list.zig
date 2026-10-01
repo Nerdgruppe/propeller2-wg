@@ -28,7 +28,7 @@ const MemoryCheck = struct {
 };
 const Check = struct {
     location: Location,
-    value: union(enum) { symbol: SymbolCheck, segment: SegmentCheck, memory: MemoryCheck, err: DiagnosticTag },
+    value: union(enum) { symbol: SymbolCheck, segment: SegmentCheck, memory: MemoryCheck, diagnostic: DiagnosticTag },
 };
 
 pub const List = struct {
@@ -41,7 +41,7 @@ pub const List = struct {
     }
 
     pub fn hasDiagnosticChecks(list: List) bool {
-        for (list.checks) |check| if (check.value == .err) return true;
+        for (list.checks) |check| if (check.value == .diagnostic) return true;
         return false;
     }
 
@@ -50,13 +50,13 @@ pub const List = struct {
         var matches = true;
         // ponytail: Checklists are small; use a map if these scans become costly.
         for (list.checks, 0..) |check, index| {
-            const tag = if (check.value == .err) check.value.err else continue;
+            const tag = if (check.value == .diagnostic) check.value.diagnostic else continue;
             for (list.checks[0..index]) |previous| {
-                if (previous.value == .err and previous.value.err == tag) break;
+                if (previous.value == .diagnostic and previous.value.diagnostic == tag) break;
             } else {
                 var expected_count: usize = 0;
                 var actual_count: usize = 0;
-                for (list.checks) |entry| if (entry.value == .err and entry.value.err == tag) {
+                for (list.checks) |entry| if (entry.value == .diagnostic and entry.value.diagnostic == tag) {
                     expected_count += 1;
                 };
                 for (actual) |entry| if (std.meta.activeTag(entry.kind) == tag) {
@@ -75,7 +75,7 @@ pub const List = struct {
         for (actual, 0..) |entry, index| {
             const tag = std.meta.activeTag(entry.kind);
             for (list.checks) |check| {
-                if (check.value == .err and check.value.err == tag) break;
+                if (check.value == .diagnostic and check.value.diagnostic == tag) break;
             } else {
                 for (actual[0..index]) |previous| {
                     if (std.meta.activeTag(previous.kind) == tag) break;
@@ -102,7 +102,7 @@ pub const List = struct {
             .symbol => |symbol| try evaluateSymbol(check.location, symbol, module, errors),
             .segment => |segment| try evaluateSegment(check.location, segment, module, errors),
             .memory => |memory| try evaluateMemory(check.location, memory, flat, errors),
-            .err => {},
+            .diagnostic => {},
         };
     }
 };
@@ -156,7 +156,7 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
                 try errors.emit_diag(location, .{ .err_invalid_checklist_diagnostic_code = .{ .token = tokens[1] } });
                 continue;
             };
-            try checks.append(arena, .{ .location = location, .value = .{ .err = tag } });
+            try checks.append(arena, .{ .location = location, .value = .{ .diagnostic = tag } });
         } else if (std.mem.eql(u8, tokens[0], "sym:")) {
             if (tokens.len != 3) {
                 try errors.emit_diag(location, .err_checklist_sym_requires_a_name_and_type_hub_local);
@@ -557,8 +557,8 @@ test "parser accepts diagnostic tags and rejects malformed checks" {
     defer list.deinit();
     try std.testing.expectEqual(@as(usize, 3), list.checks.len);
     try std.testing.expect(list.hasDiagnosticChecks());
-    try std.testing.expectEqual(DiagnosticTag.err_unknown_mnemonic, list.checks[0].value.err);
-    try std.testing.expectEqual(DiagnosticTag.warn_branch_into_data, list.checks[2].value.err);
+    try std.testing.expectEqual(DiagnosticTag.err_unknown_mnemonic, list.checks[0].value.diagnostic);
+    try std.testing.expectEqual(DiagnosticTag.warn_branch_into_data, list.checks[2].value.diagnostic);
     try std.testing.expectEqual(@as(usize, 3), errors.diagnostics.items.len);
 }
 

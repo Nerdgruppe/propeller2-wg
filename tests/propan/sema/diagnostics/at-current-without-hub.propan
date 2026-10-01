@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_current_address_has_no_hub_location
+.regspace
+var here:
+.assert @here == 0

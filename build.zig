@@ -245,95 +245,105 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
-    // The embedded checklist runs in semantic and comparison test modes.
+    // Cases that require expected failures or a comparison reference.
     {
         const expected_files = b.addWriteFiles();
         const reference = expected_files.add("check-list-reference.bin", &.{ 1, 0, 0, 0 });
-        const parser_run = coverage_stash.create_test_run(propan_exe);
-        parser_run.addArg("--format=none");
-        parser_run.addArg("--test-mode=parser");
-        parser_run.addFileArg(b.path("tests/propan/regressions/check-list-mismatch.propan"));
-        test_step.dependOn(&parser_run.step);
-        inline for (.{ "sema", "compare" }) |mode| {
-            const run = coverage_stash.create_test_run(propan_exe);
-            run.addArg("--format=none");
-            run.addArg("--test-mode=" ++ mode);
-            if (std.mem.eql(u8, mode, "compare")) run.addPrefixedFileArg("--compare-to=", reference);
-            run.addFileArg(b.path("tests/propan/regressions/check-list-mismatch.propan"));
-            run.expectExitCode(1);
-            run.expectStdErrMatch("checklist memory mismatch");
-            test_step.dependOn(&run.step);
-        }
+        const warning_reference = expected_files.add("check-list-warning.bin", &.{1});
+        const all_modes: []const TestMode = &.{ .parser, .sema, .compare };
+        const build_modes: []const TestMode = &.{ .sema, .compare };
+        const cases = [_]PropanTestCase{
+            .{
+                .path = "tests/propan/regressions/check-list-mismatch.propan",
+                .modes = build_modes,
+                .reference = reference,
+                .result = .{ .failure = &.{"checklist memory mismatch"} },
+            },
+            .{
+                .path = "tests/propan/regressions/check-list-missing-error.propan",
+                .modes = all_modes,
+                .result = .{ .failure = &.{"checklist diagnostic err_assertion_failed: expected 1, got 0"} },
+            },
+            .{
+                .path = "tests/propan/regressions/check-list-unexpected-error.propan",
+                .modes = build_modes,
+                .result = .{ .failure = &.{
+                    "checklist diagnostic err_assertion_failed: expected 1, got 0",
+                    "checklist diagnostic err_unknown_mnemonic: expected 0, got 1",
+                } },
+            },
+            .{
+                .path = "tests/propan/regressions/check-list-parser-unexpected-error.propan",
+                .modes = &.{.parser},
+                .result = .{ .failure = &.{"checklist diagnostic err_empty_character_literal_not_allowed: expected 0, got 1"} },
+            },
+            .{
+                .path = "tests/propan/regressions/check-list-parser-unexpected-warning.propan",
+                .modes = &.{.parser},
+                .result = .{ .failure = &.{"checklist diagnostic warn_invalid_escape_sequence: expected 0, got 1"} },
+            },
+            .{
+                .path = "tests/propan/regressions/check-list-missing-warning.propan",
+                .modes = all_modes,
+                .reference = warning_reference,
+                .result = .{ .failure = &.{"checklist diagnostic warn_symbol_has_no_references: expected 1, got 0"} },
+            },
+            .{ .path = "tests/propan/regressions/check-list-warning.propan", .modes = &.{.compare}, .reference = warning_reference, .result = .silent },
+            .{
+                .path = "tests/propan/regressions/check-list-unexpected-warning.propan",
+                .modes = build_modes,
+                .reference = warning_reference,
+                .result = .{ .failure = &.{"checklist diagnostic warn_symbol_has_no_references: expected 0, got 1"} },
+            },
+            .{
+                .path = "tests/propan/parser/diagnostics/malformed-checklist.propan",
+                .modes = &.{.parser},
+                .result = .{ .failure = &.{
+                    "checklist sym requires",
+                    "checklist mem requires",
+                    "invalid checklist memory address",
+                    "invalid checklist memory comparison",
+                    "invalid checklist memory format",
+                    "invalid checklist hex byte",
+                    "text after checklist memory block",
+                    "unexpected '[' in checklist memory block",
+                } },
+            },
+            .{
+                .path = "tests/propan/sema/diagnostics/pointer-constant-crash.propan",
+                .modes = &.{.sema},
+                .result = .{ .failure = &.{ "constants cannot store pointer expression", "error: InvalidSymbol" } },
+            },
+            .{
+                .path = "tests/propan/sema/diagnostics/constant-address-crash.propan",
+                .modes = &.{.sema},
+                .result = .{ .failure = &.{ "evaluated to memory offset, but expected integer", "error: InvalidSymbol" } },
+            },
+        };
+        for (cases) |case| add_propan_test_case(&coverage_stash, propan_exe, test_step, case);
     }
 
-    // Diagnostic checklists pass silently when emitted kinds and counts match.
+    for (parser_diagnostic_tests) |path| {
+        const run = create_propan_test_run(&coverage_stash, propan_exe, .parser, path, null);
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+    }
+    for (sema_diagnostic_tests) |path| {
+        const run = create_propan_test_run(&coverage_stash, propan_exe, .sema, path, null);
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+    }
+    for (compare_diagnostic_tests) |path| {
+        const run = create_propan_test_run(&coverage_stash, propan_exe, .compare, path, null);
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+    }
     {
-        inline for (.{ "parser", "sema", "compare" }) |mode| {
-            const run = coverage_stash.create_test_run(propan_exe);
-            run.addArg("--format=none");
-            run.addArg("--test-mode=" ++ mode);
-            if (std.mem.eql(u8, mode, "compare")) run.addArg("--compare-to=unused-reference.bin");
-            run.addFileArg(b.path("tests/propan/regressions/check-list-parser-errors.propan"));
-            run.expectStdErrEqual("");
-            test_step.dependOn(&run.step);
-        }
-        inline for (.{ "sema", "compare" }) |mode| {
-            const run = coverage_stash.create_test_run(propan_exe);
-            run.addArg("--format=none");
-            run.addArg("--test-mode=" ++ mode);
-            if (std.mem.eql(u8, mode, "compare")) run.addArg("--compare-to=unused-reference.bin");
-            run.addFileArg(b.path("tests/propan/regressions/check-list-sema-error.propan"));
-            run.expectStdErrEqual("");
-            test_step.dependOn(&run.step);
-        }
-        inline for (.{ "parser", "sema", "compare" }) |mode| {
-            const missing = coverage_stash.create_test_run(propan_exe);
-            missing.addArg("--format=none");
-            missing.addArg("--test-mode=" ++ mode);
-            if (std.mem.eql(u8, mode, "compare")) missing.addArg("--compare-to=unused-reference.bin");
-            missing.addFileArg(b.path("tests/propan/regressions/check-list-missing-error.propan"));
-            missing.expectExitCode(1);
-            missing.expectStdErrMatch("checklist diagnostic err_assertion_failed: expected 1, got 0");
-            test_step.dependOn(&missing.step);
-        }
-        inline for (.{ "sema", "compare" }) |mode| {
-            const unexpected = coverage_stash.create_test_run(propan_exe);
-            unexpected.addArg("--format=none");
-            unexpected.addArg("--test-mode=" ++ mode);
-            if (std.mem.eql(u8, mode, "compare")) unexpected.addArg("--compare-to=unused-reference.bin");
-            unexpected.addFileArg(b.path("tests/propan/regressions/check-list-unexpected-error.propan"));
-            unexpected.expectExitCode(1);
-            unexpected.expectStdErrMatch("checklist diagnostic err_assertion_failed: expected 1, got 0");
-            unexpected.expectStdErrMatch("checklist diagnostic err_unknown_mnemonic: expected 0, got 1");
-            test_step.dependOn(&unexpected.step);
-        }
-        const parser_unexpected = coverage_stash.create_test_run(propan_exe);
-        parser_unexpected.addArg("--format=none");
-        parser_unexpected.addArg("--test-mode=parser");
-        parser_unexpected.addFileArg(b.path("tests/propan/regressions/check-list-parser-unexpected-error.propan"));
-        parser_unexpected.expectExitCode(1);
-        parser_unexpected.expectStdErrMatch("checklist diagnostic err_empty_character_literal_not_allowed: expected 0, got 1");
-        test_step.dependOn(&parser_unexpected.step);
-
-        const warning_reference = b.addWriteFiles().add("check-list-warning.bin", &.{1});
-        inline for (.{ "sema", "compare" }) |mode| {
-            const warning = coverage_stash.create_test_run(propan_exe);
-            warning.addArg("--format=none");
-            warning.addArg("--test-mode=" ++ mode);
-            if (std.mem.eql(u8, mode, "compare")) warning.addPrefixedFileArg("--compare-to=", warning_reference);
-            warning.addFileArg(b.path("tests/propan/regressions/check-list-warning.propan"));
-            warning.expectStdErrEqual("");
-            test_step.dependOn(&warning.step);
-
-            const unexpected_warning = coverage_stash.create_test_run(propan_exe);
-            unexpected_warning.addArg("--format=none");
-            unexpected_warning.addArg("--test-mode=" ++ mode);
-            if (std.mem.eql(u8, mode, "compare")) unexpected_warning.addPrefixedFileArg("--compare-to=", warning_reference);
-            unexpected_warning.addFileArg(b.path("tests/propan/regressions/check-list-unexpected-warning.propan"));
-            unexpected_warning.expectExitCode(1);
-            unexpected_warning.expectStdErrMatch("checklist diagnostic warn_symbol_has_no_references: expected 0, got 1");
-            test_step.dependOn(&unexpected_warning.step);
-        }
+        const no_input = coverage_stash.create_test_run(propan_exe);
+        no_input.addArg("--format=none");
+        no_input.expectExitCode(1);
+        no_input.expectStdErrMatch("missing input files");
+        test_step.dependOn(&no_input.step);
     }
 
     // Exports:
@@ -353,28 +363,22 @@ pub fn build(b: *std.Build) void {
             test_step.dependOn(parser_tests);
 
             for (parser_accept_tests) |accept_file| {
-                const run = coverage_stash.create_test_run(propan_exe);
-                run.addArg("--format=none");
-                run.addArg("--test-mode=parser");
-                run.addFileArg(b.path(accept_file));
+                const run = create_propan_test_run(&coverage_stash, propan_exe, .parser, accept_file, null);
                 run.has_side_effects = true;
                 parser_tests.dependOn(&run.step);
             }
 
-            const sema_tests = make_sequencing_step(b, "parser tests");
+            const sema_tests = make_sequencing_step(b, "semantic tests");
             sema_tests.dependOn(parser_tests);
             test_step.dependOn(sema_tests);
 
             for (sema_accept_tests) |accept_file| {
-                const run = coverage_stash.create_test_run(propan_exe);
-                run.addArg("--format=none");
-                run.addArg("--test-mode=sema");
-                run.addFileArg(b.path(accept_file));
+                const run = create_propan_test_run(&coverage_stash, propan_exe, .sema, accept_file, null);
                 run.has_side_effects = true;
                 sema_tests.dependOn(&run.step);
             }
 
-            const equivalence_tests = make_sequencing_step(b, "parser tests");
+            const equivalence_tests = make_sequencing_step(b, "equivalence tests");
             equivalence_tests.dependOn(sema_tests);
             test_step.dependOn(equivalence_tests);
 
@@ -393,11 +397,7 @@ pub fn build(b: *std.Build) void {
 
                 convert.addFileArg(b.path(spin2_file));
 
-                const run = coverage_stash.create_test_run(propan_exe);
-                run.addArg("--format=none");
-                run.addArg("--test-mode=compare");
-                run.addPrefixedFileArg("--compare-to=", ref_file);
-                run.addFileArg(b.path(accept_file));
+                const run = create_propan_test_run(&coverage_stash, propan_exe, .compare, accept_file, ref_file);
                 run.has_side_effects = true;
                 equivalence_tests.dependOn(&run.step);
             }
@@ -422,6 +422,59 @@ pub fn build(b: *std.Build) void {
     //         test_step.dependOn(&run.step);
     //     }
     // }
+}
+
+const TestMode = enum { parser, sema, compare };
+
+const PropanTestCase = struct {
+    path: []const u8,
+    modes: []const TestMode,
+    reference: ?std.Build.LazyPath = null,
+    result: union(enum) {
+        silent,
+        failure: []const []const u8,
+    },
+};
+
+fn create_propan_test_run(
+    coverage_stash: *CoverageDirectoryStash,
+    exe: *std.Build.Step.Compile,
+    mode: TestMode,
+    path: []const u8,
+    reference: ?std.Build.LazyPath,
+) *std.Build.Step.Run {
+    const run = coverage_stash.create_test_run(exe);
+    run.addArg("--format=none");
+    run.addArg(coverage_stash.b.fmt("--test-mode={s}", .{@tagName(mode)}));
+    if (mode == .compare) {
+        if (reference) |file| {
+            run.addPrefixedFileArg("--compare-to=", file);
+        } else {
+            // Expected compilation errors should stop before opening this path.
+            run.addArg("--compare-to=unused-reference.bin");
+        }
+    }
+    run.addFileArg(coverage_stash.b.path(path));
+    return run;
+}
+
+fn add_propan_test_case(
+    coverage_stash: *CoverageDirectoryStash,
+    exe: *std.Build.Step.Compile,
+    test_step: *std.Build.Step,
+    case: PropanTestCase,
+) void {
+    for (case.modes) |mode| {
+        const run = create_propan_test_run(coverage_stash, exe, mode, case.path, case.reference);
+        switch (case.result) {
+            .silent => run.expectStdErrEqual(""),
+            .failure => |messages| {
+                run.expectExitCode(1);
+                for (messages) |message| run.expectStdErrMatch(message);
+            },
+        }
+        test_step.dependOn(&run.step);
+    }
 }
 
 fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
@@ -455,6 +508,102 @@ const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const
 
 const regression_tests: []const []const u8 = &[_][]const u8{
     // TODO: Implement "failing tests" "tests/propan/regressions/null-in-assert.propan",
+};
+
+const parser_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/regressions/check-list-mismatch.propan",
+    "tests/propan/regressions/check-list-parser-errors.propan",
+    "tests/propan/parser/diagnostics/incomplete-escapes.propan",
+    "tests/propan/parser/diagnostics/empty-character.propan",
+    "tests/propan/parser/diagnostics/invalid-escape-warning.propan",
+    "tests/propan/parser/diagnostics/del-character.propan",
+};
+
+const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/regressions/check-list-parser-errors.propan",
+    "tests/propan/regressions/check-list-sema-error.propan",
+    "tests/propan/regressions/check-list-warning.propan",
+    "tests/propan/sema/diagnostics/whole-memory-length-mismatch.propan",
+    "tests/propan/sema/diagnostics/ambiguous-selection.propan",
+    "tests/propan/sema/diagnostics/file-requires-path.propan",
+    "tests/propan/sema/diagnostics/align-exceeds-address-space.propan",
+    "tests/propan/sema/diagnostics/org-requires-argument.propan",
+    "tests/propan/sema/diagnostics/reserve-requires-count.propan",
+    "tests/propan/sema/diagnostics/reserve-exceeds-cog.propan",
+    "tests/propan/sema/diagnostics/assert-requires-operand.propan",
+    "tests/propan/sema/diagnostics/aug-must-be-root.propan",
+    "tests/propan/sema/diagnostics/nrel-must-be-root.propan",
+    "tests/propan/sema/diagnostics/lutaddr-register.propan",
+    "tests/propan/sema/diagnostics/address-without-execution-pc.propan",
+    "tests/propan/sema/diagnostics/at-outside-scope.propan",
+    "tests/propan/sema/diagnostics/at-target-without-hub.propan",
+    "tests/propan/sema/diagnostics/at-unaligned-delta.propan",
+    "tests/propan/sema/diagnostics/at-current-without-hub.propan",
+    "tests/propan/sema/diagnostics/positional-after-named.propan",
+    "tests/propan/sema/diagnostics/waitx-short-delay.propan",
+    "tests/propan/sema/diagnostics/align-forward-reference.propan",
+    "tests/propan/sema/diagnostics/augment-address-operand.propan",
+    "tests/propan/sema/diagnostics/org-invalid-in-data.propan",
+    "tests/propan/sema/diagnostics/org-target-exceeds-space.propan",
+    "tests/propan/sema/diagnostics/org-cannot-move-backward.propan",
+    "tests/propan/sema/diagnostics/data-in-regspace.propan",
+    "tests/propan/sema/diagnostics/code-in-data.propan",
+    "tests/propan/sema/diagnostics/branch-into-data.propan",
+    "tests/propan/sema/diagnostics/hubaddr-without-hub.propan",
+    "tests/propan/sema/diagnostics/duplicate-label.propan",
+    "tests/propan/sema/diagnostics/duplicate-constant.propan",
+    "tests/propan/sema/diagnostics/unknown-function.propan",
+    "tests/propan/sema/diagnostics/layout-needs-known-integer.propan",
+    "tests/propan/sema/diagnostics/layout-needs-integer.propan",
+    "tests/propan/sema/diagnostics/layout-integer-out-of-range.propan",
+    "tests/propan/sema/diagnostics/instruction-operand-count.propan",
+    "tests/propan/sema/diagnostics/assert-too-many-operands.propan",
+    "tests/propan/sema/diagnostics/assert-needs-integer.propan",
+    "tests/propan/sema/diagnostics/assert-needs-string-message.propan",
+    "tests/propan/sema/diagnostics/invalid-enumerator.propan",
+    "tests/propan/sema/diagnostics/pointer-immediate-out-of-range.propan",
+    "tests/propan/sema/diagnostics/operand-out-of-range.propan",
+    "tests/propan/sema/diagnostics/branch-too-far-bytes.propan",
+    "tests/propan/sema/diagnostics/branch-too-far-instructions.propan",
+    "tests/propan/sema/diagnostics/augmented-branch-too-far.propan",
+    "tests/propan/sema/diagnostics/negative-integer-truncated.propan",
+    "tests/propan/sema/diagnostics/positive-integer-truncated.propan",
+    "tests/propan/sema/diagnostics/pointer-index-out-of-range.propan",
+    "tests/propan/sema/diagnostics/incrementing-pointer-index-out-of-range.propan",
+    "tests/propan/sema/diagnostics/pointer-index-already-set.propan",
+    "tests/propan/sema/diagnostics/increment-needs-pointer.propan",
+    "tests/propan/sema/diagnostics/unary-operator-on-register.propan",
+    "tests/propan/sema/diagnostics/unary-operator-on-enumerator.propan",
+    "tests/propan/sema/diagnostics/bang-needs-integer.propan",
+    "tests/propan/sema/diagnostics/tilde-needs-integer.propan",
+    "tests/propan/sema/diagnostics/plus-needs-integer.propan",
+    "tests/propan/sema/diagnostics/minus-needs-integer.propan",
+    "tests/propan/sema/diagnostics/at-needs-address.propan",
+    "tests/propan/sema/diagnostics/dereference-needs-address.propan",
+    "tests/propan/sema/diagnostics/address-of-needs-address.propan",
+    "tests/propan/sema/diagnostics/index-needs-register-and-integer.propan",
+    "tests/propan/sema/diagnostics/binary-mismatched-types.propan",
+    "tests/propan/sema/diagnostics/binary-operator-on-registers.propan",
+    "tests/propan/sema/diagnostics/binary-operator-on-enumerators.propan",
+    "tests/propan/sema/diagnostics/binary-operator-on-pointer.propan",
+    "tests/propan/sema/diagnostics/address-function-needs-address.propan",
+    "tests/propan/sema/diagnostics/address-function-expected-offset.propan",
+    "tests/propan/sema/diagnostics/address-function-wrong-mode.propan",
+    "tests/propan/sema/diagnostics/hubaddr-expected-offset.propan",
+    "tests/propan/sema/diagnostics/hubaddr-needs-address.propan",
+    "tests/propan/sema/diagnostics/pointer-expression-needs-ptra-ptrb.propan",
+    "tests/propan/sema/diagnostics/function-argument-count.propan",
+    "tests/propan/sema/diagnostics/function-unknown-parameter.propan",
+    "tests/propan/sema/diagnostics/function-parameter-passed-twice.propan",
+    "tests/propan/sema/diagnostics/function-missing-parameter.propan",
+    "tests/propan/sema/diagnostics/pin-range-wraps.propan",
+    "tests/propan/sema/diagnostics/delay-exceeds-u32.propan",
+};
+
+const compare_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/regressions/check-list-parser-errors.propan",
+    "tests/propan/regressions/check-list-sema-error.propan",
+    "tests/propan/sema/diagnostics/whole-memory-length-mismatch.propan",
 };
 
 const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{

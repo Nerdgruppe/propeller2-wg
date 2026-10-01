@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_target_has_no_hub_location
+.regspace
+var target:
+.cogexec
+LONG @target

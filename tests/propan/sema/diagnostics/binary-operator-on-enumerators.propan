@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: err_type_mismatch_operator_cannot_be_applied_to_enumerators
+LONG _CLR + _SET
