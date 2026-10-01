@@ -7,12 +7,12 @@
 quicksum:
     REP 2, 8
         ALTI what, whatmode
-        ADD 0, 0
+        ADD altered, 0
     RET
 
 var what:
     // store R, D, S pointers
-    LONG (buf_c << 18) | (buf_b << 9) | (buf_a << 0)
+    LONG (cogaddr(buf_c) << 18) | (cogaddr(buf_b) << 9) | (cogaddr(buf_a) << 0)
 
 var whatmode:
     // increment R, D, S with wrap-8,
