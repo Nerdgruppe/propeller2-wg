@@ -1,5 +1,6 @@
     byte 0
 .align 4
 this:
-.assert hubaddr(this) == 4
+.assert hubaddr(this) == 16
+.assert localaddr(this) == 4
     long 0

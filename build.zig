@@ -187,42 +187,39 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&compare.step);
     }
 
-    // Later source files overwrite only the bytes they emit.
+    // Multi-file input is analyzed fully, then rejected without output.
     {
-        const expected_files = b.addWriteFiles();
-        const expected = expected_files.add("multi-file.bin", &.{ 3, 2 });
-
         const run = b.addRunArtifact(propan_exe);
         run.addArg("--format=flat");
-        const actual = run.addPrefixedOutputFileArg("--output=", "multi-file.bin");
+        run.addArg("--output=-");
         run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-second.propan"));
-
-        const compare = b.addRunArtifact(flat_checker);
-        compare.addFileArg(expected);
-        compare.addFileArg(actual);
-        test_step.dependOn(&compare.step);
+        run.addFileArg(b.path("tests/propan/regressions/multi-file-diagnostic.propan"));
+        run.expectExitCode(1);
+        run.expectStdOutEqual("");
+        run.expectStdErrMatch("second file analyzed");
+        run.expectStdErrMatch("multiple input files are not supported yet");
+        test_step.dependOn(&run.step);
     }
 
-    // JSON metadata includes every input module with distinct segment IDs.
+    // Data labels have a hub address but no jump PC in JSON metadata.
     {
         const run = b.addRunArtifact(propan_exe);
         run.addArg("--format=json");
-        const actual = run.addPrefixedOutputFileArg("--output=", "multi-file.json");
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-second.propan"));
+        run.addArg("--output=-");
+        run.addFileArg(b.path("tests/propan/sema/data-mode.propan"));
+        run.expectStdOutMatch("\"mode\": \"data\"");
+        run.expectStdOutMatch("\"none\": {}");
+        test_step.dependOn(&run.step);
+    }
 
-        const checker = b.addExecutable(.{
-            .name = "check-multi-file-json",
-            .root_module = b.createModule(.{
-                .root_source_file = b.path("tests/propan/regressions/check-multi-file-json.zig"),
-                .target = target,
-                .optimize = optimize,
-            }),
-        });
-        const check = b.addRunArtifact(checker);
-        check.addFileArg(actual);
-        test_step.dependOn(&check.step);
+    // LUT jumps expose a 9-bit index within LUT memory.
+    {
+        const run = b.addRunArtifact(propan_exe);
+        run.addArg("--format=json");
+        run.addArg("--output=-");
+        run.addFileArg(b.path("tests/propan/sema/lut-mode.propan"));
+        run.expectStdOutMatch("\"lut\": 4");
+        test_step.dependOn(&run.step);
     }
 
     // Exports:
@@ -359,6 +356,9 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/stdlib.propan",
     "tests/propan/sema/char-literals.propan",
     "tests/propan/sema/align.propan",
+    "tests/propan/sema/data-mode.propan",
+    "tests/propan/sema/file_source.propan",
+    "tests/propan/sema/lut-mode.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{

@@ -153,10 +153,10 @@ pub fn main(init: std.process.Init) !u8 {
         try diagnostics_collection.register_source(input_path, buffer.*);
     }
 
-    const loaded_files = try init.arena.allocator().alloc(frontend.ParsedFile, cli.positionals.len);
-    for (cli.positionals, loaded_files, source_files, 0..) |input_path, *parsed_file, source_code, i| {
-        errdefer for (loaded_files[0..i]) |*file|
-            file.deinit();
+    const loaded_files = try init.arena.allocator().alloc(?frontend.ParsedFile, cli.positionals.len);
+    @memset(loaded_files, null);
+    defer for (loaded_files) |*file| if (file.*) |*parsed| parsed.deinit();
+    for (cli.positionals, loaded_files, source_files) |input_path, *parsed_file, source_code| {
         std.log.debug("parsing {s}...", .{input_path});
 
         var parser: frontend.Parser = .init(source_code, input_path, &diagnostics_collection);
@@ -172,17 +172,14 @@ pub fn main(init: std.process.Init) !u8 {
             error.SyntaxError,
             error.InvalidCharacter,
             error.InvalidFlag,
-            => return 1,
+            => continue,
 
             error.OutOfMemory => |e| return e,
         };
     }
-    defer for (loaded_files) |*file|
-        file.deinit();
-
     // Stop after having each file parsed successfully:
     if (cli.options.@"test-mode" == .parser)
-        return 0;
+        return if (diagnostics_collection.has_errors()) 1 else 0;
 
     // try frontend.render.pretty_print(
     //     std.io.getStdOut().writer(),
@@ -205,13 +202,15 @@ pub fn main(init: std.process.Init) !u8 {
         module.deinit();
 
     var last_module: ?*Module = null;
-    for (cli.positionals, loaded_files) |input_path, parsed_file| {
+    for (cli.positionals, loaded_files) |input_path, maybe_parsed_file| {
+        const parsed_file = maybe_parsed_file orelse continue;
         std.log.debug("analyzing {s}...", .{input_path});
 
         const module = sema.analyze(allocator, parsed_file.file, .{
             .blank_pointer_expr = .as_ptr_epxr,
+            .io = init.io,
         }, &diagnostics_collection) catch |err| switch (err) {
-            error.SemanticErrors => return 1,
+            error.SemanticErrors => continue,
             else => |e| return e,
         };
 
@@ -260,9 +259,13 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
+    if (cli.positionals.len > 1) try diagnostics_collection.emit_error(null, "multiple input files are not supported yet", .{});
+    if (diagnostics_collection.has_errors()) return 1;
+
     if (cli.options.@"list-file".len > 0) {
         const list_inputs = try init.arena.allocator().alloc(listfile.Input, module_count);
-        for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, parsed_file, module| {
+        for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, maybe_parsed_file, module| {
+            const parsed_file = maybe_parsed_file.?;
             input.* = .{
                 .path = path,
                 .source = source,

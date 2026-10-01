@@ -172,12 +172,15 @@ pub const ExecMode = enum {
     hub,
     cog,
     lut,
+    regspace,
+    data,
 };
 
 pub const Segment_ID = enum(u32) { _ };
 
 pub const TaggedAddress = struct {
-    hub_address: u20,
+    pub const AddrSpace = enum { pc, data };
+    hub_address: ?u20,
     segment_id: Segment_ID,
     local: Local,
 
@@ -190,36 +193,44 @@ pub const TaggedAddress = struct {
 
         /// The offset points into lut memory
         lut: u9,
+
+        /// Uninitialized cog registers have no hub address.
+        regspace: u9,
+
+        /// Hub data has no execution address.
+        data,
     };
 
-    pub fn get_local(offset: TaggedAddress) u20 {
+    pub fn get_local(offset: TaggedAddress, address_space: AddrSpace) ?u32 {
         return switch (offset.local) {
-            .cog, .lut => |val| val,
-            .hub => offset.hub_address,
+            .cog, .regspace => |val| val,
+            .lut => |val| @as(u32, val) + if (address_space == .pc) @as(u32, 0x200) else 0,
+            .hub => if (offset.hub_address) |hub| @as(u32, hub) else null,
+            .data => null,
         };
     }
 
-    pub fn init(segment: Segment_ID, hub: u20, local: Local) TaggedAddress {
-        return .{ .segment_id = segment, .hub = hub, .local = local };
+    pub fn init(segment: Segment_ID, hub: ?u20, local: Local) TaggedAddress {
+        return .{ .segment_id = segment, .hub_address = hub, .local = local };
     }
 
     pub fn init_hub(segment: Segment_ID, hub: u20) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .hub };
     }
 
-    pub fn init_cog(segment: Segment_ID, hub: u20, cog: u9) TaggedAddress {
+    pub fn init_cog(segment: Segment_ID, hub: ?u20, cog: u9) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .{ .cog = cog } };
     }
 
-    pub fn init_lut(segment: Segment_ID, hub: u20, lut: u9) TaggedAddress {
+    pub fn init_lut(segment: Segment_ID, hub: ?u20, lut: u9) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .{ .lut = lut } };
     }
 
     pub fn format(offset: TaggedAddress, writer: *std.Io.Writer) !void {
         switch (offset.local) {
-            .cog => |cog| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, cog=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, cog }),
-            .lut => |lut| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, lut=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, lut }),
-            .hub => try writer.print("Address(segment=#{}, hub=0x{X:0>5})", .{ @intFromEnum(offset.segment_id), offset.hub_address }),
+            .cog, .regspace => |pc| try writer.print("Address(segment=#{}, hub={?}, {s}=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, @tagName(offset.local), pc }),
+            .lut => |index| try writer.print("Address(segment=#{}, hub={?}, lut=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, index }),
+            .hub, .data => try writer.print("Address(segment=#{}, hub={?}, mode={s})", .{ @intFromEnum(offset.segment_id), offset.hub_address, @tagName(offset.local) }),
         }
     }
 };

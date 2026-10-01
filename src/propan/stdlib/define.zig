@@ -230,7 +230,7 @@ fn convert_to_type(comptime T: type, value: Value) EvalError!T {
         eval.Register => switch (value.value) {
             .register => |reg| return reg,
             .address => |addr| switch (addr.local) {
-                .cog => |reg| return @enumFromInt(reg),
+                .cog, .regspace => |reg| return @enumFromInt(reg),
                 else => return error.TypeMismatch,
             },
             else => return error.TypeMismatch,

@@ -1,0 +1,4 @@
+.data 0x20
+table:
+BYTE 1
+.assert hubaddr(table) == 0x20

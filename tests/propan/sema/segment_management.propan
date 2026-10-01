@@ -1,17 +1,24 @@
+// segments are chunks of contiguous memory in hub ram.
+// each segment has its own unique "group" of addresses
+// which typically can be loaded at once.
+
 // keeps current segment,
-// moves PC forward only to ${addr},
+// moves PC to ${addr}, can only forward PC.
 // emission of data afterwards will pad the skipped space
 .org ${addr}
 
 // keeps current segment,
 // aligns PC forward such that it is divisible by ${size},
 // emission of data afterwards will pad the skipped space
+// align is kinda weird as it aligns PC, not the hub address.
 .align ${size}
 
 // keeps current segment,
-// increments PC by one LONG,
+// increments PC by the provided count of LONGs
 // emission of data afterwards will be an error,
-// only legal in cogexec or regspace
+// only legal in cogexec or regspace.
+// use case: allocating uninitialized data registers. These registers
+// won't have a defined initial value.
 .reserve ${count}
 
 // starts new segment,
@@ -58,3 +65,19 @@
 // labels have no "jump" address associated,
 // will emit at hub address ${addr}.
 .data ${addr}
+
+
+// There are four kinds of data emission available:
+BYTE … // emits all operands as 8 bit values.
+WORD … // emits all operands as 16 bit values.
+LONG … // emits all operands as 32 bit values.
+FILE "path" // emits all bytes of the file "path"
+// the important part is that in cog/lut exec mode is that:
+// | BYTE 1, 2
+// | BYTE 3, 4
+// will still only occupy a single LONG, but 
+// | BYTE 1
+// | LONG 2
+// will emit a 8-bit "1", optional padding so the LONG is aligned, then a 32-bit number "2"
+//
+// if any padding is emitted, a warning shall be generated.

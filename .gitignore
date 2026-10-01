@@ -5,3 +5,4 @@ zig-out/
 .zig-cache/
 .codex
 zig-pkg/
+.tmp/

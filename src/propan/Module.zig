@@ -56,4 +56,5 @@ pub const LineData = struct {
     offset: u32,
     length: u32,
     location: ast.Location,
+    pc: ?u32 = null,
 };

@@ -51,10 +51,11 @@ fn emit_json(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module
     const JSym = struct {
         name: []const u8,
         segment_id: u32,
-        offset: u32,
+        offset: ?u20,
         type: []const u8,
         mode: []const u8,
         jump: union(enum) {
+            none,
             cog: u9,
             lut: u9,
             hub: u20,
@@ -134,7 +135,9 @@ fn emit_json(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, module
                 .jump = switch (in.label.local) {
                     .cog => |v| .{ .cog = v },
                     .lut => |v| .{ .lut = v },
-                    .hub => .{ .hub = in.label.hub_address },
+                    .regspace => |v| .{ .cog = v },
+                    .hub => .{ .hub = in.label.hub_address.? },
+                    .data => .none,
                 },
             };
             symbol_index += 1;

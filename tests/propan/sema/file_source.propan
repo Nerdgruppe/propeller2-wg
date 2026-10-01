@@ -1,0 +1,4 @@
+.data 0x101
+BYTE 1
+.align 4
+FILE "fixtures/payload.txt"
