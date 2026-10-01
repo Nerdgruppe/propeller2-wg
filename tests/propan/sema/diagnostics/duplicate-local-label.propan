@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_duplicate_definition
+foo:
+.loop:
+.loop:
+LONG 0

@@ -1,0 +1,22 @@
+//? PROPAN CHECK LIST
+//? err: err_undefined_reference_to_symbol_at
+//? err: err_undefined_reference_to_symbol_at
+//? err: err_undefined_reference_to_symbol_at
+//? err: err_undefined_reference_to_symbol_at
+//? err: err_undefined_reference_to_symbol_at
+foo:
+.one:
+.cogexec
+LONG .one
+.two:
+.lutexec
+LONG .two
+.three:
+.hubexec
+LONG .three
+.four:
+.regspace
+LONG .four
+.five:
+.data
+LONG .five

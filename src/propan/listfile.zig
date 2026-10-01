@@ -50,7 +50,7 @@ fn render_symbols(allocator: std.mem.Allocator, writer: *std.Io.Writer, inputs: 
                 .empty, .instruction => {},
 
                 .label => |label| {
-                    const symbol = find_symbol(input.module, label.identifier) orelse continue;
+                    const symbol = find_label_symbol(input.module, label) orelse continue;
                     try rows.append(allocator, .{
                         .kind = @tagName(symbol.label.local),
                         .hub = if (symbol.label.hub_address) |hub| try format_hub(allocator, hub) else "-----",
@@ -218,6 +218,15 @@ fn find_symbol(module: Module, name: []const u8) ?Module.Symbol {
     return null;
 }
 
+fn find_label_symbol(module: Module, label: frontend.ast.Label) ?Module.Symbol {
+    for (module.symbols) |symbol| {
+        if (symbol.source_location) |location| {
+            if (same_location(location, label.location)) return symbol;
+        }
+    }
+    return find_symbol(module, label.identifier);
+}
+
 fn find_constant(module: Module, name: []const u8) ?Module.Constant {
     for (module.constants) |constant| {
         if (std.mem.eql(u8, constant.name, name))
@@ -231,22 +240,22 @@ fn line_belongs_to_segment(input: Input, line: Module.LineData, segment: Module.
     const end = start + @as(u32, @intCast(segment.data.len));
 
     if (line.length == 0) {
-        const label = label_name_at(input.ast_file, line.location) orelse return line.offset >= start and line.offset <= end;
-        const symbol = find_symbol(input.module, label) orelse return false;
+        const label = label_at(input.ast_file, line.location) orelse return line.offset >= start and line.offset <= end;
+        const symbol = find_label_symbol(input.module, label) orelse return false;
         return symbol.label.segment_id == segment.id;
     }
 
     return line.offset >= start and line.offset < end;
 }
 
-fn label_name_at(file: frontend.ast.File, location: frontend.ast.Location) ?[]const u8 {
+fn label_at(file: frontend.ast.File, location: frontend.ast.Location) ?frontend.ast.Label {
     for (file.sequence) |item| {
         if (item != .label)
             continue;
 
         const label = item.label;
         if (same_location(label.location, location))
-            return label.identifier;
+            return label;
     }
     return null;
 }

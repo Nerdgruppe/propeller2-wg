@@ -47,6 +47,28 @@ pub const Parser = struct {
         diagnostics: *diagnostics.Collection,
         lf_is_whitespace: bool = false,
         ok: bool = true,
+        local_scope: ast.LocalScope = .{ .id = 0, .parent = null },
+
+        fn label(c: *Core, location: ast.Location, name: []const u8, kind: ast.Label.Type) ast.Label {
+            if (name[0] != '.') {
+                c.local_scope.id += 1;
+                c.local_scope.parent = name;
+            }
+            return .{
+                .location = location,
+                .identifier = name,
+                .type = kind,
+                .local_scope = if (name[0] == '.') c.local_scope else null,
+            };
+        }
+
+        fn ends_local_scope(name: []const u8) bool {
+            return std.ascii.eqlIgnoreCase(name, ".cogexec") or
+                std.ascii.eqlIgnoreCase(name, ".lutexec") or
+                std.ascii.eqlIgnoreCase(name, ".hubexec") or
+                std.ascii.eqlIgnoreCase(name, ".regspace") or
+                std.ascii.eqlIgnoreCase(name, ".data");
+        }
 
         fn emit_fatal_error(core: *Core, location: ptk.Location, diagnostic: diagnostics.Kind) error{ OutOfMemory, SyntaxError } {
             try core.emit_diag(location, diagnostic);
@@ -82,23 +104,10 @@ pub const Parser = struct {
 
                 .@"var" => {
                     const name = try c.accept_one(.designator);
-
-                    return .{
-                        .label = .{
-                            .location = token.location,
-                            .identifier = name.text[0 .. name.text.len - 1],
-                            .type = .@"var",
-                        },
-                    };
+                    return .{ .label = c.label(token.location, name.text[0 .. name.text.len - 1], .@"var") };
                 },
 
-                .designator => return .{
-                    .label = .{
-                        .location = token.location,
-                        .identifier = token.text[0 .. token.text.len - 1],
-                        .type = .code,
-                    },
-                },
+                .designator => return .{ .label = c.label(token.location, token.text[0 .. token.text.len - 1], .code) },
 
                 .@"const" => {
                     const name = try c.accept_one(.identifier);
@@ -194,6 +203,11 @@ pub const Parser = struct {
             } else |_| {}
 
             try core.accept_eol_or_eof();
+
+            if (ends_local_scope(mnemonic.text)) {
+                core.local_scope.id += 1;
+                core.local_scope.parent = null;
+            }
 
             return .{
                 .location = mnemonic.location,
@@ -418,6 +432,7 @@ pub const Parser = struct {
                         .symbol = .{
                             .location = token.location,
                             .symbol_name = token.text,
+                            .local_scope = if (token.text[0] == '.') core.local_scope else null,
                         },
                     };
 

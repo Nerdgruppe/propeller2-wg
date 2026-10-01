@@ -1,0 +1,13 @@
+//? PROPAN CHECK LIST
+//? sym: foo:loop code:0x100:0
+
+.cogexec 0x100
+foo:
+.loop:
+LONG 0
+.org 2
+.assert hubaddr(.loop) == 0x100
+.align 4
+.assert hubaddr(.loop) == 0x100
+.reserve 0
+.assert hubaddr(.loop) == 0x100

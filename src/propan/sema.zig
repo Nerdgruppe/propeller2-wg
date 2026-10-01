@@ -111,7 +111,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     var constants: std.ArrayList(Module.Constant) = .empty;
     defer constants.deinit(output_allocator);
 
-    for (analyzer.symbols.keys(), analyzer.symbols.values()) |name, sym| {
+    for (analyzer.symbols.values()) |sym| {
         const stype: Module.Symbol.Type = switch (sym.type) {
             .undefined => continue,
             .code => .code,
@@ -120,10 +120,13 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
             .builtin => continue,
         };
 
+        var source_location = sym.location().?;
+        if (source_location.source) |source| source_location.source = try output_allocator.dupe(u8, source);
         try symbols.append(output_allocator, .{
-            .name = try output_allocator.dupe(u8, name),
+            .name = try output_allocator.dupe(u8, sym.name),
             .label = sym.offset.?,
             .type = stype,
+            .source_location = source_location,
         });
     }
 
@@ -299,6 +302,21 @@ const Analyzer = struct {
         return gop.value_ptr;
     }
 
+    fn get_label_info(ana: *Analyzer, name: []const u8, scope: ?ast.LocalScope) !*SymbolInfo {
+        const local = scope orelse return ana.get_symbol_info(name);
+        // A NUL cannot occur in a source identifier, so this key cannot alias a global name.
+        const key = try std.fmt.allocPrint(ana.allocator, "\x00{d}:{s}", .{ local.id, name });
+        defer ana.allocator.free(key);
+        const sym = try ana.get_symbol_info(key);
+        if (std.mem.eql(u8, sym.name, key)) {
+            sym.name = if (local.parent) |parent|
+                try std.fmt.allocPrint(ana.arena.allocator(), "{s}:{s}", .{ parent, name[1..] })
+            else
+                name;
+        }
+        return sym;
+    }
+
     fn get_mnemonic(ana: *Analyzer, name: []const u8) ?*const Mnemonic {
         return ana.mnemonics.getPtr(name);
     }
@@ -403,7 +421,7 @@ const Analyzer = struct {
             switch (item) {
                 .empty => {},
                 .label => |lbl| {
-                    const sym = try ana.get_symbol_info(lbl.identifier);
+                    const sym = try ana.get_label_info(lbl.identifier, lbl.local_scope);
                     if (sym.type != .undefined) {
                         try ana.emit_diag(lbl.location, .{
                             .err_duplicate_definition = .{
@@ -460,12 +478,12 @@ const Analyzer = struct {
         switch (expr) {
             // Symbols are to be checked:
             .symbol => |symref| {
-                const sym = try ana.get_symbol_info(symref.symbol_name);
+                const sym = try ana.get_label_info(symref.symbol_name, symref.local_scope);
                 sym.referenced = true;
                 if (sym.type == .undefined) {
                     try ana.emit_diag(symref.location, .{
                         .err_undefined_reference_to_symbol_at = .{
-                            .name = sym.name,
+                            .name = symref.symbol_name,
                             .reference_location = symref.location,
                         },
                     });
@@ -631,7 +649,7 @@ const Analyzer = struct {
                 .empty, .constant => {},
 
                 .label => |lbl| {
-                    const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
+                    const sym = ana.get_label_info(lbl.identifier, lbl.local_scope) catch unreachable;
                     sym.offset = cursor.offset;
                     if (cursor.hub >= 0x80000 and !cursor.reserved and cursor.mode != .regspace) {
                         try ana.emit_diag(lbl.location, .{ .err_address_outside_space = .{ .subject = .label, .space = .hub, .actual = cursor.hub, .max_exclusive = 0x80000 } });
@@ -1277,7 +1295,7 @@ const Analyzer = struct {
                 .label => |lbl| {
 
                     // just assert we're not doing stupid things:
-                    const sym = ana.get_symbol_info(lbl.identifier) catch unreachable;
+                    const sym = ana.get_label_info(lbl.identifier, lbl.local_scope) catch unreachable;
                     if (sym.offset.?.hub_address) |label_hub| {
                         try ana.line_data.append(segment_allocator, .{
                             .offset = label_hub,
@@ -1996,7 +2014,7 @@ const Analyzer = struct {
             .string => |string| return .string(string.value),
             .enumerator => |enumerator| return .enumerator(enumerator.symbol_name),
             .symbol => |symref| {
-                const sym = ana.get_symbol_info(symref.symbol_name) catch unreachable;
+                const sym = ana.get_label_info(symref.symbol_name, symref.local_scope) catch unreachable;
 
                 return switch (sym.type) {
                     .undefined => return error.UndefinedSymbol,

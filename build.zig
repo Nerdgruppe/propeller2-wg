@@ -245,6 +245,34 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
+    // Scoped and literal dotted labels have distinct debug names and addresses.
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=json");
+        run.addArg("--output=-");
+        run.addFileArg(b.path("tests/propan/sema/local-labels.propan"));
+        run.expectStdOutMatch("\"name\": \"foo:loop\",\n      \"segment_id\": 0,\n      \"offset\": 8");
+        run.expectStdOutMatch("\"name\": \"foo.loop\",\n      \"segment_id\": 0,\n      \"offset\": 12");
+        test_step.dependOn(&run.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=none");
+        run.addArg("--list-file=-");
+        run.addFileArg(b.path("tests/propan/sema/local-labels.propan"));
+        run.expectStdOutMatch("00008 | 002 | foo:loop");
+        run.expectStdOutMatch("0000C | 003 | foo.loop");
+        test_step.dependOn(&run.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=json");
+        run.addArg("--output=-");
+        run.addFileArg(b.path("tests/propan/sema/local-label-segments.propan"));
+        run.expectStdOutMatch("\"name\": \".loop\",\n      \"segment_id\": 2,\n      \"offset\": 272");
+        test_step.dependOn(&run.step);
+    }
+
     // Cases that require expected failures or a comparison reference.
     {
         const expected_files = b.addWriteFiles();
@@ -551,6 +579,10 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/branch-into-data.propan",
     "tests/propan/sema/diagnostics/hubaddr-without-hub.propan",
     "tests/propan/sema/diagnostics/duplicate-label.propan",
+    "tests/propan/sema/diagnostics/duplicate-local-label.propan",
+    "tests/propan/sema/diagnostics/local-label-after-global.propan",
+    "tests/propan/sema/diagnostics/local-label-after-var.propan",
+    "tests/propan/sema/diagnostics/local-label-after-segment.propan",
     "tests/propan/sema/diagnostics/duplicate-constant.propan",
     "tests/propan/sema/diagnostics/unknown-function.propan",
     "tests/propan/sema/diagnostics/layout-needs-known-integer.propan",
@@ -612,6 +644,9 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/addressing-modes.propan",
     "tests/propan/sema/ambigious-selection.propan",
     "tests/propan/sema/basic-label-addressing.propan",
+    "tests/propan/sema/local-labels.propan",
+    "tests/propan/sema/local-label-segments.propan",
+    "tests/propan/sema/local-label-non-boundaries.propan",
     "tests/propan/sema/operators.propan",
     "tests/propan/sema/unary-plus.propan",
     "tests/propan/sema/operator-associativity.propan",

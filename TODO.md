@@ -10,7 +10,6 @@
 - Configuration File for analyzer options
 - `COGBRK #S` seems to be unsupported in flexspin
 - <https://github.com/totalspectrum/spin2cpp/issues/485>
-- local labels
 - implement instruction aliases (rolnib, ..)
 - function for "ALTI state" and "ALTI config":
   - `(cogaddr(buf_c) << 18) | (cogaddr(buf_b) << 9) | (cogaddr(buf_a) << 0)`

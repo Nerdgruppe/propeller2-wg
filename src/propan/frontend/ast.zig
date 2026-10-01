@@ -21,11 +21,17 @@ pub const Label = struct {
     location: Location,
     identifier: []const u8,
     type: Type,
+    local_scope: ?LocalScope = null,
 
     pub const Type = enum {
         @"var",
         code,
     };
+};
+
+pub const LocalScope = struct {
+    id: usize,
+    parent: ?[]const u8,
 };
 
 pub const Constant = struct {
@@ -83,6 +89,7 @@ pub const StringLiteral = struct {
 pub const SymbolReference = struct {
     location: Location,
     symbol_name: []const u8,
+    local_scope: ?LocalScope = null,
 };
 
 pub const UnaryTransform = struct {

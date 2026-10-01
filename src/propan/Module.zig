@@ -33,6 +33,7 @@ pub const Symbol = struct {
     name: []const u8,
     label: TaggedAddress,
     type: Type,
+    source_location: ?ast.Location = null,
 
     pub const Type = enum {
         code,
