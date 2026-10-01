@@ -83,12 +83,31 @@ pub fn build(b: *std.Build) void {
         const exe = b.addExecutable(.{
             .name = "propan",
             .root_module = propan_mod,
+            .use_llvm = true,
         });
 
         fb.installArtifact(exe);
 
         break :blk exe;
     };
+
+    var coverage_stash: CoverageDirectoryStash = .{ .b = b };
+    defer {
+        // when everything else is done, create a step which merges all test results:
+
+        const merge_run = b.addSystemCommand(&.{"kcov"});
+
+        merge_run.addArg("--merge"); // Merge output from multiple source dirs
+        // merge_run.addArg("--clean"); // don't keep previous runs
+
+        merge_run.addArg(".coverage");
+
+        for (coverage_stash.list.items) |input_dir| {
+            merge_run.addDirectoryArg(input_dir);
+        }
+
+        test_step.dependOn(&merge_run.step);
+    }
 
     const windtunnel_exe = blk: {
         const exe = b.addExecutable(.{
@@ -154,9 +173,13 @@ pub fn build(b: *std.Build) void {
 
         const propan_tests = b.addTest(.{
             .root_module = propan_mod,
+            .use_llvm = true,
         });
 
-        const run_tests_step = b.addRunArtifact(propan_tests);
+        const install_tests = b.addInstallArtifact(propan_tests, .{});
+        test_step.dependOn(&install_tests.step);
+
+        const run_tests_step = coverage_stash.create_test_run(propan_tests);
 
         test_step.dependOn(&run_tests_step.step);
     }
@@ -175,7 +198,7 @@ pub fn build(b: *std.Build) void {
         const expected_files = b.addWriteFiles();
         const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA });
 
-        const run = b.addRunArtifact(propan_exe);
+        const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=flat");
         run.addArg("--fill-byte=126");
         const actual = run.addPrefixedOutputFileArg("--output=", "fill-byte.bin");
@@ -189,7 +212,7 @@ pub fn build(b: *std.Build) void {
 
     // Multi-file input is analyzed fully, then rejected without output.
     {
-        const run = b.addRunArtifact(propan_exe);
+        const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=flat");
         run.addArg("--output=-");
         run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
@@ -203,7 +226,7 @@ pub fn build(b: *std.Build) void {
 
     // Data labels have a hub address but no jump PC in JSON metadata.
     {
-        const run = b.addRunArtifact(propan_exe);
+        const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=json");
         run.addArg("--output=-");
         run.addFileArg(b.path("tests/propan/sema/data-mode.propan"));
@@ -214,7 +237,7 @@ pub fn build(b: *std.Build) void {
 
     // LUT jumps expose a 9-bit index within LUT memory.
     {
-        const run = b.addRunArtifact(propan_exe);
+        const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=json");
         run.addArg("--output=-");
         run.addFileArg(b.path("tests/propan/sema/lut-mode.propan"));
@@ -226,13 +249,13 @@ pub fn build(b: *std.Build) void {
     {
         const expected_files = b.addWriteFiles();
         const reference = expected_files.add("check-list-reference.bin", &.{ 1, 0, 0, 0 });
-        const parser_run = b.addRunArtifact(propan_exe);
+        const parser_run = coverage_stash.create_test_run(propan_exe);
         parser_run.addArg("--format=none");
         parser_run.addArg("--test-mode=parser");
         parser_run.addFileArg(b.path("tests/propan/regressions/check-list-mismatch.propan"));
         test_step.dependOn(&parser_run.step);
         inline for (.{ "sema", "compare" }) |mode| {
-            const run = b.addRunArtifact(propan_exe);
+            const run = coverage_stash.create_test_run(propan_exe);
             run.addArg("--format=none");
             run.addArg("--test-mode=" ++ mode);
             if (std.mem.eql(u8, mode, "compare")) run.addPrefixedFileArg("--compare-to=", reference);
@@ -260,7 +283,7 @@ pub fn build(b: *std.Build) void {
             test_step.dependOn(parser_tests);
 
             for (parser_accept_tests) |accept_file| {
-                const run = b.addRunArtifact(propan_exe);
+                const run = coverage_stash.create_test_run(propan_exe);
                 run.addArg("--format=none");
                 run.addArg("--test-mode=parser");
                 run.addFileArg(b.path(accept_file));
@@ -273,7 +296,7 @@ pub fn build(b: *std.Build) void {
             test_step.dependOn(sema_tests);
 
             for (sema_accept_tests) |accept_file| {
-                const run = b.addRunArtifact(propan_exe);
+                const run = coverage_stash.create_test_run(propan_exe);
                 run.addArg("--format=none");
                 run.addArg("--test-mode=sema");
                 run.addFileArg(b.path(accept_file));
@@ -300,7 +323,7 @@ pub fn build(b: *std.Build) void {
 
                 convert.addFileArg(b.path(spin2_file));
 
-                const run = b.addRunArtifact(propan_exe);
+                const run = coverage_stash.create_test_run(propan_exe);
                 run.addArg("--format=none");
                 run.addArg("--test-mode=compare");
                 run.addPrefixedFileArg("--compare-to=", ref_file);
@@ -409,4 +432,31 @@ const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
     "tests/windtunnel/behaviour/cogstop.propan",
     "tests/windtunnel/behaviour/output.propan",
     "tests/windtunnel/behaviour/augs.propan",
+};
+
+const CoverageDirectoryStash = struct {
+    b: *std.Build,
+
+    list: std.ArrayList(std.Build.LazyPath) = .empty,
+
+    fn create_test_run(cds: *CoverageDirectoryStash, exe: *std.Build.Step.Compile) *std.Build.Step.Run {
+        const run_step = std.Build.Step.Run.create(cds.b, "run propan");
+
+        run_step.addArg("kcov");
+
+        // Only report for files in the `src` directory:
+        run_step.addPrefixedDirectoryArg("--include-path=", cds.b.path("src"));
+
+        // Only collect the data, we're not interested in rendering yet.
+        run_step.addArg("--collect-only");
+
+        // Collect data into a new directory
+        const cov_dir = run_step.addOutputDirectoryArg("coverage");
+
+        cds.list.append(cds.b.allocator, cov_dir) catch @panic("out of memory");
+
+        // Then add the propan executable:
+        run_step.addArtifactArg(exe);
+        return run_step;
+    }
 };

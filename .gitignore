@@ -6,3 +6,4 @@ zig-out/
 .codex
 zig-pkg/
 .tmp/
+.coverage/
