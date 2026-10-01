@@ -11,6 +11,7 @@ const Module = @This();
 arena: std.heap.ArenaAllocator,
 
 segments: []const Segment,
+regspace_segments: []const u32 = &.{},
 line_data: []const LineData,
 symbols: []const Symbol,
 constants: []const Constant,

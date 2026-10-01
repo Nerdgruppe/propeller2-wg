@@ -5,6 +5,7 @@ const frontend = @import("frontend.zig");
 const sema = @import("sema.zig");
 const emit = @import("emit.zig");
 const listfile = @import("listfile.zig");
+const check_list = @import("check_list.zig");
 const diagnostics = @import("diagnostics.zig");
 const stdlib = @import("stdlib/stdlib.zig");
 const Module = @import("Module.zig");
@@ -153,6 +154,14 @@ pub fn main(init: std.process.Init) !u8 {
         try diagnostics_collection.register_source(input_path, buffer.*);
     }
 
+    const check_lists = try init.arena.allocator().alloc(?check_list.List, source_files.len);
+    @memset(check_lists, null);
+    defer for (check_lists) |*entry| if (entry.*) |*list| list.deinit();
+    if (cli.options.@"test-mode" == .sema or cli.options.@"test-mode" == .compare) {
+        for (check_lists, cli.positionals, source_files) |*entry, path, source|
+            entry.* = try check_list.parse(allocator, path, source, &diagnostics_collection);
+    }
+
     const loaded_files = try init.arena.allocator().alloc(?frontend.ParsedFile, cli.positionals.len);
     @memset(loaded_files, null);
     defer for (loaded_files) |*file| if (file.*) |*parsed| parsed.deinit();
@@ -262,6 +271,9 @@ pub fn main(init: std.process.Init) !u8 {
     if (cli.positionals.len > 1) try diagnostics_collection.emit_error(null, "multiple input files are not supported yet", .{});
     if (diagnostics_collection.has_errors()) return 1;
 
+    if (check_lists[0]) |list| try list.evaluate(modules[0], output.items, &diagnostics_collection);
+    if (diagnostics_collection.has_errors()) return 1;
+
     if (cli.options.@"list-file".len > 0) {
         const list_inputs = try init.arena.allocator().alloc(listfile.Input, module_count);
         for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, maybe_parsed_file, module| {
@@ -366,6 +378,7 @@ test {
     _ = frontend;
     _ = sema;
     _ = listfile;
+    _ = check_list;
     _ = diagnostics;
 }
 

@@ -222,6 +222,27 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
+    // The embedded checklist runs in semantic and comparison test modes.
+    {
+        const expected_files = b.addWriteFiles();
+        const reference = expected_files.add("check-list-reference.bin", &.{ 1, 0, 0, 0 });
+        const parser_run = b.addRunArtifact(propan_exe);
+        parser_run.addArg("--format=none");
+        parser_run.addArg("--test-mode=parser");
+        parser_run.addFileArg(b.path("tests/propan/regressions/check-list-mismatch.propan"));
+        test_step.dependOn(&parser_run.step);
+        inline for (.{ "sema", "compare" }) |mode| {
+            const run = b.addRunArtifact(propan_exe);
+            run.addArg("--format=none");
+            run.addArg("--test-mode=" ++ mode);
+            if (std.mem.eql(u8, mode, "compare")) run.addPrefixedFileArg("--compare-to=", reference);
+            run.addFileArg(b.path("tests/propan/regressions/check-list-mismatch.propan"));
+            run.expectExitCode(1);
+            run.expectStdErrMatch("checklist memory mismatch");
+            test_step.dependOn(&run.step);
+        }
+    }
+
     // Exports:
 
     if (with_flexspin) blk: {
@@ -357,6 +378,7 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/char-literals.propan",
     "tests/propan/sema/align.propan",
     "tests/propan/sema/data-mode.propan",
+    "tests/propan/sema/check-list-regspace.propan",
     "tests/propan/sema/file_source.propan",
     "tests/propan/sema/lut-mode.propan",
 };

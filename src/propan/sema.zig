@@ -145,6 +145,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     return .{
         .arena = output_arena,
         .segments = segments,
+        .regspace_segments = try output_allocator.dupe(u32, analyzer.regspace_segments.items),
         .line_data = try analyzer.line_data.toOwnedSlice(output_allocator),
         .symbols = try symbols.toOwnedSlice(output_allocator),
         .constants = try constants.toOwnedSlice(output_allocator),
@@ -220,6 +221,7 @@ const Analyzer = struct {
     seq_to_instr_lut: []const ?usize = &.{},
     instructions: []InstructionInfo = &.{},
     line_data: std.ArrayListUnmanaged(Module.LineData) = .empty,
+    regspace_segments: std.ArrayListUnmanaged(u32) = .empty,
 
     ok: bool = true,
 
@@ -621,6 +623,7 @@ const Analyzer = struct {
                                 try ana.emit_error(lbl.location, "label is outside its local address space", .{});
                             }
                         },
+                        .hub, .data => {},
                     }
                 },
 
@@ -653,6 +656,7 @@ const Analyzer = struct {
                                 if (addr > 0x80000) try ana.emit_error(instr.location, "hub address exceeds 512 KB", .{});
                             }
                             cursor.change_mode(idgen.next(), mode, hub_offset);
+                            if (mode == .regspace) try ana.regspace_segments.append(ana.arena.allocator(), cursor.hub);
 
                             // We must change the start address here as we're changing the cursor mode here.
                             coded.start_addr = cursor.offset;
