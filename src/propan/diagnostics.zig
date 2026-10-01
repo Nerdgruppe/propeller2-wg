@@ -121,7 +121,7 @@ pub const TokenType = struct { token_type: parser.TokenType };
 pub const Text = struct { text: []const u8 };
 pub const Character = struct { character: u8 };
 pub const StartEnd = struct { start: u6, end: u6 };
-pub const PeriodsDuration = struct { periods: u64, duration: std.Io.Duration };
+pub const PeriodsDuration = struct { periods: u128, duration: std.Io.Duration };
 
 pub const Format = struct { format: emit.BinaryFormat };
 
@@ -209,6 +209,7 @@ pub const Kind = union(enum) {
     err_unknown_instruction_effect: Text,
     err_unknown_mnemonic: Mnemonic,
     err_unrecognized_token: TokenType,
+    err_syntax_error: Text,
     err_unterminated_checklist_memory_block,
     err_unterminated_escape_sequence,
     err_usage_cannot_emit_to_stdio: Format,
@@ -303,6 +304,7 @@ pub const Kind = union(enum) {
             .err_has_no_parameter_named => |v| try writer.print("{s}() has no parameter named {s}", .{ v.function, v.parameter }),
             .err_missing_parameter_for_function => |v| try writer.print("Missing parameter {s} for function {s}()", .{ v.parameter, v.function }),
             .err_unrecognized_token => |v| try writer.print("unrecognized token: {t}", .{v.token_type}),
+            .err_syntax_error => |v| try writer.print("invalid syntax: {s}", .{v.text}),
             .err_unknown_instruction_effect => |v| try writer.print("unknown instruction effect: {s}", .{v.text}),
             .err_unexpected_token_expected_end_of_line_but_found => |v| try writer.print("unexpected token: expected end of line, but found {t}", .{v.token_type}),
             .err_integer_overflow_does_not_fit_into_a_i64 => |v| try writer.print("integer overflow: {s} does not fit into a i64!", .{v.text}),

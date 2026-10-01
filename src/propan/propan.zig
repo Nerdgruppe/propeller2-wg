@@ -445,9 +445,12 @@ fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_dat
 }
 
 fn read_diff_word(data: []const u8, offset: usize) u32 {
-    if (offset + @sizeOf(u32) > data.len)
-        return 0;
-    return std.mem.readInt(u32, data[offset..][0..@sizeOf(u32)], .little);
+    var bytes: [4]u8 = @splat(0);
+    if (offset < data.len) {
+        const length = @min(bytes.len, data.len - offset);
+        @memcpy(bytes[0..length], data[offset..][0..length]);
+    }
+    return std.mem.readInt(u32, &bytes, .little);
 }
 
 fn bitdiff(comptime T: type, comp: T, ref: T, comptime groups: []const u32) [@bitSizeOf(T) + groups.len]u8 {
@@ -587,4 +590,8 @@ fn condition_str(cond: frontend.ast.Condition.Code) []const u8 {
         .if_c_or_z => "if(C | Z)  ",
         .always => "           ",
     };
+}
+
+test {
+    _ = @import("metadata_tests.zig");
 }

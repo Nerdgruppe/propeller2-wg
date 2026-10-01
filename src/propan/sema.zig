@@ -82,9 +82,15 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     try analyzer.evaluate_constant_values();
 
+    if (!analyzer.ok)
+        return error.SemanticErrors;
+
     try analyzer.check_undefined_symbols();
 
     try analyzer.evaluate_instruction_arguments();
+
+    if (!analyzer.ok)
+        return error.SemanticErrors;
 
     try analyzer.select_instruction_encoding();
 
@@ -120,13 +126,11 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
             .builtin => continue,
         };
 
-        var source_location = sym.location().?;
-        if (source_location.source) |source| source_location.source = try output_allocator.dupe(u8, source);
         try symbols.append(output_allocator, .{
             .name = try output_allocator.dupe(u8, sym.name),
             .label = sym.offset.?,
             .type = stype,
-            .source_location = source_location,
+            .source_location = try copy_location(output_allocator, sym.location().?),
         });
     }
 
@@ -141,8 +145,12 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
         try constants.append(output_allocator, .{
             .name = try output_allocator.dupe(u8, con.identifier),
             .value = try copy_value(output_allocator, sym.value.?),
-            .location = con.location,
+            .location = try copy_location(output_allocator, con.location),
         });
+    }
+
+    for (analyzer.line_data.items) |*line| {
+        line.location = try copy_location(output_allocator, line.location);
     }
 
     return .{
@@ -153,6 +161,12 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
         .symbols = try symbols.toOwnedSlice(output_allocator),
         .constants = try constants.toOwnedSlice(output_allocator),
     };
+}
+
+fn copy_location(allocator: std.mem.Allocator, location: ast.Location) !ast.Location {
+    var copied = location;
+    if (location.source) |source| copied.source = try allocator.dupe(u8, source);
+    return copied;
 }
 
 fn copy_value(allocator: std.mem.Allocator, value: Value) !Value {
@@ -697,7 +711,10 @@ const Analyzer = struct {
                             var hub_offset: ?u32 = null;
                             if (instr.arguments.len == 1 and max_args == 1) hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic);
                             if (hub_offset) |addr| {
-                                if (addr > 0x80000) try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .origin, .space = .hub, .actual = addr, .max_exclusive = 0x80001 } });
+                                if (addr > 0x80000) {
+                                    try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .origin, .space = .hub, .actual = addr, .max_exclusive = 0x80001 } });
+                                    continue;
+                                }
                             }
                             cursor.change_mode(idgen.next(), mode, hub_offset);
                             if (mode == .regspace) try ana.regspace_segments.append(ana.arena.allocator(), cursor.hub);
@@ -1009,6 +1026,7 @@ const Analyzer = struct {
             for (args, instr.ast_node.arguments) |*value, expr| {
                 value.* = ana.evaluate_root_expr(expr, instr.end_addr.?) catch |err| {
                     try ana.emit_eval_error(instr.ast_node.location, .expression, err);
+                    value.* = .int(0);
                     continue;
                 };
             }
@@ -1113,7 +1131,7 @@ const Analyzer = struct {
                                 break true;
                         } else false;
 
-                        if (any_ptrreg_prev == true and any_ptrreg_prev == true) {
+                        if (any_ptrreg_prev and any_ptrreg_now) {
                             @panic("incredibly amgigious instructions, should check the setup");
                         }
 
@@ -1219,11 +1237,6 @@ const Analyzer = struct {
                 });
                 continue;
             }
-            if (condition.value.int != 0) {
-                // TODO: Think about emitting a warning if not 1/TRUE is yielded.
-                continue;
-            }
-
             var message: []const u8 = "expression returned 0";
 
             if (with_message) {
@@ -1240,7 +1253,11 @@ const Analyzer = struct {
                     continue;
                 }
                 message = msg.value.string;
-            } else {
+            }
+
+            if (condition.value.int != 0) continue;
+
+            if (!with_message) {
                 const arg_expr = instr.ast_node.arguments[0];
                 if (arg_expr == .binary_transform) {
                     const maybe_relation: ?[]const u8 = switch (arg_expr.binary_transform.operator) {
@@ -1254,8 +1271,8 @@ const Analyzer = struct {
                     };
 
                     if (maybe_relation) |relation| {
-                        const lhs = try ana.evaluate_root_expr(arg_expr.binary_transform.lhs.*, null);
-                        const rhs = try ana.evaluate_root_expr(arg_expr.binary_transform.rhs.*, null);
+                        const lhs = try ana.evaluate_root_expr(arg_expr.binary_transform.lhs.*, instr.end_addr);
+                        const rhs = try ana.evaluate_root_expr(arg_expr.binary_transform.rhs.*, instr.end_addr);
 
                         // TODO(0.15.2): Use "nice" formatting again:
                         message = try std.fmt.allocPrint(ana.arena.allocator(), "{f} {s} {f}!", .{ lhs, relation, rhs });
@@ -1871,8 +1888,16 @@ const Analyzer = struct {
         const raw_value: i64 = switch (value.value) {
             .int => |int| int,
             .address => |offset| try ana.get_offset_for_exec_mode(location, offset, exec_mode, address_space),
-            .string => @panic("string emission not supported yet"),
-            .enumerator => @panic("BUG: enumerators must be handled before this!"),
+            .string, .enumerator => {
+                try ana.emit_diag(location, .{
+                    .err_expected_value_type = .{
+                        .subject = "data operand",
+                        .expected = .int,
+                        .actual = value.value,
+                    },
+                });
+                return 0;
+            },
             .register => |reg| @intFromEnum(reg),
 
             .pointer_expr => |ptr_expr| try ana.encode_ptr_expr(location, ptr_expr),
@@ -2159,7 +2184,7 @@ const Analyzer = struct {
                             });
                             return .int(0);
                         }
-                        return .int(-value.value.int);
+                        return .int(-%value.value.int);
                     },
                     .@"@" => {
                         if (value.value != .address) {
@@ -2337,8 +2362,15 @@ const Analyzer = struct {
                         });
                         return .enumerator("");
                     },
-                    .address => @panic("TODO: Implement binary operators on offsets."),
-                    .string => @panic("TODO: Implement binary operators on strings."),
+                    .address, .string => {
+                        try ana.emit_diag(op.location, .{
+                            .err_operator_invalid_operand_type = .{
+                                .operator = .{ .binary = op.operator },
+                                .value_type = lhs_type,
+                            },
+                        });
+                        return .int(0);
+                    },
                 }
             },
             .function_call => |fncall| {
@@ -2545,8 +2577,13 @@ const Analyzer = struct {
             .@"<<" => if (std.math.cast(u6, rhs)) |shift| (lhs << shift) else return error.Overflow,
             .@"&" => lhs & rhs,
             .@"*" => lhs *% rhs,
-            .@"/" => if (rhs != 0) @divFloor(lhs, rhs) else return error.DivideByZero,
-            .@"%" => if (rhs != 0) @mod(lhs, rhs) else return error.DivideByZero,
+            .@"/" => if (rhs == 0)
+                return error.DivideByZero
+            else if (lhs == std.math.minInt(i64) and rhs == -1)
+                return error.Overflow
+            else
+                @divFloor(lhs, rhs),
+            .@"%" => if (rhs == 0) return error.DivideByZero else if (rhs == -1) 0 else @mod(lhs, rhs),
             .array_index => unreachable,
         };
     }
@@ -2686,7 +2723,7 @@ const Analyzer = struct {
 
             const index = index_of_param(params, arg.name.?).? - first_kwarg_index;
             kw_argv[index] = try ana.evaluate_expr(arg.value, maybe_current_address, nesting + 1);
-            argv_ok.set(index);
+            argv_ok.set(index + first_kwarg_index);
         }
 
         {
@@ -2943,6 +2980,36 @@ test "final segment retains the label segment ID" {
     try std.testing.expectEqual(@as(usize, 1), module.segments.len);
     try std.testing.expectEqual(@as(usize, 1), module.symbols.len);
     try std.testing.expectEqual(module.symbols[0].label.segment_id, module.segments[0].id);
+}
+
+test "pointer register selection is independent of variant order" {
+    const source = "CALLD PA, target\nCALLD PB, target\nCALLD PTRA, target\nCALLD PTRB, target\ntarget:\nNOP\n";
+    var collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    var parser: frontend.Parser = .init(source, "pointer-order.propan", &collection);
+    var parsed = try parser.parse(std.testing.allocator);
+    defer parsed.deinit();
+
+    for ([_]bool{ false, true }) |reversed| {
+        var analyzer: Analyzer = try .init(std.testing.allocator, parsed.file, .{}, &collection);
+        defer analyzer.deinit();
+        try analyzer.load_constants(stdlib.p2.constants);
+        for (0..stdlib.p2.instructions.len) |i| {
+            const index = if (reversed) stdlib.p2.instructions.len - i - 1 else i;
+            try analyzer.load_instruction(stdlib.p2.instructions[index]);
+        }
+        try analyzer.declare_symbols();
+        try analyzer.validate_symbol_refs();
+        try analyzer.prepare_instruction_stream();
+        try analyzer.select_instruction_mnemonic();
+        try analyzer.assign_locations();
+        try analyzer.evaluate_instruction_arguments();
+        try analyzer.select_instruction_encoding();
+        try std.testing.expect(analyzer.ok);
+        for (analyzer.instructions[0..4]) |instr| {
+            try std.testing.expect(instr.instruction.?.operands[0].type == .pointer_reg);
+        }
+    }
 }
 
 test "semantic warnings are collected without failing analysis" {

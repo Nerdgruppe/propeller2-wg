@@ -1,0 +1,10 @@
+//? PROPAN CHECK LIST
+//? err: err_operator_invalid_operand_type
+//? err: err_operator_invalid_operand_type
+//? err: err_operator_invalid_operand_type
+//? err: err_operator_invalid_operand_type
+.assert "a" == "a"
+.assert "a" + "b"
+target:
+.assert target == target
+.assert target - target

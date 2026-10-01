@@ -16,6 +16,9 @@
   - `// increment R, D, S with wrap-8,`
     `// substitue each field into next instr`
     `LONG 0b110_110_110_111_111_111`
+- `BYTE "foo"` and friends.
+- `.address => @panic("TODO: Implement binary operators on offsets."),`
+- `.string => @panic("TODO: Implement binary operators on strings."),`
 
 ## New Features
 

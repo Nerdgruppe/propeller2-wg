@@ -1,0 +1,6 @@
+.assert bitrange(0, high=3) == 96
+.assert pinrange(2, end=11) == 0x242
+.assert Hub.setFilter(#filt1, 3, tap=5) == 0x400000A5
+.assert Hub.setFilter(#filt1, tap=5, length=3) == 0x400000A5
+.assert Hub.clockMode(#off, 1, mul=1, out_div=1, xi=#float, sysclk=#rcfast) == 0xF0
+.assert ticks(1000, ms=3) == 3

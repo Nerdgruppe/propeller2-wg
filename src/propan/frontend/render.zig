@@ -79,6 +79,8 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             try writer.writeAll(sym.symbol_name);
         },
 
+        .enumerator => |sym| try writer.print("#{s}", .{sym.symbol_name}),
+
         .string => |str| {
             try writer.writeAll(str.source_text);
         },
@@ -90,16 +92,32 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
         },
 
         .unary_transform => |op| {
-            try writer.writeAll(@tagName(op.operator));
-            try pretty_print_expr(writer, op.value.*);
+            switch (op.operator) {
+                .post_increment, .post_decrement => {
+                    try pretty_print_expr(writer, op.value.*);
+                    try writer.writeAll(if (op.operator == .post_increment) "++" else "--");
+                },
+                else => {
+                    try writer.writeAll(switch (op.operator) {
+                        .pre_increment => "++",
+                        .pre_decrement => "--",
+                        else => @tagName(op.operator),
+                    });
+                    try pretty_print_expr(writer, op.value.*);
+                },
+            }
         },
 
         .binary_transform => |op| {
             try pretty_print_expr(writer, op.lhs.*);
-            try writer.writeAll(" ");
-            try writer.writeAll(@tagName(op.operator));
-            try writer.writeAll(" ");
-            try pretty_print_expr(writer, op.rhs.*);
+            if (op.operator == .array_index) {
+                try writer.writeAll("[");
+                try pretty_print_expr(writer, op.rhs.*);
+                try writer.writeAll("]");
+            } else {
+                try writer.print(" {s} ", .{@tagName(op.operator)});
+                try pretty_print_expr(writer, op.rhs.*);
+            }
         },
 
         .function_call => |func| {
@@ -134,4 +152,8 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             }
         },
     }
+}
+
+test {
+    _ = @import("render_tests.zig");
 }

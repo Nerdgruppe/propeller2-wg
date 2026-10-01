@@ -1,0 +1,7 @@
+.assert cogaddr(regoffset(PTRB, 6)) == 511
+.assert cogaddr(regoffset(PTRB, 7)) == 0
+.assert cogaddr(regoffset(PTRB, 8)) == 1
+.assert cogaddr(regoffset(regoffset(PTRB, 7), -1)) == 511
+.assert cogaddr(regoffset(regoffset(PTRB, 6), 0)) == 511
+.assert cogaddr(regoffset(PTRA, -512)) == 504
+.assert cogaddr(regoffset(PTRA, 511)) == 503

@@ -29,7 +29,13 @@ pub const Parser = struct {
             .diagnostics = parser.diagnostics,
         };
 
-        try core.accept_file(&sequence);
+        core.accept_file(&sequence) catch |err| {
+            if (err == error.OutOfMemory) return err;
+            if (core.ok) try core.emit_diag(parser.tokenizer.current_location, .{
+                .err_syntax_error = .{ .text = @errorName(err) },
+            });
+            return error.SyntaxError;
+        };
         if (!core.ok)
             return error.SyntaxError;
 
@@ -169,7 +175,13 @@ pub const Parser = struct {
             var args: std.ArrayListUnmanaged(ast.Expression) = .empty;
             defer args.deinit(core.arena);
 
-            while (core.accept_expression()) |expr| {
+            while (true) {
+                const state = core.core.saveState();
+                const next = try core.next_token();
+                core.core.restoreState(state);
+                if (next == null or next.?.type == .linefeed or next.?.type == .effect) break;
+
+                const expr = try core.accept_expression();
                 try args.append(core.arena, expr);
 
                 // If accepting a "," fails, we're at the end of
@@ -180,7 +192,7 @@ pub const Parser = struct {
                 // insert a *single* line break:
 
                 if (core.accept_one(.linefeed)) |_| {} else |_| {}
-            } else |_| {}
+            }
 
             var effect: ?ast.Effect = null;
 
@@ -477,10 +489,7 @@ pub const Parser = struct {
                     return result_expr;
                 },
                 .char_literal => {
-                    var buffer: [32]u8 = undefined;
-                    var fba: std.heap.FixedBufferAllocator = .init(&buffer);
-
-                    const string = try core.unescape_string(token.location, fba.allocator(), token.text);
+                    const string = try core.unescape_string(token.location, core.arena, token.text);
 
                     if (string.len == 1) {
                         return .{
@@ -624,6 +633,7 @@ pub const Parser = struct {
                                 allocator,
                                 try std.fmt.parseInt(u8, hex, 16),
                             );
+                            i -= 1;
                         },
 
                         // \u{HHHHH}
@@ -967,7 +977,7 @@ const patterns = struct {
     }
 
     fn generic_string_literal(str: []const u8, comptime delim: u8) ?usize {
-        if (str.len == 0 or str[0] != delim)
+        if (str.len < 2 or str[0] != delim)
             return null;
 
         var i: usize = 1;

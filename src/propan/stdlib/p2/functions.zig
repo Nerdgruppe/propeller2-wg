@@ -228,9 +228,9 @@ pub const functions = define.namespace(.{
         };
 
         pub fn invoke(ctx: EvalContext, clk: u32, s: u64, ms: u64, us: u64, ns: u64, waitx: bool, rounding: RoundingMode) !u32 {
-            const delay_ns = std.time.ns_per_s * s +
-                std.time.ns_per_ms * ms +
-                std.time.ns_per_us * us +
+            const delay_ns = @as(u128, std.time.ns_per_s) * s +
+                @as(u128, std.time.ns_per_ms) * ms +
+                @as(u128, std.time.ns_per_us) * us +
                 ns;
 
             const rounding_offset: u64 = switch (rounding) {
@@ -239,20 +239,20 @@ pub const functions = define.namespace(.{
                 .ceil => std.time.ns_per_s - 1,
             };
 
-            var clocks_u64: u64 = (delay_ns * clk + rounding_offset) / std.time.ns_per_s;
+            var clocks: u128 = (delay_ns * clk + rounding_offset) / std.time.ns_per_s;
 
             if (waitx) {
-                if (clocks_u64 < 2) {
+                if (clocks < 2) {
                     try ctx.emit_diag(.warn_waitx_delay_too_short);
                 }
-                clocks_u64 -|= 2;
+                clocks -|= 2;
             }
 
-            return std.math.cast(u32, clocks_u64) orelse {
+            return std.math.cast(u32, clocks) orelse {
                 try ctx.emit_diag(.{
                     .err_a_delay_of_periods_cannot_be_represented_with_32_bits = .{
-                        .periods = clocks_u64,
-                        .duration = std.Io.Duration.fromNanoseconds(delay_ns),
+                        .periods = clocks,
+                        .duration = std.Io.Duration.fromNanoseconds(@intCast(delay_ns)),
                     },
                 });
                 return std.math.maxInt(u32);

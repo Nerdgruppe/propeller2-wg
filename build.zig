@@ -210,6 +210,17 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&compare.step);
     }
 
+    // Differences in incomplete final words must remain visible in the diff.
+    {
+        const references = b.addWriteFiles();
+        const reference = references.add("partial-word.bin", &.{2});
+        const run = create_propan_test_run(&coverage_stash, propan_exe, .compare, "tests/propan/regressions/compare-partial-word.propan", reference);
+        run.expectExitCode(1);
+        run.expectStdOutMatch("@00000: expected: 0x00000002");
+        run.expectStdOutMatch("actual: 0x00000001");
+        test_step.dependOn(&run.step);
+    }
+
     // Multi-file input is analyzed fully, then rejected without output.
     {
         const run = coverage_stash.create_test_run(propan_exe);
@@ -282,6 +293,11 @@ pub fn build(b: *std.Build) void {
         const build_modes: []const TestMode = &.{ .sema, .compare };
         const cases = [_]PropanTestCase{
             .{
+                .path = "tests/propan/regressions/hexadecimal-string-tail.propan",
+                .modes = &.{.sema},
+                .result = .{ .failure = &.{"assertion failed: AZB!"} },
+            },
+            .{
                 .path = "tests/propan/regressions/check-list-mismatch.propan",
                 .modes = build_modes,
                 .reference = reference,
@@ -336,16 +352,6 @@ pub fn build(b: *std.Build) void {
                     "text after checklist memory block",
                     "unexpected '[' in checklist memory block",
                 } },
-            },
-            .{
-                .path = "tests/propan/sema/diagnostics/pointer-constant-crash.propan",
-                .modes = &.{.sema},
-                .result = .{ .failure = &.{ "constants cannot store pointer expression", "error: InvalidSymbol" } },
-            },
-            .{
-                .path = "tests/propan/sema/diagnostics/constant-address-crash.propan",
-                .modes = &.{.sema},
-                .result = .{ .failure = &.{ "evaluated to memory offset, but expected integer", "error: InvalidSymbol" } },
             },
         };
         for (cases) |case| add_propan_test_case(&coverage_stash, propan_exe, test_step, case);
@@ -539,6 +545,16 @@ const regression_tests: []const []const u8 = &[_][]const u8{
 };
 
 const parser_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/parser/diagnostics/hexadecimal-escape-tail.propan",
+    "tests/propan/parser/diagnostics/incomplete-binary.propan",
+    "tests/propan/parser/diagnostics/incomplete-unary.propan",
+    "tests/propan/parser/diagnostics/incomplete-constant.propan",
+    "tests/propan/parser/diagnostics/invalid-condition.propan",
+    "tests/propan/parser/diagnostics/missing-parenthesis.propan",
+    "tests/propan/parser/diagnostics/missing-function-argument.propan",
+    "tests/propan/parser/diagnostics/long-character.propan",
+    "tests/propan/parser/diagnostics/lone-string-quote.propan",
+    "tests/propan/parser/diagnostics/lone-character-quote.propan",
     "tests/propan/regressions/check-list-mismatch.propan",
     "tests/propan/regressions/check-list-parser-errors.propan",
     "tests/propan/parser/diagnostics/incomplete-escapes.propan",
@@ -548,6 +564,17 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/invalid-origins.propan",
+    "tests/propan/sema/diagnostics/assert-message-with-true-condition.propan",
+    "tests/propan/sema/diagnostics/assert-relative-comparison.propan",
+    "tests/propan/sema/diagnostics/invalid-data-types.propan",
+    "tests/propan/sema/diagnostics/pointer-constant-crash.propan",
+    "tests/propan/sema/diagnostics/constant-address-crash.propan",
+    "tests/propan/sema/diagnostics/unsupported-binary-types.propan",
+    "tests/propan/sema/diagnostics/expression-evaluation-failure.propan",
+    "tests/propan/sema/diagnostics/division-overflow.propan",
+    "tests/propan/sema/diagnostics/ticks-overflow.propan",
+    "tests/propan/sema/diagnostics/invalid-constants.propan",
     "tests/propan/regressions/check-list-parser-errors.propan",
     "tests/propan/regressions/check-list-sema-error.propan",
     "tests/propan/regressions/check-list-warning.propan",
@@ -652,6 +679,13 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/operator-associativity.propan",
     "tests/propan/sema/value-hint-converter.propan",
     "tests/propan/sema/stdlib.propan",
+    "tests/propan/sema/mixed-function-arguments.propan",
+    "tests/propan/sema/register-offset-wrap.propan",
+    "tests/propan/sema/ticks-large-duration.propan",
+    "tests/propan/sema/integer-extremes.propan",
+    "tests/propan/sema/hexadecimal-escapes.propan",
+    "tests/propan/sema/pointer-variant-order.propan",
+    "tests/propan/sema/render-roundtrip.propan",
     "tests/propan/sema/char-literals.propan",
     "tests/propan/sema/align.propan",
     "tests/propan/sema/data-mode.propan",
