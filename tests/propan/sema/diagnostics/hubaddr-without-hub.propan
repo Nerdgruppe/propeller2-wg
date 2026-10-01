@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_hubaddr_cannot_be_applied_to_an_uninitialized_register
+//? err: err_address_has_no_hub_location
 .regspace
 var target:
 .assert hubaddr(target) == 0

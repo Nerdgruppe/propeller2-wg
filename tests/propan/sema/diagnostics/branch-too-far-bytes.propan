@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_branch_too_far_cannot_jump_by_bytes
+//? err: err_branch_too_far
 .hubexec
 JMP 0xFFFFFFFF

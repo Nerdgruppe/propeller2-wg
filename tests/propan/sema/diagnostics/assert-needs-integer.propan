@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_assert_condition_must_be_an_integer_value_but_found
+//? err: err_expected_value_type
 .assert "bad"

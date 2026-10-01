@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_org_target_exceeds_address_space
+//? err: err_numeric_value_out_of_range
 .org 0x300

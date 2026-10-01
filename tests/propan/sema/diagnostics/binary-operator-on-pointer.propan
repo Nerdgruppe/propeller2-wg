@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_operator_cannot_apply_to_pointer_expression
+//? err: err_operator_invalid_operand_type
 LONG PTRA[1] + PTRB[2]

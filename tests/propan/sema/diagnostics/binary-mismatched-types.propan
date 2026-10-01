@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_type_mismatch_operator_cannot_be_applied_to_and
+//? err: err_operator_invalid_operand_types
 LONG 1 + PTRA

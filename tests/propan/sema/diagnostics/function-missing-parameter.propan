@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
 //? err: err_missing_parameter_for_function
-//? err: err_evaluation_failed
+//? err: err_expression_evaluation_failed
 LONG pinrange(wrap=#off, start=0)

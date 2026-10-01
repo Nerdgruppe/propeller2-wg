@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_operator_tilde_cannot_be_applied_to_a_value_of_type
+//? err: err_operator_invalid_operand_type
 LONG ~"x"

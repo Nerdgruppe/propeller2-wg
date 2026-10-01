@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
 //? err: err_positional_after_named_argument
-//? err: err_evaluation_failed
+//? err: err_expression_evaluation_failed
 LONG ticks(clk=200000000, us=1, 2)
