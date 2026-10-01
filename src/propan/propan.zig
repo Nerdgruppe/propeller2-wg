@@ -124,11 +124,15 @@ pub fn main(init: std.process.Init) !u8 {
 
     const output_format = cli.options.format;
     if (output_format.is_binary() and cli.options.output.len == 0) {
-        return try usage_mistake(&diagnostics_collection, "Cannot emit {s} to stdio. Use \"-o -\" to force emission to stdout.", .{@tagName(output_format)});
+        return try usage_mistake(&diagnostics_collection, .{
+            .err_usage_cannot_emit_to_stdio = .{
+                .format = output_format,
+            },
+        });
     }
 
     if (cli.positionals.len == 0) {
-        return try usage_mistake(&diagnostics_collection, "missing input files.", .{});
+        return try usage_mistake(&diagnostics_collection, .err_usage_missing_input_files);
     }
 
     const source_files = try init.arena.allocator().alloc([]const u8, cli.positionals.len);
@@ -268,7 +272,7 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
-    if (cli.positionals.len > 1) try diagnostics_collection.emit_error(null, "multiple input files are not supported yet", .{});
+    if (cli.positionals.len > 1) try diagnostics_collection.emit_diag(null, .err_multiple_input_files_are_not_supported_yet);
     if (diagnostics_collection.has_errors()) return 1;
 
     if (check_lists[0]) |list| try list.evaluate(modules[0], output.items, &diagnostics_collection);
@@ -369,8 +373,8 @@ pub fn main(init: std.process.Init) !u8 {
     return 0;
 }
 
-fn usage_mistake(diagnostics_collection: *diagnostics.Collection, comptime fmt: []const u8, args: anytype) !u8 {
-    try diagnostics_collection.emit_error(null, "usage error: " ++ fmt, args);
+fn usage_mistake(diagnostics_collection: *diagnostics.Collection, diagnostic: diagnostics.Kind) !u8 {
+    try diagnostics_collection.emit_diag(null, diagnostic);
     return 1;
 }
 

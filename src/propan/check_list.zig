@@ -6,7 +6,7 @@ const stdlib = @import("stdlib/stdlib.zig");
 
 const Location = @import("frontend/ast.zig").Location;
 const Address = union(enum) { absent, value: u32 };
-const SymbolType = enum { code, data, constant, builtin };
+const SymbolType = diagnostics.ChecklistSymbolType;
 const MemoryFormat = enum { u8, u16, u32, hex };
 
 const SymbolCheck = struct {
@@ -90,35 +90,35 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
         if (tokens.len == 0) continue;
         if (std.mem.eql(u8, tokens[0], "sym:")) {
             if (tokens.len != 3) {
-                try errors.emit_error(location, "checklist sym requires a name and type:hub[:local]", .{});
+                try errors.emit_diag(location, .err_checklist_sym_requires_a_name_and_type_hub_local);
                 continue;
             }
             const symbol = parseSymbol(tokens[1], tokens[2]) orelse {
-                try errors.emit_error(location, "invalid checklist symbol specification", .{});
+                try errors.emit_diag(location, .err_invalid_checklist_symbol_specification);
                 continue;
             };
             try checks.append(arena, .{ .location = location, .value = .{ .symbol = symbol } });
         } else if (std.mem.eql(u8, tokens[0], "seg:")) {
             const segment = parseSegment(tokens) orelse {
-                try errors.emit_error(location, "invalid checklist segment specification", .{});
+                try errors.emit_diag(location, .err_invalid_checklist_segment_specification);
                 continue;
             };
             try checks.append(arena, .{ .location = location, .value = .{ .segment = segment } });
         } else if (std.mem.eql(u8, tokens[0], "mem:")) {
             if (tokens.len < 5 or !std.mem.eql(u8, tokens[4], "[")) {
-                try errors.emit_error(location, "checklist mem requires address, comparison, format, and '['", .{});
+                try errors.emit_diag(location, .err_checklist_mem_requires_address_comparison_format_and);
                 continue;
             }
             const start = parseUnsigned(tokens[1]) orelse {
-                try errors.emit_error(location, "invalid checklist memory address", .{});
+                try errors.emit_diag(location, .err_invalid_checklist_memory_address);
                 continue;
             };
             const whole = if (std.mem.eql(u8, tokens[2], "==")) true else if (std.mem.eql(u8, tokens[2], "<-")) false else {
-                try errors.emit_error(location, "invalid checklist memory comparison", .{});
+                try errors.emit_diag(location, .err_invalid_checklist_memory_comparison);
                 continue;
             };
             const format = std.meta.stringToEnum(MemoryFormat, tokens[3]) orelse {
-                try errors.emit_error(location, "invalid checklist memory format", .{});
+                try errors.emit_diag(location, .err_invalid_checklist_memory_format);
                 continue;
             };
             var memory: PendingMemory = .{ .location = location, .start = start, .whole = whole, .format = format };
@@ -130,10 +130,14 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
                 } } });
             } else pending = memory;
         } else {
-            try errors.emit_error(location, "unknown checklist check '{s}'", .{tokens[0]});
+            try errors.emit_diag(location, .{
+                .err_unknown_checklist_check = .{
+                    .check = tokens[0],
+                },
+            });
         }
     }
-    if (pending) |memory| try errors.emit_error(memory.location, "unterminated checklist memory block", .{});
+    if (pending) |memory| try errors.emit_diag(memory.location, .err_unterminated_checklist_memory_block);
     list.checks = try checks.toOwnedSlice(arena);
     return list;
 }
@@ -216,26 +220,26 @@ fn addMemoryTokens(allocator: std.mem.Allocator, memory: *PendingMemory, tokens:
         if (std.mem.eql(u8, token, "]")) {
             if (index + 1 != tokens.len) {
                 memory.invalid = true;
-                try errors.emit_error(location, "text after checklist memory block", .{});
+                try errors.emit_diag(location, .err_text_after_checklist_memory_block);
             }
             return true;
         }
         if (std.mem.eql(u8, token, "[")) {
             memory.invalid = true;
-            try errors.emit_error(location, "unexpected '[' in checklist memory block", .{});
+            try errors.emit_diag(location, .err_unexpected_in_checklist_memory_block);
             continue;
         }
         if (memory.format == .hex) {
             if (token.len % 2 != 0 or token.len == 0) {
                 memory.invalid = true;
-                try errors.emit_error(location, "checklist hex bytes require pairs of digits", .{});
+                try errors.emit_diag(location, .err_checklist_hex_bytes_require_pairs_of_digits);
                 continue;
             }
             var offset: usize = 0;
             while (offset < token.len) : (offset += 2) {
                 const byte = std.fmt.parseInt(u8, token[offset..][0..2], 16) catch {
                     memory.invalid = true;
-                    try errors.emit_error(location, "invalid checklist hex byte", .{});
+                    try errors.emit_diag(location, .err_invalid_checklist_hex_byte);
                     break;
                 };
                 try memory.bytes.append(allocator, byte);
@@ -243,7 +247,11 @@ fn addMemoryTokens(allocator: std.mem.Allocator, memory: *PendingMemory, tokens:
         } else {
             const value = parseNumber(token) orelse {
                 memory.invalid = true;
-                try errors.emit_error(location, "invalid checklist memory integer '{s}'", .{token});
+                try errors.emit_diag(location, .{
+                    .err_invalid_checklist_memory_integer = .{
+                        .token = token,
+                    },
+                });
                 continue;
             };
             const width: usize = switch (memory.format) {
@@ -288,9 +296,20 @@ fn evaluateSymbol(location: Location, check: SymbolCheck, module: Module, errors
     };
     if (kind == null and (stdlib.common.constants.get(check.name) != null or stdlib.p2.constants.get(check.name) != null)) kind = .builtin;
     if (kind == null) {
-        try errors.emit_error(location, "checklist symbol '{s}' does not exist", .{check.name});
+        try errors.emit_diag(location, .{
+            .err_checklist_symbol_does_not_exist = .{
+                .name = check.name,
+            },
+        });
     } else if (kind.? != check.kind or !addressMatches(check.hub, hub) or (check.local != null and !addressMatches(check.local.?, local))) {
-        try errors.emit_error(location, "checklist symbol '{s}' does not match: actual type {s}, hub {?}, local {?}", .{ check.name, @tagName(kind.?), hub, local });
+        try errors.emit_diag(location, .{
+            .err_checklist_symbol_does_not_match_actual_type_hub_local = .{
+                .name = check.name,
+                .kind = kind.?,
+                .hub = hub,
+                .local = local,
+            },
+        });
     }
 }
 
@@ -305,26 +324,41 @@ fn evaluateSegment(location: Location, check: SegmentCheck, module: Module, erro
             (check.length == null or check.length.? == 0) and
             (check.mode == null or check.mode.? == .regspace)) return;
     }
-    try errors.emit_error(location, "checklist segment at 0x{X} does not match length or mode", .{check.start});
+    try errors.emit_diag(location, .{
+        .err_checklist_segment_at_0x_x_does_not_match_length_or_mode = .{
+            .start = check.start,
+        },
+    });
 }
 
 fn evaluateMemory(location: Location, check: MemoryCheck, flat: []const u8, errors: *diagnostics.Collection) !void {
     if (check.whole and check.start != 0) {
-        try errors.emit_error(location, "checklist whole-memory comparison must start at zero", .{});
+        try errors.emit_diag(location, .err_checklist_whole_memory_comparison_must_start_at_zero);
         return;
     }
     if (check.whole and check.bytes.len != flat.len) {
-        try errors.emit_error(location, "checklist memory length mismatch: expected {}, got {}", .{ check.bytes.len, flat.len });
+        try errors.emit_diag(location, .{
+            .err_checklist_memory_length_mismatch_expected_got = .{
+                .expected = check.bytes.len,
+                .actual = flat.len,
+            },
+        });
         return;
     }
     const start: usize = check.start;
     if (start > flat.len or check.bytes.len > flat.len - start) {
-        try errors.emit_error(location, "checklist memory range exceeds assembled output", .{});
+        try errors.emit_diag(location, .err_checklist_memory_range_exceeds_assembled_output);
         return;
     }
     for (check.bytes, flat[start..][0..check.bytes.len], 0..) |expected, actual, offset| {
         if (expected != actual) {
-            try errors.emit_error(location, "checklist memory mismatch at 0x{X}: expected 0x{X:0>2}, got 0x{X:0>2}", .{ start + offset, expected, actual });
+            try errors.emit_diag(location, .{
+                .err_checklist_memory_byte_mismatch = .{
+                    .offset = start + offset,
+                    .expected = expected,
+                    .actual = actual,
+                },
+            });
             return;
         }
     }

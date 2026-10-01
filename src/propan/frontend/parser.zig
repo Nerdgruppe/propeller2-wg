@@ -48,18 +48,14 @@ pub const Parser = struct {
         lf_is_whitespace: bool = false,
         ok: bool = true,
 
-        fn emit_fatal_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) error{ OutOfMemory, SyntaxError } {
-            try core.emit_error(location, fmt, args);
+        fn emit_fatal_error(core: *Core, location: ptk.Location, diagnostic: diagnostics.Kind) error{ OutOfMemory, SyntaxError } {
+            try core.emit_diag(location, diagnostic);
             return error.SyntaxError;
         }
 
-        fn emit_error(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
-            core.ok = false;
-            try core.diagnostics.emit_error(location, fmt, args);
-        }
-
-        fn emit_warning(core: *Core, location: ptk.Location, comptime fmt: []const u8, args: anytype) !void {
-            try core.diagnostics.emit_warning(location, fmt, args);
+        fn emit_diag(core: *Core, location: ptk.Location, diagnostic: diagnostics.Kind) !void {
+            if (diagnostic.level() == .@"error") core.ok = false;
+            try core.diagnostics.emit_diag(location, diagnostic);
         }
 
         fn move_to_heap(core: *Core, comptime T: type, value: T) !*T {
@@ -149,7 +145,11 @@ pub const Parser = struct {
                     };
                 },
 
-                else => return c.emit_fatal_error(token.location, "unrecognized token: {s}", .{@tagName(token.type)}),
+                else => return c.emit_fatal_error(token.location, .{
+                    .err_unrecognized_token = .{
+                        .token_type = token.type,
+                    },
+                }),
             }
         }
 
@@ -185,7 +185,11 @@ pub const Parser = struct {
                 } else false;
 
                 if (!ok) {
-                    return core.emit_fatal_error(effect_token.location, "unknown instruction effect: {s}", .{effect_token.text});
+                    return core.emit_fatal_error(effect_token.location, .{
+                        .err_unknown_instruction_effect = .{
+                            .text = effect_token.text,
+                        },
+                    });
                 }
             } else |_| {}
 
@@ -212,8 +216,10 @@ pub const Parser = struct {
                         break :blk (try core.next_token()).?;
                     };
 
-                    return core.emit_fatal_error(context, "unexpected token: expected end of line, but found {s}", .{
-                        @tagName(any.type),
+                    return core.emit_fatal_error(context, .{
+                        .err_unexpected_token_expected_end_of_line_but_found = .{
+                            .token_type = any.type,
+                        },
                     });
                 },
                 else => |e| return e,
@@ -371,7 +377,11 @@ pub const Parser = struct {
                         .location = token.location,
                         .source_text = token.text,
                         .value = core.parse_int(token.text) catch blk: {
-                            try core.emit_error(token.location, "integer overflow: {s} does not fit into a i64!", .{token.text});
+                            try core.emit_diag(token.location, .{
+                                .err_integer_overflow_does_not_fit_into_a_i64 = .{
+                                    .text = token.text,
+                                },
+                            });
                             break :blk 0;
                         },
                     },
@@ -474,12 +484,12 @@ pub const Parser = struct {
                     const codepoint: u32 = if (iter.nextCodepoint()) |codepoint|
                         codepoint
                     else blk: {
-                        try core.emit_error(token.location, "empty character literal not allowed!", .{});
+                        try core.emit_diag(token.location, .err_empty_character_literal_not_allowed);
                         break :blk 0;
                     };
 
                     if (iter.nextCodepoint() != null) {
-                        try core.emit_error(token.location, "character literal contains more than one character!", .{});
+                        try core.emit_diag(token.location, .err_character_literal_contains_more_than_one_character);
                     }
 
                     return .{
@@ -565,11 +575,15 @@ pub const Parser = struct {
             while (i < body.len) : (i += 1) {
                 const char = body[i];
                 if (char < 0x20 or char == 0x7F) {
-                    try core.emit_error(location, "invalid character in string/char literal: 0x{X:0>2}", .{char});
+                    try core.emit_diag(location, .{
+                        .err_invalid_character_in_string_char_literal_0x_x_0_2 = .{
+                            .character = char,
+                        },
+                    });
                 } else if (char == '\\') {
                     i += 1;
                     if (i >= body.len) {
-                        try core.emit_error(location, "unterminated escape sequence", .{});
+                        try core.emit_diag(location, .err_unterminated_escape_sequence);
                         break;
                     }
                     const escape = body[i];
@@ -587,7 +601,7 @@ pub const Parser = struct {
                             const start = i + 1;
                             i += 3;
                             if (i > body.len) {
-                                try core.emit_error(location, "unterminated escape sequence", .{});
+                                try core.emit_diag(location, .err_unterminated_escape_sequence);
                                 break;
                             }
                             const hex = body[start..i];
@@ -600,12 +614,12 @@ pub const Parser = struct {
                         // \u{HHHHH}
                         'u' => {
                             if (i + 1 >= body.len) {
-                                try core.emit_error(location, "unterminated escape sequence", .{});
+                                try core.emit_diag(location, .err_unterminated_escape_sequence);
                                 break;
                             }
 
                             if (body[i + 1] != '{') {
-                                try core.emit_error(location, "unicode escape sequence must have the format \\u{{...}} where ... is a hexadecimal notation of the code point", .{});
+                                try core.emit_diag(location, .err_invalid_unicode_escape_format);
                                 break;
                             }
 
@@ -616,7 +630,7 @@ pub const Parser = struct {
                                 i += 1;
                             }
                             if (i >= body.len) {
-                                try core.emit_error(location, "unterminated escape sequence", .{});
+                                try core.emit_diag(location, .err_unterminated_escape_sequence);
                                 break;
                             }
 
@@ -629,7 +643,11 @@ pub const Parser = struct {
                             try output.appendSlice(allocator, buf[0..len]);
                         },
                         else => {
-                            try core.emit_warning(location, "invalid escape sequence: \\{c}", .{body[i]});
+                            try core.emit_diag(location, .{
+                                .warn_invalid_escape_sequence = .{
+                                    .character = body[i],
+                                },
+                            });
                             try output.append(allocator, char);
                         },
                     }
