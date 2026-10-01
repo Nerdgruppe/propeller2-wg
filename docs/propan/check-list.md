@@ -12,6 +12,28 @@ Test lists are then parsed as if `//?` is not present.
 
 The features supported are:
 
+## Diagnostic Checks
+
+Assert the exact diagnostics emitted by a test:
+
+```c
+//? err: err_unknown_mnemonic
+//? err: err_unknown_mnemonic
+//? err: warn_symbol_has_no_references
+```
+
+```c
+err: <code>
+```
+
+`<code>` must be a tag of `diagnostics.Kind` at any level: error, warning, or
+info. Each `err:` line expects one occurrence, so repeated lines check the
+count. Order, message details, and source locations do not matter; missing or
+unexpected diagnostics fail the test. A matching test exits successfully
+without printing the matched diagnostics. Diagnostic checks work in parser,
+semantic, and comparison test modes. If compilation stops on expected errors,
+symbol, segment, and memory checks are skipped, as is binary comparison.
+
 ## Symbol Checks
 
 Checks for the existence of labels or other symbols.

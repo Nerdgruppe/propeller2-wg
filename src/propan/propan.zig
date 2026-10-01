@@ -161,10 +161,12 @@ pub fn main(init: std.process.Init) !u8 {
     const check_lists = try init.arena.allocator().alloc(?check_list.List, source_files.len);
     @memset(check_lists, null);
     defer for (check_lists) |*entry| if (entry.*) |*list| list.deinit();
-    if (cli.options.@"test-mode" == .sema or cli.options.@"test-mode" == .compare) {
+    if (cli.options.@"test-mode" != null) {
         for (check_lists, cli.positionals, source_files) |*entry, path, source|
             entry.* = try check_list.parse(allocator, path, source, &diagnostics_collection);
     }
+    if (diagnostics_collection.has_errors()) return 1;
+    const diagnostic_start = diagnostics_collection.diagnostics.items.len;
 
     const loaded_files = try init.arena.allocator().alloc(?frontend.ParsedFile, cli.positionals.len);
     @memset(loaded_files, null);
@@ -191,8 +193,20 @@ pub fn main(init: std.process.Init) !u8 {
         };
     }
     // Stop after having each file parsed successfully:
-    if (cli.options.@"test-mode" == .parser)
+    if (cli.options.@"test-mode" == .parser) {
+        if (check_lists[0]) |list| {
+            if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+        }
         return if (diagnostics_collection.has_errors()) 1 else 0;
+    }
+    if (diagnostics_collection.has_errors()) {
+        if (check_lists[0]) |list| {
+            if (list.hasDiagnosticChecks()) {
+                _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+                return if (diagnostics_collection.has_errors()) 1 else 0;
+            }
+        }
+    }
 
     // try frontend.render.pretty_print(
     //     std.io.getStdOut().writer(),
@@ -273,9 +287,20 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     if (cli.positionals.len > 1) try diagnostics_collection.emit_diag(null, .err_multiple_input_files_are_not_supported_yet);
-    if (diagnostics_collection.has_errors()) return 1;
+    if (diagnostics_collection.has_errors()) {
+        if (check_lists[0]) |list| {
+            if (list.hasDiagnosticChecks()) {
+                _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+                return if (diagnostics_collection.has_errors()) 1 else 0;
+            }
+        }
+        return 1;
+    }
 
-    if (check_lists[0]) |list| try list.evaluate(modules[0], output.items, &diagnostics_collection);
+    if (check_lists[0]) |list| {
+        if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+        try list.evaluate(modules[0], output.items, &diagnostics_collection);
+    }
     if (diagnostics_collection.has_errors()) return 1;
 
     if (cli.options.@"list-file".len > 0) {

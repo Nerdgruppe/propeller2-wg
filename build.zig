@@ -266,6 +266,76 @@ pub fn build(b: *std.Build) void {
         }
     }
 
+    // Diagnostic checklists pass silently when emitted kinds and counts match.
+    {
+        inline for (.{ "parser", "sema", "compare" }) |mode| {
+            const run = coverage_stash.create_test_run(propan_exe);
+            run.addArg("--format=none");
+            run.addArg("--test-mode=" ++ mode);
+            if (std.mem.eql(u8, mode, "compare")) run.addArg("--compare-to=unused-reference.bin");
+            run.addFileArg(b.path("tests/propan/regressions/check-list-parser-errors.propan"));
+            run.expectStdErrEqual("");
+            test_step.dependOn(&run.step);
+        }
+        inline for (.{ "sema", "compare" }) |mode| {
+            const run = coverage_stash.create_test_run(propan_exe);
+            run.addArg("--format=none");
+            run.addArg("--test-mode=" ++ mode);
+            if (std.mem.eql(u8, mode, "compare")) run.addArg("--compare-to=unused-reference.bin");
+            run.addFileArg(b.path("tests/propan/regressions/check-list-sema-error.propan"));
+            run.expectStdErrEqual("");
+            test_step.dependOn(&run.step);
+        }
+        inline for (.{ "parser", "sema", "compare" }) |mode| {
+            const missing = coverage_stash.create_test_run(propan_exe);
+            missing.addArg("--format=none");
+            missing.addArg("--test-mode=" ++ mode);
+            if (std.mem.eql(u8, mode, "compare")) missing.addArg("--compare-to=unused-reference.bin");
+            missing.addFileArg(b.path("tests/propan/regressions/check-list-missing-error.propan"));
+            missing.expectExitCode(1);
+            missing.expectStdErrMatch("checklist diagnostic err_assertion_failed: expected 1, got 0");
+            test_step.dependOn(&missing.step);
+        }
+        inline for (.{ "sema", "compare" }) |mode| {
+            const unexpected = coverage_stash.create_test_run(propan_exe);
+            unexpected.addArg("--format=none");
+            unexpected.addArg("--test-mode=" ++ mode);
+            if (std.mem.eql(u8, mode, "compare")) unexpected.addArg("--compare-to=unused-reference.bin");
+            unexpected.addFileArg(b.path("tests/propan/regressions/check-list-unexpected-error.propan"));
+            unexpected.expectExitCode(1);
+            unexpected.expectStdErrMatch("checklist diagnostic err_assertion_failed: expected 1, got 0");
+            unexpected.expectStdErrMatch("checklist diagnostic err_unknown_mnemonic: expected 0, got 1");
+            test_step.dependOn(&unexpected.step);
+        }
+        const parser_unexpected = coverage_stash.create_test_run(propan_exe);
+        parser_unexpected.addArg("--format=none");
+        parser_unexpected.addArg("--test-mode=parser");
+        parser_unexpected.addFileArg(b.path("tests/propan/regressions/check-list-parser-unexpected-error.propan"));
+        parser_unexpected.expectExitCode(1);
+        parser_unexpected.expectStdErrMatch("checklist diagnostic err_empty_character_literal_not_allowed: expected 0, got 1");
+        test_step.dependOn(&parser_unexpected.step);
+
+        const warning_reference = b.addWriteFiles().add("check-list-warning.bin", &.{1});
+        inline for (.{ "sema", "compare" }) |mode| {
+            const warning = coverage_stash.create_test_run(propan_exe);
+            warning.addArg("--format=none");
+            warning.addArg("--test-mode=" ++ mode);
+            if (std.mem.eql(u8, mode, "compare")) warning.addPrefixedFileArg("--compare-to=", warning_reference);
+            warning.addFileArg(b.path("tests/propan/regressions/check-list-warning.propan"));
+            warning.expectStdErrEqual("");
+            test_step.dependOn(&warning.step);
+
+            const unexpected_warning = coverage_stash.create_test_run(propan_exe);
+            unexpected_warning.addArg("--format=none");
+            unexpected_warning.addArg("--test-mode=" ++ mode);
+            if (std.mem.eql(u8, mode, "compare")) unexpected_warning.addPrefixedFileArg("--compare-to=", warning_reference);
+            unexpected_warning.addFileArg(b.path("tests/propan/regressions/check-list-unexpected-warning.propan"));
+            unexpected_warning.expectExitCode(1);
+            unexpected_warning.expectStdErrMatch("checklist diagnostic warn_symbol_has_no_references: expected 0, got 1");
+            test_step.dependOn(&unexpected_warning.step);
+        }
+    }
+
     // Exports:
 
     if (with_flexspin) blk: {

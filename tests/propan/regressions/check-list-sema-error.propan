@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? err: err_assertion_failed
+//? sym: ignored code:0
+.assert 0, "expected failure"

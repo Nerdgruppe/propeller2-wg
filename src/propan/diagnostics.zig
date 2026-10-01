@@ -94,6 +94,7 @@ pub const NameReason = struct { name: []const u8, reason: anyerror };
 pub const MnemonicFound = struct { mnemonic: []const u8, found: usize };
 pub const Message = struct { message: []const u8 };
 pub const Count = struct { count: usize };
+pub const CodeExpectedActual = struct { code: []const u8, expected: usize, actual: usize };
 pub const MnemonicEffect = struct { mnemonic: []const u8, effect: ast.Effect };
 pub const Key = struct { key: []const u8 };
 pub const Distance = struct { distance: i64 };
@@ -124,6 +125,9 @@ pub const Reason = struct { reason: EvaluationFailure };
 pub const Format = struct { format: emit.BinaryFormat };
 
 pub const Kind = union(enum) {
+    err_checklist_err_requires_one_diagnostic_code,
+    err_invalid_checklist_diagnostic_code: Token,
+    err_checklist_diagnostic_count_mismatch: CodeExpectedActual,
     err_checklist_sym_requires_a_name_and_type_hub_local,
     err_invalid_checklist_symbol_specification,
     err_invalid_checklist_segment_specification,
@@ -286,6 +290,9 @@ pub const Kind = union(enum) {
 
     pub fn render(self: Kind, writer: *std.Io.Writer) !void {
         switch (self) {
+            .err_checklist_err_requires_one_diagnostic_code => try writer.writeAll("checklist err requires one diagnostic code"),
+            .err_invalid_checklist_diagnostic_code => |v| try writer.print("invalid checklist diagnostic code '{s}'", .{v.token}),
+            .err_checklist_diagnostic_count_mismatch => |v| try writer.print("checklist diagnostic {s}: expected {}, got {}", .{ v.code, v.expected, v.actual }),
             .err_checklist_sym_requires_a_name_and_type_hub_local => try writer.print("checklist sym requires a name and type:hub[:local]", .{}),
             .err_invalid_checklist_symbol_specification => try writer.print("invalid checklist symbol specification", .{}),
             .err_invalid_checklist_segment_specification => try writer.print("invalid checklist segment specification", .{}),

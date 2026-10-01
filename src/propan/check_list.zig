@@ -8,6 +8,7 @@ const Location = @import("frontend/ast.zig").Location;
 const Address = union(enum) { absent, value: u32 };
 const SymbolType = diagnostics.ChecklistSymbolType;
 const MemoryFormat = enum { u8, u16, u32, hex };
+const DiagnosticTag = std.meta.Tag(diagnostics.Kind);
 
 const SymbolCheck = struct {
     name: []const u8,
@@ -27,7 +28,7 @@ const MemoryCheck = struct {
 };
 const Check = struct {
     location: Location,
-    value: union(enum) { symbol: SymbolCheck, segment: SegmentCheck, memory: MemoryCheck },
+    value: union(enum) { symbol: SymbolCheck, segment: SegmentCheck, memory: MemoryCheck, err: DiagnosticTag },
 };
 
 pub const List = struct {
@@ -39,11 +40,69 @@ pub const List = struct {
         list.* = undefined;
     }
 
+    pub fn hasDiagnosticChecks(list: List) bool {
+        for (list.checks) |check| if (check.value == .err) return true;
+        return false;
+    }
+
+    pub fn evaluateDiagnostics(list: List, errors: *diagnostics.Collection, start: usize) !bool {
+        const actual = try errors.arena.allocator().dupe(diagnostics.Diagnostic, errors.diagnostics.items[start..]);
+        var matches = true;
+        // ponytail: Checklists are small; use a map if these scans become costly.
+        for (list.checks, 0..) |check, index| {
+            const tag = if (check.value == .err) check.value.err else continue;
+            for (list.checks[0..index]) |previous| {
+                if (previous.value == .err and previous.value.err == tag) break;
+            } else {
+                var expected_count: usize = 0;
+                var actual_count: usize = 0;
+                for (list.checks) |entry| if (entry.value == .err and entry.value.err == tag) {
+                    expected_count += 1;
+                };
+                for (actual) |entry| if (std.meta.activeTag(entry.kind) == tag) {
+                    actual_count += 1;
+                };
+                if (expected_count != actual_count) {
+                    matches = false;
+                    try errors.emit_diag(check.location, .{ .err_checklist_diagnostic_count_mismatch = .{
+                        .code = @tagName(tag),
+                        .expected = expected_count,
+                        .actual = actual_count,
+                    } });
+                }
+            }
+        }
+        for (actual, 0..) |entry, index| {
+            const tag = std.meta.activeTag(entry.kind);
+            for (list.checks) |check| {
+                if (check.value == .err and check.value.err == tag) break;
+            } else {
+                for (actual[0..index]) |previous| {
+                    if (std.meta.activeTag(previous.kind) == tag) break;
+                } else {
+                    var count: usize = 0;
+                    for (actual) |other| if (std.meta.activeTag(other.kind) == tag) {
+                        count += 1;
+                    };
+                    matches = false;
+                    try errors.emit_diag(entry.location, .{ .err_checklist_diagnostic_count_mismatch = .{
+                        .code = @tagName(tag),
+                        .expected = 0,
+                        .actual = count,
+                    } });
+                }
+            }
+        }
+        if (matches) errors.diagnostics.items.len = start;
+        return matches;
+    }
+
     pub fn evaluate(list: List, module: Module, flat: []const u8, errors: *diagnostics.Collection) !void {
         for (list.checks) |check| switch (check.value) {
             .symbol => |symbol| try evaluateSymbol(check.location, symbol, module, errors),
             .segment => |segment| try evaluateSegment(check.location, segment, module, errors),
             .memory => |memory| try evaluateMemory(check.location, memory, flat, errors),
+            .err => {},
         };
     }
 };
@@ -88,7 +147,17 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
             continue;
         }
         if (tokens.len == 0) continue;
-        if (std.mem.eql(u8, tokens[0], "sym:")) {
+        if (std.mem.eql(u8, tokens[0], "err:")) {
+            if (tokens.len != 2) {
+                try errors.emit_diag(location, .err_checklist_err_requires_one_diagnostic_code);
+                continue;
+            }
+            const tag = std.meta.stringToEnum(DiagnosticTag, tokens[1]) orelse {
+                try errors.emit_diag(location, .{ .err_invalid_checklist_diagnostic_code = .{ .token = tokens[1] } });
+                continue;
+            };
+            try checks.append(arena, .{ .location = location, .value = .{ .err = tag } });
+        } else if (std.mem.eql(u8, tokens[0], "sym:")) {
             if (tokens.len != 3) {
                 try errors.emit_diag(location, .err_checklist_sym_requires_a_name_and_type_hub_local);
                 continue;
@@ -470,4 +539,64 @@ test "evaluator reports every mismatch" {
     try list.evaluate(module, &.{1}, &errors);
     try std.testing.expectEqual(@as(usize, 5), errors.diagnostics.items.len);
     try std.testing.expectEqual(@as(u32, 4), errors.diagnostics.items[2].location.?.line);
+}
+
+test "parser accepts diagnostic tags and rejects malformed checks" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_unknown_mnemonic
+        \\//? err: err_unknown_mnemonic
+        \\//? err: warn_branch_into_data
+        \\//? err:
+        \\//? err: missing_tag
+        \\//? err: err_unknown_mnemonic extra
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "errors.propan", source, &errors)).?;
+    defer list.deinit();
+    try std.testing.expectEqual(@as(usize, 3), list.checks.len);
+    try std.testing.expect(list.hasDiagnosticChecks());
+    try std.testing.expectEqual(DiagnosticTag.err_unknown_mnemonic, list.checks[0].value.err);
+    try std.testing.expectEqual(DiagnosticTag.warn_branch_into_data, list.checks[2].value.err);
+    try std.testing.expectEqual(@as(usize, 3), errors.diagnostics.items.len);
+}
+
+test "diagnostic checks match exact counts regardless of level and payload" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_unknown_mnemonic
+        \\//? err: err_unknown_mnemonic
+        \\//? err: warn_branch_into_data
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "errors.propan", source, &errors)).?;
+    defer list.deinit();
+    try errors.emit_diag(null, .{ .err_unknown_mnemonic = .{ .mnemonic = "FOO" } });
+    try errors.emit_diag(null, .warn_branch_into_data);
+    try errors.emit_diag(null, .{ .err_unknown_mnemonic = .{ .mnemonic = "BAR" } });
+    try std.testing.expect(try list.evaluateDiagnostics(&errors, 0));
+    try std.testing.expectEqual(@as(usize, 0), errors.diagnostics.items.len);
+}
+
+test "diagnostic checks report missing and unexpected occurrences" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_unknown_mnemonic
+        \\//? err: err_unknown_mnemonic
+        \\//? err: warn_branch_into_data
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "errors.propan", source, &errors)).?;
+    defer list.deinit();
+    try errors.emit_diag(null, .{ .err_unknown_mnemonic = .{ .mnemonic = "FOO" } });
+    try errors.emit_diag(null, .{ .warn_emitted_padding_byte_s = .{ .count = 1 } });
+    try errors.emit_diag(null, .{ .warn_emitted_padding_byte_s = .{ .count = 2 } });
+    try std.testing.expect(!(try list.evaluateDiagnostics(&errors, 0)));
+    try std.testing.expectEqual(@as(usize, 6), errors.diagnostics.items.len);
+    try std.testing.expectEqual(DiagnosticTag.err_checklist_diagnostic_count_mismatch, std.meta.activeTag(errors.diagnostics.items[3].kind));
+    try std.testing.expectEqual(DiagnosticTag.err_checklist_diagnostic_count_mismatch, std.meta.activeTag(errors.diagnostics.items[4].kind));
+    try std.testing.expectEqual(DiagnosticTag.err_checklist_diagnostic_count_mismatch, std.meta.activeTag(errors.diagnostics.items[5].kind));
 }
