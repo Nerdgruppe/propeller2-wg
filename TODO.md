@@ -17,6 +17,7 @@
 - Explicit register syntax/predefined registers (`register(X)`)
 - Plan to allow access to local labels somehow?
 - Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers
+- Warning for `.hubexec` below `$400` (would be PC inside LUT/cog)
 
 ## New Features
 
@@ -108,19 +109,6 @@ Potentially, we could define something like our own struct type for data emissio
 
 
 STRUCT Vec3(x=10, y=20, z=30)
-```
-
-### Non-automatic FIT
-
-Right now, propan automatically checks if code fits into its execution segment.
-
-`FIT` has an alternative syntax in PASM2:
-
-`FIT 10` means "did we emit not more than 10 registers. This should be supported in Propan as well:
-
-```c
-.fit 10                               // shorthand for `.assert $ < 10`
-.fit 10, "code exceeds size"          // shorthand for `.assert $ < 10, "code exceeds size"`
 ```
 
 ### Groups

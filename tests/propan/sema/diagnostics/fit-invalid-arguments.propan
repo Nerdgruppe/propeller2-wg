@@ -1,0 +1,9 @@
+//? PROPAN CHECK LIST
+//? err: err_argument_count_mismatch
+//? err: err_argument_count_mismatch
+//? err: err_expected_value_type
+//? err: err_expected_value_type
+.fit
+.fit 1, "ok", 3
+.fit "bad"
+.fit 1, PTRA

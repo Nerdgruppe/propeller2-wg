@@ -7,6 +7,11 @@
 // emission of data afterwards will pad the skipped space
 .org ${addr}
 
+// checks that the current cog/LUT/register PC or hub/data byte address
+// does not exceed the limit; emits no data.
+.fit ${limit}
+.fit ${limit}, "size exceeded"
+
 // keeps current segment,
 // aligns PC forward such that it is divisible by ${size},
 // emission of data afterwards will pad the skipped space

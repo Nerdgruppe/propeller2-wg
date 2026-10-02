@@ -111,6 +111,7 @@ pub const ParameterAlreadyPassed = struct { parameter: []const u8, function: []c
 pub const EvaluationContext = enum { expression, alignment };
 pub const EvaluationFailureContext = struct { context: EvaluationContext, reason: EvaluationFailure };
 pub const DirectiveMode = struct { directive: []const u8, mode: eval.ExecMode };
+pub const AddressSpaceMismatch = struct { subject: []const u8, expected: eval.ExecMode, actual: eval.ExecMode };
 pub const OperandUsage = struct { expected: enum { immediate, register }, actual: enum { immediate, register } };
 pub const OperatorNoEffect = struct { operator: ast.UnaryOperator, label: enum { code, data } };
 pub const FunctionValueType = struct { function: AddressFunction, value_type: eval.Value.Type };
@@ -132,6 +133,7 @@ pub const Kind = union(enum) {
     err_address_has_no_execution_pc,
     err_address_has_no_hub_location: MissingHubAddress,
     err_address_outside_space: AddressRange,
+    err_address_space_mismatch: AddressSpaceMismatch,
     err_align_references_label,
     err_align_value_must_be_a_nonzero_power_of_two: Value,
     err_ambigious_instruction_selection_for: Mnemonic,
@@ -333,6 +335,7 @@ pub const Kind = union(enum) {
                 .hubaddr_argument => "hubaddr() argument",
             }}),
             .err_address_outside_space => |v| try writer.print("{s} address 0x{x} is outside {t} space (must be below 0x{x})", .{ @tagName(v.subject), v.actual, v.space, v.max_exclusive }),
+            .err_address_space_mismatch => |v| try writer.print("{s} requires an address in {t} space, got {t}", .{ v.subject, v.expected, v.actual }),
             .err_argument_count_mismatch => |v| try writer.print("{s} expects {}..{} arguments, found {}", .{ v.subject, v.min, v.max, v.found }),
             .err_branch_too_far => |v| try writer.print("branch too far: cannot jump by {} {s}", .{ v.distance, @tagName(v.unit) }),
             .err_directive_invalid_in_mode => |v| try writer.print("{s} is invalid in {t} mode", .{ v.directive, v.mode }),

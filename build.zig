@@ -308,6 +308,11 @@ pub fn build(b: *std.Build) void {
                 .result = .{ .failure = &.{"assertion failed: AZB!"} },
             },
             .{
+                .path = "tests/propan/sema/diagnostics/fit-message.propan",
+                .modes = &.{.sema},
+                .result = .{ .failure = &.{"assertion failed: code exceeds size"} },
+            },
+            .{
                 .path = "tests/propan/regressions/check-list-mismatch.propan",
                 .modes = build_modes,
                 .reference = reference,
@@ -586,6 +591,10 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/invalid-origins.propan",
     "tests/propan/sema/diagnostics/invalid-local-start.propan",
+    "tests/propan/sema/diagnostics/fit-invalid-arguments.propan",
+    "tests/propan/sema/diagnostics/fit-incompatible-label.propan",
+    "tests/propan/sema/diagnostics/local-start-incompatible-label.propan",
+    "tests/propan/sema/diagnostics/fit-over-limit.propan",
     "tests/propan/sema/diagnostics/assert-message-with-true-condition.propan",
     "tests/propan/sema/diagnostics/assert-relative-comparison.propan",
     "tests/propan/sema/diagnostics/invalid-data-types.propan",
@@ -702,6 +711,9 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/local-labels.propan",
     "tests/propan/sema/local-label-segments.propan",
     "tests/propan/sema/explicit-local-start.propan",
+    "tests/propan/sema/fit-overlays.propan",
+    "tests/propan/sema/fit-modes.propan",
+    "tests/propan/sema/fit-address-labels.propan",
     "tests/propan/sema/local-label-non-boundaries.propan",
     "tests/propan/sema/operators.propan",
     "tests/propan/sema/builtin-functions.propan",

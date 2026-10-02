@@ -260,7 +260,7 @@ const Analyzer = struct {
         ana.functions.putAssumeCapacityNoClobber("aug", .aug);
         ana.functions.putAssumeCapacityNoClobber("nrel", .nrel);
 
-        try ana.mnemonics.ensureUnusedCapacity(allocator, 14);
+        try ana.mnemonics.ensureUnusedCapacity(allocator, 15);
 
         ana.mnemonics.putAssumeCapacityNoClobber(".cogexec", .cogexec);
         ana.mnemonics.putAssumeCapacityNoClobber(".lutexec", .lutexec);
@@ -272,6 +272,7 @@ const Analyzer = struct {
         ana.mnemonics.putAssumeCapacityNoClobber(".data", .data);
         ana.mnemonics.putAssumeCapacityNoClobber("FILE", .file);
         ana.mnemonics.putAssumeCapacityNoClobber(".assert", .assert);
+        ana.mnemonics.putAssumeCapacityNoClobber(".fit", .fit);
         ana.mnemonics.putAssumeCapacityNoClobber("LONG", .long);
         ana.mnemonics.putAssumeCapacityNoClobber("WORD", .word);
         ana.mnemonics.putAssumeCapacityNoClobber("BYTE", .byte);
@@ -592,7 +593,7 @@ const Analyzer = struct {
             instr.mnemonic = mnemonic;
 
             instr.byte_size = switch (mnemonic.*) {
-                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .@"align" => 0,
+                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .fit, .@"align" => 0,
 
                 .file => blk: {
                     if (instr.ast_node.arguments.len != 1 or instr.ast_node.arguments[0] != .string) {
@@ -685,6 +686,7 @@ const Analyzer = struct {
 
                     switch (coded.mnemonic.?.*) {
                         .assert => {},
+                        .fit => coded.fit_pc = cursor.fit_position(),
 
                         .hubexec, .lutexec, .cogexec, .regspace, .data => {
                             const mode: eval.ExecMode = switch (coded.mnemonic.?.*) {
@@ -712,7 +714,7 @@ const Analyzer = struct {
                             var hub_offset: ?u32 = null;
                             if (instr.arguments.len >= 1 and instr.arguments.len <= max_args) {
                                 const hub_start = TaggedAddress.init(cursor.offset.segment_id, std.math.cast(u20, cursor.hub), .hub);
-                                hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic, hub_start);
+                                hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic, hub_start, null);
                             }
                             if (hub_offset) |addr| {
                                 if (addr > 0x80000) {
@@ -722,7 +724,7 @@ const Analyzer = struct {
                             }
                             var local_start: ?u32 = null;
                             if (instr.arguments.len == 2 and max_args == 2) {
-                                local_start = try ana.layout_integer(instr.arguments[1], instr.location, instr.mnemonic, cursor.offset);
+                                local_start = try ana.layout_integer(instr.arguments[1], instr.location, instr.mnemonic, cursor.offset, mode);
                                 if (local_start) |target| {
                                     const min: u32 = if (mode == .lut) 0x200 else 0;
                                     const max: u32 = if (mode == .lut) 0x400 else 0x200;
@@ -805,7 +807,7 @@ const Analyzer = struct {
                                 try ana.emit_diag(instr.location, .{ .err_directive_invalid_in_mode = .{ .directive = ".org", .mode = cursor.mode } });
                             } else if (instr.arguments.len != 1) {
                                 try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".org", .min = 1, .max = 1, .found = instr.arguments.len } });
-                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".org", cursor.offset)) |target| {
+                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".org", cursor.offset, null)) |target| {
                                 const max: u32 = switch (cursor.mode) {
                                     .cog, .regspace => 0x200,
                                     .lut => 0x400,
@@ -836,7 +838,7 @@ const Analyzer = struct {
                                 try ana.emit_diag(instr.location, .{ .err_directive_invalid_in_mode = .{ .directive = ".reserve", .mode = cursor.mode } });
                             } else if (instr.arguments.len != 1) {
                                 try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".reserve", .min = 1, .max = 1, .found = instr.arguments.len } });
-                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".reserve", cursor.offset)) |count| {
+                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".reserve", cursor.offset, null)) |count| {
                                 if (cursor.local_bytes / 4 > 0x200 or count > 0x200 - @min(cursor.local_bytes / 4, 0x200)) {
                                     try ana.emit_diag(instr.location, .{ .err_numeric_value_out_of_range = .{ .subject = ".reserve count", .min = 0, .max = 0x200 - @min(cursor.local_bytes / 4, 0x200), .actual = count } });
                                 } else {
@@ -891,7 +893,7 @@ const Analyzer = struct {
         }
     }
 
-    fn layout_integer(ana: *Analyzer, expr: ast.Expression, location: ast.Location, name: []const u8, start: TaggedAddress) !?u32 {
+    fn layout_integer(ana: *Analyzer, expr: ast.Expression, location: ast.Location, name: []const u8, start: TaggedAddress, local_mode: ?eval.ExecMode) !?u32 {
         const value = ana.evaluate_root_expr(expr, .{ .start = start }) catch |err| {
             try ana.emit_diag(location, .{
                 .err_requires_an_integer_known_during_layout = .{
@@ -901,6 +903,9 @@ const Analyzer = struct {
             });
             return null;
         };
+        if (value.value == .address and local_mode != null) {
+            return try ana.local_address_value(value.value.address, local_mode.?, location, name);
+        }
         if (value.value != .int) {
             try ana.emit_diag(location, .{
                 .err_expected_value_type = .{
@@ -923,6 +928,20 @@ const Analyzer = struct {
             return null;
         };
         return number;
+    }
+
+    fn local_address_value(ana: *Analyzer, address: TaggedAddress, mode: eval.ExecMode, location: ast.Location, subject: []const u8) !?u32 {
+        const actual: eval.ExecMode = address.local;
+        const matches = switch (mode) {
+            .cog, .regspace => actual == .cog or actual == .regspace,
+            .lut => actual == .lut,
+            .hub, .data => unreachable,
+        };
+        if (!matches) {
+            try ana.emit_diag(location, .{ .err_address_space_mismatch = .{ .subject = subject, .expected = mode, .actual = actual } });
+            return null;
+        }
+        return address.get_local(.pc).?;
     }
 
     ///
@@ -1049,7 +1068,7 @@ const Analyzer = struct {
                 else => {},
             }
             for (args, instr.ast_node.arguments) |*value, expr| {
-                value.* = ana.evaluate_root_expr(expr, .{ .after = instr.end_addr, .start = instr.start_addr }) catch |err| {
+                value.* = ana.evaluate_root_expr(expr, .{ .after = instr.end_addr, .start = instr.start_addr, .fit_pc = instr.fit_pc }) catch |err| {
                     try ana.emit_eval_error(instr.ast_node.location, .expression, err);
                     value.* = .int(0);
                     continue;
@@ -1226,12 +1245,13 @@ const Analyzer = struct {
 
     fn evaluate_asserts(ana: *Analyzer) !void {
         for (ana.instructions) |*instr| {
-            if (instr.mnemonic.?.* != .assert)
-                continue;
+            const is_fit = instr.mnemonic.?.* == .fit;
+            if (!is_fit and instr.mnemonic.?.* != .assert) continue;
+            const directive = if (is_fit) ".fit" else ".assert";
 
             const with_message = switch (instr.arguments.len) {
                 0 => {
-                    try ana.emit_diag(instr.ast_node.location, .{ .err_argument_count_mismatch = .{ .subject = ".assert", .min = 1, .max = 2, .found = 0 } });
+                    try ana.emit_diag(instr.ast_node.location, .{ .err_argument_count_mismatch = .{ .subject = directive, .min = 1, .max = 2, .found = 0 } });
                     continue;
                 },
                 1 => false,
@@ -1239,7 +1259,7 @@ const Analyzer = struct {
                 else => blk: {
                     try ana.emit_diag(instr.ast_node.location, .{
                         .err_argument_count_mismatch = .{
-                            .subject = ".assert",
+                            .subject = directive,
                             .min = 1,
                             .max = 2,
                             .found = instr.arguments.len,
@@ -1252,16 +1272,30 @@ const Analyzer = struct {
             std.debug.assert(instr.arguments.len >= 1);
 
             const condition = instr.arguments[0];
-            if (condition.value != .int) {
-                try ana.emit_diag(instr.ast_node.location, .{
-                    .err_expected_value_type = .{
-                        .subject = ".assert condition",
-                        .expected = .int,
-                        .actual = condition.value,
+            const condition_true = if (is_fit) blk: {
+                const mode: eval.ExecMode = std.meta.activeTag(instr.start_addr.?.local);
+                const limit: i64 = switch (condition.value) {
+                    .int => |number| number,
+                    .address => |address| if (mode == .hub or mode == .data)
+                        address.hub_address orelse {
+                            try ana.emit_diag(instr.ast_node.location, .{ .err_address_space_mismatch = .{ .subject = ".fit limit", .expected = mode, .actual = std.meta.activeTag(address.local) } });
+                            continue;
+                        }
+                    else
+                        (try ana.local_address_value(address, mode, instr.ast_node.location, ".fit limit")) orelse continue,
+                    else => {
+                        try ana.emit_diag(instr.ast_node.location, .{ .err_expected_value_type = .{ .subject = ".fit limit", .expected = .int, .actual = condition.value } });
+                        continue;
                     },
-                });
-                continue;
-            }
+                };
+                break :blk @as(i64, instr.fit_pc.?) <= limit;
+            } else blk: {
+                if (condition.value != .int) {
+                    try ana.emit_diag(instr.ast_node.location, .{ .err_expected_value_type = .{ .subject = ".assert condition", .expected = .int, .actual = condition.value } });
+                    continue;
+                }
+                break :blk condition.value.int != 0;
+            };
             var message: []const u8 = "expression returned 0";
 
             if (with_message) {
@@ -1270,7 +1304,7 @@ const Analyzer = struct {
                 if (msg.value != .string) {
                     try ana.emit_diag(instr.ast_node.location, .{
                         .err_expected_value_type = .{
-                            .subject = ".assert message",
+                            .subject = if (is_fit) ".fit message" else ".assert message",
                             .expected = .string,
                             .actual = msg.value,
                         },
@@ -1280,9 +1314,9 @@ const Analyzer = struct {
                 message = msg.value.string;
             }
 
-            if (condition.value.int != 0) continue;
+            if (condition_true) continue;
 
-            if (!with_message) {
+            if (!with_message and !is_fit) {
                 const arg_expr = instr.ast_node.arguments[0];
                 if (arg_expr == .binary_transform) {
                     const maybe_relation: ?[]const u8 = switch (arg_expr.binary_transform.operator) {
@@ -1362,7 +1396,7 @@ const Analyzer = struct {
             }) continue :seq_loop;
 
             switch (mnemonic) {
-                .assert => continue :seq_loop,
+                .assert, .fit => continue :seq_loop,
 
                 .@"align", .org, .reserve => continue :seq_loop,
 
@@ -1422,6 +1456,7 @@ const Analyzer = struct {
 
             switch (mnemonic) {
                 .assert,
+                .fit,
                 .cogexec,
                 .lutexec,
                 .hubexec,
@@ -2082,6 +2117,7 @@ const Analyzer = struct {
     const EvalContext = struct {
         after: ?TaggedAddress = null,
         start: ?TaggedAddress = null,
+        fit_pc: ?u32 = null,
     };
 
     fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, context: EvalContext) EvalError!eval.Value {
@@ -2092,6 +2128,7 @@ const Analyzer = struct {
         switch (expr) {
             .wrapped => |inner| return try ana.evaluate_expr(inner.*, context, nesting + 1),
             .current_pc => |location| {
+                if (context.fit_pc) |pc| return .int(pc);
                 const address = context.start orelse {
                     try ana.emit_diag(location, .err_current_pc_unavailable);
                     return .int(0);
@@ -2895,6 +2932,14 @@ const Cursor = struct {
     local_bytes: u32,
     reserved: bool,
 
+    fn fit_position(cursor: Cursor) u32 {
+        return switch (cursor.mode) {
+            .cog, .regspace => cursor.local_bytes / 4,
+            .lut => 0x200 + cursor.local_bytes / 4,
+            .hub, .data => cursor.hub,
+        };
+    }
+
     fn init(segment: Segment_ID, mode: eval.ExecMode, hub: u32) Cursor {
         var cursor: Cursor = .{
             .offset = .init_cog(segment, 0, 0),
@@ -3431,6 +3476,7 @@ const InstructionInfo = struct {
 
     start_addr: ?TaggedAddress = null,
     end_addr: ?TaggedAddress = null,
+    fit_pc: ?u32 = null,
 
     /// Size of the instruction slot in bytes
     byte_size: ?u32 = null,
@@ -3536,6 +3582,7 @@ const Mnemonic = union(enum) {
     reserve,
     @"align",
     assert,
+    fit,
 
     encoded: EncodedMnemonic,
 };

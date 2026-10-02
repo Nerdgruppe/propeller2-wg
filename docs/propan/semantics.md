@@ -49,4 +49,6 @@ Original PASM:
 - `ORGH` Set code for Hub RAM
 - `ORGF` Fill Cog RAM with zeros
 - `FIT` Validate that code fits within Cog RAM or Hub RAM
+
+Propan's `.fit limit[, "message"]` checks that the current cog/LUT/register PC or hub/data byte address is at most `limit`. The limit may be a compatible address label. `.fit` emits no data and does not replace automatic execution-space bounds checks.
 - `RES` Reserve long registers for symbol
