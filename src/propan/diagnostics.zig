@@ -91,6 +91,7 @@ pub const MnemonicFound = struct { mnemonic: []const u8, found: usize };
 pub const Message = struct { message: []const u8 };
 pub const Count = struct { count: usize };
 pub const CodeExpectedActual = struct { code: []const u8, expected: usize, actual: usize };
+pub const DiagnosticCheck = struct { check: []const u8 };
 pub const MnemonicEffect = struct { mnemonic: []const u8, effect: ast.Effect };
 pub const Key = struct { key: []const u8 };
 pub const LeftRightStart = struct { left: u32, right: u32, start: u32 };
@@ -171,6 +172,7 @@ pub const Kind = union(enum) {
     err_canont_use_the_effect_operator: MnemonicEffect,
     err_character_literal_contains_more_than_one_character,
     err_checklist_diagnostic_count_mismatch: CodeExpectedActual,
+    err_checklist_diagnostic_does_not_match: DiagnosticCheck,
     err_checklist_err_requires_one_diagnostic_code,
     err_checklist_hex_bytes_require_pairs_of_digits,
     err_checklist_mem_requires_address_comparison_format_and,
@@ -202,6 +204,7 @@ pub const Kind = union(enum) {
     err_invalid_pic_mode,
     err_unaligned_cog_lut_instruction,
     err_invalid_checklist_diagnostic_code: Token,
+    err_invalid_checklist_diagnostic_constraint: Token,
     err_invalid_checklist_hex_byte,
     err_invalid_checklist_memory_address,
     err_invalid_checklist_memory_comparison,
@@ -277,7 +280,9 @@ pub const Kind = union(enum) {
         switch (self) {
             .err_checklist_err_requires_one_diagnostic_code => try writer.writeAll("checklist err requires one diagnostic code"),
             .err_invalid_checklist_diagnostic_code => |v| try writer.print("invalid checklist diagnostic code '{s}'", .{v.token}),
+            .err_invalid_checklist_diagnostic_constraint => |v| try writer.print("invalid checklist diagnostic constraint '{s}'", .{v.token}),
             .err_checklist_diagnostic_count_mismatch => |v| try writer.print("checklist diagnostic {s}: expected {}, got {}", .{ v.code, v.expected, v.actual }),
+            .err_checklist_diagnostic_does_not_match => |v| try writer.print("checklist diagnostic did not match: {s}", .{v.check}),
             .err_checklist_sym_requires_a_name_and_type_hub_local => try writer.print("checklist sym requires a name and type:hub[:local]", .{}),
             .err_invalid_checklist_symbol_specification => try writer.print("invalid checklist symbol specification", .{}),
             .err_invalid_checklist_segment_specification => try writer.print("invalid checklist segment specification", .{}),

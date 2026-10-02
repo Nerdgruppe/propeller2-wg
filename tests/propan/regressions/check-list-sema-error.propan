@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_assertion_failed
+//? err: err_assertion_failed line 4 message=="expected failure"
 //? sym: ignored code:0
 .assert 0, "expected failure"

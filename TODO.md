@@ -22,26 +22,12 @@
   - Make constant evaluation lazy
   - Resolve constants into a DAC
 - Enable "-Dx=y" on the CLI
-- Support for asserting properties of diagnostics
-  - location
-  - fields of union value
 
 ## New Features
 
 ### File Inclusion
 
 tl;dr: `#include` is missing.
-
-#### Subfeature: Structures
-
-Potentially, we could define something like our own struct type for data emission?
-
-```c
-.typedef Vec3 [ x: word, y: word, z: word ]
-
-
-STRUCT Vec3(x=10, y=20, z=30)
-```
 
 ### Groups
 
@@ -89,3 +75,15 @@ RDLONG dst, reloc(#offset, 256) // reads from #offset+256
 ### SPIN DEBUG
 
 Currently, Propan does not support the "debug()" syntax from SPIN2
+
+
+### Structures
+
+Potentially, we could define something like our own struct type for data emission?
+
+```c
+.typedef Vec3 [ x: word, y: word, z: word ]
+
+
+STRUCT Vec3(x=10, y=20, z=30)
+```

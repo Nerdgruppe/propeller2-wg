@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_current_pc_unavailable
+//? err: err_current_pc_unavailable line 4
 .regspace
 .assert $ == 0

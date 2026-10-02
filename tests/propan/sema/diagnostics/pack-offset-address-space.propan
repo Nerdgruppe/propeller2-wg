@@ -1,6 +1,6 @@
 //? PROPAN CHECK LIST
-//? err: err_address_space_mismatch
-//? err: err_address_space_mismatch
+//? err: err_address_space_mismatch line 7
+//? err: err_address_space_mismatch line 11
 .data 0x101
 data_label:
 BYTE 0

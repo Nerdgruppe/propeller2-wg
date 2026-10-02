@@ -1,6 +1,6 @@
 //? PROPAN CHECK LIST
-//? err: err_pic_requires_relative_address
-//? err: err_pic_requires_relative_address
+//? err: err_pic_requires_relative_address line 7
+//? err: err_pic_requires_relative_address line 9
 .cogexec
 target:
 .pic force

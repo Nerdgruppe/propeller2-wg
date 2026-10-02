@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_numeric_value_out_of_range
+//? err: err_numeric_value_out_of_range line 3 subject==".org target" min==0 max==512 actual==768
 .org 0x300

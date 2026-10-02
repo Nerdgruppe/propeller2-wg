@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_undefined_reference_to_symbol_at
+//? err: err_undefined_reference_to_symbol_at line 7 name==".loop"
 foo:
 .loop:
 LONG 0

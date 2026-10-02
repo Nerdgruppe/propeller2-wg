@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_syntax_error
+//? err: err_syntax_error line 4 text=="UnexpectedToken"
 .if 0
 BYTE -
 .endif

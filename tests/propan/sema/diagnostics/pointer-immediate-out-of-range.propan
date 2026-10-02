@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_numeric_value_out_of_range
+//? err: err_numeric_value_out_of_range line 3 subject=="pointer immediate" min==0 max==255 actual==256
 WMLONG PTRA, 256

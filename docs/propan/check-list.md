@@ -23,14 +23,30 @@ Assert the exact diagnostics emitted by a test:
 ```
 
 ```c
-err: <code>
+err: <code> [line <number>] [<field>==<value> ...]
 ```
 
 `<code>` must be a tag of `diagnostics.Kind` at any level: error, warning, or
 info. The `err:` keyword is kept for compatibility; it checks diagnostics at
 all three levels. Each `err:` line expects one occurrence, so repeated lines
-check the count. Order, message details, and source locations do not matter;
-missing or unexpected diagnostics fail the test. A matching test exits successfully
+check the count. An omitted line or field matches any value. `line` is the
+one-based source line where the diagnostic was emitted. Fields refer directly
+to the diagnostic's payload. For example:
+
+```c
+//? err: err_expression_evaluation_failed line 10 reason==divide_by_zero
+//? err: err_checklist_symbol_does_not_match_actual_type_hub_local line 12 name=="a b" kind==code hub==null local==0x10
+```
+
+Integer values may be decimal, hexadecimal, or binary; floating-point values
+use decimal notation. Strings are quoted and accept `\\`, `\"`, `\n`, `\r`,
+and `\t` escapes. Use bare enum names and `null` for an optional field.
+Strings compare by exact contents and floating-point fields
+compare by exact value. Nested fields and struct-valued comparisons are not
+supported. Unknown fields and values of the wrong type are checklist errors.
+Each expected diagnostic is matched to a distinct actual diagnostic, regardless
+of emission order. Missing or unexpected diagnostics fail the test. A matching
+test exits successfully
 without printing the matched diagnostics. Diagnostic checks work in parser,
 semantic, and comparison test modes. If compilation stops on expected errors,
 symbol, segment, and memory checks are skipped, as is binary comparison. Checklist

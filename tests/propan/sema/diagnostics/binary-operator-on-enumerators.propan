@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_operator_invalid_operand_type
+//? err: err_operator_invalid_operand_type line 3 value_type==enumerator
 LONG _CLR + _SET

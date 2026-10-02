@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_directive_invalid_in_mode
+//? err: err_directive_invalid_in_mode line 4 directive==".org" mode==data
 .data
 .org 1

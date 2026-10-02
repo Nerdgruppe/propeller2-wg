@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_unaligned_cog_lut_instruction
+//? err: err_unaligned_cog_lut_instruction line 6
 .cogexec
 .pack byte
 BYTE 0

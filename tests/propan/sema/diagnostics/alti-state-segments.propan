@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: warn_alti_state_segment_mismatch
+//? err: warn_alti_state_segment_mismatch line 8
 first:
 LONG 0
 .cogexec 0x100

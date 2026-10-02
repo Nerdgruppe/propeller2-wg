@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_array_constant_not_yet_supported
+//? err: err_array_constant_not_yet_supported line 4
 const ITEMS = [1, 2]
 LONG ITEMS

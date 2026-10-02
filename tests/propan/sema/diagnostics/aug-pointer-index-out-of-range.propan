@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_numeric_value_out_of_range
-//? err: err_numeric_value_out_of_range
+//? err: err_numeric_value_out_of_range line 4 subject=="pointer index" min==-524288 max==1048575 actual==1048576
+//? err: err_numeric_value_out_of_range line 5 subject=="pointer immediate" min==0 max==1048575 actual==1048576
 RDLONG PA, PTRA[aug(0x100000)]
 RDLONG PA, aug(0x100000)

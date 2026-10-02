@@ -1,6 +1,6 @@
 //? PROPAN CHECK LIST
-//? err: warn_unaligned_code
-//? err: warn_unaligned_code
+//? err: warn_unaligned_code line 12
+//? err: warn_unaligned_code line 17
 .cogexec
 .pack byte
 BYTE 0

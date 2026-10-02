@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_requires_an_integer_known_during_layout
+//? err: err_requires_an_integer_known_during_layout line 3
 .org A
 const A = 4

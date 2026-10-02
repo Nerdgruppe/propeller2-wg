@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_org_cannot_move_pc_backward
+//? err: err_org_cannot_move_pc_backward line 4
 .org 2
 .org 1

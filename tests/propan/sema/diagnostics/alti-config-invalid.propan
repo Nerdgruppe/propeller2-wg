@@ -1,8 +1,8 @@
 //? PROPAN CHECK LIST
-//? err: err_expression_evaluation_failed
-//? err: err_expression_evaluation_failed
-//? err: err_expression_evaluation_failed
-//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed line 6 context==expression reason==invalid_argument
+//? err: err_expression_evaluation_failed line 7 context==expression reason==invalid_argument
+//? err: err_expression_evaluation_failed line 8 context==expression reason==invalid_argument
+//? err: err_expression_evaluation_failed line 9 context==expression reason==invalid_argument
 LONG alti.config(#keep, #keep, #none, #none, #inc, #drop)
 LONG alti.config(#keep, #keep, #none, #none, #dec, #instr)
 LONG alti.config(#keep, #keep, #none, #none, #keep, #bogus)

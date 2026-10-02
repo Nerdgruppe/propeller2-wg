@@ -26,9 +26,22 @@ const MemoryCheck = struct {
     whole: bool,
     bytes: []const u8,
 };
+const ScalarValue = union(enum) {
+    null_value,
+    number: []const u8,
+    string: []const u8,
+    enum_name: []const u8,
+};
+const PropertyCheck = struct { name: []const u8, value: ScalarValue };
+const DiagnosticCheck = struct {
+    tag: DiagnosticTag,
+    line: ?u32,
+    properties: []const PropertyCheck,
+    spec: []const u8,
+};
 const Check = struct {
     location: Location,
-    value: union(enum) { symbol: SymbolCheck, segment: SegmentCheck, memory: MemoryCheck, diagnostic: DiagnosticTag },
+    value: union(enum) { symbol: SymbolCheck, segment: SegmentCheck, memory: MemoryCheck, diagnostic: DiagnosticCheck },
 };
 
 pub const List = struct {
@@ -50,13 +63,13 @@ pub const List = struct {
         var matches = true;
         // ponytail: Checklists are small; use a map if these scans become costly.
         for (list.checks, 0..) |check, index| {
-            const tag = if (check.value == .diagnostic) check.value.diagnostic else continue;
+            const tag = if (check.value == .diagnostic) check.value.diagnostic.tag else continue;
             for (list.checks[0..index]) |previous| {
-                if (previous.value == .diagnostic and previous.value.diagnostic == tag) break;
+                if (previous.value == .diagnostic and previous.value.diagnostic.tag == tag) break;
             } else {
                 var expected_count: usize = 0;
                 var actual_count: usize = 0;
-                for (list.checks) |entry| if (entry.value == .diagnostic and entry.value.diagnostic == tag) {
+                for (list.checks) |entry| if (entry.value == .diagnostic and entry.value.diagnostic.tag == tag) {
                     expected_count += 1;
                 };
                 for (actual) |entry| if (std.meta.activeTag(entry.kind) == tag) {
@@ -69,13 +82,27 @@ pub const List = struct {
                         .expected = expected_count,
                         .actual = actual_count,
                     } });
+                } else {
+                    const assigned = try errors.arena.allocator().alloc(?usize, actual.len);
+                    @memset(assigned, null);
+                    for (list.checks, 0..) |expected, expected_index| {
+                        if (expected.value != .diagnostic or expected.value.diagnostic.tag != tag) continue;
+                        const seen = try errors.arena.allocator().alloc(bool, actual.len);
+                        @memset(seen, false);
+                        if (!assignDiagnostic(list, expected_index, actual, assigned, seen)) {
+                            matches = false;
+                            try errors.emit_diag(expected.location, .{ .err_checklist_diagnostic_does_not_match = .{
+                                .check = expected.value.diagnostic.spec,
+                            } });
+                        }
+                    }
                 }
             }
         }
         for (actual, 0..) |entry, index| {
             const tag = std.meta.activeTag(entry.kind);
             for (list.checks) |check| {
-                if (check.value == .diagnostic and check.value.diagnostic == tag) break;
+                if (check.value == .diagnostic and check.value.diagnostic.tag == tag) break;
             } else {
                 for (actual[0..index]) |previous| {
                     if (std.meta.activeTag(previous.kind) == tag) break;
@@ -148,7 +175,7 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
         }
         if (tokens.len == 0) continue;
         if (std.mem.eql(u8, tokens[0], "err:")) {
-            if (tokens.len != 2) {
+            if (tokens.len < 2) {
                 try errors.emit_diag(location, .err_checklist_err_requires_one_diagnostic_code);
                 continue;
             }
@@ -156,7 +183,8 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
                 try errors.emit_diag(location, .{ .err_invalid_checklist_diagnostic_code = .{ .token = tokens[1] } });
                 continue;
             };
-            try checks.append(arena, .{ .location = location, .value = .{ .diagnostic = tag } });
+            const diagnostic = try parseDiagnostic(arena, tag, tokens[2..], std.mem.trim(u8, line[3..], " \t"), location, errors) orelse continue;
+            try checks.append(arena, .{ .location = location, .value = .{ .diagnostic = diagnostic } });
         } else if (std.mem.eql(u8, tokens[0], "sym:")) {
             if (tokens.len != 3) {
                 try errors.emit_diag(location, .err_checklist_sym_requires_a_name_and_type_hub_local);
@@ -211,6 +239,110 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     return list;
 }
 
+fn parseDiagnostic(allocator: std.mem.Allocator, tag: DiagnosticTag, tokens: []const []const u8, spec: []const u8, location: Location, errors: *diagnostics.Collection) !?DiagnosticCheck {
+    var result: DiagnosticCheck = .{ .tag = tag, .line = null, .properties = &.{}, .spec = spec };
+    var properties: std.ArrayList(PropertyCheck) = .empty;
+    var i: usize = 0;
+    while (i < tokens.len) : (i += 1) {
+        const token = tokens[i];
+        if (std.mem.eql(u8, token, "line")) {
+            if (result.line != null or i + 1 == tokens.len) {
+                try invalidDiagnosticConstraint(location, token, errors);
+                return null;
+            }
+            i += 1;
+            result.line = parseUnsigned(tokens[i]) orelse {
+                try invalidDiagnosticConstraint(location, tokens[i], errors);
+                return null;
+            };
+            if (result.line.? == 0) {
+                try invalidDiagnosticConstraint(location, tokens[i], errors);
+                return null;
+            }
+            continue;
+        }
+        const separator = std.mem.indexOf(u8, token, "==") orelse {
+            try invalidDiagnosticConstraint(location, token, errors);
+            return null;
+        };
+        const name = token[0..separator];
+        const value_text = token[separator + 2 ..];
+        if (name.len == 0 or value_text.len == 0 or std.mem.indexOfScalar(u8, name, '.') != null) {
+            try invalidDiagnosticConstraint(location, token, errors);
+            return null;
+        }
+        for (properties.items) |property| {
+            if (std.mem.eql(u8, property.name, name)) {
+                try invalidDiagnosticConstraint(location, token, errors);
+                return null;
+            }
+        }
+        const value = try parseDiagnosticProperty(allocator, tag, name, value_text) orelse {
+            try invalidDiagnosticConstraint(location, token, errors);
+            return null;
+        };
+        try properties.append(allocator, .{ .name = name, .value = value });
+    }
+    result.properties = try properties.toOwnedSlice(allocator);
+    return result;
+}
+
+fn invalidDiagnosticConstraint(location: Location, token: []const u8, errors: *diagnostics.Collection) !void {
+    try errors.emit_diag(location, .{ .err_invalid_checklist_diagnostic_constraint = .{ .token = token } });
+}
+
+fn parseDiagnosticProperty(allocator: std.mem.Allocator, tag: DiagnosticTag, name: []const u8, text_value: []const u8) !?ScalarValue {
+    inline for (@typeInfo(diagnostics.Kind).@"union".fields) |variant| {
+        if (tag == @field(DiagnosticTag, variant.name)) {
+            if (comptime @typeInfo(variant.type) == .@"struct") {
+                inline for (@typeInfo(variant.type).@"struct".fields) |field| {
+                    if (std.mem.eql(u8, name, field.name)) return try parseScalar(allocator, field.type, text_value);
+                }
+            }
+            return null;
+        }
+    }
+    unreachable;
+}
+
+fn parseScalar(allocator: std.mem.Allocator, comptime T: type, text_value: []const u8) !?ScalarValue {
+    return switch (@typeInfo(T)) {
+        .optional => |optional| if (std.mem.eql(u8, text_value, "null")) .null_value else try parseScalar(allocator, optional.child, text_value),
+        .int => if (std.fmt.parseInt(T, text_value, 0)) |_| .{ .number = text_value } else |_| null,
+        .float => if (std.fmt.parseFloat(T, text_value)) |_| .{ .number = text_value } else |_| null,
+        .@"enum" => if (std.meta.stringToEnum(T, text_value) != null) .{ .enum_name = text_value } else null,
+        .pointer => |pointer| if (pointer.size == .slice and pointer.child == u8)
+            if (try parseQuotedString(allocator, text_value)) |value| .{ .string = value } else null
+        else
+            null,
+        else => null,
+    };
+}
+
+fn parseQuotedString(allocator: std.mem.Allocator, input: []const u8) !?[]const u8 {
+    if (input.len < 2 or input[0] != '"' or input[input.len - 1] != '"') return null;
+    var output: std.ArrayList(u8) = .empty;
+    var i: usize = 1;
+    while (i < input.len - 1) : (i += 1) {
+        var byte = input[i];
+        if (byte == '"') return null;
+        if (byte == '\\') {
+            i += 1;
+            if (i >= input.len - 1) return null;
+            byte = switch (input[i]) {
+                '"' => '"',
+                '\\' => '\\',
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                else => return null,
+            };
+        }
+        try output.append(allocator, byte);
+    }
+    return try output.toOwnedSlice(allocator);
+}
+
 fn tokenize(allocator: std.mem.Allocator, line: []const u8) ![]const []const u8 {
     var tokens: std.ArrayList([]const u8) = .empty;
     var i: usize = 0;
@@ -225,7 +357,20 @@ fn tokenize(allocator: std.mem.Allocator, line: []const u8) ![]const []const u8 
             continue;
         }
         const start = i;
-        while (i < line.len and !std.ascii.isWhitespace(line[i]) and line[i] != ',' and line[i] != '[' and line[i] != ']') : (i += 1) {}
+        var quoted = false;
+        var escaped = false;
+        while (i < line.len) : (i += 1) {
+            if (quoted and escaped) {
+                escaped = false;
+                continue;
+            }
+            if (quoted and line[i] == '\\') {
+                escaped = true;
+                continue;
+            }
+            if (line[i] == '"') quoted = !quoted;
+            if (!quoted and (std.ascii.isWhitespace(line[i]) or line[i] == ',' or line[i] == '[' or line[i] == ']')) break;
+        }
         try tokens.append(allocator, line[start..i]);
     }
     return try tokens.toOwnedSlice(allocator);
@@ -280,6 +425,66 @@ fn parseNumber(text: []const u8) ?i64 {
     const magnitude = std.fmt.parseInt(u64, unsigned, 0) catch return null;
     if (magnitude > (if (negative) @as(u64, 0x80000000) else @as(u64, 0xFFFFFFFF))) return null;
     return if (negative) -@as(i64, @intCast(magnitude)) else @intCast(magnitude);
+}
+
+fn assignDiagnostic(list: List, check_index: usize, actual: []const diagnostics.Diagnostic, assigned: []?usize, seen: []bool) bool {
+    for (actual, 0..) |entry, index| {
+        if (seen[index] or !diagnosticMatches(list.checks[check_index].value.diagnostic, entry)) continue;
+        seen[index] = true;
+        if (assigned[index] == null or assignDiagnostic(list, assigned[index].?, actual, assigned, seen)) {
+            assigned[index] = check_index;
+            return true;
+        }
+    }
+    return false;
+}
+
+fn diagnosticMatches(check: DiagnosticCheck, entry: diagnostics.Diagnostic) bool {
+    if (std.meta.activeTag(entry.kind) != check.tag) return false;
+    if (check.line) |line| {
+        if (entry.location == null or entry.location.?.line != line) return false;
+    }
+    for (check.properties) |property| {
+        if (!propertyMatches(entry.kind, property)) return false;
+    }
+    return true;
+}
+
+fn propertyMatches(kind: diagnostics.Kind, property: PropertyCheck) bool {
+    return switch (kind) {
+        inline else => |payload| blk: {
+            if (comptime @typeInfo(@TypeOf(payload)) == .@"struct") {
+                inline for (@typeInfo(@TypeOf(payload)).@"struct".fields) |field| {
+                    if (std.mem.eql(u8, property.name, field.name))
+                        break :blk scalarMatches(field.type, @field(payload, field.name), property.value);
+                }
+            }
+            break :blk false;
+        },
+    };
+}
+
+fn scalarMatches(comptime T: type, actual: T, expected: ScalarValue) bool {
+    return switch (@typeInfo(T)) {
+        .optional => |optional| if (expected == .null_value) actual == null else if (actual) |value| scalarMatches(optional.child, value, expected) else false,
+        .int => switch (expected) {
+            .number => |number| actual == (std.fmt.parseInt(T, number, 0) catch return false),
+            else => false,
+        },
+        .float => switch (expected) {
+            .number => |number| actual == (std.fmt.parseFloat(T, number) catch return false),
+            else => false,
+        },
+        .@"enum" => switch (expected) {
+            .enum_name => |name| actual == (std.meta.stringToEnum(T, name) orelse return false),
+            else => false,
+        },
+        .pointer => |pointer| if (pointer.size == .slice and pointer.child == u8) switch (expected) {
+            .string => |string| std.mem.eql(u8, actual, string),
+            else => false,
+        } else false,
+        else => false,
+    };
 }
 
 fn addMemoryTokens(allocator: std.mem.Allocator, memory: *PendingMemory, tokens: []const []const u8, location: Location, errors: *diagnostics.Collection) !bool {
@@ -555,8 +760,8 @@ test "parser accepts diagnostic tags and rejects malformed checks" {
     defer list.deinit();
     try std.testing.expectEqual(@as(usize, 3), list.checks.len);
     try std.testing.expect(list.hasDiagnosticChecks());
-    try std.testing.expectEqual(DiagnosticTag.err_unknown_mnemonic, list.checks[0].value.diagnostic);
-    try std.testing.expectEqual(DiagnosticTag.warn_branch_into_data, list.checks[2].value.diagnostic);
+    try std.testing.expectEqual(DiagnosticTag.err_unknown_mnemonic, list.checks[0].value.diagnostic.tag);
+    try std.testing.expectEqual(DiagnosticTag.warn_branch_into_data, list.checks[2].value.diagnostic.tag);
     try std.testing.expectEqual(@as(usize, 3), errors.diagnostics.items.len);
 }
 
@@ -597,4 +802,103 @@ test "diagnostic checks report missing and unexpected occurrences" {
     try std.testing.expectEqual(DiagnosticTag.err_checklist_diagnostic_count_mismatch, std.meta.activeTag(errors.diagnostics.items[3].kind));
     try std.testing.expectEqual(DiagnosticTag.err_checklist_diagnostic_count_mismatch, std.meta.activeTag(errors.diagnostics.items[4].kind));
     try std.testing.expectEqual(DiagnosticTag.err_checklist_diagnostic_count_mismatch, std.meta.activeTag(errors.diagnostics.items[5].kind));
+}
+
+test "diagnostic constraints parse scalar fields and reject unsupported fields" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_checklist_symbol_does_not_match_actual_type_hub_local line 12 name=="a b" kind==code hub==null local==0x10
+        \\//? err: err_expression_evaluation_failed reason==divide_by_zero
+        \\//? err: err_argument_count_mismatch found==3
+        \\//? err: err_duplicate_definition previous==null
+        \\//? err: err_duplicate_definition previous.symbol==code
+        \\//? err: err_expression_evaluation_failed reason==not_a_reason
+        \\//? err: err_argument_count_mismatch found==oops
+        \\//? err: err_unknown_mnemonic mnemonic=="unterminated
+        \\//? err: err_unknown_mnemonic missing==1
+        \\//? err: err_unknown_mnemonic line 0
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "constraints.propan", source, &errors)).?;
+    defer list.deinit();
+    try std.testing.expectEqual(@as(usize, 3), list.checks.len);
+    try std.testing.expectEqual(@as(u32, 12), list.checks[0].value.diagnostic.line.?);
+    try std.testing.expectEqual(@as(usize, 4), list.checks[0].value.diagnostic.properties.len);
+    try std.testing.expectEqual(@as(usize, 7), errors.diagnostics.items.len);
+    for (errors.diagnostics.items) |item|
+        try std.testing.expectEqual(DiagnosticTag.err_invalid_checklist_diagnostic_constraint, std.meta.activeTag(item.kind));
+}
+
+test "diagnostic constraints match lines and optional, numeric, string, and enum fields" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_checklist_symbol_does_not_match_actual_type_hub_local line 7 name=="a b" kind==code hub==null local==0x10
+        \\//? err: err_expression_evaluation_failed line 9 reason==divide_by_zero context==expression
+        \\//? err: err_argument_count_mismatch line 11 found==3 subject=="arg count"
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "match.propan", source, &errors)).?;
+    defer list.deinit();
+    try std.testing.expect(!errors.has_errors());
+    try errors.emit_diag(.{ .source = "match.propan", .line = 11, .column = 1 }, .{ .err_argument_count_mismatch = .{ .subject = "arg count", .min = 1, .max = 2, .found = 3 } });
+    try errors.emit_diag(.{ .source = "match.propan", .line = 7, .column = 1 }, .{ .err_checklist_symbol_does_not_match_actual_type_hub_local = .{ .name = "a b", .kind = .code, .hub = null, .local = 16 } });
+    try errors.emit_diag(.{ .source = "match.propan", .line = 9, .column = 1 }, .{ .err_expression_evaluation_failed = .{ .context = .expression, .reason = .divide_by_zero } });
+    try std.testing.expect(try list.evaluateDiagnostics(&errors, 0));
+    try std.testing.expectEqual(@as(usize, 0), errors.diagnostics.items.len);
+}
+
+test "diagnostic constraints match repeated codes one to one" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_expression_evaluation_failed line 6 reason==overflow
+        \\//? err: err_expression_evaluation_failed line 5
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "duplicate.propan", source, &errors)).?;
+    defer list.deinit();
+    try errors.emit_diag(.{ .source = "duplicate.propan", .line = 5, .column = 1 }, .{ .err_expression_evaluation_failed = .{ .context = .expression, .reason = .overflow } });
+    try errors.emit_diag(.{ .source = "duplicate.propan", .line = 6, .column = 1 }, .{ .err_expression_evaluation_failed = .{ .context = .expression, .reason = .divide_by_zero } });
+    try std.testing.expect(!(try list.evaluateDiagnostics(&errors, 0)));
+    try std.testing.expectEqual(DiagnosticTag.err_checklist_diagnostic_does_not_match, std.meta.activeTag(errors.diagnostics.items[2].kind));
+}
+
+test "diagnostic line mismatch reports the expected check" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_unknown_mnemonic line 10 mnemonic=="FOO"
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "line.propan", source, &errors)).?;
+    defer list.deinit();
+    try errors.emit_diag(.{ .source = "line.propan", .line = 11, .column = 1 }, .{ .err_unknown_mnemonic = .{ .mnemonic = "FOO" } });
+    try std.testing.expect(!(try list.evaluateDiagnostics(&errors, 0)));
+    try std.testing.expectEqualStrings("err: err_unknown_mnemonic line 10 mnemonic==\"FOO\"", errors.diagnostics.items[1].kind.err_checklist_diagnostic_does_not_match.check);
+}
+
+test "diagnostic matcher reassigns a broad expectation to preserve a narrow one" {
+    const source =
+        \\//? PROPAN CHECK LIST
+        \\//? err: err_unknown_mnemonic
+        \\//? err: err_unknown_mnemonic mnemonic=="FOO"
+    ;
+    var errors: diagnostics.Collection = .init(std.testing.allocator);
+    defer errors.deinit();
+    var list = (try parse(std.testing.allocator, "reassign.propan", source, &errors)).?;
+    defer list.deinit();
+    try errors.emit_diag(null, .{ .err_unknown_mnemonic = .{ .mnemonic = "FOO" } });
+    try errors.emit_diag(null, .{ .err_unknown_mnemonic = .{ .mnemonic = "BAR" } });
+    try std.testing.expect(try list.evaluateDiagnostics(&errors, 0));
+}
+
+test "scalar parser supports exact float values and quoted escapes" {
+    const float_value = (try parseScalar(std.testing.allocator, f64, "1.25")).?;
+    try std.testing.expect(scalarMatches(f64, @as(f64, 1.25), float_value));
+    try std.testing.expect(!scalarMatches(f64, @as(f64, 1.5), float_value));
+    const string_value = (try parseScalar(std.testing.allocator, []const u8, "\"a\\n\\\"b\"")).?;
+    defer std.testing.allocator.free(string_value.string);
+    try std.testing.expect(scalarMatches([]const u8, "a\n\"b", string_value));
 }

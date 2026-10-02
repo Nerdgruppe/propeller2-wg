@@ -1,7 +1,7 @@
 //? PROPAN CHECK LIST
-//? err: warn_emitted_padding_byte_s
-//? err: warn_emitted_padding_byte_s
-//? err: warn_emitted_padding_byte_s
+//? err: warn_emitted_padding_byte_s line 10 count==2
+//? err: warn_emitted_padding_byte_s line 13 count==3
+//? err: warn_emitted_padding_byte_s line 18 count==1
 //? mem: 0 == hex [01 02 00 00 34 12 78 56 09 00 00 00 0A 0B 0C 0D 00 00 22 11]
 .data
 .pack word

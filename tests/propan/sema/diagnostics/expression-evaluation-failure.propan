@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_expression_evaluation_failed
-//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed line 4 context==expression reason==divide_by_zero
+//? err: err_expression_evaluation_failed line 5 context==expression reason==divide_by_zero
 MOV PTRA, 1 / 0
 .assert 1 / 0
