@@ -1,0 +1,8 @@
+//? PROPAN CHECK LIST
+//? err: warn_alti_state_segment_mismatch
+first:
+LONG 0
+.cogexec 0x100
+second:
+LONG 0
+LONG alti.state(first, second, 0)

@@ -118,6 +118,42 @@ pub const OptionalBoolean = enum {
     }
 };
 
+pub const AltiIncrement = enum(u2) { keep = 0, dec = 2, inc = 3 };
+pub const AltiForwarding = enum(u3) { none = 0, subst = 4 };
+pub const AltiRIncrement = enum(u2) { keep = 0, dec = 2, inc = 3 };
+pub const AltiRForward = enum(u3) { none = 0, drop = 1, subst = 4, instr = 5 };
+pub const AltiRingSize = enum(u4) {
+    full = 0,
+    @"512" = 8, // Alias for full; enum tags must have distinct values.
+    @"256" = 1,
+    @"128" = 2,
+    @"64" = 3,
+    @"32" = 4,
+    @"16" = 5,
+    @"8" = 6,
+    @"4" = 7,
+};
+
+const AltiStateField = struct {
+    value: u14,
+    segment: ?eval.Segment_ID = null,
+};
+
+fn alti_state_field(value: eval.Value, max: u14) error{ Overflow, TypeMismatch, InvalidArg }!AltiStateField {
+    return switch (value.value) {
+        .int => |number| .{ .value = blk: {
+            const bounded = std.math.cast(u14, number) orelse return error.Overflow;
+            if (bounded > max) return error.Overflow;
+            break :blk bounded;
+        } },
+        .address => |address| switch (address.local) {
+            .cog, .regspace => |index| .{ .value = index, .segment = address.segment_id },
+            else => error.InvalidArg,
+        },
+        else => error.TypeMismatch,
+    };
+}
+
 const Unary = enum { abs, fabs, encod, decod, clz, ctz, clo, cto, bmask, popcnt, sqrt, fsqrt, qlog, qexp };
 const Binary = enum { min, max, smin, smax, sar, ror, rol, rev, zerox, signx, sca, scas, frac, fmul, fdiv, fadd, fsub, flt, fle, fgt, fge };
 
@@ -219,6 +255,67 @@ fn eval_binary(comptime op: Binary, a: u32, b: u32) (error{DivideByZero}!i64) {
 }
 
 pub const functions = define.namespace(.{
+    .alti = define.namespace(.{
+        .config = define.function(struct {
+            pub const docs = "Pack the ALTI source, destination, result, and ring modes.";
+            pub const params = .{
+                .s_inc = .{ .docs = "S field increment mode." },
+                .d_inc = .{ .docs = "D field increment mode." },
+                .s_fwd = .{ .docs = "S field forwarding mode." },
+                .d_fwd = .{ .docs = "D field forwarding mode." },
+                .r_inc = .{ .docs = "Result field increment mode." },
+                .r_fwd = .{ .docs = "Result field forwarding mode." },
+                .s_ring = .{ .docs = "S field ring size.", .default = .full },
+                .d_ring = .{ .docs = "D field ring size.", .default = .full },
+                .r_ring = .{ .docs = "Result field ring size.", .default = .full },
+            };
+
+            pub fn invoke(s_inc: AltiIncrement, d_inc: AltiIncrement, s_fwd: AltiForwarding, d_fwd: AltiForwarding, r_inc: AltiRIncrement, r_fwd: AltiRForward, s_ring: AltiRingSize, d_ring: AltiRingSize, r_ring: AltiRingSize) !u32 {
+                if (r_inc != .keep and (r_fwd == .drop or r_fwd == .instr)) return error.InvalidArg;
+
+                const s_mode: u32 = @intFromEnum(s_inc) | @intFromEnum(s_fwd);
+                const d_mode: u32 = @intFromEnum(d_inc) | @intFromEnum(d_fwd);
+                const r_mode: u32 = @intFromEnum(r_inc) | @intFromEnum(r_fwd);
+                return s_mode | (d_mode << 3) | (r_mode << 6) |
+                    (@as(u32, @intFromEnum(s_ring) & 7) << 9) |
+                    (@as(u32, @intFromEnum(d_ring) & 7) << 12) |
+                    (@as(u32, @intFromEnum(r_ring) & 7) << 15);
+            }
+        }),
+
+        .state = define.function(struct {
+            pub const docs = "Pack ALTI S, D, and result or instruction state fields.";
+            pub const params = .{
+                .s = .{ .docs = "9-bit S field, or a cog/register-space address." },
+                .d = .{ .docs = "9-bit D field, or a cog/register-space address." },
+                .r = .{ .docs = "14-bit result/instruction field, or a cog/register-space address." },
+            };
+
+            pub fn invoke(ctx: EvalContext, s: eval.Value, d: eval.Value, r: eval.Value) !u32 {
+                const fields = .{
+                    try alti_state_field(s, 0x1ff),
+                    try alti_state_field(d, 0x1ff),
+                    try alti_state_field(r, 0x3fff),
+                };
+                var segment: ?eval.Segment_ID = null;
+                var mismatch = false;
+                inline for (fields) |field| {
+                    if (field.segment) |current| {
+                        if (segment) |first| {
+                            mismatch = mismatch or first != current;
+                        } else {
+                            segment = current;
+                        }
+                    }
+                }
+                if (mismatch) try ctx.emit_diag(.warn_alti_state_segment_mismatch);
+                return @as(u32, fields[0].value) |
+                    (@as(u32, fields[1].value) << 9) |
+                    (@as(u32, fields[2].value) << 18);
+            }
+        }),
+    }),
+
     .abs = unary(.abs, "Absolute value of a signed 32-bit integer."),
     .fabs = unary(.fabs, "Clear the sign bit of a binary32 value."),
     .encod = unary(.encod, "Index of the highest set bit; zero maps to zero."),

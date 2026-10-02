@@ -232,8 +232,7 @@ fn tokenize(allocator: std.mem.Allocator, line: []const u8) ![]const []const u8 
 }
 
 fn parseUnsigned(text: []const u8) ?u32 {
-    const hex = std.mem.startsWith(u8, text, "0x") or std.mem.startsWith(u8, text, "0X");
-    return std.fmt.parseInt(u32, if (hex) text[2..] else text, if (hex) 16 else 10) catch null;
+    return std.fmt.parseInt(u32, text, 0) catch null;
 }
 
 fn parseAddress(text: []const u8) ?Address {
@@ -278,8 +277,7 @@ fn parseMode(text: []const u8) ?eval.ExecMode {
 fn parseNumber(text: []const u8) ?i64 {
     const negative = std.mem.startsWith(u8, text, "-");
     const unsigned = if (negative) text[1..] else text;
-    const hex = std.mem.startsWith(u8, unsigned, "0x") or std.mem.startsWith(u8, unsigned, "0X");
-    const magnitude = std.fmt.parseInt(u64, if (hex) unsigned[2..] else unsigned, if (hex) 16 else 10) catch return null;
+    const magnitude = std.fmt.parseInt(u64, unsigned, 0) catch return null;
     if (magnitude > (if (negative) @as(u64, 0x80000000) else @as(u64, 0xFFFFFFFF))) return null;
     return if (negative) -@as(i64, @intCast(magnitude)) else @intCast(magnitude);
 }

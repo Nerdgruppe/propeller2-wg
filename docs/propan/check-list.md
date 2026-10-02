@@ -60,7 +60,7 @@ sym: <symbol> <spec>
   - `<type>:<hub>`: Asserts that `<symbol>` is located at the given hub address.
   - `<type>:<hub>:<local>`: Asserts that `<symbol>` is located at the given hub address and has the given `<local>` address.
   - `<type>` is `code`, `data`, `constant`, `builtin`.
-  - `<hub>` and `<local>` are either decimal, hexadecimal or `-` for absent/null
+  - `<hub>` and `<local>` are decimal, hexadecimal, binary, or `-` for absent/null
 
 ## Segment Checks
 
@@ -82,7 +82,7 @@ Syntax idea:
 ```
 
 - `<start-address>`> is the "identifier" of the segment and encodes the start address.
-- `[<length>]` is the optional length of the segment. hexadecimal or decimal.
+- `[<length>]` is the optional length of the segment. Decimal, hexadecimal, or binary.
 - `[<type>]` checks the exec_mode of our segment. Can be one of:
   - `cogexec`
   - `lutexec`
@@ -111,15 +111,15 @@ Rough syntax idea:
 mem: <start-address> <compare-mode> <data-block>
 ```
 
-- `<start-address>` is a decimal or hexadecimal address where the memory starts
+- `<start-address>` is a decimal, hexadecimal, or binary address where the memory starts
 - `<compare-mode>` is either
   - `==` for requiring that the memory block is the *whole* memory. full program length is asserted to be equal
   - `<-` for just asserting that the block of memory matches. full program length is not tested
 - `<data-block>` is one of the following things:
   - `u8 [ <numbers> ]`, `u16 [ <numbers> ]`, `u32 [ <numbers> ]`
     - `<numbers>` is a list of (comma or whitespace) separated numbers
-    - Each number is either a decimal number from `minInt(i32` to `maxInt(u32` which means
-      that we can write both positive and negative numbers.
+    - Each number is decimal, hexadecimal, or binary (with optional `_` digit separators),
+      from `minInt(i32)` to `maxInt(u32)` so both positive and negative numbers can be written.
   - `hex [ <bytes> ]` is a sequence of hex bytes.
     - `<bytes>` is a sequence of bytes where each byte is a two-character hex number.
       numbers can be upper/lower case, space or comma separated or joined together.

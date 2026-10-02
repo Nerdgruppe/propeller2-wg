@@ -1,0 +1,13 @@
+//? PROPAN CHECK LIST
+//? mem: 0 <- u32 [ 0b00000000000000_000000000_111111111, 0 ]
+.assert alti.state(0, 0, 0) == 0b00000000000000_000000000_000000000
+LONG alti.state(0x1ff, 0, 0)
+source:
+LONG 0
+.assert alti.state(source, 0, 0) == 0b00000000000000_000000000_000000001
+.assert alti.state(source, source, source) == 0b00000000000001_000000001_000000001
+.regspace
+.org 0x1ff
+var reg_s:
+.reserve 1
+.assert alti.state(reg_s, 0, 0) == 0b00000000000000_000000000_111111111

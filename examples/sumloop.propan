@@ -5,19 +5,35 @@
 //   }
 //
 quicksum:
-    REP 2, 8
-        ALTI what, whatmode
+.loop:
+    REP @.end, 8
+        ALTI reg_state, alti_mode
         ADD altered, 0
-    RET
+.end:
+    RET :wcz
 
-var what:
+var reg_state:
     // store R, D, S pointers
-    LONG (cogaddr(buf_c) << 18) | (cogaddr(buf_b) << 9) | (cogaddr(buf_a) << 0)
+    LONG alti.state(
+        s=cogaddr(buf_a),
+        d=cogaddr(buf_b),
+        r=cogaddr(buf_c),
+    )
 
-var whatmode:
+var alti_mode:
     // increment R, D, S with wrap-8,
     // substitue each field into next instr
-    LONG 0b110_110_110_111_111_111
+    LONG alti.config(
+        s_inc = #inc,
+        d_inc = #inc,
+        r_inc = #inc,
+        s_fwd = #subst,
+        d_fwd = #subst,
+        r_fwd = #subst,
+        s_ring = #8,
+        d_ring = #8,
+        r_ring = #8,
+    )
 
 .align 8
 

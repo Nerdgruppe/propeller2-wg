@@ -1,0 +1,9 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+LONG alti.config(#keep, #keep, #none, #none, #inc, #drop)
+LONG alti.config(#keep, #keep, #none, #none, #dec, #instr)
+LONG alti.config(#keep, #keep, #none, #none, #keep, #bogus)
+LONG alti.config(#keep, #keep, #none, #none, #keep, #none, s_ring=#2)

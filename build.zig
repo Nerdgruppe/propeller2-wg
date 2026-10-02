@@ -390,6 +390,16 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&no_input.step);
     }
 
+    // Render the stdlib documentation for testing
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--render-stdlib-docs=-");
+        run.expectStdOutMatch("<!doctype html>");
+        run.expectStdOutMatch(">P_DAC_DITHER_PWM<");
+        run.expectStdOutMatch(">popcnt<");
+        test_step.dependOn(&run.step);
+    }
+
     // Exports:
 
     if (with_flexspin) blk: {
@@ -666,6 +676,9 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/function-parameter-passed-twice.propan",
     "tests/propan/sema/diagnostics/function-missing-parameter.propan",
     "tests/propan/sema/diagnostics/builtin-functions.propan",
+    "tests/propan/sema/diagnostics/alti-config-invalid.propan",
+    "tests/propan/sema/diagnostics/alti-state-invalid.propan",
+    "tests/propan/sema/diagnostics/alti-state-segments.propan",
     "tests/propan/sema/diagnostics/pin-range-wraps.propan",
     "tests/propan/sema/diagnostics/delay-exceeds-u32.propan",
 };
@@ -687,6 +700,15 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/local-label-non-boundaries.propan",
     "tests/propan/sema/operators.propan",
     "tests/propan/sema/builtin-functions.propan",
+    "tests/propan/sema/alti-config-s-mode.propan",
+    "tests/propan/sema/alti-config-d-mode.propan",
+    "tests/propan/sema/alti-config-r-mode.propan",
+    "tests/propan/sema/alti-config-s-ring.propan",
+    "tests/propan/sema/alti-config-d-ring.propan",
+    "tests/propan/sema/alti-config-r-ring.propan",
+    "tests/propan/sema/alti-state-s.propan",
+    "tests/propan/sema/alti-state-d.propan",
+    "tests/propan/sema/alti-state-r.propan",
     "tests/propan/sema/unary-plus.propan",
     "tests/propan/sema/operator-associativity.propan",
     "tests/propan/sema/value-hint-converter.propan",

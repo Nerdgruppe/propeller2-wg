@@ -24,6 +24,7 @@
   - Subtask: Validate behavior
 - Explicit register syntax/predefined registers (`register(X)`)
 - Plan to allow access to local labels somehow?
+- Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers
 
 ## New Features
 
