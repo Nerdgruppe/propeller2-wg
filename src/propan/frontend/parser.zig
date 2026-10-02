@@ -383,6 +383,7 @@ pub const Parser = struct {
                 .string_literal,
                 .enumerator,
                 .@"(",
+                .@"[",
             });
 
             switch (which) {
@@ -398,6 +399,22 @@ pub const Parser = struct {
                     return .{
                         .wrapped = try core.move_to_heap(ast.Expression, value),
                     };
+                },
+                .@"[" => {
+                    const whitespace = core.push_ignore_whitespace();
+                    defer whitespace.pop();
+
+                    var items: std.ArrayListUnmanaged(ast.Expression) = .empty;
+                    defer items.deinit(core.arena);
+                    if (core.accept_one(.@"]")) |_| {} else |_| {
+                        while (true) {
+                            try items.append(core.arena, try core.accept_expression());
+                            const terminator, _ = try core.accept_any(&.{ .@",", .@"]" });
+                            if (terminator == .@"]") break;
+                            if (core.accept_one(.@"]")) |_| break else |_| {}
+                        }
+                    }
+                    return .{ .sequence = .{ .location = token.location, .items = try items.toOwnedSlice(core.arena) } };
                 },
 
                 .integer => return .{

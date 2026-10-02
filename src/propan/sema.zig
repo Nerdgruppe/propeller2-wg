@@ -176,6 +176,7 @@ fn copy_value(allocator: std.mem.Allocator, value: Value) !Value {
     var copied = value;
     switch (value.value) {
         .string => |text| copied.value = .{ .string = try allocator.dupe(u8, text) },
+        .sequence => |items| copied.value = .{ .sequence = try allocator.dupe(i64, items) },
         .enumerator => |text| copied.value = .{ .enumerator = try allocator.dupe(u8, text) },
         .int, .address, .register, .pointer_expr => {},
     }
@@ -514,6 +515,7 @@ const Analyzer = struct {
             },
 
             .wrapped => |inner| try ana.validate_expr_symbol_refs(inner.*),
+            .sequence => |seq| for (seq.items) |item| try ana.validate_expr_symbol_refs(item),
 
             .unary_transform => |trafo| try ana.validate_expr_symbol_refs(trafo.value.*),
             .binary_transform => |trafo| {
@@ -629,9 +631,7 @@ const Analyzer = struct {
                     break :blk @intCast(instr.file_data.len);
                 },
 
-                .long => @intCast(4 * instr.ast_node.arguments.len),
-                .word => @intCast(2 * instr.ast_node.arguments.len),
-                .byte => @intCast(1 * instr.ast_node.arguments.len),
+                .long, .word, .byte => 0, // Sized during layout, after the current address is known.
 
                 .encoded => blk: {
                     var size: u32 = 4;
@@ -901,7 +901,14 @@ const Analyzer = struct {
                                     else => 1,
                                 };
                                 const alignment = if (cursor.pack == 0) unit else cursor.pack;
-                                cursor.align_data(alignment);
+                                if (coded.mnemonic.?.* != .file) {
+                                    var aligned = cursor;
+                                    aligned.align_data(alignment);
+                                    coded.byte_size = try ana.data_instruction_size(coded.ast_node, aligned.offset, unit);
+                                    if (coded.byte_size.? != 0) cursor = aligned;
+                                } else {
+                                    cursor.align_data(alignment);
+                                }
                                 coded.start_addr = cursor.offset;
                                 const size = coded.byte_size.?;
                                 cursor.hub += size;
@@ -980,6 +987,135 @@ const Analyzer = struct {
             return null;
         };
         return number;
+    }
+
+    fn constant_expression(ana: *Analyzer, name: []const u8) ?ast.Expression {
+        for (ana.file.sequence) |line| {
+            if (line == .constant and std.mem.eql(u8, line.constant.identifier, name)) return line.constant.value;
+        }
+        return null;
+    }
+
+    fn has_user_constant(ana: *Analyzer, expr: ast.Expression) bool {
+        return switch (expr) {
+            .symbol => |sym| ana.constant_expression(sym.symbol_name) != null,
+            .wrapped => |inner| ana.has_user_constant(inner.*),
+            .unary_transform => |op| ana.has_user_constant(op.value.*),
+            .binary_transform => |op| ana.has_user_constant(op.lhs.*) or ana.has_user_constant(op.rhs.*),
+            .function_call => |call| for (call.arguments) |arg| {
+                if (ana.has_user_constant(arg.value)) break true;
+            } else false,
+            .sequence => |seq| for (seq.items) |item| {
+                if (ana.has_user_constant(item)) break true;
+            } else false,
+            else => false,
+        };
+    }
+
+    fn is_expandable(ana: *Analyzer, expr: ast.Expression, depth: usize) bool {
+        if (depth > 16) return false;
+        return switch (expr) {
+            .string, .sequence => true,
+            .wrapped => |inner| ana.is_expandable(inner.*, depth + 1),
+            .symbol => |sym| if (ana.constant_expression(sym.symbol_name)) |value| ana.is_expandable(value, depth + 1) else false,
+            .binary_transform => |op| op.operator == .@"*" and
+                (ana.is_expandable(op.lhs.*, depth + 1) or ana.is_expandable(op.rhs.*, depth + 1)),
+            .function_call => |call| std.mem.eql(u8, call.function, "utf16") or std.mem.eql(u8, call.function, "utf32"),
+            else => false,
+        };
+    }
+
+    fn data_expr_count(ana: *Analyzer, expr: ast.Expression, start: TaggedAddress) !u32 {
+        const count: u64 = switch (expr) {
+            .string => |str| str.value.len,
+            .sequence => |seq| blk: {
+                var total: u64 = 0;
+                for (seq.items) |item| {
+                    total += try ana.data_expr_count(item, start);
+                    if (total > 0x80000) break;
+                }
+                break :blk total;
+            },
+            .wrapped => |inner| return ana.data_expr_count(inner.*, start),
+            .symbol => |sym| blk: {
+                if (ana.constant_expression(sym.symbol_name)) |value| {
+                    if (ana.is_expandable(value, 0)) {
+                        try ana.emit_diag(expr.location(), .err_array_constant_not_yet_supported);
+                        return 0;
+                    }
+                }
+                break :blk 1;
+            },
+            .function_call => |call| blk: {
+                if (!ana.is_expandable(expr, 0)) break :blk 1;
+                if (ana.has_user_constant(expr)) {
+                    try ana.emit_diag(expr.location(), .err_array_constant_not_yet_supported);
+                    return 0;
+                }
+                const value = ana.evaluate_root_expr(expr, .{ .start = start }) catch |err| {
+                    try ana.emit_eval_error(expr.location(), .expression, err);
+                    return 0;
+                };
+                _ = call;
+                break :blk if (value.value == .sequence) value.value.sequence.len else 1;
+            },
+            .binary_transform => |op| blk: {
+                if (op.operator != .@"*" or !ana.is_expandable(expr, 0)) break :blk 1;
+                const left_expands = ana.is_expandable(op.lhs.*, 0);
+                const values = if (left_expands) op.lhs.* else op.rhs.*;
+                const repetitions = if (left_expands) op.rhs.* else op.lhs.*;
+                if (ana.has_user_constant(repetitions)) {
+                    try ana.emit_diag(repetitions.location(), .err_array_constant_not_yet_supported);
+                    return 0;
+                }
+                const times = (try ana.layout_integer(repetitions, repetitions.location(), "array repetition count", start, null)) orelse return 0;
+                break :blk @as(u64, try ana.data_expr_count(values, start)) * times;
+            },
+            else => 1,
+        };
+        if (count > 0x80000) {
+            try ana.emit_diag(expr.location(), .err_array_output_too_large);
+            return 0;
+        }
+        return @intCast(count);
+    }
+
+    fn data_instruction_size(ana: *Analyzer, instr: *const ast.Instruction, start: TaggedAddress, unit: u32) !u32 {
+        var count: u64 = 0;
+        for (instr.arguments) |arg| count += try ana.data_expr_count(arg, start);
+        if (count * unit > 0x80000) {
+            try ana.emit_diag(instr.location, .err_array_output_too_large);
+            return 0;
+        }
+        return @intCast(count * unit);
+    }
+
+    fn repeat_value(ana: *Analyzer, location: ast.Location, source: Value, raw_count: i64) EvalError!Value {
+        const count = std.math.cast(usize, raw_count) orelse {
+            try ana.emit_diag(location, .{ .err_numeric_value_out_of_range = .{ .subject = "array repetition count", .min = 0, .max = 0x80000, .actual = raw_count } });
+            return error.DiagnosedFailure;
+        };
+        if (count == 0) try ana.emit_diag(location, .warn_zero_repetition);
+        const len: usize = switch (source.value) {
+            .string => |str| str.len,
+            .sequence => |seq| seq.len,
+            else => unreachable,
+        };
+        const total = std.math.mul(usize, len, count) catch return error.Overflow;
+        if (total > 0x80000) return error.Overflow;
+        switch (source.value) {
+            .string => |str| {
+                const result = try ana.arena.allocator().alloc(u8, total);
+                for (0..count) |i| @memcpy(result[i * len ..][0..len], str);
+                return .string(result);
+            },
+            .sequence => |seq| {
+                const result = try ana.arena.allocator().alloc(i64, total);
+                for (0..count) |i| @memcpy(result[i * len ..][0..len], seq);
+                return .sequence(result);
+            },
+            else => unreachable,
+        }
     }
 
     fn local_address_value(ana: *Analyzer, address: TaggedAddress, mode: eval.ExecMode, location: ast.Location, subject: []const u8) !?u32 {
@@ -1082,7 +1218,7 @@ const Analyzer = struct {
             };
 
             switch (value.value) {
-                .int, .string, .enumerator => {},
+                .int, .string, .sequence, .enumerator => {},
 
                 .register => {
                     // TODO: Consider if this is OK or not. It's kinda handy, but not sure if hazardous
@@ -1129,6 +1265,22 @@ const Analyzer = struct {
                     value.* = .int(0);
                     continue;
                 };
+            }
+
+            if (instr.mnemonic.?.* == .byte or instr.mnemonic.?.* == .word or instr.mnemonic.?.* == .long) {
+                var count: u64 = 0;
+                for (args) |arg| count += switch (arg.value) {
+                    .string => |str| @as(u64, str.len),
+                    .sequence => |seq| @as(u64, seq.len),
+                    else => 1,
+                };
+                const unit: u64 = switch (instr.mnemonic.?.*) {
+                    .byte => 1,
+                    .word => 2,
+                    .long => 4,
+                    else => unreachable,
+                };
+                if (count * unit != instr.byte_size.?) try ana.emit_diag(instr.ast_node.location, .err_array_length_requires_layout_known);
             }
 
             instr.arguments = args;
@@ -1546,14 +1698,21 @@ const Analyzer = struct {
                     };
 
                     for (instr.arguments, instr.ast_node.arguments) |container_value, ast_node| {
-                        const value: T = try ana.cast_value_to(
-                            ast_node.location(),
-                            if (current_segment.exec_mode == .data) .hub else current_segment.exec_mode,
-                            container_value,
-                            .data,
-                            T,
-                        );
-                        try current_segment.writer().writeInt(T, value, .little);
+                        const mode: eval.ExecMode = if (current_segment.exec_mode == .data) .hub else current_segment.exec_mode;
+                        switch (container_value.value) {
+                            .string => |str| for (str) |byte| {
+                                const value: T = try ana.cast_value_to(ast_node.location(), mode, .int(byte), .data, T);
+                                try current_segment.writer().writeInt(T, value, .little);
+                            },
+                            .sequence => |items| for (items) |item| {
+                                const value: T = try ana.cast_value_to(ast_node.location(), mode, .int(item), .data, T);
+                                try current_segment.writer().writeInt(T, value, .little);
+                            },
+                            else => {
+                                const value: T = try ana.cast_value_to(ast_node.location(), mode, container_value, .data, T);
+                                try current_segment.writer().writeInt(T, value, .little);
+                            },
+                        }
                     }
                 },
 
@@ -2019,7 +2178,7 @@ const Analyzer = struct {
         const raw_value: i64 = switch (value.value) {
             .int => |int| int,
             .address => |offset| try ana.get_offset_for_exec_mode(location, offset, exec_mode, address_space),
-            .string, .enumerator => {
+            .string, .sequence, .enumerator => {
                 try ana.emit_diag(location, .{
                     .err_expected_value_type = .{
                         .subject = "data operand",
@@ -2217,6 +2376,28 @@ const Analyzer = struct {
             },
             .integer => |int| return .int(int.value),
             .string => |string| return .string(string.value),
+            .sequence => |seq| {
+                var values: std.ArrayList(i64) = .empty;
+                for (seq.items) |item| {
+                    const value = try ana.evaluate_expr(item, context, nesting + 1);
+                    switch (value.value) {
+                        .int => |int| try values.append(ana.arena.allocator(), int),
+                        .string => |str| for (str) |byte| try values.append(ana.arena.allocator(), byte),
+                        .sequence => |items| try values.appendSlice(ana.arena.allocator(), items),
+                        .address => |addr| {
+                            const start = context.start orelse return error.TypeMismatch;
+                            const mode: eval.ExecMode = if (start.local == .data) .hub else std.meta.activeTag(start.local);
+                            const number = try ana.get_offset_for_exec_mode(item.location(), addr, mode, .data);
+                            try values.append(ana.arena.allocator(), number);
+                        },
+                        else => {
+                            try ana.emit_diag(item.location(), .{ .err_expected_value_type = .{ .subject = "array item", .expected = .int, .actual = value.value } });
+                            return error.DiagnosedFailure;
+                        },
+                    }
+                }
+                return .sequence(try values.toOwnedSlice(ana.arena.allocator()));
+            },
             .enumerator => |enumerator| return .enumerator(enumerator.symbol_name),
             .symbol => |symref| {
                 const sym = ana.get_label_info(symref.symbol_name, symref.local_scope) catch unreachable;
@@ -2506,6 +2687,13 @@ const Analyzer = struct {
                     };
                 }
 
+                if (op.operator == .@"*") {
+                    if (lhs_type == .int and (rhs_type == .string or rhs_type == .sequence))
+                        return try ana.repeat_value(op.location, rhs, lhs.value.int);
+                    if (rhs_type == .int and (lhs_type == .string or lhs_type == .sequence))
+                        return try ana.repeat_value(op.location, lhs, rhs.value.int);
+                }
+
                 if (lhs_type != rhs_type) {
                     try ana.emit_diag(op.location, .{
                         .err_operator_invalid_operand_types = .{
@@ -2548,7 +2736,7 @@ const Analyzer = struct {
                         });
                         return .enumerator("");
                     },
-                    .address, .string => {
+                    .address, .string, .sequence => {
                         try ana.emit_diag(op.location, .{
                             .err_operator_invalid_operand_type = .{
                                 .operator = .{ .binary = op.operator },
@@ -2644,7 +2832,7 @@ const Analyzer = struct {
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         switch (value.value) {
-                            .string, .enumerator, .pointer_expr => {
+                            .string, .sequence, .enumerator, .pointer_expr => {
                                 try ana.emit_diag(fncall.arguments[0].location, .{
                                     .err_address_function_invalid_operand_type = .{
                                         .function = address_function,
@@ -2725,7 +2913,7 @@ const Analyzer = struct {
                                 });
                                 return value;
                             },
-                            .string, .register, .enumerator, .pointer_expr => {
+                            .string, .sequence, .register, .enumerator, .pointer_expr => {
                                 try ana.emit_diag(fncall.arguments[0].location, .{
                                     .err_address_function_invalid_operand_type = .{
                                         .function = .hubaddr,
@@ -3679,6 +3867,10 @@ pub const FunctionCallContext = struct {
     ana: *Analyzer,
     location: ast.Location,
 
+    pub fn allocator(ctx: FunctionCallContext) std.mem.Allocator {
+        return ctx.ana.arena.allocator();
+    }
+
     pub fn fatal_error(ctx: FunctionCallContext, diagnostic: diagnostics.Kind) error{ OutOfMemory, DiagnosedFailure } {
         try ctx.ana.emit_diag(ctx.location, diagnostic);
         return error.DiagnosedFailure;
@@ -3837,8 +4029,8 @@ pub const EncodedInstruction = struct {
             enumeration: std.StaticStringMap(u32),
 
             pub fn can_assign_from(opt: Type, value: Value) bool {
-                if (value.value == .string) {
-                    // strings cannot be assigned to an operand
+                if (value.value == .string or value.value == .sequence) {
+                    // strings and sequences cannot be assigned to instruction operands
                     return false;
                 }
                 if (value.value == .enumerator) {

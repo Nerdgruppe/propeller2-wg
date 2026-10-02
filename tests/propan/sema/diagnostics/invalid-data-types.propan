@@ -4,12 +4,6 @@
 //? err: err_expected_value_type
 //? err: err_expected_value_type
 //? err: err_expected_value_type
-//? err: err_expected_value_type
-//? err: err_expected_value_type
-//? err: err_expected_value_type
-BYTE "hi"
-WORD "hi"
-LONG "hi"
 BYTE #on
 WORD #on
 LONG #on

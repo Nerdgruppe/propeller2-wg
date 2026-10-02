@@ -255,6 +255,8 @@ fn eval_binary(comptime op: Binary, a: u32, b: u32) (error{DivideByZero}!i64) {
 }
 
 pub const functions = define.namespace(.{
+    .utf16 = unicode_sequence(.utf16),
+    .utf32 = unicode_sequence(.utf32),
     .alti = define.namespace(.{
         .config = define.function(struct {
             pub const docs = "Pack the ALTI source, destination, result, and ring modes.";
@@ -842,6 +844,29 @@ pub const functions = define.namespace(.{
         }),
     }),
 });
+
+fn unicode_sequence(comptime encoding: enum { utf16, utf32 }) define.Function {
+    return define.function(struct {
+        pub const docs = "Encode a UTF-8 string as Unicode code units";
+        pub const params = .{ .text = .{ .docs = "UTF-8 string" } };
+
+        pub fn invoke(ctx: EvalContext, text: []const u8) !eval.Value {
+            const view = std.unicode.Utf8View.init(text) catch return ctx.fatal_error(.err_invalid_utf8_string);
+            var iter = view.iterator();
+            var units: std.ArrayList(i64) = .empty;
+            while (iter.nextCodepoint()) |point| {
+                if (encoding == .utf16 and point > 0xFFFF) {
+                    const pair = point - 0x10000;
+                    try units.append(ctx.allocator(), 0xD800 + (pair >> 10));
+                    try units.append(ctx.allocator(), 0xDC00 + (pair & 0x3FF));
+                } else {
+                    try units.append(ctx.allocator(), point);
+                }
+            }
+            return .sequence(try units.toOwnedSlice(ctx.allocator()));
+        }
+    });
+}
 
 fn pack_x_halves(low: u16, high: u16) u32 {
     return @as(u32, low) | (@as(u32, high) << 16);

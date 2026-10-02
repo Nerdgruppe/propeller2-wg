@@ -319,6 +319,7 @@ fn format_value(allocator: std.mem.Allocator, value: eval.Value) ![]const u8 {
     switch (value.value) {
         .int => |int| try output.writer.print("{d}", .{int}),
         .string => |string| try output.writer.print("\"{f}\"", .{std.zig.fmtString(string)}),
+        .sequence => |items| try output.writer.print("{any}", .{items}),
         .address => |address| try output.writer.print("{f}", .{address}),
         .register => |register| try output.writer.print("{f}", .{register}),
         .enumerator => |enumerator| try output.writer.print("#{s}", .{enumerator}),

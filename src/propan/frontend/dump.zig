@@ -109,6 +109,11 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             try writer.print("string: \"{f}\" \"{f}\"\n", .{ std.zig.fmtString(str.value), std.zig.fmtString(str.source_text) });
         },
 
+        .sequence => |seq| {
+            try writer.writeAll("sequence\n");
+            for (seq.items) |item| try pretty_print_expr(writer, item);
+        },
+
         .wrapped => |inner| {
             try writer.writeAll("wrapped\n");
             try pretty_print_expr(writer, inner.*);

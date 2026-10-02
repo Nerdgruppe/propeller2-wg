@@ -18,6 +18,9 @@
 - Plan to allow access to local labels somehow?
 - Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers
 - Warning for `.hubexec` below `$400` (would be PC inside LUT/cog)
+- Improve constant evaluation system
+  - Make constant evaluation lazy
+  - Resolve constants into a DAC
 
 ## New Features
 
@@ -45,23 +48,6 @@ Stack modification can be done with:
 If any of these are encountered while in a disabled code area, `<cond>` is not evaluated, but only a `false`
 is pushed/replaced. This means we keep the "code disabled" feature while also not requiring to
 evaluate `<cond>`.
-
-### Array Emission
-
-PASM2 has the ability to emit arrays of values: `LONG 10[15]` will emit 15 times the value `10`.
-
-Propan does not support this right now, but should.
-
-Concept:
-
-```c
-LONG 10[15]                 // would work syntactically right now
-LONG 15 * [10,20,30]        // might be an alternative solution
-                            // would also work with strings:
-BYTE 5 * "NaN", " Batman!"  // "NaNNaNNaNNaNNaN Batman!"
-```
-
-Potentially a clearer syntax shall be used.
 
 #### Subfeature: Structures
 

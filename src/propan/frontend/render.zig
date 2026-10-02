@@ -88,6 +88,15 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             try writer.writeAll(str.source_text);
         },
 
+        .sequence => |seq| {
+            try writer.writeAll("[");
+            for (seq.items, 0..) |item, i| {
+                if (i != 0) try writer.writeAll(", ");
+                try pretty_print_expr(writer, item);
+            }
+            try writer.writeAll("]");
+        },
+
         .wrapped => |inner| {
             try writer.writeAll("(");
             try pretty_print_expr(writer, inner.*);

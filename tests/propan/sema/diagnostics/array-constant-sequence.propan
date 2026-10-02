@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? err: err_array_constant_not_yet_supported
+const ITEMS = [1, 2]
+LONG ITEMS

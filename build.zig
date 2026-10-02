@@ -589,6 +589,12 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/array-zero.propan",
+    "tests/propan/sema/diagnostics/array-negative.propan",
+    "tests/propan/sema/diagnostics/array-constant-count.propan",
+    "tests/propan/sema/diagnostics/array-constant-sequence.propan",
+    "tests/propan/sema/diagnostics/array-invalid-utf8.propan",
+    "tests/propan/sema/diagnostics/array-too-large.propan",
     "tests/propan/sema/diagnostics/pic-invalid.propan",
     "tests/propan/sema/diagnostics/pic-force-absolute.propan",
     "tests/propan/sema/diagnostics/pack-invalid.propan",
@@ -719,6 +725,7 @@ const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const
 };
 
 const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
+    "tests/propan/sema/array-emission.propan",
     "tests/propan/sema/pic-modes.propan",
     "tests/propan/sema/basic-constants.propan",
     "tests/propan/sema/basic-instruction-selection.propan",
@@ -762,6 +769,7 @@ const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests +
     "tests/propan/sema/check-list-regspace.propan",
     "tests/propan/sema/file_source.propan",
     "tests/propan/sema/lut-mode.propan",
+    "tests/propan/sema/string-emission.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{

@@ -61,6 +61,7 @@ pub const Expression = union(enum) {
     integer: IntegerLiteral,
     enumerator: SymbolReference,
     string: StringLiteral,
+    sequence: SequenceLiteral,
     symbol: SymbolReference,
     unary_transform: UnaryTransform,
     binary_transform: BinaryTransform,
@@ -86,6 +87,11 @@ pub const StringLiteral = struct {
     location: Location,
     source_text: []const u8,
     value: []const u8,
+};
+
+pub const SequenceLiteral = struct {
+    location: Location,
+    items: []const Expression,
 };
 
 pub const SymbolReference = struct {

@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == hex [ 68 69 68 00 69 00 68 00 00 00 69 00 00 00 ]
+BYTE "hi"
+WORD "hi"
+LONG "hi"

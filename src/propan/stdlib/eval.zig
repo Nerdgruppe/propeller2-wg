@@ -19,6 +19,10 @@ pub const Value = struct {
         return .init(.{ .string = value }, .literal);
     }
 
+    pub fn sequence(value: []const i64) Value {
+        return .init(.{ .sequence = value }, .literal);
+    }
+
     pub fn address(value: TaggedAddress, usage: UsageHint) Value {
         return .init(.{ .address = value }, usage);
     }
@@ -70,6 +74,7 @@ pub const Value = struct {
     pub const Type = enum {
         int,
         string,
+        sequence,
         address,
         register,
         enumerator,
@@ -79,6 +84,7 @@ pub const Value = struct {
     pub const Payload = union(Type) {
         int: i64,
         string: []const u8,
+        sequence: []const i64,
         address: TaggedAddress,
         register: Register,
         enumerator: []const u8,
@@ -109,6 +115,7 @@ pub const Value = struct {
         switch (val.value) {
             .int => |v| try writer.print("{d}", .{v}),
             .string => |v| try writer.print("\"{f}\"", .{std.zig.fmtString(v)}),
+            .sequence => |v| try writer.print("{any}", .{v}),
             .address => |v| try writer.print("{f}", .{v}),
             .register => |v| try writer.print("{f}", .{v}),
             .enumerator => |v| try writer.print("#{s}", .{v}),
