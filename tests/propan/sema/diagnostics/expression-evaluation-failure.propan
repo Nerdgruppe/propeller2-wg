@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+MOV PTRA, 1 / 0
+.assert 1 / 0

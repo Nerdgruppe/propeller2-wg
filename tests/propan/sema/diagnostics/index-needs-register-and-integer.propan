@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? err: err_operator_invalid_operand_types
+const x = 1
+LONG x[1]

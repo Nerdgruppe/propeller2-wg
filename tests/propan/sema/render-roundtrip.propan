@@ -1,0 +1,19 @@
+// FRONTEND ROUNDTRIP
+const ON = #on
+const OFF = #off
+const NUMBER = 2
+const MESSAGE = "message"
+.assert pinrange(0, 1, wrap=ON) == (0x40 + 0), MESSAGE
+.assert pinrange(start=0, end=1, wrap=OFF,) == 0x40
+if(C) RDLONG PA, PTRB++
+if(!Z) RDLONG PB, PTRA--
+if(C == Z) RDLONG PA, ++PTRA
+if(C != Z) RDLONG PA, --PTRB
+if(!C & Z) RDLONG PA, PTRA[NUMBER]
+if(C | !Z) RDLONG PA, ++PTRB[2]
+if(>=) ADD PTRA, 1 :wc
+return NOP
+JMP target
+target:
+var slot:
+LONG 'A'

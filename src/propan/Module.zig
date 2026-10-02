@@ -11,6 +11,7 @@ const Module = @This();
 arena: std.heap.ArenaAllocator,
 
 segments: []const Segment,
+regspace_segments: []const u32 = &.{},
 line_data: []const LineData,
 symbols: []const Symbol,
 constants: []const Constant,
@@ -32,6 +33,7 @@ pub const Symbol = struct {
     name: []const u8,
     label: TaggedAddress,
     type: Type,
+    source_location: ?ast.Location = null,
 
     pub const Type = enum {
         code,
@@ -56,4 +58,5 @@ pub const LineData = struct {
     offset: u32,
     length: u32,
     location: ast.Location,
+    pc: ?u32 = null,
 };

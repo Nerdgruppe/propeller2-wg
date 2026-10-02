@@ -107,6 +107,14 @@ Typical workflows (started from the workspace root):
 - `${zig} build install test`: Build the projects and run their test suites.
 - `${zig} build install -Dno-emit-bin`: Compile the projects, but don't write the output. This is a quick syntax check.
 
+#### Propan
+
+When working on Propan, always prefer writing a `.propan` file in `tests/propan` over unit tests when applicable.
+End-to-end tests are beneficial as they prevent potential future regressions also in other parts of the codebase,
+and they are way easier to review.
+
+Use the `docs/propan/check-list.md` feature to annotate your expectations.
+
 ### P2DB
 
 The P2DB is written in CUE and located in `data/p2db`.

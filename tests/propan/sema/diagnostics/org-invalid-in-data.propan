@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? err: err_directive_invalid_in_mode
+.data
+.org 1

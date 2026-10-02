@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? err: err_requires_an_integer_known_during_layout
+.org A
+const A = 4

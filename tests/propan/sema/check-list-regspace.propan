@@ -1,0 +1,10 @@
+//? PROPAN CHECK LIST
+//? sym: slot data:-:0
+//? seg: 0 0 regspace
+//? seg: 0x20 4 cogexec
+//? mem: 0x20 <- hex [00 00 00 00]
+.regspace
+var slot:
+.reserve 1
+.cogexec 0x20
+LONG 0

@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: err_ambigious_instruction_selection_for
+ROR 1, PTRA

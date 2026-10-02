@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? err: err_constants_cannot_store_pointer_expression
+const X = PTRA[0]
+BYTE 1

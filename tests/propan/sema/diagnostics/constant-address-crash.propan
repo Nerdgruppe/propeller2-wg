@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_constant_requires_integer_not_offset
+target:
+const X = target
+BYTE 1

@@ -129,7 +129,7 @@ pub const functions = define.namespace(.{
 
         pub fn invoke(base: eval.Register, offset: i10) !eval.Register {
             const new: u9 = @intCast(
-                (@as(i10, @intFromEnum(base)) +% offset) & std.math.maxInt(i9),
+                (@as(i10, @intFromEnum(base)) +% offset) & std.math.maxInt(u9),
             );
             return @enumFromInt(new);
         }
@@ -170,14 +170,29 @@ pub const functions = define.namespace(.{
             const end_grp = end / 32;
 
             if (start_grp != end_grp) {
-                return ctx.fatal_error("Pins {} and {} are not in the same pin group", .{ start, end });
+                return ctx.fatal_error(.{
+                    .err_pins_and_are_not_in_the_same_pin_group = .{
+                        .start = start,
+                        .end = end,
+                    },
+                });
             }
 
             if (start > end) {
                 if (wrap.as_bool() == null) {
-                    try ctx.emit_warning("The pin range from {} to {} wraps inside its register. Add wrap=#on to mute this, or wrap=#off to make it an error.", .{ start, end });
+                    try ctx.emit_diag(.{
+                        .warn_pin_range_wraps = .{
+                            .start = start,
+                            .end = end,
+                        },
+                    });
                 } else if (wrap.as_bool() == false) {
-                    try ctx.emit_error("The pin range from {} to {} wraps inside its register.", .{ start, end });
+                    try ctx.emit_diag(.{
+                        .err_the_pin_range_from_to_wraps_inside_its_register = .{
+                            .start = start,
+                            .end = end,
+                        },
+                    });
                 }
             }
 
@@ -213,9 +228,9 @@ pub const functions = define.namespace(.{
         };
 
         pub fn invoke(ctx: EvalContext, clk: u32, s: u64, ms: u64, us: u64, ns: u64, waitx: bool, rounding: RoundingMode) !u32 {
-            const delay_ns = std.time.ns_per_s * s +
-                std.time.ns_per_ms * ms +
-                std.time.ns_per_us * us +
+            const delay_ns = @as(u128, std.time.ns_per_s) * s +
+                @as(u128, std.time.ns_per_ms) * ms +
+                @as(u128, std.time.ns_per_us) * us +
                 ns;
 
             const rounding_offset: u64 = switch (rounding) {
@@ -224,19 +239,21 @@ pub const functions = define.namespace(.{
                 .ceil => std.time.ns_per_s - 1,
             };
 
-            var clocks_u64: u64 = (delay_ns * clk + rounding_offset) / std.time.ns_per_s;
+            var clocks: u128 = (delay_ns * clk + rounding_offset) / std.time.ns_per_s;
 
             if (waitx) {
-                if (clocks_u64 < 2) {
-                    try ctx.emit_warning("Requested delay time is less than 2 periods. It's recommended to remove the WAITX in question.", .{});
+                if (clocks < 2) {
+                    try ctx.emit_diag(.warn_waitx_delay_too_short);
                 }
-                clocks_u64 -|= 2;
+                clocks -|= 2;
             }
 
-            return std.math.cast(u32, clocks_u64) orelse {
-                try ctx.emit_error("A delay of {} periods ({f}) cannot be represented with 32 bits.", .{
-                    clocks_u64,
-                    std.Io.Duration.fromNanoseconds(delay_ns),
+            return std.math.cast(u32, clocks) orelse {
+                try ctx.emit_diag(.{
+                    .err_a_delay_of_periods_cannot_be_represented_with_32_bits = .{
+                        .periods = clocks,
+                        .duration = std.Io.Duration.fromNanoseconds(@intCast(delay_ns)),
+                    },
                 });
                 return std.math.maxInt(u32);
             };

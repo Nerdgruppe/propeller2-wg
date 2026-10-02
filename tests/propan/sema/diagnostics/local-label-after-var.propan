@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_undefined_reference_to_symbol_at
+foo:
+.loop:
+var storage:
+LONG .loop

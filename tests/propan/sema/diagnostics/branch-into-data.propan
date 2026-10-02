@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? err: warn_branch_into_data
+.data
+target:
+BYTE 1
+.cogexec
+JMP target

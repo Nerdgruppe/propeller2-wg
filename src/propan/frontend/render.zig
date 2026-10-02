@@ -1,6 +1,8 @@
 const std = @import("std");
 const ast = @import("ast.zig");
 
+const unary_precedence: u8 = 6;
+
 pub fn pretty_print(writer: anytype, file: ast.File) !void {
     for (file.sequence) |node| {
         switch (node) {
@@ -79,6 +81,8 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             try writer.writeAll(sym.symbol_name);
         },
 
+        .enumerator => |sym| try writer.print("#{s}", .{sym.symbol_name}),
+
         .string => |str| {
             try writer.writeAll(str.source_text);
         },
@@ -90,16 +94,33 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
         },
 
         .unary_transform => |op| {
-            try writer.writeAll(@tagName(op.operator));
-            try pretty_print_expr(writer, op.value.*);
+            switch (op.operator) {
+                .post_increment, .post_decrement => {
+                    try pretty_print_expr(writer, op.value.*);
+                    try writer.writeAll(if (op.operator == .post_increment) "++" else "--");
+                },
+                else => {
+                    try writer.writeAll(switch (op.operator) {
+                        .pre_increment => "++",
+                        .pre_decrement => "--",
+                        else => @tagName(op.operator),
+                    });
+                    try pretty_print_operand(writer, op.value.*, unary_precedence, false);
+                },
+            }
         },
 
         .binary_transform => |op| {
-            try pretty_print_expr(writer, op.lhs.*);
-            try writer.writeAll(" ");
-            try writer.writeAll(@tagName(op.operator));
-            try writer.writeAll(" ");
-            try pretty_print_expr(writer, op.rhs.*);
+            const parent_precedence = binary_precedence(op.operator);
+            try pretty_print_operand(writer, op.lhs.*, parent_precedence, false);
+            if (op.operator == .array_index) {
+                try writer.writeAll("[");
+                try pretty_print_expr(writer, op.rhs.*);
+                try writer.writeAll("]");
+            } else {
+                try writer.print(" {s} ", .{@tagName(op.operator)});
+                try pretty_print_operand(writer, op.rhs.*, parent_precedence, true);
+            }
         },
 
         .function_call => |func| {
@@ -134,4 +155,34 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             }
         },
     }
+}
+
+fn binary_precedence(operator: ast.BinaryOperator) u8 {
+    // Match parser.zig's opgroup_0 through opgroup_4; larger binds tighter.
+    return switch (operator) {
+        .@"and", .@"or", .xor => 1,
+        .@"==", .@"!=", .@"<=>", .@"<", .@">", .@"<=", .@">=" => 2,
+        .@"+", .@"-", .@"|", .@"^" => 3,
+        .@"&", .@"*", .@"/", .@"%" => 4,
+        .@"<<", .@">>" => 5,
+        .array_index => unary_precedence + 1,
+    };
+}
+
+fn pretty_print_operand(writer: anytype, expr: ast.Expression, parent_precedence: u8, is_rhs: bool) anyerror!void {
+    const needs_parens = switch (expr) {
+        .binary_transform => |binary| blk: {
+            const child_precedence = binary_precedence(binary.operator);
+            break :blk child_precedence < parent_precedence or
+                (is_rhs and child_precedence == parent_precedence);
+        },
+        else => false,
+    };
+    if (needs_parens) try writer.writeAll("(");
+    try pretty_print_expr(writer, expr);
+    if (needs_parens) try writer.writeAll(")");
+}
+
+test {
+    _ = @import("render_tests.zig");
 }

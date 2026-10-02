@@ -95,15 +95,17 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
 
     switch (expr) {
         .integer => |int| {
-            try writer.print("integer: {d} \"{}\"\n", .{ int.value, std.zig.fmtEscapes(int.source_text) });
+            try writer.print("integer: {d} \"{f}\"\n", .{ int.value, std.zig.fmtString(int.source_text) });
         },
 
         .symbol => |sym| {
             try writer.print("symbol: '{s}'\n", .{sym.symbol_name});
         },
 
+        .enumerator => |sym| try writer.print("enumerator: '#{s}'\n", .{sym.symbol_name}),
+
         .string => |str| {
-            try writer.print("integer: \"{}\" \"{}\"\n", .{ std.zig.fmtEscapes(str.value), std.zig.fmtEscapes(str.source_text) });
+            try writer.print("string: \"{f}\" \"{f}\"\n", .{ std.zig.fmtString(str.value), std.zig.fmtString(str.source_text) });
         },
 
         .wrapped => |inner| {
@@ -208,12 +210,12 @@ fn IndentingStream(InnerWriter: type) type {
             const is: *@This() = @alignCast(@fieldParentPtr("interface", io_writer));
             var written: usize = 0;
             for (data[0 .. data.len - 1]) |buffer| {
-                try is.write(buffer);
+                _ = try is.write(buffer);
                 written += buffer.len;
             }
             for (0..splat) |_| {
                 const buffer = data[data.len - 1];
-                try is.write(buffer);
+                _ = try is.write(buffer);
                 written += buffer.len;
             }
             return written;

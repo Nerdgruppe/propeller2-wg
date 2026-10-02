@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: warn_address_function_expected_offset
+LONG hubaddr(1)

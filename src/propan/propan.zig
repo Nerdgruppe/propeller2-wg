@@ -5,6 +5,7 @@ const frontend = @import("frontend.zig");
 const sema = @import("sema.zig");
 const emit = @import("emit.zig");
 const listfile = @import("listfile.zig");
+const check_list = @import("check_list.zig");
 const diagnostics = @import("diagnostics.zig");
 const stdlib = @import("stdlib/stdlib.zig");
 const Module = @import("Module.zig");
@@ -123,11 +124,15 @@ pub fn main(init: std.process.Init) !u8 {
 
     const output_format = cli.options.format;
     if (output_format.is_binary() and cli.options.output.len == 0) {
-        return try usage_mistake(&diagnostics_collection, "Cannot emit {s} to stdio. Use \"-o -\" to force emission to stdout.", .{@tagName(output_format)});
+        return try usage_mistake(&diagnostics_collection, .{
+            .err_usage_cannot_emit_to_stdio = .{
+                .format = output_format,
+            },
+        });
     }
 
     if (cli.positionals.len == 0) {
-        return try usage_mistake(&diagnostics_collection, "missing input files.", .{});
+        return try usage_mistake(&diagnostics_collection, .err_usage_missing_input_files);
     }
 
     const source_files = try init.arena.allocator().alloc([]const u8, cli.positionals.len);
@@ -153,10 +158,20 @@ pub fn main(init: std.process.Init) !u8 {
         try diagnostics_collection.register_source(input_path, buffer.*);
     }
 
-    const loaded_files = try init.arena.allocator().alloc(frontend.ParsedFile, cli.positionals.len);
-    for (cli.positionals, loaded_files, source_files, 0..) |input_path, *parsed_file, source_code, i| {
-        errdefer for (loaded_files[0..i]) |*file|
-            file.deinit();
+    const check_lists = try init.arena.allocator().alloc(?check_list.List, source_files.len);
+    @memset(check_lists, null);
+    defer for (check_lists) |*entry| if (entry.*) |*list| list.deinit();
+    if (cli.options.@"test-mode" != null) {
+        for (check_lists, cli.positionals, source_files) |*entry, path, source|
+            entry.* = try check_list.parse(allocator, path, source, &diagnostics_collection);
+    }
+    if (diagnostics_collection.has_errors()) return 1;
+    const diagnostic_start = diagnostics_collection.diagnostics.items.len;
+
+    const loaded_files = try init.arena.allocator().alloc(?frontend.ParsedFile, cli.positionals.len);
+    @memset(loaded_files, null);
+    defer for (loaded_files) |*file| if (file.*) |*parsed| parsed.deinit();
+    for (cli.positionals, loaded_files, source_files) |input_path, *parsed_file, source_code| {
         std.log.debug("parsing {s}...", .{input_path});
 
         var parser: frontend.Parser = .init(source_code, input_path, &diagnostics_collection);
@@ -172,17 +187,26 @@ pub fn main(init: std.process.Init) !u8 {
             error.SyntaxError,
             error.InvalidCharacter,
             error.InvalidFlag,
-            => return 1,
+            => continue,
 
             error.OutOfMemory => |e| return e,
         };
     }
-    defer for (loaded_files) |*file|
-        file.deinit();
-
     // Stop after having each file parsed successfully:
-    if (cli.options.@"test-mode" == .parser)
-        return 0;
+    if (cli.options.@"test-mode" == .parser) {
+        if (check_lists[0]) |list| {
+            if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+        }
+        return if (diagnostics_collection.has_errors()) 1 else 0;
+    }
+    if (diagnostics_collection.has_errors()) {
+        if (check_lists[0]) |list| {
+            if (list.hasDiagnosticChecks()) {
+                _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+                return if (diagnostics_collection.has_errors()) 1 else 0;
+            }
+        }
+    }
 
     // try frontend.render.pretty_print(
     //     std.io.getStdOut().writer(),
@@ -205,13 +229,15 @@ pub fn main(init: std.process.Init) !u8 {
         module.deinit();
 
     var last_module: ?*Module = null;
-    for (cli.positionals, loaded_files) |input_path, parsed_file| {
+    for (cli.positionals, loaded_files) |input_path, maybe_parsed_file| {
+        const parsed_file = maybe_parsed_file orelse continue;
         std.log.debug("analyzing {s}...", .{input_path});
 
         const module = sema.analyze(allocator, parsed_file.file, .{
             .blank_pointer_expr = .as_ptr_epxr,
+            .io = init.io,
         }, &diagnostics_collection) catch |err| switch (err) {
-            error.SemanticErrors => return 1,
+            error.SemanticErrors => continue,
             else => |e| return e,
         };
 
@@ -260,9 +286,29 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
+    if (cli.positionals.len > 1) try diagnostics_collection.emit_diag(null, .err_multiple_input_files_are_not_supported_yet);
+    if (diagnostics_collection.has_errors()) {
+        if (check_lists[0]) |list| {
+            if (list.hasDiagnosticChecks()) {
+                _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+                return if (diagnostics_collection.has_errors()) 1 else 0;
+            }
+        }
+        return 1;
+    }
+
+    if (check_lists[0]) |list| {
+        try list.evaluate(modules[0], output.items, &diagnostics_collection);
+        const check_failed = diagnostics_collection.has_errors();
+        if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
+        if (check_failed) return if (diagnostics_collection.has_errors()) 1 else 0;
+    }
+    if (diagnostics_collection.has_errors()) return 1;
+
     if (cli.options.@"list-file".len > 0) {
         const list_inputs = try init.arena.allocator().alloc(listfile.Input, module_count);
-        for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, parsed_file, module| {
+        for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, maybe_parsed_file, module| {
+            const parsed_file = maybe_parsed_file.?;
             input.* = .{
                 .path = path,
                 .source = source,
@@ -354,8 +400,8 @@ pub fn main(init: std.process.Init) !u8 {
     return 0;
 }
 
-fn usage_mistake(diagnostics_collection: *diagnostics.Collection, comptime fmt: []const u8, args: anytype) !u8 {
-    try diagnostics_collection.emit_error(null, "usage error: " ++ fmt, args);
+fn usage_mistake(diagnostics_collection: *diagnostics.Collection, diagnostic: diagnostics.Kind) !u8 {
+    try diagnostics_collection.emit_diag(null, diagnostic);
     return 1;
 }
 
@@ -363,6 +409,7 @@ test {
     _ = frontend;
     _ = sema;
     _ = listfile;
+    _ = check_list;
     _ = diagnostics;
 }
 
@@ -398,9 +445,12 @@ fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_dat
 }
 
 fn read_diff_word(data: []const u8, offset: usize) u32 {
-    if (offset + @sizeOf(u32) > data.len)
-        return 0;
-    return std.mem.readInt(u32, data[offset..][0..@sizeOf(u32)], .little);
+    var bytes: [4]u8 = @splat(0);
+    if (offset < data.len) {
+        const length = @min(bytes.len, data.len - offset);
+        @memcpy(bytes[0..length], data[offset..][0..length]);
+    }
+    return std.mem.readInt(u32, &bytes, .little);
 }
 
 fn bitdiff(comptime T: type, comp: T, ref: T, comptime groups: []const u32) [@bitSizeOf(T) + groups.len]u8 {
@@ -540,4 +590,8 @@ fn condition_str(cond: frontend.ast.Condition.Code) []const u8 {
         .if_c_or_z => "if(C | Z)  ",
         .always => "           ",
     };
+}
+
+test {
+    _ = @import("metadata_tests.zig");
 }

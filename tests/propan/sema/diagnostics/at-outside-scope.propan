@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_operator_at_cannot_be_used_in_this_scope
+label:
+const X = @label
+.assert X == 0

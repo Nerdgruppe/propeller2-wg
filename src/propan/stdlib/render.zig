@@ -163,12 +163,14 @@ const ValueFmt = struct {
             .pointer_expr => |value| try writer.print("<code>{f}</code>", .{value}),
 
             .address => |address| {
-                try writer.print("hub: <code class=\"number hex\">0x{X:0>5}</code><br />", .{address.hub_address});
+                if (address.hub_address) |hub| try writer.print("hub: <code class=\"number hex\">0x{X:0>5}</code><br />", .{hub});
                 try writer.print("segment: <code class=\"number dec\">{}</code><br />", .{address.segment_id});
                 switch (address.local) {
                     .hub => {},
                     .cog => |reg| try writer.print("cog: <code class=\"register\">r{}</code>", .{reg}),
                     .lut => |idx| try writer.print("lut: <code class=\"lut_index\">l{}</code>", .{idx}),
+                    .regspace => |reg| try writer.print("cog: <code class=\"register\">r{}</code>", .{reg}),
+                    .data => {},
                 }
             },
         }

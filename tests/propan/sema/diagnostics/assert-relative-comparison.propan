@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_assertion_failed
+.assert @target == 1
+target:
+NOP

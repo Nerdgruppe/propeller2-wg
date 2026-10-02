@@ -1,0 +1,39 @@
+//? PROPAN CHECK LIST
+//? sym: start:loop code:0:0
+//? sym: .loop      code:0x100:0
+//? seg: 0 4 cogexec
+//? seg: 0x100 4 cogexec
+//? seg: 0x110 4 lutexec
+//? seg: 0x120 4 hubexec
+//? seg: 0x130 1 data
+
+start:
+.assert hubaddr(start) == 0
+.loop:
+LONG 0
+.assert hubaddr(.loop) == 0
+
+.cogexec 0x100
+.loop:
+LONG 0
+.assert hubaddr(.loop) == 0x100
+
+.lutexec 0x110
+.loop:
+LONG 0
+.assert hubaddr(.loop) == 0x110
+
+.hubexec 0x120
+.loop:
+LONG 0
+.assert hubaddr(.loop) == 0x120
+
+.regspace
+var .loop:
+.assert localaddr(.loop) == 0
+.reserve 1
+
+.data 0x130
+var .loop:
+BYTE 1
+.assert hubaddr(.loop) == 0x130

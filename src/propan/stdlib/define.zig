@@ -219,9 +219,9 @@ fn convert_to_type(comptime T: type, value: Value) EvalError!T {
 
         eval.PointerExpression => switch (value.value) {
             .pointer_expr => |expr| return expr,
-            .register => |reg| switch (reg) {
-                PTRA => .{ .pointer = .PTRA, .inremenet = .none, .index = null },
-                PTRA => .{ .pointer = .PTRB, .inremenet = .none, .index = null },
+            .register => |reg| return switch (reg) {
+                PTRA => .{ .pointer = .PTRA, .increment = .none, .index = null },
+                PTRB => .{ .pointer = .PTRB, .increment = .none, .index = null },
                 else => return error.InvalidArg,
             },
             else => return error.TypeMismatch,
@@ -230,7 +230,7 @@ fn convert_to_type(comptime T: type, value: Value) EvalError!T {
         eval.Register => switch (value.value) {
             .register => |reg| return reg,
             .address => |addr| switch (addr.local) {
-                .cog => |reg| return @enumFromInt(reg),
+                .cog, .regspace => |reg| return @enumFromInt(reg),
                 else => return error.TypeMismatch,
             },
             else => return error.TypeMismatch,
@@ -299,4 +299,8 @@ const bool_lut: std.StaticStringMap(bool) = .initComptime(.{
 
 fn enum_to_bool(str: []const u8) error{InvalidArg}!bool {
     return bool_lut.get(str) orelse return error.InvalidArg;
+}
+
+test {
+    _ = @import("define_tests.zig");
 }

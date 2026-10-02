@@ -50,10 +50,10 @@ fn render_symbols(allocator: std.mem.Allocator, writer: *std.Io.Writer, inputs: 
                 .empty, .instruction => {},
 
                 .label => |label| {
-                    const symbol = find_symbol(input.module, label.identifier) orelse continue;
+                    const symbol = find_label_symbol(input.module, label) orelse continue;
                     try rows.append(allocator, .{
                         .kind = @tagName(symbol.label.local),
-                        .hub = try format_hub(allocator, symbol.label.hub_address),
+                        .hub = if (symbol.label.hub_address) |hub| try format_hub(allocator, hub) else "-----",
                         .pc = try format_pc(allocator, symbol.label.local),
                         .name = symbol.name,
                         .value = "",
@@ -153,7 +153,7 @@ fn render_segment_body(
 
         try rows.append(allocator, .{
             .hub = try format_hub(allocator, line.offset),
-            .pc = try format_segment_pc(allocator, segment, line.offset),
+            .pc = try format_segment_pc(allocator, segment, line.pc),
             .bytes = try format_bytes(allocator, segment, line),
             .source = source_line(input.source, line.location.line),
         });
@@ -218,6 +218,15 @@ fn find_symbol(module: Module, name: []const u8) ?Module.Symbol {
     return null;
 }
 
+fn find_label_symbol(module: Module, label: frontend.ast.Label) ?Module.Symbol {
+    for (module.symbols) |symbol| {
+        if (symbol.source_location) |location| {
+            if (same_location(location, label.location)) return symbol;
+        }
+    }
+    return find_symbol(module, label.identifier);
+}
+
 fn find_constant(module: Module, name: []const u8) ?Module.Constant {
     for (module.constants) |constant| {
         if (std.mem.eql(u8, constant.name, name))
@@ -231,22 +240,22 @@ fn line_belongs_to_segment(input: Input, line: Module.LineData, segment: Module.
     const end = start + @as(u32, @intCast(segment.data.len));
 
     if (line.length == 0) {
-        const label = label_name_at(input.ast_file, line.location) orelse return line.offset >= start and line.offset <= end;
-        const symbol = find_symbol(input.module, label) orelse return false;
+        const label = label_at(input.ast_file, line.location) orelse return line.offset >= start and line.offset <= end;
+        const symbol = find_label_symbol(input.module, label) orelse return false;
         return symbol.label.segment_id == segment.id;
     }
 
     return line.offset >= start and line.offset < end;
 }
 
-fn label_name_at(file: frontend.ast.File, location: frontend.ast.Location) ?[]const u8 {
+fn label_at(file: frontend.ast.File, location: frontend.ast.Location) ?frontend.ast.Label {
     for (file.sequence) |item| {
         if (item != .label)
             continue;
 
         const label = item.label;
         if (same_location(label.location, location))
-            return label.identifier;
+            return label;
     }
     return null;
 }
@@ -281,7 +290,7 @@ fn source_line(source: []const u8, one_based_line: u32) []const u8 {
 }
 
 fn format_exec_mode(allocator: std.mem.Allocator, mode: eval.ExecMode) ![]const u8 {
-    return std.fmt.allocPrint(allocator, "{s}exec", .{@tagName(mode)});
+    return if (mode == .data or mode == .regspace) @tagName(mode) else std.fmt.allocPrint(allocator, "{s}exec", .{@tagName(mode)});
 }
 
 fn format_hub(allocator: std.mem.Allocator, address: anytype) ![]const u8 {
@@ -290,15 +299,16 @@ fn format_hub(allocator: std.mem.Allocator, address: anytype) ![]const u8 {
 
 fn format_pc(allocator: std.mem.Allocator, local: Module.TaggedAddress.Local) ![]const u8 {
     return switch (local) {
-        .hub => "---",
-        .cog, .lut => |value| std.fmt.allocPrint(allocator, "{X:0>3}", .{value}),
+        .hub, .data => "---",
+        .cog, .regspace => |value| std.fmt.allocPrint(allocator, "{X:0>3}", .{value}),
+        .lut => |index| std.fmt.allocPrint(allocator, "{X:0>3}", .{@as(u32, index) + 0x200}),
     };
 }
 
-fn format_segment_pc(allocator: std.mem.Allocator, segment: Module.Segment, hub_offset: u32) ![]const u8 {
+fn format_segment_pc(allocator: std.mem.Allocator, segment: Module.Segment, pc: ?u32) ![]const u8 {
     return switch (segment.exec_mode) {
-        .hub => "---",
-        .cog, .lut => std.fmt.allocPrint(allocator, "{X:0>3}", .{(hub_offset - segment.hub_offset) / 4}),
+        .hub, .data, .regspace => "---",
+        .cog, .lut => if (pc) |value| std.fmt.allocPrint(allocator, "{X:0>3}", .{value}) else "---",
     };
 }
 
@@ -372,10 +382,10 @@ test "render list file with symbols and segment body" {
             },
         },
         .line_data = &.{
-            .{ .offset = 0, .length = 0, .location = loc(path, 2) },
-            .{ .offset = 0, .length = 4, .location = loc(path, 3) },
-            .{ .offset = 4, .length = 0, .location = loc(path, 4) },
-            .{ .offset = 4, .length = 2, .location = loc(path, 5) },
+            .{ .offset = 0, .length = 0, .location = loc(path, 2), .pc = 0 },
+            .{ .offset = 0, .length = 4, .location = loc(path, 3), .pc = 0 },
+            .{ .offset = 4, .length = 0, .location = loc(path, 4), .pc = 1 },
+            .{ .offset = 4, .length = 2, .location = loc(path, 5), .pc = 1 },
         },
         .symbols = &.{
             .{
