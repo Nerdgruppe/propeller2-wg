@@ -118,7 +118,144 @@ pub const OptionalBoolean = enum {
     }
 };
 
+const Unary = enum { abs, fabs, encod, decod, clz, ctz, clo, cto, bmask, popcnt, sqrt, fsqrt, qlog, qexp };
+const Binary = enum { min, max, smin, smax, sar, ror, rol, rev, zerox, signx, sca, scas, frac, fmul, fdiv, fadd, fsub, flt, fle, fgt, fge };
+
+fn unary(comptime op: Unary, comptime description: []const u8) define.Function {
+    return define.function(struct {
+        pub const docs = description;
+        pub const params = .{ .v = .{ .docs = "32-bit value" } };
+
+        pub fn invoke(v: i64) !i64 {
+            return eval_unary(op, try word(v));
+        }
+    });
+}
+
+fn binary(comptime op: Binary, comptime description: []const u8) define.Function {
+    return define.function(struct {
+        pub const docs = description;
+        pub const params = .{
+            .a = .{ .docs = "First 32-bit value" },
+            .b = .{ .docs = "Second 32-bit value" },
+        };
+
+        pub fn invoke(a: i64, b: i64) !i64 {
+            return eval_binary(op, try word(a), try word(b));
+        }
+    });
+}
+
+fn word(value: i64) error{Overflow}!u32 {
+    if (value < std.math.minInt(i32) or value > std.math.maxInt(u32)) return error.Overflow;
+    return if (value < 0) @bitCast(@as(i32, @intCast(value))) else @intCast(value);
+}
+
+fn signed(value: u32) i32 {
+    return @bitCast(value);
+}
+
+fn float(value: u32) f32 {
+    return @bitCast(value);
+}
+
+fn float_bits(value: f32) i64 {
+    return @as(u32, @bitCast(value));
+}
+
+fn eval_unary(comptime op: Unary, v: u32) (error{InvalidArg}!i64) {
+    return switch (op) {
+        .abs => if (signed(v) < 0) @as(i64, -%signed(v)) else signed(v),
+        .fabs => v & 0x7fff_ffff,
+        .encod => if (v == 0) 0 else 31 - @as(i64, @intCast(@clz(v))),
+        .decod => @as(u32, 1) << @as(u5, @truncate(v)),
+        .clz => @clz(v),
+        .ctz => @ctz(v),
+        .clo => @clz(~v),
+        .cto => @ctz(~v),
+        .bmask => @as(u32, @truncate((@as(u64, 2) << @as(u6, @intCast(v & 31))) - 1)),
+        .popcnt => @popCount(v),
+        // Spin2 evaluates SQRT through binary32, including its rounding at 0xffffffff.
+        .sqrt => @intFromFloat(@sqrt(@as(f32, @floatFromInt(v)))),
+        .fsqrt => float_bits(@sqrt(float(v))),
+        .qlog => blk: {
+            if (v == 0) return error.InvalidArg;
+            const rounded = @round(@log2(@as(f64, @floatFromInt(v))) * 134_217_728.0);
+            // At the upper endpoint Spin2 keeps the last integer exponent.
+            break :blk if (rounded >= 4_294_967_296.0) 0xf800_0000 else @as(i64, @intFromFloat(rounded));
+        },
+        .qexp => @intFromFloat(@round(@exp2(@as(f64, @floatFromInt(v)) / 134_217_728.0))),
+    };
+}
+
+fn eval_binary(comptime op: Binary, a: u32, b: u32) (error{DivideByZero}!i64) {
+    const shift: u5 = @truncate(b);
+    return switch (op) {
+        .min => @min(a, b),
+        .max => @max(a, b),
+        .smin => @min(signed(a), signed(b)),
+        .smax => @max(signed(a), signed(b)),
+        .sar => signed(a) >> shift,
+        .ror => std.math.rotr(u32, a, shift),
+        .rol => std.math.rotl(u32, a, shift),
+        .rev => @bitReverse(a) >> @as(u5, 31 - shift),
+        .zerox => a & (@as(u32, @truncate((@as(u64, 2) << @as(u6, shift)) - 1))),
+        .signx => blk: {
+            const left: i32 = @bitCast(a << @as(u5, 31 - shift));
+            break :blk left >> @as(u5, 31 - shift);
+        },
+        .sca => @as(i64, @intCast((@as(u64, a) * b) >> 32)),
+        .scas => @as(i32, @truncate((@as(i64, signed(a)) * signed(b)) >> 30)),
+        .frac => if (b == 0) error.DivideByZero else @as(i64, @as(u32, @truncate((@as(u64, a) << 32) / b))),
+        .fmul => float_bits(float(a) * float(b)),
+        .fdiv => float_bits(float(a) / float(b)),
+        .fadd => float_bits(float(a) + float(b)),
+        .fsub => float_bits(float(a) - float(b)),
+        .flt => if (float(a) < float(b)) -1 else 0,
+        .fle => if (float(a) <= float(b)) -1 else 0,
+        .fgt => if (float(a) > float(b)) -1 else 0,
+        .fge => if (float(a) >= float(b)) -1 else 0,
+    };
+}
+
 pub const functions = define.namespace(.{
+    .abs = unary(.abs, "Absolute value of a signed 32-bit integer."),
+    .fabs = unary(.fabs, "Clear the sign bit of a binary32 value."),
+    .encod = unary(.encod, "Index of the highest set bit; zero maps to zero."),
+    .decod = unary(.decod, "Set bit v[4:0]."),
+    .clz = unary(.clz, "Count leading zero bits."),
+    .ctz = unary(.ctz, "Count trailing zero bits."),
+    .clo = unary(.clo, "Count leading one bits."),
+    .cto = unary(.cto, "Count trailing one bits."),
+    .bmask = unary(.bmask, "Set the lowest v[4:0]+1 bits."),
+    .popcnt = unary(.popcnt, "Count set bits."),
+    .sqrt = unary(.sqrt, "Square root of an unsigned 32-bit integer."),
+    .fsqrt = unary(.fsqrt, "Binary32 square root."),
+    .qlog = unary(.qlog, "Base-2 logarithm as unsigned 5.27 fixed point."),
+    .qexp = unary(.qexp, "Power of two from unsigned 5.27 fixed point."),
+
+    .min = binary(.min, "Unsigned 32-bit minimum."),
+    .max = binary(.max, "Unsigned 32-bit maximum."),
+    .smin = binary(.smin, "Signed 32-bit minimum."),
+    .smax = binary(.smax, "Signed 32-bit maximum."),
+    .sar = binary(.sar, "Arithmetic shift right by b[4:0]."),
+    .ror = binary(.ror, "Rotate right by b[4:0]."),
+    .rol = binary(.rol, "Rotate left by b[4:0]."),
+    .rev = binary(.rev, "Reverse bits 0 through b[4:0] and zero-extend."),
+    .zerox = binary(.zerox, "Zero-extend from bit b[4:0]."),
+    .signx = binary(.signx, "Sign-extend from bit b[4:0]."),
+    .sca = binary(.sca, "Upper 32 bits of an unsigned 32 by 32 product."),
+    .scas = binary(.scas, "Signed 32 by 32 product shifted right 30 bits."),
+    .frac = binary(.frac, "Unsigned fractional quotient (a << 32) / b."),
+    .fmul = binary(.fmul, "Binary32 multiplication."),
+    .fdiv = binary(.fdiv, "Binary32 division."),
+    .fadd = binary(.fadd, "Binary32 addition."),
+    .fsub = binary(.fsub, "Binary32 subtraction."),
+    .flt = binary(.flt, "Binary32 less-than, returning zero or minus one."),
+    .fle = binary(.fle, "Binary32 less-than-or-equal, returning zero or minus one."),
+    .fgt = binary(.fgt, "Binary32 greater-than, returning zero or minus one."),
+    .fge = binary(.fge, "Binary32 greater-than-or-equal, returning zero or minus one."),
+
     .regoffset = define.function(struct {
         pub const docs = "Computes the register from a base register and an integer offset.";
 

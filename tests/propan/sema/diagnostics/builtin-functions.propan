@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+LONG abs("not an integer")
+LONG clz(4294967296)
+LONG frac(1, 0)
+LONG ror(1, -2147483649)
+LONG qlog(0)

@@ -3433,6 +3433,7 @@ pub const FunctionCallError = error{
     InvalidArg,
     InvalidArgCount,
     Overflow,
+    DivideByZero,
     TypeMismatch,
     /// Special error which is silently swallowed and does not emit an explicit diagnostic code
     DiagnosedFailure,

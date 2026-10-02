@@ -147,45 +147,6 @@ Right now, propan automatically checks if code fits into its execution segment.
 .fit 10, "code exceeds size"          // shorthand for `.assert $ < 10, "code exceeds size"`
 ```
 
-### More builtin functions
-
-PASM still has operators that Propan does not expose:
-
-- `abs(v)`
-- `fabs(v)`
-- `encod(v)`: Index of highest 1 bit
-- `decod(v)`: (1<<v)
-- `clz`: Count leading zeroes (0..32)
-- `ctz`: Count trailing zeroes (0..32)
-- `clo`: Count leading ones (0..32)
-- `cto`: Count trailing ones (0..32)
-- `reverse`: Reverses the bits
-- `bmask`: (2<<v)-1
-- `popcnt`: Number of 1 bits
-- `sqrt`
-- `fsqrt`
-- `qlog`
-- `qexp`
-- `smin(a, b)`
-- `smax(a, b)`
-- `sar(a, b)`
-- `ror(a, b)`
-- `rol(a, b)`
-- `rev(a, b)`
-- `zerox(a, b)`
-- `signx(a, b)`
-- `sca(a, b)`
-- `scas(a, b)`
-- `frac(a, b)`
-- `fmul(a, b)`
-- `fdiv(a, b)`
-- `fadd(a, b)`
-- `fsub(a, b)`
-- `flt(a, b)`
-- `fle(a, b)`
-- `fgt(a, b)`
-- `fge(a, b)`
-
 ### Groups
 
 Groups are similar to ELF sections with garbage collection.
@@ -232,4 +193,3 @@ RDLONG dst, reloc(#offset, 256) // reads from #offset+256
 ### SPIN DEBUG
 
 Currently, Propan does not support the "debug()" syntax from SPIN2
-

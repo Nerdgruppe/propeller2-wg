@@ -665,6 +665,7 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/function-unknown-parameter.propan",
     "tests/propan/sema/diagnostics/function-parameter-passed-twice.propan",
     "tests/propan/sema/diagnostics/function-missing-parameter.propan",
+    "tests/propan/sema/diagnostics/builtin-functions.propan",
     "tests/propan/sema/diagnostics/pin-range-wraps.propan",
     "tests/propan/sema/diagnostics/delay-exceeds-u32.propan",
 };
@@ -685,6 +686,7 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/local-label-segments.propan",
     "tests/propan/sema/local-label-non-boundaries.propan",
     "tests/propan/sema/operators.propan",
+    "tests/propan/sema/builtin-functions.propan",
     "tests/propan/sema/unary-plus.propan",
     "tests/propan/sema/operator-associativity.propan",
     "tests/propan/sema/value-hint-converter.propan",
