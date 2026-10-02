@@ -20,19 +20,6 @@
 
 ## New Features
 
-### Explicit cog/lut start address
-
-```c
-.cogexec <hubaddr>, <localstart> // starts this cogexec segment with PC = <localstart>
-.cogexec $, <localstart> // starts this cogexec segment "here" with PC = <localstart>
-```
-
-This shall be supported for `.cogexec`, `.lutexec`, `.regspace`, but not for `.data` and `.hubexec`.
-
-This can then be used as a variation of `.cogexec \ .org` without padding.
-
-Open Question: Should regular `.org` still should emit padding?
-
 ### PIC Control
 
 Right now, we don't have control over position independent code. This should be changed so we can

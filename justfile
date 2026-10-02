@@ -10,7 +10,10 @@ build:
         -freference-trace=10 \
         --prominent-compile-errors \
         install \
-        test 
+        test
+
+test:
+    {{zig}} build install test -Dwith-flexspin 
 
 # Regenerates src/windtunnel/sim/{encoding,decode}.zig files
 update-windtunnel:

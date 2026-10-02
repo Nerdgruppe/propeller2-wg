@@ -585,6 +585,7 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 
 const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/invalid-origins.propan",
+    "tests/propan/sema/diagnostics/invalid-local-start.propan",
     "tests/propan/sema/diagnostics/assert-message-with-true-condition.propan",
     "tests/propan/sema/diagnostics/assert-relative-comparison.propan",
     "tests/propan/sema/diagnostics/invalid-data-types.propan",
@@ -700,6 +701,7 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/basic-label-addressing.propan",
     "tests/propan/sema/local-labels.propan",
     "tests/propan/sema/local-label-segments.propan",
+    "tests/propan/sema/explicit-local-start.propan",
     "tests/propan/sema/local-label-non-boundaries.propan",
     "tests/propan/sema/operators.propan",
     "tests/propan/sema/builtin-functions.propan",

@@ -695,7 +695,10 @@ const Analyzer = struct {
                                 .data => .data,
                                 else => unreachable,
                             };
-                            const max_args: usize = if (mode == .data or mode == .hub or mode == .cog or mode == .lut) 1 else 0;
+                            const max_args: usize = switch (mode) {
+                                .data, .hub => 1,
+                                .cog, .lut, .regspace => 2,
+                            };
                             if (instr.arguments.len > max_args) {
                                 try ana.emit_diag(instr.location, .{
                                     .err_argument_count_mismatch = .{
@@ -707,14 +710,29 @@ const Analyzer = struct {
                                 });
                             }
                             var hub_offset: ?u32 = null;
-                            if (instr.arguments.len == 1 and max_args == 1) hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic, cursor.offset);
+                            if (instr.arguments.len >= 1 and instr.arguments.len <= max_args) {
+                                const hub_start = TaggedAddress.init(cursor.offset.segment_id, std.math.cast(u20, cursor.hub), .hub);
+                                hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic, hub_start);
+                            }
                             if (hub_offset) |addr| {
                                 if (addr > 0x80000) {
                                     try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .origin, .space = .hub, .actual = addr, .max_exclusive = 0x80001 } });
                                     continue;
                                 }
                             }
-                            cursor.change_mode(idgen.next(), mode, hub_offset);
+                            var local_start: ?u32 = null;
+                            if (instr.arguments.len == 2 and max_args == 2) {
+                                local_start = try ana.layout_integer(instr.arguments[1], instr.location, instr.mnemonic, cursor.offset);
+                                if (local_start) |target| {
+                                    const min: u32 = if (mode == .lut) 0x200 else 0;
+                                    const max: u32 = if (mode == .lut) 0x400 else 0x200;
+                                    if (target < min or target > max) {
+                                        try ana.emit_diag(instr.location, .{ .err_numeric_value_out_of_range = .{ .subject = "local start", .min = min, .max = max, .actual = target } });
+                                        continue;
+                                    }
+                                }
+                            }
+                            cursor.change_mode(idgen.next(), mode, hub_offset, local_start);
                             if (mode == .regspace) try ana.regspace_segments.append(ana.arena.allocator(), cursor.hub);
 
                             // We must change the start address here as we're changing the cursor mode here.
@@ -1021,6 +1039,15 @@ const Analyzer = struct {
             std.debug.assert(instr.end_addr != null);
 
             const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
+            switch (instr.mnemonic.?.*) {
+                .cogexec, .lutexec, .hubexec, .regspace, .data => {
+                    // Segment operands were evaluated during layout, before the mode changed.
+                    @memset(args, .int(0));
+                    instr.arguments = args;
+                    continue;
+                },
+                else => {},
+            }
             for (args, instr.ast_node.arguments) |*value, expr| {
                 value.* = ana.evaluate_root_expr(expr, .{ .after = instr.end_addr, .start = instr.start_addr }) catch |err| {
                     try ana.emit_eval_error(instr.ast_node.location, .expression, err);
@@ -2894,10 +2921,10 @@ const Cursor = struct {
         };
     }
 
-    fn change_mode(cursor: *Cursor, seg: Segment_ID, mode: eval.ExecMode, hub_offset: ?u32) void {
+    fn change_mode(cursor: *Cursor, seg: Segment_ID, mode: eval.ExecMode, hub_offset: ?u32, local_start: ?u32) void {
         cursor.mode = mode;
         cursor.hub = hub_offset orelse cursor.hub;
-        cursor.local_bytes = 0;
+        cursor.local_bytes = if (local_start) |start| (start - if (mode == .lut) @as(u32, 0x200) else 0) * 4 else 0;
         cursor.reserved = false;
         cursor.offset.segment_id = seg;
         cursor.sync();
