@@ -20,8 +20,6 @@
 - `.address => @panic("TODO: Implement binary operators on offsets."),`
 - `.string => @panic("TODO: Implement binary operators on strings."),`
 - Make `.align` filling configurable (not just fill 0xFF)
-- Enable `RDLONG x, aug(1024)`: Only forbid 0x100…0x1FF for pointer expressions?
-  - Subtask: Validate behavior
 - Explicit register syntax/predefined registers (`register(X)`)
 - Plan to allow access to local labels somehow?
 - Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers

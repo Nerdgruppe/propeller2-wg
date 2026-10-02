@@ -625,27 +625,24 @@ const Analyzer = struct {
                 .byte => @intCast(1 * instr.ast_node.arguments.len),
 
                 .encoded => blk: {
-                    // we search for a super-special case here,
-                    // which is an `aug(…)` argument that augments the
-                    // argument with a prefix instruction and increments
-                    // the size by an additional instruction
                     var size: u32 = 4;
                     for (instr.ast_node.arguments) |arg| {
-                        switch (arg) {
-                            .function_call => |fncall| {
-                                const func = ana.get_function(fncall.function) orelse continue;
-                                if (func.* == .aug) {
-                                    // Each aug() increments the size
-                                    size += 4;
-                                }
-                            },
-                            else => {},
-                        }
+                        if (ana.has_augment(arg)) size += 4;
                     }
                     break :blk size;
                 },
             };
         }
+    }
+
+    fn has_augment(ana: *Analyzer, expr: ast.Expression) bool {
+        return switch (expr) {
+            .wrapped => |inner| ana.has_augment(inner.*),
+            .unary_transform => |op| ana.has_augment(op.value.*),
+            .binary_transform => |op| op.operator == .array_index and ana.has_augment(op.rhs.*),
+            .function_call => |call| if (ana.get_function(call.function)) |func| func.* == .aug else false,
+            else => false,
+        };
     }
 
     ///
@@ -1692,12 +1689,12 @@ const Analyzer = struct {
                                     if (value.value == .pointer_expr) {
                                         // is always "immediate"
                                         fill_extra_slot = meta.imm;
-                                    } else if (hint == .literal and int > 255) {
+                                    } else if (hint == .literal and int > (if (value.flags.augment) @as(u32, 0xFFFFF) else 255)) {
                                         try ana.emit_diag(location, .{
                                             .err_numeric_value_out_of_range = .{
                                                 .subject = "pointer immediate",
                                                 .min = 0,
-                                                .max = 255,
+                                                .max = if (value.flags.augment) 0xFFFFF else 255,
                                                 .actual = int,
                                             },
                                         });
@@ -1900,7 +1897,7 @@ const Analyzer = struct {
             },
             .register => |reg| @intFromEnum(reg),
 
-            .pointer_expr => |ptr_expr| try ana.encode_ptr_expr(location, ptr_expr),
+            .pointer_expr => |ptr_expr| try ana.encode_ptr_expr(location, ptr_expr, value.flags.augment),
         };
 
         if (raw_value < 0) {
@@ -1930,7 +1927,7 @@ const Analyzer = struct {
         }
     }
 
-    fn encode_ptr_expr(ana: *Analyzer, location: ast.Location, expr: eval.PointerExpression) !u9 {
+    fn encode_ptr_expr(ana: *Analyzer, location: ast.Location, expr: eval.PointerExpression, augmented: bool) !u32 {
         const ptr_mask = 0b1_0000_0000 | @as(u9, @intFromEnum(expr.pointer)) << 7;
         const opcode_mask: u7 = switch (expr.increment) {
             .none => 0b000_0000,
@@ -1944,6 +1941,31 @@ const Analyzer = struct {
             .pre_decrement, .post_decrement => 1,
             .pre_increment, .post_increment => 1,
         };
+        if (augmented) {
+            const min: i64 = if (expr.increment == .none) -0x80000 else 1;
+            const max: i64 = switch (expr.increment) {
+                .none => 0xFFFFF,
+                .pre_increment, .post_increment => 0x7FFFF,
+                .pre_decrement, .post_decrement => 0x80000,
+            };
+            if (index < min or index > max) {
+                try ana.emit_diag(location, .{ .err_numeric_value_out_of_range = .{
+                    .subject = "pointer index",
+                    .min = min,
+                    .max = max,
+                    .actual = index,
+                } });
+                return 0;
+            }
+
+            const offset: i64 = switch (expr.increment) {
+                .pre_decrement, .post_decrement => -index,
+                else => index,
+            };
+            const bits: u32 = @intCast(@as(u64, @bitCast(offset)) & 0xFFFFF);
+            return (@as(u32, ptr_mask | (opcode_mask & 0b110_0000)) << 15) | bits;
+        }
+
         const enc_index: u6 = switch (expr.increment) {
             .none => blk: {
                 const index6: i6 = std.math.cast(i6, index) orelse err: {
@@ -2273,7 +2295,13 @@ const Analyzer = struct {
             },
             .binary_transform => |op| {
                 const lhs = try ana.evaluate_expr(op.lhs.*, maybe_current_address, nesting + 1);
-                const rhs = try ana.evaluate_expr(op.rhs.*, maybe_current_address, nesting + 1);
+                var index_expr = op.rhs.*;
+                while (index_expr == .wrapped) index_expr = index_expr.wrapped.*;
+                const augmented_index = op.operator == .array_index and
+                    (lhs.value == .pointer_expr or (lhs.value == .register and (lhs.value.register == PTRA or lhs.value.register == PTRB))) and
+                    index_expr == .function_call and
+                    ana.has_augment(index_expr);
+                const rhs = try ana.evaluate_expr(if (augmented_index) index_expr else op.rhs.*, maybe_current_address, if (augmented_index) 0 else nesting + 1);
 
                 const lhs_type: Value.Type = lhs.value;
                 const rhs_type: Value.Type = rhs.value;

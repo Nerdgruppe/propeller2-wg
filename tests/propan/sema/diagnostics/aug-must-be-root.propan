@@ -1,3 +1,5 @@
 //? PROPAN CHECK LIST
 //? err: err_function_must_be_root
+//? err: err_function_must_be_root
 LONG 1 + aug(2)
+RDLONG 0, PTRA[1 + aug(2)]
