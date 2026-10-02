@@ -91,13 +91,23 @@ pub fn build(b: *std.Build) void {
         break :blk exe;
     };
 
-    var coverage_stash: CoverageDirectoryStash = .{ .b = b };
-    defer {
+    var coverage_stash: CoverageDirectoryStash = .{
+        .b = b,
+        .kcov_path = b.findProgram(&.{"kcov"}, &.{}) catch blk: {
+            std.log.warn("could not find kcov, not generating coverage", .{});
+            break :blk null;
+        },
+    };
+    defer if (coverage_stash.kcov_path) |kcov| {
         // when everything else is done, create a step which merges all test results:
 
-        const merge_run = b.addSystemCommand(&.{"kcov"});
+        const merge_run = b.addSystemCommand(&.{
+            kcov,
+            "--merge",
+            "--clean",
+        });
 
-        merge_run.addArg("--merge"); // Merge output from multiple source dirs
+        // merge_run.addArg("--merge"); // Merge output from multiple source dirs
         // merge_run.addArg("--clean"); // don't keep previous runs
 
         merge_run.addArg(".coverage");
@@ -107,7 +117,7 @@ pub fn build(b: *std.Build) void {
         }
 
         test_step.dependOn(&merge_run.step);
-    }
+    };
 
     const windtunnel_exe = blk: {
         const exe = b.addExecutable(.{
@@ -726,22 +736,25 @@ const CoverageDirectoryStash = struct {
     b: *std.Build,
 
     list: std.ArrayList(std.Build.LazyPath) = .empty,
+    kcov_path: ?[]const u8,
 
     fn create_test_run(cds: *CoverageDirectoryStash, exe: *std.Build.Step.Compile) *std.Build.Step.Run {
         const run_step = std.Build.Step.Run.create(cds.b, "run propan");
 
-        run_step.addArg("kcov");
+        if (cds.kcov_path) |path| {
+            run_step.addArg(path);
 
-        // Only report for files in the `src` directory:
-        run_step.addPrefixedDirectoryArg("--include-path=", cds.b.path("src"));
+            // Only report for files in the `src` directory:
+            run_step.addPrefixedDirectoryArg("--include-path=", cds.b.path("src"));
 
-        // Only collect the data, we're not interested in rendering yet.
-        run_step.addArg("--collect-only");
+            // Only collect the data, we're not interested in rendering yet.
+            run_step.addArg("--collect-only");
 
-        // Collect data into a new directory
-        const cov_dir = run_step.addOutputDirectoryArg("coverage");
+            // Collect data into a new directory
+            const cov_dir = run_step.addOutputDirectoryArg("coverage");
 
-        cds.list.append(cds.b.allocator, cov_dir) catch @panic("out of memory");
+            cds.list.append(cds.b.allocator, cov_dir) catch @panic("out of memory");
+        }
 
         // Then add the propan executable:
         run_step.addArtifactArg(exe);
