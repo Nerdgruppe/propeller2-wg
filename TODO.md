@@ -1,25 +1,36 @@
 # TODO-List
 
-- `TEST D {WC/WZ/WCZ}`
-- Consider if `const magic = register(13)` is a good idea
-- Resolve ambigious instruction encoding
-  - `CALLD D,{#}S {WC/WZ/WCZ}`
-  - `CALLD PA/PB/PTRA/PTRB,#{\}A`
-  - `tests/propan/equivalence/ambigious.spin2`
-- annotate Offset/Label with segment id, so it can be detected if labels are used cross-segment
+## Random Task Collection
+
 - Configuration File for analyzer options
 - `COGBRK #S` seems to be unsupported in flexspin
 - <https://github.com/totalspectrum/spin2cpp/issues/485>
-- Implement single-operand instruction aliases (rolnib, ..)
-- `BYTE "foo"` and friends.
 - `.address => @panic("TODO: Implement binary operators on offsets."),`
 - `.string => @panic("TODO: Implement binary operators on strings."),`
-- Explicit register syntax/predefined registers (`register(X)`)
 - Plan to allow access to local labels somehow?
 - Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers
 - Warning for `.hubexec` below `$400` (would be PC inside LUT/cog)
 - Enable "-Dx=y" on the CLI
 - Implement warning/error for `EncodedInstruction.Flags.wcz_not_used`
+- Fully define the compatibility matrix for implicit jumping/referencing between segments.
+
+## Priority Fixes / Tasks
+
+- `TEST D {WC/WZ/WCZ}`
+  - Add the one operand alias for TEST D,D, including its flag effects.
+    The instruction table specifies this encoding. FlexSpin emitted identical
+    words for both spellings; Propan currently rejects the one operand form because
+    its TEST definition (line 1348) requires two operands.
+- Resolve ambigious instruction encoding
+  - `CALLD D,{#}S {WC/WZ/WCZ}`
+  - `CALLD PA/PB/PTRA/PTRB,#{\}A`
+  - `tests/propan/equivalence/ambigious.spin2`
+  - These instructions can have two different selections and are ambigious.
+    provide configuration for this.
+- Implement single-operand instruction aliases (rolnib, ..)
+- Explicit register syntax/predefined registers (`register(X)`)
+  - Consider if `const magic = register(13)` is a good idea
+
 
 ## New Features
 
