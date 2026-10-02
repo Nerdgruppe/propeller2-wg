@@ -19,7 +19,6 @@
 - `BYTE "foo"` and friends.
 - `.address => @panic("TODO: Implement binary operators on offsets."),`
 - `.string => @panic("TODO: Implement binary operators on strings."),`
-- Make `.align` filling configurable (not just fill 0xFF)
 - Explicit register syntax/predefined registers (`register(X)`)
 - Plan to allow access to local labels somehow?
 - Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers

@@ -203,10 +203,10 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    // Flat output must preserve the configured byte in segment gaps.
+    // Flat output must use the configured byte for all padding.
     {
         const expected_files = b.addWriteFiles();
-        const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA });
+        const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA, 0x7E, 0x7E, 0x7E, 0xBB, 0x7E, 0x7E, 0x7E, 0x44, 0x33, 0x22, 0x11 });
 
         const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=flat");

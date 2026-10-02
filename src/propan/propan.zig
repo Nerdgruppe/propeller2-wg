@@ -235,6 +235,7 @@ pub fn main(init: std.process.Init) !u8 {
 
         const module = sema.analyze(allocator, parsed_file.file, .{
             .blank_pointer_expr = .as_ptr_epxr,
+            .fill_byte = cli.options.@"fill-byte",
             .io = init.io,
         }, &diagnostics_collection) catch |err| switch (err) {
             error.SemanticErrors => continue,

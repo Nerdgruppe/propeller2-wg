@@ -23,6 +23,7 @@ const PTRB: eval.Register = @enumFromInt(0x1F9);
 
 pub const AnalyzeOptions = struct {
     io: ?std.Io = null,
+    fill_byte: u8 = 0x00,
     blank_pointer_expr: enum {
         as_ptr_epxr,
         as_register,
@@ -1372,7 +1373,7 @@ const Analyzer = struct {
             std.debug.assert(hub_offset >= segment_end_hub_offset);
 
             if (hub_offset > segment_end_hub_offset) {
-                try current_segment.writer().splatByteAll(0xFF, hub_offset - segment_end_hub_offset);
+                try current_segment.writer().splatByteAll(ana.options.fill_byte, hub_offset - segment_end_hub_offset);
                 try ana.emit_diag(instr.ast_node.location, .{
                     .warn_emitted_padding_byte_s = .{
                         .count = hub_offset - segment_end_hub_offset,
@@ -3159,7 +3160,7 @@ test "cog packing, origin, and emitted padding" {
 
     try std.testing.expectEqual(@as(usize, 1), module.segments.len);
     try std.testing.expectEqual(@as(u20, 0x101), module.segments[0].hub_offset);
-    try std.testing.expectEqualSlices(u8, &.{ 1, 2, 3, 4, 6, 5, 0xFF, 0xFF, 0x0A, 9, 8, 7, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 9 }, module.segments[0].data);
+    try std.testing.expectEqualSlices(u8, &.{ 1, 2, 3, 4, 6, 5, 0, 0, 0x0A, 9, 8, 7, 0, 0, 0, 0, 0, 0, 0, 0, 9 }, module.segments[0].data);
     try std.testing.expectEqual(@as(?u20, 0x105), test_symbol(module, "packed").hub_address);
     try std.testing.expectEqual(@as(?u32, 1), test_symbol(module, "packed").get_local(.data));
     try std.testing.expectEqual(@as(?u20, 0x115), test_symbol(module, "after").hub_address);
@@ -3235,7 +3236,7 @@ test "FILE resolves beside source and data alignment pads hub" {
     defer collection.deinit();
     var module = try analyze_test_source(source, "tests/propan/sema/file_source.propan", &collection, .{ .io = std.testing.io });
     defer module.deinit();
-    try std.testing.expectEqualSlices(u8, &.{ 1, 0xFF, 0xFF, 'x', 'y', 'z', '\n' }, module.segments[0].data);
+    try std.testing.expectEqualSlices(u8, &.{ 1, 0, 0, 'x', 'y', 'z', '\n' }, module.segments[0].data);
     try std.testing.expect(collection.has_warnings());
 }
 
@@ -3300,7 +3301,7 @@ test "LUT origin uses execution PC and list entries retain it" {
     try std.testing.expectEqual(@as(?u32, 3), test_symbol(module, "target").get_local(.data));
     try std.testing.expectEqual(@as(?u32, 0x203), test_symbol(module, "target").get_local(.pc));
     try std.testing.expectEqual(@as(u20, 0x100), module.segments[0].hub_offset);
-    try std.testing.expectEqual(@as(u8, 0xFF), module.segments[0].data[0]);
+    try std.testing.expectEqual(@as(u8, 0), module.segments[0].data[0]);
     try std.testing.expectEqual(@as(?u32, 0x203), module.line_data[module.line_data.len - 1].pc);
     try std.testing.expect(collection.has_warnings());
 }
