@@ -16,6 +16,8 @@ const Segment = Module.Segment;
 const TaggedAddress = eval.TaggedAddress;
 const Segment_ID = eval.Segment_ID;
 
+const PicMode = enum { default, prefer, avoid, force };
+
 const PA: eval.Register = @enumFromInt(0x1F6);
 const PB: eval.Register = @enumFromInt(0x1F7);
 const PTRA: eval.Register = @enumFromInt(0x1F8);
@@ -269,6 +271,7 @@ const Analyzer = struct {
         ana.mnemonics.putAssumeCapacityNoClobber(".hubexec", .hubexec);
         ana.mnemonics.putAssumeCapacityNoClobber(".align", .@"align");
         ana.mnemonics.putAssumeCapacityNoClobber(".pack", .pack);
+        ana.mnemonics.putAssumeCapacityNoClobber(".pic", .pic);
         ana.mnemonics.putAssumeCapacityNoClobber(".org", .org);
         ana.mnemonics.putAssumeCapacityNoClobber(".reserve", .reserve);
         ana.mnemonics.putAssumeCapacityNoClobber(".regspace", .regspace);
@@ -484,7 +487,7 @@ const Analyzer = struct {
                     try ana.validate_expr_symbol_refs(con.value);
                 },
                 .instruction => |instr| {
-                    if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".pack")) continue;
+                    if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".pack") or std.ascii.eqlIgnoreCase(instr.mnemonic, ".pic")) continue;
                     for (instr.arguments) |arg| {
                         try ana.validate_expr_symbol_refs(arg);
                     }
@@ -597,7 +600,7 @@ const Analyzer = struct {
             instr.mnemonic = mnemonic;
 
             instr.byte_size = switch (mnemonic.*) {
-                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .fit, .@"align", .pack => 0,
+                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .fit, .@"align", .pack, .pic => 0,
 
                 .file => blk: {
                     if (instr.ast_node.arguments.len != 1 or instr.ast_node.arguments[0] != .string) {
@@ -824,6 +827,21 @@ const Analyzer = struct {
                                     try ana.emit_diag(instr.location, .err_invalid_pack_mode);
                                 }
                                 warned_packed_code = false;
+                            }
+                        },
+
+                        .pic => {
+                            if (instr.arguments.len != 1) {
+                                try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".pic", .min = 1, .max = 1, .found = instr.arguments.len } });
+                            } else {
+                                const name = if (instr.arguments[0] == .symbol) instr.arguments[0].symbol.symbol_name else "";
+                                inline for (std.meta.tags(PicMode)) |mode| {
+                                    if (std.ascii.eqlIgnoreCase(name, @tagName(mode))) {
+                                        coded.pic_mode = mode;
+                                        break;
+                                    }
+                                }
+                                if (coded.pic_mode == null) try ana.emit_diag(instr.location, .err_invalid_pic_mode);
                             }
                         },
 
@@ -1097,8 +1115,8 @@ const Analyzer = struct {
 
             const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
             switch (instr.mnemonic.?.*) {
-                .cogexec, .lutexec, .hubexec, .regspace, .data, .pack => {
-                    // Segment operands were evaluated during layout, before the mode changed.
+                .cogexec, .lutexec, .hubexec, .regspace, .data, .pack, .pic => {
+                    // These directive operands were handled during layout.
                     @memset(args, .int(0));
                     instr.arguments = args;
                     continue;
@@ -1398,6 +1416,7 @@ const Analyzer = struct {
 
         var current_segment: SegmentBuilder = .init(sid.next(), 0, .cog, segment_allocator);
         defer current_segment.data.deinit();
+        var pic_mode: PicMode = .default;
 
         std.debug.assert(ana.line_data.items.len == 0);
         errdefer {
@@ -1439,6 +1458,11 @@ const Analyzer = struct {
 
             switch (mnemonic) {
                 .assert, .fit => continue :seq_loop,
+
+                .pic => {
+                    pic_mode = instr.pic_mode.?;
+                    continue :seq_loop;
+                },
 
                 .@"align", .pack, .org, .reserve => continue :seq_loop,
 
@@ -1508,6 +1532,7 @@ const Analyzer = struct {
                 .reserve,
                 .@"align",
                 .pack,
+                .pic,
                 => unreachable,
 
                 .file => try current_segment.writer().writeAll(instr.file_data),
@@ -1650,6 +1675,7 @@ const Analyzer = struct {
 
                                 selector: switch (value.flags.addressing) {
                                     .auto => {
+                                        if (pic_mode == .avoid) continue :selector .absolute;
                                         // xq  — 11:29
                                         // do you happen to know how (or where) flexspin chooses
                                         // when to use abs/relative addressing?
@@ -1672,7 +1698,7 @@ const Analyzer = struct {
                                                     continue :selector .relative;
                                                 } else if (current_segment.exec_mode == .hub and address.local == .hub) {
                                                     // Use configurable behaviour between two hubexec sections
-                                                    if (ana.options.use_label_relative_hub_to_hub_jmp) {
+                                                    if (pic_mode == .prefer or pic_mode == .force or ana.options.use_label_relative_hub_to_hub_jmp) {
                                                         continue :selector .relative;
                                                     } else {
                                                         continue :selector .absolute;
@@ -1701,7 +1727,7 @@ const Analyzer = struct {
                                                     });
                                                     // We're targeting the same execution mode with a non-label address,
                                                     // so we need to adhere to the user option selection:
-                                                    if (ana.options.use_relative_jmp_for_same_mode_nonlabel_address) {
+                                                    if (pic_mode == .prefer or pic_mode == .force or ana.options.use_relative_jmp_for_same_mode_nonlabel_address) {
                                                         continue :selector .relative;
                                                     } else {
                                                         continue :selector .absolute;
@@ -1716,6 +1742,7 @@ const Analyzer = struct {
                                     },
 
                                     .absolute => {
+                                        if (pic_mode == .force) try ana.emit_diag(location, .err_pic_requires_relative_address);
                                         fill_extra_slot = null;
                                         break :selector int;
                                     },
@@ -3309,6 +3336,39 @@ fn test_symbol(module: Module, name: []const u8) TaggedAddress {
     @panic("missing test symbol");
 }
 
+test ".pic default restores AnalyzeOptions after prefer" {
+    const source =
+        \\.hubexec 0x400
+        \\target:
+        \\LONG 0
+        \\.hubexec
+        \\JMP target
+        \\.pic prefer
+        \\JMP target
+        \\.pic default
+        \\JMP target
+        \\JMP 0x400
+        \\.pic prefer
+        \\JMP 0x400
+        \\.pic default
+        \\JMP 0x400
+    ;
+    var collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    var module = try analyze_test_source(source, "pic-options.propan", &collection, .{
+        .use_label_relative_hub_to_hub_jmp = false,
+        .use_relative_jmp_for_same_mode_nonlabel_address = false,
+    });
+    defer module.deinit();
+
+    const expected = [_]u32{ 0xFD800400, 0xFD9FFFF4, 0xFD800400, 0xFD800400, 0xFD9FFFE8, 0xFD800400 };
+    try std.testing.expectEqual(@as(usize, 2), module.segments.len);
+    for (expected, 0..) |word, i| {
+        try std.testing.expectEqual(word, std.mem.readInt(u32, module.segments[1].data[i * 4 ..][0..4], .little));
+    }
+    try std.testing.expect(!collection.has_errors());
+}
+
 test "cog packing, origin, and emitted padding" {
     const source =
         \\.cogexec 0x101
@@ -3554,6 +3614,7 @@ const InstructionInfo = struct {
     /// Size of the instruction slot in bytes
     byte_size: ?u32 = null,
     file_data: []const u8 = &.{},
+    pic_mode: ?PicMode = null,
 
     arguments: []eval.Value = &.{},
 };
@@ -3657,6 +3718,7 @@ const Mnemonic = union(enum) {
     reserve,
     @"align",
     pack,
+    pic,
     assert,
     fit,
 

@@ -1,0 +1,9 @@
+//? PROPAN CHECK LIST
+//? err: err_pic_requires_relative_address
+//? err: err_pic_requires_relative_address
+.cogexec
+target:
+.pic force
+    JMP nrel(target)
+.lutexec
+    JMP target

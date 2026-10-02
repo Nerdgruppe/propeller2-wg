@@ -589,6 +589,8 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/pic-invalid.propan",
+    "tests/propan/sema/diagnostics/pic-force-absolute.propan",
     "tests/propan/sema/diagnostics/pack-invalid.propan",
     "tests/propan/sema/diagnostics/pack-mode-count.propan",
     "tests/propan/sema/diagnostics/pack-offset-address-space.propan",
@@ -717,6 +719,7 @@ const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const
 };
 
 const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
+    "tests/propan/sema/pic-modes.propan",
     "tests/propan/sema/basic-constants.propan",
     "tests/propan/sema/basic-instruction-selection.propan",
     "tests/propan/sema/addressing-modes.propan",

@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? err: err_argument_count_mismatch
+//? err: err_argument_count_mismatch
+//? err: err_invalid_pic_mode
+.pic
+.pic prefer, force
+.pic banana
