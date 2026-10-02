@@ -11,11 +11,6 @@
 - `COGBRK #S` seems to be unsupported in flexspin
 - <https://github.com/totalspectrum/spin2cpp/issues/485>
 - Implement single-operand instruction aliases (rolnib, ..)
-- function for "ALTI state" and "ALTI config":
-  - `(cogaddr(buf_c) << 18) | (cogaddr(buf_b) << 9) | (cogaddr(buf_a) << 0)`
-  - `// increment R, D, S with wrap-8,`
-    `// substitue each field into next instr`
-    `LONG 0b110_110_110_111_111_111`
 - `BYTE "foo"` and friends.
 - `.address => @panic("TODO: Implement binary operators on offsets."),`
 - `.string => @panic("TODO: Implement binary operators on strings."),`
@@ -127,10 +122,6 @@ Potentially, we could define something like our own struct type for data emissio
 
 STRUCT Vec3(x=10, y=20, z=30)
 ```
-
-### "Here PC"-Sigil
-
-PASM2 has `$` as the current instruction position. THis should be replicated in Propan.
 
 ### Non-automatic FIT
 

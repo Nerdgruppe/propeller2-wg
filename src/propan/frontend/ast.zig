@@ -57,6 +57,7 @@ pub const ConditionNode = struct {
 
 pub const Expression = union(enum) {
     wrapped: *Expression,
+    current_pc: Location,
     integer: IntegerLiteral,
     enumerator: SymbolReference,
     string: StringLiteral,
@@ -69,6 +70,7 @@ pub const Expression = union(enum) {
     pub fn location(expr: Expression) Location {
         return switch (expr) {
             .wrapped => |value| value.location(),
+            .current_pc => |loc| loc,
             inline else => |value| value.location,
         };
     }

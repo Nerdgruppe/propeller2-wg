@@ -376,6 +376,7 @@ pub const Parser = struct {
 
         fn accept_value_expression(core: *Core) AcceptExprError!ast.Expression {
             const which, const token = try core.accept_any(&.{
+                .@"$",
                 .integer,
                 .identifier,
                 .char_literal,
@@ -385,6 +386,7 @@ pub const Parser = struct {
             });
 
             switch (which) {
+                .@"$" => return .{ .current_pc = token.location },
                 .@"(" => {
                     const whitespace = core.push_ignore_whitespace();
                     defer whitespace.pop();
@@ -918,6 +920,7 @@ pub const TokenType = enum {
 
     // symbols
     @"=",
+    @"$",
     @"(",
     @")",
     @"[",
@@ -1062,6 +1065,7 @@ const patterns = struct {
         .create(.@"--", match.literal("--")),
 
         .create(.@"<", match.literal("<")),
+        .create(.@"$", match.literal("$")),
         .create(.@">", match.literal(">")),
         .create(.@"|", match.literal("|")),
         .create(.@"^", match.literal("^")),

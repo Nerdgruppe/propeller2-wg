@@ -527,7 +527,7 @@ const Analyzer = struct {
             },
 
             // These values don't require checks:
-            .integer => {},
+            .integer, .current_pc => {},
             .string => {},
             .enumerator => {},
         }
@@ -707,7 +707,7 @@ const Analyzer = struct {
                                 });
                             }
                             var hub_offset: ?u32 = null;
-                            if (instr.arguments.len == 1 and max_args == 1) hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic);
+                            if (instr.arguments.len == 1 and max_args == 1) hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic, cursor.offset);
                             if (hub_offset) |addr| {
                                 if (addr > 0x80000) {
                                     try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .origin, .space = .hub, .actual = addr, .max_exclusive = 0x80001 } });
@@ -736,7 +736,7 @@ const Analyzer = struct {
                                 break :blk;
                             }
 
-                            if (ana.evaluate_root_expr(coded.ast_node.arguments[0], null)) |value| {
+                            if (ana.evaluate_root_expr(coded.ast_node.arguments[0], .{ .start = cursor.offset })) |value| {
                                 switch (value.value) {
                                     .int => |int| {
                                         if (std.math.cast(u32, int)) |alignment| {
@@ -787,7 +787,7 @@ const Analyzer = struct {
                                 try ana.emit_diag(instr.location, .{ .err_directive_invalid_in_mode = .{ .directive = ".org", .mode = cursor.mode } });
                             } else if (instr.arguments.len != 1) {
                                 try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".org", .min = 1, .max = 1, .found = instr.arguments.len } });
-                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".org")) |target| {
+                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".org", cursor.offset)) |target| {
                                 const max: u32 = switch (cursor.mode) {
                                     .cog, .regspace => 0x200,
                                     .lut => 0x400,
@@ -818,7 +818,7 @@ const Analyzer = struct {
                                 try ana.emit_diag(instr.location, .{ .err_directive_invalid_in_mode = .{ .directive = ".reserve", .mode = cursor.mode } });
                             } else if (instr.arguments.len != 1) {
                                 try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".reserve", .min = 1, .max = 1, .found = instr.arguments.len } });
-                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".reserve")) |count| {
+                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".reserve", cursor.offset)) |count| {
                                 if (cursor.local_bytes / 4 > 0x200 or count > 0x200 - @min(cursor.local_bytes / 4, 0x200)) {
                                     try ana.emit_diag(instr.location, .{ .err_numeric_value_out_of_range = .{ .subject = ".reserve count", .min = 0, .max = 0x200 - @min(cursor.local_bytes / 4, 0x200), .actual = count } });
                                 } else {
@@ -873,8 +873,8 @@ const Analyzer = struct {
         }
     }
 
-    fn layout_integer(ana: *Analyzer, expr: ast.Expression, location: ast.Location, name: []const u8) !?u32 {
-        const value = ana.evaluate_root_expr(expr, null) catch |err| {
+    fn layout_integer(ana: *Analyzer, expr: ast.Expression, location: ast.Location, name: []const u8, start: TaggedAddress) !?u32 {
+        const value = ana.evaluate_root_expr(expr, .{ .start = start }) catch |err| {
             try ana.emit_diag(location, .{
                 .err_requires_an_integer_known_during_layout = .{
                     .name = name,
@@ -983,7 +983,7 @@ const Analyzer = struct {
             std.debug.assert(sym.value == null);
             std.debug.assert(sym.offset == null);
 
-            const value = ana.evaluate_root_expr(con.value, null) catch |err| {
+            const value = ana.evaluate_root_expr(con.value, .{}) catch |err| {
                 try ana.emit_eval_error(con.location, .expression, err);
                 continue;
             };
@@ -1022,7 +1022,7 @@ const Analyzer = struct {
 
             const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
             for (args, instr.ast_node.arguments) |*value, expr| {
-                value.* = ana.evaluate_root_expr(expr, instr.end_addr.?) catch |err| {
+                value.* = ana.evaluate_root_expr(expr, .{ .after = instr.end_addr, .start = instr.start_addr }) catch |err| {
                     try ana.emit_eval_error(instr.ast_node.location, .expression, err);
                     value.* = .int(0);
                     continue;
@@ -1269,8 +1269,9 @@ const Analyzer = struct {
                     };
 
                     if (maybe_relation) |relation| {
-                        const lhs = try ana.evaluate_root_expr(arg_expr.binary_transform.lhs.*, instr.end_addr);
-                        const rhs = try ana.evaluate_root_expr(arg_expr.binary_transform.rhs.*, instr.end_addr);
+                        const context: EvalContext = .{ .after = instr.end_addr, .start = instr.start_addr };
+                        const lhs = try ana.evaluate_root_expr(arg_expr.binary_transform.lhs.*, context);
+                        const rhs = try ana.evaluate_root_expr(arg_expr.binary_transform.rhs.*, context);
 
                         // TODO(0.15.2): Use "nice" formatting again:
                         message = try std.fmt.allocPrint(ana.arena.allocator(), "{f} {s} {f}!", .{ lhs, relation, rhs });
@@ -2051,13 +2052,35 @@ const Analyzer = struct {
         DiagnosedFailure,
     };
 
-    fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, current_address: ?TaggedAddress) EvalError!eval.Value {
-        return ana.evaluate_expr(expr, current_address, 0);
+    const EvalContext = struct {
+        after: ?TaggedAddress = null,
+        start: ?TaggedAddress = null,
+    };
+
+    fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, context: EvalContext) EvalError!eval.Value {
+        return ana.evaluate_expr(expr, context, 0);
     }
 
-    fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, maybe_current_address: ?TaggedAddress, nesting: usize) EvalError!eval.Value {
+    fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, context: EvalContext, nesting: usize) EvalError!eval.Value {
         switch (expr) {
-            .wrapped => |inner| return try ana.evaluate_expr(inner.*, maybe_current_address, nesting + 1),
+            .wrapped => |inner| return try ana.evaluate_expr(inner.*, context, nesting + 1),
+            .current_pc => |location| {
+                const address = context.start orelse {
+                    try ana.emit_diag(location, .err_current_pc_unavailable);
+                    return .int(0);
+                };
+                return switch (address.local) {
+                    .cog, .lut => .int(address.get_local(.pc).?),
+                    .hub, .data => .int(address.hub_address orelse {
+                        try ana.emit_diag(location, .err_current_pc_unavailable);
+                        return .int(0);
+                    }),
+                    .regspace => blk: {
+                        try ana.emit_diag(location, .err_current_pc_unavailable);
+                        break :blk .int(0);
+                    },
+                };
+            },
             .integer => |int| return .int(int.value),
             .string => |string| return .string(string.value),
             .enumerator => |enumerator| return .enumerator(enumerator.symbol_name),
@@ -2074,7 +2097,7 @@ const Analyzer = struct {
             },
 
             .unary_transform => |op| {
-                const value = try ana.evaluate_expr(op.value.*, maybe_current_address, nesting + 1);
+                const value = try ana.evaluate_expr(op.value.*, context, nesting + 1);
 
                 switch (op.operator) {
                     .post_decrement,
@@ -2220,7 +2243,7 @@ const Analyzer = struct {
                             return .int(0);
                         }
 
-                        const local_offset: TaggedAddress = maybe_current_address orelse {
+                        const local_offset: TaggedAddress = context.after orelse {
                             try ana.emit_diag(op.location, .err_operator_at_cannot_be_used_in_this_scope);
                             return .int(0);
                         };
@@ -2253,7 +2276,7 @@ const Analyzer = struct {
                                     .value_type = value.value,
                                 },
                             });
-                            return .address(if (maybe_current_address) |addr|
+                            return .address(if (context.after) |addr|
                                 addr
                             else
                                 .init_hub(undefined, 0), .literal);
@@ -2295,14 +2318,14 @@ const Analyzer = struct {
                 }
             },
             .binary_transform => |op| {
-                const lhs = try ana.evaluate_expr(op.lhs.*, maybe_current_address, nesting + 1);
+                const lhs = try ana.evaluate_expr(op.lhs.*, context, nesting + 1);
                 var index_expr = op.rhs.*;
                 while (index_expr == .wrapped) index_expr = index_expr.wrapped.*;
                 const augmented_index = op.operator == .array_index and
                     (lhs.value == .pointer_expr or (lhs.value == .register and (lhs.value.register == PTRA or lhs.value.register == PTRB))) and
                     index_expr == .function_call and
                     ana.has_augment(index_expr);
-                const rhs = try ana.evaluate_expr(if (augmented_index) index_expr else op.rhs.*, maybe_current_address, if (augmented_index) 0 else nesting + 1);
+                const rhs = try ana.evaluate_expr(if (augmented_index) index_expr else op.rhs.*, context, if (augmented_index) 0 else nesting + 1);
 
                 const lhs_type: Value.Type = lhs.value;
                 const rhs_type: Value.Type = rhs.value;
@@ -2410,7 +2433,7 @@ const Analyzer = struct {
                 const argv_res = try ana.map_function_args(
                     fncall,
                     params,
-                    maybe_current_address,
+                    context,
                     nesting,
                 );
                 const argv = argv_res.constSlice();
@@ -2623,7 +2646,7 @@ const Analyzer = struct {
         ana: *Analyzer,
         fncall: ast.FunctionInvocation,
         params: []const Function.Parameter,
-        maybe_current_address: ?TaggedAddress,
+        context: EvalContext,
         nesting: usize,
     ) !BoundedArray(Value, max_supported_parameters) {
         if (params.len > max_supported_parameters)
@@ -2695,7 +2718,7 @@ const Analyzer = struct {
 
         for (pos_argv, pos_argin, 0..) |*value, arg, index| {
             std.debug.assert(arg.name == null);
-            value.* = try ana.evaluate_expr(arg.value, maybe_current_address, nesting + 1);
+            value.* = try ana.evaluate_expr(arg.value, context, nesting + 1);
             argv_ok.set(index);
         }
 
@@ -2751,7 +2774,7 @@ const Analyzer = struct {
             std.debug.assert(arg.name != null);
 
             const index = index_of_param(params, arg.name.?).? - first_kwarg_index;
-            kw_argv[index] = try ana.evaluate_expr(arg.value, maybe_current_address, nesting + 1);
+            kw_argv[index] = try ana.evaluate_expr(arg.value, context, nesting + 1);
             argv_ok.set(index + first_kwarg_index);
         }
 

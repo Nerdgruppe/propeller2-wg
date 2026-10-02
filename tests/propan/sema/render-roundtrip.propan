@@ -17,3 +17,4 @@ JMP target
 target:
 var slot:
 LONG 'A'
+LONG $
