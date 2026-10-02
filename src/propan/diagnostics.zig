@@ -44,6 +44,8 @@ pub const EvaluationFailure = enum {
     divide_by_zero,
     invalid_argument,
     type_mismatch,
+    cyclic_constant,
+    constant_needs_label_during_layout,
 
     fn text(reason: EvaluationFailure) []const u8 {
         return switch (reason) {
@@ -54,6 +56,8 @@ pub const EvaluationFailure = enum {
             .divide_by_zero => "division by zero",
             .invalid_argument => "invalid argument",
             .type_mismatch => "type mismatch",
+            .cyclic_constant => "cyclic constant dependency",
+            .constant_needs_label_during_layout => "constant depends on a label during layout",
         };
     }
 };
@@ -166,7 +170,6 @@ pub const Kind = union(enum) {
     err_conditional_directive_without_if: Text,
     err_cannot_write_operand_integer_overflow,
     err_array_length_requires_layout_known,
-    err_array_constant_not_yet_supported,
     err_array_output_too_large,
     err_invalid_utf8_string,
     err_canont_use_the_effect_operator: MnemonicEffect,
@@ -315,7 +318,6 @@ pub const Kind = union(enum) {
             .err_conditional_directive_requires_plain_line => try writer.writeAll("conditional directive cannot have an instruction condition or effect"),
             .err_conditional_directive_without_if => |v| try writer.print("{s} has no matching .if", .{v.text}),
             .err_array_length_requires_layout_known => try writer.writeAll("array length must be known during layout"),
-            .err_array_constant_not_yet_supported => try writer.writeAll("user-defined constants used for array length are not yet supported"),
             .err_array_output_too_large => try writer.writeAll("array output exceeds the 512 KiB hub address space"),
             .err_invalid_utf8_string => try writer.writeAll("utf16/utf32 requires a valid UTF-8 string"),
             .err_unknown_function => |v| try writer.print("unknown function {s}", .{v.function}),
@@ -328,7 +330,7 @@ pub const Kind = union(enum) {
             .err_org_cannot_move_pc_backward => try writer.print(".org cannot move PC backward", .{}),
             .err_cannot_emit_data_after_reserve_or_inside_regspace => try writer.print("cannot emit data after .reserve or inside .regspace", .{}),
             .err_cannot_emit_code_in_this_segment => try writer.print("cannot emit code in this segment", .{}),
-            .err_requires_an_integer_known_during_layout => |v| try writer.print("{s} requires an integer known during layout: {s}", .{ v.name, @errorName(v.reason) }),
+            .err_requires_an_integer_known_during_layout => |v| try writer.print("{s} requires an integer known during layout: {s}", .{ v.name, if (v.reason == error.ConstantNeedsLabelDuringLayout) "constant depends on a label" else @errorName(v.reason) }),
             .warn_symbol_has_no_references => |v| try writer.print("symbol {s} has no references", .{v.name}),
             .err_constant_requires_integer_not_offset => |v| try writer.print("constant {s} evaluated to memory offset, but expected integer. Use hubaddr() or cogaddr() to resolve the value.", .{v.name}),
             .err_constants_cannot_store_pointer_expression => try writer.print("constants cannot store pointer expression.", .{}),

@@ -541,6 +541,8 @@ const Analyzer = struct {
     regspace_segments: std.ArrayListUnmanaged(u32) = .empty,
 
     ok: bool = true,
+    error_count: usize = 0,
+    in_layout: bool = false,
 
     fn init(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions, diagnostics_collection: *diagnostics.Collection) !Analyzer {
         var ana: Analyzer = .{
@@ -592,7 +594,10 @@ const Analyzer = struct {
     }
 
     fn emit_diag(ana: *Analyzer, location: ?ast.Location, diagnostic: diagnostics.Kind) !void {
-        if (diagnostic.level() == .@"error") ana.ok = false;
+        if (diagnostic.level() == .@"error") {
+            ana.ok = false;
+            ana.error_count += 1;
+        }
         try ana.diagnostics.emit_diag(location, diagnostic);
     }
 
@@ -606,6 +611,8 @@ const Analyzer = struct {
             error.DivideByZero => .divide_by_zero,
             error.InvalidArg => .invalid_argument,
             error.TypeMismatch => .type_mismatch,
+            error.CyclicConstant => .cyclic_constant,
+            error.ConstantNeedsLabelDuringLayout => .constant_needs_label_during_layout,
         };
         try ana.emit_diag(location, .{ .err_expression_evaluation_failed = .{ .context = context, .reason = reason } });
     }
@@ -736,8 +743,8 @@ const Analyzer = struct {
 
     /// Declares all symbols from labels and constants.
     fn declare_symbols(ana: *Analyzer) !void {
-        for (ana.file.sequence) |item| {
-            switch (item) {
+        for (ana.file.sequence) |*item| {
+            switch (item.*) {
                 .empty => {},
                 .label => |lbl| {
                     const sym = try ana.get_label_info(lbl.identifier, lbl.local_scope);
@@ -755,7 +762,7 @@ const Analyzer = struct {
                         };
                     }
                 },
-                .constant => |con| {
+                .constant => |*con| {
                     const sym = try ana.get_symbol_info(con.identifier);
                     if (sym.type != .undefined) {
                         try ana.emit_diag(con.location, .{
@@ -766,6 +773,7 @@ const Analyzer = struct {
                         });
                     } else {
                         sym.type = .{ .constant = con.location };
+                        sym.constant = con;
                     }
                 },
                 .instruction => {},
@@ -956,6 +964,8 @@ const Analyzer = struct {
     ///
     fn assign_locations(ana: *Analyzer) !void {
         std.debug.assert(ana.seq_to_instr_lut.len == ana.file.sequence.len);
+        ana.in_layout = true;
+        defer ana.in_layout = false;
 
         var idgen: Segment_ID_Gen = .{};
         var cursor: Cursor = .init(idgen.next(), .cog, 0);
@@ -1250,7 +1260,7 @@ const Analyzer = struct {
 
     fn layout_integer(ana: *Analyzer, expr: ast.Expression, location: ast.Location, name: []const u8, start: TaggedAddress, local_mode: ?eval.ExecMode) !?u32 {
         const value = ana.evaluate_root_expr(expr, .{ .start = start }) catch |err| {
-            try ana.emit_diag(location, .{
+            if (err != error.DiagnosedFailure) try ana.emit_diag(location, .{
                 .err_requires_an_integer_known_during_layout = .{
                     .name = name,
                     .reason = err,
@@ -1286,36 +1296,29 @@ const Analyzer = struct {
     }
 
     fn constant_expression(ana: *Analyzer, name: []const u8) ?ast.Expression {
-        for (ana.file.sequence) |line| {
-            if (line == .constant and std.mem.eql(u8, line.constant.identifier, name)) return line.constant.value;
-        }
-        return null;
+        const sym = ana.symbols.get(name) orelse return null;
+        return if (sym.constant) |con| con.value else null;
     }
 
-    fn has_user_constant(ana: *Analyzer, expr: ast.Expression) bool {
-        return switch (expr) {
-            .symbol => |sym| ana.constant_expression(sym.symbol_name) != null,
-            .wrapped => |inner| ana.has_user_constant(inner.*),
-            .unary_transform => |op| ana.has_user_constant(op.value.*),
-            .binary_transform => |op| ana.has_user_constant(op.lhs.*) or ana.has_user_constant(op.rhs.*),
-            .function_call => |call| for (call.arguments) |arg| {
-                if (ana.has_user_constant(arg.value)) break true;
-            } else false,
-            .sequence => |seq| for (seq.items) |item| {
-                if (ana.has_user_constant(item)) break true;
-            } else false,
-            else => false,
-        };
+    fn is_expandable(ana: *Analyzer, expr: ast.Expression) !bool {
+        var visiting: std.StringHashMapUnmanaged(void) = .empty;
+        defer visiting.deinit(ana.allocator);
+        return ana.is_expandable_inner(expr, &visiting);
     }
 
-    fn is_expandable(ana: *Analyzer, expr: ast.Expression, depth: usize) bool {
-        if (depth > 16) return false;
+    fn is_expandable_inner(ana: *Analyzer, expr: ast.Expression, visiting: *std.StringHashMapUnmanaged(void)) std.mem.Allocator.Error!bool {
         return switch (expr) {
             .string, .sequence => true,
-            .wrapped => |inner| ana.is_expandable(inner.*, depth + 1),
-            .symbol => |sym| if (ana.constant_expression(sym.symbol_name)) |value| ana.is_expandable(value, depth + 1) else false,
+            .wrapped => |inner| try ana.is_expandable_inner(inner.*, visiting),
+            .symbol => |sym| blk: {
+                const value = ana.constant_expression(sym.symbol_name) orelse break :blk false;
+                if (visiting.contains(sym.symbol_name)) break :blk false;
+                try visiting.put(ana.allocator, sym.symbol_name, {});
+                defer _ = visiting.remove(sym.symbol_name);
+                break :blk try ana.is_expandable_inner(value, visiting);
+            },
             .binary_transform => |op| op.operator == .@"*" and
-                (ana.is_expandable(op.lhs.*, depth + 1) or ana.is_expandable(op.rhs.*, depth + 1)),
+                ((try ana.is_expandable_inner(op.lhs.*, visiting)) or (try ana.is_expandable_inner(op.rhs.*, visiting))),
             .function_call => |call| std.mem.eql(u8, call.function, "utf16") or std.mem.eql(u8, call.function, "utf32"),
             else => false,
         };
@@ -1333,37 +1336,31 @@ const Analyzer = struct {
                 break :blk total;
             },
             .wrapped => |inner| return ana.data_expr_count(inner.*, start),
-            .symbol => |sym| blk: {
-                if (ana.constant_expression(sym.symbol_name)) |value| {
-                    if (ana.is_expandable(value, 0)) {
-                        try ana.emit_diag(expr.location(), .err_array_constant_not_yet_supported);
-                        return 0;
-                    }
-                }
-                break :blk 1;
-            },
-            .function_call => |call| blk: {
-                if (!ana.is_expandable(expr, 0)) break :blk 1;
-                if (ana.has_user_constant(expr)) {
-                    try ana.emit_diag(expr.location(), .err_array_constant_not_yet_supported);
-                    return 0;
-                }
+            .symbol => blk: {
+                if (!(try ana.is_expandable(expr))) break :blk 1;
                 const value = ana.evaluate_root_expr(expr, .{ .start = start }) catch |err| {
                     try ana.emit_eval_error(expr.location(), .expression, err);
                     return 0;
                 };
-                _ = call;
+                break :blk switch (value.value) {
+                    .string => |str| str.len,
+                    .sequence => |items| items.len,
+                    else => 1,
+                };
+            },
+            .function_call => blk: {
+                if (!(try ana.is_expandable(expr))) break :blk 1;
+                const value = ana.evaluate_root_expr(expr, .{ .start = start }) catch |err| {
+                    try ana.emit_eval_error(expr.location(), .expression, err);
+                    return 0;
+                };
                 break :blk if (value.value == .sequence) value.value.sequence.len else 1;
             },
             .binary_transform => |op| blk: {
-                if (op.operator != .@"*" or !ana.is_expandable(expr, 0)) break :blk 1;
-                const left_expands = ana.is_expandable(op.lhs.*, 0);
+                if (op.operator != .@"*" or !(try ana.is_expandable(expr))) break :blk 1;
+                const left_expands = try ana.is_expandable(op.lhs.*);
                 const values = if (left_expands) op.lhs.* else op.rhs.*;
                 const repetitions = if (left_expands) op.rhs.* else op.lhs.*;
-                if (ana.has_user_constant(repetitions)) {
-                    try ana.emit_diag(repetitions.location(), .err_array_constant_not_yet_supported);
-                    return 0;
-                }
                 const times = (try ana.layout_integer(repetitions, repetitions.location(), "array repetition count", start, null)) orelse return 0;
                 break :blk @as(u64, try ana.data_expr_count(values, start)) * times;
             },
@@ -1498,44 +1495,62 @@ const Analyzer = struct {
         }
     }
 
+    fn resolve_constant(ana: *Analyzer, name: []const u8) EvalError!Value {
+        const sym = ana.symbols.getPtr(name) orelse return error.UndefinedSymbol;
+        std.debug.assert(sym.type == .constant);
+        if (sym.value) |value| return value;
+        if (sym.constant_state == .evaluating) return error.CyclicConstant;
+        if (sym.constant_state == .failed) return error.DiagnosedFailure;
+        const con = sym.constant orelse return error.UndefinedSymbol;
+
+        sym.constant_state = .evaluating;
+        errdefer {
+            const current = ana.symbols.getPtr(name).?;
+            if (current.constant_state == .evaluating) current.constant_state = .unvisited;
+        }
+
+        const errors_before = ana.error_count;
+        const value = ana.evaluate_root_expr(con.value, .{
+            .constant = true,
+            .forbid_label_addresses = ana.in_layout,
+        }) catch |err| {
+            if (err == error.ConstantNeedsLabelDuringLayout) return err;
+            (ana.symbols.getPtr(name).?).constant_state = .failed;
+            try ana.emit_eval_error(con.location, .expression, err);
+            return error.DiagnosedFailure;
+        };
+        if (ana.error_count != errors_before) {
+            (ana.symbols.getPtr(name).?).constant_state = .failed;
+            return error.DiagnosedFailure;
+        }
+
+        switch (value.value) {
+            .int, .string, .sequence, .enumerator => {},
+            .register => {},
+            .address => {
+                try ana.emit_diag(con.location, .{ .err_constant_requires_integer_not_offset = .{ .name = name } });
+                (ana.symbols.getPtr(name).?).constant_state = .failed;
+                return error.DiagnosedFailure;
+            },
+            .pointer_expr => {
+                try ana.emit_diag(con.location, .err_constants_cannot_store_pointer_expression);
+                (ana.symbols.getPtr(name).?).constant_state = .failed;
+                return error.DiagnosedFailure;
+            },
+        }
+
+        const current = ana.symbols.getPtr(name).?;
+        current.value = value;
+        current.constant_state = .evaluated;
+        return value;
+    }
+
     fn evaluate_constant_values(ana: *Analyzer) !void {
         for (ana.file.sequence) |seq| {
-            if (seq != .constant)
-                continue;
-            const con = &seq.constant;
-            const sym = ana.get_symbol_info(con.identifier) catch unreachable;
-            std.debug.assert(sym.type == .constant);
-            std.debug.assert(sym.value == null);
-            std.debug.assert(sym.offset == null);
-
-            const value = ana.evaluate_root_expr(con.value, .{}) catch |err| {
-                try ana.emit_eval_error(con.location, .expression, err);
-                continue;
+            if (seq != .constant) continue;
+            _ = ana.resolve_constant(seq.constant.identifier) catch |err| {
+                try ana.emit_eval_error(seq.constant.location, .expression, err);
             };
-
-            switch (value.value) {
-                .int, .string, .sequence, .enumerator => {},
-
-                .register => {
-                    // TODO: Consider if this is OK or not. It's kinda handy, but not sure if hazardous
-                },
-
-                .address => {
-                    try ana.emit_diag(con.location, .{
-                        .err_constant_requires_integer_not_offset = .{
-                            .name = con.identifier,
-                        },
-                    });
-                    continue;
-                },
-
-                .pointer_expr => {
-                    try ana.emit_diag(con.location, .err_constants_cannot_store_pointer_expression);
-                    continue;
-                },
-            }
-
-            sym.value = value;
         }
     }
 
@@ -2637,12 +2652,16 @@ const Analyzer = struct {
         InvalidArg,
         TypeMismatch,
         DiagnosedFailure,
+        CyclicConstant,
+        ConstantNeedsLabelDuringLayout,
     };
 
     const EvalContext = struct {
         after: ?TaggedAddress = null,
         start: ?TaggedAddress = null,
         fit_pc: ?u32 = null,
+        constant: bool = false,
+        forbid_label_addresses: bool = false,
     };
 
     fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, context: EvalContext) EvalError!eval.Value {
@@ -2653,6 +2672,10 @@ const Analyzer = struct {
         switch (expr) {
             .wrapped => |inner| return try ana.evaluate_expr(inner.*, context, nesting + 1),
             .current_pc => |location| {
+                if (context.constant) {
+                    try ana.emit_diag(location, .err_current_pc_unavailable);
+                    return error.DiagnosedFailure;
+                }
                 if (context.fit_pc) |pc| return .int(pc);
                 const address = context.start orelse {
                     try ana.emit_diag(location, .err_current_pc_unavailable);
@@ -2700,9 +2723,9 @@ const Analyzer = struct {
 
                 return switch (sym.type) {
                     .undefined => return error.UndefinedSymbol,
-                    .code => .address(sym.offset orelse return error.UndefinedSymbol, .literal),
-                    .data => .address(sym.offset orelse return error.UndefinedSymbol, .register),
-                    .constant => sym.value orelse return error.UndefinedSymbol,
+                    .code => if (context.forbid_label_addresses) error.ConstantNeedsLabelDuringLayout else .address(sym.offset orelse return error.UndefinedSymbol, .literal),
+                    .data => if (context.forbid_label_addresses) error.ConstantNeedsLabelDuringLayout else .address(sym.offset orelse return error.UndefinedSymbol, .register),
+                    .constant => sym.value orelse try ana.resolve_constant(symref.symbol_name),
                     .builtin => sym.value.?,
                 };
             },
@@ -4072,6 +4095,8 @@ const SymbolInfo = struct {
 
     offset: ?TaggedAddress = null,
     value: ?Value = null,
+    constant: ?*const ast.Constant = null,
+    constant_state: enum { unvisited, evaluating, evaluated, failed } = .unvisited,
 
     pub fn location(sym: SymbolInfo) ?ast.Location {
         return switch (sym.type) {

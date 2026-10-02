@@ -1,4 +1,0 @@
-//? PROPAN CHECK LIST
-//? err: err_array_constant_not_yet_supported line 4
-const N = 3
-LONG N * [7]

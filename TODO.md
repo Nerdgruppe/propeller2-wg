@@ -18,10 +18,8 @@
 - Plan to allow access to local labels somehow?
 - Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers
 - Warning for `.hubexec` below `$400` (would be PC inside LUT/cog)
-- Improve constant evaluation system
-  - Make constant evaluation lazy
-  - Resolve constants into a DAC
 - Enable "-Dx=y" on the CLI
+- Implement warning/error for `EncodedInstruction.Flags.wcz_not_used`
 
 ## New Features
 
