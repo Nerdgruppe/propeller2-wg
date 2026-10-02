@@ -574,6 +574,7 @@ const parser_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/parser/diagnostics/incomplete-binary.propan",
     "tests/propan/parser/diagnostics/incomplete-unary.propan",
     "tests/propan/parser/diagnostics/incomplete-constant.propan",
+    "tests/propan/parser/diagnostics/inactive-conditional-syntax.propan",
     "tests/propan/parser/diagnostics/invalid-condition.propan",
     "tests/propan/parser/diagnostics/missing-parenthesis.propan",
     "tests/propan/parser/diagnostics/missing-function-argument.propan",
@@ -589,6 +590,9 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/conditional-structure.propan",
+    "tests/propan/sema/diagnostics/conditional-values.propan",
+    "tests/propan/sema/diagnostics/conditional-arity.propan",
     "tests/propan/sema/diagnostics/array-zero.propan",
     "tests/propan/sema/diagnostics/array-negative.propan",
     "tests/propan/sema/diagnostics/array-constant-count.propan",
@@ -717,6 +721,7 @@ const compare_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
+    "tests/propan/sema/conditional-compilation.propan",
     "tests/propan/sema/pack-groups.propan",
     "tests/propan/sema/pack-hub-code.propan",
     "tests/propan/sema/pack-offsets.propan",

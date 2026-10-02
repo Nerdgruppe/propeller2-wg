@@ -1,0 +1,17 @@
+//? PROPAN CHECK LIST
+//? err: err_conditional_directive_without_if
+//? err: err_conditional_directive_without_if
+//? err: err_conditional_directive_without_if
+//? err: err_conditional_branch_after_else
+//? err: err_conditional_branch_after_else
+//? err: err_unterminated_conditional_if
+
+.endif
+.elif 1
+.else
+.if 1
+.else
+.elif 0
+.else
+.endif
+.if 1

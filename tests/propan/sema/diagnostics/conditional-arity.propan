@@ -1,0 +1,14 @@
+//? PROPAN CHECK LIST
+//? err: err_argument_count_mismatch
+//? err: err_conditional_directive_requires_plain_line
+//? err: err_argument_count_mismatch
+//? err: err_argument_count_mismatch
+//? err: err_argument_count_mismatch
+
+.if
+.else 1
+.endif 1
+.if 1, 2
+.endif
+if(C) .if 1
+.endif

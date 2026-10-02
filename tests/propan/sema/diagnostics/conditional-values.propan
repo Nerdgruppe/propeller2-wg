@@ -1,0 +1,20 @@
+//? PROPAN CHECK LIST
+//? err: err_expected_value_type
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+//? err: err_expression_evaluation_failed
+
+.if "yes"
+    LONG 1
+.endif
+.if LATER
+    LONG 2
+.endif
+.if $
+    LONG 3
+.endif
+earlier_label:
+.if earlier_label
+    LONG 4
+.endif
+const LATER = 1

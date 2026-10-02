@@ -47,7 +47,25 @@ pub const AnalyzeOptions = struct {
 };
 
 pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions, diagnostics_collection: *diagnostics.Collection) !Module {
-    var analyzer: Analyzer = try .init(allocator, file, options, diagnostics_collection);
+    var filter_arena: std.heap.ArenaAllocator = .init(allocator);
+    defer filter_arena.deinit();
+
+    var active_file = file;
+    var condition_references: std.StringHashMapUnmanaged(void) = .empty;
+    if (has_conditional_directives(file)) {
+        var probe: Analyzer = try .init(allocator, file, options, diagnostics_collection);
+        defer probe.deinit();
+        try probe.load_constants(stdlib.common.constants);
+        try probe.load_constants(stdlib.p2.constants);
+        try probe.load_functions(stdlib.p2.functions);
+
+        var filter: ConditionalFilter = .{ .allocator = filter_arena.allocator(), .probe = &probe };
+        active_file = try filter.run(file);
+        if (!probe.ok) return error.SemanticErrors;
+        condition_references = filter.referenced;
+    }
+
+    var analyzer: Analyzer = try .init(allocator, active_file, options, diagnostics_collection);
     defer analyzer.deinit();
 
     errdefer dump_analyzer(&analyzer);
@@ -62,6 +80,11 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     // Validate
     try analyzer.declare_symbols();
+    var referenced = condition_references.iterator();
+    while (referenced.next()) |entry| {
+        const name = entry.key_ptr.*;
+        if (analyzer.symbols.getPtr(name)) |sym| sym.referenced = true;
+    }
     try analyzer.validate_symbol_refs();
 
     // Lay Out
@@ -166,6 +189,18 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     };
 }
 
+fn has_conditional_directives(file: ast.File) bool {
+    for (file.sequence) |line| {
+        if (line != .instruction) continue;
+        const name = line.instruction.mnemonic;
+        if (std.ascii.eqlIgnoreCase(name, ".if") or
+            std.ascii.eqlIgnoreCase(name, ".elif") or
+            std.ascii.eqlIgnoreCase(name, ".else") or
+            std.ascii.eqlIgnoreCase(name, ".endif")) return true;
+    }
+    return false;
+}
+
 fn copy_location(allocator: std.mem.Allocator, location: ast.Location) !ast.Location {
     var copied = location;
     if (location.source) |source| copied.source = try allocator.dupe(u8, source);
@@ -182,6 +217,267 @@ fn copy_value(allocator: std.mem.Allocator, value: Value) !Value {
     }
     return copied;
 }
+
+const ConditionalFilter = struct {
+    allocator: std.mem.Allocator,
+    probe: *Analyzer,
+    constants: std.StringHashMapUnmanaged(ast.Constant) = .empty,
+    resolving: std.StringHashMapUnmanaged(void) = .empty,
+    referenced: std.StringHashMapUnmanaged(void) = .empty,
+    frames: std.ArrayListUnmanaged(Frame) = .empty,
+    active: bool = true,
+    scope: ast.LocalScope = .{ .id = 0, .parent = null },
+
+    const Frame = struct {
+        location: ast.Location,
+        parent_active: bool,
+        branch_taken: bool,
+        else_seen: bool = false,
+        active: bool,
+    };
+
+    const Directive = enum { none, if_, elif, else_, endif };
+
+    fn run(filter: *ConditionalFilter, file: ast.File) !ast.File {
+        var output: std.ArrayListUnmanaged(ast.Line) = .empty;
+        for (file.sequence) |line| {
+            if (line == .instruction) {
+                const instr = line.instruction;
+                const kind: Directive = if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".if"))
+                    .if_
+                else if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".elif"))
+                    .elif
+                else if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".else"))
+                    .else_
+                else if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".endif"))
+                    .endif
+                else
+                    .none;
+                if (kind != .none) {
+                    try filter.directive(instr, kind);
+                    continue;
+                }
+            }
+
+            if (!filter.active) continue;
+            if (line == .constant) {
+                const con = line.constant;
+                const gop = try filter.constants.getOrPut(filter.allocator, con.identifier);
+                if (!gop.found_existing) gop.value_ptr.* = con;
+            }
+            try output.append(filter.allocator, try filter.rebind_line(line));
+        }
+        for (filter.frames.items) |frame|
+            try filter.probe.emit_diag(frame.location, .err_unterminated_conditional_if);
+        return .{ .sequence = try output.toOwnedSlice(filter.allocator) };
+    }
+
+    fn directive(filter: *ConditionalFilter, instr: ast.Instruction, kind: Directive) !void {
+        const expected: usize = if (kind == .if_ or kind == .elif) 1 else 0;
+        const valid_args = instr.arguments.len == expected;
+        if (!valid_args) try filter.probe.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{
+            .subject = instr.mnemonic,
+            .min = expected,
+            .max = expected,
+            .found = instr.arguments.len,
+        } });
+        if (instr.condition != null or instr.effect != null)
+            try filter.probe.emit_diag(instr.location, .err_conditional_directive_requires_plain_line);
+
+        switch (kind) {
+            .none => unreachable,
+            .if_ => {
+                const enabled = if (filter.active and valid_args) try filter.eval_condition(instr) else false;
+                try filter.frames.append(filter.allocator, .{
+                    .location = instr.location,
+                    .parent_active = filter.active,
+                    .branch_taken = enabled,
+                    .active = enabled,
+                });
+                filter.active = enabled;
+            },
+            .elif, .else_, .endif => {
+                if (filter.frames.items.len == 0) {
+                    try filter.probe.emit_diag(instr.location, .{ .err_conditional_directive_without_if = .{ .text = instr.mnemonic } });
+                    return;
+                }
+                const frame = &filter.frames.items[filter.frames.items.len - 1];
+                switch (kind) {
+                    .elif => {
+                        if (frame.else_seen) {
+                            try filter.probe.emit_diag(instr.location, .err_conditional_branch_after_else);
+                            frame.active = false;
+                        } else {
+                            frame.active = if (frame.parent_active and !frame.branch_taken and valid_args)
+                                try filter.eval_condition(instr)
+                            else
+                                false;
+                            frame.branch_taken = frame.branch_taken or frame.active;
+                        }
+                        filter.active = frame.active;
+                    },
+                    .else_ => {
+                        if (frame.else_seen) {
+                            try filter.probe.emit_diag(instr.location, .err_conditional_branch_after_else);
+                            frame.active = false;
+                        } else {
+                            frame.else_seen = true;
+                            frame.active = frame.parent_active and !frame.branch_taken;
+                            frame.branch_taken = true;
+                        }
+                        filter.active = frame.active;
+                    },
+                    .endif => {
+                        filter.active = frame.parent_active;
+                        _ = filter.frames.pop();
+                    },
+                    else => unreachable,
+                }
+            },
+        }
+    }
+
+    fn eval_condition(filter: *ConditionalFilter, instr: ast.Instruction) !bool {
+        filter.prepare_refs(instr.arguments[0]) catch |err| {
+            try filter.probe.emit_eval_error(instr.location, .expression, err);
+            return false;
+        };
+        const value = filter.probe.evaluate_root_expr(instr.arguments[0], .{}) catch |err| {
+            try filter.probe.emit_eval_error(instr.location, .expression, err);
+            return false;
+        };
+        if (value.value != .int) {
+            try filter.probe.emit_diag(instr.location, .{ .err_expected_value_type = .{
+                .subject = instr.mnemonic,
+                .expected = .int,
+                .actual = value.value,
+            } });
+            return false;
+        }
+        return value.value.int != 0;
+    }
+
+    fn resolve_constant(filter: *ConditionalFilter, name: []const u8) Analyzer.EvalError!void {
+        const con = filter.constants.get(name) orelse return error.UndefinedSymbol;
+        const sym = try filter.probe.get_symbol_info(name);
+        if (sym.type == .builtin) return error.InvalidArg;
+        if (sym.value != null) return;
+        if (filter.resolving.contains(name)) return error.UndefinedSymbol;
+        try filter.resolving.put(filter.allocator, name, {});
+        defer _ = filter.resolving.remove(name);
+        sym.type = .{ .constant = con.location };
+        try filter.prepare_refs(con.value);
+        const value = try filter.probe.evaluate_root_expr(con.value, .{});
+        (try filter.probe.get_symbol_info(name)).value = value;
+    }
+
+    fn prepare_refs(filter: *ConditionalFilter, expr: ast.Expression) Analyzer.EvalError!void {
+        switch (expr) {
+            .current_pc => return error.InvalidArg,
+            .symbol => |ref| {
+                if (ref.symbol_name[0] == '.') return error.UndefinedSymbol;
+                if (filter.constants.contains(ref.symbol_name)) {
+                    try filter.referenced.put(filter.allocator, ref.symbol_name, {});
+                    try filter.resolve_constant(ref.symbol_name);
+                } else if (filter.probe.symbols.get(ref.symbol_name)) |sym| {
+                    if (sym.type != .builtin) return error.UndefinedSymbol;
+                } else return error.UndefinedSymbol;
+            },
+            .wrapped => |inner| try filter.prepare_refs(inner.*),
+            .sequence => |seq| for (seq.items) |item| try filter.prepare_refs(item),
+            .unary_transform => |op| try filter.prepare_refs(op.value.*),
+            .binary_transform => |op| {
+                try filter.prepare_refs(op.lhs.*);
+                try filter.prepare_refs(op.rhs.*);
+            },
+            .function_call => |call| for (call.arguments) |arg| try filter.prepare_refs(arg.value),
+            .integer, .string, .enumerator => {},
+        }
+    }
+
+    fn rebind_line(filter: *ConditionalFilter, line: ast.Line) !ast.Line {
+        switch (line) {
+            .label => |original| {
+                var label = original;
+                if (label.identifier[0] != '.') {
+                    filter.scope.id += 1;
+                    filter.scope.parent = label.identifier;
+                }
+                label.local_scope = if (label.identifier[0] == '.') filter.scope else null;
+                return .{ .label = label };
+            },
+            .constant => |original| {
+                var con = original;
+                con.value = try filter.rebind_expr(con.value);
+                return .{ .constant = con };
+            },
+            .instruction => |original| {
+                var instr = original;
+                const args = try filter.allocator.alloc(ast.Expression, instr.arguments.len);
+                for (instr.arguments, args) |arg, *dest| dest.* = try filter.rebind_expr(arg);
+                instr.arguments = args;
+                if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".cogexec") or
+                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".lutexec") or
+                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".hubexec") or
+                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".regspace") or
+                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".data"))
+                {
+                    filter.scope.id += 1;
+                    filter.scope.parent = null;
+                }
+                return .{ .instruction = instr };
+            },
+            .empty => return .empty,
+        }
+    }
+
+    fn rebind_expr(filter: *ConditionalFilter, original: ast.Expression) std.mem.Allocator.Error!ast.Expression {
+        switch (original) {
+            .symbol => |old| {
+                var ref = old;
+                if (ref.symbol_name[0] == '.') ref.local_scope = filter.scope;
+                return .{ .symbol = ref };
+            },
+            .wrapped => |old| {
+                const inner = try filter.allocator.create(ast.Expression);
+                inner.* = try filter.rebind_expr(old.*);
+                return .{ .wrapped = inner };
+            },
+            .sequence => |old| {
+                var seq = old;
+                const items = try filter.allocator.alloc(ast.Expression, seq.items.len);
+                for (seq.items, items) |item, *dest| dest.* = try filter.rebind_expr(item);
+                seq.items = items;
+                return .{ .sequence = seq };
+            },
+            .unary_transform => |old| {
+                var op = old;
+                op.value = try filter.allocator.create(ast.Expression);
+                op.value.* = try filter.rebind_expr(old.value.*);
+                return .{ .unary_transform = op };
+            },
+            .binary_transform => |old| {
+                var op = old;
+                op.lhs = try filter.allocator.create(ast.Expression);
+                op.rhs = try filter.allocator.create(ast.Expression);
+                op.lhs.* = try filter.rebind_expr(old.lhs.*);
+                op.rhs.* = try filter.rebind_expr(old.rhs.*);
+                return .{ .binary_transform = op };
+            },
+            .function_call => |old| {
+                var call = old;
+                const args = try filter.allocator.alloc(ast.FunctionInvocation.Argument, call.arguments.len);
+                for (call.arguments, args) |arg, *dest| {
+                    dest.* = arg;
+                    dest.value = try filter.rebind_expr(arg.value);
+                }
+                call.arguments = args;
+                return .{ .function_call = call };
+            },
+            else => return original,
+        }
+    }
+};
 
 fn dump_analyzer(analyzer: *Analyzer) void {
     logger.info("symbols:", .{});

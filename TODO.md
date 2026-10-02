@@ -21,33 +21,16 @@
 - Improve constant evaluation system
   - Make constant evaluation lazy
   - Resolve constants into a DAC
+- Enable "-Dx=y" on the CLI
+- Support for asserting properties of diagnostics
+  - location
+  - fields of union value
 
 ## New Features
 
 ### File Inclusion
 
 tl;dr: `#include` is missing.
-
-### Conditional Compilation
-
-Right now, everything is always analyzed. This yields potential issues when having configurable code.
-
-Concept:
-
-We have an evaluation stack, which prevents code evaluation if at least a single "false" is on the stack.
-
-Stack modification can be done with:
-
-```c
-.if <cond>    // Evaluates <cond> and pushes <cond> on the stack.
-.elif <cond>  // Replaces stack top with <cond>.
-.else         // Logically inverts stack top
-.endif        // Pops stack top.
-```
-
-If any of these are encountered while in a disabled code area, `<cond>` is not evaluated, but only a `false`
-is pushed/replaced. This means we keep the "code disabled" feature while also not requiring to
-evaluate `<cond>`.
 
 #### Subfeature: Structures
 
