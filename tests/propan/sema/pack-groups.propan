@@ -1,0 +1,25 @@
+//? PROPAN CHECK LIST
+//? mem: 0x100 <- hex [01 02 03 00 04 05 06]
+//? mem: 0x200 <- hex [01 02 03 44 55 66 77 08]
+//? mem: 0x300 <- hex [01 00 22 33 44 55 06 00 77 88]
+
+// .pack applies to each individual data mnemonic, but not to each individual datum.
+// this means that each the start of each BYTE/WORD/LONG/... is then aligned, but not each item.
+
+.data 0x100
+.pack long // align data to 4 bytes instead of natural alignment
+BYTE 1, 2, 3 // + 1 hidden padding byte for alignment
+BYTE 4, 5, 6
+
+.data 0x200
+.pack byte
+BYTE 1, 2, 3
+LONG 0x77665544
+BYTE 8
+
+.data 0x300
+.pack word
+BYTE 1
+LONG 0x55443322
+BYTE 6
+WORD 0x8877

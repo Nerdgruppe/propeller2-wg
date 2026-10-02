@@ -111,7 +111,22 @@ pub const ParameterAlreadyPassed = struct { parameter: []const u8, function: []c
 pub const EvaluationContext = enum { expression, alignment };
 pub const EvaluationFailureContext = struct { context: EvaluationContext, reason: EvaluationFailure };
 pub const DirectiveMode = struct { directive: []const u8, mode: eval.ExecMode };
-pub const AddressSpaceMismatch = struct { subject: []const u8, expected: eval.ExecMode, actual: eval.ExecMode };
+pub const AddressSpaceMismatch = struct {
+    subject: []const u8,
+    expected: std.enums.EnumSet(eval.ExecMode),
+    actual: std.enums.EnumSet(eval.ExecMode),
+};
+
+fn write_exec_modes(writer: *std.Io.Writer, modes: std.enums.EnumSet(eval.ExecMode)) !void {
+    const total = modes.count();
+    std.debug.assert(total > 0);
+    var iter = modes.iterator();
+    var index: usize = 0;
+    while (iter.next()) |mode| : (index += 1) {
+        if (index > 0) try writer.writeAll(if (index + 1 == total) (if (total == 2) " or " else ", or ") else ", ");
+        try writer.print("{t}", .{mode});
+    }
+}
 pub const OperandUsage = struct { expected: enum { immediate, register }, actual: enum { immediate, register } };
 pub const OperatorNoEffect = struct { operator: ast.UnaryOperator, label: enum { code, data } };
 pub const FunctionValueType = struct { function: AddressFunction, value_type: eval.Value.Type };
@@ -176,6 +191,8 @@ pub const Kind = union(enum) {
     err_instruction_operand_count_unmatched: MnemonicFound,
     err_integer_overflow_does_not_fit_into_a_i64: Text,
     err_invalid_character_in_string_char_literal_0x_x_0_2: Character,
+    err_invalid_pack_mode,
+    err_unaligned_cog_lut_instruction,
     err_invalid_checklist_diagnostic_code: Token,
     err_invalid_checklist_hex_byte,
     err_invalid_checklist_memory_address,
@@ -221,6 +238,7 @@ pub const Kind = union(enum) {
     warn_alti_state_segment_mismatch,
     warn_branch_into_data,
     warn_emitted_padding_byte_s: Count,
+    warn_unaligned_code,
     warn_integer_was_truncated_to_bits_expected_emitted: BitsExpectedEmitted,
     warn_invalid_escape_sequence: Character,
     warn_jump_between_exec_modes: SourceModeTargetMode,
@@ -279,6 +297,8 @@ pub const Kind = union(enum) {
             .err_unknown_function => |v| try writer.print("unknown function {s}", .{v.function}),
             .err_align_value_must_be_a_nonzero_power_of_two => |v| try writer.print(".align value {} must be a nonzero power of two.", .{v.value}),
             .err_align_references_label => try writer.print(".align value could not be evaluated: cannot refer to labels in .align", .{}),
+            .err_invalid_pack_mode => try writer.writeAll(".pack expects off, byte, word, or long"),
+            .err_unaligned_cog_lut_instruction => try writer.writeAll("instruction is not long-aligned in cog/lut mode"),
             .err_org_cannot_move_pc_backward => try writer.print(".org cannot move PC backward", .{}),
             .err_cannot_emit_data_after_reserve_or_inside_regspace => try writer.print("cannot emit data after .reserve or inside .regspace", .{}),
             .err_cannot_emit_code_in_this_segment => try writer.print("cannot emit code in this segment", .{}),
@@ -291,6 +311,7 @@ pub const Kind = union(enum) {
             .err_ambigious_instruction_selection_for => |v| try writer.print("Ambigious instruction selection for {s}", .{v.mnemonic}),
             .err_assertion_failed => |v| try writer.print("assertion failed: {s}", .{v.message}),
             .warn_emitted_padding_byte_s => |v| try writer.print("emitted {} padding byte(s)", .{v.count}),
+            .warn_unaligned_code => try writer.writeAll("code uses non-natural packing and may be unaligned"),
             .err_canont_use_the_effect_operator => |v| try writer.print("{s} canont use the effect operator :{t}", .{ v.mnemonic, v.effect }),
             .err_cannot_be_used_without_effect_operator => |v| try writer.print("{s} cannot be used without effect operator", .{v.mnemonic}),
             .err_is_not_a_valid_enumerator => |v| try writer.print("#{s} is not a valid enumerator", .{v.key}),
@@ -335,7 +356,13 @@ pub const Kind = union(enum) {
                 .hubaddr_argument => "hubaddr() argument",
             }}),
             .err_address_outside_space => |v| try writer.print("{s} address 0x{x} is outside {t} space (must be below 0x{x})", .{ @tagName(v.subject), v.actual, v.space, v.max_exclusive }),
-            .err_address_space_mismatch => |v| try writer.print("{s} requires an address in {t} space, got {t}", .{ v.subject, v.expected, v.actual }),
+            .err_address_space_mismatch => |v| {
+                try writer.print("{s} requires an address in ", .{v.subject});
+                if (v.expected.count() > 1) try writer.writeAll("one of the ");
+                try write_exec_modes(writer, v.expected);
+                try writer.writeAll(if (v.expected.count() == 1) " space, got " else " spaces, got ");
+                try write_exec_modes(writer, v.actual);
+            },
             .err_argument_count_mismatch => |v| try writer.print("{s} expects {}..{} arguments, found {}", .{ v.subject, v.min, v.max, v.found }),
             .err_branch_too_far => |v| try writer.print("branch too far: cannot jump by {} {s}", .{ v.distance, @tagName(v.unit) }),
             .err_directive_invalid_in_mode => |v| try writer.print("{s} is invalid in {t} mode", .{ v.directive, v.mode }),
@@ -750,6 +777,32 @@ test "renders enum diagnostic properties" {
             "error: pointer index must be in range -32..31, found 32\n" ++
             "error: cannot read FILE missing.bin: FileNotFound\n" ++
             "error: usage error: Cannot emit flat to stdio. Use \"-o -\" to force emission to stdout.\n",
+        actual,
+    );
+}
+
+test "address space mismatch renders single and joined modes" {
+    var collection: Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    try collection.emit_diag(null, .{ .err_address_space_mismatch = .{
+        .subject = ".fit limit",
+        .expected = .initOne(.hub),
+        .actual = .initOne(.regspace),
+    } });
+    try collection.emit_diag(null, .{ .err_address_space_mismatch = .{
+        .subject = "byteoffset",
+        .expected = .initMany(&.{ .cog, .lut, .regspace }),
+        .actual = .initOne(.data),
+    } });
+
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+    try collection.render(&output.writer, .{});
+    const actual = try output.toOwnedSlice();
+    defer std.testing.allocator.free(actual);
+    try std.testing.expectEqualStrings(
+        "error: .fit limit requires an address in hub space, got regspace\n" ++
+            "error: byteoffset requires an address in one of the cog, lut, or regspace spaces, got data\n",
         actual,
     );
 }

@@ -251,21 +251,24 @@ const Analyzer = struct {
             .options = options,
             .diagnostics = diagnostics_collection,
         };
-        try ana.functions.ensureUnusedCapacity(allocator, 6);
+        try ana.functions.ensureUnusedCapacity(allocator, 8);
 
         ana.functions.putAssumeCapacityNoClobber("hubaddr", .hubaddr);
         ana.functions.putAssumeCapacityNoClobber("cogaddr", .cogaddr);
         ana.functions.putAssumeCapacityNoClobber("lutaddr", .lutaddr);
         ana.functions.putAssumeCapacityNoClobber("localaddr", .localaddr);
+        ana.functions.putAssumeCapacityNoClobber("byteoffset", .byteoffset);
+        ana.functions.putAssumeCapacityNoClobber("wordoffset", .wordoffset);
         ana.functions.putAssumeCapacityNoClobber("aug", .aug);
         ana.functions.putAssumeCapacityNoClobber("nrel", .nrel);
 
-        try ana.mnemonics.ensureUnusedCapacity(allocator, 15);
+        try ana.mnemonics.ensureUnusedCapacity(allocator, 16);
 
         ana.mnemonics.putAssumeCapacityNoClobber(".cogexec", .cogexec);
         ana.mnemonics.putAssumeCapacityNoClobber(".lutexec", .lutexec);
         ana.mnemonics.putAssumeCapacityNoClobber(".hubexec", .hubexec);
         ana.mnemonics.putAssumeCapacityNoClobber(".align", .@"align");
+        ana.mnemonics.putAssumeCapacityNoClobber(".pack", .pack);
         ana.mnemonics.putAssumeCapacityNoClobber(".org", .org);
         ana.mnemonics.putAssumeCapacityNoClobber(".reserve", .reserve);
         ana.mnemonics.putAssumeCapacityNoClobber(".regspace", .regspace);
@@ -481,6 +484,7 @@ const Analyzer = struct {
                     try ana.validate_expr_symbol_refs(con.value);
                 },
                 .instruction => |instr| {
+                    if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".pack")) continue;
                     for (instr.arguments) |arg| {
                         try ana.validate_expr_symbol_refs(arg);
                     }
@@ -593,7 +597,7 @@ const Analyzer = struct {
             instr.mnemonic = mnemonic;
 
             instr.byte_size = switch (mnemonic.*) {
-                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .fit, .@"align" => 0,
+                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .fit, .@"align", .pack => 0,
 
                 .file => blk: {
                     if (instr.ast_node.arguments.len != 1 or instr.ast_node.arguments[0] != .string) {
@@ -656,6 +660,7 @@ const Analyzer = struct {
 
         var idgen: Segment_ID_Gen = .{};
         var cursor: Cursor = .init(idgen.next(), .cog, 0);
+        var warned_packed_code = false;
 
         for (ana.file.sequence, 0..) |*seq, i| {
             switch (seq.*) {
@@ -802,6 +807,26 @@ const Analyzer = struct {
                             }
                         },
 
+                        .pack => {
+                            if (instr.arguments.len != 1) {
+                                try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".pack", .min = 1, .max = 1, .found = instr.arguments.len } });
+                            } else {
+                                const name = if (instr.arguments[0] == .symbol) instr.arguments[0].symbol.symbol_name else "";
+                                if (std.ascii.eqlIgnoreCase(name, "off")) {
+                                    cursor.pack = 0;
+                                } else if (std.ascii.eqlIgnoreCase(name, "byte")) {
+                                    cursor.pack = 1;
+                                } else if (std.ascii.eqlIgnoreCase(name, "word")) {
+                                    cursor.pack = 2;
+                                } else if (std.ascii.eqlIgnoreCase(name, "long")) {
+                                    cursor.pack = 4;
+                                } else {
+                                    try ana.emit_diag(instr.location, .err_invalid_pack_mode);
+                                }
+                                warned_packed_code = false;
+                            }
+                        },
+
                         .org => {
                             if (cursor.mode == .data) {
                                 try ana.emit_diag(instr.location, .{ .err_directive_invalid_in_mode = .{ .directive = ".org", .mode = cursor.mode } });
@@ -857,7 +882,8 @@ const Analyzer = struct {
                                     .word => 2,
                                     else => 1,
                                 };
-                                cursor.align_data(unit);
+                                const alignment = if (cursor.pack == 0) unit else cursor.pack;
+                                cursor.align_data(alignment);
                                 coded.start_addr = cursor.offset;
                                 const size = coded.byte_size.?;
                                 cursor.hub += size;
@@ -870,7 +896,15 @@ const Analyzer = struct {
                             if (cursor.mode == .data or cursor.mode == .regspace or cursor.reserved) {
                                 try ana.emit_diag(instr.location, .err_cannot_emit_code_in_this_segment);
                             } else {
-                                cursor.align_data(4);
+                                cursor.align_data(if (cursor.pack == 0) 4 else cursor.pack);
+                                if ((cursor.mode == .cog or cursor.mode == .lut) and cursor.local_bytes % 4 != 0) {
+                                    try ana.emit_diag(instr.location, .err_unaligned_cog_lut_instruction);
+                                    continue;
+                                }
+                                if (cursor.pack != 0 and cursor.pack != 4 and !warned_packed_code) {
+                                    try ana.emit_diag(instr.location, .warn_unaligned_code);
+                                    warned_packed_code = true;
+                                }
                                 coded.start_addr = cursor.offset;
                                 for (0..@divExact(coded.byte_size.?, 4)) |_| cursor.advance_data(.long);
                             }
@@ -938,7 +972,11 @@ const Analyzer = struct {
             .hub, .data => unreachable,
         };
         if (!matches) {
-            try ana.emit_diag(location, .{ .err_address_space_mismatch = .{ .subject = subject, .expected = mode, .actual = actual } });
+            try ana.emit_diag(location, .{ .err_address_space_mismatch = .{
+                .subject = subject,
+                .expected = if (mode == .cog or mode == .regspace) .initMany(&.{ .cog, .regspace }) else .initOne(mode),
+                .actual = .initOne(actual),
+            } });
             return null;
         }
         return address.get_local(.pc).?;
@@ -1059,7 +1097,7 @@ const Analyzer = struct {
 
             const args = try ana.arena.allocator().alloc(eval.Value, instr.ast_node.arguments.len);
             switch (instr.mnemonic.?.*) {
-                .cogexec, .lutexec, .hubexec, .regspace, .data => {
+                .cogexec, .lutexec, .hubexec, .regspace, .data, .pack => {
                     // Segment operands were evaluated during layout, before the mode changed.
                     @memset(args, .int(0));
                     instr.arguments = args;
@@ -1278,7 +1316,11 @@ const Analyzer = struct {
                     .int => |number| number,
                     .address => |address| if (mode == .hub or mode == .data)
                         address.hub_address orelse {
-                            try ana.emit_diag(instr.ast_node.location, .{ .err_address_space_mismatch = .{ .subject = ".fit limit", .expected = mode, .actual = std.meta.activeTag(address.local) } });
+                            try ana.emit_diag(instr.ast_node.location, .{ .err_address_space_mismatch = .{
+                                .subject = ".fit limit",
+                                .expected = .initOne(mode),
+                                .actual = .initOne(std.meta.activeTag(address.local)),
+                            } });
                             continue;
                         }
                     else
@@ -1398,7 +1440,7 @@ const Analyzer = struct {
             switch (mnemonic) {
                 .assert, .fit => continue :seq_loop,
 
-                .@"align", .org, .reserve => continue :seq_loop,
+                .@"align", .pack, .org, .reserve => continue :seq_loop,
 
                 .cogexec, .lutexec, .hubexec, .regspace, .data => {
                     const new_mode: eval.ExecMode = switch (mnemonic) {
@@ -1465,6 +1507,7 @@ const Analyzer = struct {
                 .org,
                 .reserve,
                 .@"align",
+                .pack,
                 => unreachable,
 
                 .file => try current_segment.writer().writeAll(instr.file_data),
@@ -2536,6 +2579,33 @@ const Analyzer = struct {
                         return value;
                     },
 
+                    .byteoffset, .wordoffset => {
+                        std.debug.assert(argv.len == 1);
+                        const value = argv[0];
+                        if (value.value != .address) {
+                            try ana.emit_diag(fncall.arguments[0].location, .{ .err_expected_value_type = .{
+                                .subject = fncall.function,
+                                .expected = .address,
+                                .actual = value.value,
+                            } });
+                            return .int(0);
+                        }
+                        const address = value.value.address;
+
+                        const byte_offset: u2 = switch (address.local) {
+                            .cog, .lut, .regspace => address.subreg_byte,
+                            .hub, .data => {
+                                try ana.emit_diag(fncall.arguments[0].location, .{ .err_address_space_mismatch = .{
+                                    .subject = fncall.function,
+                                    .expected = .initMany(&.{ .cog, .lut, .regspace }),
+                                    .actual = .initOne(std.meta.activeTag(address.local)),
+                                } });
+                                return .int(0);
+                            },
+                        };
+                        return .int(if (func.* == .byteoffset) byte_offset else byte_offset / 2);
+                    },
+
                     .cogaddr, .lutaddr, .localaddr => {
                         const address_function: diagnostics.AddressFunction = switch (func.*) {
                             .cogaddr => .cogaddr,
@@ -2931,6 +3001,7 @@ const Cursor = struct {
     hub: u32,
     local_bytes: u32,
     reserved: bool,
+    pack: u32 = 0,
 
     fn fit_position(cursor: Cursor) u32 {
         return switch (cursor.mode) {
@@ -2964,6 +3035,8 @@ const Cursor = struct {
             .regspace => .init(seg, null, .{ .regspace = local }),
             .data => .init(seg, physical_hub, .data),
         };
+        if (cursor.mode == .cog or cursor.mode == .lut)
+            cursor.offset = cursor.offset.with_subreg_byte(@truncate(cursor.local_bytes));
     }
 
     fn change_mode(cursor: *Cursor, seg: Segment_ID, mode: eval.ExecMode, hub_offset: ?u32, local_start: ?u32) void {
@@ -3180,19 +3253,19 @@ test Cursor {
     try std.testing.expectEqual(TaggedAddress.init_cog(seg, 8, 2), cursor.offset);
 
     cursor.advance_data(.word);
-    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 10, 2), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 10, 2).with_subreg_byte(2), cursor.offset);
 
     cursor.advance_data(.word);
     try std.testing.expectEqual(TaggedAddress.init_cog(seg, 12, 3), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 13, 3), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 13, 3).with_subreg_byte(1), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 14, 3), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 14, 3).with_subreg_byte(2), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 15, 3), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 15, 3).with_subreg_byte(3), cursor.offset);
 
     cursor.advance_data(.byte);
     try std.testing.expectEqual(TaggedAddress.init_cog(seg, 16, 4), cursor.offset);
@@ -3201,13 +3274,13 @@ test Cursor {
     try std.testing.expectEqual(TaggedAddress.init_cog(seg, 20, 5), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 21, 5), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 21, 5).with_subreg_byte(1), cursor.offset);
 
     cursor.advance_code();
     try std.testing.expectEqual(TaggedAddress.init_cog(seg, 28, 7), cursor.offset);
 
     cursor.advance_data(.byte);
-    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 29, 7), cursor.offset);
+    try std.testing.expectEqual(TaggedAddress.init_cog(seg, 29, 7).with_subreg_byte(1), cursor.offset);
 
     cursor.alignas(2);
     try std.testing.expectEqual(TaggedAddress.init_cog(seg, 32, 8), cursor.offset);
@@ -3494,6 +3567,8 @@ pub const Function = union(enum) {
     cogaddr,
     lutaddr,
     localaddr,
+    byteoffset,
+    wordoffset,
 
     // stdlib functions are defined as "generic" ones:
     user: UserFunction,
@@ -3505,7 +3580,7 @@ pub const Function = union(enum) {
             .hubaddr => &.{.init("addr", .address)},
             .cogaddr => &.{.init("addr", .address)},
             .lutaddr => &.{.init("addr", .address)},
-            .localaddr => &.{.init("addr", .address)},
+            .localaddr, .byteoffset, .wordoffset => &.{.init("addr", .address)},
             .user => |f| f.params,
         };
     }
@@ -3581,6 +3656,7 @@ const Mnemonic = union(enum) {
     org,
     reserve,
     @"align",
+    pack,
     assert,
     fit,
 

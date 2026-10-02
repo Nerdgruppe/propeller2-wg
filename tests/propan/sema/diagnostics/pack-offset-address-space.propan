@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: err_address_space_mismatch
+//? err: err_address_space_mismatch
+.data 0x101
+data_label:
+BYTE 0
+.assert byteoffset(data_label) == 0
+.hubexec 0x200
+hub_label:
+NOP
+.assert wordoffset(hub_label) == 0

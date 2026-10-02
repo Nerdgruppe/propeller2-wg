@@ -61,28 +61,6 @@ If any of these are encountered while in a disabled code area, `<cond>` is not e
 is pushed/replaced. This means we keep the "code disabled" feature while also not requiring to
 evaluate `<cond>`.
 
-### Alignment Control
-
-Right now, Propan forces automatic value alignment to their natural alignment. This is potentially undesired.
-
-Concept:
-
-```c
-.pack off  // natural alignment of values happens as right now
-.pack byte // all values and instructions will be 1-aligned.
-.pack word // all values and instructions will be 2-aligned.
-.pack long // all values and instructions will be 4-aligned.
-```
-
-If instructions are emitted with non-natural packing, the first instructions emits an "unaligned code warning".
-
-Considerations: How should `BYTE`, `WORD` work in cog/lut mode anyways? We kinda need something like
-
-- `GETBYTE value, label, byteoffset(label)`
-- `SETWORD value, label, wordoffset(label)`
-
-so we can query the offset inside a register/`LONG`
-
 ### Array Emission
 
 PASM2 has the ability to emit arrays of values: `LONG 10[15]` will emit 15 times the value `10`.

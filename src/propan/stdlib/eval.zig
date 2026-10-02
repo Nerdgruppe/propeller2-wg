@@ -183,6 +183,8 @@ pub const TaggedAddress = struct {
     hub_address: ?u20,
     segment_id: Segment_ID,
     local: Local,
+    /// Byte position within a cog/LUT register; hub offsets use hub_address instead.
+    subreg_byte: u2 = 0,
 
     pub const Local = union(ExecMode) {
         /// The offset points into hub memory
@@ -220,6 +222,12 @@ pub const TaggedAddress = struct {
 
     pub fn init_cog(segment: Segment_ID, hub: ?u20, cog: u9) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .{ .cog = cog } };
+    }
+
+    pub fn with_subreg_byte(address: TaggedAddress, byte: u2) TaggedAddress {
+        var result = address;
+        result.subreg_byte = byte;
+        return result;
     }
 
     pub fn init_lut(segment: Segment_ID, hub: ?u20, lut: u9) TaggedAddress {

@@ -1,0 +1,50 @@
+//? PROPAN CHECK LIST
+//? err: warn_unaligned_code
+//? err: warn_unaligned_code
+.cogexec
+.pack byte
+BYTE 0
+var field:
+BYTE 0xAB
+BYTE 0, 0
+var result:
+LONG 0
+GETBYTE result, field, byteoffset(field)
+BYTE 0, 0
+.pack word
+var word_field:
+WORD 0x1234
+GETWORD result, word_field, wordoffset(word_field)
+.assert cogaddr(field) == 0
+.assert byteoffset(field) == 1
+.assert wordoffset(field) == 0
+.assert byteoffset(result) == 0
+.assert cogaddr(word_field) == 3
+.assert byteoffset(word_field) == 2
+.assert wordoffset(word_field) == 1
+.lutexec
+.pack byte
+BYTE 0, 0
+.pack word
+var lut_field:
+WORD 0x1234
+.assert lutaddr(lut_field) == 0
+.assert byteoffset(lut_field) == 2
+.assert wordoffset(lut_field) == 1
+.pack off
+.data 0x101
+hub_field:
+BYTE 0
+.assert hubaddr(hub_field) == 0x101
+.cogexec 0x201
+.pack byte
+BYTE 0
+var skew_field:
+BYTE 0xCD
+.assert hubaddr(skew_field) == 0x202
+.assert cogaddr(skew_field) == 0
+.assert byteoffset(skew_field) == 1
+.regspace
+var register_field:
+.assert byteoffset(register_field) == 0
+.assert wordoffset(register_field) == 0

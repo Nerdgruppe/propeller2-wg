@@ -52,3 +52,9 @@ Original PASM:
 
 Propan's `.fit limit[, "message"]` checks that the current cog/LUT/register PC or hub/data byte address is at most `limit`. The limit may be a compatible address label. `.fit` emits no data and does not replace automatic execution-space bounds checks.
 - `RES` Reserve long registers for symbol
+
+`.pack off` uses natural alignment (`BYTE` 1, `WORD` 2, `LONG` and instructions 4). `.pack byte`, `.pack word`, and `.pack long` align the start of each subsequent data or instruction line to 1, 2, or 4 bytes respectively, until the next `.pack`. Values listed on one `BYTE`, `WORD`, or `LONG` line remain contiguous. An explicit `.align` still advances the location. The first instruction emitted under `.pack byte` or `.pack word` warns about potentially unaligned code. A cog/LUT instruction whose register position is not divisible by four is an error.
+
+Labels bind to the location before a following value's implicit padding. Place `.align` before a label when the label must name that aligned value.
+
+`byteoffset(label)` returns the byte position within a cog/LUT register (0–3). `wordoffset(label)` returns that position divided by two (0–1). Both require a cog, LUT, or regspace label. These can supply the selector for `GETBYTE`/`SETBYTE` or `GETWORD`/`SETWORD` when accessing packed cog/LUT data. A word beginning at an odd byte position spans two word fields and cannot be accessed as one word with that selector.

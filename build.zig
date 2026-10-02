@@ -551,7 +551,7 @@ const examples: []const []const u8 = &[_][]const u8{
     "examples/sumloop.propan",
 };
 
-const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const u8{
+const parser_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
     "./tests/propan/parser/labels.propan",
     "./tests/propan/parser/conditions.propan",
     "./tests/propan/parser/effects.propan",
@@ -589,6 +589,12 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/pack-invalid.propan",
+    "tests/propan/sema/diagnostics/pack-mode-count.propan",
+    "tests/propan/sema/diagnostics/pack-offset-address-space.propan",
+    "tests/propan/sema/diagnostics/pack-offset-needs-address.propan",
+    "tests/propan/sema/diagnostics/pack-unaligned-cog.propan",
+    "tests/propan/sema/diagnostics/pack-unaligned-lut.propan",
     "tests/propan/sema/diagnostics/invalid-origins.propan",
     "tests/propan/sema/diagnostics/invalid-local-start.propan",
     "tests/propan/sema/diagnostics/fit-invalid-arguments.propan",
@@ -702,7 +708,15 @@ const compare_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/whole-memory-length-mismatch.propan",
 };
 
-const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
+const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
+    "tests/propan/sema/pack-groups.propan",
+    "tests/propan/sema/pack-hub-code.propan",
+    "tests/propan/sema/pack-offsets.propan",
+    "tests/propan/sema/pack-values.propan",
+    "tests/propan/sema/pack.propan",
+};
+
+const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
     "tests/propan/sema/basic-constants.propan",
     "tests/propan/sema/basic-instruction-selection.propan",
     "tests/propan/sema/addressing-modes.propan",
