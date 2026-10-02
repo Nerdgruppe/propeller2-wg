@@ -210,12 +210,12 @@ fn IndentingStream(InnerWriter: type) type {
             const is: *@This() = @alignCast(@fieldParentPtr("interface", io_writer));
             var written: usize = 0;
             for (data[0 .. data.len - 1]) |buffer| {
-                try is.writeAll(buffer);
+                _ = try is.write(buffer);
                 written += buffer.len;
             }
             for (0..splat) |_| {
                 const buffer = data[data.len - 1];
-                try is.writeAll(buffer);
+                _ = try is.write(buffer);
                 written += buffer.len;
             }
             return written;
