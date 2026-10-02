@@ -4,6 +4,7 @@ const ast = @import("frontend/ast.zig");
 const eval = @import("stdlib/eval.zig");
 const parser = @import("frontend/parser.zig");
 const emit = @import("emit.zig");
+const source_line = @import("source_line.zig");
 
 pub const Collection = @This();
 
@@ -533,7 +534,7 @@ fn render_location(self: Collection, writer: *std.Io.Writer, item: Diagnostic, l
         try writer.writeByte('\n');
 
         if (self.sources.get(path)) |source| {
-            if (source_line(source.text, location.line)) |line| {
+            if (source_line.get(source.text, location.line)) |line| {
                 const line_width = @max(@as(usize, 4), decimal_width(location.line));
                 try writer.splatByteAll(' ', line_width - decimal_width(location.line));
                 try writer.print("{d} | {s}\n", .{ location.line, line });
@@ -553,25 +554,6 @@ fn render_location(self: Collection, writer: *std.Io.Writer, item: Diagnostic, l
         try item.kind.render(writer);
         try writer.writeByte('\n');
     }
-}
-
-fn source_line(source: []const u8, one_based_line: u32) ?[]const u8 {
-    if (one_based_line == 0)
-        return null;
-
-    var start: usize = 0;
-    var current_line: u32 = 1;
-
-    while (current_line < one_based_line) : (current_line += 1) {
-        const newline = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse return null;
-        start = newline + 1;
-    }
-
-    var end = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse source.len;
-    if (end > start and source[end - 1] == '\r')
-        end -= 1;
-
-    return source[start..end];
 }
 
 fn decimal_width(value: u32) usize {

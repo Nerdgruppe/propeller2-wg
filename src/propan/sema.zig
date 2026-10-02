@@ -5,6 +5,7 @@ const eval = @import("stdlib/eval.zig");
 const frontend = @import("frontend.zig");
 const ast = frontend.ast;
 const diagnostics = @import("diagnostics.zig");
+const mode_directive = @import("mode_directive.zig");
 
 const logger = std.log.scoped(.sema);
 
@@ -99,7 +100,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     if (!analyzer.ok)
         return error.SemanticErrors;
 
-    try analyzer.check_undefined_labels();
+    try analyzer.check_symbols(.labels);
 
     // beyond  this check, all symbols are defined
     // and expression evaluation can happen:
@@ -111,7 +112,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     if (!analyzer.ok)
         return error.SemanticErrors;
 
-    try analyzer.check_undefined_symbols();
+    try analyzer.check_symbols(.constants);
 
     try analyzer.evaluate_instruction_arguments();
 
@@ -416,12 +417,7 @@ const ConditionalFilter = struct {
                 const args = try filter.allocator.alloc(ast.Expression, instr.arguments.len);
                 for (instr.arguments, args) |arg, *dest| dest.* = try filter.rebind_expr(arg);
                 instr.arguments = args;
-                if (std.ascii.eqlIgnoreCase(instr.mnemonic, ".cogexec") or
-                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".lutexec") or
-                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".hubexec") or
-                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".regspace") or
-                    std.ascii.eqlIgnoreCase(instr.mnemonic, ".data"))
-                {
+                if (mode_directive.from_name(instr.mnemonic) != null) {
                     filter.scope.id += 1;
                     filter.scope.parent = null;
                 }
@@ -726,7 +722,7 @@ const Analyzer = struct {
                         break false;
                 } else true;
 
-                const effects_overlap = instr.effects.@"union"(other.effects).any();
+                const effects_overlap = instr.effects.overlaps(other.effects);
 
                 if (all_eq and effects_overlap) {
                     std.log.err("{s}, {s}", .{ instr.mnemonic, other.mnemonic });
@@ -1003,14 +999,7 @@ const Analyzer = struct {
                         .fit => coded.fit_pc = cursor.fit_position(),
 
                         .hubexec, .lutexec, .cogexec, .regspace, .data => {
-                            const mode: eval.ExecMode = switch (coded.mnemonic.?.*) {
-                                .hubexec => .hub,
-                                .lutexec => .lut,
-                                .cogexec => .cog,
-                                .regspace => .regspace,
-                                .data => .data,
-                                else => unreachable,
-                            };
+                            const mode = mode_directive.from_name(instr.mnemonic).?;
                             const max_args: usize = switch (mode) {
                                 .data, .hub => 1,
                                 .cog, .lut, .regspace => 2,
@@ -1429,63 +1418,33 @@ const Analyzer = struct {
         return address.get_local(.pc).?;
     }
 
-    ///
-    /// Checks if any undefined labels are in our symbol table.
-    /// NOTE: This function does not check "const" declarations!
-    ///
-    fn check_undefined_labels(ana: *Analyzer) !void {
-        for (ana.symbols.values()) |sym| {
-            errdefer logger.err("invalid symbol {s}", .{sym.name});
-            switch (sym.type) {
-                .code, .data => {
-                    if (sym.offset == null)
-                        return error.InvalidSymbol;
-                    if (sym.value != null)
-                        return error.InvalidSymbol;
-                },
-                .undefined, .constant, .builtin => {
-                    // ignored
-                    continue;
-                },
-            }
-            if (sym.type != .builtin and !sym.referenced) {
-                try ana.emit_diag(sym.location(), .{
-                    .warn_symbol_has_no_references = .{
-                        .name = sym.name,
-                    },
-                });
-            }
-        }
-    }
-
-    ///
-    /// Checks if any undefined symbols are in our symbol table.
-    ///
-    fn check_undefined_symbols(ana: *Analyzer) !void {
+    /// Check labels after layout and constants after evaluation.
+    fn check_symbols(ana: *Analyzer, comptime phase: enum { labels, constants }) !void {
         for (ana.symbols.values()) |sym| {
             errdefer logger.err("invalid symbol {s}", .{sym.name});
             switch (sym.type) {
                 .undefined => {
-                    std.debug.assert(sym.referenced);
-                    ana.ok = false;
-                    continue;
+                    if (phase == .constants) {
+                        std.debug.assert(sym.referenced);
+                        ana.ok = false;
+                    }
                 },
                 .code, .data => {
-                    if (sym.offset == null)
-                        return error.InvalidSymbol;
-                    if (sym.value != null)
-                        return error.InvalidSymbol;
-                    continue;
+                    if (phase == .labels) {
+                        if (sym.offset == null or sym.value != null) return error.InvalidSymbol;
+                    }
                 },
                 .constant, .builtin => {
-                    errdefer logger.err("invalid symbol {s}", .{sym.name});
-                    if (sym.offset != null)
-                        return error.InvalidSymbol;
-                    if (sym.value == null)
-                        return error.InvalidSymbol;
+                    if (phase == .constants) {
+                        if (sym.offset != null or sym.value == null) return error.InvalidSymbol;
+                    }
                 },
             }
-            if (sym.type != .builtin and !sym.referenced) {
+            const defined_this_phase = switch (phase) {
+                .labels => sym.type == .code or sym.type == .data,
+                .constants => sym.type == .constant,
+            };
+            if (defined_this_phase and !sym.referenced) {
                 try ana.emit_diag(sym.location(), .{
                     .warn_symbol_has_no_references = .{
                         .name = sym.name,
@@ -1930,14 +1889,7 @@ const Analyzer = struct {
                 .@"align", .pack, .org, .reserve => continue :seq_loop,
 
                 .cogexec, .lutexec, .hubexec, .regspace, .data => {
-                    const new_mode: eval.ExecMode = switch (mnemonic) {
-                        .cogexec => .cog,
-                        .lutexec => .lut,
-                        .hubexec => .hub,
-                        .regspace => .regspace,
-                        .data => .data,
-                        else => unreachable,
-                    };
+                    const new_mode = mode_directive.from_name(instr.ast_node.mnemonic).?;
                     const hub_offset = instr.start_addr.?.hub_address orelse segment_end_hub_offset;
 
                     if (current_segment.len() > 0) {
@@ -2043,16 +1995,6 @@ const Analyzer = struct {
                     try condition_slot.write(&output, @intFromEnum(cond_code));
 
                     if (instr.ast_node.effect) |effect| {
-                        if (!encoded.effects.contains(effect)) {
-                            try ana.emit_diag(instr.ast_node.location, .{
-                                .err_canont_use_the_effect_operator = .{
-                                    .mnemonic = encoded.mnemonic,
-                                    .effect = effect,
-                                },
-                            });
-                            continue;
-                        }
-
                         const write_mask = effect.get_write_mask();
 
                         if (write_mask.c) {
@@ -2063,15 +2005,6 @@ const Analyzer = struct {
                         if (write_mask.z) {
                             const slot = encoded.z_effect_slot orelse return error.BadInstructionEncoding;
                             slot.fill(&output);
-                        }
-                    } else {
-                        if (!encoded.effects.none) {
-                            try ana.emit_diag(instr.ast_node.location, .{
-                                .err_cannot_be_used_without_effect_operator = .{
-                                    .mnemonic = encoded.mnemonic,
-                                },
-                            });
-                            continue;
                         }
                     }
 
@@ -2818,7 +2751,7 @@ const Analyzer = struct {
                     .pre_increment,
                     => unreachable,
 
-                    .@"!" => {
+                    .@"!", .@"~", .@"+", .@"-" => {
                         if (value.value != .int) {
                             try ana.emit_diag(op.location, .{
                                 .err_operator_invalid_operand_type = .{
@@ -2828,43 +2761,13 @@ const Analyzer = struct {
                             });
                             return .int(0);
                         }
-                        return .int(@intFromBool(value.value.int == 0));
-                    },
-                    .@"~" => {
-                        if (value.value != .int) {
-                            try ana.emit_diag(op.location, .{
-                                .err_operator_invalid_operand_type = .{
-                                    .operator = .{ .unary = op.operator },
-                                    .value_type = value.value,
-                                },
-                            });
-                            return .int(0);
-                        }
-                        return .int(~value.value.int);
-                    },
-                    .@"+" => {
-                        if (value.value != .int) {
-                            try ana.emit_diag(op.location, .{
-                                .err_operator_invalid_operand_type = .{
-                                    .operator = .{ .unary = op.operator },
-                                    .value_type = value.value,
-                                },
-                            });
-                            return .int(0);
-                        }
-                        return value;
-                    },
-                    .@"-" => {
-                        if (value.value != .int) {
-                            try ana.emit_diag(op.location, .{
-                                .err_operator_invalid_operand_type = .{
-                                    .operator = .{ .unary = op.operator },
-                                    .value_type = value.value,
-                                },
-                            });
-                            return .int(0);
-                        }
-                        return .int(-%value.value.int);
+                        return switch (op.operator) {
+                            .@"!" => .int(@intFromBool(value.value.int == 0)),
+                            .@"~" => .int(~value.value.int),
+                            .@"+" => value,
+                            .@"-" => .int(-%value.value.int),
+                            else => unreachable,
+                        };
                     },
                     .@"@" => {
                         if (value.value != .address) {
@@ -4414,18 +4317,9 @@ pub const EncodedInstruction = struct {
             return results;
         }
 
-        pub fn @"union"(lhs: Effects, rhs: Effects) Effects {
-            var results = std.mem.zeroes(Effects);
+        pub fn overlaps(lhs: Effects, rhs: Effects) bool {
             inline for (std.meta.fields(Effects)) |fld| {
-                @field(results, fld.name) = @field(lhs, fld.name) and @field(rhs, fld.name);
-            }
-            return results;
-        }
-
-        pub fn any(value: Effects) bool {
-            inline for (std.meta.fields(Effects)) |fld| {
-                if (@field(value, fld.name))
-                    return true;
+                if (@field(lhs, fld.name) and @field(rhs, fld.name)) return true;
             }
             return false;
         }
@@ -4479,16 +4373,9 @@ fn BoundedArray(comptime T: type, comptime cap: usize) type {
         len: usize = 0,
 
         pub fn resize(arr: *@This(), size: usize) error{OutOfMemory}!void {
-            if (size >= cap)
+            if (size > cap)
                 return error.OutOfMemory;
             arr.len = size;
-        }
-
-        pub fn append(arr: *@This(), item: T) error{OutOfMemory}!void {
-            if (arr.len >= cap)
-                return error.OutOfMemory;
-            arr.items[arr.len] = item;
-            arr.len += 1;
         }
 
         pub fn slice(arr: *@This()) []T {
@@ -4499,4 +4386,11 @@ fn BoundedArray(comptime T: type, comptime cap: usize) type {
             return arr.items[0..arr.len];
         }
     };
+}
+
+test "function argument buffer accepts its full capacity" {
+    var args: BoundedArray(u8, 16) = .{};
+    try args.resize(16);
+    try std.testing.expectEqual(@as(usize, 16), args.slice().len);
+    try std.testing.expectError(error.OutOfMemory, args.resize(17));
 }

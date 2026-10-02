@@ -27,6 +27,16 @@
 
 tl;dr: `#include` is missing.
 
+Implement:
+`.import "<filepath>"` should behave as if the file was pasted at this location.
+This must invoke a "sub-parser". This is best implemented *before* semantic analysis, and
+just paste the AST nodes of `<filepath>` into the AST of the enclosing file.
+
+Files can be included multiple times unless they are declared `.import once`
+(not with a string but a identifier/word).
+
+Drop multi-file-support on the CLI (just plain reject it)
+
 ### Groups
 
 Groups are similar to ELF sections with garbage collection.

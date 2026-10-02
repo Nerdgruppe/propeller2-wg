@@ -3,6 +3,7 @@ const std = @import("std");
 const frontend = @import("frontend.zig");
 const Module = @import("Module.zig");
 const eval = @import("stdlib/eval.zig");
+const source_lines = @import("source_line.zig");
 
 pub const Input = struct {
     path: []const u8,
@@ -271,22 +272,7 @@ fn same_location(lhs: frontend.ast.Location, rhs: frontend.ast.Location) bool {
 }
 
 fn source_line(source: []const u8, one_based_line: u32) []const u8 {
-    if (one_based_line == 0)
-        return "";
-
-    var start: usize = 0;
-    var current_line: u32 = 1;
-
-    while (current_line < one_based_line) : (current_line += 1) {
-        const newline = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse return "";
-        start = newline + 1;
-    }
-
-    var end = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse source.len;
-    if (end > start and source[end - 1] == '\r')
-        end -= 1;
-
-    return source[start..end];
+    return source_lines.get(source, one_based_line) orelse "";
 }
 
 fn format_exec_mode(allocator: std.mem.Allocator, mode: eval.ExecMode) ![]const u8 {

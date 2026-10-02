@@ -192,21 +192,8 @@ pub fn main(init: std.process.Init) !u8 {
             error.OutOfMemory => |e| return e,
         };
     }
-    // Stop after having each file parsed successfully:
-    if (cli.options.@"test-mode" == .parser) {
-        if (check_lists[0]) |list| {
-            if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
-        }
-        return if (diagnostics_collection.has_errors()) 1 else 0;
-    }
-    if (diagnostics_collection.has_errors()) {
-        if (check_lists[0]) |list| {
-            if (list.hasDiagnosticChecks()) {
-                _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
-                return if (diagnostics_collection.has_errors()) 1 else 0;
-            }
-        }
-    }
+    if (cli.options.@"test-mode" == .parser or diagnostics_collection.has_errors())
+        return try diagnostic_status(&diagnostics_collection, check_lists[0], diagnostic_start);
 
     // try frontend.render.pretty_print(
     //     std.io.getStdOut().writer(),
@@ -288,23 +275,15 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     if (cli.positionals.len > 1) try diagnostics_collection.emit_diag(null, .err_multiple_input_files_are_not_supported_yet);
-    if (diagnostics_collection.has_errors()) {
-        if (check_lists[0]) |list| {
-            if (list.hasDiagnosticChecks()) {
-                _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
-                return if (diagnostics_collection.has_errors()) 1 else 0;
-            }
-        }
-        return 1;
-    }
+    if (diagnostics_collection.has_errors())
+        return try diagnostic_status(&diagnostics_collection, check_lists[0], diagnostic_start);
 
     if (check_lists[0]) |list| {
         try list.evaluate(modules[0], output.items, &diagnostics_collection);
         const check_failed = diagnostics_collection.has_errors();
-        if (list.hasDiagnosticChecks()) _ = try list.evaluateDiagnostics(&diagnostics_collection, diagnostic_start);
-        if (check_failed) return if (diagnostics_collection.has_errors()) 1 else 0;
+        const status = try diagnostic_status(&diagnostics_collection, list, diagnostic_start);
+        if (check_failed or status != 0) return status;
     }
-    if (diagnostics_collection.has_errors()) return 1;
 
     if (cli.options.@"list-file".len > 0) {
         const list_inputs = try init.arena.allocator().alloc(listfile.Input, module_count);
@@ -404,6 +383,13 @@ pub fn main(init: std.process.Init) !u8 {
 fn usage_mistake(diagnostics_collection: *diagnostics.Collection, diagnostic: diagnostics.Kind) !u8 {
     try diagnostics_collection.emit_diag(null, diagnostic);
     return 1;
+}
+
+fn diagnostic_status(diagnostics_collection: *diagnostics.Collection, list: ?check_list.List, start: usize) !u8 {
+    if (list) |checks| {
+        if (checks.hasDiagnosticChecks()) _ = try checks.evaluateDiagnostics(diagnostics_collection, start);
+    }
+    return if (diagnostics_collection.has_errors()) 1 else 0;
 }
 
 test {

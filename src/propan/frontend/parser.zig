@@ -3,6 +3,7 @@ const ptk = @import("ptk");
 
 const ast = @import("ast.zig");
 const diagnostics = @import("../diagnostics.zig");
+const mode_directive = @import("../mode_directive.zig");
 
 const logger = std.log.scoped(.parser);
 
@@ -69,11 +70,7 @@ pub const Parser = struct {
         }
 
         fn ends_local_scope(name: []const u8) bool {
-            return std.ascii.eqlIgnoreCase(name, ".cogexec") or
-                std.ascii.eqlIgnoreCase(name, ".lutexec") or
-                std.ascii.eqlIgnoreCase(name, ".hubexec") or
-                std.ascii.eqlIgnoreCase(name, ".regspace") or
-                std.ascii.eqlIgnoreCase(name, ".data");
+            return mode_directive.from_name(name) != null;
         }
 
         fn emit_fatal_error(core: *Core, location: ptk.Location, diagnostic: diagnostics.Kind) error{ OutOfMemory, SyntaxError } {
