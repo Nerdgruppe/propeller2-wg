@@ -781,6 +781,7 @@ const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests +
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{
+    "tests/propan/equivalence/address-byte-offsets.propan",
     "tests/propan/equivalence/absrel_sample.propan",
     "tests/propan/equivalence/ambigious.propan",
     "tests/propan/equivalence/argless.propan",

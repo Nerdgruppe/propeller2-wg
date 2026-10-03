@@ -19,6 +19,8 @@ const Segment_ID = eval.Segment_ID;
 
 const PicMode = enum { default, prefer, avoid, force };
 
+pub const CalldAmbiguousEncoding = enum { flexspin, general, address };
+
 const PA: eval.Register = @enumFromInt(0x1F6);
 const PB: eval.Register = @enumFromInt(0x1F7);
 const PTRA: eval.Register = @enumFromInt(0x1F8);
@@ -34,6 +36,10 @@ pub const AnalyzeOptions = struct {
 
     flip_augs_on_pcrel: bool = true,
 
+    /// Selects the encoding when CALLD with PA/PB/PTRA/PTRB and a literal
+    /// source fits both the general and the 20-bit address forms.
+    calld_ambiguous_encoding: CalldAmbiguousEncoding = .flexspin,
+
     /// If this is `true`, the emitted code will use relative addressing for
     /// `JMP #{/}A` and friends if `A` is a label value, and addresses an address
     /// that jumps from hub exec mode to a hub exec mode address which is *not* in the
@@ -42,7 +48,7 @@ pub const AnalyzeOptions = struct {
 
     /// If this is `true`, the emitted code will use relative addressing for
     /// `JMP #{/}A` and friends if `A` is a non-label value, and addresses
-    /// an address in the same execution mode.
+    /// an address in the same execution domain (cog and LUT share a domain).
     /// TODO: Make this more fine granular for exec modes and cross-segment.
     use_relative_jmp_for_same_mode_nonlabel_address: bool = true,
 };
@@ -1561,6 +1567,7 @@ const Analyzer = struct {
     /// Selects the fitting encoding and required arguments for the mnemonic.
     ///
     fn select_instruction_encoding(ana: *Analyzer) !void {
+        var pic_mode: PicMode = .default;
         current_instr: for (ana.instructions) |*instr| {
             std.debug.assert(instr.mnemonic != null);
             std.debug.assert(instr.start_addr != null);
@@ -1569,6 +1576,11 @@ const Analyzer = struct {
 
             const mnemonic: *const EncodedMnemonic = switch (instr.mnemonic.?.*) {
                 .encoded => |*mnemonic| mnemonic,
+
+                .pic => {
+                    pic_mode = instr.pic_mode.?;
+                    continue :current_instr;
+                },
 
                 // these are all already defined
                 else => continue :current_instr,
@@ -1640,10 +1652,6 @@ const Analyzer = struct {
 
                 if (selection) |previous| amgigious_check: {
                     if (previous.operands.len != 0) {
-                        // special handling for .pointer_reg operands:
-                        // "PA/PB/PTRA/PTRB" is preferred over regular "D" operands, so
-                        // keep the instruction which fits better:
-
                         const any_ptrreg_prev: bool = for (previous.operands) |op| {
                             if (op.type == .pointer_reg)
                                 break true;
@@ -1657,13 +1665,18 @@ const Analyzer = struct {
                             @panic("incredibly amgigious instructions, should check the setup");
                         }
 
+                        if (std.ascii.eqlIgnoreCase(alt.mnemonic, "CALLD") and (any_ptrreg_prev or any_ptrreg_now)) {
+                            const wanted = ana.select_calld_ambiguous_encoding(instr, pic_mode);
+                            if (any_ptrreg_prev == (wanted == .address))
+                                continue :match_alternative;
+                            break :amgigious_check;
+                        }
+
                         if (any_ptrreg_prev) {
-                            // previous instruction is using the pointer_reg operand, so keep the old one:
                             continue :match_alternative;
                         }
 
                         if (any_ptrreg_now) {
-                            // current instruction is using the pointer_reg operand, so use the new one
                             break :amgigious_check;
                         }
 
@@ -1719,6 +1732,50 @@ const Analyzer = struct {
                 },
             }
         }
+    }
+
+    fn select_calld_ambiguous_encoding(ana: *Analyzer, instr: *const InstructionInfo, pic_mode: PicMode) CalldAmbiguousEncoding {
+        const source = instr.arguments[1];
+        if (source.flags.addressing == .absolute or pic_mode == .avoid) return .address;
+        if (source.flags.augment) return .general;
+        if (ana.options.calld_ambiguous_encoding != .flexspin) return ana.options.calld_ambiguous_encoding;
+
+        const start = instr.start_addr.?;
+        const after = instr.end_addr.?;
+        const current_mode = std.meta.activeTag(start.local);
+        const target: u32 = switch (source.value) {
+            .address => |address| if (address.local == .data)
+                address.hub_address orelse return .address
+            else
+                address.get_local(.pc) orelse return .address,
+            .int => |number| std.math.cast(u32, number) orelse return .address,
+            else => return .address,
+        };
+        const target_mode: eval.ExecMode = if (source.value == .address and source.value.address.local != .data)
+            std.meta.activeTag(source.value.address.local)
+        else if (target < 0x400)
+            if (target < 0x200) .cog else .lut
+        else
+            .hub;
+        if (!same_exec_domain(current_mode, target_mode)) return .address;
+
+        if (source.value == .address and source.value.address.local != .data) {
+            const address = source.value.address;
+            if (start.segment_id != address.segment_id and current_mode == .hub and target_mode == .hub and
+                !(pic_mode == .prefer or pic_mode == .force or ana.options.use_label_relative_hub_to_hub_jmp)) return .address;
+        } else if (pic_mode == .default and !ana.options.use_relative_jmp_for_same_mode_nonlabel_address) {
+            return .address;
+        }
+
+        const pc = after.get_local(.pc) orelse return .address;
+        const delta = @as(i64, target) - @as(i64, pc);
+        if (current_mode == .hub and @mod(delta, 4) != 0) return .address;
+        const instruction_delta = if (current_mode == .hub) @divTrunc(delta, 4) else delta;
+        return if (std.math.cast(i9, instruction_delta) != null) .general else .address;
+    }
+
+    fn same_exec_domain(a: eval.ExecMode, b: eval.ExecMode) bool {
+        return a == b or (a == .cog or a == .lut) and (b == .cog or b == .lut);
     }
 
     fn evaluate_asserts(ana: *Analyzer) !void {
@@ -2119,7 +2176,7 @@ const Analyzer = struct {
                                                     else => .hub,
                                                 };
 
-                                                if (current_segment.exec_mode == target_mode) {
+                                                if (same_exec_domain(current_segment.exec_mode, target_mode)) {
                                                     std.log.debug("#{{/}}A: src mode={} address={f} address:int=0x{X:0>6} cog={} lut={} hub={}", .{
                                                         current_segment.exec_mode,
                                                         value,
@@ -2128,16 +2185,14 @@ const Analyzer = struct {
                                                         int >= 0x200 and int < 0x400,
                                                         int >= 0x400,
                                                     });
-                                                    // We're targeting the same execution mode with a non-label address,
-                                                    // so we need to adhere to the user option selection:
+                                                    // Cog and LUT addresses share the same relative branch domain.
                                                     if (pic_mode == .prefer or pic_mode == .force or ana.options.use_relative_jmp_for_same_mode_nonlabel_address) {
                                                         continue :selector .relative;
                                                     } else {
                                                         continue :selector .absolute;
                                                     }
                                                 } else {
-                                                    // If we would change the execution mode, we must
-                                                    // always perform absolute jumps:
+                                                    // Crossing between cog/LUT and hub requires an absolute branch.
                                                     continue :selector .absolute;
                                                 }
                                             },
@@ -2152,16 +2207,35 @@ const Analyzer = struct {
 
                                     .relative => {
 
-                                        // "A" addressing always uses byte offsets, even if jumping in cog/lut mode:
-                                        const target_address: u32 = switch (value.value) {
-                                            .address => |addr| addr.hub_address orelse {
-                                                try ana.emit_diag(location, .{ .err_address_has_no_hub_location = .branch_target });
-                                                break :selector 0;
+                                        // The encoded relative A field is a signed BYTE displacement.
+                                        // Instruction-relative S fields (e.g. JINT) use compute_rel() below.
+                                        // The source operand is a destination address, whose units depend
+                                        // on the execution domain; it is not an already computed offset.
+                                        const byte_delta_i33: i33 = switch (value.value) {
+                                            .address => |addr| delta: {
+                                                // Labels in the same segment share its hub-to-local mapping,
+                                                // so subtracting their hub byte addresses gives the displacement.
+                                                const target_address = addr.hub_address orelse {
+                                                    try ana.emit_diag(location, .{ .err_address_has_no_hub_location = .branch_target });
+                                                    break :selector 0;
+                                                };
+                                                break :delta @as(i33, target_address) - @as(i33, hub_pc);
                                             },
-                                            else => int,
+                                            else => delta: {
+                                                // Numeric $000..$1FF destinations index cog RAM longs;
+                                                // $200..$3FF index LUT RAM longs. Thus $400 is the boundary
+                                                // in LONG addresses, not a limit on byte displacements.
+                                                if ((current_segment.exec_mode == .cog or current_segment.exec_mode == .lut) and int < 0x400) {
+                                                    const target_pc_longs: i33 = int;
+                                                    const next_pc_longs: i33 = cog_pc;
+                                                    // Subtract in execution-PC units, then convert longs to bytes.
+                                                    // The segment's hub storage origin does not enter this calculation.
+                                                    break :delta (target_pc_longs - next_pc_longs) * 4;
+                                                }
+                                                // Hub destinations and the next hub PC are already byte addresses.
+                                                break :delta @as(i33, int) - @as(i33, hub_pc);
+                                            },
                                         };
-
-                                        const byte_delta_i33: i33 = @as(i33, target_address) - @as(i33, hub_pc);
 
                                         const byte_delta_i20: i20 = std.math.cast(i20, byte_delta_i33) orelse delta: {
                                             try ana.emit_diag(location, .{
@@ -3622,32 +3696,49 @@ test "final segment retains the label segment ID" {
     try std.testing.expectEqual(module.symbols[0].label.segment_id, module.segments[0].id);
 }
 
-test "pointer register selection is independent of variant order" {
-    const source = "CALLD PA, target\nCALLD PB, target\nCALLD PTRA, target\nCALLD PTRB, target\ntarget:\nNOP\n";
+test "CALLD encoding selection is independent of variant order" {
+    const source =
+        \\CALLD PA, target
+        \\CALLD PB, target
+        \\CALLD PTRA, target
+        \\CALLD PTRB, target
+        \\CALLD PA, 1000
+        \\CALLD PA, nrel(target)
+        \\CALLD PA, target :wc
+        \\CALLD PA, aug(1000)
+        \\target:
+        \\NOP
+    ;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
     var parser: frontend.Parser = .init(source, "pointer-order.propan", &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
-    for ([_]bool{ false, true }) |reversed| {
-        var analyzer: Analyzer = try .init(std.testing.allocator, parsed.file, .{}, &collection);
-        defer analyzer.deinit();
-        try analyzer.load_constants(stdlib.p2.constants);
-        for (0..stdlib.p2.instructions.len) |i| {
-            const index = if (reversed) stdlib.p2.instructions.len - i - 1 else i;
-            try analyzer.load_instruction(stdlib.p2.instructions[index]);
-        }
-        try analyzer.declare_symbols();
-        try analyzer.validate_symbol_refs();
-        try analyzer.prepare_instruction_stream();
-        try analyzer.select_instruction_mnemonic();
-        try analyzer.assign_locations();
-        try analyzer.evaluate_instruction_arguments();
-        try analyzer.select_instruction_encoding();
-        try std.testing.expect(analyzer.ok);
-        for (analyzer.instructions[0..4]) |instr| {
-            try std.testing.expect(instr.instruction.?.operands[0].type == .pointer_reg);
+    for ([_]CalldAmbiguousEncoding{ .flexspin, .general, .address }) |policy| {
+        for ([_]bool{ false, true }) |reversed| {
+            var analyzer: Analyzer = try .init(std.testing.allocator, parsed.file, .{ .calld_ambiguous_encoding = policy }, &collection);
+            defer analyzer.deinit();
+            try analyzer.load_constants(stdlib.p2.constants);
+            for (0..stdlib.p2.instructions.len) |i| {
+                const index = if (reversed) stdlib.p2.instructions.len - i - 1 else i;
+                try analyzer.load_instruction(stdlib.p2.instructions[index]);
+            }
+            try analyzer.declare_symbols();
+            try analyzer.validate_symbol_refs();
+            try analyzer.prepare_instruction_stream();
+            try analyzer.select_instruction_mnemonic();
+            try analyzer.assign_locations();
+            try analyzer.evaluate_instruction_arguments();
+            try analyzer.select_instruction_encoding();
+            try std.testing.expect(analyzer.ok);
+            for (analyzer.instructions[0..4]) |instr| {
+                try std.testing.expectEqual(policy == .address, instr.instruction.?.operands[0].type == .pointer_reg);
+            }
+            try std.testing.expectEqual(policy != .general, analyzer.instructions[4].instruction.?.operands[0].type == .pointer_reg);
+            try std.testing.expect(analyzer.instructions[5].instruction.?.operands[0].type == .pointer_reg);
+            try std.testing.expect(analyzer.instructions[6].instruction.?.operands[0].type == .register);
+            try std.testing.expect(analyzer.instructions[7].instruction.?.operands[0].type == .register);
         }
     }
 }
@@ -3783,6 +3874,84 @@ test ".pic default restores AnalyzeOptions after prefer" {
         try std.testing.expectEqual(word, std.mem.readInt(u32, module.segments[1].data[i * 4 ..][0..4], .little));
     }
     try std.testing.expect(!collection.has_errors());
+}
+
+test "CALLD address mode follows PIC and the numeric target default" {
+    const source =
+        \\CALLD PA, 1000
+        \\.pic avoid
+        \\CALLD PA, 1000
+        \\.pic prefer
+        \\CALLD PA, 1000
+        \\.pic default
+        \\CALLD PA, 1000
+        \\.pic force
+        \\CALLD PA, 1000
+        \\.pic avoid
+        \\CALLD PA, 1
+        \\.pic default
+        \\CALLD PA, 1
+    ;
+
+    for ([_]bool{ true, false }) |relative_default| {
+        var collection: diagnostics.Collection = .init(std.testing.allocator);
+        defer collection.deinit();
+        var module = try analyze_test_source(source, "calld-pic.propan", &collection, .{
+            .use_relative_jmp_for_same_mode_nonlabel_address = relative_default,
+        });
+        defer module.deinit();
+        const bytes = module.segments[0].data;
+        try std.testing.expectEqual(@as(usize, 7 * 4), bytes.len);
+        for ([_]bool{ relative_default, false, true, relative_default, true, false }, 0..) |relative, i| {
+            const word = std.mem.readInt(u32, bytes[i * 4 ..][0..4], .little);
+            try std.testing.expectEqual(@as(u32, 0xFE000000), word & 0xFFE00000);
+            try std.testing.expectEqual(relative, word & 0x00100000 != 0);
+        }
+        try std.testing.expectEqual(if (relative_default) @as(u32, 0xFE100F9C) else 0xFE0003E8, std.mem.readInt(u32, bytes[0..4], .little));
+        const last = std.mem.readInt(u32, bytes[6 * 4 ..][0..4], .little);
+        try std.testing.expectEqual(relative_default, last & 0xFFE00000 == 0xFB200000);
+        try std.testing.expect(!collection.has_errors());
+    }
+}
+
+test "forced address CALLD uses a byte displacement in cog mode" {
+    var collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    var module = try analyze_test_source("CALLD PA, 1\n", "calld-address.propan", &collection, .{
+        .calld_ambiguous_encoding = .address,
+    });
+    defer module.deinit();
+    try std.testing.expectEqual(@as(u32, 0xFE100000), std.mem.readInt(u32, module.segments[0].data[0..4], .little));
+    try std.testing.expect(!collection.has_errors());
+}
+
+test "near CALLD crosses from cog to LUT with the general encoding" {
+    const source =
+        \\.cogexec
+        \\.org 0x1EE
+        \\CALLD PA, target
+        \\.lutexec
+        \\target:
+        \\NOP
+    ;
+    var collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    var module = try analyze_test_source(source, "calld-lut.propan", &collection, .{});
+    defer module.deinit();
+    try std.testing.expectEqual(@as(u32, 0xFB27EC11), std.mem.readInt(u32, module.segments[0].data[0x1EE * 4 ..][0..4], .little));
+    try std.testing.expect(!collection.has_errors());
+}
+
+test "forced general CALLD reports an out-of-range branch" {
+    var collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    try std.testing.expectError(error.SemanticErrors, analyze_test_source("CALLD PA, 1000\n", "calld-general.propan", &collection, .{
+        .calld_ambiguous_encoding = .general,
+    }));
+    try std.testing.expect(collection.has_errors());
+    try std.testing.expect(for (collection.diagnostics.items) |item| {
+        if (item.kind == .err_branch_too_far) break true;
+    } else false);
 }
 
 test "cog packing, origin, and emitted padding" {

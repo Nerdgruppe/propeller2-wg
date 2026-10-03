@@ -13,24 +13,18 @@
 - Enable "-Dx=y" on the CLI
 - Implement warning/error for `EncodedInstruction.Flags.wcz_not_used`
 - Fully define the compatibility matrix for implicit jumping/referencing between segments.
+- wordoffset must error/warn on byteoffset() == 1/3
 
 ## Priority Fixes / Tasks
 
-- Resolve ambigious instruction encoding
-  - `CALLD D,{#}S {WC/WZ/WCZ}`
-  - `CALLD PA/PB/PTRA/PTRB,#{\}A`
-  - `tests/propan/equivalence/ambigious.spin2`
-  - These instructions can have two different selections and are ambigious.
-    provide configuration for this.
 - Explicit register syntax/predefined registers (`register(X)`)
   - Consider if `const magic = register(13)` is a good idea
-
 
 ## New Features
 
 ### File Inclusion
 
-tl;dr: `#include` is missing.
+tl;dr: file inclusion is missing.
 
 Implement:
 `.import "<filepath>"` should behave as if the file was pasted at this location.
@@ -41,6 +35,12 @@ Files can be included multiple times unless they are declared `.import once`
 (not with a string but a identifier/word).
 
 Drop multi-file-support on the CLI (just plain reject it)
+
+### `propan fmt`
+
+Implement auto-formatting for propan code.
+
+This needs further specification.
 
 ### Groups
 
@@ -89,14 +89,12 @@ RDLONG dst, reloc(#offset, 256) // reads from #offset+256
 
 Currently, Propan does not support the "debug()" syntax from SPIN2
 
+### PASM2/SPIN2 emission
 
-### Structures
+Implement `propan --format=spin2` which emits a text file that is compatible with
+the SPIN ecosystem.
 
-Potentially, we could define something like our own struct type for data emission?
+This file should not contain just a long `BYTE` block, but preferrably textual
+instructions, data blocks, and labels.
 
-```c
-.typedef Vec3 [ x: word, y: word, z: word ]
-
-
-STRUCT Vec3(x=10, y=20, z=30)
-```
+For this, we need extensive flexspin-oracle testing.
