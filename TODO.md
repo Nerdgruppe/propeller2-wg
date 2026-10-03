@@ -19,9 +19,6 @@
 
 *empty*
 
-- File inclusion needs search path support.
-  - Easiest solution: `-I, --include-path <path>` to add search paths
-
 ## New Features
 
 ### `propan fmt`

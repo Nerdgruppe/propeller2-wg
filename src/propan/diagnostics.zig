@@ -164,6 +164,7 @@ pub const Kind = union(enum) {
     err_cannot_emit_data_after_reserve_or_inside_regspace,
     err_cannot_read_file: PathReason,
     err_cannot_read_import: PathReason,
+    err_cannot_open_include_path: PathReason,
     err_import_cycle: struct { path: []const u8 },
     err_import_requires_path_or_once,
     err_conditional_branch_after_else,
@@ -314,8 +315,9 @@ pub const Kind = union(enum) {
             .err_unknown_mnemonic => |v| try writer.print("unknown mnemonic {s}", .{v.mnemonic}),
             .err_file_requires_one_string_literal_path => try writer.print("FILE requires one string literal path", .{}),
             .err_file_requires_file_i_o => try writer.print("FILE requires file I/O", .{}),
-            .err_cannot_read_file => |v| try writer.print("cannot read FILE {s}: {s}", .{ v.path, @errorName(v.reason) }),
-            .err_cannot_read_import => |v| try writer.print("cannot read import {s}: {s}", .{ v.path, @errorName(v.reason) }),
+            .err_cannot_read_file => |v| try writer.print("cannot read FILE {s}: {t}", .{ v.path, v.reason }),
+            .err_cannot_read_import => |v| try writer.print("cannot read import {s}: {t}", .{ v.path, v.reason }),
+            .err_cannot_open_include_path => |v| try writer.print("cannot open include path {s}: {t}", .{ v.path, v.reason }),
             .err_import_cycle => |v| try writer.print("import cycle involving {s}", .{v.path}),
             .err_import_requires_path_or_once => try writer.writeAll(".import requires one string literal path or the word once"),
             .err_conditional_branch_after_else => try writer.writeAll("conditional branch after .else"),
@@ -334,7 +336,13 @@ pub const Kind = union(enum) {
             .err_org_cannot_move_pc_backward => try writer.print(".org cannot move PC backward", .{}),
             .err_cannot_emit_data_after_reserve_or_inside_regspace => try writer.print("cannot emit data after .reserve or inside .regspace", .{}),
             .err_cannot_emit_code_in_this_segment => try writer.print("cannot emit code in this segment", .{}),
-            .err_requires_an_integer_known_during_layout => |v| try writer.print("{s} requires an integer known during layout: {s}", .{ v.name, if (v.reason == error.ConstantNeedsLabelDuringLayout) "constant depends on a label" else @errorName(v.reason) }),
+            .err_requires_an_integer_known_during_layout => |v| {
+                try writer.print("{s} requires an integer known during layout: ", .{v.name});
+                if (v.reason == error.ConstantNeedsLabelDuringLayout)
+                    try writer.writeAll("constant depends on a label")
+                else
+                    try writer.print("{t}", .{v.reason});
+            },
             .warn_symbol_has_no_references => |v| try writer.print("symbol {s} has no references", .{v.name}),
             .err_constant_requires_integer_not_offset => |v| try writer.print("constant {s} evaluated to memory offset, but expected integer. Use hubaddr() or cogaddr() to resolve the value.", .{v.name}),
             .err_constants_cannot_store_pointer_expression => try writer.print("constants cannot store pointer expression.", .{}),
@@ -388,7 +396,7 @@ pub const Kind = union(enum) {
                 .branch_target => "branch target",
                 .hubaddr_argument => "hubaddr() argument",
             }}),
-            .err_address_outside_space => |v| try writer.print("{s} address 0x{x} is outside {t} space (must be below 0x{x})", .{ @tagName(v.subject), v.actual, v.space, v.max_exclusive }),
+            .err_address_outside_space => |v| try writer.print("{t} address 0x{x} is outside {t} space (must be below 0x{x})", .{ v.subject, v.actual, v.space, v.max_exclusive }),
             .err_address_space_mismatch => |v| {
                 try writer.print("{s} requires an address in ", .{v.subject});
                 if (v.expected.count() > 1) try writer.writeAll("one of the ");
@@ -397,30 +405,30 @@ pub const Kind = union(enum) {
                 try write_exec_modes(writer, v.actual);
             },
             .err_argument_count_mismatch => |v| try writer.print("{s} expects {}..{} arguments, found {}", .{ v.subject, v.min, v.max, v.found }),
-            .err_branch_too_far => |v| try writer.print("branch too far: cannot jump by {} {s}", .{ v.distance, @tagName(v.unit) }),
+            .err_branch_too_far => |v| try writer.print("branch too far: cannot jump by {} {t}", .{ v.distance, v.unit }),
             .err_directive_invalid_in_mode => |v| try writer.print("{s} is invalid in {t} mode", .{ v.directive, v.mode }),
             .err_duplicate_definition => |v| switch (v.previous) {
                 .symbol => |kind| try writer.print("symbol {s} ({}) is already defined", .{ v.name, kind }),
                 .function => try writer.print("function {s} is already defined", .{v.name}),
             },
             .err_expected_value_type => |v| try writer.print("{s} requires {t}, found {t}", .{ v.subject, v.expected, v.actual }),
-            .err_expression_evaluation_failed => |v| try writer.print("{s} could not be evaluated: {s}", .{ @tagName(v.context), v.reason.text() }),
+            .err_expression_evaluation_failed => |v| try writer.print("{t} could not be evaluated: {s}", .{ v.context, v.reason.text() }),
             .err_function_must_be_root => |v| try writer.print("{s}() must be the root of an expression", .{v.function}),
             .err_numeric_value_out_of_range => |v| try writer.print("{s} must be in range {}..{}, found {}", .{ v.subject, v.min, v.max, v.actual }),
-            .err_operand_usage_mismatch => |v| try writer.print("expected {s} operand, found {s}", .{ @tagName(v.expected), @tagName(v.actual) }),
+            .err_operand_usage_mismatch => |v| try writer.print("expected {t} operand, found {t}", .{ v.expected, v.actual }),
             .err_operator_invalid_operand_type => |v| try writer.print("operator '{f}' cannot be applied to a value of type {t}", .{ v.operator, v.value_type }),
             .err_operator_invalid_operand_types => |v| try writer.print("operator '{f}' cannot be applied to {t} and {t}", .{ v.operator, v.lhs_type, v.rhs_type }),
             .err_parameter_already_passed => |v| switch (v.previous) {
                 .positional => |index| try writer.print("parameter {s} of {s}() was already passed positionally as argument {}", .{ v.parameter, v.function, index + 1 }),
                 .named => |location| try writer.print("parameter {s} of {s}() was already passed by name at {f}", .{ v.parameter, v.function, location }),
             },
-            .err_pointer_modifier_already_set => |v| try writer.print("operator '{f}' cannot be applied: pointer {s} is already set", .{ v.operator, @tagName(v.modifier) }),
+            .err_pointer_modifier_already_set => |v| try writer.print("operator '{f}' cannot be applied: pointer {t} is already set", .{ v.operator, v.modifier }),
             .err_register_not_allowed => |v| try writer.print("register {f} is not allowed for {s}", .{ v.actual, switch (v.allowed) {
                 .pointer_expression => "pointer expressions",
                 .pointer_operand => "pointer operands",
             } }),
             .warn_address_function_expected_offset => |v| try writer.print("{t}() expected offset, found {t}", .{ v.function, v.value_type }),
-            .warn_operator_no_effect => |v| try writer.print("operator '{t}' has no effect on a {s} label", .{ v.operator, @tagName(v.label) }),
+            .warn_operator_no_effect => |v| try writer.print("operator '{t}' has no effect on a {t} label", .{ v.operator, v.label }),
         }
     }
 };

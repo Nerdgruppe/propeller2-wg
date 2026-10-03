@@ -244,6 +244,19 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
+    // Imports search the containing file first, then CLI include paths in order.
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=none");
+        run.addArg("--test-mode=sema");
+        run.addPrefixedDirectoryArg("--include-path=", b.path("tests/propan/sema/fixtures/include-a"));
+        run.addArg("-I");
+        run.addDirectoryArg(b.path("tests/propan/sema/fixtures/include-b"));
+        run.addFileArg(b.path("tests/propan/sema/fixtures/include-case/main.propan"));
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+    }
+
     // Diagnostics in an imported file retain its path and source excerpt.
     {
         const run = coverage_stash.create_test_run(propan_exe);

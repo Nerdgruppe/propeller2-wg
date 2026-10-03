@@ -34,6 +34,7 @@ const CliArgs = struct {
     format: emit.BinaryFormat = .flat,
     @"fill-byte": u8 = 0x00,
     @"list-file": []const u8 = "",
+    @"include-path": []const u8 = "",
     @"render-stdlib-docs": []const u8 = "",
 
     pub const shorthands = .{
@@ -42,10 +43,11 @@ const CliArgs = struct {
         .v = "verbose",
         .f = "format",
         .F = "fill-byte",
+        .I = "include-path",
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-o <output>] <source>",
+        .usage_summary = "[-h] [-I <path>] [-o <output>] <source>",
 
         .full_text =
         \\Propan is an assembler for the Propeller 2 architecture.
@@ -58,6 +60,7 @@ const CliArgs = struct {
             .format = "Selects the binary format to use",
             .@"fill-byte" = "The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.",
             .@"list-file" = "Writes a list file to the given path. Use '-' to write to stdout.",
+            .@"include-path" = "Adds an import search path. May be specified more than once.",
             .@"render-stdlib-docs" = "Renders the standard library documentation as an HTML file",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
@@ -139,13 +142,26 @@ pub fn main(init: std.process.Init) !u8 {
         return try usage_mistake(&diagnostics_collection, .err_multiple_input_files_are_not_supported);
     }
 
+    const include_paths = try collect_include_paths(init);
     const input_path = cli.positionals[0];
+    // Index zero is the source directory; include paths follow in CLI order.
+    const dirs = try init.arena.allocator().alloc(std.Io.Dir, include_paths.len + 1);
+    dirs[0] = try std.Io.Dir.cwd().openDir(init.io, std.fs.path.dirname(input_path) orelse ".", .{});
+    var opened_dirs: usize = 1;
+    defer for (dirs[0..opened_dirs]) |dir| dir.close(init.io);
+    for (include_paths, 1..) |path, index| {
+        dirs[index] = std.Io.Dir.cwd().openDir(init.io, path, .{}) catch |err| {
+            try diagnostics_collection.emit_diag(null, .{ .err_cannot_open_include_path = .{ .path = path, .reason = err } });
+            return 1;
+        };
+        opened_dirs += 1;
+    }
+
     const source_file = try init.arena.allocator().create(SourceFile);
     source_file.path = try init.arena.allocator().dupe(u8, input_path);
-    source_file.identity = if (std.mem.eql(u8, input_path, "-"))
-        "-"
-    else
-        try std.Io.Dir.cwd().realPathFileAlloc(init.io, input_path, init.arena.allocator());
+    source_file.dir_index = 0;
+    source_file.relative_path = std.fs.path.basename(source_file.path);
+    source_file.identity = try std.fmt.allocPrint(init.arena.allocator(), "0:{s}", .{source_file.relative_path});
     source_file.text = blk: {
         if (std.mem.eql(u8, input_path, "-")) {
             std.log.debug("loading stdin...", .{});
@@ -162,7 +178,7 @@ pub fn main(init: std.process.Init) !u8 {
         } else {
             std.log.debug("loading {s}...", .{input_path});
 
-            break :blk try std.Io.Dir.cwd().readFileAlloc(init.io, input_path, init.arena.allocator(), .limited(1 << 20));
+            break :blk try dirs[0].readFileAlloc(init.io, source_file.relative_path, init.arena.allocator(), .limited(1 << 20));
         }
     };
     try diagnostics_collection.register_source_file(source_file);
@@ -175,7 +191,7 @@ pub fn main(init: std.process.Init) !u8 {
     if (diagnostics_collection.has_errors()) return 1;
     const diagnostic_start = diagnostics_collection.diagnostics.items.len;
 
-    var expander = frontend.imports.Expander.init(init.arena.allocator(), init.io, &diagnostics_collection);
+    var expander = frontend.imports.Expander.init(init.arena.allocator(), init.io, &diagnostics_collection, dirs, include_paths);
     defer expander.deinit();
     const ast_file = expander.expand(source_file) catch |err| switch (err) {
         error.OutOfMemory => return err,
@@ -340,6 +356,41 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     return 0;
+}
+
+fn collect_include_paths(init: std.process.Init) ![]const []const u8 {
+    const allocator = init.arena.allocator();
+    var args = try init.minimal.args.iterateAllocator(allocator);
+    defer args.deinit();
+    _ = args.next(); // executable name
+
+    var paths: std.ArrayListUnmanaged([]const u8) = .empty;
+    while (args.next()) |arg| {
+        if (std.mem.eql(u8, arg, "--")) break;
+        if (std.mem.eql(u8, arg, "-I") or std.mem.eql(u8, arg, "--include-path") or
+            (arg.len > 2 and arg[0] == '-' and arg[1] != '-' and arg[arg.len - 1] == 'I'))
+        {
+            try paths.append(allocator, try allocator.dupe(u8, args.next().?));
+        } else if (std.mem.startsWith(u8, arg, "--include-path=")) {
+            try paths.append(allocator, try allocator.dupe(u8, arg["--include-path=".len..]));
+        } else if (cli_option_requires_value(arg)) {
+            _ = args.next();
+        }
+    }
+    return try paths.toOwnedSlice(allocator);
+}
+
+fn cli_option_requires_value(arg: []const u8) bool {
+    if (std.mem.startsWith(u8, arg, "--") and std.mem.indexOfScalar(u8, arg, '=') == null) {
+        inline for (std.meta.fields(CliArgs)) |field| {
+            if (field.type != bool and std.mem.eql(u8, arg[2..], field.name)) return true;
+        }
+    } else if (arg.len > 1 and arg[0] == '-' and arg[1] != '-') {
+        inline for (std.meta.fields(@TypeOf(CliArgs.shorthands))) |field| {
+            if (arg[arg.len - 1] == field.name[0] and @FieldType(CliArgs, @field(CliArgs.shorthands, field.name)) != bool) return true;
+        }
+    }
+    return false;
 }
 
 fn usage_mistake(diagnostics_collection: *diagnostics.Collection, diagnostic: diagnostics.Kind) !u8 {

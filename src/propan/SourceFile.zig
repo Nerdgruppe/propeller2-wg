@@ -4,3 +4,5 @@ pub const SourceFile = @This();
 path: []const u8,
 identity: []const u8,
 text: []const u8,
+dir_index: usize = 0,
+relative_path: []const u8 = "",

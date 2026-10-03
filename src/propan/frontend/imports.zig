@@ -9,14 +9,17 @@ pub const Expander = struct {
     allocator: std.mem.Allocator,
     io: std.Io,
     diagnostics: *diagnostics.Collection,
+    dirs: []std.Io.Dir,
+    include_paths: []const []const u8,
     files: std.StringHashMapUnmanaged(*SourceFile) = .empty,
     active: std.StringHashMapUnmanaged(void) = .empty,
     once_seen: std.StringHashMapUnmanaged(void) = .empty,
     parsed: std.ArrayListUnmanaged(parser.ParsedFile) = .empty,
     did_import: bool = false,
 
-    pub fn init(allocator: std.mem.Allocator, io: std.Io, collection: *diagnostics.Collection) Expander {
-        return .{ .allocator = allocator, .io = io, .diagnostics = collection };
+    pub fn init(allocator: std.mem.Allocator, io: std.Io, collection: *diagnostics.Collection, dirs: []std.Io.Dir, include_paths: []const []const u8) Expander {
+        std.debug.assert(dirs.len == include_paths.len + 1);
+        return .{ .allocator = allocator, .io = io, .diagnostics = collection, .dirs = dirs, .include_paths = include_paths };
     }
 
     pub fn deinit(self: *Expander) void {
@@ -76,21 +79,39 @@ pub const Expander = struct {
             const path = instruction.arguments[0].string.value;
             self.did_import = true;
             const dir = std.fs.path.dirname(source.path) orelse ".";
-            const display_path = try std.fs.path.resolve(self.allocator, &.{ dir, path });
-            const identity = std.Io.Dir.cwd().realPathFileAlloc(self.io, display_path, self.allocator) catch |err| {
-                try self.diagnostics.emit_diag(instruction.location, .{ .err_cannot_read_import = .{ .path = display_path, .reason = err } });
+            const local_path = try std.fs.path.resolve(self.allocator, &.{ dir, path });
+            const absolute = std.fs.path.isAbsolute(path);
+            const search_count = if (absolute) 1 else self.include_paths.len + 1;
+            const imported = search: {
+                for (0..search_count) |index| {
+                    const dir_index = if (absolute) 0 else if (index == 0) source.dir_index else index;
+                    const relative_path = if (index == 0)
+                        try std.fs.path.resolve(self.allocator, &.{ std.fs.path.dirname(source.relative_path) orelse ".", path })
+                    else
+                        try std.fs.path.resolve(self.allocator, &.{path});
+                    const display_path = if (index == 0)
+                        local_path
+                    else
+                        try std.fs.path.resolve(self.allocator, &.{ self.include_paths[index - 1], path });
+                    const identity = try std.fmt.allocPrint(self.allocator, "{}:{s}", .{ dir_index, relative_path });
+                    if (self.files.get(identity)) |file| break :search file;
+
+                    const search_dir = if (std.fs.path.isAbsolute(relative_path)) std.Io.Dir.cwd() else self.dirs[dir_index];
+                    const text = search_dir.readFileAlloc(self.io, relative_path, self.allocator, .limited(1 << 20)) catch |err| switch (err) {
+                        error.FileNotFound, error.NotDir => continue,
+                        else => {
+                            try self.diagnostics.emit_diag(instruction.location, .{ .err_cannot_read_import = .{ .path = display_path, .reason = err } });
+                            return error.ImportFailed;
+                        },
+                    };
+                    const file = try self.allocator.create(SourceFile);
+                    file.* = .{ .path = display_path, .identity = identity, .text = text, .dir_index = dir_index, .relative_path = relative_path };
+                    try self.files.put(self.allocator, identity, file);
+                    try self.diagnostics.register_source_file(file);
+                    break :search file;
+                }
+                try self.diagnostics.emit_diag(instruction.location, .{ .err_cannot_read_import = .{ .path = local_path, .reason = error.FileNotFound } });
                 return error.ImportFailed;
-            };
-            const imported = if (self.files.get(identity)) |file| file else blk: {
-                const text = std.Io.Dir.cwd().readFileAlloc(self.io, display_path, self.allocator, .limited(1 << 20)) catch |err| {
-                    try self.diagnostics.emit_diag(instruction.location, .{ .err_cannot_read_import = .{ .path = display_path, .reason = err } });
-                    return error.ImportFailed;
-                };
-                const file = try self.allocator.create(SourceFile);
-                file.* = .{ .path = display_path, .identity = identity, .text = text };
-                try self.files.put(self.allocator, identity, file);
-                try self.diagnostics.register_source_file(file);
-                break :blk file;
             };
             try self.expand_file(imported, instruction.location, lines);
         }

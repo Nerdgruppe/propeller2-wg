@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? mem: 0 <- u32 [1, 2, 4, 3]
+.import "local.propan"
+.import "order.propan"
+.import "second.propan"
