@@ -355,6 +355,19 @@ pub const functions = define.namespace(.{
     .fgt = binary(.fgt, "Binary32 greater-than, returning zero or minus one."),
     .fge = binary(.fge, "Binary32 greater-than-or-equal, returning zero or minus one."),
 
+    .register = define.function(struct {
+        pub const docs = "Convert a 9-bit integer or register to a register.";
+        pub const params = .{ .value = .{ .docs = "Register index or register value." } };
+
+        pub fn invoke(value: eval.Value) !eval.Register {
+            return switch (value.value) {
+                .int => |index| @enumFromInt(std.math.cast(u9, index) orelse return error.Overflow),
+                .register => |reg| reg,
+                else => error.TypeMismatch,
+            };
+        }
+    }),
+
     .regoffset = define.function(struct {
         pub const docs = "Computes the register from a base register and an integer offset.";
 

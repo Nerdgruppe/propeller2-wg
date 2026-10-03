@@ -1,0 +1,4 @@
+.assert cogaddr(register(0)) == 0
+.assert cogaddr(register(511)) == 511
+.assert cogaddr(register(PTRA)) == 504
+.assert cogaddr(regoffset(register(7), 1)) == 8

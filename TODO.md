@@ -17,8 +17,7 @@
 
 ## Priority Fixes / Tasks
 
-- Explicit register syntax/predefined registers (`register(X)`)
-  - Consider if `const magic = register(13)` is a good idea
+*empty*
 
 ## New Features
 
