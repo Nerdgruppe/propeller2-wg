@@ -1,0 +1,38 @@
+// Swap the alias and explicit D,D forms between assemblers.
+NOT dst
+NOT dst, dst
+
+ABS dst :wc
+ABS dst, dst :wc
+
+NEG dst :wz
+NEG dst, dst :wz
+
+NEGC dst :wcz
+NEGC dst, dst :wcz
+
+NEGNC dst
+NEGNC dst, dst
+
+NEGZ dst :wc
+NEGZ dst, dst :wc
+
+NEGNZ dst :wz
+NEGNZ dst, dst :wz
+
+ENCOD dst :wcz
+ENCOD dst, dst :wcz
+
+ONES dst
+ONES dst, dst
+
+TEST dst :wc
+TEST dst, dst :wc
+
+DECOD dst
+DECOD dst, dst
+
+BMASK dst
+BMASK dst, dst
+
+var dst: LONG 1

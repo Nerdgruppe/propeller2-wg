@@ -798,9 +798,12 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/memory.propan",
     "tests/propan/equivalence/metaprogramming.propan",
     "tests/propan/equivalence/rdlong-selection-bug.propan",
+    "tests/propan/equivalence/same-source-aliases-alternating.propan",
+    "tests/propan/equivalence/same-source-aliases.propan",
     "tests/propan/equivalence/special_effects.propan",
     "tests/propan/equivalence/three_ops.propan",
     "tests/propan/equivalence/hubset.propan",
+    "tests/propan/equivalence/implicit-field-aliases.propan",
 };
 
 const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{

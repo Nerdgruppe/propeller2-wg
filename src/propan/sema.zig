@@ -2308,6 +2308,12 @@ const Analyzer = struct {
                             error.Overflow => try ana.emit_diag(location, .err_cannot_write_operand_integer_overflow),
                         };
 
+                        if (operand.copy_to) |slot| {
+                            slot.write(&output, slot_value) catch |err| switch (err) {
+                                error.Overflow => try ana.emit_diag(location, .err_cannot_write_operand_integer_overflow),
+                            };
+                        }
+
                         if (fill_extra_slot) |slot| {
                             slot.fill(&output);
                         }
@@ -4212,6 +4218,7 @@ pub const EncodedInstruction = struct {
     pub const Operand = struct {
         type: Type,
         slot: Slot,
+        copy_to: ?Slot = null,
 
         pub fn init(optype: Type, opslot: Slot) Operand {
             return .{

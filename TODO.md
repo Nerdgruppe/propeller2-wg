@@ -16,18 +16,12 @@
 
 ## Priority Fixes / Tasks
 
-- `TEST D {WC/WZ/WCZ}`
-  - Add the one operand alias for TEST D,D, including its flag effects.
-    The instruction table specifies this encoding. FlexSpin emitted identical
-    words for both spellings; Propan currently rejects the one operand form because
-    its TEST definition (line 1348) requires two operands.
 - Resolve ambigious instruction encoding
   - `CALLD D,{#}S {WC/WZ/WCZ}`
   - `CALLD PA/PB/PTRA/PTRB,#{\}A`
   - `tests/propan/equivalence/ambigious.spin2`
   - These instructions can have two different selections and are ambigious.
     provide configuration for this.
-- Implement single-operand instruction aliases (rolnib, ..)
 - Explicit register syntax/predefined registers (`register(X)`)
   - Consider if `const magic = register(13)` is a good idea
 
