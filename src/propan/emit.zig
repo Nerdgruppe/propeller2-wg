@@ -6,12 +6,13 @@ pub const BinaryFormat = enum {
     none,
     flat,
     json,
+    spin2,
 
     pub fn is_binary(bf: BinaryFormat) bool {
         return switch (bf) {
             .flat => true,
 
-            .none, .json => false,
+            .none, .json, .spin2 => false,
         };
     }
 };
@@ -20,9 +21,23 @@ pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules
     switch (format) {
         .flat => try file.writeStreamingAll(io, flat_data),
         .json => try emit_json(io, allocator, file, modules, flat_data.len),
+        .spin2 => try emit_spin2_bytes(io, file, flat_data),
 
         .none => {},
     }
+}
+
+fn emit_spin2_bytes(io: std.Io, file: std.Io.File, data: []const u8) !void {
+    var buffer: [4096]u8 = undefined;
+    var writer = file.writer(io, &buffer);
+    const out = &writer.interface;
+    try out.writeAll("DAT\n");
+    for (data, 0..) |byte, index| {
+        if (index % 16 == 0) try out.writeAll("  BYTE ") else try out.writeAll(", ");
+        try out.print("${X:0>2}", .{byte});
+        if (index % 16 == 15 or index + 1 == data.len) try out.writeByte('\n');
+    }
+    try out.flush();
 }
 
 fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {
