@@ -80,7 +80,7 @@ pub fn dump_ast(raw_writer: anytype, file: ast.File) !void {
                 }
 
                 if (instr.effect) |effect| {
-                    try writer.print(" :{s}", .{@tagName(effect)});
+                    try writer.print(" :{s}", .{@tagName(effect.type)});
                 }
 
                 try writer.writeAll("\n");
@@ -116,7 +116,7 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
 
         .wrapped => |inner| {
             try writer.writeAll("wrapped\n");
-            try pretty_print_expr(writer, inner.*);
+            try pretty_print_expr(writer, inner.value.*);
         },
 
         .unary_transform => |op| {

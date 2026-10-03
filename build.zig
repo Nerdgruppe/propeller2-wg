@@ -444,6 +444,24 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--pretty-print");
+        run.addFileArg(b.path("tests/propan/format/input.propan"));
+        run.expectStdOutEqual(@embedFile("tests/propan/format/expected.propan"));
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--pretty-print");
+        run.addFileArg(b.path("tests/propan/parser/diagnostics/missing-parenthesis.propan"));
+        run.expectExitCode(1);
+        run.expectStdOutEqual("");
+        run.expectStdErrMatch("error:");
+        test_step.dependOn(&run.step);
+    }
+
     // Exports:
 
     if (with_flexspin) blk: {

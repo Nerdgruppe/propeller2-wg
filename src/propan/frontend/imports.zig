@@ -35,7 +35,7 @@ pub const Expander = struct {
         var lines: std.ArrayListUnmanaged(ast.Line) = .empty;
         errdefer lines.deinit(self.allocator);
         try self.expand_file(root, null, &lines);
-        return .{ .sequence = try lines.toOwnedSlice(self.allocator) };
+        return .{ .span = self.parsed.items[0].file.span, .sequence = try lines.toOwnedSlice(self.allocator) };
     }
 
     fn expand_file(self: *Expander, source: *SourceFile, from: ?ast.Location, lines: *std.ArrayListUnmanaged(ast.Line)) !void {
@@ -72,7 +72,7 @@ pub const Expander = struct {
             if (instruction.condition != null or instruction.effect != null or
                 instruction.arguments.len != 1 or instruction.arguments[0] != .string)
             {
-                try self.diagnostics.emit_diag(instruction.location, .err_import_requires_path_or_once);
+                try self.diagnostics.emit_diag(instruction.location(), .err_import_requires_path_or_once);
                 return error.ImportFailed;
             }
 
@@ -100,7 +100,7 @@ pub const Expander = struct {
                     const text = search_dir.readFileAlloc(self.io, relative_path, self.allocator, .limited(1 << 20)) catch |err| switch (err) {
                         error.FileNotFound, error.NotDir => continue,
                         else => {
-                            try self.diagnostics.emit_diag(instruction.location, .{ .err_cannot_read_import = .{ .path = display_path, .reason = err } });
+                            try self.diagnostics.emit_diag(instruction.location(), .{ .err_cannot_read_import = .{ .path = display_path, .reason = err } });
                             return error.ImportFailed;
                         },
                     };
@@ -110,10 +110,10 @@ pub const Expander = struct {
                     try self.diagnostics.register_source_file(file);
                     break :search file;
                 }
-                try self.diagnostics.emit_diag(instruction.location, .{ .err_cannot_read_import = .{ .path = local_path, .reason = error.FileNotFound } });
+                try self.diagnostics.emit_diag(instruction.location(), .{ .err_cannot_read_import = .{ .path = local_path, .reason = error.FileNotFound } });
                 return error.ImportFailed;
             };
-            try self.expand_file(imported, instruction.location, lines);
+            try self.expand_file(imported, instruction.location(), lines);
         }
     }
 

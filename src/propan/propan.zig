@@ -36,6 +36,7 @@ const CliArgs = struct {
     @"list-file": []const u8 = "",
     @"include-path": []const u8 = "",
     @"render-stdlib-docs": []const u8 = "",
+    @"pretty-print": []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
@@ -47,7 +48,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-I <path>] [-o <output>] <source>",
+        .usage_summary = "[-h] [-I <path>] [-o <output>] <source> | --pretty-print <path>",
 
         .full_text =
         \\Propan is an assembler for the Propeller 2 architecture.
@@ -62,6 +63,7 @@ const CliArgs = struct {
             .@"list-file" = "Writes a list file to the given path. Use '-' to write to stdout.",
             .@"include-path" = "Adds an import search path. May be specified more than once.",
             .@"render-stdlib-docs" = "Renders the standard library documentation as an HTML file",
+            .@"pretty-print" = "Pretty-prints a Propan source file to stdout. Use '-' for stdin.",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -123,6 +125,32 @@ pub fn main(init: std.process.Init) !u8 {
             &stdout.interface,
         );
         try stdout.interface.flush();
+        return 0;
+    }
+
+    if (cli.options.@"pretty-print".len > 0) {
+        if (cli.positionals.len != 0)
+            return try usage_mistake(&diagnostics_collection, .err_multiple_input_files_are_not_supported);
+
+        const path = cli.options.@"pretty-print";
+        const source = if (std.mem.eql(u8, path, "-")) blk: {
+            var buffer: [8192]u8 = undefined;
+            var reader = std.Io.File.stdin().reader(init.io, &buffer);
+            var contents: std.Io.Writer.Allocating = .init(init.arena.allocator());
+            _ = try reader.interface.streamRemaining(&contents.writer);
+            break :blk try contents.toOwnedSlice();
+        } else try std.Io.Dir.cwd().readFileAlloc(init.io, path, init.arena.allocator(), .limited(1 << 20));
+
+        var parser: frontend.Parser = .init(source, path, &diagnostics_collection);
+        var parsed = parser.parse(init.arena.allocator()) catch |err| switch (err) {
+            error.OutOfMemory => return err,
+            else => return 1,
+        };
+        defer parsed.deinit();
+
+        var rendered: std.Io.Writer.Allocating = .init(init.arena.allocator());
+        try frontend.render.pretty_print_alloc(init.arena.allocator(), &rendered.writer, parsed.file);
+        try std.Io.File.stdout().writeStreamingAll(init.io, rendered.written());
         return 0;
     }
 
