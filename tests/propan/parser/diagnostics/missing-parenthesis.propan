@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_syntax_error
+//? err: err_syntax_error line 3 text=="UnexpectedEndOfFile"
 BYTE (1

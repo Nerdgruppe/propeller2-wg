@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_operator_invalid_operand_types
+//? err: err_operator_invalid_operand_types line 4 lhs_type==int rhs_type==int
 const x = 1
 LONG x[1]

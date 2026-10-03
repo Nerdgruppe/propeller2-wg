@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_parameter_already_passed
-//? err: err_expression_evaluation_failed
+//? err: err_parameter_already_passed line 4 parameter=="start" function=="pinrange"
+//? err: err_expression_evaluation_failed line 4 context==expression reason==invalid_function_call
 LONG pinrange(0, end=1, start=2)

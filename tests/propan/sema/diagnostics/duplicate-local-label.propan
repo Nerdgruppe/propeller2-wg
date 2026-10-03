@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_duplicate_definition
+//? err: err_duplicate_definition line 5 name==".loop"
 foo:
 .loop:
 .loop:

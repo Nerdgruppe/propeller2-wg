@@ -17,3 +17,5 @@ JMP target
 target:
 var slot:
 LONG 'A'
+LONG $
+BYTE [1, "A", [2]] * 2

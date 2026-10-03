@@ -23,14 +23,30 @@ Assert the exact diagnostics emitted by a test:
 ```
 
 ```c
-err: <code>
+err: <code> [line <number>] [<field>==<value> ...]
 ```
 
 `<code>` must be a tag of `diagnostics.Kind` at any level: error, warning, or
 info. The `err:` keyword is kept for compatibility; it checks diagnostics at
 all three levels. Each `err:` line expects one occurrence, so repeated lines
-check the count. Order, message details, and source locations do not matter;
-missing or unexpected diagnostics fail the test. A matching test exits successfully
+check the count. An omitted line or field matches any value. `line` is the
+one-based source line where the diagnostic was emitted. Fields refer directly
+to the diagnostic's payload. For example:
+
+```c
+//? err: err_expression_evaluation_failed line 10 reason==divide_by_zero
+//? err: err_checklist_symbol_does_not_match_actual_type_hub_local line 12 name=="a b" kind==code hub==null local==0x10
+```
+
+Integer values may be decimal, hexadecimal, or binary; floating-point values
+use decimal notation. Strings are quoted and accept `\\`, `\"`, `\n`, `\r`,
+and `\t` escapes. Use bare enum names and `null` for an optional field.
+Strings compare by exact contents and floating-point fields
+compare by exact value. Nested fields and struct-valued comparisons are not
+supported. Unknown fields and values of the wrong type are checklist errors.
+Each expected diagnostic is matched to a distinct actual diagnostic, regardless
+of emission order. Missing or unexpected diagnostics fail the test. A matching
+test exits successfully
 without printing the matched diagnostics. Diagnostic checks work in parser,
 semantic, and comparison test modes. If compilation stops on expected errors,
 symbol, segment, and memory checks are skipped, as is binary comparison. Checklist
@@ -60,7 +76,7 @@ sym: <symbol> <spec>
   - `<type>:<hub>`: Asserts that `<symbol>` is located at the given hub address.
   - `<type>:<hub>:<local>`: Asserts that `<symbol>` is located at the given hub address and has the given `<local>` address.
   - `<type>` is `code`, `data`, `constant`, `builtin`.
-  - `<hub>` and `<local>` are either decimal, hexadecimal or `-` for absent/null
+  - `<hub>` and `<local>` are decimal, hexadecimal, binary, or `-` for absent/null
 
 ## Segment Checks
 
@@ -82,7 +98,7 @@ Syntax idea:
 ```
 
 - `<start-address>`> is the "identifier" of the segment and encodes the start address.
-- `[<length>]` is the optional length of the segment. hexadecimal or decimal.
+- `[<length>]` is the optional length of the segment. Decimal, hexadecimal, or binary.
 - `[<type>]` checks the exec_mode of our segment. Can be one of:
   - `cogexec`
   - `lutexec`
@@ -111,15 +127,15 @@ Rough syntax idea:
 mem: <start-address> <compare-mode> <data-block>
 ```
 
-- `<start-address>` is a decimal or hexadecimal address where the memory starts
+- `<start-address>` is a decimal, hexadecimal, or binary address where the memory starts
 - `<compare-mode>` is either
   - `==` for requiring that the memory block is the *whole* memory. full program length is asserted to be equal
   - `<-` for just asserting that the block of memory matches. full program length is not tested
 - `<data-block>` is one of the following things:
   - `u8 [ <numbers> ]`, `u16 [ <numbers> ]`, `u32 [ <numbers> ]`
     - `<numbers>` is a list of (comma or whitespace) separated numbers
-    - Each number is either a decimal number from `minInt(i32` to `maxInt(u32` which means
-      that we can write both positive and negative numbers.
+    - Each number is decimal, hexadecimal, or binary (with optional `_` digit separators),
+      from `minInt(i32)` to `maxInt(u32)` so both positive and negative numbers can be written.
   - `hex [ <bytes> ]` is a sequence of hex bytes.
     - `<bytes>` is a sequence of bytes where each byte is a two-character hex number.
       numbers can be upper/lower case, space or comma separated or joined together.

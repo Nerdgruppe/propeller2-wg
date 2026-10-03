@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: warn_branch_into_data
+//? err: warn_branch_into_data line 7
 .data
 target:
 BYTE 1

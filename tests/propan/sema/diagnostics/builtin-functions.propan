@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed line 7 context==expression reason==type_mismatch
+//? err: err_expression_evaluation_failed line 8 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 9 context==expression reason==divide_by_zero
+//? err: err_expression_evaluation_failed line 10 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 11 context==expression reason==invalid_argument
+LONG abs("not an integer")
+LONG clz(4294967296)
+LONG frac(1, 0)
+LONG ror(1, -2147483649)
+LONG qlog(0)

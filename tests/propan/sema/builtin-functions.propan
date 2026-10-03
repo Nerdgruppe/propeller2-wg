@@ -1,0 +1,84 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [ 0x3f800000, 0x80000000, 0x0cae00d2, 0xffffffea, 1, 0xffffffff ]
+
+.assert abs(-5) == 5
+.assert abs(13) == 13
+.assert abs(-2147483648) == -2147483648
+.assert abs(0x80000000) == -2147483648
+.assert fabs(0xbf800000) == 0x3f800000
+.assert encod(0) == 0
+.assert encod(0x80000000) == 31
+.assert decod(33) == 2
+.assert clz(0) == 32
+.assert clz(0xFF) == 24
+.assert clz(0x80000000) == 0
+.assert ctz(0) == 32
+.assert ctz(8) == 3
+.assert ctz(0x80) == 7
+.assert clo(0xffffffff) == 32
+.assert clo(0x7fffffff) == 0
+.assert cto(0xffffffff) == 32
+.assert cto(0xfffffffe) == 0
+.assert bmask(0) == 1
+.assert bmask(31) == 0xffffffff
+.assert bmask(32) == 1
+.assert popcnt(0) == 0
+.assert popcnt(0xFF00FF00) == 16
+.assert popcnt(0b1100101) == 4
+.assert popcnt(0xffffffff) == 32
+.assert sqrt(255) == 15
+.assert sqrt(0xffffffff) == 65536
+.assert fsqrt(0x40800000) == 0x40000000
+.assert fsqrt(0x80000000) == 0x80000000
+.assert fsqrt(0x7f800000) == 0x7f800000
+.assert fsqrt(0xbf800000) == 0xffc00000
+.assert fsqrt(0x7fc12345) == 0x7fc12345
+.assert qlog(1) == 0
+.assert qlog(3) == 0x0cae00d2
+.assert qlog(0xffffffff) == 0xf8000000
+.assert qexp(0) == 1
+.assert qexp(0x08000000) == 2
+.assert qexp(0xffffffff) == 0xffffffea
+
+.assert min(0xffffffff, 1) == 1
+.assert max(0xffffffff, 1) == 0xffffffff
+.assert min(-1, 0x80000000) == 0x80000000
+.assert max(0, -1) == 0xffffffff
+.assert smin(-5, 3) == -5
+.assert smin(0x80000000, 0x7fffffff) == -2147483648
+.assert smax(-5, 3) == 3
+.assert sar(0x80000000, 1) == -1073741824
+.assert sar(-1, 31) == -1
+.assert ror(1, 1) == 0x80000000
+.assert rol(1, 31) == 0x80000000
+.assert rev(0b1101, 3) == 0b1011
+.assert rev(1, 31) == 0x80000000
+.assert zerox(0xffffffff, 7) == 0xff
+.assert signx(0x80, 7) == -128
+.assert signx(0x7f, 7) == 127
+.assert sca(0xffffffff, 0xffffffff) == 0xfffffffe
+.assert scas(0x7fffffff, 0x7fffffff) == -4
+.assert frac(1, 3) == 0x55555555
+.assert frac(3, 1) == 0
+
+.assert fmul(0x3fc00000, 0x40000000) == 0x40400000
+.assert fdiv(0x40c00000, 0x40000000) == 0x40400000
+.assert fadd(0x3f800000, 0x40000000) == 0x40400000
+.assert fadd(0x3f800000, 0x33800000) == 0x3f800000
+.assert fadd(0x3f800001, 0x33800000) == 0x3f800002
+.assert fadd(0x7fc12345, 0x3f800000) == 0x7fc12345
+.assert fadd(0x80000000, 0) == 0
+.assert fsub(0x40400000, 0x3f800000) == 0x40000000
+.assert fsub(0x80000000, 0) == 0x80000000
+.assert flt(0x3f800000, 0x40000000) == -1
+.assert flt(0x7fc00000, 0x40000000) == 0
+.assert fle(0x40000000, 0x40000000) == -1
+.assert fgt(0x40000000, 0x3f800000) == -1
+.assert fge(0x40000000, 0x40000000) == -1
+.assert fge(0x3f800000, 0x40000000) == 0
+.assert fdiv(0x3f800000, 0) == 0x7f800000
+.assert fdiv(0, 0) == 0xffc00000
+.assert fdiv(0x7f800000, 0x7f800000) == 0xffc00000
+.assert fmul(0x7f800000, 0) == 0xffc00000
+
+LONG fabs(0xbf800000), fsqrt(0x80000000), qlog(3), qexp(0xffffffff), min(0xffffffff, 1), max(0xffffffff, 1)

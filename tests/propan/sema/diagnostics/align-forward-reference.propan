@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_align_references_label
+//? err: err_align_references_label line 3
 .align target
 target:
 BYTE 1

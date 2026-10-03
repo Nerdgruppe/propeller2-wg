@@ -1,15 +1,8 @@
 //? PROPAN CHECK LIST
-//? err: warn_emitted_padding_byte_s
-//? err: warn_emitted_padding_byte_s
-//? err: err_expected_value_type
-//? err: err_expected_value_type
-//? err: err_expected_value_type
-//? err: err_expected_value_type
-//? err: err_expected_value_type
-//? err: err_expected_value_type
-BYTE "hi"
-WORD "hi"
-LONG "hi"
+//? err: warn_emitted_padding_byte_s line 7 count==1
+//? err: err_expected_value_type line 6 subject=="data operand" expected==int actual==enumerator
+//? err: err_expected_value_type line 7 subject=="data operand" expected==int actual==enumerator
+//? err: err_expected_value_type line 8 subject=="data operand" expected==int actual==enumerator
 BYTE #on
 WORD #on
 LONG #on

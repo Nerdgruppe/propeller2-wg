@@ -1117,6 +1117,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },
+    // NOT D {WC/WZ/WCZ}
+    // EEEE 0110001 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "NOT",
+        .binary = 0x06200000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
     // ABS D, {#}S {WC/WZ/WCZ}
     // EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS
     .{
@@ -1131,6 +1147,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
+    // ABS D {WC/WZ/WCZ}
+    // EEEE 0110010 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "ABS",
+        .binary = 0x06400000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1155,6 +1187,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },
+    // NEG D {WC/WZ/WCZ}
+    // EEEE 0110011 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "NEG",
+        .binary = 0x06600000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
     // NEGC D, {#}S {WC/WZ/WCZ}
     // EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS
     .{
@@ -1169,6 +1217,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
+    // NEGC D {WC/WZ/WCZ}
+    // EEEE 0110100 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "NEGC",
+        .binary = 0x06800000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1193,6 +1257,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },
+    // NEGNC D {WC/WZ/WCZ}
+    // EEEE 0110101 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "NEGNC",
+        .binary = 0x06a00000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
     // NEGZ D, {#}S {WC/WZ/WCZ}
     // EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS
     .{
@@ -1212,6 +1292,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },
+    // NEGZ D {WC/WZ/WCZ}
+    // EEEE 0110110 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "NEGZ",
+        .binary = 0x06c00000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
     // NEGNZ D, {#}S {WC/WZ/WCZ}
     // EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS
     .{
@@ -1226,6 +1322,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
+    // NEGNZ D {WC/WZ/WCZ}
+    // EEEE 0110111 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "NEGNZ",
+        .binary = 0x06e00000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1326,6 +1438,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },
+    // ENCOD D {WC/WZ/WCZ}
+    // EEEE 0111100 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "ENCOD",
+        .binary = 0x07800000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
     // ONES D, {#}S {WC/WZ/WCZ}
     // EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS
     .{
@@ -1345,6 +1473,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },
+    // ONES D {WC/WZ/WCZ}
+    // EEEE 0111101 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "ONES",
+        .binary = 0x07a00000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
     // TEST D, {#}S {WC/WZ/WCZ}
     // EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS
     .{
@@ -1359,6 +1503,22 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
+    // TEST D {WC/WZ/WCZ}
+    // EEEE 0111110 CZ0 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "TEST",
+        .binary = 0x07c00000,
+        .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
             },
         },
         .c_effect_slot = .init(20, 1),
@@ -1404,6 +1564,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // SETNIB {#}S
+    // EEEE 1000000 00I 000000000 SSSSSSSSS
+    .{
+        .mnemonic = "SETNIB",
+        .binary = 0x08000000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // {#}S
+                .slot = .init(0, 9),
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
     // GETNIB D, {#}S, #N
     // EEEE 100001N NNI DDDDDDDDD SSSSSSSSS
     .{
@@ -1422,6 +1595,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // #N
                 .slot = .init(19, 3),
                 .type = .{ .immediate = 0 },
+            },
+        },
+    },
+    // GETNIB D
+    // EEEE 1000010 000 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "GETNIB",
+        .binary = 0x08400000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1446,6 +1632,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // ROLNIB D
+    // EEEE 1000100 000 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ROLNIB",
+        .binary = 0x08800000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // SETBYTE D, {#}S, #N
     // EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS
     .{
@@ -1464,6 +1663,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // #N
                 .slot = .init(19, 2),
                 .type = .{ .immediate = 0 },
+            },
+        },
+    },
+    // SETBYTE {#}S
+    // EEEE 1000110 00I 000000000 SSSSSSSSS
+    .{
+        .mnemonic = "SETBYTE",
+        .binary = 0x08c00000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // {#}S
+                .slot = .init(0, 9),
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
             },
         },
     },
@@ -1488,6 +1700,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // GETBYTE D
+    // EEEE 1000111 000 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "GETBYTE",
+        .binary = 0x08e00000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // ROLBYTE D, {#}S, #N
     // EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS
     .{
@@ -1506,6 +1731,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // #N
                 .slot = .init(19, 2),
                 .type = .{ .immediate = 0 },
+            },
+        },
+    },
+    // ROLBYTE D
+    // EEEE 1001000 000 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ROLBYTE",
+        .binary = 0x09000000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1530,6 +1768,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // SETWORD {#}S
+    // EEEE 1001001 00I 000000000 SSSSSSSSS
+    .{
+        .mnemonic = "SETWORD",
+        .binary = 0x09200000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // {#}S
+                .slot = .init(0, 9),
+                .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
     // GETWORD D, {#}S, #N
     // EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS
     .{
@@ -1548,6 +1799,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // #N
                 .slot = .init(19, 1),
                 .type = .{ .immediate = 0 },
+            },
+        },
+    },
+    // GETWORD D
+    // EEEE 1001001 100 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "GETWORD",
+        .binary = 0x09300000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1572,6 +1836,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // ROLWORD D
+    // EEEE 1001010 000 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ROLWORD",
+        .binary = 0x09400000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // ALTSN D, {#}S
     // EEEE 1001010 10I DDDDDDDDD SSSSSSSSS
     .{
@@ -1586,6 +1863,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
+    // ALTSN D
+    // EEEE 1001010 101 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTSN",
+        .binary = 0x09540000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1606,6 +1896,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // ALTGN D
+    // EEEE 1001010 111 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTGN",
+        .binary = 0x095c0000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // ALTSB D, {#}S
     // EEEE 1001011 00I DDDDDDDDD SSSSSSSSS
     .{
@@ -1620,6 +1923,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
+    // ALTSB D
+    // EEEE 1001011 001 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTSB",
+        .binary = 0x09640000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1640,6 +1956,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // ALTGB D
+    // EEEE 1001011 011 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTGB",
+        .binary = 0x096c0000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // ALTSW D, {#}S
     // EEEE 1001011 10I DDDDDDDDD SSSSSSSSS
     .{
@@ -1654,6 +1983,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
+    // ALTSW D
+    // EEEE 1001011 101 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTSW",
+        .binary = 0x09740000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1674,6 +2016,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // ALTGW D
+    // EEEE 1001011 111 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTGW",
+        .binary = 0x097c0000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // ALTR D, {#}S
     // EEEE 1001100 00I DDDDDDDDD SSSSSSSSS
     .{
@@ -1688,6 +2043,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
+    // ALTR D
+    // EEEE 1001100 001 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTR",
+        .binary = 0x09840000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1708,6 +2076,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // ALTD D
+    // EEEE 1001100 011 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTD",
+        .binary = 0x098c0000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // ALTS D, {#}S
     // EEEE 1001100 10I DDDDDDDDD SSSSSSSSS
     .{
@@ -1722,6 +2103,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
+    // ALTS D
+    // EEEE 1001100 101 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTS",
+        .binary = 0x09940000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1742,6 +2136,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // ALTB D
+    // EEEE 1001100 111 DDDDDDDDD 000000000
+    .{
+        .mnemonic = "ALTB",
+        .binary = 0x099c0000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
+            },
+        },
+    },
     // ALTI D, {#}S
     // EEEE 1001101 00I DDDDDDDDD SSSSSSSSS
     .{
@@ -1756,6 +2163,19 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
+    // ALTI D
+    // EEEE 1001101 001 DDDDDDDDD 101100100
+    .{
+        .mnemonic = "ALTI",
+        .binary = 0x09a40164,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .type = .register,
             },
         },
     },
@@ -1827,6 +2247,20 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             },
         },
     },
+    // DECOD D
+    // EEEE 1001110 000 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "DECOD",
+        .binary = 0x09c00000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
+            },
+        },
+    },
     // BMASK D, {#}S
     // EEEE 1001110 01I DDDDDDDDD SSSSSSSSS
     .{
@@ -1841,6 +2275,20 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
             .{ // {#}S
                 .slot = .init(0, 9),
                 .type = .{ .reg_or_imm = .{ .imm = .init(18, 1), .pcrel = false } },
+            },
+        },
+    },
+    // BMASK D
+    // EEEE 1001110 010 DDDDDDDDD DDDDDDDDD
+    .{
+        .mnemonic = "BMASK",
+        .binary = 0x09c80000,
+        .effects = .from_list(&.{.none}),
+        .operands = &.{
+            .{ // D
+                .slot = .init(9, 9),
+                .copy_to = .init(0, 9),
+                .type = .register,
             },
         },
     },
@@ -3763,6 +4211,16 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
                 .type = .register,
             },
         },
+        .c_effect_slot = .init(20, 1),
+        .z_effect_slot = .init(19, 1),
+    },
+    // GETRND WC/WZ/WCZ
+    // EEEE 1101011 CZ1 000000000 000011011
+    .{
+        .mnemonic = "GETRND",
+        .binary = 0x0d64001b,
+        .effects = .from_list(&.{ .wc, .wcz, .wz }),
+        .operands = &.{},
         .c_effect_slot = .init(20, 1),
         .z_effect_slot = .init(19, 1),
     },

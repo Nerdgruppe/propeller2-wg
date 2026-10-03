@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_cannot_aug_operand
+//? err: err_cannot_aug_operand line 3
 JMP aug(1)

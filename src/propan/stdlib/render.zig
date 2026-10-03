@@ -158,6 +158,7 @@ const ValueFmt = struct {
             else
                 try writer.print("<code class=\"number dec\">{0}</code>", .{value}),
             .string => |value| try writer.print("<code class=\"string\">\"{f}\"</code>", .{std.zig.fmtString(value)}),
+            .sequence => |value| try writer.print("<code class=\"string\">{any}</code>", .{value}),
             .register => |value| try writer.print("<code class=\"register\">{f}</code>", .{value}),
             .enumerator => |value| try writer.print("<code class=\"enumerator\">#{s}</code>", .{value}),
             .pointer_expr => |value| try writer.print("<code>{f}</code>", .{value}),

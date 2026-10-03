@@ -19,6 +19,10 @@ pub const Value = struct {
         return .init(.{ .string = value }, .literal);
     }
 
+    pub fn sequence(value: []const i64) Value {
+        return .init(.{ .sequence = value }, .literal);
+    }
+
     pub fn address(value: TaggedAddress, usage: UsageHint) Value {
         return .init(.{ .address = value }, usage);
     }
@@ -70,6 +74,7 @@ pub const Value = struct {
     pub const Type = enum {
         int,
         string,
+        sequence,
         address,
         register,
         enumerator,
@@ -79,6 +84,7 @@ pub const Value = struct {
     pub const Payload = union(Type) {
         int: i64,
         string: []const u8,
+        sequence: []const i64,
         address: TaggedAddress,
         register: Register,
         enumerator: []const u8,
@@ -109,6 +115,7 @@ pub const Value = struct {
         switch (val.value) {
             .int => |v| try writer.print("{d}", .{v}),
             .string => |v| try writer.print("\"{f}\"", .{std.zig.fmtString(v)}),
+            .sequence => |v| try writer.print("{any}", .{v}),
             .address => |v| try writer.print("{f}", .{v}),
             .register => |v| try writer.print("{f}", .{v}),
             .enumerator => |v| try writer.print("#{s}", .{v}),
@@ -183,6 +190,8 @@ pub const TaggedAddress = struct {
     hub_address: ?u20,
     segment_id: Segment_ID,
     local: Local,
+    /// Byte position within a cog/LUT register; hub offsets use hub_address instead.
+    subreg_byte: u2 = 0,
 
     pub const Local = union(ExecMode) {
         /// The offset points into hub memory
@@ -220,6 +229,12 @@ pub const TaggedAddress = struct {
 
     pub fn init_cog(segment: Segment_ID, hub: ?u20, cog: u9) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .{ .cog = cog } };
+    }
+
+    pub fn with_subreg_byte(address: TaggedAddress, byte: u2) TaggedAddress {
+        var result = address;
+        result.subreg_byte = byte;
+        return result;
     }
 
     pub fn init_lut(segment: Segment_ID, hub: ?u20, lut: u9) TaggedAddress {

@@ -1,8 +1,8 @@
 //? PROPAN CHECK LIST
-//? err: err_operator_invalid_operand_type
-//? err: err_operator_invalid_operand_type
-//? err: err_operator_invalid_operand_type
-//? err: err_operator_invalid_operand_type
+//? err: err_operator_invalid_operand_type line 6 value_type==string
+//? err: err_operator_invalid_operand_type line 7 value_type==string
+//? err: err_operator_invalid_operand_type line 9 value_type==address
+//? err: err_operator_invalid_operand_type line 10 value_type==address
 .assert "a" == "a"
 .assert "a" + "b"
 target:

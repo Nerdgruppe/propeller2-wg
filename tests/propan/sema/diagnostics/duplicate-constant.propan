@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_duplicate_definition
+//? err: err_duplicate_definition line 4 name=="X"
 const X = 1
 const X = 2
 BYTE 1

@@ -199,6 +199,8 @@ const MY_CONSTANT = 10
 
 ### Unary Operators
 
+Builtin functions accept 32-bit words (−2³¹ through 2³²−1). Signed functions interpret the word as `i32`; floating-point functions interpret and return IEEE 754 binary32 bit patterns.
+
 | Propan      | PASM                    | Description                                        |
 |-------------|-------------------------|----------------------------------------------------|
 | `!`         | `!!`                    | Boolean: NOT (0 => TRUE, else => FALSE)            |
@@ -213,6 +215,10 @@ const MY_CONSTANT = 10
 | `fabs()`    | `FABS`                  | Floating-point absolute value (clears MSB)         |
 | `encod()`   | `ENCOD`                 | Encode MSB, 0..31                                  |
 | `decod()`   | `DECOD`                 | Decode, 1 << (x & $1F)                             |
+| `clz()`     | *n.a.*                  | Count leading zero bits, 0..32                     |
+| `ctz()`     | *n.a.*                  | Count trailing zero bits, 0..32                    |
+| `clo()`     | *n.a.*                  | Count leading one bits, 0..32                      |
+| `cto()`     | *n.a.*                  | Count trailing one bits, 0..32                     |
 | `bmask()`   | `BMASK`                 | Bitmask, (2 << (x & $1F)) - 1                      |
 | `popcnt()`  | `ONES`                  | Sum all '1' bits, 0..32                            |
 | `sqrt()`    | `SQRT`                  | Square root of unsigned value                      |
@@ -250,8 +256,10 @@ const MY_CONSTANT = 10
 | 3                | *n.a.*       | `+/`      | Divide and return quotient (unsigned)                  |
 | 3                | *n.a.*       | `//`      | Divide and return remainder (signed)                   |
 | 3                | `%`          | `+//`     | Divide and return remainder (unsigned)                 |
-| -                | `smin()`     | `#>`      | Limit minimum (signed)                                 |
-| -                | `smax()`     | `<#`      | Limit maximum (signed)                                 |
+| -                | `min()`      | `FLE`     | Unsigned minimum                                       |
+| -                | `max()`      | `FGE`     | Unsigned maximum                                       |
+| -                | `smin()`     | `<#`      | Signed minimum                                         |
+| -                | `smax()`     | `#>`      | Signed maximum                                         |
 | -                | `sar()`      | `SAR`     | Shift x right by y bits, insert MSB's                  |
 | -                | `ror()`      | `ROR`     | Rotate x right by y bits                               |
 | -                | `rol()`      | `ROL`     | Rotate x left by y bits                                |
@@ -271,8 +279,8 @@ const MY_CONSTANT = 10
 | -                | `fle()`      | `<=.`     | Floating-point less than or equal (returns 0 or -1)    |
 | -                | `==`         | `==.`     | Floating-point equal (returns 0 or -1)                 |
 | -                | `!=`         | `<>.`     | Floating-point not equal (returns 0 or -1)             |
-| -                | `fgt()`      | `>=.`     | Floating-point greater than or equal (returns 0 or -1) |
-| -                | `fge()`      | `>.`      | Floating-point greater than (returns 0 or -1)          |
+| -                | `fgt()`      | `>.`      | Floating-point greater than (returns 0 or -1)          |
+| -                | `fge()`      | `>=.`     | Floating-point greater than or equal (returns 0 or -1) |
 
 ### Ternary Operators
 

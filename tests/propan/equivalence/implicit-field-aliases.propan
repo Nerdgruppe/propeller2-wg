@@ -1,0 +1,29 @@
+// Aliases whose omitted operands are fixed by the instruction encoding.
+SETNIB src
+SETNIB &src
+GETNIB dst
+ROLNIB dst
+SETBYTE src
+SETBYTE &src
+GETBYTE dst
+ROLBYTE dst
+SETWORD src
+SETWORD &src
+GETWORD dst
+ROLWORD dst
+ALTSN dst
+ALTGN dst
+ALTSB dst
+ALTGB dst
+ALTSW dst
+ALTGW dst
+ALTR dst
+ALTD dst
+ALTS dst
+ALTB dst
+ALTI dst
+GETRND :wc
+GETRND :wz
+GETRND :wcz
+var dst: LONG 1
+var src: LONG 2

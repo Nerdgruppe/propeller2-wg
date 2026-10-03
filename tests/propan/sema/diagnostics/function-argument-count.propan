@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_argument_count_mismatch
-//? err: err_expression_evaluation_failed
+//? err: err_argument_count_mismatch line 4 subject=="pinrange" min==2 max==3 found==0
+//? err: err_expression_evaluation_failed line 4 context==expression reason==invalid_function_call
 LONG pinrange()

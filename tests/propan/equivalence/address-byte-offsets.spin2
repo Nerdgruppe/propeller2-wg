@@ -1,0 +1,77 @@
+DAT
+    ORG 0
+    JMP #0
+    JMP #$1FF
+    JMP #$200
+    JMP #$3FF
+    JMP #$400
+    JMP #\$3FF
+    CALL #$200
+    CALLA #$200
+    CALLB #$200
+    CALLD PA, #1000
+    CALLD PB, #1000
+    CALLD PTRA, #1000
+    CALLD PTRB, #1000
+    CALLD PA, #\1000
+
+    ORGH $1000
+    ORG $100
+cog_target
+    JMP #$100
+    JMP #cog_target
+    JMP #\$100
+    CALL #$200
+    CALLA #$200
+    CALLB #$200
+    CALLD PA, #1000
+    CALLD PB, #1000
+    CALLD PTRA, #1000
+    CALLD PTRB, #1000
+
+    ORG $200
+lut_target
+    JMP #$200
+    JMP #lut_target
+    JMP #0
+    JMP #$3FF
+    JMP #$400
+    JMP #\$200
+    CALL #0
+    CALLA #0
+    CALLB #0
+    CALLD PA, #0
+    CALLD PB, #0
+    CALLD PTRA, #0
+    CALLD PTRB, #0
+
+    ORGH $2000
+    JMP #$2000
+    JMP #$200
+    JMP #\$2000
+    CALL #$2100
+    CALLA #$2100
+    CALLB #$2100
+
+    ORGH $2100
+    ORG $100
+event_cog
+    JMP #$100
+    JINT #$100
+    JINT #event_cog
+    JINT PA
+
+    ORGH $2200
+    ORG $280
+event_lut
+    JMP #$280
+    JINT #$280
+    JINT #event_lut
+    JINT PA
+
+    ORGH $2300
+event_hub
+    JMP #$2300
+    JINT #$2300
+    JINT #event_hub
+    JINT PA

@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_address_has_no_hub_location
+//? err: err_address_has_no_hub_location line 6
 .regspace
 var target:
 .cogexec

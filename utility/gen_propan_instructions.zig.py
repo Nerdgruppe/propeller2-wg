@@ -68,7 +68,10 @@ def render_zig(stream: io.IOBase, instructions: list[Instruction]) -> None:
 
     for instr in instructions:
         stream.write(f"    // {instr.display_text}\n")
-        stream.write(f"    // {instr.encoding}\n")
+        encoding_text = str(instr.encoding)
+        if instr.copy_d_to_s:
+            encoding_text = encoding_text.replace("SSSSSSSSS", "DDDDDDDDD")
+        stream.write(f"    // {encoding_text}\n")
         stream.write("    .{\n")
 
         stream.write(f'        .mnemonic = "{instr.name}",\n')
@@ -99,6 +102,10 @@ def render_zig(stream: io.IOBase, instructions: list[Instruction]) -> None:
 
             stream.write(f"            .{{ // {OP_DISPLAY_TEXT[op]}\n")
             stream.write(f"                .slot = {newslot(op_slot)},\n")
+            if instr.copy_d_to_s:
+                stream.write(
+                    f"                .copy_to = {newslot(instr.encoding.fields[BitField.SOURCE])},\n"
+                )
             stream.write(f"                .type = {zig_op_type},\n")
             stream.write("            },\n")
         stream.write("        },\n")

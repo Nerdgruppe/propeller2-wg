@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_empty_character_literal_not_allowed
-//? err: err_empty_character_literal_not_allowed
+//? err: err_empty_character_literal_not_allowed line 4
+//? err: err_empty_character_literal_not_allowed line 5
 BYTE ''
 BYTE ''

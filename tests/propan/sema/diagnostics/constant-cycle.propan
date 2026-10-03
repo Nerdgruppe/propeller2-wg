@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed reason==cyclic_constant
+//? err: err_expression_evaluation_failed reason==cyclic_constant
+
+const A = B
+const B = A
+const SELF = SELF

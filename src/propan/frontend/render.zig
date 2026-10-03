@@ -73,6 +73,7 @@ pub fn pretty_print(writer: anytype, file: ast.File) !void {
 
 fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
     switch (expr) {
+        .current_pc => try writer.writeAll("$"),
         .integer => |int| {
             try writer.writeAll(int.source_text);
         },
@@ -85,6 +86,15 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
 
         .string => |str| {
             try writer.writeAll(str.source_text);
+        },
+
+        .sequence => |seq| {
+            try writer.writeAll("[");
+            for (seq.items, 0..) |item, i| {
+                if (i != 0) try writer.writeAll(", ");
+                try pretty_print_expr(writer, item);
+            }
+            try writer.writeAll("]");
         },
 
         .wrapped => |inner| {

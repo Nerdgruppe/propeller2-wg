@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_assertion_failed
+//? err: err_assertion_failed line 3 message=="Value(0, literal) is not equal to Value(1, literal)!"
 .assert @target == 1
 target:
 NOP

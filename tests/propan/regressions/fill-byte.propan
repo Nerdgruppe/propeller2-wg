@@ -1,2 +1,5 @@
 .hubexec 4
 BYTE 0xAA
+.align 8
+BYTE 0xBB
+LONG 0x11223344

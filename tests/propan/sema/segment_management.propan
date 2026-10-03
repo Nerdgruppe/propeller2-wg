@@ -7,6 +7,11 @@
 // emission of data afterwards will pad the skipped space
 .org ${addr}
 
+// checks that the current cog/LUT/register PC or hub/data byte address
+// does not exceed the limit; emits no data.
+.fit ${limit}
+.fit ${limit}, "size exceeded"
+
 // keeps current segment,
 // aligns PC forward such that it is divisible by ${size},
 // emission of data afterwards will pad the skipped space
@@ -38,10 +43,19 @@
 // will emit at hub address ${addr}.
 .cogexec ${addr}
 
+// starts a new cog segment at hub address ${addr} with PC = ${localstart}.
+// unlike .org, this does not emit padding.
+.cogexec ${addr}, ${localstart}
+.cogexec $, ${localstart} // starts at the current hub address
+
 // starts new segment,
 // switches mode into "lut exec" mode and sets PC = 0x200,
 // will emit at hub address ${addr}.
 .lutexec ${addr}
+
+// starts a new LUT segment with PC = ${localstart}, without padding.
+.lutexec ${addr}, ${localstart}
+.lutexec $, ${localstart}
 
 // starts new segment,
 // switches mode into "hub exec" mode and sets PC = ${addr},
@@ -52,6 +66,10 @@
 // switches into "reg space" mode, sets PC = 0x000
 // will not emit any data
 .regspace
+
+// starts a new register-space segment at ${localstart}, without padding.
+.regspace ${addr}, ${localstart}
+.regspace $, ${localstart}
 
 // starts new segment,
 // switches into "no code" mode, sets PC = invalid

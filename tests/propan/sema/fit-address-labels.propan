@@ -1,0 +1,34 @@
+//? PROPAN CHECK LIST
+//? seg: 0x100 4 lutexec
+//? seg: 0x104 4 lutexec
+//? seg: 0x108 0 regspace
+//? seg: 0x108 1 hubexec
+//? seg: 0x109 1 data
+
+.lutexec 0x100, 0x200
+lut_start:
+NOP
+.fit lut_end
+lut_end:
+
+.lutexec $, lut_start
+NOP
+.fit lut_end
+
+.regspace $, 0x1fe
+var reg_start:
+.reserve 1
+.regspace $, reg_start
+.reserve 1
+.fit 0x1ff
+
+.hubexec $
+.fit hub_end
+BYTE 1
+hub_end:
+.fit hub_end
+
+.data $
+BYTE 2
+data_end:
+.fit data_end

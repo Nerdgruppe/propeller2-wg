@@ -1,8 +1,8 @@
 //? PROPAN CHECK LIST
-//? err: err_unterminated_escape_sequence
-//? err: err_unterminated_escape_sequence
-//? err: err_unterminated_escape_sequence
-//? err: err_invalid_unicode_escape_format
+//? err: err_unterminated_escape_sequence line 6
+//? err: err_unterminated_escape_sequence line 7
+//? err: err_unterminated_escape_sequence line 9
+//? err: err_invalid_unicode_escape_format line 8
 BYTE "\x"
 BYTE "\u"
 BYTE "\u12"

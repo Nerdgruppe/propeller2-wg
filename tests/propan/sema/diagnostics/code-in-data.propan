@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_cannot_emit_code_in_this_segment
+//? err: err_cannot_emit_code_in_this_segment line 4
 .data
 ROR PTRA, 1
