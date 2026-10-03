@@ -1,0 +1,5 @@
+const VALUE = 7
+MOV dst, VALUE
+MOV dst, popcnt(7)
+MOV dst, &dst
+var dst: LONG 0

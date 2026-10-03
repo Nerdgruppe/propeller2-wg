@@ -36,3 +36,7 @@ Decision: attach the emitted kind and source mnemonic to each line record. The S
 ## Step 4 — self-contained instruction metadata
 
 Decision: each emitted instruction line now keeps its evaluated operands, rendered source operand syntax, source expression kind, condition, and effect. Operand syntax and variable-length evaluated values are owned by the returned `Module`; a regression test destroys parser storage and changes its source buffer before reading the metadata. This gives stage 5 readable source material without coupling the emitter to parser lifetime.
+
+## Step 5 — readable mnemonics and references, best effort
+
+Decision: emit real PASM2 mnemonics for long-aligned, single-word instructions when their operand encoding is an ordinary register or immediate and numeric values fit. Preserve conditions and WC/WZ/WCZ effects where FlexSpin round-trips them. Emit safe integer constants in `CON`, use stable sanitized label/constant names in operands, and substitute evaluated integers for function calls. Other instruction forms retain exact `LONG` opcodes with source-like mnemonic and operand comments, including evaluated function results. The fallback is necessary for relative branches, pointer forms, augment sequences, and packed instructions; exact bytes remain the first constraint. A dedicated fixture checks real mnemonic, label, constant, and function-result output.

@@ -48,9 +48,19 @@ fn emit_spin2(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modul
     var buffer: [4096]u8 = undefined;
     var writer = file.writer(io, &buffer);
     const out = &writer.interface;
+    for (modules) |module| {
+        for (module.constants, 0..) |constant, index| {
+            if (constant.value.value != .int) continue;
+            const value = constant.value.value.int;
+            if (value < std.math.minInt(i32) or value > std.math.maxInt(u32)) continue;
+            try out.writeAll("CON\n  ");
+            try emit_name(out, "const", constant.name, index);
+            try out.print(" = {d} ' {s}\n", .{ value, constant.name });
+        }
+    }
     try out.writeAll("DAT\n");
     var offset: usize = 0;
-    while (offset <= data.len) {
+    emit_loop: while (offset <= data.len) {
         for (modules) |module| {
             for (module.segments) |segment| {
                 if (segment.hub_offset == offset and offset < data.len)
@@ -58,17 +68,30 @@ fn emit_spin2(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modul
             }
             for (module.symbols, 0..) |symbol, index| {
                 if (symbol.label.hub_address) |hub| {
-                    if (hub == offset) try out.print("p2_label_{d} ' {s}\n", .{ index, symbol.name });
+                    if (hub == offset) {
+                        try emit_name(out, "label", symbol.name, index);
+                        try out.print(" ' {s}\n", .{symbol.name});
+                    }
                 }
             }
             for (module.line_data) |line| {
                 if (line.offset == offset and line.kind == .code and line.mnemonic != null)
-                    try out.print("  ' {s}\n", .{line.mnemonic.?});
+                    try emit_instruction_comment(out, line);
             }
         }
         if (offset == data.len) break;
 
         const kind = kinds[offset];
+        if (kind == .code) {
+            for (modules) |module| {
+                for (module.line_data) |line| {
+                    if (line.offset == offset and offset % 4 == 0 and try emit_readable_instruction(out, module, line)) {
+                        offset += 4;
+                        continue :emit_loop;
+                    }
+                }
+            }
+        }
         const width: usize = switch (kind) {
             .word => 2,
             .code, .long => 4,
@@ -107,6 +130,88 @@ fn emit_spin2(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modul
         try out.writeByte('\n');
     }
     try out.flush();
+}
+
+fn emit_instruction_comment(out: *std.Io.Writer, line: Module.LineData) !void {
+    try out.writeAll("  ' ");
+    if (line.condition) |condition| try out.print("{s} ", .{@tagName(condition.encode())});
+    try out.writeAll(line.mnemonic.?);
+    for (line.operands, 0..) |operand, index| {
+        try out.writeAll(if (index == 0) " " else ", ");
+        if (operand.source_kind == .function_call and operand.value.value == .int) {
+            if (operand.value.flags.usage == .literal) try out.writeByte('#');
+            try out.print("{d}", .{operand.value.value.int});
+        } else {
+            try out.writeAll(operand.syntax);
+        }
+    }
+    if (line.effect) |effect| try out.print(" {s}", .{@tagName(effect)});
+    try out.writeByte('\n');
+}
+
+fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.LineData) !bool {
+    if (line.kind != .code or line.length != 4 or line.mnemonic == null) return false;
+    if (line.condition) |condition| if (condition == .@"return") return false;
+    if (line.effect != null and line.operands.len == 0) return false;
+    if (line.effect) |effect| switch (effect) {
+        .wc, .wz, .wcz => {},
+        else => return false,
+    };
+    for (line.operands) |operand| {
+        if ((operand.encoding != .register and operand.encoding != .reg_or_imm) or operand.pcrel) return false;
+        if (operand.value.flags.augment or operand.value.flags.addressing != .auto) return false;
+        if (operand_number(operand) == null) return false;
+    }
+
+    try out.writeAll("  ");
+    if (line.condition) |condition| try out.print("{s} ", .{@tagName(condition.encode())});
+    try out.writeAll(line.mnemonic.?);
+    for (line.operands, 0..) |operand, index| {
+        try out.writeAll(if (index == 0) " " else ", ");
+        if (operand.value.flags.usage == .literal) try out.writeByte('#');
+        if (operand.source_kind == .symbol) {
+            for (module.constants, 0..) |constant, constant_index| {
+                if (std.ascii.eqlIgnoreCase(operand.syntax, constant.name) and constant.value.value == .int and constant.value.value.int >= std.math.minInt(i32) and constant.value.value.int <= std.math.maxInt(u32)) {
+                    try emit_name(out, "const", constant.name, constant_index);
+                    break;
+                }
+            } else {
+                for (module.symbols, 0..) |symbol, symbol_index| {
+                    if (std.ascii.eqlIgnoreCase(operand.syntax, symbol.name) and symbol.label.hub_address != null) {
+                        try emit_name(out, "label", symbol.name, symbol_index);
+                        break;
+                    }
+                } else {
+                    try out.print("${X}", .{operand_number(operand).?});
+                }
+            }
+        } else {
+            try out.print("${X}", .{operand_number(operand).?});
+        }
+    }
+    if (line.effect) |effect| try out.print(" {s}", .{@tagName(effect)});
+    try out.writeByte('\n');
+    return true;
+}
+
+fn emit_name(out: *std.Io.Writer, kind: []const u8, name: []const u8, index: usize) !void {
+    try out.print("p2_{s}_", .{kind});
+    for (name) |character| {
+        try out.writeByte(if (std.ascii.isAlphanumeric(character) or character == '_') character else '_');
+    }
+    try out.print("_{d}", .{index});
+}
+
+fn operand_number(operand: Module.LineData.Operand) ?u32 {
+    return switch (operand.value.value) {
+        .int => |value| if (value >= 0 and value <= 511) @intCast(value) else null,
+        .register => |value| @intFromEnum(value),
+        .address => |address| switch (address.local) {
+            .cog, .regspace => |value| value,
+            else => null,
+        },
+        else => null,
+    };
 }
 
 fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {

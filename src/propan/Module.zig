@@ -70,5 +70,9 @@ pub const LineData = struct {
         value: eval.Value,
         syntax: []const u8,
         source_kind: enum { symbol, function_call, other },
+        encoding: Encoding,
+        pcrel: bool = false,
+
+        pub const Encoding = enum { address, register, immediate, reg_or_imm, pointer_expr, pointer_reg, enumeration };
     };
 };

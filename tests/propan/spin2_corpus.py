@@ -28,7 +28,11 @@ def main():
             checked += 1
             emitted = run(propan, "--format=spin2", "-o", str(spin), str(source))
             compiled = run(flexspin, "-2", "-q", "-o", str(rebuilt), str(spin)) if emitted.returncode == 0 else emitted
-            if compiled.returncode or not rebuilt.exists() or flat.read_bytes() != rebuilt.read_bytes():
+            readable = True
+            if source.name == "spin2-readable.propan" and emitted.returncode == 0:
+                text = spin.read_text()
+                readable = "MOV p2_label_dst_0, #p2_const_VALUE_0" in text and "MOV p2_label_dst_0, #$3" in text
+            if compiled.returncode or not rebuilt.exists() or flat.read_bytes() != rebuilt.read_bytes() or not readable:
                 failures.append((source.relative_to(root), (emitted.stderr + compiled.stderr).decode(errors="replace")))
     print(f"Spin2 round-trip: {checked} accepted files, {len(failures)} failures")
     for source, error in failures:

@@ -831,6 +831,7 @@ const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests +
     "tests/propan/sema/file_source.propan",
     "tests/propan/sema/lut-mode.propan",
     "tests/propan/sema/string-emission.propan",
+    "tests/propan/sema/spin2-readable.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{

@@ -2005,8 +2005,9 @@ const Analyzer = struct {
             };
             if (mnemonic == .encoded) {
                 const operands = try segment_allocator.alloc(Module.LineData.Operand, instr.arguments.len);
-                for (operands, instr.arguments, instr.ast_node.arguments) |*operand, value, expression| {
+                for (operands, instr.arguments, instr.ast_node.arguments, instr.instruction.?.operands) |*operand, value, expression, encoded_operand| {
                     var rendered: std.Io.Writer.Allocating = .init(segment_allocator);
+                    defer rendered.deinit();
                     try frontend.render.pretty_print_expr(&rendered.writer, expression);
                     operand.* = .{
                         .value = value,
@@ -2015,6 +2016,19 @@ const Analyzer = struct {
                             .symbol => .symbol,
                             .function_call => .function_call,
                             else => .other,
+                        },
+                        .encoding = switch (encoded_operand.type) {
+                            .address => .address,
+                            .register => .register,
+                            .immediate => .immediate,
+                            .reg_or_imm => .reg_or_imm,
+                            .pointer_expr => .pointer_expr,
+                            .pointer_reg => .pointer_reg,
+                            .enumeration => .enumeration,
+                        },
+                        .pcrel = switch (encoded_operand.type) {
+                            .reg_or_imm => |meta| meta.pcrel,
+                            else => false,
                         },
                     };
                 }
