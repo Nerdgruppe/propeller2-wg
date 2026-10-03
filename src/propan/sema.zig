@@ -29,6 +29,7 @@ const PTRB: eval.Register = @enumFromInt(0x1F9);
 pub const AnalyzeOptions = struct {
     io: ?std.Io = null,
     fill_byte: u8 = 0x00,
+    rebind_scopes: bool = false,
     blank_pointer_expr: enum {
         as_ptr_epxr,
         as_register,
@@ -59,7 +60,8 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     var active_file = file;
     var condition_references: std.StringHashMapUnmanaged(void) = .empty;
-    if (has_conditional_directives(file)) {
+    // Rebind local scopes after imports have been spliced into one sequence.
+    if (has_conditional_directives(file) or options.rebind_scopes) {
         var probe: Analyzer = try .init(allocator, file, options, diagnostics_collection);
         defer probe.deinit();
         try probe.load_constants(stdlib.common.constants);

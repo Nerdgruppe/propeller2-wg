@@ -4,6 +4,7 @@ const ptk = @import("ptk");
 const ast = @import("ast.zig");
 const diagnostics = @import("../diagnostics.zig");
 const mode_directive = @import("../mode_directive.zig");
+const SourceFile = @import("../SourceFile.zig");
 
 const logger = std.log.scoped(.parser);
 
@@ -16,6 +17,10 @@ pub const Parser = struct {
             .tokenizer = .init(source_code, file_name),
             .diagnostics = diagnostics_collection,
         };
+    }
+
+    pub fn init_file(source: *const SourceFile, diagnostics_collection: *diagnostics.Collection) Parser {
+        return .init(source.text, source.path, diagnostics_collection);
     }
 
     pub fn parse(parser: *Parser, allocator: std.mem.Allocator) !ParsedFile {

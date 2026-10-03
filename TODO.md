@@ -19,21 +19,10 @@
 
 *empty*
 
+- File inclusion needs search path support.
+  - Easiest solution: `-I, --include-path <path>` to add search paths
+
 ## New Features
-
-### File Inclusion
-
-tl;dr: file inclusion is missing.
-
-Implement:
-`.import "<filepath>"` should behave as if the file was pasted at this location.
-This must invoke a "sub-parser". This is best implemented *before* semantic analysis, and
-just paste the AST nodes of `<filepath>` into the AST of the enclosing file.
-
-Files can be included multiple times unless they are declared `.import once`
-(not with a string but a identifier/word).
-
-Drop multi-file-support on the CLI (just plain reject it)
 
 ### `propan fmt`
 

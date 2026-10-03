@@ -231,7 +231,7 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
-    // Multi-file input is analyzed fully, then rejected without output.
+    // Multi-file input is rejected before either file is analyzed.
     {
         const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=flat");
@@ -240,8 +240,34 @@ pub fn build(b: *std.Build) void {
         run.addFileArg(b.path("tests/propan/regressions/multi-file-diagnostic.propan"));
         run.expectExitCode(1);
         run.expectStdOutEqual("");
-        run.expectStdErrMatch("second file analyzed");
-        run.expectStdErrMatch("multiple input files are not supported yet");
+        run.expectStdErrEqual("error: multiple input files are not supported\n");
+        test_step.dependOn(&run.step);
+    }
+
+    // Diagnostics in an imported file retain its path and source excerpt.
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=none");
+        run.addFileArg(b.path("tests/propan/sema/import-diagnostic-source.propan"));
+        run.expectExitCode(1);
+        run.expectStdErrMatch("fixtures/import-bad.propan:1:1: error");
+        run.expectStdErrMatch("UNKNOWN_MNEMONIC");
+        test_step.dependOn(&run.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=none");
+        run.addArg("--list-file=-");
+        run.addFileArg(b.path("tests/propan/sema/import-local-scope.propan"));
+        run.expectStdOutMatch("00004 | 001 | second:local");
+        test_step.dependOn(&run.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=json");
+        run.addArg("--output=-");
+        run.addFileArg(b.path("tests/propan/sema/import-basic.propan"));
+        run.expectStdOutMatch("fixtures/import-repeat.propan");
         test_step.dependOn(&run.step);
     }
 
@@ -708,6 +734,9 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/function-parameter-passed-twice.propan",
     "tests/propan/sema/diagnostics/function-missing-parameter.propan",
     "tests/propan/sema/diagnostics/builtin-functions.propan",
+    "tests/propan/sema/diagnostics/import-invalid.propan",
+    "tests/propan/sema/diagnostics/import-missing.propan",
+    "tests/propan/sema/diagnostics/import-cycle.propan",
     "tests/propan/sema/diagnostics/register-function-invalid.propan",
     "tests/propan/sema/diagnostics/alti-config-invalid.propan",
     "tests/propan/sema/diagnostics/alti-state-invalid.propan",
@@ -765,6 +794,10 @@ const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests +
     "tests/propan/sema/stdlib.propan",
     "tests/propan/sema/mixed-function-arguments.propan",
     "tests/propan/sema/register-offset-wrap.propan",
+    "tests/propan/sema/import-basic.propan",
+    "tests/propan/sema/import-file-relative.propan",
+    "tests/propan/sema/import-once-self.propan",
+    "tests/propan/sema/import-local-scope.propan",
     "tests/propan/sema/register-function.propan",
     "tests/propan/sema/ticks-large-duration.propan",
     "tests/propan/sema/integer-extremes.propan",

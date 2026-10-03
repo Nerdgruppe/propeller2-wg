@@ -5,20 +5,17 @@ const eval = @import("stdlib/eval.zig");
 const parser = @import("frontend/parser.zig");
 const emit = @import("emit.zig");
 const source_line = @import("source_line.zig");
+const SourceFile = @import("SourceFile.zig");
 
 pub const Collection = @This();
 
 arena: std.heap.ArenaAllocator,
 diagnostics: std.ArrayListUnmanaged(Diagnostic) = .empty,
-sources: std.StringArrayHashMapUnmanaged(Source) = .empty,
+sources: std.StringArrayHashMapUnmanaged(*const SourceFile) = .empty,
 
 pub const Diagnostic = struct {
     location: ?ast.Location,
     kind: Kind,
-};
-
-pub const Source = struct {
-    text: []const u8,
 };
 
 pub const RenderOptions = struct {
@@ -166,6 +163,9 @@ pub const Kind = union(enum) {
     err_cannot_emit_code_in_this_segment,
     err_cannot_emit_data_after_reserve_or_inside_regspace,
     err_cannot_read_file: PathReason,
+    err_cannot_read_import: PathReason,
+    err_import_cycle: struct { path: []const u8 },
+    err_import_requires_path_or_once,
     err_conditional_branch_after_else,
     err_conditional_directive_requires_plain_line,
     err_conditional_directive_without_if: Text,
@@ -220,7 +220,7 @@ pub const Kind = union(enum) {
     err_is_not_a_valid_enumerator: Key,
     err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope,
     err_missing_parameter_for_function: ParameterFunction,
-    err_multiple_input_files_are_not_supported_yet,
+    err_multiple_input_files_are_not_supported,
     err_numeric_value_out_of_range: NumericRange,
     err_operand_usage_mismatch: OperandUsage,
     err_operator_at_cannot_be_used_in_this_scope,
@@ -309,12 +309,15 @@ pub const Kind = union(enum) {
             .err_checklist_memory_length_mismatch_expected_got => |v| try writer.print("checklist memory length mismatch: expected {}, got {}", .{ v.expected, v.actual }),
             .err_checklist_memory_range_exceeds_assembled_output => try writer.print("checklist memory range exceeds assembled output", .{}),
             .err_checklist_memory_byte_mismatch => |v| try writer.print("checklist memory mismatch at 0x{X}: expected 0x{X:0>2}, got 0x{X:0>2}", .{ v.offset, v.expected, v.actual }),
-            .err_multiple_input_files_are_not_supported_yet => try writer.print("multiple input files are not supported yet", .{}),
+            .err_multiple_input_files_are_not_supported => try writer.print("multiple input files are not supported", .{}),
             .err_undefined_reference_to_symbol_at => |v| try writer.print("undefined reference to symbol {s} at {f}", .{ v.name, v.reference_location }),
             .err_unknown_mnemonic => |v| try writer.print("unknown mnemonic {s}", .{v.mnemonic}),
             .err_file_requires_one_string_literal_path => try writer.print("FILE requires one string literal path", .{}),
             .err_file_requires_file_i_o => try writer.print("FILE requires file I/O", .{}),
             .err_cannot_read_file => |v| try writer.print("cannot read FILE {s}: {s}", .{ v.path, @errorName(v.reason) }),
+            .err_cannot_read_import => |v| try writer.print("cannot read import {s}: {s}", .{ v.path, @errorName(v.reason) }),
+            .err_import_cycle => |v| try writer.print("import cycle involving {s}", .{v.path}),
+            .err_import_requires_path_or_once => try writer.writeAll(".import requires one string literal path or the word once"),
             .err_conditional_branch_after_else => try writer.writeAll("conditional branch after .else"),
             .err_conditional_directive_requires_plain_line => try writer.writeAll("conditional directive cannot have an instruction condition or effect"),
             .err_conditional_directive_without_if => |v| try writer.print("{s} has no matching .if", .{v.text}),
@@ -438,14 +441,23 @@ pub fn deinit(self: *Collection) void {
 
 pub fn register_source(self: *Collection, path: []const u8, source: []const u8) !void {
     const allocator = self.arena.allocator();
-    const gop = try self.sources.getOrPut(allocator, path);
+    const name = try allocator.dupe(u8, path);
+    const file = try allocator.create(SourceFile);
+    file.* = .{ .path = name, .identity = name, .text = source };
+    try self.register_source_file(file);
+}
 
-    if (!gop.found_existing)
-        gop.key_ptr.* = try allocator.dupe(u8, path);
+pub fn register_source_file(self: *Collection, source: *const SourceFile) !void {
+    const allocator = self.arena.allocator();
+    const gop = try self.sources.getOrPut(allocator, source.path);
+    if (!gop.found_existing) gop.key_ptr.* = try allocator.dupe(u8, source.path);
+    gop.value_ptr.* = source;
+}
 
-    gop.value_ptr.* = .{
-        .text = source,
-    };
+pub fn source_text(self: *const Collection, path: ?[]const u8) ?[]const u8 {
+    const name = path orelse return null;
+    const source = self.sources.get(name) orelse return null;
+    return source.text;
 }
 
 pub fn emit_diag(self: *Collection, location: ?ast.Location, diagnostic: Kind) !void {
@@ -568,7 +580,7 @@ test "collects diagnostics" {
     var collection: Collection = .init(std.testing.allocator);
     defer collection.deinit();
 
-    try collection.emit_diag(null, .err_multiple_input_files_are_not_supported_yet);
+    try collection.emit_diag(null, .err_multiple_input_files_are_not_supported);
     try collection.emit_diag(null, .warn_branch_into_data);
 
     try std.testing.expect(collection.has_errors());

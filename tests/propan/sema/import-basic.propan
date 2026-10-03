@@ -1,0 +1,9 @@
+//? PROPAN CHECK LIST
+//? mem: 0 <- u32 [1, 2, 3, 3, 5, 4, 6]
+LONG 1
+.import "fixtures/import-once.propan"
+.import "fixtures/import-once.propan"
+.import "fixtures/import-repeat.propan"
+.import "fixtures/import-repeat.propan"
+.import "fixtures/import-nested.propan"
+LONG 6

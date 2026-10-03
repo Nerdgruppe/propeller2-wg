@@ -1,0 +1,10 @@
+//? PROPAN CHECK LIST
+//? mem: 0 <- u32 [11, 11]
+first:
+.import "fixtures/import-local.propan"
+.assert hubaddr(.local) == 0
+second:
+.import "fixtures/import-local.propan"
+.assert hubaddr(.local) == 4
+.assert hubaddr(first) == 0
+.assert hubaddr(second) == 4
