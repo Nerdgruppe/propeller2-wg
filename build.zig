@@ -455,6 +455,11 @@ pub fn build(b: *std.Build) void {
         const loadp2_exe = p2dev_dep.artifact("loadp2");
         fb.installArtifact(loadp2_exe);
 
+        const spin2_corpus = b.addSystemCommand(&.{ "python3", "tests/propan/spin2_corpus.py" });
+        spin2_corpus.addArtifactArg(propan_exe);
+        spin2_corpus.addArtifactArg(flexspin);
+        test_step.dependOn(&spin2_corpus.step);
+
         // Propan Behaviour Tests
         {
             const parser_tests = make_sequencing_step(b, "parser tests");

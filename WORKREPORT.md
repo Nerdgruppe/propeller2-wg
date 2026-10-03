@@ -24,3 +24,7 @@ Also report all bugs encountered in propan into BUGREPORT.md with the typical sc
 ## Step 1 — byte-only Spin2 output
 
 Decision: `--format=spin2` writes `DAT` followed by `BYTE` rows of at most 16 hexadecimal values from the same merged image used by `--format=flat`. This guarantees identical content, including fill bytes, before introducing semantic rendering. FlexSpin accepts this form and emits a raw DAT binary.
+
+## Step 2 — semantic corpus round-trip
+
+Decision: discover every `.propan` file under `tests/propan`, then retain exactly those that assemble successfully to a flat binary without test-mode checklist handling. For each accepted file, compile the Spin2 output with `flexspin -2` and compare the resulting bytes to the flat image. This includes semantic and equivalence fixtures while naturally excluding parser-only and diagnostic fixtures that fail semantic analysis. A standalone script keeps this check runnable without modifying each existing test case.
