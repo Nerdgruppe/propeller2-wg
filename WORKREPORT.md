@@ -32,3 +32,7 @@ Decision: discover every `.propan` file under `tests/propan`, then retain exactl
 ## Step 3 — structured byte-exact emission
 
 Decision: attach the emitted kind and source mnemonic to each line record. The Spin2 writer now emits `LONG` opcode words for encoded instructions, typed `BYTE`/`WORD`/`LONG` data, explicit `BYTE` padding with a comment, segment comments, and stable exported `p2_label_N` aliases with original names in comments. Raw opcode words preserve augmentation order and unusual encodings exactly; source mnemonic comments keep them recognizable. The 119-file corpus still round-trips exactly.
+
+## Step 4 — self-contained instruction metadata
+
+Decision: each emitted instruction line now keeps its evaluated operands, rendered source operand syntax, source expression kind, condition, and effect. Operand syntax and variable-length evaluated values are owned by the returned `Module`; a regression test destroys parser storage and changes its source buffer before reading the metadata. This gives stage 5 readable source material without coupling the emitter to parser lifetime.

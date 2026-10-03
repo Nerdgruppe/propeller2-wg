@@ -61,6 +61,14 @@ pub const LineData = struct {
     pc: ?u32 = null,
     kind: Kind = .label,
     mnemonic: ?[]const u8 = null,
+    operands: []const Operand = &.{},
+    condition: ?ast.Condition = null,
+    effect: ?ast.Effect = null,
 
     pub const Kind = enum { label, code, byte, word, long, file };
+    pub const Operand = struct {
+        value: eval.Value,
+        syntax: []const u8,
+        source_kind: enum { symbol, function_call, other },
+    };
 };

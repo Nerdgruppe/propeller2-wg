@@ -187,6 +187,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     for (analyzer.line_data.items) |*line| {
         line.location = try copy_location(output_allocator, line.location);
         if (line.mnemonic) |name| line.mnemonic = try output_allocator.dupe(u8, name);
+        for (@constCast(line.operands)) |*operand| operand.value = try copy_value(output_allocator, operand.value);
     }
 
     return .{
@@ -1999,7 +2000,26 @@ const Analyzer = struct {
                     else => unreachable,
                 },
                 .mnemonic = if (mnemonic == .encoded) instr.ast_node.mnemonic else null,
+                .condition = if (instr.ast_node.condition) |condition| condition.type else null,
+                .effect = instr.ast_node.effect,
             };
+            if (mnemonic == .encoded) {
+                const operands = try segment_allocator.alloc(Module.LineData.Operand, instr.arguments.len);
+                for (operands, instr.arguments, instr.ast_node.arguments) |*operand, value, expression| {
+                    var rendered: std.Io.Writer.Allocating = .init(segment_allocator);
+                    try frontend.render.pretty_print_expr(&rendered.writer, expression);
+                    operand.* = .{
+                        .value = value,
+                        .syntax = try rendered.toOwnedSlice(),
+                        .source_kind = switch (expression) {
+                            .symbol => .symbol,
+                            .function_call => .function_call,
+                            else => .other,
+                        },
+                    };
+                }
+                line_info.operands = operands;
+            }
             defer line_info.length = @intCast((current_segment.hub_offset + current_segment.len()) - hub_offset);
 
             logger.debug("emit {s}", .{@tagName(mnemonic)});
