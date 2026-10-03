@@ -1,0 +1,53 @@
+DAT
+    NOT dst
+    NOT dst WC
+    NOT dst WZ
+    NOT dst WCZ
+
+    ABS dst
+    ABS dst WC
+    ABS dst WZ
+    ABS dst WCZ
+
+    NEG dst
+    NEG dst WC
+    NEG dst WZ
+    NEG dst WCZ
+
+    NEGC dst
+    NEGC dst WC
+    NEGC dst WZ
+    NEGC dst WCZ
+
+    NEGNC dst
+    NEGNC dst WC
+    NEGNC dst WZ
+    NEGNC dst WCZ
+
+    NEGZ dst
+    NEGZ dst WC
+    NEGZ dst WZ
+    NEGZ dst WCZ
+
+    NEGNZ dst
+    NEGNZ dst WC
+    NEGNZ dst WZ
+    NEGNZ dst WCZ
+
+    ENCOD dst
+    ENCOD dst WC
+    ENCOD dst WZ
+    ENCOD dst WCZ
+
+    ONES dst
+    ONES dst WC
+    ONES dst WZ
+    ONES dst WCZ
+
+    TEST dst WC
+    TEST dst WZ
+    TEST dst WCZ
+
+    DECOD dst
+    BMASK dst
+dst LONG 1

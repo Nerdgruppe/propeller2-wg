@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_expected_offset_of_type_but_got_type
+//? err: err_expected_offset_of_type_but_got_type line 6
 .data
 label:
 BYTE 1

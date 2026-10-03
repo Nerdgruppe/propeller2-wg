@@ -1,6 +1,6 @@
 //? PROPAN CHECK LIST
-//? err: err_expression_evaluation_failed
-//? err: err_operator_invalid_operand_type
+//? err: err_expression_evaluation_failed line 4 context==expression reason==divide_by_zero
+//? err: err_operator_invalid_operand_type line 5 value_type==string
 const X = 1 / 0
 const Y = "a" + "b"
 BYTE 1

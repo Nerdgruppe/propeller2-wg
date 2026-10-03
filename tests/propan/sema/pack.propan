@@ -1,0 +1,21 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == hex [11 22 33 44 55 00 66 77 88 00 99 AA BB CC DD EE]
+.cogexec
+.pack byte
+BYTE 0x11
+var second:
+WORD 0x3322
+var fourth:
+BYTE 0x44
+.assert cogaddr(second) == 0
+.assert byteoffset(second) == 1
+.assert byteoffset(fourth) == 3
+.assert wordoffset(fourth) == 1
+.pack word
+BYTE 0x55
+WORD 0x7766
+.pack long
+BYTE 0x88
+.pack off
+WORD 0xAA99
+LONG 0xEEDDCCBB

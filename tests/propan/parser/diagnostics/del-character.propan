@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_invalid_character_in_string_char_literal_0x_x_0_2
+//? err: err_invalid_character_in_string_char_literal_0x_x_0_2 line 3
 BYTE ""

@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_unaligned_cog_lut_instruction line 6
+.lutexec
+.pack word
+WORD 0
+NOP

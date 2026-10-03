@@ -1,3 +1,3 @@
 //? PROPAN CHECK LIST
-//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits
+//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits line 3 periods==6000000000
 LONG ticks(s=20, clk=300000000)

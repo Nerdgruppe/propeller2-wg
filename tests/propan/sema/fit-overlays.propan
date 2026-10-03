@@ -1,0 +1,34 @@
+//? PROPAN CHECK LIST
+//? sym: ovl_foo_start    code:4:1
+//? sym: ovl_foo_end      code:20:5
+//? sym: ovl_foo_variant1 code:24:1
+//? sym: ovl_foo_variant2 code:40:1
+//? seg:  0 24 cogexec
+//? seg: 24 16 cogexec
+//? seg: 40 16 cogexec
+
+.cogexec
+    NOP
+ovl_foo_start:
+    NOP
+    NOP
+    NOP
+    NOP
+ovl_foo_end:
+    NOP
+
+.cogexec $, ovl_foo_start
+ovl_foo_variant1:
+    NOP
+    NOP
+    NOP
+    NOP
+.fit ovl_foo_end
+
+.cogexec $, ovl_foo_start
+ovl_foo_variant2:
+    NOP
+    NOP
+    NOP
+    NOP
+.fit ovl_foo_end

@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_checklist_memory_length_mismatch_expected_got
+//? err: err_checklist_memory_length_mismatch_expected_got line 3 expected==0 actual==1
 //? mem: 0 == hex [ ]
 BYTE 1

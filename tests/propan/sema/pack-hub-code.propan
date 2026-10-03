@@ -1,0 +1,9 @@
+//? PROPAN CHECK LIST
+//? err: warn_unaligned_code line 7
+//? mem: 0x101 <- hex [AB 00 00 00 00 00 00 00 00]
+.hubexec 0x101
+.pack byte
+BYTE 0xAB
+NOP
+NOP
+.pack off

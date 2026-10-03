@@ -3,10 +3,14 @@ const std = @import("std");
 const frontend = @import("frontend.zig");
 const Module = @import("Module.zig");
 const eval = @import("stdlib/eval.zig");
+const source_lines = @import("source_line.zig");
+const SourceFile = @import("SourceFile.zig");
+const diagnostics = @import("diagnostics.zig");
+const mode_directive = @import("mode_directive.zig");
 
 pub const Input = struct {
-    path: []const u8,
-    source: []const u8,
+    source_file: *const SourceFile,
+    sources: ?*const diagnostics.Collection = null,
     ast_file: frontend.ast.File,
     module: Module,
 };
@@ -45,19 +49,27 @@ fn render_symbols(allocator: std.mem.Allocator, writer: *std.Io.Writer, inputs: 
     defer rows.deinit(allocator);
 
     for (inputs) |input| {
+        const used = try allocator.alloc(bool, input.module.symbols.len);
+        @memset(used, false);
+        var parent: ?[]const u8 = null;
         for (input.ast_file.sequence) |item| {
             switch (item) {
-                .empty, .instruction => {},
+                .empty => {},
+                .instruction => |instruction| {
+                    if (mode_directive.from_name(instruction.mnemonic) != null) parent = null;
+                },
 
                 .label => |label| {
-                    const symbol = find_label_symbol(input.module, label) orelse continue;
+                    const symbol = find_label_symbol_once(input.module, label, parent, used);
+                    if (label.identifier[0] != '.') parent = label.identifier;
+                    const matched = symbol orelse continue;
                     try rows.append(allocator, .{
-                        .kind = @tagName(symbol.label.local),
-                        .hub = if (symbol.label.hub_address) |hub| try format_hub(allocator, hub) else "-----",
-                        .pc = try format_pc(allocator, symbol.label.local),
-                        .name = symbol.name,
+                        .kind = @tagName(matched.label.local),
+                        .hub = if (matched.label.hub_address) |hub| try format_hub(allocator, hub) else "-----",
+                        .pc = try format_pc(allocator, matched.label.local),
+                        .name = matched.name,
                         .value = "",
-                        .source = source_line(input.source, label.location.line),
+                        .source = input_source_line(input, label.location),
                     });
                 },
 
@@ -69,7 +81,7 @@ fn render_symbols(allocator: std.mem.Allocator, writer: *std.Io.Writer, inputs: 
                         .pc = "---",
                         .name = value.name,
                         .value = try format_value(allocator, value.value),
-                        .source = source_line(input.source, constant.location.line),
+                        .source = input_source_line(input, constant.location),
                     });
                 },
             }
@@ -155,7 +167,7 @@ fn render_segment_body(
             .hub = try format_hub(allocator, line.offset),
             .pc = try format_segment_pc(allocator, segment, line.pc),
             .bytes = try format_bytes(allocator, segment, line),
-            .source = source_line(input.source, line.location.line),
+            .source = input_source_line(input, line.location),
         });
     }
 
@@ -218,13 +230,24 @@ fn find_symbol(module: Module, name: []const u8) ?Module.Symbol {
     return null;
 }
 
-fn find_label_symbol(module: Module, label: frontend.ast.Label) ?Module.Symbol {
-    for (module.symbols) |symbol| {
+fn find_label_symbol_once(module: Module, label: frontend.ast.Label, parent: ?[]const u8, used: []bool) ?Module.Symbol {
+    for (module.symbols, used) |symbol, *was_used| {
+        if (was_used.*) continue;
         if (symbol.source_location) |location| {
-            if (same_location(location, label.location)) return symbol;
+            if (!same_location(location, label.location)) continue;
         }
+        const matches = if (label.identifier[0] == '.' and parent != null)
+            std.mem.startsWith(u8, symbol.name, parent.?) and
+                symbol.name.len == parent.?.len + label.identifier.len and
+                symbol.name[parent.?.len] == ':' and
+                std.mem.eql(u8, symbol.name[parent.?.len + 1 ..], label.identifier[1..])
+        else
+            std.mem.eql(u8, symbol.name, label.identifier);
+        if (!matches) continue;
+        was_used.* = true;
+        return symbol;
     }
-    return find_symbol(module, label.identifier);
+    return null;
 }
 
 fn find_constant(module: Module, name: []const u8) ?Module.Constant {
@@ -240,24 +263,19 @@ fn line_belongs_to_segment(input: Input, line: Module.LineData, segment: Module.
     const end = start + @as(u32, @intCast(segment.data.len));
 
     if (line.length == 0) {
-        const label = label_at(input.ast_file, line.location) orelse return line.offset >= start and line.offset <= end;
-        const symbol = find_label_symbol(input.module, label) orelse return false;
-        return symbol.label.segment_id == segment.id;
+        var found_label = false;
+        for (input.module.symbols) |symbol| {
+            const location = symbol.source_location orelse continue;
+            if (!same_location(location, line.location)) continue;
+            found_label = true;
+            if (symbol.label.segment_id == segment.id and
+                (symbol.label.hub_address == null or symbol.label.hub_address.? == line.offset)) return true;
+        }
+        if (found_label) return false;
+        return line.offset >= start and line.offset <= end;
     }
 
     return line.offset >= start and line.offset < end;
-}
-
-fn label_at(file: frontend.ast.File, location: frontend.ast.Location) ?frontend.ast.Label {
-    for (file.sequence) |item| {
-        if (item != .label)
-            continue;
-
-        const label = item.label;
-        if (same_location(label.location, location))
-            return label;
-    }
-    return null;
 }
 
 fn same_location(lhs: frontend.ast.Location, rhs: frontend.ast.Location) bool {
@@ -271,22 +289,15 @@ fn same_location(lhs: frontend.ast.Location, rhs: frontend.ast.Location) bool {
 }
 
 fn source_line(source: []const u8, one_based_line: u32) []const u8 {
-    if (one_based_line == 0)
-        return "";
+    return source_lines.get(source, one_based_line) orelse "";
+}
 
-    var start: usize = 0;
-    var current_line: u32 = 1;
-
-    while (current_line < one_based_line) : (current_line += 1) {
-        const newline = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse return "";
-        start = newline + 1;
-    }
-
-    var end = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse source.len;
-    if (end > start and source[end - 1] == '\r')
-        end -= 1;
-
-    return source[start..end];
+fn input_source_line(input: Input, location: frontend.ast.Location) []const u8 {
+    const source = if (input.sources) |sources|
+        sources.source_text(location.source) orelse input.source_file.text
+    else
+        input.source_file.text;
+    return source_line(source, location.line);
 }
 
 fn format_exec_mode(allocator: std.mem.Allocator, mode: eval.ExecMode) ![]const u8 {
@@ -319,6 +330,7 @@ fn format_value(allocator: std.mem.Allocator, value: eval.Value) ![]const u8 {
     switch (value.value) {
         .int => |int| try output.writer.print("{d}", .{int}),
         .string => |string| try output.writer.print("\"{f}\"", .{std.zig.fmtString(string)}),
+        .sequence => |items| try output.writer.print("{any}", .{items}),
         .address => |address| try output.writer.print("{f}", .{address}),
         .register => |register| try output.writer.print("{f}", .{register}),
         .enumerator => |enumerator| try output.writer.print("#{s}", .{enumerator}),
@@ -452,8 +464,7 @@ test "render list file with symbols and segment body" {
 
     try render(&output.writer, &.{
         .{
-            .path = path,
-            .source = source,
+            .source_file = &.{ .path = path, .identity = path, .text = source },
             .ast_file = ast_file,
             .module = module,
         },

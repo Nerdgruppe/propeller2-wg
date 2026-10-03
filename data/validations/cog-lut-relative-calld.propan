@@ -1,0 +1,46 @@
+// A relative CALLD works from cog $1EE to LUT $200 and back to cog $1EF.
+// Output: 1 = both branches worked; 0 = execution returned with a wrong result.
+// Run: python3 utility/p2aas-run.py data/validations/cog-lut-relative-calld.propan
+
+const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART_CFG = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+const TX_PIN = 62
+
+.cogexec 0
+        HUBSET aug(CLOCK_MODE)
+        WRPIN P_TT_01 | P_ASYNC_TX, TX_PIN
+        WXPIN aug(UART_CFG), TX_PIN
+        DIRH TX_PIN
+        WAITX aug(20_000_000)
+
+        MOV result, 0
+        SETQ2 1
+        RDLONG *lut_entry, aug(hubaddr(lut_entry))
+        JMP cog_to_lut
+returned:
+        MOV PA, '0'
+        CMP result, 7 :wz
+if(Z)   MOV PA, '1'
+        CALL write_byte
+.halt:  JMP .halt
+
+write_byte:
+        WYPIN PA, TX_PIN
+        WAITX 1
+.wait:  TESTP TX_PIN :wc
+if(!C)  JMP .wait
+        RET
+
+var result: LONG 0
+
+// Keep these addresses within the signed 9-bit CALLD displacement range.
+.org 0x1EE
+cog_to_lut:
+        CALLD PA, lut_entry
+cog_return:
+        JMP nrel(returned)
+
+.lutexec
+lut_entry:
+        MOV result, 7
+        CALLD PB, cog_return

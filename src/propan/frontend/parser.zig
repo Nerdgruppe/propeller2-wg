@@ -3,6 +3,8 @@ const ptk = @import("ptk");
 
 const ast = @import("ast.zig");
 const diagnostics = @import("../diagnostics.zig");
+const mode_directive = @import("../mode_directive.zig");
+const SourceFile = @import("../SourceFile.zig");
 
 const logger = std.log.scoped(.parser);
 
@@ -15,6 +17,10 @@ pub const Parser = struct {
             .tokenizer = .init(source_code, file_name),
             .diagnostics = diagnostics_collection,
         };
+    }
+
+    pub fn init_file(source: *const SourceFile, diagnostics_collection: *diagnostics.Collection) Parser {
+        return .init(source.text, source.path, diagnostics_collection);
     }
 
     pub fn parse(parser: *Parser, allocator: std.mem.Allocator) !ParsedFile {
@@ -69,11 +75,7 @@ pub const Parser = struct {
         }
 
         fn ends_local_scope(name: []const u8) bool {
-            return std.ascii.eqlIgnoreCase(name, ".cogexec") or
-                std.ascii.eqlIgnoreCase(name, ".lutexec") or
-                std.ascii.eqlIgnoreCase(name, ".hubexec") or
-                std.ascii.eqlIgnoreCase(name, ".regspace") or
-                std.ascii.eqlIgnoreCase(name, ".data");
+            return mode_directive.from_name(name) != null;
         }
 
         fn emit_fatal_error(core: *Core, location: ptk.Location, diagnostic: diagnostics.Kind) error{ OutOfMemory, SyntaxError } {
@@ -376,15 +378,18 @@ pub const Parser = struct {
 
         fn accept_value_expression(core: *Core) AcceptExprError!ast.Expression {
             const which, const token = try core.accept_any(&.{
+                .@"$",
                 .integer,
                 .identifier,
                 .char_literal,
                 .string_literal,
                 .enumerator,
                 .@"(",
+                .@"[",
             });
 
             switch (which) {
+                .@"$" => return .{ .current_pc = token.location },
                 .@"(" => {
                     const whitespace = core.push_ignore_whitespace();
                     defer whitespace.pop();
@@ -396,6 +401,22 @@ pub const Parser = struct {
                     return .{
                         .wrapped = try core.move_to_heap(ast.Expression, value),
                     };
+                },
+                .@"[" => {
+                    const whitespace = core.push_ignore_whitespace();
+                    defer whitespace.pop();
+
+                    var items: std.ArrayListUnmanaged(ast.Expression) = .empty;
+                    defer items.deinit(core.arena);
+                    if (core.accept_one(.@"]")) |_| {} else |_| {
+                        while (true) {
+                            try items.append(core.arena, try core.accept_expression());
+                            const terminator, _ = try core.accept_any(&.{ .@",", .@"]" });
+                            if (terminator == .@"]") break;
+                            if (core.accept_one(.@"]")) |_| break else |_| {}
+                        }
+                    }
+                    return .{ .sequence = .{ .location = token.location, .items = try items.toOwnedSlice(core.arena) } };
                 },
 
                 .integer => return .{
@@ -918,6 +939,7 @@ pub const TokenType = enum {
 
     // symbols
     @"=",
+    @"$",
     @"(",
     @")",
     @"[",
@@ -1062,6 +1084,7 @@ const patterns = struct {
         .create(.@"--", match.literal("--")),
 
         .create(.@"<", match.literal("<")),
+        .create(.@"$", match.literal("$")),
         .create(.@">", match.literal(">")),
         .create(.@"|", match.literal("|")),
         .create(.@"^", match.literal("^")),

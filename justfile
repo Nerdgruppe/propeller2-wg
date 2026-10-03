@@ -10,7 +10,10 @@ build:
         -freference-trace=10 \
         --prominent-compile-errors \
         install \
-        test 
+        test
+
+test:
+    {{zig}} build install test -Dwith-flexspin 
 
 # Regenerates src/windtunnel/sim/{encoding,decode}.zig files
 update-windtunnel:
@@ -46,3 +49,9 @@ setup-venv:
     uv pip install -r tools/requirements.txt
     uv pip install -r tools/dev-requirements.txt
     realpath tools > .venv/lib/$(python -c 'import sys; print(f"python{sys.version_info.major}.{sys.version_info.minor}")')/site-packages/nerdgruppe.pth
+
+
+eval-pasm:
+    mkdir -p .tmp
+    flexspin -Wall -2 -o .tmp/test.bin -l .tmp/test.spin2
+    cat .tmp/test.lst

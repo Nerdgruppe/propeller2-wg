@@ -94,6 +94,7 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
     defer writer.pop();
 
     switch (expr) {
+        .current_pc => try writer.writeAll("current PC: $\n"),
         .integer => |int| {
             try writer.print("integer: {d} \"{f}\"\n", .{ int.value, std.zig.fmtString(int.source_text) });
         },
@@ -106,6 +107,11 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
 
         .string => |str| {
             try writer.print("string: \"{f}\" \"{f}\"\n", .{ std.zig.fmtString(str.value), std.zig.fmtString(str.source_text) });
+        },
+
+        .sequence => |seq| {
+            try writer.writeAll("sequence\n");
+            for (seq.items) |item| try pretty_print_expr(writer, item);
         },
 
         .wrapped => |inner| {

@@ -1,0 +1,20 @@
+//? PROPAN CHECK LIST
+//? err: err_expected_value_type line 7 subject==".if" expected==int actual==string
+//? err: err_expression_evaluation_failed line 10 context==expression reason==undefined_symbol
+//? err: err_expression_evaluation_failed line 13 context==expression reason==invalid_argument
+//? err: err_expression_evaluation_failed line 17 context==expression reason==undefined_symbol
+
+.if "yes"
+    LONG 1
+.endif
+.if LATER
+    LONG 2
+.endif
+.if $
+    LONG 3
+.endif
+earlier_label:
+.if earlier_label
+    LONG 4
+.endif
+const LATER = 1

@@ -4,20 +4,18 @@ const ast = @import("frontend/ast.zig");
 const eval = @import("stdlib/eval.zig");
 const parser = @import("frontend/parser.zig");
 const emit = @import("emit.zig");
+const source_line = @import("source_line.zig");
+const SourceFile = @import("SourceFile.zig");
 
 pub const Collection = @This();
 
 arena: std.heap.ArenaAllocator,
 diagnostics: std.ArrayListUnmanaged(Diagnostic) = .empty,
-sources: std.StringArrayHashMapUnmanaged(Source) = .empty,
+sources: std.StringArrayHashMapUnmanaged(*const SourceFile) = .empty,
 
 pub const Diagnostic = struct {
     location: ?ast.Location,
     kind: Kind,
-};
-
-pub const Source = struct {
-    text: []const u8,
 };
 
 pub const RenderOptions = struct {
@@ -44,6 +42,8 @@ pub const EvaluationFailure = enum {
     divide_by_zero,
     invalid_argument,
     type_mismatch,
+    cyclic_constant,
+    constant_needs_label_during_layout,
 
     fn text(reason: EvaluationFailure) []const u8 {
         return switch (reason) {
@@ -54,6 +54,8 @@ pub const EvaluationFailure = enum {
             .divide_by_zero => "division by zero",
             .invalid_argument => "invalid argument",
             .type_mismatch => "type mismatch",
+            .cyclic_constant => "cyclic constant dependency",
+            .constant_needs_label_during_layout => "constant depends on a label during layout",
         };
     }
 };
@@ -91,6 +93,7 @@ pub const MnemonicFound = struct { mnemonic: []const u8, found: usize };
 pub const Message = struct { message: []const u8 };
 pub const Count = struct { count: usize };
 pub const CodeExpectedActual = struct { code: []const u8, expected: usize, actual: usize };
+pub const DiagnosticCheck = struct { check: []const u8 };
 pub const MnemonicEffect = struct { mnemonic: []const u8, effect: ast.Effect };
 pub const Key = struct { key: []const u8 };
 pub const LeftRightStart = struct { left: u32, right: u32, start: u32 };
@@ -111,6 +114,22 @@ pub const ParameterAlreadyPassed = struct { parameter: []const u8, function: []c
 pub const EvaluationContext = enum { expression, alignment };
 pub const EvaluationFailureContext = struct { context: EvaluationContext, reason: EvaluationFailure };
 pub const DirectiveMode = struct { directive: []const u8, mode: eval.ExecMode };
+pub const AddressSpaceMismatch = struct {
+    subject: []const u8,
+    expected: std.enums.EnumSet(eval.ExecMode),
+    actual: std.enums.EnumSet(eval.ExecMode),
+};
+
+fn write_exec_modes(writer: *std.Io.Writer, modes: std.enums.EnumSet(eval.ExecMode)) !void {
+    const total = modes.count();
+    std.debug.assert(total > 0);
+    var iter = modes.iterator();
+    var index: usize = 0;
+    while (iter.next()) |mode| : (index += 1) {
+        if (index > 0) try writer.writeAll(if (index + 1 == total) (if (total == 2) " or " else ", or ") else ", ");
+        try writer.print("{t}", .{mode});
+    }
+}
 pub const OperandUsage = struct { expected: enum { immediate, register }, actual: enum { immediate, register } };
 pub const OperatorNoEffect = struct { operator: ast.UnaryOperator, label: enum { code, data } };
 pub const FunctionValueType = struct { function: AddressFunction, value_type: eval.Value.Type };
@@ -132,6 +151,7 @@ pub const Kind = union(enum) {
     err_address_has_no_execution_pc,
     err_address_has_no_hub_location: MissingHubAddress,
     err_address_outside_space: AddressRange,
+    err_address_space_mismatch: AddressSpaceMismatch,
     err_align_references_label,
     err_align_value_must_be_a_nonzero_power_of_two: Value,
     err_ambigious_instruction_selection_for: Mnemonic,
@@ -143,10 +163,21 @@ pub const Kind = union(enum) {
     err_cannot_emit_code_in_this_segment,
     err_cannot_emit_data_after_reserve_or_inside_regspace,
     err_cannot_read_file: PathReason,
+    err_cannot_read_import: PathReason,
+    err_cannot_open_include_path: PathReason,
+    err_import_cycle: struct { path: []const u8 },
+    err_import_requires_path_or_once,
+    err_conditional_branch_after_else,
+    err_conditional_directive_requires_plain_line,
+    err_conditional_directive_without_if: Text,
     err_cannot_write_operand_integer_overflow,
+    err_array_length_requires_layout_known,
+    err_array_output_too_large,
+    err_invalid_utf8_string,
     err_canont_use_the_effect_operator: MnemonicEffect,
     err_character_literal_contains_more_than_one_character,
     err_checklist_diagnostic_count_mismatch: CodeExpectedActual,
+    err_checklist_diagnostic_does_not_match: DiagnosticCheck,
     err_checklist_err_requires_one_diagnostic_code,
     err_checklist_hex_bytes_require_pairs_of_digits,
     err_checklist_mem_requires_address_comparison_format_and,
@@ -160,6 +191,7 @@ pub const Kind = union(enum) {
     err_checklist_whole_memory_comparison_must_start_at_zero,
     err_constant_requires_integer_not_offset: Name,
     err_constants_cannot_store_pointer_expression,
+    err_current_pc_unavailable,
     err_directive_invalid_in_mode: DirectiveMode,
     err_duplicate_definition: DuplicateDefinition,
     err_empty_character_literal_not_allowed,
@@ -173,7 +205,11 @@ pub const Kind = union(enum) {
     err_instruction_operand_count_unmatched: MnemonicFound,
     err_integer_overflow_does_not_fit_into_a_i64: Text,
     err_invalid_character_in_string_char_literal_0x_x_0_2: Character,
+    err_invalid_pack_mode,
+    err_invalid_pic_mode,
+    err_unaligned_cog_lut_instruction,
     err_invalid_checklist_diagnostic_code: Token,
+    err_invalid_checklist_diagnostic_constraint: Token,
     err_invalid_checklist_hex_byte,
     err_invalid_checklist_memory_address,
     err_invalid_checklist_memory_comparison,
@@ -185,7 +221,7 @@ pub const Kind = union(enum) {
     err_is_not_a_valid_enumerator: Key,
     err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope,
     err_missing_parameter_for_function: ParameterFunction,
-    err_multiple_input_files_are_not_supported_yet,
+    err_multiple_input_files_are_not_supported,
     err_numeric_value_out_of_range: NumericRange,
     err_operand_usage_mismatch: OperandUsage,
     err_operator_at_cannot_be_used_in_this_scope,
@@ -193,6 +229,7 @@ pub const Kind = union(enum) {
     err_operator_invalid_operand_types: OperatorLhsTypeRhsType,
     err_org_cannot_move_pc_backward,
     err_parameter_already_passed: ParameterAlreadyPassed,
+    err_pic_requires_relative_address,
     err_pins_and_are_not_in_the_same_pin_group: StartEnd,
     err_pointer_modifier_already_set: PointerModifier,
     err_positional_after_named_argument,
@@ -211,12 +248,16 @@ pub const Kind = union(enum) {
     err_unrecognized_token: TokenType,
     err_syntax_error: Text,
     err_unterminated_checklist_memory_block,
+    err_unterminated_conditional_if,
     err_unterminated_escape_sequence,
     err_usage_cannot_emit_to_stdio: Format,
     err_usage_missing_input_files,
     warn_address_function_expected_offset: FunctionValueType,
+    warn_alti_state_segment_mismatch,
     warn_branch_into_data,
     warn_emitted_padding_byte_s: Count,
+    warn_zero_repetition,
+    warn_unaligned_code,
     warn_integer_was_truncated_to_bits_expected_emitted: BitsExpectedEmitted,
     warn_invalid_escape_sequence: Character,
     warn_jump_between_exec_modes: SourceModeTargetMode,
@@ -244,7 +285,9 @@ pub const Kind = union(enum) {
         switch (self) {
             .err_checklist_err_requires_one_diagnostic_code => try writer.writeAll("checklist err requires one diagnostic code"),
             .err_invalid_checklist_diagnostic_code => |v| try writer.print("invalid checklist diagnostic code '{s}'", .{v.token}),
+            .err_invalid_checklist_diagnostic_constraint => |v| try writer.print("invalid checklist diagnostic constraint '{s}'", .{v.token}),
             .err_checklist_diagnostic_count_mismatch => |v| try writer.print("checklist diagnostic {s}: expected {}, got {}", .{ v.code, v.expected, v.actual }),
+            .err_checklist_diagnostic_does_not_match => |v| try writer.print("checklist diagnostic did not match: {s}", .{v.check}),
             .err_checklist_sym_requires_a_name_and_type_hub_local => try writer.print("checklist sym requires a name and type:hub[:local]", .{}),
             .err_invalid_checklist_symbol_specification => try writer.print("invalid checklist symbol specification", .{}),
             .err_invalid_checklist_segment_specification => try writer.print("invalid checklist segment specification", .{}),
@@ -254,6 +297,7 @@ pub const Kind = union(enum) {
             .err_invalid_checklist_memory_format => try writer.print("invalid checklist memory format", .{}),
             .err_unknown_checklist_check => |v| try writer.print("unknown checklist check '{s}'", .{v.check}),
             .err_unterminated_checklist_memory_block => try writer.print("unterminated checklist memory block", .{}),
+            .err_unterminated_conditional_if => try writer.writeAll(".if has no matching .endif"),
             .err_text_after_checklist_memory_block => try writer.print("text after checklist memory block", .{}),
             .err_unexpected_in_checklist_memory_block => try writer.print("unexpected '[' in checklist memory block", .{}),
             .err_checklist_hex_bytes_require_pairs_of_digits => try writer.print("checklist hex bytes require pairs of digits", .{}),
@@ -266,30 +310,54 @@ pub const Kind = union(enum) {
             .err_checklist_memory_length_mismatch_expected_got => |v| try writer.print("checklist memory length mismatch: expected {}, got {}", .{ v.expected, v.actual }),
             .err_checklist_memory_range_exceeds_assembled_output => try writer.print("checklist memory range exceeds assembled output", .{}),
             .err_checklist_memory_byte_mismatch => |v| try writer.print("checklist memory mismatch at 0x{X}: expected 0x{X:0>2}, got 0x{X:0>2}", .{ v.offset, v.expected, v.actual }),
-            .err_multiple_input_files_are_not_supported_yet => try writer.print("multiple input files are not supported yet", .{}),
+            .err_multiple_input_files_are_not_supported => try writer.print("multiple input files are not supported", .{}),
             .err_undefined_reference_to_symbol_at => |v| try writer.print("undefined reference to symbol {s} at {f}", .{ v.name, v.reference_location }),
             .err_unknown_mnemonic => |v| try writer.print("unknown mnemonic {s}", .{v.mnemonic}),
             .err_file_requires_one_string_literal_path => try writer.print("FILE requires one string literal path", .{}),
             .err_file_requires_file_i_o => try writer.print("FILE requires file I/O", .{}),
-            .err_cannot_read_file => |v| try writer.print("cannot read FILE {s}: {s}", .{ v.path, @errorName(v.reason) }),
+            .err_cannot_read_file => |v| try writer.print("cannot read FILE {s}: {t}", .{ v.path, v.reason }),
+            .err_cannot_read_import => |v| try writer.print("cannot read import {s}: {t}", .{ v.path, v.reason }),
+            .err_cannot_open_include_path => |v| try writer.print("cannot open include path {s}: {t}", .{ v.path, v.reason }),
+            .err_import_cycle => |v| try writer.print("import cycle involving {s}", .{v.path}),
+            .err_import_requires_path_or_once => try writer.writeAll(".import requires one string literal path or the word once"),
+            .err_conditional_branch_after_else => try writer.writeAll("conditional branch after .else"),
+            .err_conditional_directive_requires_plain_line => try writer.writeAll("conditional directive cannot have an instruction condition or effect"),
+            .err_conditional_directive_without_if => |v| try writer.print("{s} has no matching .if", .{v.text}),
+            .err_array_length_requires_layout_known => try writer.writeAll("array length must be known during layout"),
+            .err_array_output_too_large => try writer.writeAll("array output exceeds the 512 KiB hub address space"),
+            .err_invalid_utf8_string => try writer.writeAll("utf16/utf32 requires a valid UTF-8 string"),
             .err_unknown_function => |v| try writer.print("unknown function {s}", .{v.function}),
             .err_align_value_must_be_a_nonzero_power_of_two => |v| try writer.print(".align value {} must be a nonzero power of two.", .{v.value}),
             .err_align_references_label => try writer.print(".align value could not be evaluated: cannot refer to labels in .align", .{}),
+            .err_invalid_pack_mode => try writer.writeAll(".pack expects off, byte, word, or long"),
+            .err_invalid_pic_mode => try writer.writeAll(".pic expects default, prefer, avoid, or force"),
+            .err_pic_requires_relative_address => try writer.writeAll(".pic force forbids absolute branch addressing"),
+            .err_unaligned_cog_lut_instruction => try writer.writeAll("instruction is not long-aligned in cog/lut mode"),
             .err_org_cannot_move_pc_backward => try writer.print(".org cannot move PC backward", .{}),
             .err_cannot_emit_data_after_reserve_or_inside_regspace => try writer.print("cannot emit data after .reserve or inside .regspace", .{}),
             .err_cannot_emit_code_in_this_segment => try writer.print("cannot emit code in this segment", .{}),
-            .err_requires_an_integer_known_during_layout => |v| try writer.print("{s} requires an integer known during layout: {s}", .{ v.name, @errorName(v.reason) }),
+            .err_requires_an_integer_known_during_layout => |v| {
+                try writer.print("{s} requires an integer known during layout: ", .{v.name});
+                if (v.reason == error.ConstantNeedsLabelDuringLayout)
+                    try writer.writeAll("constant depends on a label")
+                else
+                    try writer.print("{t}", .{v.reason});
+            },
             .warn_symbol_has_no_references => |v| try writer.print("symbol {s} has no references", .{v.name}),
             .err_constant_requires_integer_not_offset => |v| try writer.print("constant {s} evaluated to memory offset, but expected integer. Use hubaddr() or cogaddr() to resolve the value.", .{v.name}),
             .err_constants_cannot_store_pointer_expression => try writer.print("constants cannot store pointer expression.", .{}),
+            .err_current_pc_unavailable => try writer.writeAll("$ requires a current instruction address"),
             .err_instruction_operand_count_unmatched => |v| try writer.print("Could not find a matching instruction for {s}: No variant expects {} operands.", .{ v.mnemonic, v.found }),
             .err_ambigious_instruction_selection_for => |v| try writer.print("Ambigious instruction selection for {s}", .{v.mnemonic}),
             .err_assertion_failed => |v| try writer.print("assertion failed: {s}", .{v.message}),
             .warn_emitted_padding_byte_s => |v| try writer.print("emitted {} padding byte(s)", .{v.count}),
+            .warn_zero_repetition => try writer.writeAll("zero repetitions emit no data"),
+            .warn_unaligned_code => try writer.writeAll("code uses non-natural packing and may be unaligned"),
             .err_canont_use_the_effect_operator => |v| try writer.print("{s} canont use the effect operator :{t}", .{ v.mnemonic, v.effect }),
             .err_cannot_be_used_without_effect_operator => |v| try writer.print("{s} cannot be used without effect operator", .{v.mnemonic}),
             .err_is_not_a_valid_enumerator => |v| try writer.print("#{s} is not a valid enumerator", .{v.key}),
             .warn_branch_into_data => try writer.print("branch into .data", .{}),
+            .warn_alti_state_segment_mismatch => try writer.print("alti.state() combines addresses from different segments", .{}),
             .err_cannot_aug_operand => try writer.print("Cannot aug() operand", .{}),
             .err_cannot_write_operand_integer_overflow => try writer.print("cannot write operand: integer overflow", .{}),
             .err_segments_and_overlap_at_hub_address_0x_x_0_5 => |v| try writer.print("segments {} and {} overlap at hub address 0x{X:0>5}", .{ v.left, v.right, v.start }),
@@ -328,32 +396,39 @@ pub const Kind = union(enum) {
                 .branch_target => "branch target",
                 .hubaddr_argument => "hubaddr() argument",
             }}),
-            .err_address_outside_space => |v| try writer.print("{s} address 0x{x} is outside {t} space (must be below 0x{x})", .{ @tagName(v.subject), v.actual, v.space, v.max_exclusive }),
+            .err_address_outside_space => |v| try writer.print("{t} address 0x{x} is outside {t} space (must be below 0x{x})", .{ v.subject, v.actual, v.space, v.max_exclusive }),
+            .err_address_space_mismatch => |v| {
+                try writer.print("{s} requires an address in ", .{v.subject});
+                if (v.expected.count() > 1) try writer.writeAll("one of the ");
+                try write_exec_modes(writer, v.expected);
+                try writer.writeAll(if (v.expected.count() == 1) " space, got " else " spaces, got ");
+                try write_exec_modes(writer, v.actual);
+            },
             .err_argument_count_mismatch => |v| try writer.print("{s} expects {}..{} arguments, found {}", .{ v.subject, v.min, v.max, v.found }),
-            .err_branch_too_far => |v| try writer.print("branch too far: cannot jump by {} {s}", .{ v.distance, @tagName(v.unit) }),
+            .err_branch_too_far => |v| try writer.print("branch too far: cannot jump by {} {t}", .{ v.distance, v.unit }),
             .err_directive_invalid_in_mode => |v| try writer.print("{s} is invalid in {t} mode", .{ v.directive, v.mode }),
             .err_duplicate_definition => |v| switch (v.previous) {
                 .symbol => |kind| try writer.print("symbol {s} ({}) is already defined", .{ v.name, kind }),
                 .function => try writer.print("function {s} is already defined", .{v.name}),
             },
             .err_expected_value_type => |v| try writer.print("{s} requires {t}, found {t}", .{ v.subject, v.expected, v.actual }),
-            .err_expression_evaluation_failed => |v| try writer.print("{s} could not be evaluated: {s}", .{ @tagName(v.context), v.reason.text() }),
+            .err_expression_evaluation_failed => |v| try writer.print("{t} could not be evaluated: {s}", .{ v.context, v.reason.text() }),
             .err_function_must_be_root => |v| try writer.print("{s}() must be the root of an expression", .{v.function}),
             .err_numeric_value_out_of_range => |v| try writer.print("{s} must be in range {}..{}, found {}", .{ v.subject, v.min, v.max, v.actual }),
-            .err_operand_usage_mismatch => |v| try writer.print("expected {s} operand, found {s}", .{ @tagName(v.expected), @tagName(v.actual) }),
+            .err_operand_usage_mismatch => |v| try writer.print("expected {t} operand, found {t}", .{ v.expected, v.actual }),
             .err_operator_invalid_operand_type => |v| try writer.print("operator '{f}' cannot be applied to a value of type {t}", .{ v.operator, v.value_type }),
             .err_operator_invalid_operand_types => |v| try writer.print("operator '{f}' cannot be applied to {t} and {t}", .{ v.operator, v.lhs_type, v.rhs_type }),
             .err_parameter_already_passed => |v| switch (v.previous) {
                 .positional => |index| try writer.print("parameter {s} of {s}() was already passed positionally as argument {}", .{ v.parameter, v.function, index + 1 }),
                 .named => |location| try writer.print("parameter {s} of {s}() was already passed by name at {f}", .{ v.parameter, v.function, location }),
             },
-            .err_pointer_modifier_already_set => |v| try writer.print("operator '{f}' cannot be applied: pointer {s} is already set", .{ v.operator, @tagName(v.modifier) }),
+            .err_pointer_modifier_already_set => |v| try writer.print("operator '{f}' cannot be applied: pointer {t} is already set", .{ v.operator, v.modifier }),
             .err_register_not_allowed => |v| try writer.print("register {f} is not allowed for {s}", .{ v.actual, switch (v.allowed) {
                 .pointer_expression => "pointer expressions",
                 .pointer_operand => "pointer operands",
             } }),
             .warn_address_function_expected_offset => |v| try writer.print("{t}() expected offset, found {t}", .{ v.function, v.value_type }),
-            .warn_operator_no_effect => |v| try writer.print("operator '{t}' has no effect on a {s} label", .{ v.operator, @tagName(v.label) }),
+            .warn_operator_no_effect => |v| try writer.print("operator '{t}' has no effect on a {t} label", .{ v.operator, v.label }),
         }
     }
 };
@@ -374,14 +449,23 @@ pub fn deinit(self: *Collection) void {
 
 pub fn register_source(self: *Collection, path: []const u8, source: []const u8) !void {
     const allocator = self.arena.allocator();
-    const gop = try self.sources.getOrPut(allocator, path);
+    const name = try allocator.dupe(u8, path);
+    const file = try allocator.create(SourceFile);
+    file.* = .{ .path = name, .identity = name, .text = source };
+    try self.register_source_file(file);
+}
 
-    if (!gop.found_existing)
-        gop.key_ptr.* = try allocator.dupe(u8, path);
+pub fn register_source_file(self: *Collection, source: *const SourceFile) !void {
+    const allocator = self.arena.allocator();
+    const gop = try self.sources.getOrPut(allocator, source.path);
+    if (!gop.found_existing) gop.key_ptr.* = try allocator.dupe(u8, source.path);
+    gop.value_ptr.* = source;
+}
 
-    gop.value_ptr.* = .{
-        .text = source,
-    };
+pub fn source_text(self: *const Collection, path: ?[]const u8) ?[]const u8 {
+    const name = path orelse return null;
+    const source = self.sources.get(name) orelse return null;
+    return source.text;
 }
 
 pub fn emit_diag(self: *Collection, location: ?ast.Location, diagnostic: Kind) !void {
@@ -470,7 +554,7 @@ fn render_location(self: Collection, writer: *std.Io.Writer, item: Diagnostic, l
         try writer.writeByte('\n');
 
         if (self.sources.get(path)) |source| {
-            if (source_line(source.text, location.line)) |line| {
+            if (source_line.get(source.text, location.line)) |line| {
                 const line_width = @max(@as(usize, 4), decimal_width(location.line));
                 try writer.splatByteAll(' ', line_width - decimal_width(location.line));
                 try writer.print("{d} | {s}\n", .{ location.line, line });
@@ -492,25 +576,6 @@ fn render_location(self: Collection, writer: *std.Io.Writer, item: Diagnostic, l
     }
 }
 
-fn source_line(source: []const u8, one_based_line: u32) ?[]const u8 {
-    if (one_based_line == 0)
-        return null;
-
-    var start: usize = 0;
-    var current_line: u32 = 1;
-
-    while (current_line < one_based_line) : (current_line += 1) {
-        const newline = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse return null;
-        start = newline + 1;
-    }
-
-    var end = std.mem.indexOfScalarPos(u8, source, start, '\n') orelse source.len;
-    if (end > start and source[end - 1] == '\r')
-        end -= 1;
-
-    return source[start..end];
-}
-
 fn decimal_width(value: u32) usize {
     var digits: usize = 1;
     var rest = value;
@@ -523,7 +588,7 @@ test "collects diagnostics" {
     var collection: Collection = .init(std.testing.allocator);
     defer collection.deinit();
 
-    try collection.emit_diag(null, .err_multiple_input_files_are_not_supported_yet);
+    try collection.emit_diag(null, .err_multiple_input_files_are_not_supported);
     try collection.emit_diag(null, .warn_branch_into_data);
 
     try std.testing.expect(collection.has_errors());
@@ -743,6 +808,32 @@ test "renders enum diagnostic properties" {
             "error: pointer index must be in range -32..31, found 32\n" ++
             "error: cannot read FILE missing.bin: FileNotFound\n" ++
             "error: usage error: Cannot emit flat to stdio. Use \"-o -\" to force emission to stdout.\n",
+        actual,
+    );
+}
+
+test "address space mismatch renders single and joined modes" {
+    var collection: Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    try collection.emit_diag(null, .{ .err_address_space_mismatch = .{
+        .subject = ".fit limit",
+        .expected = .initOne(.hub),
+        .actual = .initOne(.regspace),
+    } });
+    try collection.emit_diag(null, .{ .err_address_space_mismatch = .{
+        .subject = "byteoffset",
+        .expected = .initMany(&.{ .cog, .lut, .regspace }),
+        .actual = .initOne(.data),
+    } });
+
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+    try collection.render(&output.writer, .{});
+    const actual = try output.toOwnedSlice();
+    defer std.testing.allocator.free(actual);
+    try std.testing.expectEqualStrings(
+        "error: .fit limit requires an address in hub space, got regspace\n" ++
+            "error: byteoffset requires an address in one of the cog, lut, or regspace spaces, got data\n",
         actual,
     );
 }

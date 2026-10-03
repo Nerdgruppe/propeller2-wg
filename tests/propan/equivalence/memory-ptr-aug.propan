@@ -1,0 +1,19 @@
+//? PROPAN CHECK LIST
+//? sym: after_aug data:100:25
+
+    RDLONG dst, PTRA
+    RDLONG dst, aug(0x100)
+    RDLONG dst, aug(0x1FF)
+    RDLONG dst, aug(0x200)
+    RDLONG dst, aug(0x12345)
+    RDLONG dst, aug(0xFFFFF)
+    RDLONG dst, PTRA[aug(0x100)]
+    RDLONG dst, PTRA[aug(0x1FF)]
+    RDLONG dst, PTRA[aug(0x200)]
+    RDLONG dst, PTRA[aug(0x12345)]
+    RDLONG dst, PTRA[aug(0xFFFFF)]
+    RDWORD dst, PTRB[aug(0x200)]
+    RDLONG dst, PTRB[aug(0xFFFFF)]
+
+var after_aug: LONG 0x12345678
+var dst: LONG 1

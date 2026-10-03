@@ -51,25 +51,25 @@ reset_delay:        GETCT   bittimer            // reset delay
 
 // --------------------------------------------------------------------------------------------------
 
-var connect:    .RES    1
-var p_hub:      .RES    1
-var pixcount:   .RES    1
-var tx:         .RES    1
-var pixelbits:  .RES    1
-var resettix:   .RES    1
-var swapflag:   .RES    1
-var bit0hi:     .RES    1
-var bit1hi:     .RES    1
-var cycletix:   .RES    1
+var connect:    .reserve    1
+var p_hub:      .reserve    1
+var pixcount:   .reserve    1
+var tx:         .reserve    1
+var pixelbits:  .reserve    1
+var resettix:   .reserve    1
+var swapflag:   .reserve    1
+var bit0hi:     .reserve    1
+var bit1hi:     .reserve    1
+var cycletix:   .reserve    1
 
-var addr:       .RES    1
-var npix:       .RES    1
-var colorbits:  .RES    1
+var addr:       .reserve    1
+var npix:       .reserve    1
+var colorbits:  .reserve    1
 
-var bittimer:   .RES    1
+var bittimer:   .reserve    1
 
-var t1:         .RES    1
-var t2:         .RES    1
-var t3:         .RES    1
+var t1:         .reserve    1
+var t2:         .reserve    1
+var t3:         .reserve    1
 
 .fit    496

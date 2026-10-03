@@ -118,7 +118,256 @@ pub const OptionalBoolean = enum {
     }
 };
 
+pub const AltiIncrement = enum(u2) { keep = 0, dec = 2, inc = 3 };
+pub const AltiForwarding = enum(u3) { none = 0, subst = 4 };
+pub const AltiRIncrement = enum(u2) { keep = 0, dec = 2, inc = 3 };
+pub const AltiRForward = enum(u3) { none = 0, drop = 1, subst = 4, instr = 5 };
+pub const AltiRingSize = enum(u4) {
+    full = 0,
+    @"512" = 8, // Alias for full; enum tags must have distinct values.
+    @"256" = 1,
+    @"128" = 2,
+    @"64" = 3,
+    @"32" = 4,
+    @"16" = 5,
+    @"8" = 6,
+    @"4" = 7,
+};
+
+const AltiStateField = struct {
+    value: u14,
+    segment: ?eval.Segment_ID = null,
+};
+
+fn alti_state_field(value: eval.Value, max: u14) error{ Overflow, TypeMismatch, InvalidArg }!AltiStateField {
+    return switch (value.value) {
+        .int => |number| .{ .value = blk: {
+            const bounded = std.math.cast(u14, number) orelse return error.Overflow;
+            if (bounded > max) return error.Overflow;
+            break :blk bounded;
+        } },
+        .address => |address| switch (address.local) {
+            .cog, .regspace => |index| .{ .value = index, .segment = address.segment_id },
+            else => error.InvalidArg,
+        },
+        else => error.TypeMismatch,
+    };
+}
+
+const Unary = enum { abs, fabs, encod, decod, clz, ctz, clo, cto, bmask, popcnt, sqrt, fsqrt, qlog, qexp };
+const Binary = enum { min, max, smin, smax, sar, ror, rol, rev, zerox, signx, sca, scas, frac, fmul, fdiv, fadd, fsub, flt, fle, fgt, fge };
+
+fn unary(comptime op: Unary, comptime description: []const u8) define.Function {
+    return define.function(struct {
+        pub const docs = description;
+        pub const params = .{ .v = .{ .docs = "32-bit value" } };
+
+        pub fn invoke(v: i64) !i64 {
+            return eval_unary(op, try word(v));
+        }
+    });
+}
+
+fn binary(comptime op: Binary, comptime description: []const u8) define.Function {
+    return define.function(struct {
+        pub const docs = description;
+        pub const params = .{
+            .a = .{ .docs = "First 32-bit value" },
+            .b = .{ .docs = "Second 32-bit value" },
+        };
+
+        pub fn invoke(a: i64, b: i64) !i64 {
+            return eval_binary(op, try word(a), try word(b));
+        }
+    });
+}
+
+fn word(value: i64) error{Overflow}!u32 {
+    if (value < std.math.minInt(i32) or value > std.math.maxInt(u32)) return error.Overflow;
+    return if (value < 0) @bitCast(@as(i32, @intCast(value))) else @intCast(value);
+}
+
+fn signed(value: u32) i32 {
+    return @bitCast(value);
+}
+
+fn float(value: u32) f32 {
+    return @bitCast(value);
+}
+
+fn float_bits(value: f32) i64 {
+    return @as(u32, @bitCast(value));
+}
+
+fn eval_unary(comptime op: Unary, v: u32) (error{InvalidArg}!i64) {
+    return switch (op) {
+        .abs => if (signed(v) < 0) @as(i64, -%signed(v)) else signed(v),
+        .fabs => v & 0x7fff_ffff,
+        .encod => if (v == 0) 0 else 31 - @as(i64, @intCast(@clz(v))),
+        .decod => @as(u32, 1) << @as(u5, @truncate(v)),
+        .clz => @clz(v),
+        .ctz => @ctz(v),
+        .clo => @clz(~v),
+        .cto => @ctz(~v),
+        .bmask => @as(u32, @truncate((@as(u64, 2) << @as(u6, @intCast(v & 31))) - 1)),
+        .popcnt => @popCount(v),
+        // Spin2 evaluates SQRT through binary32, including its rounding at 0xffffffff.
+        .sqrt => @intFromFloat(@sqrt(@as(f32, @floatFromInt(v)))),
+        .fsqrt => float_bits(@sqrt(float(v))),
+        .qlog => blk: {
+            if (v == 0) return error.InvalidArg;
+            const rounded = @round(@log2(@as(f64, @floatFromInt(v))) * 134_217_728.0);
+            // At the upper endpoint Spin2 keeps the last integer exponent.
+            break :blk if (rounded >= 4_294_967_296.0) 0xf800_0000 else @as(i64, @intFromFloat(rounded));
+        },
+        .qexp => @intFromFloat(@round(@exp2(@as(f64, @floatFromInt(v)) / 134_217_728.0))),
+    };
+}
+
+fn eval_binary(comptime op: Binary, a: u32, b: u32) (error{DivideByZero}!i64) {
+    const shift: u5 = @truncate(b);
+    return switch (op) {
+        .min => @min(a, b),
+        .max => @max(a, b),
+        .smin => @min(signed(a), signed(b)),
+        .smax => @max(signed(a), signed(b)),
+        .sar => signed(a) >> shift,
+        .ror => std.math.rotr(u32, a, shift),
+        .rol => std.math.rotl(u32, a, shift),
+        .rev => @bitReverse(a) >> @as(u5, 31 - shift),
+        .zerox => a & (@as(u32, @truncate((@as(u64, 2) << @as(u6, shift)) - 1))),
+        .signx => blk: {
+            const left: i32 = @bitCast(a << @as(u5, 31 - shift));
+            break :blk left >> @as(u5, 31 - shift);
+        },
+        .sca => @as(i64, @intCast((@as(u64, a) * b) >> 32)),
+        .scas => @as(i32, @truncate((@as(i64, signed(a)) * signed(b)) >> 30)),
+        .frac => if (b == 0) error.DivideByZero else @as(i64, @as(u32, @truncate((@as(u64, a) << 32) / b))),
+        .fmul => float_bits(float(a) * float(b)),
+        .fdiv => float_bits(float(a) / float(b)),
+        .fadd => float_bits(float(a) + float(b)),
+        .fsub => float_bits(float(a) - float(b)),
+        .flt => if (float(a) < float(b)) -1 else 0,
+        .fle => if (float(a) <= float(b)) -1 else 0,
+        .fgt => if (float(a) > float(b)) -1 else 0,
+        .fge => if (float(a) >= float(b)) -1 else 0,
+    };
+}
+
 pub const functions = define.namespace(.{
+    .utf16 = unicode_sequence(.utf16),
+    .utf32 = unicode_sequence(.utf32),
+    .alti = define.namespace(.{
+        .config = define.function(struct {
+            pub const docs = "Pack the ALTI source, destination, result, and ring modes.";
+            pub const params = .{
+                .s_inc = .{ .docs = "S field increment mode." },
+                .d_inc = .{ .docs = "D field increment mode." },
+                .s_fwd = .{ .docs = "S field forwarding mode." },
+                .d_fwd = .{ .docs = "D field forwarding mode." },
+                .r_inc = .{ .docs = "Result field increment mode." },
+                .r_fwd = .{ .docs = "Result field forwarding mode." },
+                .s_ring = .{ .docs = "S field ring size.", .default = .full },
+                .d_ring = .{ .docs = "D field ring size.", .default = .full },
+                .r_ring = .{ .docs = "Result field ring size.", .default = .full },
+            };
+
+            pub fn invoke(s_inc: AltiIncrement, d_inc: AltiIncrement, s_fwd: AltiForwarding, d_fwd: AltiForwarding, r_inc: AltiRIncrement, r_fwd: AltiRForward, s_ring: AltiRingSize, d_ring: AltiRingSize, r_ring: AltiRingSize) !u32 {
+                if (r_inc != .keep and (r_fwd == .drop or r_fwd == .instr)) return error.InvalidArg;
+
+                const s_mode: u32 = @intFromEnum(s_inc) | @intFromEnum(s_fwd);
+                const d_mode: u32 = @intFromEnum(d_inc) | @intFromEnum(d_fwd);
+                const r_mode: u32 = @intFromEnum(r_inc) | @intFromEnum(r_fwd);
+                return s_mode | (d_mode << 3) | (r_mode << 6) |
+                    (@as(u32, @intFromEnum(s_ring) & 7) << 9) |
+                    (@as(u32, @intFromEnum(d_ring) & 7) << 12) |
+                    (@as(u32, @intFromEnum(r_ring) & 7) << 15);
+            }
+        }),
+
+        .state = define.function(struct {
+            pub const docs = "Pack ALTI S, D, and result or instruction state fields.";
+            pub const params = .{
+                .s = .{ .docs = "9-bit S field, or a cog/register-space address." },
+                .d = .{ .docs = "9-bit D field, or a cog/register-space address." },
+                .r = .{ .docs = "14-bit result/instruction field, or a cog/register-space address." },
+            };
+
+            pub fn invoke(ctx: EvalContext, s: eval.Value, d: eval.Value, r: eval.Value) !u32 {
+                const fields = .{
+                    try alti_state_field(s, 0x1ff),
+                    try alti_state_field(d, 0x1ff),
+                    try alti_state_field(r, 0x3fff),
+                };
+                var segment: ?eval.Segment_ID = null;
+                var mismatch = false;
+                inline for (fields) |field| {
+                    if (field.segment) |current| {
+                        if (segment) |first| {
+                            mismatch = mismatch or first != current;
+                        } else {
+                            segment = current;
+                        }
+                    }
+                }
+                if (mismatch) try ctx.emit_diag(.warn_alti_state_segment_mismatch);
+                return @as(u32, fields[0].value) |
+                    (@as(u32, fields[1].value) << 9) |
+                    (@as(u32, fields[2].value) << 18);
+            }
+        }),
+    }),
+
+    .abs = unary(.abs, "Absolute value of a signed 32-bit integer."),
+    .fabs = unary(.fabs, "Clear the sign bit of a binary32 value."),
+    .encod = unary(.encod, "Index of the highest set bit; zero maps to zero."),
+    .decod = unary(.decod, "Set bit v[4:0]."),
+    .clz = unary(.clz, "Count leading zero bits."),
+    .ctz = unary(.ctz, "Count trailing zero bits."),
+    .clo = unary(.clo, "Count leading one bits."),
+    .cto = unary(.cto, "Count trailing one bits."),
+    .bmask = unary(.bmask, "Set the lowest v[4:0]+1 bits."),
+    .popcnt = unary(.popcnt, "Count set bits."),
+    .sqrt = unary(.sqrt, "Square root of an unsigned 32-bit integer."),
+    .fsqrt = unary(.fsqrt, "Binary32 square root."),
+    .qlog = unary(.qlog, "Base-2 logarithm as unsigned 5.27 fixed point."),
+    .qexp = unary(.qexp, "Power of two from unsigned 5.27 fixed point."),
+
+    .min = binary(.min, "Unsigned 32-bit minimum."),
+    .max = binary(.max, "Unsigned 32-bit maximum."),
+    .smin = binary(.smin, "Signed 32-bit minimum."),
+    .smax = binary(.smax, "Signed 32-bit maximum."),
+    .sar = binary(.sar, "Arithmetic shift right by b[4:0]."),
+    .ror = binary(.ror, "Rotate right by b[4:0]."),
+    .rol = binary(.rol, "Rotate left by b[4:0]."),
+    .rev = binary(.rev, "Reverse bits 0 through b[4:0] and zero-extend."),
+    .zerox = binary(.zerox, "Zero-extend from bit b[4:0]."),
+    .signx = binary(.signx, "Sign-extend from bit b[4:0]."),
+    .sca = binary(.sca, "Upper 32 bits of an unsigned 32 by 32 product."),
+    .scas = binary(.scas, "Signed 32 by 32 product shifted right 30 bits."),
+    .frac = binary(.frac, "Unsigned fractional quotient (a << 32) / b."),
+    .fmul = binary(.fmul, "Binary32 multiplication."),
+    .fdiv = binary(.fdiv, "Binary32 division."),
+    .fadd = binary(.fadd, "Binary32 addition."),
+    .fsub = binary(.fsub, "Binary32 subtraction."),
+    .flt = binary(.flt, "Binary32 less-than, returning zero or minus one."),
+    .fle = binary(.fle, "Binary32 less-than-or-equal, returning zero or minus one."),
+    .fgt = binary(.fgt, "Binary32 greater-than, returning zero or minus one."),
+    .fge = binary(.fge, "Binary32 greater-than-or-equal, returning zero or minus one."),
+
+    .register = define.function(struct {
+        pub const docs = "Convert a 9-bit integer or register to a register.";
+        pub const params = .{ .value = .{ .docs = "Register index or register value." } };
+
+        pub fn invoke(value: eval.Value) !eval.Register {
+            return switch (value.value) {
+                .int => |index| @enumFromInt(std.math.cast(u9, index) orelse return error.Overflow),
+                .register => |reg| reg,
+                else => error.TypeMismatch,
+            };
+        }
+    }),
+
     .regoffset = define.function(struct {
         pub const docs = "Computes the register from a base register and an integer offset.";
 
@@ -608,6 +857,29 @@ pub const functions = define.namespace(.{
         }),
     }),
 });
+
+fn unicode_sequence(comptime encoding: enum { utf16, utf32 }) define.Function {
+    return define.function(struct {
+        pub const docs = "Encode a UTF-8 string as Unicode code units";
+        pub const params = .{ .text = .{ .docs = "UTF-8 string" } };
+
+        pub fn invoke(ctx: EvalContext, text: []const u8) !eval.Value {
+            const view = std.unicode.Utf8View.init(text) catch return ctx.fatal_error(.err_invalid_utf8_string);
+            var iter = view.iterator();
+            var units: std.ArrayList(i64) = .empty;
+            while (iter.nextCodepoint()) |point| {
+                if (encoding == .utf16 and point > 0xFFFF) {
+                    const pair = point - 0x10000;
+                    try units.append(ctx.allocator(), 0xD800 + (pair >> 10));
+                    try units.append(ctx.allocator(), 0xDC00 + (pair & 0x3FF));
+                } else {
+                    try units.append(ctx.allocator(), point);
+                }
+            }
+            return .sequence(try units.toOwnedSlice(ctx.allocator()));
+        }
+    });
+}
 
 fn pack_x_halves(low: u16, high: u16) u32 {
     return @as(u32, low) | (@as(u32, high) << 16);

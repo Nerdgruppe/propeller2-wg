@@ -203,10 +203,10 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    // Flat output must preserve the configured byte in segment gaps.
+    // Flat output must use the configured byte for all padding.
     {
         const expected_files = b.addWriteFiles();
-        const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA });
+        const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA, 0x7E, 0x7E, 0x7E, 0xBB, 0x7E, 0x7E, 0x7E, 0x44, 0x33, 0x22, 0x11 });
 
         const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=flat");
@@ -231,7 +231,7 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
-    // Multi-file input is analyzed fully, then rejected without output.
+    // Multi-file input is rejected before either file is analyzed.
     {
         const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--format=flat");
@@ -240,8 +240,47 @@ pub fn build(b: *std.Build) void {
         run.addFileArg(b.path("tests/propan/regressions/multi-file-diagnostic.propan"));
         run.expectExitCode(1);
         run.expectStdOutEqual("");
-        run.expectStdErrMatch("second file analyzed");
-        run.expectStdErrMatch("multiple input files are not supported yet");
+        run.expectStdErrEqual("error: multiple input files are not supported\n");
+        test_step.dependOn(&run.step);
+    }
+
+    // Imports search the containing file first, then CLI include paths in order.
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=none");
+        run.addArg("--test-mode=sema");
+        run.addPrefixedDirectoryArg("--include-path=", b.path("tests/propan/sema/fixtures/include-a"));
+        run.addArg("-I");
+        run.addDirectoryArg(b.path("tests/propan/sema/fixtures/include-b"));
+        run.addFileArg(b.path("tests/propan/sema/fixtures/include-case/main.propan"));
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+    }
+
+    // Diagnostics in an imported file retain its path and source excerpt.
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=none");
+        run.addFileArg(b.path("tests/propan/sema/import-diagnostic-source.propan"));
+        run.expectExitCode(1);
+        run.expectStdErrMatch("fixtures/import-bad.propan:1:1: error");
+        run.expectStdErrMatch("UNKNOWN_MNEMONIC");
+        test_step.dependOn(&run.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=none");
+        run.addArg("--list-file=-");
+        run.addFileArg(b.path("tests/propan/sema/import-local-scope.propan"));
+        run.expectStdOutMatch("00004 | 001 | second:local");
+        test_step.dependOn(&run.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=json");
+        run.addArg("--output=-");
+        run.addFileArg(b.path("tests/propan/sema/import-basic.propan"));
+        run.expectStdOutMatch("fixtures/import-repeat.propan");
         test_step.dependOn(&run.step);
     }
 
@@ -306,6 +345,11 @@ pub fn build(b: *std.Build) void {
                 .path = "tests/propan/regressions/hexadecimal-string-tail.propan",
                 .modes = &.{.sema},
                 .result = .{ .failure = &.{"assertion failed: AZB!"} },
+            },
+            .{
+                .path = "tests/propan/sema/diagnostics/fit-message.propan",
+                .modes = &.{.sema},
+                .result = .{ .failure = &.{"assertion failed: code exceeds size"} },
             },
             .{
                 .path = "tests/propan/regressions/check-list-mismatch.propan",
@@ -388,6 +432,16 @@ pub fn build(b: *std.Build) void {
         no_input.expectExitCode(1);
         no_input.expectStdErrMatch("missing input files");
         test_step.dependOn(&no_input.step);
+    }
+
+    // Render the stdlib documentation for testing
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--render-stdlib-docs=-");
+        run.expectStdOutMatch("<!doctype html>");
+        run.expectStdOutMatch(">P_DAC_DITHER_PWM<");
+        run.expectStdOutMatch(">popcnt<");
+        test_step.dependOn(&run.step);
     }
 
     // Exports:
@@ -536,7 +590,7 @@ const examples: []const []const u8 = &[_][]const u8{
     "examples/sumloop.propan",
 };
 
-const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const u8{
+const parser_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
     "./tests/propan/parser/labels.propan",
     "./tests/propan/parser/conditions.propan",
     "./tests/propan/parser/effects.propan",
@@ -559,6 +613,7 @@ const parser_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/parser/diagnostics/incomplete-binary.propan",
     "tests/propan/parser/diagnostics/incomplete-unary.propan",
     "tests/propan/parser/diagnostics/incomplete-constant.propan",
+    "tests/propan/parser/diagnostics/inactive-conditional-syntax.propan",
     "tests/propan/parser/diagnostics/invalid-condition.propan",
     "tests/propan/parser/diagnostics/missing-parenthesis.propan",
     "tests/propan/parser/diagnostics/missing-function-argument.propan",
@@ -574,7 +629,31 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/conditional-structure.propan",
+    "tests/propan/sema/diagnostics/conditional-values.propan",
+    "tests/propan/sema/diagnostics/conditional-arity.propan",
+    "tests/propan/sema/diagnostics/array-zero.propan",
+    "tests/propan/sema/diagnostics/array-negative.propan",
+    "tests/propan/sema/diagnostics/constant-cycle.propan",
+    "tests/propan/sema/diagnostics/layout-constant-label.propan",
+    "tests/propan/sema/diagnostics/layout-constant-known-label.propan",
+    "tests/propan/sema/diagnostics/array-constant-label.propan",
+    "tests/propan/sema/diagnostics/array-invalid-utf8.propan",
+    "tests/propan/sema/diagnostics/array-too-large.propan",
+    "tests/propan/sema/diagnostics/pic-invalid.propan",
+    "tests/propan/sema/diagnostics/pic-force-absolute.propan",
+    "tests/propan/sema/diagnostics/pack-invalid.propan",
+    "tests/propan/sema/diagnostics/pack-mode-count.propan",
+    "tests/propan/sema/diagnostics/pack-offset-address-space.propan",
+    "tests/propan/sema/diagnostics/pack-offset-needs-address.propan",
+    "tests/propan/sema/diagnostics/pack-unaligned-cog.propan",
+    "tests/propan/sema/diagnostics/pack-unaligned-lut.propan",
     "tests/propan/sema/diagnostics/invalid-origins.propan",
+    "tests/propan/sema/diagnostics/invalid-local-start.propan",
+    "tests/propan/sema/diagnostics/fit-invalid-arguments.propan",
+    "tests/propan/sema/diagnostics/fit-incompatible-label.propan",
+    "tests/propan/sema/diagnostics/local-start-incompatible-label.propan",
+    "tests/propan/sema/diagnostics/fit-over-limit.propan",
     "tests/propan/sema/diagnostics/assert-message-with-true-condition.propan",
     "tests/propan/sema/diagnostics/assert-relative-comparison.propan",
     "tests/propan/sema/diagnostics/invalid-data-types.propan",
@@ -597,10 +676,13 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/reserve-exceeds-cog.propan",
     "tests/propan/sema/diagnostics/assert-requires-operand.propan",
     "tests/propan/sema/diagnostics/aug-must-be-root.propan",
+    "tests/propan/sema/diagnostics/aug-pointer-index-out-of-range.propan",
     "tests/propan/sema/diagnostics/nrel-must-be-root.propan",
     "tests/propan/sema/diagnostics/lutaddr-register.propan",
     "tests/propan/sema/diagnostics/address-without-execution-pc.propan",
     "tests/propan/sema/diagnostics/at-outside-scope.propan",
+    "tests/propan/sema/diagnostics/current-pc-regspace.propan",
+    "tests/propan/sema/diagnostics/current-pc-constant.propan",
     "tests/propan/sema/diagnostics/at-target-without-hub.propan",
     "tests/propan/sema/diagnostics/at-unaligned-delta.propan",
     "tests/propan/sema/diagnostics/at-current-without-hub.propan",
@@ -622,7 +704,6 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/local-label-after-segment.propan",
     "tests/propan/sema/diagnostics/duplicate-constant.propan",
     "tests/propan/sema/diagnostics/unknown-function.propan",
-    "tests/propan/sema/diagnostics/layout-needs-known-integer.propan",
     "tests/propan/sema/diagnostics/layout-needs-integer.propan",
     "tests/propan/sema/diagnostics/layout-integer-out-of-range.propan",
     "tests/propan/sema/diagnostics/instruction-operand-count.propan",
@@ -665,6 +746,14 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/function-unknown-parameter.propan",
     "tests/propan/sema/diagnostics/function-parameter-passed-twice.propan",
     "tests/propan/sema/diagnostics/function-missing-parameter.propan",
+    "tests/propan/sema/diagnostics/builtin-functions.propan",
+    "tests/propan/sema/diagnostics/import-invalid.propan",
+    "tests/propan/sema/diagnostics/import-missing.propan",
+    "tests/propan/sema/diagnostics/import-cycle.propan",
+    "tests/propan/sema/diagnostics/register-function-invalid.propan",
+    "tests/propan/sema/diagnostics/alti-config-invalid.propan",
+    "tests/propan/sema/diagnostics/alti-state-invalid.propan",
+    "tests/propan/sema/diagnostics/alti-state-segments.propan",
     "tests/propan/sema/diagnostics/pin-range-wraps.propan",
     "tests/propan/sema/diagnostics/delay-exceeds-u32.propan",
 };
@@ -675,7 +764,20 @@ const compare_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/whole-memory-length-mismatch.propan",
 };
 
-const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
+const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
+    "tests/propan/sema/conditional-compilation.propan",
+    "tests/propan/sema/pack-groups.propan",
+    "tests/propan/sema/pack-hub-code.propan",
+    "tests/propan/sema/pack-offsets.propan",
+    "tests/propan/sema/pack-values.propan",
+    "tests/propan/sema/pack.propan",
+};
+
+const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
+    "tests/propan/sema/array-emission.propan",
+    "tests/propan/sema/array-constants.propan",
+    "tests/propan/sema/lazy-constants.propan",
+    "tests/propan/sema/pic-modes.propan",
     "tests/propan/sema/basic-constants.propan",
     "tests/propan/sema/basic-instruction-selection.propan",
     "tests/propan/sema/addressing-modes.propan",
@@ -683,28 +785,51 @@ const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ 
     "tests/propan/sema/basic-label-addressing.propan",
     "tests/propan/sema/local-labels.propan",
     "tests/propan/sema/local-label-segments.propan",
+    "tests/propan/sema/explicit-local-start.propan",
+    "tests/propan/sema/fit-overlays.propan",
+    "tests/propan/sema/fit-modes.propan",
+    "tests/propan/sema/fit-address-labels.propan",
     "tests/propan/sema/local-label-non-boundaries.propan",
     "tests/propan/sema/operators.propan",
+    "tests/propan/sema/builtin-functions.propan",
+    "tests/propan/sema/alti-config-s-mode.propan",
+    "tests/propan/sema/alti-config-d-mode.propan",
+    "tests/propan/sema/alti-config-r-mode.propan",
+    "tests/propan/sema/alti-config-s-ring.propan",
+    "tests/propan/sema/alti-config-d-ring.propan",
+    "tests/propan/sema/alti-config-r-ring.propan",
+    "tests/propan/sema/alti-state-s.propan",
+    "tests/propan/sema/alti-state-d.propan",
+    "tests/propan/sema/alti-state-r.propan",
     "tests/propan/sema/unary-plus.propan",
     "tests/propan/sema/operator-associativity.propan",
     "tests/propan/sema/value-hint-converter.propan",
     "tests/propan/sema/stdlib.propan",
     "tests/propan/sema/mixed-function-arguments.propan",
     "tests/propan/sema/register-offset-wrap.propan",
+    "tests/propan/sema/import-basic.propan",
+    "tests/propan/sema/import-file-relative.propan",
+    "tests/propan/sema/import-once-self.propan",
+    "tests/propan/sema/import-local-scope.propan",
+    "tests/propan/sema/register-function.propan",
     "tests/propan/sema/ticks-large-duration.propan",
     "tests/propan/sema/integer-extremes.propan",
     "tests/propan/sema/hexadecimal-escapes.propan",
     "tests/propan/sema/pointer-variant-order.propan",
     "tests/propan/sema/render-roundtrip.propan",
+    "tests/propan/sema/current-pc.propan",
     "tests/propan/sema/char-literals.propan",
+    "tests/propan/sema/aug-pointer-update.propan",
     "tests/propan/sema/align.propan",
     "tests/propan/sema/data-mode.propan",
     "tests/propan/sema/check-list-regspace.propan",
     "tests/propan/sema/file_source.propan",
     "tests/propan/sema/lut-mode.propan",
+    "tests/propan/sema/string-emission.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{
+    "tests/propan/equivalence/address-byte-offsets.propan",
     "tests/propan/equivalence/absrel_sample.propan",
     "tests/propan/equivalence/ambigious.propan",
     "tests/propan/equivalence/argless.propan",
@@ -718,12 +843,16 @@ const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/flags.propan",
     "tests/propan/equivalence/io.propan",
     "tests/propan/equivalence/memory-ptr.propan",
+    "tests/propan/equivalence/memory-ptr-aug.propan",
     "tests/propan/equivalence/memory.propan",
     "tests/propan/equivalence/metaprogramming.propan",
     "tests/propan/equivalence/rdlong-selection-bug.propan",
+    "tests/propan/equivalence/same-source-aliases-alternating.propan",
+    "tests/propan/equivalence/same-source-aliases.propan",
     "tests/propan/equivalence/special_effects.propan",
     "tests/propan/equivalence/three_ops.propan",
     "tests/propan/equivalence/hubset.propan",
+    "tests/propan/equivalence/implicit-field-aliases.propan",
 };
 
 const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{

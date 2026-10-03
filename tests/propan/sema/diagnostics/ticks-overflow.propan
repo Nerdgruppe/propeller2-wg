@@ -1,7 +1,7 @@
 //? PROPAN CHECK LIST
-//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits
-//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits
-//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits
+//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits line 5 periods==20000000000
+//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits line 6 periods==21474836475
+//? err: err_a_delay_of_periods_cannot_be_represented_with_32_bits line 7 periods==39653734982852034709083406675
 LONG ticks(1, s=20000000000)
 LONG ticks(4294967295, s=5)
 LONG ticks(4294967295, s=9223372036854775807, ms=9223372036854775807, us=9223372036854775807, ns=9223372036854775807)

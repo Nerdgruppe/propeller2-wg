@@ -57,9 +57,11 @@ pub const ConditionNode = struct {
 
 pub const Expression = union(enum) {
     wrapped: *Expression,
+    current_pc: Location,
     integer: IntegerLiteral,
     enumerator: SymbolReference,
     string: StringLiteral,
+    sequence: SequenceLiteral,
     symbol: SymbolReference,
     unary_transform: UnaryTransform,
     binary_transform: BinaryTransform,
@@ -69,6 +71,7 @@ pub const Expression = union(enum) {
     pub fn location(expr: Expression) Location {
         return switch (expr) {
             .wrapped => |value| value.location(),
+            .current_pc => |loc| loc,
             inline else => |value| value.location,
         };
     }
@@ -84,6 +87,11 @@ pub const StringLiteral = struct {
     location: Location,
     source_text: []const u8,
     value: []const u8,
+};
+
+pub const SequenceLiteral = struct {
+    location: Location,
+    items: []const Expression,
 };
 
 pub const SymbolReference = struct {

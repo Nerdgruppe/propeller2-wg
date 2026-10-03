@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_constant_requires_integer_not_offset
+//? err: err_constant_requires_integer_not_offset line 4 name=="X"
 target:
 const X = target
 BYTE 1

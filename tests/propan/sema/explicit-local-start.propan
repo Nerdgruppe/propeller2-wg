@@ -1,0 +1,34 @@
+//? PROPAN CHECK LIST
+//? sym: cog_first code:0x40:0x1f0
+//? sym: cog_here code:0x44:0x1f8
+//? sym: lut_first code:0x48:0x1fe
+//? sym: slot data:-:0x1fe
+//? sym: cog_after_regspace code:0x4c:0
+//? seg: 0x40 4 cogexec
+//? seg: 0x44 4 cogexec
+//? seg: 0x48 4 lutexec
+//? seg: 0x4c 0 regspace
+//? seg: 0x4c 12 cogexec
+//? mem: 0x40 <- u32 [0x1f0, 0x1f8, 0x3fe, 0, 0, 2]
+
+.cogexec 0x40, 0x1f0
+cog_first:
+LONG $
+
+.cogexec $, 0x1f8
+cog_here:
+LONG $
+
+.lutexec $, 0x3fe
+lut_first:
+LONG $
+
+.regspace $, 0x1fe
+var slot:
+.reserve 1
+
+.cogexec $, 0
+cog_after_regspace:
+LONG $
+.org 2
+LONG $

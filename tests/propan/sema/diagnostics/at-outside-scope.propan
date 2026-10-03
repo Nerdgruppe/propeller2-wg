@@ -1,5 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_operator_at_cannot_be_used_in_this_scope
+//? err: err_operator_at_cannot_be_used_in_this_scope line 4
 label:
 const X = @label
 .assert X == 0

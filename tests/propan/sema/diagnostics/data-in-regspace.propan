@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_cannot_emit_data_after_reserve_or_inside_regspace
+//? err: err_cannot_emit_data_after_reserve_or_inside_regspace line 4
 .regspace
 LONG 1

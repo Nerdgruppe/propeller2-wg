@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_positional_after_named_argument
-//? err: err_expression_evaluation_failed
+//? err: err_positional_after_named_argument line 4
+//? err: err_expression_evaluation_failed line 4 context==expression reason==invalid_function_call
 LONG ticks(clk=200000000, us=1, 2)

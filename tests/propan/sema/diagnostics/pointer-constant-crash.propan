@@ -1,4 +1,4 @@
 //? PROPAN CHECK LIST
-//? err: err_constants_cannot_store_pointer_expression
+//? err: err_constants_cannot_store_pointer_expression line 3
 const X = PTRA[0]
 BYTE 1

@@ -1,0 +1,26 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed line 10 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 11 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 12 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 13 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 14 context==expression reason==type_mismatch
+//? err: err_expression_evaluation_failed line 15 context==expression reason==invalid_argument
+//? err: err_expression_evaluation_failed line 16 context==expression reason==invalid_argument
+//? err: err_expression_evaluation_failed line 17 context==expression reason==invalid_argument
+LONG alti.state(512, 0, 0)
+LONG alti.state(0, 512, 0)
+LONG alti.state(0, 0, 16384)
+LONG alti.state(-1, 0, 0)
+LONG alti.state(#foo, 0, 0)
+LONG alti.state(hub, 0, 0)
+LONG alti.state(0, lut, 0)
+LONG alti.state(0, 0, data)
+.hubexec 0x100
+hub:
+LONG 0
+.lutexec 0x200
+lut:
+LONG 0
+.data 0x300
+data:
+LONG 0
