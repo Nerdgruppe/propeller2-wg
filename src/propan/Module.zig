@@ -59,4 +59,8 @@ pub const LineData = struct {
     length: u32,
     location: ast.Location,
     pc: ?u32 = null,
+    kind: Kind = .label,
+    mnemonic: ?[]const u8 = null,
+
+    pub const Kind = enum { label, code, byte, word, long, file };
 };

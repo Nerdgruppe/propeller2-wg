@@ -28,3 +28,7 @@ Decision: `--format=spin2` writes `DAT` followed by `BYTE` rows of at most 16 he
 ## Step 2 — semantic corpus round-trip
 
 Decision: discover every `.propan` file under `tests/propan`, then retain exactly those that assemble successfully to a flat binary without test-mode checklist handling. For each accepted file, compile the Spin2 output with `flexspin -2` and compare the resulting bytes to the flat image. This includes semantic and equivalence fixtures while naturally excluding parser-only and diagnostic fixtures that fail semantic analysis. A standalone script keeps this check runnable without modifying each existing test case.
+
+## Step 3 — structured byte-exact emission
+
+Decision: attach the emitted kind and source mnemonic to each line record. The Spin2 writer now emits `LONG` opcode words for encoded instructions, typed `BYTE`/`WORD`/`LONG` data, explicit `BYTE` padding with a comment, segment comments, and stable exported `p2_label_N` aliases with original names in comments. Raw opcode words preserve augmentation order and unusual encodings exactly; source mnemonic comments keep them recognizable. The 119-file corpus still round-trips exactly.

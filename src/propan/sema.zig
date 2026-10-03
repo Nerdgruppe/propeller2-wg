@@ -186,6 +186,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     for (analyzer.line_data.items) |*line| {
         line.location = try copy_location(output_allocator, line.location);
+        if (line.mnemonic) |name| line.mnemonic = try output_allocator.dupe(u8, name);
     }
 
     return .{
@@ -1989,6 +1990,15 @@ const Analyzer = struct {
                 .length = 0,
                 .location = instr.ast_node.location,
                 .pc = instr.start_addr.?.get_local(.pc),
+                .kind = switch (mnemonic) {
+                    .encoded => .code,
+                    .byte => .byte,
+                    .word => .word,
+                    .long => .long,
+                    .file => .file,
+                    else => unreachable,
+                },
+                .mnemonic = if (mnemonic == .encoded) instr.ast_node.mnemonic else null,
             };
             defer line_info.length = @intCast((current_segment.hub_offset + current_segment.len()) - hub_offset);
 
