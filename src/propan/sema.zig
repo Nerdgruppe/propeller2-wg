@@ -152,6 +152,15 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     var constants: std.ArrayList(Module.Constant) = .empty;
     defer constants.deinit(output_allocator);
 
+    var sources: std.ArrayList(Module.Source) = .empty;
+    defer sources.deinit(output_allocator);
+    for (diagnostics_collection.sources.values()) |source| {
+        try sources.append(output_allocator, .{
+            .path = try output_allocator.dupe(u8, source.path),
+            .text = try output_allocator.dupe(u8, source.text),
+        });
+    }
+
     for (analyzer.symbols.values()) |sym| {
         const stype: Module.Symbol.Type = switch (sym.type) {
             .undefined => continue,
@@ -197,6 +206,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
         .line_data = try analyzer.line_data.toOwnedSlice(output_allocator),
         .symbols = try symbols.toOwnedSlice(output_allocator),
         .constants = try constants.toOwnedSlice(output_allocator),
+        .sources = try sources.toOwnedSlice(output_allocator),
     };
 }
 
@@ -227,6 +237,14 @@ fn copy_value(allocator: std.mem.Allocator, value: Value) !Value {
         .int, .address, .register, .pointer_expr => {},
     }
     return copied;
+}
+
+fn number_style(expr: ast.Expression) Module.LineData.NumberStyle {
+    return switch (expr) {
+        .integer => |literal| if (std.mem.startsWith(u8, literal.source_text, "0x") or std.mem.startsWith(u8, literal.source_text, "0X") or std.mem.startsWith(u8, literal.source_text, "$")) .hex else .decimal,
+        .wrapped => |inner| number_style(inner.*),
+        else => .hex,
+    };
 }
 
 const ConditionalFilter = struct {
@@ -2013,6 +2031,7 @@ const Analyzer = struct {
                         .value = value,
                         .syntax = try rendered.toOwnedSlice(),
                         .source_kind = switch (expression) {
+                            .integer => .integer,
                             .symbol => .symbol,
                             .function_call => .function_call,
                             else => .other,
@@ -2063,23 +2082,29 @@ const Analyzer = struct {
                         else => unreachable,
                     };
 
+                    var number_styles: std.ArrayList(Module.LineData.NumberStyle) = .empty;
+                    defer number_styles.deinit(segment_allocator);
                     for (instr.arguments, instr.ast_node.arguments) |container_value, ast_node| {
                         const mode: eval.ExecMode = if (current_segment.exec_mode == .data) .hub else current_segment.exec_mode;
                         switch (container_value.value) {
                             .string => |str| for (str) |byte| {
                                 const value: T = try ana.cast_value_to(ast_node.location(), mode, .int(byte), .data, T);
                                 try current_segment.writer().writeInt(T, value, .little);
+                                try number_styles.append(segment_allocator, .hex);
                             },
                             .sequence => |items| for (items) |item| {
                                 const value: T = try ana.cast_value_to(ast_node.location(), mode, .int(item), .data, T);
                                 try current_segment.writer().writeInt(T, value, .little);
+                                try number_styles.append(segment_allocator, .hex);
                             },
                             else => {
                                 const value: T = try ana.cast_value_to(ast_node.location(), mode, container_value, .data, T);
                                 try current_segment.writer().writeInt(T, value, .little);
+                                try number_styles.append(segment_allocator, number_style(ast_node));
                             },
                         }
                     }
+                    line_info.number_styles = try number_styles.toOwnedSlice(segment_allocator);
                 },
 
                 .encoded => {

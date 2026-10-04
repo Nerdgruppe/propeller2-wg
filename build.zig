@@ -508,9 +508,21 @@ pub fn build(b: *std.Build) void {
             const readable = b.addRunArtifact(propan_exe);
             readable.addArgs(&.{ "--format=spin2", "--output=-" });
             readable.addFileArg(b.path("tests/propan/sema/spin2-readable.propan"));
-            readable.expectStdOutMatch("MOV p2_label_dst_0, #p2_const_VALUE_0");
-            readable.expectStdOutMatch("MOV p2_label_dst_0, #$3");
+            readable.expectStdOutMatch("MOV dst, #VALUE");
+            readable.expectStdOutMatch("MOV dst, #$3");
+            readable.expectStdOutMatch("MOV 10, 32");
+            readable.expectStdOutMatch("ADD 12, #$A");
             spin2_tests.dependOn(&readable.step);
+
+            const sumloop = b.addRunArtifact(propan_exe);
+            sumloop.addArgs(&.{ "--format=spin2", "--output=-" });
+            sumloop.addFileArg(b.path("examples/sumloop.propan"));
+            sumloop.expectStdOutMatch("' swiftly sums buf_a and buf_b into buf_c");
+            sumloop.expectStdOutMatch(".loop\n  REP @.end, #8");
+            sumloop.expectStdOutMatch("  ADD 0-0, #0");
+            sumloop.expectStdOutMatch(".end\n  RET wcz");
+            sumloop.expectStdOutMatch("BYTE 0[8] ' .align 8");
+            spin2_tests.dependOn(&sumloop.step);
 
             const equivalence_tests = make_sequencing_step(b, "equivalence tests");
             equivalence_tests.dependOn(sema_tests);

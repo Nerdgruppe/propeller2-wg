@@ -15,6 +15,7 @@ regspace_segments: []const u32 = &.{},
 line_data: []const LineData,
 symbols: []const Symbol,
 constants: []const Constant,
+sources: []const Source = &.{},
 
 pub fn deinit(mod: *Module) void {
     mod.arena.deinit();
@@ -47,6 +48,11 @@ pub const Constant = struct {
     location: ast.Location,
 };
 
+pub const Source = struct {
+    path: []const u8,
+    text: []const u8,
+};
+
 pub const Segment = struct {
     id: Segment_ID,
     hub_offset: u20,
@@ -64,12 +70,14 @@ pub const LineData = struct {
     operands: []const Operand = &.{},
     condition: ?ast.Condition = null,
     effect: ?ast.Effect = null,
+    number_styles: []const NumberStyle = &.{},
 
     pub const Kind = enum { label, code, byte, word, long, file };
+    pub const NumberStyle = enum { hex, decimal };
     pub const Operand = struct {
         value: eval.Value,
         syntax: []const u8,
-        source_kind: enum { symbol, function_call, other },
+        source_kind: enum { integer, symbol, function_call, other },
         encoding: Encoding,
         pcrel: bool = false,
 

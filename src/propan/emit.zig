@@ -1,6 +1,8 @@
 const std = @import("std");
 
 const Module = @import("Module.zig");
+const source_line = @import("source_line.zig");
+const instructions = @import("stdlib/p2/instructions.zig").p2_instructions;
 
 pub const BinaryFormat = enum {
     none,
@@ -54,29 +56,31 @@ fn emit_spin2(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modul
             const value = constant.value.value.int;
             if (value < std.math.minInt(i32) or value > std.math.maxInt(u32)) continue;
             try out.writeAll("CON\n  ");
-            try emit_name(out, "const", constant.name, index);
-            try out.print(" = {d} ' {s}\n", .{ value, constant.name });
+            try emit_constant_name(out, module, constant.name, index);
+            try out.print(" = {d}\n", .{value});
         }
     }
     try out.writeAll("DAT\n");
+    var comment_cursors: std.StringHashMapUnmanaged(u32) = .empty;
+    defer comment_cursors.deinit(allocator);
     var offset: usize = 0;
     emit_loop: while (offset <= data.len) {
         for (modules) |module| {
             for (module.segments) |segment| {
                 if (segment.hub_offset == offset and offset < data.len)
-                    try out.print("  ' segment {d}: {s} at ${X:0>5}\n", .{ @intFromEnum(segment.id), @tagName(segment.exec_mode), offset });
-            }
-            for (module.symbols, 0..) |symbol, index| {
-                if (symbol.label.hub_address) |hub| {
-                    if (hub == offset) {
-                        try emit_name(out, "label", symbol.name, index);
-                        try out.print(" ' {s}\n", .{symbol.name});
-                    }
-                }
+                    try out.print("' segment {d}: {s} at ${X:0>5}\n", .{ @intFromEnum(segment.id), @tagName(segment.exec_mode), offset });
             }
             for (module.line_data) |line| {
-                if (line.offset == offset and line.kind == .code and line.mnemonic != null)
-                    try emit_instruction_comment(out, line);
+                if (line.offset != offset) continue;
+                try emit_source_comments(out, allocator, &comment_cursors, module, line.location);
+                if (line.kind == .label) {
+                    for (module.symbols, 0..) |symbol, index| {
+                        if (symbol.label.hub_address != null and symbol.label.hub_address.? == offset and same_location(symbol.source_location, line.location)) {
+                            try emit_label_name(out, module, symbol.name, index);
+                            try out.writeByte('\n');
+                        }
+                    }
+                }
             }
         }
         if (offset == data.len) break;
@@ -89,28 +93,47 @@ fn emit_spin2(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modul
                         offset += 4;
                         continue :emit_loop;
                     }
+                    if (line.offset == offset and line.kind == .code and line.mnemonic != null)
+                        try emit_instruction_comment(out, line);
                 }
             }
+        }
+        if (kind == .padding) {
+            const byte = data[offset];
+            var count: usize = 1;
+            while (count < 16 and offset + count < data.len and kinds[offset + count] == .padding and data[offset + count] == byte and !has_boundary(modules, offset + count)) : (count += 1) {}
+            try out.writeAll("  BYTE ");
+            try emit_number(out, byte, .hex, false);
+            if (count > 1) try out.print("[{d}]", .{count});
+            if (padding_directive(modules, offset, offset + count)) |directive|
+                try out.print(" ' {s}", .{directive})
+            else
+                try out.writeAll(" ' padding");
+            try out.writeByte('\n');
+            offset += count;
+            continue;
         }
         const width: usize = switch (kind) {
             .word => 2,
             .code, .long => 4,
             else => 1,
         };
-        const max_count: usize = switch (width) { 1 => 16, 2 => 8, else => 4 };
-        const name = switch (width) { 1 => "BYTE", 2 => "WORD", else => "LONG" };
+        const max_count: usize = switch (width) {
+            1 => 16,
+            2 => 8,
+            else => 8,
+        };
+        const name = switch (width) {
+            1 => "BYTE",
+            2 => "WORD",
+            else => "LONG",
+        };
         try out.print("  {s} ", .{name});
         var count: usize = 0;
         while (count < max_count and offset + width <= data.len) {
             if (kinds[offset] != kind) break;
             if (count > 0) {
-                var boundary = false;
-                for (modules) |module| {
-                    for (module.segments) |segment| if (segment.hub_offset == offset) { boundary = true; };
-                    for (module.symbols) |symbol| if (symbol.label.hub_address) |hub| { if (hub == offset) boundary = true; };
-                    for (module.line_data) |line| if (line.offset == offset) { boundary = true; };
-                }
-                if (boundary) break;
+                if (has_boundary(modules, offset)) break;
                 try out.writeAll(", ");
             }
             const value = switch (width) {
@@ -118,18 +141,117 @@ fn emit_spin2(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modul
                 2 => @as(u32, std.mem.readInt(u16, data[offset..][0..2], .little)),
                 else => std.mem.readInt(u32, data[offset..][0..4], .little),
             };
-            try out.print("${X}", .{value});
+            try emit_number(out, value, data_style(modules, offset, width), false);
             offset += width;
             count += 1;
         }
         if (count == 0) {
-            try out.print("${X}", .{data[offset]});
+            try emit_number(out, data[offset], .hex, false);
             offset += 1;
         }
-        if (kind == .padding) try out.writeAll(" ' padding");
         try out.writeByte('\n');
     }
+    for (modules) |module| for (module.sources) |source| {
+        const last_line: u32 = @intCast(std.mem.count(u8, source.text, "\n") + 1);
+        try emit_source_comments(out, allocator, &comment_cursors, module, .{ .source = source.path, .line = last_line, .column = 1 });
+    };
     try out.flush();
+}
+
+fn same_location(a: ?@import("frontend/ast.zig").Location, b: @import("frontend/ast.zig").Location) bool {
+    const left = a orelse return false;
+    return left.line == b.line and left.column == b.column and
+        (if (left.source) |path| b.source != null and std.mem.eql(u8, path, b.source.?) else b.source == null);
+}
+
+fn source_for(module: Module, path: []const u8) ?[]const u8 {
+    for (module.sources) |source| if (std.mem.eql(u8, source.path, path)) return source.text;
+    return null;
+}
+
+fn comment_start(line: []const u8) ?usize {
+    var quoted = false;
+    var index: usize = 0;
+    while (index + 1 < line.len) : (index += 1) {
+        if (quoted and line[index] == '\\') {
+            index += 1;
+            continue;
+        }
+        if (line[index] == '"') quoted = !quoted;
+        if (!quoted and line[index] == '/' and line[index + 1] == '/') return index;
+    }
+    return null;
+}
+
+fn emit_source_comments(out: *std.Io.Writer, allocator: std.mem.Allocator, cursors: *std.StringHashMapUnmanaged(u32), module: Module, location: @import("frontend/ast.zig").Location) !void {
+    const path = location.source orelse return;
+    const source = source_for(module, path) orelse return;
+    const previous = cursors.get(path) orelse 0;
+    if (location.line <= previous) return;
+    for (previous + 1..@as(usize, location.line) + 1) |line_number| {
+        const line = source_line.get(source, @intCast(line_number)) orelse continue;
+        if (comment_start(line)) |start| {
+            if (!std.mem.startsWith(u8, line[start..], "//?"))
+                try out.print("'{s}\n", .{line[start + 2 ..]});
+        } else if (std.mem.trim(u8, line, " \t").len == 0 and line_number > 1) {
+            try out.writeByte('\n');
+        }
+    }
+    try cursors.put(allocator, path, location.line);
+}
+
+fn has_boundary(modules: []const Module, offset: usize) bool {
+    for (modules) |module| {
+        for (module.segments) |segment| if (segment.hub_offset == offset) return true;
+        for (module.symbols) |symbol| if (symbol.label.hub_address) |hub| {
+            if (hub == offset) return true;
+        };
+        for (module.line_data) |line| if (line.offset == offset) return true;
+    }
+    return false;
+}
+
+fn data_style(modules: []const Module, offset: usize, width: usize) Module.LineData.NumberStyle {
+    for (modules) |module| for (module.line_data) |line| {
+        if (line.kind != .byte and line.kind != .word and line.kind != .long) continue;
+        if (offset < line.offset or offset >= line.offset + line.length) continue;
+        const index = (offset - line.offset) / width;
+        if (index < line.number_styles.len) return line.number_styles[index];
+    };
+    return .hex;
+}
+
+fn padding_directive(modules: []const Module, start: usize, end: usize) ?[]const u8 {
+    for (modules) |module| {
+        var next: ?Module.LineData = null;
+        for (module.line_data) |line| {
+            if (line.offset >= end and (next == null or line.offset < next.?.offset)) next = line;
+        }
+        const target = next orelse continue;
+        const path = target.location.source orelse continue;
+        const source = source_for(module, path) orelse continue;
+        var previous_line: u32 = 0;
+        for (module.line_data) |line| {
+            if (line.offset + line.length <= start and line.location.source != null and std.mem.eql(u8, line.location.source.?, path))
+                previous_line = @max(previous_line, line.location.line);
+        }
+        if (target.location.line <= previous_line + 1) continue;
+        var found: ?[]const u8 = null;
+        for (@as(usize, previous_line) + 1..@as(usize, target.location.line)) |line_number| {
+            const text = source_line.get(source, @intCast(line_number)) orelse continue;
+            const trimmed = std.mem.trim(u8, text, " \t\r");
+            if (trimmed.len >= 6 and std.ascii.eqlIgnoreCase(trimmed[0..6], ".align")) found = trimmed;
+        }
+        if (found) |text| return text;
+    }
+    return null;
+}
+
+fn emit_number(out: *std.Io.Writer, value: u32, style: Module.LineData.NumberStyle, register: bool) !void {
+    if (value == 0 or register or style == .decimal)
+        try out.print("{d}", .{value})
+    else
+        try out.print("${X}", .{value});
 }
 
 fn emit_instruction_comment(out: *std.Io.Writer, line: Module.LineData) !void {
@@ -152,12 +274,13 @@ fn emit_instruction_comment(out: *std.Io.Writer, line: Module.LineData) !void {
 fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.LineData) !bool {
     if (line.kind != .code or line.length != 4 or line.mnemonic == null) return false;
     if (line.condition) |condition| if (condition == .@"return") return false;
-    if (line.effect != null and line.operands.len == 0) return false;
+    if (line.effect != null and line.operands.len == 0 and !std.ascii.eqlIgnoreCase(line.mnemonic.?, "RET")) return false;
     if (line.effect) |effect| switch (effect) {
         .wc, .wz, .wcz => {},
         else => return false,
     };
-    for (line.operands) |operand| {
+    for (line.operands, 0..) |operand, index| {
+        if (std.ascii.eqlIgnoreCase(line.mnemonic.?, "REP") and index == 0 and std.mem.startsWith(u8, operand.syntax, "@")) continue;
         if ((operand.encoding != .register and operand.encoding != .reg_or_imm) or operand.pcrel) return false;
         if (operand.value.flags.augment or operand.value.flags.addressing != .auto) return false;
         if (operand_number(operand) == null) return false;
@@ -168,25 +291,44 @@ fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.L
     try out.writeAll(line.mnemonic.?);
     for (line.operands, 0..) |operand, index| {
         try out.writeAll(if (index == 0) " " else ", ");
+        if (std.ascii.eqlIgnoreCase(line.mnemonic.?, "REP") and index == 0 and std.mem.startsWith(u8, operand.syntax, "@")) {
+            try out.writeByte('@');
+            const target = operand.syntax[1..];
+            if (std.mem.startsWith(u8, target, ".")) {
+                try out.writeAll(target);
+            } else {
+                for (module.symbols, 0..) |symbol, symbol_index| {
+                    if (std.ascii.eqlIgnoreCase(target, symbol.name)) {
+                        try emit_label_name(out, module, symbol.name, symbol_index);
+                        break;
+                    }
+                } else try out.writeAll(target);
+            }
+            continue;
+        }
         if (operand.value.flags.usage == .literal) try out.writeByte('#');
+        if (operand.source_kind == .symbol and std.ascii.eqlIgnoreCase(operand.syntax, "altered")) {
+            try out.writeAll("0-0");
+            continue;
+        }
         if (operand.source_kind == .symbol) {
             for (module.constants, 0..) |constant, constant_index| {
                 if (std.ascii.eqlIgnoreCase(operand.syntax, constant.name) and constant.value.value == .int and constant.value.value.int >= std.math.minInt(i32) and constant.value.value.int <= std.math.maxInt(u32)) {
-                    try emit_name(out, "const", constant.name, constant_index);
+                    try emit_constant_name(out, module, constant.name, constant_index);
                     break;
                 }
             } else {
                 for (module.symbols, 0..) |symbol, symbol_index| {
-                    if (std.ascii.eqlIgnoreCase(operand.syntax, symbol.name) and symbol.label.hub_address != null) {
-                        try emit_name(out, "label", symbol.name, symbol_index);
+                    if (matches_label(operand, symbol) and symbol.label.hub_address != null) {
+                        try emit_label_name(out, module, symbol.name, symbol_index);
                         break;
                     }
                 } else {
-                    try out.print("${X}", .{operand_number(operand).?});
+                    try emit_operand_number(out, operand);
                 }
             }
         } else {
-            try out.print("${X}", .{operand_number(operand).?});
+            try emit_operand_number(out, operand);
         }
     }
     if (line.effect) |effect| try out.print(" {s}", .{@tagName(effect)});
@@ -194,12 +336,62 @@ fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.L
     return true;
 }
 
-fn emit_name(out: *std.Io.Writer, kind: []const u8, name: []const u8, index: usize) !void {
-    try out.print("p2_{s}_", .{kind});
-    for (name) |character| {
-        try out.writeByte(if (std.ascii.isAlphanumeric(character) or character == '_') character else '_');
+fn matches_label(operand: Module.LineData.Operand, symbol: Module.Symbol) bool {
+    if (std.ascii.eqlIgnoreCase(operand.syntax, symbol.name)) return true;
+    if (!std.mem.startsWith(u8, operand.syntax, ".") or operand.value.value != .address) return false;
+    const colon = std.mem.lastIndexOfScalar(u8, symbol.name, ':') orelse return false;
+    return std.ascii.eqlIgnoreCase(operand.syntax[1..], symbol.name[colon + 1 ..]) and std.meta.eql(operand.value.value.address, symbol.label);
+}
+
+fn emit_operand_number(out: *std.Io.Writer, operand: Module.LineData.Operand) !void {
+    const style: Module.LineData.NumberStyle = if (operand.source_kind == .integer and !std.mem.startsWith(u8, operand.syntax, "$") and !std.mem.startsWith(u8, operand.syntax, "0x") and !std.mem.startsWith(u8, operand.syntax, "0X")) .decimal else .hex;
+    try emit_number(out, operand_number(operand).?, style, operand.encoding == .register or operand.value.flags.usage == .register);
+}
+
+fn keyword(name: []const u8) bool {
+    const words = [_][]const u8{ "BYTE", "WORD", "LONG", "DAT", "CON", "VAR", "PUB", "PRI", "ORG", "ORGH", "ORGF", "RES", "FIT", "FILE", "IF", "ELSE", "REPEAT", "RETURN", "COUNT", "NEXT", "OTHER", "END" };
+    for (words) |word| if (std.ascii.eqlIgnoreCase(name, word)) return true;
+    for (instructions) |instruction| if (std.ascii.eqlIgnoreCase(name, instruction.mnemonic)) return true;
+    return false;
+}
+
+fn emit_label_name(out: *std.Io.Writer, module: Module, name: []const u8, index: usize) !void {
+    if (std.mem.lastIndexOfScalar(u8, name, ':')) |colon| {
+        try out.print(".{s}", .{name[colon + 1 ..]});
+        return;
     }
-    try out.print("_{d}", .{index});
+    try emit_identifier(out, name);
+    var conflict = keyword(name);
+    for (module.symbols, 0..) |other, other_index| {
+        if (other_index != index and std.mem.indexOfScalar(u8, other.name, ':') == null and same_identifier(name, other.name)) conflict = true;
+    }
+    if (conflict) try out.print("_p2{d}", .{index});
+}
+
+fn emit_identifier(out: *std.Io.Writer, name: []const u8) !void {
+    for (name) |character| try out.writeByte(if (std.ascii.isAlphanumeric(character) or character == '_') character else '_');
+}
+
+fn same_identifier(a: []const u8, b: []const u8) bool {
+    if (a.len != b.len) return false;
+    for (a, b) |left, right| {
+        const normalized_left = if (std.ascii.isAlphanumeric(left) or left == '_') left else '_';
+        const normalized_right = if (std.ascii.isAlphanumeric(right) or right == '_') right else '_';
+        if (std.ascii.toLower(normalized_left) != std.ascii.toLower(normalized_right)) return false;
+    }
+    return true;
+}
+
+fn emit_constant_name(out: *std.Io.Writer, module: Module, name: []const u8, index: usize) !void {
+    try out.writeAll(name);
+    var conflict = keyword(name);
+    for (module.symbols) |symbol| if (std.mem.indexOfScalar(u8, symbol.name, ':') == null and same_identifier(name, symbol.name)) {
+        conflict = true;
+    };
+    for (module.constants, 0..) |other, other_index| {
+        if (other_index != index and same_identifier(name, other.name)) conflict = true;
+    }
+    if (conflict) try out.print("_p2{d}", .{index});
 }
 
 fn operand_number(operand: Module.LineData.Operand) ?u32 {

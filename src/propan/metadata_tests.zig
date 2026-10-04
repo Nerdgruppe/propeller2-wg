@@ -26,6 +26,7 @@ test "module instruction metadata owns operand syntax and values" {
     var source = "const X = 7\nMOV PTRA, X\n".*;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
+    try collection.register_source("source.propan", &source);
     var parser: frontend.Parser = .init(&source, "source.propan", &collection);
     var parsed = try parser.parse(std.testing.allocator);
     var module = try sema.analyze(std.testing.allocator, parsed.file, .{}, &collection);
@@ -38,4 +39,5 @@ test "module instruction metadata owns operand syntax and values" {
     try std.testing.expectEqualStrings("MOV", line.mnemonic.?);
     try std.testing.expectEqualStrings("X", line.operands[1].syntax);
     try std.testing.expectEqual(@as(i64, 7), line.operands[1].value.value.int);
+    try std.testing.expectEqualStrings("const X = 7\nMOV PTRA, X\n", module.sources[0].text);
 }

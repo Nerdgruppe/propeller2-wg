@@ -40,3 +40,9 @@ Decision: each emitted instruction line now keeps its evaluated operands, render
 ## Step 5 — readable mnemonics and references, best effort
 
 Decision: emit real PASM2 mnemonics for long-aligned, single-word instructions when their operand encoding is an ordinary register or immediate and numeric values fit. Preserve conditions and WC/WZ/WCZ effects where FlexSpin round-trips them. Emit safe integer constants in `CON`, use stable sanitized label/constant names in operands, and substitute evaluated integers for function calls. Other instruction forms retain exact `LONG` opcodes with source-like mnemonic and operand comments, including evaluated function results. The fallback is necessary for relative branches, pointer forms, augment sequences, and packed instructions; exact bytes remain the first constraint. A dedicated fixture checks real mnemonic, label, constant, and function-result output.
+
+## Readability corrections
+
+Decision: render original global names and scoped `.local` names unless a name collides with a Spin2 keyword; then add a short suffix. Preserve source comments and decimal/hex integer style in module metadata. Render `RET WCZ`, `REP @label`, and the special `altered` register as their PASM forms, with decimal register numbers and plain `0`. Keep the FlexSpin binary round-trip as the correctness gate.
+
+Validation: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed the full semantic corpus and byte comparisons. The `sumloop` output now uses `REP @.end`, `ADD 0-0, #0`, `RET wcz`, local labels, copied comments, and `BYTE 0[8] ' .align 8`. A dedicated readability fixture also checks decimal register numbers and a hexadecimal source literal.
