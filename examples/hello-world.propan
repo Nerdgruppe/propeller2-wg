@@ -1,0 +1,26 @@
+const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART_CFG = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+const TX_PIN = 62
+
+.cogexec 0
+        HUBSET aug(CLOCK_MODE)
+        WRPIN P_TT_01 | P_ASYNC_TX, TX_PIN
+        WXPIN aug(UART_CFG), TX_PIN
+        DIRH TX_PIN
+        WAITX aug(20_000_000)
+
+        MOV PTRA, aug(hubaddr(message))
+.next:  RDBYTE PA, PTRA++
+        TJZ PA, .halt
+        CALL write_byte
+        JMP .next
+.halt:  JMP .halt
+
+write_byte:
+        WYPIN PA, TX_PIN
+        WAITX 1
+.wait:  TESTP TX_PIN :wc
+if(!C)  JMP .wait
+        RET
+
+message: BYTE "Hello world!\r\n", 0
