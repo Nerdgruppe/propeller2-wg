@@ -476,6 +476,54 @@ pub fn build(b: *std.Build) void {
                 sema_tests.dependOn(&run.step);
             }
 
+            const spin2_tests = make_sequencing_step(b, "Spin2 round-trip tests");
+            spin2_tests.dependOn(sema_tests);
+            test_step.dependOn(spin2_tests);
+
+            // sema_accept_tests already includes emit_compare_tests.
+            for (sema_accept_tests) |accept_file| {
+                const flat = b.addRunArtifact(propan_exe);
+                flat.addArg("--format=flat");
+                const reference = flat.addPrefixedOutputFileArg("--output=", "reference.bin");
+                flat.addFileArg(b.path(accept_file));
+                flat.expectExitCode(0);
+
+                const spin2 = b.addRunArtifact(propan_exe);
+                spin2.addArg("--format=spin2");
+                const generated = spin2.addPrefixedOutputFileArg("--output=", b.fmt("{s}.spin2", .{std.fs.path.stem(accept_file)}));
+                spin2.addFileArg(b.path(accept_file));
+                spin2.expectExitCode(0);
+
+                const convert = b.addRunArtifact(flexspin);
+                convert.addArgs(&.{ "-2", "-q", "-o" });
+                const rebuilt = convert.addOutputFileArg("rebuilt.bin");
+                convert.addFileArg(generated);
+
+                const check = b.addRunArtifact(flat_checker);
+                check.addFileArg(reference);
+                check.addFileArg(rebuilt);
+                spin2_tests.dependOn(&check.step);
+            }
+
+            const readable = b.addRunArtifact(propan_exe);
+            readable.addArgs(&.{ "--format=spin2", "--output=-" });
+            readable.addFileArg(b.path("tests/propan/sema/spin2-readable.propan"));
+            readable.expectStdOutMatch("MOV dst, #VALUE");
+            readable.expectStdOutMatch("MOV dst, #$3");
+            readable.expectStdOutMatch("MOV 10, 32");
+            readable.expectStdOutMatch("ADD 12, #$A");
+            spin2_tests.dependOn(&readable.step);
+
+            const sumloop = b.addRunArtifact(propan_exe);
+            sumloop.addArgs(&.{ "--format=spin2", "--output=-" });
+            sumloop.addFileArg(b.path("examples/sumloop.propan"));
+            sumloop.expectStdOutMatch("' swiftly sums buf_a and buf_b into buf_c");
+            sumloop.expectStdOutMatch(".loop\n  REP @.end, #8");
+            sumloop.expectStdOutMatch("  ADD 0-0, #0");
+            sumloop.expectStdOutMatch(".end\n  RET wcz");
+            sumloop.expectStdOutMatch("BYTE 0[8] ' .align 8");
+            spin2_tests.dependOn(&sumloop.step);
+
             const equivalence_tests = make_sequencing_step(b, "equivalence tests");
             equivalence_tests.dependOn(sema_tests);
             test_step.dependOn(equivalence_tests);
@@ -826,6 +874,7 @@ const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests +
     "tests/propan/sema/file_source.propan",
     "tests/propan/sema/lut-mode.propan",
     "tests/propan/sema/string-emission.propan",
+    "tests/propan/sema/spin2-readable.propan",
 };
 
 const emit_compare_tests: []const []const u8 = &[_][]const u8{

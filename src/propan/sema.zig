@@ -152,6 +152,15 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     var constants: std.ArrayList(Module.Constant) = .empty;
     defer constants.deinit(output_allocator);
 
+    var sources: std.ArrayList(Module.Source) = .empty;
+    defer sources.deinit(output_allocator);
+    for (diagnostics_collection.sources.values()) |source| {
+        try sources.append(output_allocator, .{
+            .path = try output_allocator.dupe(u8, source.path),
+            .text = try output_allocator.dupe(u8, source.text),
+        });
+    }
+
     for (analyzer.symbols.values()) |sym| {
         const stype: Module.Symbol.Type = switch (sym.type) {
             .undefined => continue,
@@ -186,6 +195,8 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     for (analyzer.line_data.items) |*line| {
         line.location = try copy_location(output_allocator, line.location);
+        if (line.mnemonic) |name| line.mnemonic = try output_allocator.dupe(u8, name);
+        for (@constCast(line.operands)) |*operand| operand.value = try copy_value(output_allocator, operand.value);
     }
 
     return .{
@@ -195,6 +206,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
         .line_data = try analyzer.line_data.toOwnedSlice(output_allocator),
         .symbols = try symbols.toOwnedSlice(output_allocator),
         .constants = try constants.toOwnedSlice(output_allocator),
+        .sources = try sources.toOwnedSlice(output_allocator),
     };
 }
 
@@ -225,6 +237,14 @@ fn copy_value(allocator: std.mem.Allocator, value: Value) !Value {
         .int, .address, .register, .pointer_expr => {},
     }
     return copied;
+}
+
+fn number_style(expr: ast.Expression) Module.LineData.NumberStyle {
+    return switch (expr) {
+        .integer => |literal| if (std.mem.startsWith(u8, literal.source_text, "0x") or std.mem.startsWith(u8, literal.source_text, "0X") or std.mem.startsWith(u8, literal.source_text, "$")) .hex else .decimal,
+        .wrapped => |inner| number_style(inner.*),
+        else => .hex,
+    };
 }
 
 const ConditionalFilter = struct {
@@ -1989,7 +2009,50 @@ const Analyzer = struct {
                 .length = 0,
                 .location = instr.ast_node.location,
                 .pc = instr.start_addr.?.get_local(.pc),
+                .kind = switch (mnemonic) {
+                    .encoded => .code,
+                    .byte => .byte,
+                    .word => .word,
+                    .long => .long,
+                    .file => .file,
+                    else => unreachable,
+                },
+                .mnemonic = if (mnemonic == .encoded) instr.ast_node.mnemonic else null,
+                .condition = if (instr.ast_node.condition) |condition| condition.type else null,
+                .effect = instr.ast_node.effect,
             };
+            if (mnemonic == .encoded) {
+                const operands = try segment_allocator.alloc(Module.LineData.Operand, instr.arguments.len);
+                for (operands, instr.arguments, instr.ast_node.arguments, instr.instruction.?.operands) |*operand, value, expression, encoded_operand| {
+                    var rendered: std.Io.Writer.Allocating = .init(segment_allocator);
+                    defer rendered.deinit();
+                    try frontend.render.pretty_print_expr(&rendered.writer, expression);
+                    operand.* = .{
+                        .value = value,
+                        .syntax = try rendered.toOwnedSlice(),
+                        .source_kind = switch (expression) {
+                            .integer => .integer,
+                            .symbol => .symbol,
+                            .function_call => .function_call,
+                            else => .other,
+                        },
+                        .encoding = switch (encoded_operand.type) {
+                            .address => .address,
+                            .register => .register,
+                            .immediate => .immediate,
+                            .reg_or_imm => .reg_or_imm,
+                            .pointer_expr => .pointer_expr,
+                            .pointer_reg => .pointer_reg,
+                            .enumeration => .enumeration,
+                        },
+                        .pcrel = switch (encoded_operand.type) {
+                            .reg_or_imm => |meta| meta.pcrel,
+                            else => false,
+                        },
+                    };
+                }
+                line_info.operands = operands;
+            }
             defer line_info.length = @intCast((current_segment.hub_offset + current_segment.len()) - hub_offset);
 
             logger.debug("emit {s}", .{@tagName(mnemonic)});
@@ -2019,23 +2082,29 @@ const Analyzer = struct {
                         else => unreachable,
                     };
 
+                    var number_styles: std.ArrayList(Module.LineData.NumberStyle) = .empty;
+                    defer number_styles.deinit(segment_allocator);
                     for (instr.arguments, instr.ast_node.arguments) |container_value, ast_node| {
                         const mode: eval.ExecMode = if (current_segment.exec_mode == .data) .hub else current_segment.exec_mode;
                         switch (container_value.value) {
                             .string => |str| for (str) |byte| {
                                 const value: T = try ana.cast_value_to(ast_node.location(), mode, .int(byte), .data, T);
                                 try current_segment.writer().writeInt(T, value, .little);
+                                try number_styles.append(segment_allocator, .hex);
                             },
                             .sequence => |items| for (items) |item| {
                                 const value: T = try ana.cast_value_to(ast_node.location(), mode, .int(item), .data, T);
                                 try current_segment.writer().writeInt(T, value, .little);
+                                try number_styles.append(segment_allocator, .hex);
                             },
                             else => {
                                 const value: T = try ana.cast_value_to(ast_node.location(), mode, container_value, .data, T);
                                 try current_segment.writer().writeInt(T, value, .little);
+                                try number_styles.append(segment_allocator, number_style(ast_node));
                             },
                         }
                     }
+                    line_info.number_styles = try number_styles.toOwnedSlice(segment_allocator);
                 },
 
                 .encoded => {

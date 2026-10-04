@@ -189,3 +189,35 @@ Validation: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, includin
 - **Bug:** Both public frontend renderers omit the enumerator expression variant, so calling them fails compilation. The AST dump also uses outdated formatting for string escapes and ignores non-void writer return values, which Zig rejects. The pretty printer renders pointer modifiers as internal names (`pre_increment`, `post_increment`) and array indexing as `array_index`, producing source that cannot be parsed again.
 - **Reproduction:** Parse a source with `#on`, `PTRB++`, or `PTRA[2]`, then call `frontend.render.pretty_print` or `frontend.dump_ast`. Instantiating either renderer exposes the missing union case; printed pointer syntax cannot round-trip.
 - **Fix:** Handle enumerators in both renderers, update escape formatting and explicitly discard handled writer byte counts, and print source tokens for pointer modifiers and array indexing. `render-roundtrip.propan` and `src/propan/frontend/render_tests.zig` exercise every expression variant, reparse printed source, compare emitted bytes, and invoke the AST dump.
+
+---
+
+## Spin2 emitter loses readable zero-operand effects
+
+- **Bug:** `RET :wcz` was emitted as a raw `LONG` because the readable renderer rejected every zero-operand instruction with an effect.
+- **Reproduction:** `propan --format=spin2 --output=- examples/sumloop.propan` contained `LONG $FD7C002D` for the return.
+- **Fix:** Permit the verified `RET wcz` form while retaining opcode fallback for zero-operand aliases whose FlexSpin encoding differs.
+
+## Spin2 emitter flattens REP end labels and the altered register
+
+- **Bug:** `REP @.end, 8` became a numeric destination and `ADD altered, 0` became `ADD $0, #$0`, hiding both PASM constructs.
+- **Reproduction:** Inspect the Spin2 output for `examples/sumloop.propan`.
+- **Fix:** Preserve `@label` for the first REP operand, render `altered` as `0-0`, and keep exact binary round-trip coverage.
+
+## Spin2 emitter mangles every label and drops source comments
+
+- **Bug:** Every label was prefixed with `p2_label`, local scope names were flattened, and source comments disappeared.
+- **Reproduction:** `quicksum:` and `.loop:` in `examples/sumloop.propan` became `p2_label_quicksum_0` and `p2_label_quicksum_loop_1`; the introductory comment block was absent.
+- **Fix:** Emit ordinary global names and scoped `.local` names, add short suffixes for keyword collisions, sanitize nonlocal punctuation, and copy source text into the module for comment emission.
+
+## Spin2 emitter ignores integer spelling and prints zero in hex
+
+- **Bug:** Data and operand zeroes appeared as `$0`, register numbers appeared in hex, and decimal source literals lost their spelling style.
+- **Reproduction:** Spin2 output for `examples/sumloop.propan` contained `LONG $0` and `ADD $0, #$0`.
+- **Fix:** Print zero as `0`, use decimal for numeric registers, and preserve decimal versus hexadecimal style for direct integer literals.
+
+## Spin2 emitter emits invalid keyword identifiers
+
+- **Bug:** Emitting source names unchanged can produce invalid Spin2 declarations for names such as `COUNT`, `NEXT`, and `END`.
+- **Reproduction:** FlexSpin rejected generated output for `tests/propan/sema/array-constants.propan`, `lazy-constants.propan`, and `basic-instruction-selection.propan`.
+- **Fix:** Keep readable names by default and append a short suffix only for reserved names or collisions; sanitize punctuation in nonlocal names such as `foo.loop`.
