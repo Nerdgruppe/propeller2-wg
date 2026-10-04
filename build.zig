@@ -455,11 +455,6 @@ pub fn build(b: *std.Build) void {
         const loadp2_exe = p2dev_dep.artifact("loadp2");
         fb.installArtifact(loadp2_exe);
 
-        const spin2_corpus = b.addSystemCommand(&.{ "python3", "tests/propan/spin2_corpus.py" });
-        spin2_corpus.addArtifactArg(propan_exe);
-        spin2_corpus.addArtifactArg(flexspin);
-        test_step.dependOn(&spin2_corpus.step);
-
         // Propan Behaviour Tests
         {
             const parser_tests = make_sequencing_step(b, "parser tests");
@@ -480,6 +475,42 @@ pub fn build(b: *std.Build) void {
                 run.has_side_effects = true;
                 sema_tests.dependOn(&run.step);
             }
+
+            const spin2_tests = make_sequencing_step(b, "Spin2 round-trip tests");
+            spin2_tests.dependOn(sema_tests);
+            test_step.dependOn(spin2_tests);
+
+            // sema_accept_tests already includes emit_compare_tests.
+            for (sema_accept_tests) |accept_file| {
+                const flat = b.addRunArtifact(propan_exe);
+                flat.addArg("--format=flat");
+                const reference = flat.addPrefixedOutputFileArg("--output=", "reference.bin");
+                flat.addFileArg(b.path(accept_file));
+                flat.expectExitCode(0);
+
+                const spin2 = b.addRunArtifact(propan_exe);
+                spin2.addArg("--format=spin2");
+                const generated = spin2.addPrefixedOutputFileArg("--output=", b.fmt("{s}.spin2", .{std.fs.path.stem(accept_file)}));
+                spin2.addFileArg(b.path(accept_file));
+                spin2.expectExitCode(0);
+
+                const convert = b.addRunArtifact(flexspin);
+                convert.addArgs(&.{ "-2", "-q", "-o" });
+                const rebuilt = convert.addOutputFileArg("rebuilt.bin");
+                convert.addFileArg(generated);
+
+                const check = b.addRunArtifact(flat_checker);
+                check.addFileArg(reference);
+                check.addFileArg(rebuilt);
+                spin2_tests.dependOn(&check.step);
+            }
+
+            const readable = b.addRunArtifact(propan_exe);
+            readable.addArgs(&.{ "--format=spin2", "--output=-" });
+            readable.addFileArg(b.path("tests/propan/sema/spin2-readable.propan"));
+            readable.expectStdOutMatch("MOV p2_label_dst_0, #p2_const_VALUE_0");
+            readable.expectStdOutMatch("MOV p2_label_dst_0, #$3");
+            spin2_tests.dependOn(&readable.step);
 
             const equivalence_tests = make_sequencing_step(b, "equivalence tests");
             equivalence_tests.dependOn(sema_tests);

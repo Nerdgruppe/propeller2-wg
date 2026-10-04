@@ -27,7 +27,7 @@ Decision: `--format=spin2` writes `DAT` followed by `BYTE` rows of at most 16 he
 
 ## Step 2 — semantic corpus round-trip
 
-Decision: discover every `.propan` file under `tests/propan`, then retain exactly those that assemble successfully to a flat binary without test-mode checklist handling. For each accepted file, compile the Spin2 output with `flexspin -2` and compare the resulting bytes to the flat image. This includes semantic and equivalence fixtures while naturally excluding parser-only and diagnostic fixtures that fail semantic analysis. A standalone script keeps this check runnable without modifying each existing test case.
+Decision: use `sema_accept_tests` in `build.zig`, which already includes `emit_compare_tests`, as the corpus. For every listed source, run Propan with `--format=flat` and `--format=spin2`, compile the generated Spin2 with FlexSpin `-2`, and compare the binaries with the repository's existing Zig file checker. This keeps the test graph within Zig and avoids a Python dependency. The readability fixture is also checked through the existing build test APIs.
 
 ## Step 3 — structured byte-exact emission
 
