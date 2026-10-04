@@ -46,3 +46,9 @@ Decision: emit real PASM2 mnemonics for long-aligned, single-word instructions w
 Decision: render original global names and scoped `.local` names unless a name collides with a Spin2 keyword; then add a short suffix. Preserve source comments and decimal/hex integer style in module metadata. Render `RET WCZ`, `REP @label`, and the special `altered` register as their PASM forms, with decimal register numbers and plain `0`. Keep the FlexSpin binary round-trip as the correctness gate.
 
 Validation: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed the full semantic corpus and byte comparisons. The `sumloop` output now uses `REP @.end`, `ADD 0-0, #0`, `RET wcz`, local labels, copied comments, and `BYTE 0[8] ' .align 8`. A dedicated readability fixture also checks decimal register numbers and a hexadecimal source literal.
+
+## Emitter organization
+
+Decision: keep `emit.zig` as the public format dispatcher and move the existing flat, JSON, and Spin2 writers into `src/propan/emit/{flat,json,spin2}.zig`. Keep their output behavior and signatures unchanged so the existing end-to-end suite checks the split.
+
+Validation: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including the Spin2 corpus byte comparisons.
