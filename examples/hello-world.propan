@@ -1,26 +1,49 @@
-const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
-const UART_CFG = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
-const TX_PIN = 62
+//
+// This program implements a tiny "hello world"
+// for the Propeller 2 using the Propan assembly syntax.
+//
+.cogexec
+                HUBSET  aug(CLOCK_MODE)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   TX_PIN
+                WXPIN   aug(UART_CFG),          TX_PIN
+                DIRH    TX_PIN
+                WAITX   aug(20_000_000)
 
-.cogexec 0
-        HUBSET aug(CLOCK_MODE)
-        WRPIN P_TT_01 | P_ASYNC_TX, TX_PIN
-        WXPIN aug(UART_CFG), TX_PIN
-        DIRH TX_PIN
-        WAITX aug(20_000_000)
+                CALLPB  aug(hubaddr(message)),  write_str
+.halt:          JMP     .halt
 
-        MOV PTRA, aug(hubaddr(message))
-.next:  RDBYTE PA, PTRA++
-        TJZ PA, .halt
-        CALL write_byte
-        JMP .next
-.halt:  JMP .halt
+// Loads string at hub address "PA" and writes
+// it to UART TX at TX_PIN
+write_str:
+                RDFAST  0,  PB
+.next:          RFBYTE  PA          :wz
+    if(!Z)      CALL    write_byte
+    if(!Z)      JMP     .next
+                RET
 
+// Writes "PA" to UART TX at TX_PIN
 write_byte:
-        WYPIN PA, TX_PIN
-        WAITX 1
-.wait:  TESTP TX_PIN :wc
-if(!C)  JMP .wait
-        RET
+                WYPIN   PA, TX_PIN
+                WAITX   1
+.wait:          TESTP   TX_PIN      :wc
+    if(!C)      JMP     .wait
+                RET
 
-message: BYTE "Hello world!\r\n", 0
+message:        BYTE    "Hello world!\r\n", 0
+
+                LONG    0                           // aligns
+
+const TX_PIN     = 62
+const UART_CFG   = SmartPin.UartTx.config(
+                       baud=115_200,
+                       bits=8,
+                       clk=200_000_000,
+                   )
+const CLOCK_MODE = Hub.clockMode(
+                       pll=#on,
+                       in_div=1,
+                       mul=10,
+                       out_div=1,
+                       xi=#15pF,
+                       sysclk=#pll,
+                   )
