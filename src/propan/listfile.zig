@@ -301,7 +301,7 @@ fn input_source_line(input: Input, location: frontend.ast.Location) []const u8 {
 }
 
 fn format_exec_mode(allocator: std.mem.Allocator, mode: eval.ExecMode) ![]const u8 {
-    return if (mode == .data or mode == .regspace) @tagName(mode) else std.fmt.allocPrint(allocator, "{s}exec", .{@tagName(mode)});
+    return if (mode == .data or mode == .regspace) @tagName(mode) else std.fmt.allocPrint(allocator, "{t}exec", .{mode});
 }
 
 fn format_hub(allocator: std.mem.Allocator, address: anytype) ![]const u8 {

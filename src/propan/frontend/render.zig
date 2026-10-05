@@ -182,7 +182,7 @@ fn write_block(allocator: std.mem.Allocator, writer: anytype, entries: []Entry) 
                         }
                         if (instr.effect) |effect| {
                             try pad_to(writer, &column, if (directive) column + 1 else effect_column);
-                            try writer.print(":{s}", .{@tagName(effect.type)});
+                            try writer.print(":{t}", .{effect.type});
                             column += 1 + @tagName(effect.type).len;
                         }
                     },
@@ -253,7 +253,7 @@ fn render_condition(allocator: std.mem.Allocator, maybe_condition: ?ast.Conditio
         .z_is => |value| try writer.print("if({s})", .{z_strings[@intFromBool(value)]}),
         .c_and_z => |value| try writer.print("if({s} & {s})", .{ c_strings[@intFromBool(value.c)], z_strings[@intFromBool(value.z)] }),
         .c_or_z => |value| try writer.print("if({s} | {s})", .{ c_strings[@intFromBool(value.c)], z_strings[@intFromBool(value.z)] }),
-        .comparison => |value| try writer.print("if({s})", .{@tagName(value)}),
+        .comparison => |value| try writer.print("if({t})", .{value}),
     }
     return try output.toOwnedSlice();
 }

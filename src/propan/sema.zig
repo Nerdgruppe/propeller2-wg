@@ -755,7 +755,7 @@ const Analyzer = struct {
                 if (all_eq and effects_overlap) {
                     std.log.err("{s}, {s}", .{ instr.mnemonic, other.mnemonic });
                     for (other.operands) |op| {
-                        std.log.err("ops: {s}", .{@tagName(op.type)});
+                        std.log.err("ops: {t}", .{op.type});
                     }
                     return error.DuplicateInstruction;
                 }
@@ -1636,7 +1636,7 @@ const Analyzer = struct {
 
             logger.debug("  args:", .{});
             for (instr.arguments) |arg| {
-                logger.debug("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.flags.usage), arg.flags.augment });
+                logger.debug("  - {t}: {t} aug={}", .{ arg.value, arg.flags.usage, arg.flags.augment });
             }
             logger.debug("  alts:", .{});
 
@@ -1647,8 +1647,8 @@ const Analyzer = struct {
                 var can_assign = true;
                 for (alt.operands, instr.arguments) |op, arg| {
                     const op_ok = op.type.can_assign_from(arg);
-                    logger.debug("    - {s}; type ok={}", .{
-                        @tagName(op.type),
+                    logger.debug("    - {t}; type ok={}", .{
+                        op.type,
                         op_ok,
                     });
                     if (!op_ok) {
@@ -2055,7 +2055,7 @@ const Analyzer = struct {
             }
             defer line_info.length = @intCast((current_segment.hub_offset + current_segment.len()) - hub_offset);
 
-            logger.debug("emit {s}", .{@tagName(mnemonic)});
+            logger.debug("emit {t}", .{mnemonic});
 
             switch (mnemonic) {
                 .assert,
@@ -2523,7 +2523,7 @@ const Analyzer = struct {
             .regspace, .data => unreachable,
         };
 
-        logger.debug("pcrel: cog={} hub={} target={}:{s} => rel {}", .{ cog_pc, hub_pc, int, @tagName(exec_mode), delta33 });
+        logger.debug("pcrel: cog={} hub={} target={}:{t} => rel {}", .{ cog_pc, hub_pc, int, exec_mode, delta33 });
 
         switch (mode) {
             .default => {

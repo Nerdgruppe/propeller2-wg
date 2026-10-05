@@ -107,6 +107,8 @@ Typical workflows (started from the workspace root):
 - `${zig} build install test`: Build the projects and run their test suites.
 - `${zig} build install -Dno-emit-bin`: Compile the projects, but don't write the output. This is a quick syntax check.
 
+Instead of using `@tagName(v)` or `@errorName(v)` + `{s}` formatting, use `v` directly and `{t}` formatting.
+
 #### Propan
 
 When working on Propan, always prefer writing a `.propan` file in `tests/propan` over unit tests when applicable.

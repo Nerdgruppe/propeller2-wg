@@ -53,7 +53,7 @@ pub fn dump_ast(raw_writer: anytype, file: ast.File) !void {
                         .z_is => |val| try writer.print("Z={}\n", .{val}),
 
                         .c_and_z, .c_or_z => |val| {
-                            try writer.print("{s}\n", .{@tagName(cond.type)});
+                            try writer.print("{t}\n", .{cond.type});
 
                             writer.push();
                             defer writer.pop();
@@ -62,7 +62,7 @@ pub fn dump_ast(raw_writer: anytype, file: ast.File) !void {
                             try writer.print("Z: {}", .{val.z});
                         },
 
-                        .comparison => |comp| try writer.print("{s}\n", .{@tagName(comp)}),
+                        .comparison => |comp| try writer.print("{t}\n", .{comp}),
                     }
                 }
 
@@ -80,7 +80,7 @@ pub fn dump_ast(raw_writer: anytype, file: ast.File) !void {
                 }
 
                 if (instr.effect) |effect| {
-                    try writer.print(" :{s}", .{@tagName(effect.type)});
+                    try writer.print(" :{t}", .{effect.type});
                 }
 
                 try writer.writeAll("\n");
@@ -125,7 +125,7 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             writer.push();
             defer writer.pop();
 
-            try writer.print("op: {s}\n", .{@tagName(op.operator)});
+            try writer.print("op: {t}\n", .{op.operator});
             try writer.writeAll("value:\n");
 
             try pretty_print_expr(writer, op.value.*);
@@ -137,7 +137,7 @@ fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
             writer.push();
             defer writer.pop();
 
-            try writer.print("op: {s}\n", .{@tagName(op.operator)});
+            try writer.print("op: {t}\n", .{op.operator});
 
             try writer.writeAll("lhs:\n");
             try pretty_print_expr(writer, op.lhs.*);

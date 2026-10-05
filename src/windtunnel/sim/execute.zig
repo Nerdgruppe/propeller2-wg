@@ -115,7 +115,7 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
             const field = comptime decode.instruction_type.get(opc);
             const params = @field(enc, field);
 
-            logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {f}", .{ state.pc, state.instr, @tagName(opc), params });
+            logger.info("0x{X:0>5}: 0x{X:0>8} {t}: {f}", .{ state.pc, state.instr, opc, params });
 
             return @field(@This(), @tagName(opc))(cog, params);
         },

@@ -654,7 +654,7 @@ fn create_propan_test_run(
 ) *std.Build.Step.Run {
     const run = coverage_stash.create_test_run(exe);
     run.addArg("--format=none");
-    run.addArg(coverage_stash.b.fmt("--test-mode={s}", .{@tagName(mode)}));
+    run.addArg(coverage_stash.b.fmt("--test-mode={t}", .{mode}));
     if (mode == .compare) {
         if (reference) |file| {
             run.addPrefixedFileArg("--compare-to=", file);

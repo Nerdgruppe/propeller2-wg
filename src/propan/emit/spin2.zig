@@ -43,7 +43,7 @@ pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules
         for (modules) |module| {
             for (module.segments) |segment| {
                 if (segment.hub_offset == offset and offset < data.len)
-                    try out.print("' segment {d}: {s} at ${X:0>5}\n", .{ @intFromEnum(segment.id), @tagName(segment.exec_mode), offset });
+                    try out.print("' segment {d}: {t} at ${X:0>5}\n", .{ @intFromEnum(segment.id), segment.exec_mode, offset });
             }
             for (module.line_data) |line| {
                 if (line.offset != offset) continue;
@@ -231,7 +231,7 @@ fn emit_number(out: *std.Io.Writer, value: u32, style: Module.LineData.NumberSty
 
 fn emit_instruction_comment(out: *std.Io.Writer, line: Module.LineData) !void {
     try out.writeAll("  ' ");
-    if (line.condition) |condition| try out.print("{s} ", .{@tagName(condition.encode())});
+    if (line.condition) |condition| try out.print("{t} ", .{condition.encode()});
     try out.writeAll(line.mnemonic.?);
     for (line.operands, 0..) |operand, index| {
         try out.writeAll(if (index == 0) " " else ", ");
@@ -242,7 +242,7 @@ fn emit_instruction_comment(out: *std.Io.Writer, line: Module.LineData) !void {
             try out.writeAll(operand.syntax);
         }
     }
-    if (line.effect) |effect| try out.print(" {s}", .{@tagName(effect)});
+    if (line.effect) |effect| try out.print(" {t}", .{effect});
     try out.writeByte('\n');
 }
 
@@ -262,7 +262,7 @@ fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.L
     }
 
     try out.writeAll("  ");
-    if (line.condition) |condition| try out.print("{s} ", .{@tagName(condition.encode())});
+    if (line.condition) |condition| try out.print("{t} ", .{condition.encode()});
     try out.writeAll(line.mnemonic.?);
     for (line.operands, 0..) |operand, index| {
         try out.writeAll(if (index == 0) " " else ", ");
@@ -306,7 +306,7 @@ fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.L
             try emit_operand_number(out, operand);
         }
     }
-    if (line.effect) |effect| try out.print(" {s}", .{@tagName(effect)});
+    if (line.effect) |effect| try out.print(" {t}", .{effect});
     try out.writeByte('\n');
     return true;
 }

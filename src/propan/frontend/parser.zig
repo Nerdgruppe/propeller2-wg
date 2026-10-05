@@ -919,7 +919,7 @@ pub const Parser = struct {
                     return .{ @field(AcceptKey(options), @tagName(opt)), token };
             }
 
-            logger.debug("failed to accept token {s}. expected one of {any}", .{ @tagName(token.type), options });
+            logger.debug("failed to accept token {t}. expected one of {any}", .{ token.type, options });
 
             return error.UnexpectedToken;
         }
