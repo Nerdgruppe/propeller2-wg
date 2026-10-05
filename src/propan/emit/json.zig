@@ -11,7 +11,7 @@ fn create_b64(allocator: std.mem.Allocator, buffer: []const u8) ![]const u8 {
     return try writer.toOwnedSlice();
 }
 
-pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules: []const Module, total_size: usize) !void {
+pub fn emit(allocator: std.mem.Allocator, writer: *std.Io.Writer, modules: []const Module, total_size: usize) !void {
     var arena_allocator: std.heap.ArenaAllocator = .init(allocator);
     defer arena_allocator.deinit();
 
@@ -122,16 +122,13 @@ pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules
         id_base += max_id + 1;
     }
 
-    var buffer: [4096]u8 = undefined;
-    var writer = file.writer(io, &buffer);
-
     try std.json.Stringify.value(mod, .{
         .whitespace = .indent_2,
         .escape_unicode = false,
         .emit_null_optional_fields = true,
         .emit_strings_as_arrays = false,
         .emit_nonportable_numbers_as_strings = false,
-    }, &writer.interface);
-    try writer.interface.writeAll("\n");
-    try writer.interface.flush();
+    }, writer);
+    try writer.writeAll("\n");
+    try writer.flush();
 }

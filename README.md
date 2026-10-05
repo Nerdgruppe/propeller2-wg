@@ -31,6 +31,13 @@ Options:
 To format a Propan source file, run `./zig-out/bin/propan --pretty-print source.propan`.
 Formatted source is written to stdout; use `--pretty-print -` to read from stdin.
 
+Run `zig-0.16.0 build test` from the repository root to execute the Propan unit tests
+and fixture suites in a single process. Add `-Dwith-flexspin` to include Spin2
+round-trip and assembler equivalence tests; those two categories are skipped otherwise.
+If `kcov` is installed, the build captures coverage in `.coverage/propan-tests/`.
+The installed `zig-out/bin/propan-tests` executable can also be run directly from
+the repository root without coverage collection.
+
 If you want to also have the tools [loadp2](https://github.com/totalspectrum/loadp2) and [flexspin](https://github.com/totalspectrum/flexprop), you can use `-Dwith-flexspin` on the `zig build` invocation:
 
 ```sh-session

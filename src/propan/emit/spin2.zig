@@ -5,7 +5,7 @@ const source_line = @import("../source_line.zig");
 const instructions = @import("../stdlib/p2/instructions.zig").p2_instructions;
 const stdlib = @import("../stdlib/stdlib.zig");
 
-pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules: []const Module, data: []const u8) !void {
+pub fn emit(allocator: std.mem.Allocator, out: *std.Io.Writer, modules: []const Module, data: []const u8) !void {
     const Kind = enum { padding, code, byte, word, long };
     const kinds = try allocator.alloc(Kind, data.len);
     defer allocator.free(kinds);
@@ -23,9 +23,6 @@ pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules
         @memset(kinds[start..end], kind);
     };
 
-    var buffer: [4096]u8 = undefined;
-    var writer = file.writer(io, &buffer);
-    const out = &writer.interface;
     for (modules) |module| {
         for (module.constants, 0..) |constant, index| {
             if (constant.value.value != .int) continue;
