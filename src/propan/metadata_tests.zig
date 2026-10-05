@@ -2,13 +2,16 @@ const std = @import("std");
 const frontend = @import("frontend.zig");
 const sema = @import("sema.zig");
 const diagnostics = @import("diagnostics.zig");
+const SourceFile = @import("SourceFile.zig");
 
 test "module source locations survive mutation of the caller's path" {
     var path = "source.propan".*;
     const source = "const X = 1\nentry:\nLONG X\n";
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    var parser: frontend.Parser = .init(source, &path, &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, &path, source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
     var module = try sema.analyze(std.testing.allocator, parsed.file, .{}, &collection);
@@ -26,8 +29,8 @@ test "module instruction metadata owns operand syntax and values" {
     var source = "const X = 7\nMOV PTRA, X\n".*;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    try collection.register_source("source.propan", &source);
-    var parser: frontend.Parser = .init(&source, "source.propan", &collection);
+    const source_file = try collection.register_source("source.propan", &source);
+    var parser: frontend.Parser = .init(source_file, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     var module = try sema.analyze(std.testing.allocator, parsed.file, .{}, &collection);
     defer module.deinit();

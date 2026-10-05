@@ -2,23 +2,18 @@ const std = @import("std");
 const ptk = @import("ptk");
 
 const parser = @import("parser.zig");
+const SourceFile = @import("../SourceFile.zig");
 
 const Token = parser.Token;
 pub const Location = ptk.Location;
 
 /// Byte offsets are half-open and refer to one parsed source file.
 pub const SourceSpan = struct {
-    source: ?*const Source = null,
+    source: ?*const SourceFile = null,
     start: u32,
     end: u32,
 
     pub const empty: SourceSpan = .{ .start = 0, .end = 0 };
-
-    pub const Source = struct {
-        name: ?[]const u8,
-        text: []const u8,
-        line_starts: []const usize,
-    };
 
     pub fn location(span: SourceSpan) Location {
         const source = span.source orelse return .empty;
@@ -30,7 +25,7 @@ pub const SourceSpan = struct {
             if (source.line_starts[mid] <= offset) lower = mid else upper = mid;
         }
         return .{
-            .source = source.name,
+            .source = source.path,
             .line = @intCast(lower + 1),
             .column = @intCast(offset - source.line_starts[lower] + 1),
         };
@@ -49,7 +44,7 @@ pub const File = struct {
     span: SourceSpan = .empty,
     sequence: []const Line,
     comments: []const Comment = &.{},
-    source: []const u8 = "",
+    source: *const SourceFile,
 };
 
 pub const Comment = struct {

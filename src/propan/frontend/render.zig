@@ -34,12 +34,12 @@ pub fn pretty_print_alloc(allocator: std.mem.Allocator, writer: anytype, file: a
 
     for (file.sequence, 0..) |line, index| {
         if (line == .empty) {
-            if (file.source.len == 0) try entries.append(arena, .blank);
+            if (file.source.text.len == 0) try entries.append(arena, .blank);
             continue;
         }
 
         const location = line_location(line);
-        if (file.source.len > 0) {
+        if (file.source.text.len > 0) {
             while (next_line < location.line) : (next_line += 1) {
                 try append_gap_line(arena, &entries, file.comments, &comment_index, next_line);
             }
@@ -73,9 +73,8 @@ pub fn pretty_print_alloc(allocator: std.mem.Allocator, writer: anytype, file: a
         next_line = @max(next_line, end_line + 1);
     }
 
-    if (file.source.len > 0) {
-        const newline_count: u32 = @intCast(std.mem.count(u8, file.source, "\n"));
-        const line_count = newline_count + @as(u32, if (std.mem.endsWith(u8, file.source, "\n")) 0 else 1);
+    if (file.source.text.len > 0) {
+        const line_count: u32 = @intCast(file.source.line_starts.len - @as(usize, if (std.mem.endsWith(u8, file.source.text, "\n")) 1 else 0));
         while (next_line <= line_count) : (next_line += 1)
             try append_gap_line(arena, &entries, file.comments, &comment_index, next_line);
     }

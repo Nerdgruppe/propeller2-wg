@@ -145,7 +145,8 @@ pub fn main(init: std.process.Init) !u8 {
             break :blk try contents.toOwnedSlice();
         } else try std.Io.Dir.cwd().readFileAlloc(init.io, path, init.arena.allocator(), .limited(1 << 20));
 
-        var parser: frontend.Parser = .init(source, path, &diagnostics_collection);
+        const source_file: SourceFile = try .init(init.arena.allocator(), path, source);
+        var parser: frontend.Parser = .init(&source_file, &diagnostics_collection);
         var parsed = parser.parse(init.arena.allocator()) catch |err| switch (err) {
             error.OutOfMemory => return err,
             else => return 1,
@@ -190,11 +191,8 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     const source_file = try init.arena.allocator().create(SourceFile);
-    source_file.path = try init.arena.allocator().dupe(u8, input_path);
-    source_file.dir_index = 0;
-    source_file.relative_path = std.fs.path.basename(source_file.path);
-    source_file.identity = try std.fmt.allocPrint(init.arena.allocator(), "0:{s}", .{source_file.relative_path});
-    source_file.text = blk: {
+    const source_path = try init.arena.allocator().dupe(u8, input_path);
+    const source_text = blk: {
         if (std.mem.eql(u8, input_path, "-")) {
             std.log.debug("loading stdin...", .{});
             var buf: [8192]u8 = undefined;
@@ -210,9 +208,12 @@ pub fn main(init: std.process.Init) !u8 {
         } else {
             std.log.debug("loading {s}...", .{input_path});
 
-            break :blk try dirs[0].readFileAlloc(init.io, source_file.relative_path, init.arena.allocator(), .limited(1 << 20));
+            break :blk try dirs[0].readFileAlloc(init.io, std.fs.path.basename(source_path), init.arena.allocator(), .limited(1 << 20));
         }
     };
+    source_file.* = try .init(init.arena.allocator(), source_path, source_text);
+    source_file.relative_path = std.fs.path.basename(source_file.path);
+    source_file.identity = try std.fmt.allocPrint(init.arena.allocator(), "0:{s}", .{source_file.relative_path});
     try diagnostics_collection.register_source_file(source_file);
 
     var check_list_value: ?check_list.List = if (cli.options.@"test-mode" != null)

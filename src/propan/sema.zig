@@ -5,6 +5,7 @@ const eval = @import("stdlib/eval.zig");
 const frontend = @import("frontend.zig");
 const ast = frontend.ast;
 const diagnostics = @import("diagnostics.zig");
+const SourceFile = @import("SourceFile.zig");
 const mode_directive = @import("mode_directive.zig");
 
 const logger = std.log.scoped(.sema);
@@ -3701,9 +3702,8 @@ test "semantic errors are collected" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3726,9 +3726,8 @@ test "invalid alignments produce semantic errors" {
     for ([_][]const u8{ ".align 0\n", ".align 3\n" }) |source| {
         var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
         defer diagnostics_collection.deinit();
-        try diagnostics_collection.register_source("test.propan", source);
-
-        var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+        const source_file = try diagnostics_collection.register_source("test.propan", source);
+        var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
         var parsed = try parser.parse(std.testing.allocator);
         defer parsed.deinit();
 
@@ -3755,9 +3754,8 @@ test "final segment retains the label segment ID" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3783,7 +3781,9 @@ test "CALLD encoding selection is independent of variant order" {
     ;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    var parser: frontend.Parser = .init(source, "pointer-order.propan", &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "pointer-order.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3824,9 +3824,8 @@ test "semantic warnings are collected without failing analysis" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3903,8 +3902,8 @@ test Cursor {
 }
 
 fn analyze_test_source(source: []const u8, path: []const u8, collection: *diagnostics.Collection, options: AnalyzeOptions) !Module {
-    try collection.register_source(path, source);
-    var parser: frontend.Parser = .init(source, path, collection);
+    const source_file = try collection.register_source(path, source);
+    var parser: frontend.Parser = .init(source_file, collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
     return analyze(std.testing.allocator, parsed.file, options, collection);

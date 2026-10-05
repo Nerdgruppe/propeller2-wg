@@ -2,6 +2,7 @@ const std = @import("std");
 const frontend = @import("../frontend.zig");
 const sema = @import("../sema.zig");
 const diagnostics = @import("../diagnostics.zig");
+const SourceFile = @import("../SourceFile.zig");
 
 test "frontend source and AST renderers cover expression variants" {
     const source = for (@import("fuzz-corpus").files) |candidate| {
@@ -9,14 +10,18 @@ test "frontend source and AST renderers cover expression variants" {
     } else return error.MissingRendererFixture;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    var parser: frontend.Parser = .init(source, "render.propan", &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "render.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
     var rendered: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer rendered.deinit();
     try frontend.render.pretty_print_alloc(std.testing.allocator, &rendered.writer, parsed.file);
-    var reparsing: frontend.Parser = .init(rendered.written(), "roundtrip.propan", &collection);
+    var reparsing_source: SourceFile = try .init(std.testing.allocator, "roundtrip.propan", rendered.written());
+    defer reparsing_source.deinit(std.testing.allocator);
+    var reparsing: frontend.Parser = .init(&reparsing_source, &collection);
     var reparsed = try reparsing.parse(std.testing.allocator);
     defer reparsed.deinit();
     var original = try sema.analyze(std.testing.allocator, parsed.file, .{}, &collection);
@@ -48,7 +53,9 @@ test "AST renderer preserves binary grouping without extra parentheses" {
     ;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    var parser: frontend.Parser = .init(source, "grouping.propan", &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "grouping.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -77,7 +84,9 @@ test "AST renderer preserves binary grouping without extra parentheses" {
         rendered.written(),
     );
 
-    var reparsing: frontend.Parser = .init(rendered.written(), "grouping-roundtrip.propan", &collection);
+    var reparsing_source: SourceFile = try .init(std.testing.allocator, "grouping-roundtrip.propan", rendered.written());
+    defer reparsing_source.deinit(std.testing.allocator);
+    var reparsing: frontend.Parser = .init(&reparsing_source, &collection);
     var reparsed = try reparsing.parse(std.testing.allocator);
     defer reparsed.deinit();
     var original = try sema.analyze(std.testing.allocator, parsed.file, .{}, &collection);
@@ -98,7 +107,9 @@ test "pretty printer aligns blocks and preserves comments and emitted bytes" {
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
 
-    var parser: frontend.Parser = .init(source, "input.propan", &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "input.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
     var formatted: std.Io.Writer.Allocating = .init(std.testing.allocator);
@@ -106,7 +117,9 @@ test "pretty printer aligns blocks and preserves comments and emitted bytes" {
     try frontend.render.pretty_print_alloc(std.testing.allocator, &formatted.writer, parsed.file);
     try std.testing.expectEqualStrings(expected, formatted.written());
 
-    var reparsing: frontend.Parser = .init(formatted.written(), "expected.propan", &collection);
+    var reparsing_source: SourceFile = try .init(std.testing.allocator, "expected.propan", formatted.written());
+    defer reparsing_source.deinit(std.testing.allocator);
+    var reparsing: frontend.Parser = .init(&reparsing_source, &collection);
     var reparsed = try reparsing.parse(std.testing.allocator);
     defer reparsed.deinit();
     var second_pass: std.Io.Writer.Allocating = .init(std.testing.allocator);
@@ -129,7 +142,9 @@ test "comment in an empty call stays inside its parentheses" {
     const source = "const X = foo( // inside empty call\n)\n";
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    var parser: frontend.Parser = .init(source, "empty-call.propan", &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "empty-call.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
@@ -137,7 +152,9 @@ test "comment in an empty call stays inside its parentheses" {
     try frontend.render.pretty_print_alloc(std.testing.allocator, &output.writer, parsed.file);
     try std.testing.expectEqualStrings("const X = foo(  // inside empty call\n          )\n", output.written());
 
-    var reparsing: frontend.Parser = .init(output.written(), "empty-call-formatted.propan", &collection);
+    var reparsing_source: SourceFile = try .init(std.testing.allocator, "empty-call-formatted.propan", output.written());
+    defer reparsing_source.deinit(std.testing.allocator);
+    var reparsing: frontend.Parser = .init(&reparsing_source, &collection);
     var reparsed = try reparsing.parse(std.testing.allocator);
     defer reparsed.deinit();
     try std.testing.expectEqual(@as(usize, 1), reparsed.file.comments.len);

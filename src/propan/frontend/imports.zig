@@ -35,7 +35,7 @@ pub const Expander = struct {
         var lines: std.ArrayListUnmanaged(ast.Line) = .empty;
         errdefer lines.deinit(self.allocator);
         try self.expand_file(root, null, &lines);
-        return .{ .span = self.parsed.items[0].file.span, .sequence = try lines.toOwnedSlice(self.allocator) };
+        return .{ .span = self.parsed.items[0].file.span, .sequence = try lines.toOwnedSlice(self.allocator), .source = root };
     }
 
     fn expand_file(self: *Expander, source: *SourceFile, from: ?ast.Location, lines: *std.ArrayListUnmanaged(ast.Line)) !void {
@@ -48,7 +48,7 @@ pub const Expander = struct {
         try self.active.put(self.allocator, source.identity, {});
         defer _ = self.active.remove(source.identity);
 
-        var subparser: parser.Parser = .init_file(source, self.diagnostics);
+        var subparser: parser.Parser = .init(source, self.diagnostics);
         const parsed_file = try subparser.parse(self.allocator);
         try self.parsed.append(self.allocator, parsed_file);
 
@@ -105,7 +105,10 @@ pub const Expander = struct {
                         },
                     };
                     const file = try self.allocator.create(SourceFile);
-                    file.* = .{ .path = display_path, .identity = identity, .text = text, .dir_index = dir_index, .relative_path = relative_path };
+                    file.* = try .init(self.allocator, display_path, text);
+                    file.identity = identity;
+                    file.dir_index = dir_index;
+                    file.relative_path = relative_path;
                     try self.files.put(self.allocator, identity, file);
                     try self.diagnostics.register_source_file(file);
                     break :search file;

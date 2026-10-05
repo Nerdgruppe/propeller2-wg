@@ -9,44 +9,29 @@ const SourceFile = @import("../SourceFile.zig");
 const logger = std.log.scoped(.parser);
 
 pub const Parser = struct {
+    source: *const SourceFile,
     tokenizer: Tokenizer,
     diagnostics: *diagnostics.Collection,
 
-    pub fn init(source_code: []const u8, file_name: ?[]const u8, diagnostics_collection: *diagnostics.Collection) Parser {
+    pub fn init(source: *const SourceFile, diagnostics_collection: *diagnostics.Collection) Parser {
         return .{
-            .tokenizer = .init(source_code, file_name),
+            .source = source,
+            .tokenizer = .init(source.text, source.path),
             .diagnostics = diagnostics_collection,
         };
     }
 
-    pub fn init_file(source: *const SourceFile, diagnostics_collection: *diagnostics.Collection) Parser {
-        return .init(source.text, source.path, diagnostics_collection);
-    }
-
     pub fn parse(parser: *Parser, allocator: std.mem.Allocator) !ParsedFile {
-        if (parser.tokenizer.source.len > std.math.maxInt(u32)) return error.SourceTooLarge;
         var arena: std.heap.ArenaAllocator = .init(allocator);
         errdefer arena.deinit();
 
         var sequence: std.ArrayListUnmanaged(ast.Line) = .empty;
 
-        var line_starts: std.ArrayListUnmanaged(usize) = .empty;
-        try line_starts.append(arena.allocator(), 0);
-        for (parser.tokenizer.source, 0..) |byte, offset| {
-            if (byte == '\n') try line_starts.append(arena.allocator(), offset + 1);
-        }
-        const source_ref = try arena.allocator().create(ast.SourceSpan.Source);
-        source_ref.* = .{
-            .name = parser.tokenizer.current_location.source,
-            .text = parser.tokenizer.source,
-            .line_starts = try line_starts.toOwnedSlice(arena.allocator()),
-        };
-
         var core: Core = .{
             .arena = arena.allocator(),
             .core = .init(&parser.tokenizer),
             .diagnostics = parser.diagnostics,
-            .source_ref = source_ref,
+            .source_ref = parser.source,
         };
 
         core.accept_file(&sequence) catch |err| {
@@ -69,10 +54,10 @@ pub const Parser = struct {
         return .{
             .arena = arena,
             .file = .{
-                .span = .{ .source = source_ref, .start = 0, .end = @intCast(parser.tokenizer.source.len) },
+                .span = .{ .source = parser.source, .start = 0, .end = @intCast(parser.source.text.len) },
                 .sequence = try sequence.toOwnedSlice(arena.allocator()),
                 .comments = try comments.toOwnedSlice(arena.allocator()),
-                .source = parser.tokenizer.source,
+                .source = parser.source,
             },
         };
     }
@@ -81,7 +66,7 @@ pub const Parser = struct {
         arena: std.mem.Allocator,
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
         diagnostics: *diagnostics.Collection,
-        source_ref: *const ast.SourceSpan.Source,
+        source_ref: *const SourceFile,
         lf_is_whitespace: bool = false,
         ok: bool = true,
         local_scope: ast.LocalScope = .{ .id = 0, .parent = null },
@@ -964,6 +949,7 @@ pub const Parser = struct {
 
 pub const ParsedFile = struct {
     arena: std.heap.ArenaAllocator,
+    /// Borrows its SourceFile, which must outlive the parsed AST.
     file: ast.File,
 
     pub fn deinit(parsed: *ParsedFile) void {
@@ -1212,7 +1198,9 @@ fn fuzz_parser_bytes(input: []const u8) !void {
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
 
-    var parser: Parser = .init(input, null, &diagnostics_collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "fuzz.propan", input);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: Parser = .init(&parser_source, &diagnostics_collection);
 
     var parsed = parser.parse(std.testing.allocator) catch {
         // parser errors are oke
@@ -1240,9 +1228,8 @@ test "parser records syntax diagnostics" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: Parser = .init(source_file, &diagnostics_collection);
     const result = parser.parse(std.testing.allocator);
 
     try std.testing.expectError(error.SyntaxError, result);
@@ -1264,9 +1251,8 @@ test "unknown instruction effect is rejected" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: Parser = .init(source_file, &diagnostics_collection);
     try std.testing.expectError(error.SyntaxError, parser.parse(std.testing.allocator));
 
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
@@ -1283,9 +1269,8 @@ test "recoverable parser diagnostics reject the source" {
     }) |source| {
         var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
         defer diagnostics_collection.deinit();
-        try diagnostics_collection.register_source("test.propan", source);
-
-        var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+        const source_file = try diagnostics_collection.register_source("test.propan", source);
+        var parser: Parser = .init(source_file, &diagnostics_collection);
         try std.testing.expectError(error.SyntaxError, parser.parse(std.testing.allocator));
         try std.testing.expect(diagnostics_collection.has_errors());
     }
@@ -1346,13 +1331,14 @@ test "parse conditions (positive)" {
         var tok: Tokenizer = .init(expectation.input, null);
 
         var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
-        errdefer arena.deinit();
+        defer arena.deinit();
+        const source: SourceFile = try .init(arena.allocator(), "condition.propan", expectation.input);
 
         var core: Parser.Core = .{
             .arena = arena.allocator(),
             .core = .init(&tok),
             .diagnostics = &diagnostics_collection,
-            .source_ref = &.{ .name = null, .text = expectation.input, .line_starts = &.{0} },
+            .source_ref = &source,
         };
 
         const cond = try core.accept_condition();
@@ -1405,13 +1391,14 @@ test "parse effect (positive)" {
             var tok: Tokenizer = .init(input, null);
 
             var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
-            errdefer arena.deinit();
+            defer arena.deinit();
+            const source: SourceFile = try .init(arena.allocator(), "effect.propan", input);
 
             var core: Parser.Core = .{
                 .arena = arena.allocator(),
                 .core = .init(&tok),
                 .diagnostics = &diagnostics_collection,
-                .source_ref = &.{ .name = null, .text = input, .line_starts = &.{ 0, input.len - 1 } },
+                .source_ref = &source,
             };
 
             const identifier = try core.accept_one(.identifier);
@@ -1433,11 +1420,15 @@ test "AST spans retain source offsets and diagnostic positions" {
     ;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    var parser: Parser = .init(source, "sample.propan", &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "sample.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
     const file = parsed.file;
+    try std.testing.expectEqual(&parser_source, file.source);
+    try std.testing.expectEqual(file.source, file.span.source.?);
     try std.testing.expectEqual(source.len, file.span.end);
     try std.testing.expectEqualStrings("// heading", file.comments[0].span.source.?.text[file.comments[0].span.start..file.comments[0].span.end]);
     try std.testing.expectEqualStrings("// tail", file.comments[1].span.source.?.text[file.comments[1].span.start..file.comments[1].span.end]);
@@ -1461,4 +1452,11 @@ test "AST spans retain source offsets and diagnostic positions" {
     try std.testing.expectEqualStrings("foo + 1", source[binary.span.start..binary.span.end]);
     try std.testing.expectEqualStrings("+", source[binary.operator_span.start..binary.operator_span.end]);
     try std.testing.expectEqual(@as(u32, 22), binary.operator_span.location().column);
+
+    var second_parser: Parser = .init(&parser_source, &collection);
+    var second_parsed = try second_parser.parse(std.testing.allocator);
+    defer second_parsed.deinit();
+    try std.testing.expectEqual(file.source, second_parsed.file.source);
+    try std.testing.expectEqual(file.source, second_parsed.file.comments[0].span.source.?);
+    try std.testing.expectEqual(@as(u32, 2), second_parsed.file.comments[1].span.location().line);
 }

@@ -4,7 +4,6 @@ const ast = @import("frontend/ast.zig");
 const eval = @import("stdlib/eval.zig");
 const parser = @import("frontend/parser.zig");
 const emit = @import("emit.zig");
-const source_line = @import("source_line.zig");
 const SourceFile = @import("SourceFile.zig");
 
 pub const Collection = @This();
@@ -447,12 +446,13 @@ pub fn deinit(self: *Collection) void {
     self.* = undefined;
 }
 
-pub fn register_source(self: *Collection, path: []const u8, source: []const u8) !void {
+pub fn register_source(self: *Collection, path: []const u8, source: []const u8) !*const SourceFile {
     const allocator = self.arena.allocator();
     const name = try allocator.dupe(u8, path);
     const file = try allocator.create(SourceFile);
-    file.* = .{ .path = name, .identity = name, .text = source };
+    file.* = try .init(allocator, name, source);
     try self.register_source_file(file);
+    return file;
 }
 
 pub fn register_source_file(self: *Collection, source: *const SourceFile) !void {
@@ -554,7 +554,7 @@ fn render_location(self: Collection, writer: *std.Io.Writer, item: Diagnostic, l
         try writer.writeByte('\n');
 
         if (self.sources.get(path)) |source| {
-            if (source_line.get(source.text, location.line)) |line| {
+            if (source.line(location.line)) |line| {
                 const line_width = @max(@as(usize, 4), decimal_width(location.line));
                 try writer.splatByteAll(' ', line_width - decimal_width(location.line));
                 try writer.print("{d} | {s}\n", .{ location.line, line });
@@ -599,7 +599,7 @@ test "renders source excerpts" {
     var collection: Collection = .init(std.testing.allocator);
     defer collection.deinit();
 
-    try collection.register_source("test.propan", "first\n    BAD\n");
+    _ = try collection.register_source("test.propan", "first\n    BAD\n");
     try collection.emit_diag(.{ .source = "test.propan", .line = 2, .column = 5 }, .{
         .err_unknown_mnemonic = .{
             .mnemonic = "BAD",

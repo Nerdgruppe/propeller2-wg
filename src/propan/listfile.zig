@@ -421,8 +421,10 @@ test "render list file with symbols and segment body" {
     };
     defer module.deinit();
 
-    const source_ref: frontend.ast.SourceSpan.Source = .{ .name = path, .text = source, .line_starts = &.{ 0, 24, 32, 40, 53, 67 } };
+    var source_ref: SourceFile = try .init(std.testing.allocator, path, source);
+    defer source_ref.deinit(std.testing.allocator);
     const ast_file: frontend.ast.File = .{
+        .source = &source_ref,
         .sequence = &.{
             .{ .constant = .{
                 .span = .{ .source = &source_ref, .start = 0, .end = 23 },
@@ -467,7 +469,7 @@ test "render list file with symbols and segment body" {
 
     try render(&output.writer, &.{
         .{
-            .source_file = &.{ .path = path, .identity = path, .text = source },
+            .source_file = &source_ref,
             .ast_file = ast_file,
             .module = module,
         },
