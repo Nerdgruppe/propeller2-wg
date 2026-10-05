@@ -24,6 +24,7 @@ pub const Parser = struct {
     }
 
     pub fn parse(parser: *Parser, allocator: std.mem.Allocator) !ParsedFile {
+        if (parser.tokenizer.source.len > std.math.maxInt(u32)) return error.SourceTooLarge;
         var arena: std.heap.ArenaAllocator = .init(allocator);
         errdefer arena.deinit();
 
@@ -68,7 +69,7 @@ pub const Parser = struct {
         return .{
             .arena = arena,
             .file = .{
-                .span = .{ .source = source_ref, .start = 0, .end = parser.tokenizer.source.len },
+                .span = .{ .source = source_ref, .start = 0, .end = @intCast(parser.tokenizer.source.len) },
                 .sequence = try sequence.toOwnedSlice(arena.allocator()),
                 .comments = try comments.toOwnedSlice(arena.allocator()),
                 .source = parser.tokenizer.source,
@@ -87,11 +88,11 @@ pub const Parser = struct {
 
         fn token_span(c: *Core, token: Token) ast.SourceSpan {
             const start = @intFromPtr(token.text.ptr) - @intFromPtr(c.source_ref.text.ptr);
-            return .{ .source = c.source_ref, .start = start, .end = start + token.text.len };
+            return .{ .source = c.source_ref, .start = @intCast(start), .end = @intCast(start + token.text.len) };
         }
 
         fn through_current(c: *Core, start: ast.SourceSpan) ast.SourceSpan {
-            return .{ .source = c.source_ref, .start = start.start, .end = c.core.tokenizer.offset };
+            return .{ .source = c.source_ref, .start = start.start, .end = @intCast(c.core.tokenizer.offset) };
         }
 
         fn label(c: *Core, token: Token, name: []const u8, kind: ast.Label.Type) ast.Label {

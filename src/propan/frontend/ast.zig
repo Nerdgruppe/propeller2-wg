@@ -9,8 +9,8 @@ pub const Location = ptk.Location;
 /// Byte offsets are half-open and refer to one parsed source file.
 pub const SourceSpan = struct {
     source: ?*const Source = null,
-    start: usize,
-    end: usize,
+    start: u32,
+    end: u32,
 
     pub const empty: SourceSpan = .{ .start = 0, .end = 0 };
 
@@ -22,7 +22,7 @@ pub const SourceSpan = struct {
 
     pub fn location(span: SourceSpan) Location {
         const source = span.source orelse return .empty;
-        const offset = @min(span.start, source.text.len);
+        const offset: usize = @min(span.start, source.text.len);
         var lower: usize = 0;
         var upper: usize = source.line_starts.len;
         while (lower + 1 < upper) {
@@ -40,7 +40,7 @@ pub const SourceSpan = struct {
         return (SourceSpan{ .source = span.source, .start = span.end, .end = span.end }).location();
     }
 
-    pub fn at(span: SourceSpan, offset: usize) SourceSpan {
+    pub fn at(span: SourceSpan, offset: u32) SourceSpan {
         return .{ .source = span.source, .start = offset, .end = offset + 1 };
     }
 };
