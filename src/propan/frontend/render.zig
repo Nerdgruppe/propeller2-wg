@@ -195,7 +195,7 @@ fn can_fold(label: ast.Label, instr: ast.Instruction) bool {
     if (width > mnemonic_column) return false;
     if (is_directive(instr)) return false;
     if (label.identifier[0] == '.') return true;
-    for ([_][]const u8{ "LONG", "WORD", "BYTE", "FILE" }) |name| {
+    for ([_][]const u8{ "LONG", "WORD", "BYTE", "FILE", "RES" }) |name| {
         if (std.ascii.eqlIgnoreCase(instr.mnemonic, name)) return true;
     }
     return false;

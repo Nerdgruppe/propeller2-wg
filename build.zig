@@ -463,6 +463,7 @@ pub fn build(b: *std.Build) void {
         .{ .input = "tests/propan/format/layout-input.propan", .expected = @embedFile("tests/propan/format/layout-expected.propan") },
         .{ .input = "tests/propan/format/constants.propan", .expected = @embedFile("tests/propan/format/constants-expected.propan") },
         .{ .input = "tests/propan/format/operands-input.propan", .expected = @embedFile("tests/propan/format/operands-expected.propan") },
+        .{ .input = "tests/propan/sema/res-labels.propan", .expected = @embedFile("tests/propan/format/res-expected.propan") },
     }) |fixture| {
         const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--pretty-print");
@@ -596,7 +597,7 @@ pub fn build(b: *std.Build) void {
             sumloop.expectStdOutMatch(".loop\n  REP @.end, #8");
             sumloop.expectStdOutMatch("  ADD 0-0, #0");
             sumloop.expectStdOutMatch(".end\n  RET wcz");
-            sumloop.expectStdOutMatch("BYTE 0[8] ' .align 8");
+            sumloop.expectStdOutMatch("BYTE 0[8] ' .align  8");
             spin2_tests.dependOn(&sumloop.step);
 
             const equivalence_tests = make_sequencing_step(b, "equivalence tests");
@@ -797,6 +798,8 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/org-requires-argument.propan",
     "tests/propan/sema/diagnostics/reserve-requires-count.propan",
     "tests/propan/sema/diagnostics/reserve-exceeds-cog.propan",
+    "tests/propan/sema/diagnostics/res-invalid-in-mode.propan",
+    "tests/propan/sema/diagnostics/reserve-old-spelling.propan",
     "tests/propan/sema/diagnostics/assert-requires-operand.propan",
     "tests/propan/sema/diagnostics/aug-must-be-root.propan",
     "tests/propan/sema/diagnostics/aug-pointer-index-out-of-range.propan",
@@ -898,6 +901,7 @@ const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const
 };
 
 const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
+    "tests/propan/sema/res-labels.propan",
     "tests/propan/sema/array-emission.propan",
     "tests/propan/sema/array-constants.propan",
     "tests/propan/sema/lazy-constants.propan",

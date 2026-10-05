@@ -597,7 +597,7 @@ const Analyzer = struct {
         ana.mnemonics.putAssumeCapacityNoClobber(".pack", .pack);
         ana.mnemonics.putAssumeCapacityNoClobber(".pic", .pic);
         ana.mnemonics.putAssumeCapacityNoClobber(".org", .org);
-        ana.mnemonics.putAssumeCapacityNoClobber(".reserve", .reserve);
+        ana.mnemonics.putAssumeCapacityNoClobber("RES", .res);
         ana.mnemonics.putAssumeCapacityNoClobber(".regspace", .regspace);
         ana.mnemonics.putAssumeCapacityNoClobber(".data", .data);
         ana.mnemonics.putAssumeCapacityNoClobber("FILE", .file);
@@ -931,7 +931,7 @@ const Analyzer = struct {
             instr.mnemonic = mnemonic;
 
             instr.byte_size = switch (mnemonic.*) {
-                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .fit, .@"align", .pack, .pic => 0,
+                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .res, .assert, .fit, .@"align", .pack, .pic => 0,
 
                 .file => blk: {
                     if (instr.ast_node.arguments.len != 1 or instr.ast_node.arguments[0] != .string) {
@@ -1200,14 +1200,14 @@ const Analyzer = struct {
                             }
                         },
 
-                        .reserve => {
+                        .res => {
                             if (cursor.mode != .cog and cursor.mode != .regspace) {
-                                try ana.emit_diag(instr.location(), .{ .err_directive_invalid_in_mode = .{ .directive = ".reserve", .mode = cursor.mode } });
+                                try ana.emit_diag(instr.location(), .{ .err_directive_invalid_in_mode = .{ .directive = "RES", .mode = cursor.mode } });
                             } else if (instr.arguments.len != 1) {
-                                try ana.emit_diag(instr.location(), .{ .err_argument_count_mismatch = .{ .subject = ".reserve", .min = 1, .max = 1, .found = instr.arguments.len } });
-                            } else if (try ana.layout_integer(instr.arguments[0], instr.location(), ".reserve", cursor.offset, null)) |count| {
+                                try ana.emit_diag(instr.location(), .{ .err_argument_count_mismatch = .{ .subject = "RES", .min = 1, .max = 1, .found = instr.arguments.len } });
+                            } else if (try ana.layout_integer(instr.arguments[0], instr.location(), "RES", cursor.offset, null)) |count| {
                                 if (cursor.local_bytes / 4 > 0x200 or count > 0x200 - @min(cursor.local_bytes / 4, 0x200)) {
-                                    try ana.emit_diag(instr.location(), .{ .err_numeric_value_out_of_range = .{ .subject = ".reserve count", .min = 0, .max = 0x200 - @min(cursor.local_bytes / 4, 0x200), .actual = count } });
+                                    try ana.emit_diag(instr.location(), .{ .err_numeric_value_out_of_range = .{ .subject = "RES count", .min = 0, .max = 0x200 - @min(cursor.local_bytes / 4, 0x200), .actual = count } });
                                 } else {
                                     cursor.reserve(count);
                                     coded.start_addr = cursor.offset;
@@ -1966,7 +1966,7 @@ const Analyzer = struct {
                     continue :seq_loop;
                 },
 
-                .@"align", .pack, .org, .reserve => continue :seq_loop,
+                .@"align", .pack, .org, .res => continue :seq_loop,
 
                 .cogexec, .lutexec, .hubexec, .regspace, .data => {
                     const new_mode = mode_directive.from_name(instr.ast_node.mnemonic).?;
@@ -2067,7 +2067,7 @@ const Analyzer = struct {
                 .regspace,
                 .data,
                 .org,
-                .reserve,
+                .res,
                 .@"align",
                 .pack,
                 .pic,
@@ -4060,12 +4060,12 @@ test "reserve, regspace, and data labels" {
     const source =
         \\.cogexec 0x100
         \\LONG 1
-        \\.reserve 2
+        \\RES 2
         \\var cogvar:
         \\.regspace
         \\.org 0x1F0
         \\var reg:
-        \\.reserve 2
+        \\RES 2
         \\var reg2:
         \\.data 0x200
         \\table:
@@ -4096,7 +4096,7 @@ test "regspace labels work as cog register operands" {
     const source =
         \\.regspace
         \\var temp:
-        \\.reserve 1
+        \\RES 1
         \\.cogexec 0x100
         \\MOV temp, 1
     ;
@@ -4214,7 +4214,7 @@ test "one-past-end hub cursor emits no segment" {
 test "segment layout rejects overlaps and invalid emission" {
     const cases = [_][]const u8{
         ".hubexec 0x100\nBYTE 1\n.data 0x100\nBYTE 2\n",
-        ".cogexec\n.reserve 1\nLONG 2\n",
+        ".cogexec\nRES 1\nLONG 2\n",
         ".regspace\nBYTE 1\n",
         ".data\nNOP\n",
         ".data\n.org 4\n",
@@ -4226,7 +4226,7 @@ test "segment layout rejects overlaps and invalid emission" {
         ".lutexec\n.org 0x200\nLONG 0\n.org 0x200\n",
         ".cogexec\n.org 4\n.org 3\n",
         ".regspace\nvar x:\n.assert hubaddr(x) == 0\n",
-        ".cogexec\n.reserve 1\nvar x:\n.assert hubaddr(x) == 0\n",
+        ".cogexec\nRES 1\nvar x:\n.assert hubaddr(x) == 0\n",
     };
     for (cases) |source| {
         var collection: diagnostics.Collection = .init(std.testing.allocator);
@@ -4377,7 +4377,7 @@ const Mnemonic = union(enum) {
     regspace,
     data,
     org,
-    reserve,
+    res,
     @"align",
     pack,
     pic,

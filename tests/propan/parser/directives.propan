@@ -23,22 +23,22 @@ ramdata:
 .cogexec 0x1F0
 .cogexec
 
-var IJMP3: .reserve 1  // 0x1F0: Read/WriteInterrupt call address for INT3; set by code
-var IRET3: .reserve 1  // 0x1F1: Read/WriteInterrupt return address and C/Z flags for INT3; set by cog
-var IJMP2: .reserve 1  // 0x1F2: Read/WriteInterrupt call address for INT2; set by code
-var IRET2: .reserve 1  // 0x1F3: Read/WriteInterrupt return address and C/Z flags for INT2; set by cog
-var IJMP1: .reserve 1  // 0x1F4: Read/WriteInterrupt call address for INT1; set by code
-var IRET1: .reserve 1  // 0x1F5: Read/WriteInterrupt return address and C/Z flags for INT1; set by cog
-var PA:    .reserve 1  // 0x1F6: Read/WriteCALLD-imm return, CALLPA parameter, or LOC address
-var PB:    .reserve 1  // 0x1F7: Read/WriteCALLD-imm return, CALLPB parameter, or LOC address
-var PTRA:  .reserve 1  // 0x1F8: Read Special / Write Special Pointer A to Hub RAM
-var PTRB:  .reserve 1  // 0x1F9: Read Special / Write Special Pointer B to Hub RAM
-var DIRA:  .reserve 1  // 0x1FA: Read / Write SpecialOutput enables (direction bits) for P31..P0
-var DIRB:  .reserve 1  // 0x1FB: Read / Write SpecialOutput enables (direction bits) for P63..P32
-var OUTA:  .reserve 1  // 0x1FC: Read / Write SpecialOutput states for P31..P0
-var OUTB:  .reserve 1  // 0x1FD: Read / Write SpecialOutput states for P63..P32
-var INA:   .reserve 1  // 0x1FE: Read SpecialInput states for P31..P0
-var INB:   .reserve 1  // 0x1FE: Read SpecialInput states for P63..P32
+var IJMP3: RES 1  // 0x1F0: Read/WriteInterrupt call address for INT3; set by code
+var IRET3: RES 1  // 0x1F1: Read/WriteInterrupt return address and C/Z flags for INT3; set by cog
+var IJMP2: RES 1  // 0x1F2: Read/WriteInterrupt call address for INT2; set by code
+var IRET2: RES 1  // 0x1F3: Read/WriteInterrupt return address and C/Z flags for INT2; set by cog
+var IJMP1: RES 1  // 0x1F4: Read/WriteInterrupt call address for INT1; set by code
+var IRET1: RES 1  // 0x1F5: Read/WriteInterrupt return address and C/Z flags for INT1; set by cog
+var PA:    RES 1  // 0x1F6: Read/WriteCALLD-imm return, CALLPA parameter, or LOC address
+var PB:    RES 1  // 0x1F7: Read/WriteCALLD-imm return, CALLPB parameter, or LOC address
+var PTRA:  RES 1  // 0x1F8: Read Special / Write Special Pointer A to Hub RAM
+var PTRB:  RES 1  // 0x1F9: Read Special / Write Special Pointer B to Hub RAM
+var DIRA:  RES 1  // 0x1FA: Read / Write SpecialOutput enables (direction bits) for P31..P0
+var DIRB:  RES 1  // 0x1FB: Read / Write SpecialOutput enables (direction bits) for P63..P32
+var OUTA:  RES 1  // 0x1FC: Read / Write SpecialOutput states for P31..P0
+var OUTB:  RES 1  // 0x1FD: Read / Write SpecialOutput states for P63..P32
+var INA:   RES 1  // 0x1FE: Read SpecialInput states for P31..P0
+var INB:   RES 1  // 0x1FE: Read SpecialInput states for P63..P32
 
-// .reserve N will advance the cog address by N longs, but prevents further hub emission before another segment
+// RES N will advance the cog address by N longs, but prevents further hub emission before another segment
 

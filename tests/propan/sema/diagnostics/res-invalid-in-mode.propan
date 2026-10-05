@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: err_directive_invalid_in_mode line 7 directive=="RES" mode==lut
+//? err: err_directive_invalid_in_mode line 9 directive=="RES" mode==hub
+//? err: err_directive_invalid_in_mode line 11 directive=="RES" mode==data
+
+.lutexec
+RES 1
+.hubexec
+RES 1
+.data
+RES 1

@@ -33,7 +33,7 @@ and comment text is preserved. The keywords `const` and `var` are lowercase.
 
 A local label can share a line with the next mnemonic when its complete text,
 including `:` and at least one following space, fits before indentation 16.
-A nonlocal label can share a line with `LONG`, `WORD`, `BYTE`, or `FILE` under
+A nonlocal label can share a line with `LONG`, `WORD`, `BYTE`, `FILE`, or `RES` under
 the same limit. The `var ` prefix counts towards this limit for variable labels.
 
 Folding can skip intervening blank lines. A comment after the label prevents

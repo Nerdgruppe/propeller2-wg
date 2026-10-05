@@ -17,7 +17,7 @@
 
 ## Priority Fixes / Tasks
 
-- Change `.reserve` to `RES` (makes code more uniform and allows better code formatting)
+- *empty*
 
 ## New Features
 

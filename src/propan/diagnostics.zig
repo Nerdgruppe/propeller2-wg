@@ -333,7 +333,7 @@ pub const Kind = union(enum) {
             .err_pic_requires_relative_address => try writer.writeAll(".pic force forbids absolute branch addressing"),
             .err_unaligned_cog_lut_instruction => try writer.writeAll("instruction is not long-aligned in cog/lut mode"),
             .err_org_cannot_move_pc_backward => try writer.print(".org cannot move PC backward", .{}),
-            .err_cannot_emit_data_after_reserve_or_inside_regspace => try writer.print("cannot emit data after .reserve or inside .regspace", .{}),
+            .err_cannot_emit_data_after_reserve_or_inside_regspace => try writer.print("cannot emit data after RES or inside .regspace", .{}),
             .err_cannot_emit_code_in_this_segment => try writer.print("cannot emit code in this segment", .{}),
             .err_requires_an_integer_known_during_layout => |v| {
                 try writer.print("{s} requires an integer known during layout: ", .{v.name});

@@ -14,7 +14,7 @@ NOP
 .fit 0x400
 
 .regspace $, 0x1ff
-.reserve 1
+RES 1
 .fit $
 
 .hubexec $
