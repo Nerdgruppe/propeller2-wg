@@ -5,43 +5,38 @@
 //   }
 //
 quicksum:
-.loop:
-    REP @.end, 8
-        ALTI reg_state, alti_mode
-        ADD altered, 0
-.end:
-    RET :wcz
+.loop:          REP     @.end,      8
+                ALTI    reg_state,  alti_mode
+                ADD     altered,    0
+.end:           RET                            :wcz
 
 var reg_state:
-    // store R, D, S pointers
-    LONG alti.state(
-        s=cogaddr(buf_a),
-        d=cogaddr(buf_b),
-        r=cogaddr(buf_c),
-    )
+                // store R, D, S pointers
+                LONG    alti.state(
+                            s=cogaddr(buf_a),
+                            d=cogaddr(buf_b),
+                            r=cogaddr(buf_c),
+                        )
 
 var alti_mode:
-    // increment R, D, S with wrap-8,
-    // substitue each field into next instr
-    LONG alti.config(
-        s_inc = #inc,
-        d_inc = #inc,
-        r_inc = #inc,
-        s_fwd = #subst,
-        d_fwd = #subst,
-        r_fwd = #subst,
-        s_ring = #8,
-        d_ring = #8,
-        r_ring = #8,
-    )
+                // increment R, D, S with wrap-8,
+                // substitue each field into next instr
+    if(!C & !Z) LONG    alti.config(
+                            s_inc=#inc,
+                            d_inc=#inc,
+                            r_inc=#inc,
+                            s_fwd=#subst,
+                            d_fwd=#subst,
+                            r_fwd=#subst,
+                            s_ring=#8,
+                            d_ring=#8,
+                            r_ring=#8,
+                        )
 
 .align 8
 
-buf_a:
-    LONG 1, 2, 3, 4, 5, 6, 7, 8
+buf_a:          LONG    1, 2, 3, 4, 5, 6, 7, 8
 
-buf_b:
-    LONG 9, 10, 11, 12, 13, 14, 15
+buf_b:          LONG    9, 10, 11, 12, 13, 14, 15
 
-buf_c:
-    LONG 0, 0, 0, 0, 0, 0, 0, 0
+buf_c:          LONG    0, 0, 0, 0, 0, 0, 0, 0

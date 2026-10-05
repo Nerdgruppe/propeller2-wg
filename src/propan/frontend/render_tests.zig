@@ -71,14 +71,15 @@ test "AST renderer preserves binary grouping without extra parentheses" {
     defer rendered.deinit();
     try frontend.render.pretty_print(&rendered.writer, parsed.file);
     try std.testing.expectEqualStrings(
-        \\const PRECEDENCE = (1 + 2) * 3
+        \\const PRECEDENCE    = (1 + 2) * 3
         \\const ASSOCIATIVITY = 20 - (5 - 2)
-        \\const PREFIX = -(1 + 2)
-        \\const CHAIN = 1 + 2 + 3
-        \\const WRAPPED = (1 + 2)
-        \\const NATURAL = 1 + 2 * 3
-        \\              BYTE PRECEDENCE, ASSOCIATIVITY, CHAIN, WRAPPED, NATURAL
+        \\const PREFIX        = -(1 + 2)
+        \\const CHAIN         = 1 + 2 + 3
+        \\const WRAPPED       = (1 + 2)
+        \\const NATURAL       = 1 + 2 * 3
+        \\                BYTE    PRECEDENCE, ASSOCIATIVITY,  CHAIN,  WRAPPED,    NATURAL
         \\.assert PREFIX == -3
+        \\
         \\
     ,
         rendered.written(),
@@ -150,7 +151,7 @@ test "comment in an empty call stays inside its parentheses" {
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
     try frontend.render.pretty_print(&output.writer, parsed.file);
-    try std.testing.expectEqualStrings("const X = foo(  // inside empty call\n          )\n", output.written());
+    try std.testing.expectEqualStrings("const X = foo(  // inside empty call\n          )\n\n", output.written());
 
     var reparsing_source: SourceFile = try .init(std.testing.allocator, "empty-call-formatted.propan", output.written());
     defer reparsing_source.deinit(std.testing.allocator);
@@ -158,4 +159,26 @@ test "comment in an empty call stays inside its parentheses" {
     var reparsed = try reparsing.parse(std.testing.allocator);
     defer reparsed.deinit();
     try std.testing.expectEqual(@as(usize, 1), reparsed.file.comments.len);
+}
+
+test "pretty printer ends empty and unterminated inputs with an empty line" {
+    for ([_]struct { source: []const u8, expected: []const u8 }{
+        .{ .source = "", .expected = "\n" },
+        .{ .source = "// comment", .expected = "// comment\n\n" },
+        .{ .source = "const A = 1", .expected = "const A = 1\n\n" },
+        .{ .source = "const A = 1\n\n", .expected = "const A = 1\n\n" },
+        .{ .source = "const A = 1\n\n\n\n", .expected = "const A = 1\n\n\n" },
+    }) |case| {
+        var collection: diagnostics.Collection = .init(std.testing.allocator);
+        defer collection.deinit();
+        var source: SourceFile = try .init(std.testing.allocator, "ending.propan", case.source);
+        defer source.deinit(std.testing.allocator);
+        var parser: frontend.Parser = .init(&source, &collection);
+        var parsed = try parser.parse(std.testing.allocator);
+        defer parsed.deinit();
+        var buffer: [128]u8 = undefined;
+        var output: std.Io.Writer = .fixed(&buffer);
+        try frontend.render.pretty_print(&output, parsed.file);
+        try std.testing.expectEqualStrings(case.expected, output.buffered());
+    }
 }

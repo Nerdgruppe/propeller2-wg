@@ -458,13 +458,24 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
-    {
+    for ([_]struct { input: []const u8, expected: []const u8 }{
+        .{ .input = "tests/propan/format/input.propan", .expected = @embedFile("tests/propan/format/expected.propan") },
+        .{ .input = "tests/propan/format/layout-input.propan", .expected = @embedFile("tests/propan/format/layout-expected.propan") },
+        .{ .input = "tests/propan/format/constants.propan", .expected = @embedFile("tests/propan/format/constants-expected.propan") },
+    }) |fixture| {
         const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--pretty-print");
-        run.addFileArg(b.path("tests/propan/format/input.propan"));
-        run.expectStdOutEqual(@embedFile("tests/propan/format/expected.propan"));
+        run.addFileArg(b.path(fixture.input));
+        run.expectStdOutEqual(fixture.expected);
         run.expectStdErrEqual("");
         test_step.dependOn(&run.step);
+
+        const again = coverage_stash.create_test_run(propan_exe);
+        again.addArgs(&.{ "--pretty-print", "-" });
+        again.setStdIn(.{ .bytes = fixture.expected });
+        again.expectStdOutEqual(fixture.expected);
+        again.expectStdErrEqual("");
+        test_step.dependOn(&again.step);
     }
     {
         const run = coverage_stash.create_test_run(propan_exe);
@@ -876,6 +887,7 @@ const compare_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
+    "tests/propan/format/constants.propan",
     "tests/propan/sema/conditional-compilation.propan",
     "tests/propan/sema/pack-groups.propan",
     "tests/propan/sema/pack-hub-code.propan",
