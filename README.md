@@ -40,6 +40,10 @@ the repository root without coverage collection.
 
 Run `zig-0.16.0 build test --fuzz` to start Zig's native fuzzer, or use
 `--fuzz=10K` for a bounded run. Fuzz-test discovery uses Zig's test-server protocol.
+Alongside tokenizer and parser fuzzing, two targets run the full assembler through
+flat binary emission: arbitrary source may succeed or report assembly errors;
+generated valid programs must succeed. The generator covers cog, LUT, and hub
+execution, operands, augmentation, pointers, labels, expressions, data, and alignment.
 
 If you want to also have the tools [loadp2](https://github.com/totalspectrum/loadp2) and [flexspin](https://github.com/totalspectrum/flexprop), you can use `-Dwith-flexspin` on the `zig build` invocation:
 

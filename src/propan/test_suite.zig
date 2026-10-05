@@ -466,6 +466,126 @@ test "comparison diagnostic fixtures" {
     try checkFixtures(.compare, cases.compare_diagnostic_tests);
 }
 
+fn fuzz_arbitrary_assembly(_: void, smith: *std.testing.Smith) !void {
+    var buffer: [8192]u8 = undefined;
+    const source = buffer[0..smith.slice(&buffer)];
+    errdefer std.debug.print("\nassembly fuzz source:\n{s}\n", .{source});
+    var result = try execute(.{ .format = .flat, .output = "-", .@"no-warnings" = true }, &.{"-"}, &.{}, source, null, null);
+    defer result.deinit();
+    try std.testing.expect(result.status <= 1);
+    if (result.status == 1) {
+        // Invalid programs must report a diagnostic without emitting a partial binary.
+        try std.testing.expect(result.stderr.written().len > 0);
+        try std.testing.expectEqual(@as(usize, 0), result.stdout.written().len);
+    }
+}
+
+test "fuzz arbitrary source through full assembly" {
+    const sources = @import("fuzz-corpus").files ++ &[_][]const u8{
+        "",
+        "MOV (\n",
+        "UNKNOWN_MNEMONIC\n",
+        "const A = 1 / 0\nLONG A\n",
+        ".assert 0, \"expected failure\"\n",
+        "BYTE \"\\x\"\n",
+    };
+    var corpus: std.ArrayList([]const u8) = .empty;
+    defer {
+        for (corpus.items) |input| std.testing.allocator.free(input);
+        corpus.deinit(std.testing.allocator);
+    }
+    for (sources) |source| {
+        const len = @min(source.len, 8192);
+        const input = try std.testing.allocator.alloc(u8, 4 + len);
+        errdefer std.testing.allocator.free(input);
+        // Smith.slice replays a little-endian u32 length followed by the source bytes.
+        std.mem.writeInt(u32, input[0..4], @intCast(len), .little);
+        @memcpy(input[4..], source[0..len]);
+        try corpus.append(std.testing.allocator, input);
+    }
+    try std.testing.fuzz({}, fuzz_arbitrary_assembly, .{ .corpus = corpus.items });
+}
+
+const GeneratedOperation = enum { immediate, register, augment, pointer, branch, expression, local_label, data, alignment };
+
+fn generate_program(smith: *std.testing.Smith, writer: *std.Io.Writer) !void {
+    const mode = smith.value(enum { cog, lut, hub });
+    const count = smith.valueRangeAtMost(u8, 1, 16);
+    const fill = smith.value(u8);
+    const base = smith.value(u16);
+    try writer.print(".{t}exec\nconst BASE = {d}\n", .{ mode, base });
+    const mnemonics = [_][]const u8{ "MOV", "ADD", "SUB", "AND", "OR", "XOR" };
+    const conditions = [_][]const u8{ "", "if(C) ", "if(!Z) ", "if(C == Z) " };
+    const effects = [_][]const u8{ "", " :wc", " :wz", " :wcz" };
+    for (0..count) |index| {
+        const operation = smith.value(GeneratedOperation);
+        const dst = smith.value(u9);
+        const src = smith.value(u9);
+        const value = smith.valueWeighted(u32, &.{
+            .rangeAtMost(u32, 0, std.math.maxInt(u32), 1),
+            .value(u32, 0, 8),
+            .value(u32, 1, 8),
+            .value(u32, 255, 8),
+            .value(u32, 256, 8),
+            .value(u32, 511, 8),
+            .value(u32, 512, 8),
+            .value(u32, std.math.maxInt(u32), 8),
+        });
+        const condition = conditions[smith.index(conditions.len)];
+        const effect = effects[smith.index(effects.len)];
+        const mnemonic = mnemonics[smith.index(mnemonics.len)];
+        try writer.print("block{d}:\n", .{index});
+        switch (operation) {
+            .immediate => try writer.print("{s}{s} register({d}), {d}{s}\n", .{ condition, mnemonic, dst, value & 511, effect }),
+            .register => try writer.print("{s}{s} register({d}), register({d}){s}\n", .{ condition, mnemonic, dst, src, effect }),
+            .augment => try writer.print("{s}{s} register({d}), aug(0x{X}){s}\n", .{ condition, mnemonic, dst, value, effect }),
+            .pointer => try writer.print("RDLONG register({d}), {s}[{d}]\n", .{ dst, if (src & 1 == 0) "PTRA" else "PTRB", value & 15 }),
+            .branch => try writer.print("JMP after{d}\nNOP\nafter{d}:\nJMP block{d}\n", .{ index, index, index }),
+            .expression => {
+                const expected = (@as(u32, dst) + src) ^ value;
+                try writer.print("const value{d} = ({d} + {d}) ^ 0x{X}\nLONG value{d}\n.assert value{d} == 0x{X}\n", .{ index, dst, src, value, index, index, expected });
+            },
+            .local_label => try writer.writeAll("JMP .done\n.loop:\nNOP\n.done:\nJMP .loop\n"),
+            .data => try writer.print("BYTE {d}, \"A\\x00Z\"\nWORD {d}\nLONG 0x{X}\n.align 4\n", .{ @as(u8, @truncate(value)), @as(u16, @truncate(value)), value }),
+            .alignment => try writer.print(".align {d}\nNOP\n", .{@as(u32, 4) << @as(u5, @intCast(value % 3))}),
+        }
+    }
+    // A separate data segment exercises flattening alongside the generated code.
+    try writer.print(".data\nBYTE {d}, \"end\"\nWORD BASE\nLONG BASE + 1\n", .{fill});
+}
+
+fn fuzz_generated_assembly(_: void, smith: *std.testing.Smith) !void {
+    var source: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer source.deinit();
+    try generate_program(smith, &source.writer);
+    errdefer std.debug.print("\ngenerated assembly:\n{s}\n", .{source.written()});
+    var result = try execute(.{ .format = .flat, .output = "-", .@"no-warnings" = true }, &.{"-"}, &.{}, source.written(), null, null);
+    defer result.deinit();
+    errdefer std.debug.print("\ndiagnostics:\n{s}\n", .{result.stderr.written()});
+    try std.testing.expectEqual(@as(u8, 0), result.status);
+    try std.testing.expectEqualStrings("", result.stderr.written());
+    try std.testing.expect(result.stdout.written().len > 0);
+    // At most 16 bounded blocks, with alignment no greater than 16 cog longs.
+    try std.testing.expect(result.stdout.written().len <= 4096);
+}
+
+test "fuzz generated valid programs through full assembly" {
+    const operation_count = std.meta.fields(GeneratedOperation).len;
+    // Four initial choices and seven choices per block; Smith integers replay as u64.
+    var seeds: [3][(4 + 7 * operation_count) * 8]u8 = undefined;
+    for (&seeds, 0..) |*seed, mode| {
+        var writer: std.Io.Writer = .fixed(seed);
+        for ([_]u64{ mode, operation_count, 0x7E, 42 }) |value| try writer.writeInt(u64, value, .little);
+        for (0..operation_count) |operation| {
+            const values = [_]u32{ 0, 1, 255, 256, 511, 512, 0xFFFF, 0xFFFFFFFF };
+            for ([_]u64{ operation, 511, 255, values[(operation + mode) % values.len], operation % 4, (operation / 2) % 4, operation % 6 }) |value|
+                try writer.writeInt(u64, value, .little);
+        }
+    }
+    // Ordinary test runs exercise every operation in each execution mode, plus EOF defaults.
+    try std.testing.fuzz({}, fuzz_generated_assembly, .{ .corpus = &.{ "", &seeds[0], &seeds[1], &seeds[2] } });
+}
+
 fn assemble(path: []const u8, format: @FieldType(propan.Options, "format"), source: ?[]const u8) !Result {
     var result = try execute(.{ .format = format, .output = "-", .@"no-warnings" = true }, &.{if (source != null) "-" else path}, &.{}, source orelse "", if (source != null) path else null, null);
     errdefer result.deinit();
