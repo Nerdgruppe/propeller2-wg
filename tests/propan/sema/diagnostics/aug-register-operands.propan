@@ -1,0 +1,25 @@
+//? PROPAN CHECK LIST
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+const REG = PB
+MOV PA, aug(PB)
+RDLONG PA, PTRA[1]
+MOV aug(PA), 1
+RDLONG PA, aug(PTRA)
+WRLONG PA, aug(PTRB)
+MOV PA, aug(register(3))
+MOV PA, aug(REG)
+MOV PA, aug(slot)
+MOV PA, aug(*code)
+RDLONG PA, PTRA[aug(PB)]
+var slot:
+LONG 0
+code:
+NOP

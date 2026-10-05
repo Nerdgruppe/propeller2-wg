@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: warn_waitx_delay_too_short
+//? err: warn_relative_address_crosses_segments
+//? err: err_assertion_failed message=="Value(0, literal) is not equal to Value(1, literal)!"
+//? err: err_assertion_failed message=="Value(20, literal) is not equal to Value(1, literal)!"
+.assert ticks(1, ns=1, waitx=#on) == 1
+.cogexec 0x100, 10
+.assert @target == 1
+.cogexec 0x200, 30
+target:
+NOP

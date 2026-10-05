@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
+.hubexec
+const invalid_cog_register = localaddr(PA)
+.cogexec
+LONG invalid_cog_register

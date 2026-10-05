@@ -1,0 +1,21 @@
+//? PROPAN CHECK LIST
+//? err: err_unknown_function function=="missing_if"
+//? err: err_unknown_function function=="missing_elif"
+//? err: err_unknown_function function=="missing_constant"
+.if missing_if(1)
+BYTE 1
+.endif
+.if 0
+BYTE 2
+.elif missing_elif(1)
+BYTE 3
+.endif
+const CONDITION = missing_constant(1)
+.if CONDITION
+BYTE 4
+.endif
+.if 0
+.if skipped_function(1)
+BYTE 5
+.endif
+.endif

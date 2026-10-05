@@ -1,0 +1,13 @@
+//? PROPAN CHECK LIST
+//? err: err_ambigious_instruction_selection_for mnemonic=="MOV"
+//? err: err_ambigious_instruction_selection_for mnemonic=="ADD"
+//? err: err_ambigious_instruction_selection_for mnemonic=="MOV"
+//? err: err_ambigious_instruction_selection_for mnemonic=="RDLONG"
+//? err: err_ambigious_instruction_selection_for mnemonic=="WRLONG"
+
+// Pointer values cannot stand in for ordinary register or immediate operands.
+MOV PA, PTRA++
+ADD PB, PTRB[2]
+MOV ++PTRA, 1
+RDLONG PTRA++, PTRB[2]
+WRLONG PTRB[2], ++PTRA

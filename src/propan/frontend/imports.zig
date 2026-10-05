@@ -31,6 +31,12 @@ pub const Expander = struct {
     }
 
     pub fn expand(self: *Expander, root: *SourceFile) !ast.File {
+        if (!std.mem.eql(u8, root.path, "-")) {
+            root.identity = std.Io.Dir.cwd().realPathFileAlloc(self.io, root.path, self.allocator) catch |err| {
+                try self.diagnostics.emit_diag(null, .{ .err_cannot_read_import = .{ .path = root.path, .reason = err } });
+                return error.ImportFailed;
+            };
+        }
         try self.files.put(self.allocator, root.identity, root);
         var lines: std.ArrayListUnmanaged(ast.Line) = .empty;
         errdefer lines.deinit(self.allocator);
@@ -93,10 +99,15 @@ pub const Expander = struct {
                         local_path
                     else
                         try std.fs.path.resolve(self.allocator, &.{ self.include_paths[index - 1], path });
-                    const identity = try std.fmt.allocPrint(self.allocator, "{}:{s}", .{ dir_index, relative_path });
-                    if (self.files.get(identity)) |file| break :search file;
-
                     const search_dir = if (std.fs.path.isAbsolute(relative_path)) std.Io.Dir.cwd() else self.dirs[dir_index];
+                    const identity = search_dir.realPathFileAlloc(self.io, relative_path, self.allocator) catch |err| switch (err) {
+                        error.FileNotFound, error.NotDir => continue,
+                        else => {
+                            try self.diagnostics.emit_diag(instruction.location(), .{ .err_cannot_read_import = .{ .path = display_path, .reason = err } });
+                            return error.ImportFailed;
+                        },
+                    };
+                    if (self.files.get(identity)) |file| break :search file;
                     const text = search_dir.readFileAlloc(self.io, relative_path, self.allocator, .limited(1 << 20)) catch |err| switch (err) {
                         error.FileNotFound, error.NotDir => continue,
                         else => {

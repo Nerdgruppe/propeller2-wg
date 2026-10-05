@@ -678,6 +678,7 @@ pub const Parser = struct {
                         't' => try output.append(allocator, std.ascii.control_code.ht),
                         '\"' => try output.append(allocator, '\"'),
                         '\'' => try output.append(allocator, '\''),
+                        '\\' => try output.append(allocator, '\\'),
 
                         // \xHH
                         'x' => {

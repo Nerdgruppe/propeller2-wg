@@ -3,6 +3,7 @@ const std = @import("std");
 const Module = @import("../Module.zig");
 const source_line = @import("../source_line.zig");
 const instructions = @import("../stdlib/p2/instructions.zig").p2_instructions;
+const stdlib = @import("../stdlib/stdlib.zig");
 
 pub fn emit(io: std.Io, allocator: std.mem.Allocator, file: std.Io.File, modules: []const Module, data: []const u8) !void {
     const Kind = enum { padding, code, byte, word, long };
@@ -145,15 +146,20 @@ fn source_for(module: Module, path: []const u8) ?[]const u8 {
 }
 
 fn comment_start(line: []const u8) ?usize {
-    var quoted = false;
+    var quote: ?u8 = null;
     var index: usize = 0;
     while (index + 1 < line.len) : (index += 1) {
-        if (quoted and line[index] == '\\') {
-            index += 1;
-            continue;
+        if (quote) |delimiter| {
+            if (line[index] == '\\') {
+                index += 1;
+            } else if (line[index] == delimiter) {
+                quote = null;
+            }
+        } else if (line[index] == '"' or line[index] == '\'') {
+            quote = line[index];
+        } else if (line[index] == '/' and line[index + 1] == '/') {
+            return index;
         }
-        if (line[index] == '"') quoted = !quoted;
-        if (!quoted and line[index] == '/' and line[index + 1] == '/') return index;
     }
     return null;
 }
@@ -255,7 +261,10 @@ fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.L
         else => return false,
     };
     for (line.operands, 0..) |operand, index| {
-        if (std.ascii.eqlIgnoreCase(line.mnemonic.?, "REP") and index == 0 and std.mem.startsWith(u8, operand.syntax, "@")) continue;
+        if (std.ascii.eqlIgnoreCase(line.mnemonic.?, "REP") and index == 0 and std.mem.startsWith(u8, operand.syntax, "@")) {
+            if (rep_target_index(module, line, operand) == null) return false;
+            continue;
+        }
         if ((operand.encoding != .register and operand.encoding != .reg_or_imm) or operand.pcrel) return false;
         if (operand.value.flags.augment or operand.value.flags.addressing != .auto) return false;
         if (operand_number(operand) == null) return false;
@@ -268,33 +277,26 @@ fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.L
         try out.writeAll(if (index == 0) " " else ", ");
         if (std.ascii.eqlIgnoreCase(line.mnemonic.?, "REP") and index == 0 and std.mem.startsWith(u8, operand.syntax, "@")) {
             try out.writeByte('@');
-            const target = operand.syntax[1..];
-            if (std.mem.startsWith(u8, target, ".")) {
-                try out.writeAll(target);
-            } else {
-                for (module.symbols, 0..) |symbol, symbol_index| {
-                    if (std.ascii.eqlIgnoreCase(target, symbol.name)) {
-                        try emit_label_name(out, module, symbol.name, symbol_index);
-                        break;
-                    }
-                } else try out.writeAll(target);
-            }
+            const target_index = rep_target_index(module, line, operand).?;
+            try emit_label_name(out, module, module.symbols[target_index].name, target_index);
             continue;
         }
         if (operand.value.flags.usage == .literal) try out.writeByte('#');
-        if (operand.source_kind == .symbol and std.ascii.eqlIgnoreCase(operand.syntax, "altered")) {
+        if (operand.source_kind == .symbol and std.mem.eql(u8, operand.syntax, "altered")) {
             try out.writeAll("0-0");
             continue;
         }
         if (operand.source_kind == .symbol) {
             for (module.constants, 0..) |constant, constant_index| {
-                if (std.ascii.eqlIgnoreCase(operand.syntax, constant.name) and constant.value.value == .int and constant.value.value.int >= std.math.minInt(i32) and constant.value.value.int <= std.math.maxInt(u32)) {
+                if (std.mem.eql(u8, operand.syntax, constant.name) and constant.value.value == .int and constant.value.value.int >= std.math.minInt(i32) and constant.value.value.int <= std.math.maxInt(u32)) {
                     try emit_constant_name(out, module, constant.name, constant_index);
                     break;
                 }
             } else {
                 for (module.symbols, 0..) |symbol, symbol_index| {
-                    if (matches_label(operand, symbol) and symbol.label.hub_address != null) {
+                    if (matches_label(operand, symbol) and symbol.label.hub_address != null and
+                        symbol.label.hub_address.? / 4 == operand_number(operand).?)
+                    {
                         try emit_label_name(out, module, symbol.name, symbol_index);
                         break;
                     }
@@ -312,10 +314,31 @@ fn emit_readable_instruction(out: *std.Io.Writer, module: Module, line: Module.L
 }
 
 fn matches_label(operand: Module.LineData.Operand, symbol: Module.Symbol) bool {
-    if (std.ascii.eqlIgnoreCase(operand.syntax, symbol.name)) return true;
+    if (std.mem.eql(u8, operand.syntax, symbol.name)) return true;
     if (!std.mem.startsWith(u8, operand.syntax, ".") or operand.value.value != .address) return false;
     const colon = std.mem.lastIndexOfScalar(u8, symbol.name, ':') orelse return false;
-    return std.ascii.eqlIgnoreCase(operand.syntax[1..], symbol.name[colon + 1 ..]) and std.meta.eql(operand.value.value.address, symbol.label);
+    return std.mem.eql(u8, operand.syntax[1..], symbol.name[colon + 1 ..]) and std.meta.eql(operand.value.value.address, symbol.label);
+}
+
+fn rep_target_index(module: Module, line: Module.LineData, operand: Module.LineData.Operand) ?usize {
+    if (operand.value.value != .int) return null;
+    const target = operand.syntax[1..];
+    for (module.symbols, 0..) |symbol, index| {
+        const name = if (std.mem.startsWith(u8, target, ".")) blk: {
+            const colon = std.mem.lastIndexOfScalar(u8, symbol.name, ':') orelse break :blk symbol.name;
+            break :blk symbol.name[colon..];
+        } else symbol.name;
+        // Scoped local names use ':' where their source spelling uses '.'.
+        const matches = if (name.len > 0 and name[0] == ':')
+            std.mem.eql(u8, target[1..], name[1..])
+        else
+            std.mem.eql(u8, target, name);
+        if (!matches) continue;
+        const hub = symbol.label.hub_address orelse continue;
+        const bytes = @as(i64, hub) - (@as(i64, line.offset) + line.length);
+        if (@mod(bytes, 4) == 0 and @divTrunc(bytes, 4) == operand.value.value.int) return index;
+    }
+    return null;
 }
 
 fn emit_operand_number(out: *std.Io.Writer, operand: Module.LineData.Operand) !void {
@@ -324,23 +347,86 @@ fn emit_operand_number(out: *std.Io.Writer, operand: Module.LineData.Operand) !v
 }
 
 fn keyword(name: []const u8) bool {
-    const words = [_][]const u8{ "BYTE", "WORD", "LONG", "DAT", "CON", "VAR", "PUB", "PRI", "ORG", "ORGH", "ORGF", "RES", "FIT", "FILE", "IF", "ELSE", "REPEAT", "RETURN", "COUNT", "NEXT", "OTHER", "END" };
+    if (name.len >= 3 and std.ascii.eqlIgnoreCase(name[0..3], "IF_")) return true;
+    const words = [_][]const u8{
+        // Spin2 language and DAT keywords, including names used in operands.
+        "_",         "__ANDTHEN__", "__ORELSE__", "__REG__",   "__BUILTIN_ALLOCA",
+        "ADDBITS",   "ADDPINS",     "ALIGNL",     "ALIGNW",    "ASM",
+        "ASM_CONST", "ASMCLK",      "BMASK",      "BYTE",      "BYTEFIT",
+        "CASE",      "CASE_FAST",   "COGNEW",     "COGSPIN",   "CON",
+        "COUNT",     "DAT",         "DEBUG",      "ELSE",      "ELSEIF",
+        "ELSEIFNOT", "END",         "ENDASM",     "FABS",      "FILE",
+        "FIT",       "FLOAT",       "FRAC",       "FROM",      "FSQRT",
+        "FVAR",      "FVARS",       "IF",         "IFNOT",     "LONG",
+        "LOOKDOWN",  "LOOKDOWNZ",   "LOOKUP",     "LOOKUPZ",   "NAN",
+        "NEXT",      "OBJ",         "ORG",        "ORGH",      "ORGF",
+        "OTHER",     "PINH",        "PINHIGH",    "PINL",      "PINLOW",
+        "PINR",      "PINREAD",     "PINT",       "PINTOGGLE", "PINW",
+        "PINWRITE",  "PRI",         "PUB",        "QUIT",      "REG",
+        "REGEXEC",   "REGLOAD",     "REPEAT",     "RES",       "RETURN",
+        "ROUND",     "SQRT",        "STEP",       "STRING",    "THEN",
+        "TO",        "TRUNC",       "UNTIL",      "VAR",       "WHILE",
+        "WITH",      "WORD",        "WORDFIT",
+        // PASM condition and effect keywords.
+           "_RET_",     "WC",
+        "WZ",        "WCZ",         "ANDC",       "ANDZ",      "ORC",
+        "ORZ",       "XORC",        "XORZ",
+    };
     for (words) |word| if (std.ascii.eqlIgnoreCase(name, word)) return true;
     for (instructions) |instruction| if (std.ascii.eqlIgnoreCase(name, instruction.mnemonic)) return true;
+    for (stdlib.common.constants.keys()) |constant| if (std.ascii.eqlIgnoreCase(name, constant)) return true;
+    for (stdlib.p2.constants.keys(), stdlib.p2.constants.values()) |constant, value| {
+        if (value.value == .register and std.ascii.eqlIgnoreCase(name, constant)) return true;
+    }
     return false;
 }
 
 fn emit_label_name(out: *std.Io.Writer, module: Module, name: []const u8, index: usize) !void {
     if (std.mem.lastIndexOfScalar(u8, name, ':')) |colon| {
-        try out.print(".{s}", .{name[colon + 1 ..]});
-        return;
+        const local_name = name[colon + 1 ..];
+        try out.writeByte('.');
+        for (module.symbols, 0..) |other, other_index| {
+            if (other_index == index) continue;
+            const other_colon = std.mem.lastIndexOfScalar(u8, other.name, ':') orelse continue;
+            if (std.ascii.eqlIgnoreCase(name[0..colon], other.name[0..other_colon]) and
+                same_identifier(local_name, other.name[other_colon + 1 ..]))
+            {
+                return emit_conflicted_identifier(out, module, local_name, 's', index);
+            }
+        }
+        return emit_identifier(out, local_name);
     }
-    try emit_identifier(out, name);
     var conflict = keyword(name);
     for (module.symbols, 0..) |other, other_index| {
         if (other_index != index and std.mem.indexOfScalar(u8, other.name, ':') == null and same_identifier(name, other.name)) conflict = true;
     }
-    if (conflict) try out.print("_p2{d}", .{index});
+    for (module.constants) |constant| if (same_identifier(name, constant.name)) {
+        conflict = true;
+    };
+    if (conflict)
+        try emit_conflicted_identifier(out, module, name, 's', index)
+    else
+        try emit_identifier(out, name);
+}
+
+fn emit_conflicted_identifier(out: *std.Io.Writer, module: Module, name: []const u8, kind: u8, index: usize) !void {
+    // Reserve a prefix absent from every source identifier. Kind and index then
+    // distinguish generated names without colliding with existing declarations.
+    var buffer: [64]u8 = undefined;
+    var attempt: usize = 0;
+    const prefix = search: while (true) : (attempt += 1) {
+        const candidate = try std.fmt.bufPrint(&buffer, "_propan{d}_", .{attempt});
+        for (module.constants) |constant| {
+            if (constant.name.len >= candidate.len and same_identifier(constant.name[0..candidate.len], candidate)) continue :search;
+        }
+        for (module.symbols) |symbol| {
+            const identifier = if (std.mem.lastIndexOfScalar(u8, symbol.name, ':')) |colon| symbol.name[colon + 1 ..] else symbol.name;
+            if (identifier.len >= candidate.len and same_identifier(identifier[0..candidate.len], candidate)) continue :search;
+        }
+        break :search candidate;
+    };
+    try out.print("{s}{c}{d}_", .{ prefix, kind, index });
+    try emit_identifier(out, name);
 }
 
 fn emit_identifier(out: *std.Io.Writer, name: []const u8) !void {
@@ -358,7 +444,6 @@ fn same_identifier(a: []const u8, b: []const u8) bool {
 }
 
 fn emit_constant_name(out: *std.Io.Writer, module: Module, name: []const u8, index: usize) !void {
-    try out.writeAll(name);
     var conflict = keyword(name);
     for (module.symbols) |symbol| if (std.mem.indexOfScalar(u8, symbol.name, ':') == null and same_identifier(name, symbol.name)) {
         conflict = true;
@@ -366,7 +451,10 @@ fn emit_constant_name(out: *std.Io.Writer, module: Module, name: []const u8, ind
     for (module.constants, 0..) |other, other_index| {
         if (other_index != index and same_identifier(name, other.name)) conflict = true;
     }
-    if (conflict) try out.print("_p2{d}", .{index});
+    if (conflict)
+        try emit_conflicted_identifier(out, module, name, 'c', index)
+    else
+        try emit_identifier(out, name);
 }
 
 fn operand_number(operand: Module.LineData.Operand) ?u32 {

@@ -68,3 +68,13 @@ Outside conditional compilation, constants may refer to other constants in eithe
 Labels bind to the location before a following value's implicit padding. Place `.align` before a label when the label must name that aligned value.
 
 `byteoffset(label)` returns the byte position within a cog/LUT register (0–3). `wordoffset(label)` returns that position divided by two (0–1). Both require a cog, LUT, or regspace label. These can supply the selector for `GETBYTE`/`SETBYTE` or `GETWORD`/`SETWORD` when accessing packed cog/LUT data. A word beginning at an odd byte position spans two word fields and cannot be accessed as one word with that selector.
+
+`@label` returns the signed execution distance in longs from the PC after the current instruction to the label. Cog and LUT distances use execution addresses, independent of hub storage origins. Hub byte distances are divided by four; a distance not divisible by four is an error. References between different execution modes are errors. References between segments in the same execution mode are allowed and warn. `.data` and `.regspace` have no execution PC for this operator.
+
+Pointer expressions such as `PTRA++` and `PTRB[2]` are accepted only by instruction operands of type `pointer_expr`. Ordinary register, immediate, and register/immediate operands reject them; neither operand of `MOV` can take a pointer expression.
+
+`localaddr(register)` returns the register number only in `.cogexec` mode; `cogaddr(register)` returns it in every mode. These rules apply to all register values, including those produced by `register` and `regoffset`. Constants use their declaration's execution mode. Register arguments retain the advisory warning that an address function expected an offset.
+
+`NOP` has exactly the word `0x00000000` and accepts no explicit instruction condition, including `return`. Nonzero words in the ROR encoding are ROR instructions; `ROR register(0), register(0)` encodes as `0xF0000000`.
+
+`aug(value)` requires an instruction operand and an immediate value (an integer or address with literal usage). Parentheses are transparent wrapping, so `MOV PA, (aug(266))` is valid; operators and function arguments still introduce nesting and cannot contain `aug()`. Register values and values with register usage, such as `aug(PB)`, `aug(slot)` for a data label, and `aug(*label)`, are errors. It is also invalid in constant declarations, data, layout directives, assertions, and conditional-compilation expressions. An ordinary immediate constant may supply its value, for example `MOV PA, aug(BIG)`. In pointer expressions, augmentation applies to the index: `PTRA[aug(256)]` and `PTRA++[aug(256)]` are valid; `aug(PTRA[256])` and `aug(PTRA++)` are errors.

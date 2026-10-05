@@ -61,6 +61,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
 
     var active_file = file;
     var condition_references: std.StringHashMapUnmanaged(void) = .empty;
+    var condition_values: std.StringHashMapUnmanaged(Value) = .empty;
     // Rebind local scopes after imports have been spliced into one sequence.
     if (has_conditional_directives(file) or options.rebind_scopes) {
         var probe: Analyzer = try .init(allocator, file, options, diagnostics_collection);
@@ -73,6 +74,13 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
         active_file = try filter.run(file);
         if (!probe.ok) return error.SemanticErrors;
         condition_references = filter.referenced;
+        var references = condition_references.iterator();
+        while (references.next()) |entry| {
+            const value = probe.symbols.get(entry.key_ptr.*).?.value orelse continue;
+            // Invalid constant types still go through ordinary constant validation.
+            if (value.value == .address or value.value == .pointer_expr) continue;
+            try condition_values.put(filter_arena.allocator(), entry.key_ptr.*, try copy_value(filter_arena.allocator(), value));
+        }
     }
 
     var analyzer: Analyzer = try .init(allocator, active_file, options, diagnostics_collection);
@@ -93,7 +101,13 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
     var referenced = condition_references.iterator();
     while (referenced.next()) |entry| {
         const name = entry.key_ptr.*;
-        if (analyzer.symbols.getPtr(name)) |sym| sym.referenced = true;
+        if (analyzer.symbols.getPtr(name)) |sym| {
+            sym.referenced = true;
+            if (condition_values.get(name)) |value| {
+                sym.value = value;
+                sym.constant_state = .evaluated;
+            }
+        }
     }
     try analyzer.validate_symbol_refs();
 
@@ -251,11 +265,12 @@ fn number_style(expr: ast.Expression) Module.LineData.NumberStyle {
 const ConditionalFilter = struct {
     allocator: std.mem.Allocator,
     probe: *Analyzer,
-    constants: std.StringHashMapUnmanaged(ast.Constant) = .empty,
+    constants: std.StringHashMapUnmanaged(struct { declaration: ast.Constant, mode: eval.ExecMode }) = .empty,
     resolving: std.StringHashMapUnmanaged(void) = .empty,
     referenced: std.StringHashMapUnmanaged(void) = .empty,
     frames: std.ArrayListUnmanaged(Frame) = .empty,
     active: bool = true,
+    mode: eval.ExecMode = .cog,
     scope: ast.LocalScope = .{ .id = 0, .parent = null },
 
     const Frame = struct {
@@ -293,7 +308,7 @@ const ConditionalFilter = struct {
             if (line == .constant) {
                 const con = line.constant;
                 const gop = try filter.constants.getOrPut(filter.allocator, con.identifier);
-                if (!gop.found_existing) gop.value_ptr.* = con;
+                if (!gop.found_existing) gop.value_ptr.* = .{ .declaration = con, .mode = filter.mode };
             }
             try output.append(filter.allocator, try filter.rebind_line(line));
         }
@@ -372,7 +387,7 @@ const ConditionalFilter = struct {
             try filter.probe.emit_eval_error(instr.location(), .expression, err);
             return false;
         };
-        const value = filter.probe.evaluate_root_expr(instr.arguments[0], .{}) catch |err| {
+        const value = filter.probe.evaluate_root_expr(instr.arguments[0], .{ .exec_mode = filter.mode }) catch |err| {
             try filter.probe.emit_eval_error(instr.location(), .expression, err);
             return false;
         };
@@ -388,7 +403,8 @@ const ConditionalFilter = struct {
     }
 
     fn resolve_constant(filter: *ConditionalFilter, name: []const u8) Analyzer.EvalError!void {
-        const con = filter.constants.get(name) orelse return error.UndefinedSymbol;
+        const declared = filter.constants.get(name) orelse return error.UndefinedSymbol;
+        const con = declared.declaration;
         const sym = try filter.probe.get_symbol_info(name);
         if (sym.type == .builtin) return error.InvalidArg;
         if (sym.value != null) return;
@@ -397,7 +413,7 @@ const ConditionalFilter = struct {
         defer _ = filter.resolving.remove(name);
         sym.type = .{ .constant = con.span.location() };
         try filter.prepare_refs(con.value);
-        const value = try filter.probe.evaluate_root_expr(con.value, .{});
+        const value = try filter.probe.evaluate_root_expr(con.value, .{ .exec_mode = declared.mode });
         (try filter.probe.get_symbol_info(name)).value = value;
     }
 
@@ -446,7 +462,8 @@ const ConditionalFilter = struct {
                 const args = try filter.allocator.alloc(ast.Expression, instr.arguments.len);
                 for (instr.arguments, args) |arg, *dest| dest.* = try filter.rebind_expr(arg);
                 instr.arguments = args;
-                if (mode_directive.from_name(instr.mnemonic) != null) {
+                if (mode_directive.from_name(instr.mnemonic)) |mode| {
+                    filter.mode = mode;
                     filter.scope.id += 1;
                     filter.scope.parent = null;
                 }
@@ -568,6 +585,7 @@ const Analyzer = struct {
     ok: bool = true,
     error_count: usize = 0,
     in_layout: bool = false,
+    suppress_diagnostics: bool = false,
 
     fn init(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOptions, diagnostics_collection: *diagnostics.Collection) !Analyzer {
         var ana: Analyzer = .{
@@ -619,6 +637,7 @@ const Analyzer = struct {
     }
 
     fn emit_diag(ana: *Analyzer, location: ?ast.Location, diagnostic: diagnostics.Kind) !void {
+        if (ana.suppress_diagnostics) return;
         if (diagnostic.level() == .@"error") {
             ana.ok = false;
             ana.error_count += 1;
@@ -768,6 +787,7 @@ const Analyzer = struct {
 
     /// Declares all symbols from labels and constants.
     fn declare_symbols(ana: *Analyzer) !void {
+        var mode: eval.ExecMode = .cog;
         for (ana.file.sequence) |*item| {
             switch (item.*) {
                 .empty => {},
@@ -799,9 +819,12 @@ const Analyzer = struct {
                     } else {
                         sym.type = .{ .constant = con.span.location() };
                         sym.constant = con;
+                        sym.constant_mode = mode;
                     }
                 },
-                .instruction => {},
+                .instruction => |instr| {
+                    if (mode_directive.from_name(instr.mnemonic)) |new_mode| mode = new_mode;
+                },
             }
         }
     }
@@ -930,6 +953,11 @@ const Analyzer = struct {
 
             instr.mnemonic = mnemonic;
 
+            if (instr.ast_node.condition) |condition| {
+                if (std.ascii.eqlIgnoreCase(instr.ast_node.mnemonic, "NOP"))
+                    try ana.emit_diag(condition.span.location(), .err_nop_cannot_have_condition);
+            }
+
             instr.byte_size = switch (mnemonic.*) {
                 .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .res, .assert, .fit, .@"align", .pack, .pic => 0,
 
@@ -1021,7 +1049,10 @@ const Analyzer = struct {
                     std.debug.assert(coded.ast_node == instr);
 
                     coded.start_addr = cursor.offset;
-                    defer coded.end_addr = cursor.offset;
+                    defer {
+                        coded.end_addr = cursor.offset;
+                        coded.end_pc = cursor.fit_position();
+                    }
 
                     switch (coded.mnemonic.?.*) {
                         .assert => {},
@@ -1412,6 +1443,7 @@ const Analyzer = struct {
             .sequence => |seq| seq.len,
             else => unreachable,
         };
+        if (len == 0) return source;
         const total = std.math.mul(usize, len, count) catch return error.Overflow;
         if (total > 0x80000) return error.Overflow;
         switch (source.value) {
@@ -1500,6 +1532,7 @@ const Analyzer = struct {
         const errors_before = ana.error_count;
         const value = ana.evaluate_root_expr(con.value, .{
             .constant = true,
+            .exec_mode = sym.constant_mode,
             .forbid_label_addresses = ana.in_layout,
         }) catch |err| {
             if (err == error.ConstantNeedsLabelDuringLayout) return err;
@@ -1559,7 +1592,7 @@ const Analyzer = struct {
                 else => {},
             }
             for (args, instr.ast_node.arguments) |*value, expr| {
-                value.* = ana.evaluate_root_expr(expr, .{ .after = instr.end_addr, .start = instr.start_addr, .fit_pc = instr.fit_pc }) catch |err| {
+                value.* = ana.evaluate_root_expr(expr, .{ .after = instr.end_addr, .after_pc = instr.end_pc, .start = instr.start_addr, .fit_pc = instr.fit_pc, .allow_augment = instr.mnemonic.?.* == .encoded }) catch |err| {
                     try ana.emit_eval_error(instr.ast_node.location(), .expression, err);
                     value.* = .int(0);
                     continue;
@@ -1892,7 +1925,10 @@ const Analyzer = struct {
                     };
 
                     if (maybe_relation) |relation| {
-                        const context: EvalContext = .{ .after = instr.end_addr, .start = instr.start_addr };
+                        // Operands were already evaluated and diagnosed; only build the message.
+                        ana.suppress_diagnostics = true;
+                        defer ana.suppress_diagnostics = false;
+                        const context: EvalContext = .{ .after = instr.end_addr, .after_pc = instr.end_pc, .start = instr.start_addr };
                         const lhs = try ana.evaluate_root_expr(arg_expr.binary_transform.lhs.*, context);
                         const rhs = try ana.evaluate_root_expr(arg_expr.binary_transform.rhs.*, context);
 
@@ -2116,7 +2152,7 @@ const Analyzer = struct {
                     const cond_code: ast.Condition.Code = if (instr.ast_node.condition) |condition|
                         condition.type.encode()
                     else if (std.ascii.eqlIgnoreCase(encoded.mnemonic, "NOP"))
-                        .@"return" // TODO: Remove this special case, it's weird. Should be encoded as a flag
+                        .@"return" // NOP has a fixed all-zero encoding, including its condition bits.
                     else
                         encoded.default_condition;
 
@@ -2743,10 +2779,13 @@ const Analyzer = struct {
 
     const EvalContext = struct {
         after: ?TaggedAddress = null,
+        after_pc: ?u32 = null,
         start: ?TaggedAddress = null,
         fit_pc: ?u32 = null,
+        exec_mode: ?eval.ExecMode = null,
         constant: bool = false,
         forbid_label_addresses: bool = false,
+        allow_augment: bool = false,
     };
 
     fn evaluate_root_expr(ana: *Analyzer, expr: ast.Expression, context: EvalContext) EvalError!eval.Value {
@@ -2755,7 +2794,7 @@ const Analyzer = struct {
 
     fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, context: EvalContext, nesting: usize) EvalError!eval.Value {
         switch (expr) {
-            .wrapped => |inner| return try ana.evaluate_expr(inner.value.*, context, nesting + 1),
+            .wrapped => |inner| return try ana.evaluate_expr(inner.value.*, context, nesting),
             .current_pc => |span| {
                 const location = span.location();
                 if (context.constant) {
@@ -2939,22 +2978,32 @@ const Analyzer = struct {
                         };
                         const target_offset: TaggedAddress = value.value.address;
 
-                        // TODO: Validate local_offset and target_offset point into the same segment
-
-                        const local_hub_addr: u32 = local_offset.hub_address orelse {
-                            try ana.emit_diag(op.operator_span.location(), .{ .err_address_has_no_hub_location = .current });
+                        const mode: eval.ExecMode = local_offset.local;
+                        if (target_offset.local != mode) {
+                            try ana.emit_diag(op.operator_span.location(), .{ .err_address_space_mismatch = .{
+                                .subject = "@",
+                                .expected = .initOne(mode),
+                                .actual = .initOne(std.meta.activeTag(target_offset.local)),
+                            } });
                             return .int(0);
-                        };
-                        const target_hub_addr: u32 = target_offset.hub_address orelse {
-                            try ana.emit_diag(op.operator_span.location(), .{ .err_address_has_no_hub_location = .target });
+                        }
+                        if (mode == .data or mode == .regspace) {
+                            try ana.emit_diag(op.operator_span.location(), .err_address_has_no_execution_pc);
                             return .int(0);
-                        };
+                        }
+                        const local_pc = context.after_pc orelse local_offset.get_local(.pc).?;
+                        const target_pc = target_offset.get_local(.pc).?;
+                        const local_bytes: i64 = if (mode == .hub) local_pc else @as(i64, local_pc) * 4 + local_offset.subreg_byte;
+                        const target_bytes: i64 = if (mode == .hub) target_pc else @as(i64, target_pc) * 4 + target_offset.subreg_byte;
 
-                        const jmp_delta = @as(i33, target_hub_addr) - @as(i33, local_hub_addr);
+                        const jmp_delta = target_bytes - local_bytes;
 
                         if (@mod(jmp_delta, 4) != 0) {
                             try ana.emit_diag(op.operator_span.location(), .err_address_delta_not_divisible_by_four);
+                            return .int(0);
                         }
+                        if (local_offset.segment_id != target_offset.segment_id)
+                            try ana.emit_diag(op.operator_span.location(), .warn_relative_address_crosses_segments);
 
                         return .int(@divTrunc(jmp_delta, 4));
                     },
@@ -3123,7 +3172,12 @@ const Analyzer = struct {
                 }
             },
             .function_call => |fncall| {
-                const func = ana.get_function(fncall.function).?;
+                const func = ana.get_function(fncall.function) orelse {
+                    try ana.emit_diag(fncall.span.location(), .{ .err_unknown_function = .{
+                        .function = fncall.function,
+                    } });
+                    return error.DiagnosedFailure;
+                };
 
                 const params = func.get_parameters();
 
@@ -3153,8 +3207,21 @@ const Analyzer = struct {
                         std.debug.assert(argv.len == 1);
                         if (nesting != 0) {
                             try ana.emit_diag(fncall.arguments[0].span.location(), .{ .err_function_must_be_root = .{ .function = "aug" } });
+                            return error.DiagnosedFailure;
+                        }
+                        if (!context.allow_augment) {
+                            try ana.emit_diag(fncall.span.location(), .err_augmentation_requires_instruction_operand);
+                            return error.DiagnosedFailure;
                         }
                         var value = argv[0];
+                        if (value.value == .pointer_expr) {
+                            try ana.emit_diag(fncall.arguments[0].span.location(), .err_augmentation_requires_pointer_index);
+                            return error.DiagnosedFailure;
+                        }
+                        if (value.flags.usage != .literal or (value.value != .int and value.value != .address)) {
+                            try ana.emit_diag(fncall.arguments[0].span.location(), .err_augmentation_requires_immediate);
+                            return error.DiagnosedFailure;
+                        }
                         value.flags.augment = true;
                         return value;
                     },
@@ -3232,8 +3299,11 @@ const Analyzer = struct {
                                     try ana.emit_diag(loc, .{ .err_address_function_invalid_operand_type = .{ .function = .lutaddr, .value_type = .register } });
                                     return .int(0);
                                 } else if (func.* == .localaddr) {
-                                    // TODO: Check if "execution mode" is .cogexec
-                                    try ana.emit_diag(loc, .err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope);
+                                    const mode = context.exec_mode orelse if (context.start) |start| std.meta.activeTag(start.local) else null;
+                                    if (mode != .cog) {
+                                        try ana.emit_diag(loc, .err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope);
+                                        return .int(0);
+                                    }
                                 }
 
                                 try ana.emit_diag(fncall.arguments[0].span.location(), .{
@@ -4245,6 +4315,7 @@ const SymbolInfo = struct {
     offset: ?TaggedAddress = null,
     value: ?Value = null,
     constant: ?*const ast.Constant = null,
+    constant_mode: eval.ExecMode = .cog,
     constant_state: enum { unvisited, evaluating, evaluated, failed } = .unvisited,
 
     pub fn location(sym: SymbolInfo) ?ast.Location {
@@ -4267,6 +4338,8 @@ const InstructionInfo = struct {
 
     start_addr: ?TaggedAddress = null,
     end_addr: ?TaggedAddress = null,
+    /// Retain the one-past-end PC, which may exceed the address's 9-bit index.
+    end_pc: ?u32 = null,
     fit_pc: ?u32 = null,
 
     /// Size of the instruction slot in bytes
@@ -4500,6 +4573,7 @@ pub const EncodedInstruction = struct {
             enumeration: std.StaticStringMap(u32),
 
             pub fn can_assign_from(opt: Type, value: Value) bool {
+                if (value.value == .pointer_expr) return opt == .pointer_expr;
                 if (value.value == .string or value.value == .sequence) {
                     // strings and sequences cannot be assigned to instruction operands
                     return false;

@@ -1,0 +1,8 @@
+//? PROPAN CHECK LIST
+//? err: warn_relative_address_crosses_segments
+//? mem: 0x100 <- u32 [0xFCDC2601]
+.cogexec 0x100, 10
+REP @target, 1
+.cogexec 0x200, 30
+target:
+NOP
