@@ -18,7 +18,7 @@ test "frontend source and AST renderers cover expression variants" {
 
     var rendered: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer rendered.deinit();
-    try frontend.render.pretty_print_alloc(std.testing.allocator, &rendered.writer, parsed.file);
+    try frontend.render.pretty_print(&rendered.writer, parsed.file);
     var reparsing_source: SourceFile = try .init(std.testing.allocator, "roundtrip.propan", rendered.written());
     defer reparsing_source.deinit(std.testing.allocator);
     var reparsing: frontend.Parser = .init(&reparsing_source, &collection);
@@ -69,7 +69,7 @@ test "AST renderer preserves binary grouping without extra parentheses" {
 
     var rendered: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer rendered.deinit();
-    try frontend.render.pretty_print_alloc(std.testing.allocator, &rendered.writer, parsed.file);
+    try frontend.render.pretty_print(&rendered.writer, parsed.file);
     try std.testing.expectEqualStrings(
         \\const PRECEDENCE = (1 + 2) * 3
         \\const ASSOCIATIVITY = 20 - (5 - 2)
@@ -112,20 +112,20 @@ test "pretty printer aligns blocks and preserves comments and emitted bytes" {
     var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
-    var formatted: std.Io.Writer.Allocating = .init(std.testing.allocator);
-    defer formatted.deinit();
-    try frontend.render.pretty_print_alloc(std.testing.allocator, &formatted.writer, parsed.file);
-    try std.testing.expectEqualStrings(expected, formatted.written());
+    var formatted_buffer: [8192]u8 = undefined;
+    var formatted: std.Io.Writer = .fixed(&formatted_buffer);
+    try frontend.render.pretty_print(&formatted, parsed.file);
+    try std.testing.expectEqualStrings(expected, formatted.buffered());
 
-    var reparsing_source: SourceFile = try .init(std.testing.allocator, "expected.propan", formatted.written());
+    var reparsing_source: SourceFile = try .init(std.testing.allocator, "expected.propan", formatted.buffered());
     defer reparsing_source.deinit(std.testing.allocator);
     var reparsing: frontend.Parser = .init(&reparsing_source, &collection);
     var reparsed = try reparsing.parse(std.testing.allocator);
     defer reparsed.deinit();
-    var second_pass: std.Io.Writer.Allocating = .init(std.testing.allocator);
-    defer second_pass.deinit();
-    try frontend.render.pretty_print_alloc(std.testing.allocator, &second_pass.writer, reparsed.file);
-    try std.testing.expectEqualStrings(expected, second_pass.written());
+    var second_buffer: [8192]u8 = undefined;
+    var second_pass: std.Io.Writer = .fixed(&second_buffer);
+    try frontend.render.pretty_print(&second_pass, reparsed.file);
+    try std.testing.expectEqualStrings(expected, second_pass.buffered());
 
     var original_module = try sema.analyze(std.testing.allocator, parsed.file, .{}, &collection);
     defer original_module.deinit();
@@ -149,7 +149,7 @@ test "comment in an empty call stays inside its parentheses" {
     defer parsed.deinit();
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
-    try frontend.render.pretty_print_alloc(std.testing.allocator, &output.writer, parsed.file);
+    try frontend.render.pretty_print(&output.writer, parsed.file);
     try std.testing.expectEqualStrings("const X = foo(  // inside empty call\n          )\n", output.written());
 
     var reparsing_source: SourceFile = try .init(std.testing.allocator, "empty-call-formatted.propan", output.written());

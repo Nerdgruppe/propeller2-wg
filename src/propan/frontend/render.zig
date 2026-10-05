@@ -9,8 +9,10 @@ const Row = struct {
     line: ast.Line,
     trailing_comment: ?[]const u8 = null,
     inner_comments: []const ast.Comment = &.{},
-    rendered: []const u8 = "",
-    condition: []const u8 = "",
+
+    fn content(row: Row) Content {
+        return .{ .line = row.line, .comments = row.inner_comments };
+    }
 };
 
 const Entry = union(enum) {
@@ -20,80 +22,96 @@ const Entry = union(enum) {
 };
 
 pub fn pretty_print(writer: *std.Io.Writer, file: ast.File) !void {
-    try pretty_print_alloc(std.heap.page_allocator, writer, file);
-}
-
-pub fn pretty_print_alloc(allocator: std.mem.Allocator, writer: *std.Io.Writer, file: ast.File) !void {
-    var arena_state: std.heap.ArenaAllocator = .init(allocator);
-    defer arena_state.deinit();
-    const arena = arena_state.allocator();
-
-    var entries: std.ArrayListUnmanaged(Entry) = .empty;
-    var comment_index: usize = 0;
-    var next_line: u32 = 1;
-
-    for (file.sequence, 0..) |line, index| {
-        if (line == .empty) {
-            if (file.source.text.len == 0) try entries.append(arena, .blank);
-            continue;
-        }
-
-        const location = line_location(line);
-        if (file.source.text.len > 0) {
-            while (next_line < location.line) : (next_line += 1) {
-                try append_gap_line(arena, &entries, file.comments, &comment_index, next_line);
-            }
-        }
-
-        const end_line: u32 = switch (line) {
-            .instruction => |instr| instr.span.endLocation().line,
-            .constant => |con| con.span.endLocation().line,
-            else => location.line,
-        };
-        const first_comment = comment_index;
-        const next_same_line = for (file.sequence[index + 1 ..]) |later| {
-            if (later == .empty) continue;
-            break line_location(later).line == end_line;
-        } else false;
-        if (!(line == .label and next_same_line)) {
-            while (comment_index < file.comments.len and file.comments[comment_index].span.location().line <= end_line)
-                comment_index += 1;
-        }
-        var inner_end = comment_index;
-        var trailing: ?[]const u8 = null;
-        if (inner_end > first_comment and file.comments[inner_end - 1].span.location().line == end_line and !next_same_line) {
-            inner_end -= 1;
-            trailing = file.comments[inner_end].text;
-        }
-        try entries.append(arena, .{ .row = .{
-            .line = line,
-            .trailing_comment = trailing,
-            .inner_comments = file.comments[first_comment..inner_end],
-        } });
-        next_line = @max(next_line, end_line + 1);
-    }
-
-    if (file.source.text.len > 0) {
-        const line_count: u32 = @intCast(file.source.line_starts.len - @as(usize, if (std.mem.endsWith(u8, file.source.text, "\n")) 1 else 0));
-        while (next_line <= line_count) : (next_line += 1)
-            try append_gap_line(arena, &entries, file.comments, &comment_index, next_line);
-    }
-
-    var block_start: usize = 0;
-    for (entries.items, 0..) |entry, index| {
-        if (entry != .row) continue;
-        const boundary = switch (entry.row.line) {
+    var entries: Entries = .{ .file = file };
+    var block_start = entries;
+    var block_length: usize = 0;
+    while (true) {
+        const before = entries;
+        const entry = entries.next() orelse break;
+        const boundary = entry == .row and switch (entry.row.line) {
             .label => |label| label.identifier[0] != '.',
             .instruction => |instr| mode_directive.from_name(instr.mnemonic) != null,
             else => false,
         };
-        if (boundary and index > block_start) {
-            try write_block(arena, writer, entries.items[block_start..index]);
-            block_start = index;
+        if (boundary and block_length > 0) {
+            try write_block(writer, block_start, block_length);
+            block_start = before;
+            block_length = 0;
         }
+        block_length += 1;
     }
-    try write_block(arena, writer, entries.items[block_start..]);
+    try write_block(writer, block_start, block_length);
 }
+
+// Copying the cursor lets measurement and output walk the same block.
+const Entries = struct {
+    file: ast.File,
+    line_index: usize = 0,
+    comment_index: usize = 0,
+    next_line: u32 = 1,
+
+    fn next(self: *Entries) ?Entry {
+        const file = self.file;
+        while (self.line_index < file.sequence.len) {
+            const index = self.line_index;
+            const line = file.sequence[index];
+            if (line == .empty) {
+                self.line_index += 1;
+                if (file.source.text.len == 0) return .blank;
+                continue;
+            }
+
+            const location = line_location(line);
+            if (file.source.text.len > 0 and self.next_line < location.line)
+                return self.gap();
+            self.line_index += 1;
+
+            const end_line = switch (line) {
+                .instruction => |instr| instr.span.endLocation().line,
+                .constant => |con| con.span.endLocation().line,
+                else => location.line,
+            };
+            const first_comment = self.comment_index;
+            const next_same_line = for (file.sequence[index + 1 ..]) |later| {
+                if (later == .empty) continue;
+                break line_location(later).line == end_line;
+            } else false;
+            if (!(line == .label and next_same_line)) {
+                while (self.comment_index < file.comments.len and file.comments[self.comment_index].span.location().line <= end_line)
+                    self.comment_index += 1;
+            }
+            var inner_end = self.comment_index;
+            var trailing: ?[]const u8 = null;
+            if (inner_end > first_comment and file.comments[inner_end - 1].span.location().line == end_line and !next_same_line) {
+                inner_end -= 1;
+                trailing = file.comments[inner_end].text;
+            }
+            self.next_line = @max(self.next_line, end_line + 1);
+            return .{ .row = .{
+                .line = line,
+                .trailing_comment = trailing,
+                .inner_comments = file.comments[first_comment..inner_end],
+            } };
+        }
+
+        if (file.source.text.len > 0) {
+            const line_count = file.source.line_starts.len - @as(usize, if (std.mem.endsWith(u8, file.source.text, "\n")) 1 else 0);
+            if (self.next_line <= line_count) return self.gap();
+        }
+        return null;
+    }
+
+    fn gap(self: *Entries) Entry {
+        const line = self.next_line;
+        self.next_line += 1;
+        if (self.comment_index < self.file.comments.len and self.file.comments[self.comment_index].span.location().line == line) {
+            const comment = self.file.comments[self.comment_index];
+            self.comment_index += 1;
+            return .{ .comment = comment.text };
+        }
+        return .blank;
+    }
+};
 
 fn line_location(line: ast.Line) ast.Location {
     return switch (line) {
@@ -104,49 +122,49 @@ fn line_location(line: ast.Line) ast.Location {
     };
 }
 
-fn append_gap_line(allocator: std.mem.Allocator, entries: *std.ArrayListUnmanaged(Entry), comments: []const ast.Comment, comment_index: *usize, line: u32) !void {
-    if (comment_index.* < comments.len and comments[comment_index.*].span.location().line == line) {
-        try entries.append(allocator, .{ .comment = comments[comment_index.*].text });
-        comment_index.* += 1;
-    } else try entries.append(allocator, .blank);
-}
-
-fn write_block(allocator: std.mem.Allocator, writer: *std.Io.Writer, entries: []Entry) !void {
+fn write_block(writer: *std.Io.Writer, start: Entries, length: usize) !void {
     var mnemonic_width: usize = 0;
-    for (entries) |*entry| {
-        if (entry.* != .row) continue;
-        const row = &entry.row;
-        switch (row.line) {
-            .instruction => |instr| {
-                if (!is_directive(instr)) mnemonic_width = @max(mnemonic_width, instr.mnemonic.len);
-                row.condition = try render_condition(allocator, instr.condition);
-                row.rendered = try render_arguments(allocator, instr.arguments, row.inner_comments);
-            },
-            .constant => |con| row.rendered = try render_expression(allocator, con.value, row.inner_comments),
-            else => {},
+    var entries = start;
+    for (0..length) |_| {
+        const entry = entries.next().?;
+        if (entry == .row and entry.row.line == .instruction) {
+            const instr = entry.row.line.instruction;
+            if (!is_directive(instr)) mnemonic_width = @max(mnemonic_width, instr.mnemonic.len);
         }
     }
     const operand_column = mnemonic_column + mnemonic_width + 1;
     var operand_width: usize = 0;
     var effect_width: usize = 0;
-    for (entries) |entry| {
-        if (entry != .row or entry.row.line != .instruction or is_directive(entry.row.line.instruction)) continue;
+    var comment_column: usize = 0;
+    entries = start;
+    for (0..length) |_| {
+        const entry = entries.next().?;
+        if (entry != .row) continue;
         const row = entry.row;
-        operand_width = @max(operand_width, last_line_width(row.rendered));
-        if (row.line.instruction.effect) |effect| effect_width = @max(effect_width, 1 + @tagName(effect.type).len);
-    }
-    const effect_column = operand_column + operand_width + 1;
-    var comment_column = effect_column + effect_width + 1;
-    for (entries) |entry| {
-        if (entry != .row or entry.row.trailing_comment == null) continue;
-        switch (entry.row.line) {
-            .constant => |con| comment_column = @max(comment_column, "const ".len + con.identifier.len + " = ".len + last_line_width(entry.row.rendered) + 1),
-            .label => |label| comment_column = @max(comment_column, label.identifier.len + (if (label.type == .@"var") @as(usize, 5) else 1) + 1),
-            else => {},
+        switch (row.line) {
+            .instruction => |instr| {
+                if (!is_directive(instr)) {
+                    operand_width = @max(operand_width, row.content().width());
+                    if (instr.effect) |effect| effect_width = @max(effect_width, std.fmt.count(":{t}", .{effect.type}));
+                }
+            },
+            .constant => |con| {
+                if (row.trailing_comment != null)
+                    comment_column = @max(comment_column, std.fmt.count("const {s} = ", .{con.identifier}) + row.content().width() + 1);
+            },
+            .label => |label| {
+                if (row.trailing_comment != null)
+                    comment_column = @max(comment_column, label.identifier.len + (if (label.type == .@"var") @as(usize, 5) else 1) + 1);
+            },
+            .empty => unreachable,
         }
     }
+    const effect_column = operand_column + operand_width + 1;
+    comment_column = @max(comment_column, effect_column + effect_width + 1);
 
-    for (entries) |entry| {
+    entries = start;
+    for (0..length) |_| {
+        const entry = entries.next().?;
         switch (entry) {
             .blank => try writer.writeByte('\n'),
             .comment => |comment| try writer.print("{s}\n", .{comment}),
@@ -162,13 +180,15 @@ fn write_block(allocator: std.mem.Allocator, writer: *std.Io.Writer, entries: []
                         try write_text(writer, &column, "const ");
                         try write_text(writer, &column, con.identifier);
                         try write_text(writer, &column, " = ");
-                        try write_multiline(writer, &column, column, row.rendered);
+                        try row.content().write(writer, &column);
                     },
                     .instruction => |instr| {
                         const directive = is_directive(instr);
-                        if (instr.condition != null) {
+                        if (instr.condition) |condition| {
                             try pad_to(writer, &column, 2);
-                            try write_text(writer, &column, row.condition);
+                            const formatted: Condition = .{ .condition = condition };
+                            try writer.print("{f}", .{formatted});
+                            column += std.fmt.count("{f}", .{formatted});
                         }
                         if (directive) {
                             if (instr.condition != null) try pad_to(writer, &column, column + 1);
@@ -177,21 +197,19 @@ fn write_block(allocator: std.mem.Allocator, writer: *std.Io.Writer, entries: []
                         if (instr.arguments.len > 0) {
                             const argument_column = if (directive) column + 1 else operand_column;
                             try pad_to(writer, &column, argument_column);
-                            try write_multiline(writer, &column, argument_column, row.rendered);
+                            try row.content().write(writer, &column);
                         }
                         if (instr.effect) |effect| {
                             try pad_to(writer, &column, if (directive) column + 1 else effect_column);
                             try writer.print(":{t}", .{effect.type});
-                            column += 1 + @tagName(effect.type).len;
+                            column += std.fmt.count(":{t}", .{effect.type});
                         }
                     },
                     .empty => unreachable,
                 }
                 if (row.trailing_comment) |comment| {
                     const directive = row.line == .instruction and is_directive(row.line.instruction);
-                    if (directive) {
-                        try pad_to(writer, &column, column + 2);
-                    } else try pad_to(writer, &column, comment_column);
+                    try pad_to(writer, &column, if (directive) column + 2 else comment_column);
                     try write_text(writer, &column, comment);
                 }
                 try writer.writeByte('\n');
@@ -209,13 +227,9 @@ fn is_directive(instr: ast.Instruction) bool {
     return std.mem.startsWith(u8, instr.mnemonic, ".");
 }
 
-fn last_line_width(value: []const u8) usize {
-    return value.len - (if (std.mem.lastIndexOfScalar(u8, value, '\n')) |index| index + 1 else 0);
-}
-
 fn pad_to(writer: *std.Io.Writer, column: *usize, target: usize) !void {
     const count = if (column.* >= target) @as(usize, 1) else target - column.*;
-    for (0..count) |_| try writer.writeByte(' ');
+    try writer.splatByteAll(' ', count);
     column.* += count;
 }
 
@@ -224,57 +238,63 @@ fn write_text(writer: *std.Io.Writer, column: *usize, text: []const u8) !void {
     column.* += text.len;
 }
 
-fn write_multiline(writer: *std.Io.Writer, column: *usize, continuation: usize, text: []const u8) !void {
-    for (text) |char| {
-        if (char == '\n') {
-            try writer.writeByte('\n');
-            column.* = 0;
-            for (0..continuation) |_| try writer.writeByte(' ');
-            column.* = continuation;
-        } else {
-            try writer.writeByte(char);
-            column.* += 1;
+const Condition = struct {
+    condition: ast.ConditionNode,
+
+    pub fn format(self: Condition, writer: *std.Io.Writer) std.Io.Writer.Error!void {
+        const c_strings: [2][]const u8 = .{ "!C", "C" };
+        const z_strings: [2][]const u8 = .{ "!Z", "Z" };
+        switch (self.condition.type) {
+            .@"return" => try writer.writeAll("return"),
+            .c_is_z => try writer.writeAll("if(C == Z)"),
+            .c_is_not_z => try writer.writeAll("if(C != Z)"),
+            .c_is => |value| try writer.print("if({s})", .{c_strings[@intFromBool(value)]}),
+            .z_is => |value| try writer.print("if({s})", .{z_strings[@intFromBool(value)]}),
+            .c_and_z => |value| try writer.print("if({s} & {s})", .{ c_strings[@intFromBool(value.c)], z_strings[@intFromBool(value.z)] }),
+            .c_or_z => |value| try writer.print("if({s} | {s})", .{ c_strings[@intFromBool(value.c)], z_strings[@intFromBool(value.z)] }),
+            .comparison => |value| try writer.print("if({t})", .{value}),
         }
     }
-}
+};
 
-fn render_condition(allocator: std.mem.Allocator, maybe_condition: ?ast.ConditionNode) ![]const u8 {
-    const condition = maybe_condition orelse return "";
-    var output: std.Io.Writer.Allocating = .init(allocator);
-    const writer = &output.writer;
-    const c_strings: [2][]const u8 = .{ "!C", "C" };
-    const z_strings: [2][]const u8 = .{ "!Z", "Z" };
-    switch (condition.type) {
-        .@"return" => try writer.writeAll("return"),
-        .c_is_z => try writer.writeAll("if(C == Z)"),
-        .c_is_not_z => try writer.writeAll("if(C != Z)"),
-        .c_is => |value| try writer.print("if({s})", .{c_strings[@intFromBool(value)]}),
-        .z_is => |value| try writer.print("if({s})", .{z_strings[@intFromBool(value)]}),
-        .c_and_z => |value| try writer.print("if({s} & {s})", .{ c_strings[@intFromBool(value.c)], z_strings[@intFromBool(value.z)] }),
-        .c_or_z => |value| try writer.print("if({s} | {s})", .{ c_strings[@intFromBool(value.c)], z_strings[@intFromBool(value.z)] }),
-        .comparison => |value| try writer.print("if({t})", .{value}),
+const Content = struct {
+    line: ast.Line,
+    comments: []const ast.Comment,
+    continuation: usize = 0,
+    last_line_start: ?*usize = null,
+    end_column: ?*usize = null,
+
+    fn width(self: Content) usize {
+        var last_line_start: usize = 0;
+        var measured = self;
+        measured.last_line_start = &last_line_start;
+        const total = std.fmt.count("{f}", .{measured});
+        return total - last_line_start;
     }
-    return try output.toOwnedSlice();
-}
 
-fn render_expression(allocator: std.mem.Allocator, expr: ast.Expression, comments: []const ast.Comment) ![]const u8 {
-    var output: std.Io.Writer.Allocating = .init(allocator);
-    var printer: ExpressionPrinter = .{ .writer = &output.writer, .comments = comments };
-    try printer.expression(expr);
-    try printer.finish();
-    return try output.toOwnedSlice();
-}
-
-fn render_arguments(allocator: std.mem.Allocator, args: []const ast.Expression, comments: []const ast.Comment) ![]const u8 {
-    var output: std.Io.Writer.Allocating = .init(allocator);
-    var printer: ExpressionPrinter = .{ .writer = &output.writer, .comments = comments };
-    for (args, 0..) |arg, index| {
-        if (index > 0) try printer.write(", ");
-        try printer.expression(arg);
+    fn write(self: Content, writer: *std.Io.Writer, column: *usize) !void {
+        var formatted = self;
+        formatted.continuation = column.*;
+        formatted.end_column = column;
+        try writer.print("{f}", .{formatted});
     }
-    try printer.finish();
-    return try output.toOwnedSlice();
-}
+
+    pub fn format(self: Content, writer: *std.Io.Writer) std.Io.Writer.Error!void {
+        var printer: ExpressionPrinter = .{ .writer = writer, .comments = self.comments, .continuation = self.continuation };
+        switch (self.line) {
+            .constant => |con| try printer.expression(con.value),
+            .instruction => |instr| for (instr.arguments, 0..) |arg, index| {
+                if (index > 0) try printer.write(", ");
+                try printer.expression(arg);
+            },
+            else => unreachable,
+        }
+        try printer.finish();
+        if (self.last_line_start) |start| start.* = printer.last_line_start;
+        if (self.end_column) |column|
+            column.* = printer.written - printer.last_line_start + (if (printer.last_line_start == 0) self.continuation else 0);
+    }
+};
 
 const ExpressionPrinter = struct {
     writer: *std.Io.Writer,
@@ -283,28 +303,37 @@ const ExpressionPrinter = struct {
     indent: usize = 0,
     at_line_start: bool = true,
     last_char: u8 = 0,
+    continuation: usize = 0,
+    written: usize = 0,
+    last_line_start: usize = 0,
 
-    fn write(self: *ExpressionPrinter, text: []const u8) !void {
+    fn write(self: *ExpressionPrinter, text: []const u8) std.Io.Writer.Error!void {
         for (text) |char| {
             if (char == '\n') {
                 try self.writer.writeByte('\n');
+                self.written += 1;
+                self.last_line_start = self.written;
+                try self.writer.splatByteAll(' ', self.continuation);
+                self.written += self.continuation;
                 self.at_line_start = true;
             } else {
                 if (self.at_line_start) {
-                    for (0..self.indent) |_| try self.writer.writeByte(' ');
+                    try self.writer.splatByteAll(' ', self.indent);
+                    self.written += self.indent;
                     self.at_line_start = false;
                 }
                 try self.writer.writeByte(char);
+                self.written += 1;
             }
             self.last_char = char;
         }
     }
 
-    fn newline(self: *ExpressionPrinter) !void {
+    fn newline(self: *ExpressionPrinter) std.Io.Writer.Error!void {
         if (!self.at_line_start) try self.write("\n");
     }
 
-    fn before(self: *ExpressionPrinter, location: ast.Location) !void {
+    fn before(self: *ExpressionPrinter, location: ast.Location) std.Io.Writer.Error!void {
         while (self.next_comment < self.comments.len and location_before(self.comments[self.next_comment].span.location(), location)) {
             if (!self.at_line_start) try self.write(if (self.last_char == ' ') " " else "  ");
             try self.write(self.comments[self.next_comment].text);
@@ -313,7 +342,7 @@ const ExpressionPrinter = struct {
         }
     }
 
-    fn finish(self: *ExpressionPrinter) !void {
+    fn finish(self: *ExpressionPrinter) std.Io.Writer.Error!void {
         while (self.next_comment < self.comments.len) {
             if (!self.at_line_start) try self.write("  ");
             try self.write(self.comments[self.next_comment].text);
@@ -322,7 +351,7 @@ const ExpressionPrinter = struct {
         }
     }
 
-    fn expression(self: *ExpressionPrinter, expr: ast.Expression) anyerror!void {
+    fn expression(self: *ExpressionPrinter, expr: ast.Expression) std.Io.Writer.Error!void {
         switch (expr) {
             .current_pc => |span| {
                 try self.before(span.location());
@@ -439,7 +468,7 @@ const ExpressionPrinter = struct {
         }
     }
 
-    fn operand(self: *ExpressionPrinter, expr: ast.Expression, parent_precedence: u8, is_rhs: bool) !void {
+    fn operand(self: *ExpressionPrinter, expr: ast.Expression, parent_precedence: u8, is_rhs: bool) std.Io.Writer.Error!void {
         const needs_parens = switch (expr) {
             .binary_transform => |binary| blk: {
                 const child_precedence = binary_precedence(binary.operator);

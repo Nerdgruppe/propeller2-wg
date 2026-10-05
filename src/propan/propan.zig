@@ -153,9 +153,10 @@ pub fn main(init: std.process.Init) !u8 {
         };
         defer parsed.deinit();
 
-        var rendered: std.Io.Writer.Allocating = .init(init.arena.allocator());
-        try frontend.render.pretty_print_alloc(init.arena.allocator(), &rendered.writer, parsed.file);
-        try std.Io.File.stdout().writeStreamingAll(init.io, rendered.written());
+        var buffer: [8192]u8 = undefined;
+        var stdout = std.Io.File.stdout().writer(init.io, &buffer);
+        try frontend.render.pretty_print(&stdout.interface, parsed.file);
+        try stdout.interface.flush();
         return 0;
     }
 
