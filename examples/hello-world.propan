@@ -9,17 +9,16 @@
                 DIRH    TX_PIN
                 WAITX   aug(20_000_000)
 
-                CALLPB  aug(hubaddr(message)),  write_str
+                CALLPA  aug(hubaddr(message)),  write_str
 .halt:          JMP     .halt
 
 // Loads string at hub address "PA" and writes
 // it to UART TX at TX_PIN
 write_str:
-                RDFAST  0,  PB
+                RDFAST  0,  PA
 .next:          RFBYTE  PA          :wz
     if(!Z)      CALL    write_byte
-    if(!Z)      JMP     .next
-                RET
+    return      TJNZ    PA, .next
 
 // Writes "PA" to UART TX at TX_PIN
 write_byte:

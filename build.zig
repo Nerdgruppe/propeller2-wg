@@ -1,4 +1,5 @@
 const std = @import("std");
+const cases = @import("tests/propan/cases.zig");
 
 const FastBuild = struct {
     b: *std.Build,
@@ -13,13 +14,13 @@ const FastBuild = struct {
     }
 };
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     // Steps:
     const run_step = b.step("run", "Runs propan");
     const test_step = b.step("test", "Runs the test suite");
 
     // Options:
-    const with_flexspin = b.option(bool, "with-flexspin", "Includes the flexspin dependency required for running the testsuite.") orelse false;
+    const with_flexspin = b.option(bool, "with-flexspin", "Includes FlexSpin for Spin2 round-trip and assembler equivalence tests.") orelse false;
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
 
     const target = b.standardTargetOptions(.{});
@@ -91,34 +92,6 @@ pub fn build(b: *std.Build) void {
         break :blk exe;
     };
 
-    var coverage_stash: CoverageDirectoryStash = .{
-        .b = b,
-        .kcov_path = b.findProgram(&.{"kcov"}, &.{}) catch blk: {
-            std.log.warn("could not find kcov, not generating coverage", .{});
-            break :blk null;
-        },
-    };
-    defer if (coverage_stash.kcov_path) |kcov| {
-        // when everything else is done, create a step which merges all test results:
-
-        const merge_run = b.addSystemCommand(&.{
-            kcov,
-            "--merge",
-            "--clean",
-        });
-
-        // merge_run.addArg("--merge"); // Merge output from multiple source dirs
-        // merge_run.addArg("--clean"); // don't keep previous runs
-
-        merge_run.addArg(".coverage");
-
-        for (coverage_stash.list.items) |input_dir| {
-            merge_run.addDirectoryArg(input_dir);
-        }
-
-        test_step.dependOn(&merge_run.step);
-    };
-
     const windtunnel_exe = blk: {
         const exe = b.addExecutable(.{
             .name = "windtunnel",
@@ -145,7 +118,7 @@ pub fn build(b: *std.Build) void {
         run_step.dependOn(&run_cmd.step);
     }
 
-    // Propan Unit Tests
+    // One process runs unit tests and all fixture categories.
     {
         const fuzz_corpus_files = b.addWriteFiles();
 
@@ -157,7 +130,7 @@ pub fn build(b: *std.Build) void {
             \\
         ) catch @panic("oom");
 
-        for (parser_accept_tests) |path| {
+        for (cases.parser_accept_tests) |path| {
             const filename = std.fs.path.basename(path);
 
             _ = fuzz_corpus_files.addCopyFile(b.path(path), filename);
@@ -181,914 +154,61 @@ pub fn build(b: *std.Build) void {
 
         propan_mod.addImport("fuzz-corpus", fuzz_corpus_mod);
 
-        const propan_tests = b.addTest(.{
+        propan_mod.addImport("test-cases", b.createModule(.{ .root_source_file = b.path("tests/propan/cases.zig") }));
+        const options = b.addOptions();
+        if (with_flexspin) {
+            const dep = b.lazyDependency("p2devsuite", .{}) orelse return;
+            const flexspin = dep.artifact("flexspin");
+            fb.installArtifact(flexspin);
+            fb.installArtifact(dep.artifact("loadp2"));
+            options.addOptionPath("flexspin", flexspin.getEmittedBin());
+        } else {
+            options.addOption(?[]const u8, "flexspin", null);
+        }
+        propan_mod.addOptions("test-options", options);
+        const tests = b.addTest(.{
+            .name = "propan-tests",
             .root_module = propan_mod,
             .use_llvm = true,
         });
-
-        const install_tests = b.addInstallArtifact(propan_tests, .{});
-        test_step.dependOn(&install_tests.step);
-
-        const run_tests_step = coverage_stash.create_test_run(propan_tests);
-
-        test_step.dependOn(&run_tests_step.step);
-    }
-
-    const flat_checker = b.addExecutable(.{
-        .name = "check-flat-output",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tests/propan/regressions/check-flat-output.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-
-    // Flat output must use the configured byte for all padding.
-    {
-        const expected_files = b.addWriteFiles();
-        const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA, 0x7E, 0x7E, 0x7E, 0xBB, 0x7E, 0x7E, 0x7E, 0x44, 0x33, 0x22, 0x11 });
-
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=flat");
-        run.addArg("--fill-byte=126");
-        const actual = run.addPrefixedOutputFileArg("--output=", "fill-byte.bin");
-        run.addFileArg(b.path("tests/propan/regressions/fill-byte.propan"));
-
-        const compare = b.addRunArtifact(flat_checker);
-        compare.addFileArg(expected);
-        compare.addFileArg(actual);
-        test_step.dependOn(&compare.step);
-    }
-
-    // Differences in incomplete final words must remain visible in the diff.
-    {
-        const references = b.addWriteFiles();
-        const reference = references.add("partial-word.bin", &.{2});
-        const run = create_propan_test_run(&coverage_stash, propan_exe, .compare, "tests/propan/regressions/compare-partial-word.propan", reference);
-        run.expectExitCode(1);
-        run.expectStdOutMatch("@00000: expected: 0x00000002");
-        run.expectStdOutMatch("actual: 0x00000001");
-        test_step.dependOn(&run.step);
-    }
-
-    // Multi-file input is rejected before either file is analyzed.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=flat");
-        run.addArg("--output=-");
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-diagnostic.propan"));
-        run.expectExitCode(1);
-        run.expectStdOutEqual("");
-        run.expectStdErrEqual("error: multiple input files are not supported\n");
-        test_step.dependOn(&run.step);
-    }
-
-    // Imports search the containing file first, then CLI include paths in order.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=none");
-        run.addArg("--test-mode=sema");
-        run.addPrefixedDirectoryArg("--include-path=", b.path("tests/propan/sema/fixtures/include-a"));
-        run.addArg("-I");
-        run.addDirectoryArg(b.path("tests/propan/sema/fixtures/include-b"));
-        run.addFileArg(b.path("tests/propan/sema/fixtures/include-case/main.propan"));
-        run.expectStdErrEqual("");
-        test_step.dependOn(&run.step);
-    }
-
-    // Import-once identity is independent of relative, absolute, and include paths.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArgs(&.{ "--format=none", "--test-mode=sema" });
-        run.addPrefixedDirectoryArg("--include-path=", b.path("tests/propan/sema/fixtures"));
-        run.setStdIn(.{ .bytes = b.fmt(
-            "//? PROPAN CHECK LIST\n//? mem: 0 == u8 [9]\n" ++
-                ".import \"tests/propan/sema/fixtures/import-once-alias-leaf.propan\"\n" ++
-                ".import \"{s}\"\n" ++
-                ".import \"import-once-alias-leaf.propan\"\n",
-            .{b.pathFromRoot("tests/propan/sema/fixtures/import-once-alias-leaf.propan")},
-        ) });
-        run.addArg("-");
-        run.expectStdErrEqual("");
-        test_step.dependOn(&run.step);
-    }
-
-    // Diagnostics in an imported file retain its path and source excerpt.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=none");
-        run.addFileArg(b.path("tests/propan/sema/import-diagnostic-source.propan"));
-        run.expectExitCode(1);
-        run.expectStdErrMatch("fixtures/import-bad.propan:1:1: error");
-        run.expectStdErrMatch("UNKNOWN_MNEMONIC");
-        test_step.dependOn(&run.step);
-    }
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=none");
-        run.addArg("--list-file=-");
-        run.addFileArg(b.path("tests/propan/sema/import-local-scope.propan"));
-        run.expectStdOutMatch("00004 | 001 | second:local");
-        test_step.dependOn(&run.step);
-    }
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=json");
-        run.addArg("--output=-");
-        run.addFileArg(b.path("tests/propan/sema/import-basic.propan"));
-        run.expectStdOutMatch("fixtures/import-repeat.propan");
-        test_step.dependOn(&run.step);
-    }
-
-    // Data labels have a hub address but no jump PC in JSON metadata.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=json");
-        run.addArg("--output=-");
-        run.addFileArg(b.path("tests/propan/sema/data-mode.propan"));
-        run.expectStdOutMatch("\"mode\": \"data\"");
-        run.expectStdOutMatch("\"none\": {}");
-        test_step.dependOn(&run.step);
-    }
-
-    // LUT jumps expose a 9-bit index within LUT memory.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=json");
-        run.addArg("--output=-");
-        run.addFileArg(b.path("tests/propan/sema/lut-mode.propan"));
-        run.expectStdOutMatch("\"lut\": 4");
-        test_step.dependOn(&run.step);
-    }
-
-    // Scoped and literal dotted labels have distinct debug names and addresses.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=json");
-        run.addArg("--output=-");
-        run.addFileArg(b.path("tests/propan/sema/local-labels.propan"));
-        run.expectStdOutMatch("\"name\": \"foo:loop\",\n      \"segment_id\": 0,\n      \"offset\": 8");
-        run.expectStdOutMatch("\"name\": \"foo.loop\",\n      \"segment_id\": 0,\n      \"offset\": 12");
-        test_step.dependOn(&run.step);
-    }
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=none");
-        run.addArg("--list-file=-");
-        run.addFileArg(b.path("tests/propan/sema/local-labels.propan"));
-        run.expectStdOutMatch("00008 | 002 | foo:loop");
-        run.expectStdOutMatch("0000C | 003 | foo.loop");
-        test_step.dependOn(&run.step);
-    }
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=json");
-        run.addArg("--output=-");
-        run.addFileArg(b.path("tests/propan/sema/local-label-segments.propan"));
-        run.expectStdOutMatch("\"name\": \".loop\",\n      \"segment_id\": 2,\n      \"offset\": 272");
-        test_step.dependOn(&run.step);
-    }
-
-    // Cases that require expected failures or a comparison reference.
-    {
-        const expected_files = b.addWriteFiles();
-        const nop_reference = expected_files.add("nop-disasm-reference.bin", "\x00\x00\x00\xF0" ++ "\x00" ** 32);
-        const nop_disasm = create_propan_test_run(&coverage_stash, propan_exe, .compare, "tests/propan/sema/nop-encoding.propan", nop_reference);
-        nop_disasm.expectExitCode(1);
-        nop_disasm.expectStdErrEqual("");
-        nop_disasm.expectStdOutMatch("expected:             ROR 0x0, 0x0");
-        nop_disasm.expectStdOutMatch("actual:               NOP");
-        nop_disasm.expectStdOutMatch("actual:               ROR 0x0, 0x0");
-        nop_disasm.expectStdOutMatch("actual:   if(C)       ROR 0x0, 0x0");
-        const reference = expected_files.add("check-list-reference.bin", &.{ 1, 0, 0, 0 });
-        const warning_reference = expected_files.add("check-list-warning.bin", &.{1});
-        const all_modes: []const TestMode = &.{ .parser, .sema, .compare };
-        const build_modes: []const TestMode = &.{ .sema, .compare };
-        const cases = [_]PropanTestCase{
-            .{
-                .path = "tests/propan/regressions/hexadecimal-string-tail.propan",
-                .modes = &.{.sema},
-                .result = .{ .failure = &.{"assertion failed: AZB!"} },
-            },
-            .{
-                .path = "tests/propan/sema/diagnostics/fit-message.propan",
-                .modes = &.{.sema},
-                .result = .{ .failure = &.{"assertion failed: code exceeds size"} },
-            },
-            .{
-                .path = "tests/propan/regressions/check-list-mismatch.propan",
-                .modes = build_modes,
-                .reference = reference,
-                .result = .{ .failure = &.{"checklist memory mismatch"} },
-            },
-            .{
-                .path = "tests/propan/regressions/check-list-missing-error.propan",
-                .modes = all_modes,
-                .result = .{ .failure = &.{"checklist diagnostic err_assertion_failed: expected 1, got 0"} },
-            },
-            .{
-                .path = "tests/propan/regressions/check-list-unexpected-error.propan",
-                .modes = build_modes,
-                .result = .{ .failure = &.{
-                    "checklist diagnostic err_assertion_failed: expected 1, got 0",
-                    "checklist diagnostic err_unknown_mnemonic: expected 0, got 1",
-                } },
-            },
-            .{
-                .path = "tests/propan/regressions/check-list-parser-unexpected-error.propan",
-                .modes = &.{.parser},
-                .result = .{ .failure = &.{"checklist diagnostic err_empty_character_literal_not_allowed: expected 0, got 1"} },
-            },
-            .{
-                .path = "tests/propan/regressions/check-list-parser-unexpected-warning.propan",
-                .modes = &.{.parser},
-                .result = .{ .failure = &.{"checklist diagnostic warn_invalid_escape_sequence: expected 0, got 1"} },
-            },
-            .{
-                .path = "tests/propan/regressions/check-list-missing-warning.propan",
-                .modes = all_modes,
-                .reference = warning_reference,
-                .result = .{ .failure = &.{"checklist diagnostic warn_symbol_has_no_references: expected 1, got 0"} },
-            },
-            .{ .path = "tests/propan/regressions/check-list-warning.propan", .modes = &.{.compare}, .reference = warning_reference, .result = .silent },
-            .{
-                .path = "tests/propan/regressions/check-list-unexpected-warning.propan",
-                .modes = build_modes,
-                .reference = warning_reference,
-                .result = .{ .failure = &.{"checklist diagnostic warn_symbol_has_no_references: expected 0, got 1"} },
-            },
-            .{
-                .path = "tests/propan/parser/diagnostics/malformed-checklist.propan",
-                .modes = &.{.parser},
-                .result = .{ .failure = &.{
-                    "checklist sym requires",
-                    "checklist mem requires",
-                    "invalid checklist memory address",
-                    "invalid checklist memory comparison",
-                    "invalid checklist memory format",
-                    "invalid checklist hex byte",
-                    "text after checklist memory block",
-                    "unexpected '[' in checklist memory block",
-                } },
-            },
-        };
-        for (cases) |case| add_propan_test_case(&coverage_stash, propan_exe, test_step, case);
-        test_step.dependOn(&nop_disasm.step);
-    }
-
-    for (parser_diagnostic_tests) |path| {
-        const run = create_propan_test_run(&coverage_stash, propan_exe, .parser, path, null);
-        run.expectStdErrEqual("");
-        test_step.dependOn(&run.step);
-    }
-    for (sema_diagnostic_tests) |path| {
-        const run = create_propan_test_run(&coverage_stash, propan_exe, .sema, path, null);
-        run.expectStdErrEqual("");
-        test_step.dependOn(&run.step);
-    }
-    for (compare_diagnostic_tests) |path| {
-        const run = create_propan_test_run(&coverage_stash, propan_exe, .compare, path, null);
-        run.expectStdErrEqual("");
-        test_step.dependOn(&run.step);
-    }
-    {
-        const no_input = coverage_stash.create_test_run(propan_exe);
-        no_input.addArg("--format=none");
-        no_input.expectExitCode(1);
-        no_input.expectStdErrMatch("missing input files");
-        test_step.dependOn(&no_input.step);
-    }
-    {
-        const source = b.path("tests/propan/sema/pack-values.propan");
-        const normal = coverage_stash.create_test_run(propan_exe);
-        normal.addArg("--format=none");
-        normal.addFileArg(source);
-        normal.expectStdErrMatch("warning:");
-        test_step.dependOn(&normal.step);
-
-        const quiet = coverage_stash.create_test_run(propan_exe);
-        quiet.addArgs(&.{ "--format=none", "--no-warnings" });
-        quiet.addFileArg(source);
-        quiet.expectStdErrEqual("");
-        test_step.dependOn(&quiet.step);
-    }
-
-    // Preserve trailing comments after strings and character literals in Spin2.
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--format=spin2");
-        run.addFileArg(b.path("tests/propan/sema/spin2-quoted-comments.propan"));
-        run.expectStdOutMatch("' keep quote character comment\n");
-        run.expectStdOutMatch("' keep escaped quote comment\n");
-        run.expectStdOutMatch("' keep apostrophe comment\n");
-        run.expectStdOutMatch("' keep backslash comment\n");
-        run.expectStdOutMatch("' keep string comment\n");
-        run.expectStdErrEqual("");
-        test_step.dependOn(&run.step);
-    }
-
-    // Render the stdlib documentation for testing
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--render-stdlib-docs=-");
-        run.expectStdOutMatch("<!doctype html>");
-        run.expectStdOutMatch(">P_DAC_DITHER_PWM<");
-        run.expectStdOutMatch(">popcnt<");
-        test_step.dependOn(&run.step);
-    }
-
-    for ([_]struct { input: []const u8, expected: []const u8 }{
-        .{ .input = "tests/propan/format/input.propan", .expected = @embedFile("tests/propan/format/expected.propan") },
-        .{ .input = "tests/propan/format/layout-input.propan", .expected = @embedFile("tests/propan/format/layout-expected.propan") },
-        .{ .input = "tests/propan/format/constants.propan", .expected = @embedFile("tests/propan/format/constants-expected.propan") },
-        .{ .input = "tests/propan/format/operands-input.propan", .expected = @embedFile("tests/propan/format/operands-expected.propan") },
-        .{ .input = "tests/propan/sema/res-labels.propan", .expected = @embedFile("tests/propan/format/res-expected.propan") },
-    }) |fixture| {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--pretty-print");
-        run.addFileArg(b.path(fixture.input));
-        run.expectStdOutEqual(fixture.expected);
-        run.expectStdErrEqual("");
-        test_step.dependOn(&run.step);
-
-        const again = coverage_stash.create_test_run(propan_exe);
-        again.addArgs(&.{ "--pretty-print", "-" });
-        again.setStdIn(.{ .bytes = fixture.expected });
-        again.expectStdOutEqual(fixture.expected);
-        again.expectStdErrEqual("");
-        test_step.dependOn(&again.step);
-    }
-    {
-        const run = coverage_stash.create_test_run(propan_exe);
-        run.addArg("--pretty-print");
-        run.addFileArg(b.path("tests/propan/parser/diagnostics/missing-parenthesis.propan"));
-        run.expectExitCode(1);
-        run.expectStdOutEqual("");
-        run.expectStdErrMatch("error:");
-        test_step.dependOn(&run.step);
-    }
-
-    // Exports:
-
-    if (with_flexspin) blk: {
-        const p2dev_dep = b.lazyDependency("p2devsuite", .{}) orelse break :blk;
-
-        const flexspin = p2dev_dep.artifact("flexspin");
-        fb.installArtifact(flexspin);
-
-        const loadp2_exe = p2dev_dep.artifact("loadp2");
-        fb.installArtifact(loadp2_exe);
-
-        // Propan Behaviour Tests
-        {
-            const parser_tests = make_sequencing_step(b, "parser tests");
-            test_step.dependOn(parser_tests);
-
-            for (parser_accept_tests) |accept_file| {
-                const run = create_propan_test_run(&coverage_stash, propan_exe, .parser, accept_file, null);
-                run.has_side_effects = true;
-                parser_tests.dependOn(&run.step);
-            }
-
-            const sema_tests = make_sequencing_step(b, "semantic tests");
-            sema_tests.dependOn(parser_tests);
-            test_step.dependOn(sema_tests);
-
-            for (sema_accept_tests) |accept_file| {
-                const run = create_propan_test_run(&coverage_stash, propan_exe, .sema, accept_file, null);
-                run.has_side_effects = true;
-                sema_tests.dependOn(&run.step);
-            }
-
-            const formatter_tests = make_sequencing_step(b, "formatter round-trip tests");
-            formatter_tests.dependOn(sema_tests);
-            test_step.dependOn(formatter_tests);
-
-            for (sema_accept_tests) |accept_file| {
-                const original = coverage_stash.create_test_run(propan_exe);
-                original.addArgs(&.{ "--format=flat", "--no-warnings" });
-                const reference = original.addPrefixedOutputFileArg("--output=", "original.bin");
-                original.addFileArg(b.path(accept_file));
-                original.expectExitCode(0);
-
-                const format = coverage_stash.create_test_run(propan_exe);
-                format.addArgs(&.{ "--no-warnings", "--pretty-print" });
-                format.addFileArg(b.path(accept_file));
-                const formatted = format.captureStdOut(.{ .basename = "formatted.propan" });
-                format.expectExitCode(0);
-
-                const reassemble = coverage_stash.create_test_run(propan_exe);
-                reassemble.setCwd(b.path(std.fs.path.dirname(accept_file) orelse "."));
-                reassemble.setStdIn(.{ .lazy_path = formatted });
-                reassemble.addArgs(&.{ "--format=flat", "--no-warnings" });
-                const rebuilt = reassemble.addPrefixedOutputFileArg("--output=", "formatted.bin");
-                reassemble.addArg("-");
-                reassemble.expectExitCode(0);
-
-                const check = b.addRunArtifact(flat_checker);
-                check.addFileArg(reference);
-                check.addFileArg(rebuilt);
-                formatter_tests.dependOn(&check.step);
-            }
-
-            const spin2_tests = make_sequencing_step(b, "Spin2 round-trip tests");
-            spin2_tests.dependOn(sema_tests);
-            test_step.dependOn(spin2_tests);
-
-            // sema_accept_tests already includes emit_compare_tests.
-            for (sema_accept_tests) |accept_file| {
-                const flat = b.addRunArtifact(propan_exe);
-                flat.addArg("--format=flat");
-                const reference = flat.addPrefixedOutputFileArg("--output=", "reference.bin");
-                flat.addFileArg(b.path(accept_file));
-                flat.expectExitCode(0);
-
-                const spin2 = b.addRunArtifact(propan_exe);
-                spin2.addArg("--format=spin2");
-                const generated = spin2.addPrefixedOutputFileArg("--output=", b.fmt("{s}.spin2", .{std.fs.path.stem(accept_file)}));
-                spin2.addFileArg(b.path(accept_file));
-                spin2.expectExitCode(0);
-
-                const convert = b.addRunArtifact(flexspin);
-                convert.addArgs(&.{ "-2", "-q", "-o" });
-                const rebuilt = convert.addOutputFileArg("rebuilt.bin");
-                convert.addFileArg(generated);
-
-                const check = b.addRunArtifact(flat_checker);
-                check.addFileArg(reference);
-                check.addFileArg(rebuilt);
-                spin2_tests.dependOn(&check.step);
-            }
-
-            const readable = b.addRunArtifact(propan_exe);
-            readable.addArgs(&.{ "--format=spin2", "--output=-" });
-            readable.addFileArg(b.path("tests/propan/sema/spin2-readable.propan"));
-            readable.expectStdOutMatch("MOV dst, #VALUE");
-            readable.expectStdOutMatch("MOV dst, #$3");
-            readable.expectStdOutMatch("MOV 10, 32");
-            readable.expectStdOutMatch("ADD 12, #$A");
-            spin2_tests.dependOn(&readable.step);
-
-            const sumloop = b.addRunArtifact(propan_exe);
-            sumloop.addArgs(&.{ "--format=spin2", "--output=-" });
-            sumloop.addFileArg(b.path("examples/sumloop.propan"));
-            sumloop.expectStdOutMatch("' swiftly sums buf_a and buf_b into buf_c");
-            sumloop.expectStdOutMatch(".loop\n  REP @.end, #8");
-            sumloop.expectStdOutMatch("  ADD 0-0, #0");
-            sumloop.expectStdOutMatch(".end\n  RET wcz");
-            sumloop.expectStdOutMatch("BYTE 0[8] ' .align  8");
-            spin2_tests.dependOn(&sumloop.step);
-
-            const equivalence_tests = make_sequencing_step(b, "equivalence tests");
-            equivalence_tests.dependOn(sema_tests);
-            test_step.dependOn(equivalence_tests);
-
-            for (emit_compare_tests) |accept_file| {
-                const suffix = std.fs.path.extension(accept_file);
-
-                const spin2_file = b.fmt("{s}.spin2", .{accept_file[0 .. accept_file.len - suffix.len]});
-
-                const convert = b.addRunArtifact(flexspin);
-                convert.addArg("-2");
-                convert.addArg("-o");
-
-                const ref_file = convert.addOutputFileArg(b.fmt("{s}.bin", .{
-                    std.fs.path.basename(accept_file),
-                }));
-
-                convert.addFileArg(b.path(spin2_file));
-
-                const run = create_propan_test_run(&coverage_stash, propan_exe, .compare, accept_file, ref_file);
-                run.has_side_effects = true;
-                equivalence_tests.dependOn(&run.step);
-            }
-        }
-    } else {
-        const fail_step = b.addFail("Cannot run test suite without flexspin! Use -Dwith-flexspin to enable it.");
-        test_step.dependOn(&fail_step.step);
-    }
-
-    // // Windtunnel behaviour tests
-    // {
-    //     for (windtunnel_behaviour_tests) |test_file| {
-    //         const assemble = b.addRunArtifact(propan_exe);
-    //         assemble.addArg("--format=flat");
-    //         assemble.addFileArg(b.path(test_file));
-    //         const bin_file = assemble.addPrefixedOutputFileArg("--output=", "app.bin");
-
-    //         const run = b.addRunArtifact(windtunnel_exe);
-    //         run.addPrefixedFileArg("--image=", bin_file);
-    //         run.addPrefixedFileArg("--tests=", b.path(test_file));
-    //         run.has_side_effects = true;
-    //         test_step.dependOn(&run.step);
-    //     }
-    // }
-}
-
-const TestMode = enum { parser, sema, compare };
-
-const PropanTestCase = struct {
-    path: []const u8,
-    modes: []const TestMode,
-    reference: ?std.Build.LazyPath = null,
-    result: union(enum) {
-        silent,
-        failure: []const []const u8,
-    },
-};
-
-fn create_propan_test_run(
-    coverage_stash: *CoverageDirectoryStash,
-    exe: *std.Build.Step.Compile,
-    mode: TestMode,
-    path: []const u8,
-    reference: ?std.Build.LazyPath,
-) *std.Build.Step.Run {
-    const run = coverage_stash.create_test_run(exe);
-    run.addArg("--format=none");
-    run.addArg(coverage_stash.b.fmt("--test-mode={t}", .{mode}));
-    if (mode == .compare) {
-        if (reference) |file| {
-            run.addPrefixedFileArg("--compare-to=", file);
+        const install = b.addInstallArtifact(tests, .{});
+        test_step.dependOn(&install.step);
+        const kcov_path = b.findProgram(&.{"kcov"}, &.{}) catch null;
+        if (kcov_path) |kcov| {
+            tests.setExecCmd(&.{
+                kcov,
+                "--clean",
+                b.fmt("--include-path={s}", .{b.pathFromRoot("src")}),
+                ".coverage",
+                null, // addRunArtifact inserts the test executable here.
+            });
         } else {
-            // Expected compilation errors should stop before opening this path.
-            run.addArg("--compare-to=unused-reference.bin");
+            std.log.warn("could not find kcov, not generating coverage", .{});
         }
-    }
-    run.addFileArg(coverage_stash.b.path(path));
-    return run;
-}
-
-fn add_propan_test_case(
-    coverage_stash: *CoverageDirectoryStash,
-    exe: *std.Build.Step.Compile,
-    test_step: *std.Build.Step,
-    case: PropanTestCase,
-) void {
-    for (case.modes) |mode| {
-        const run = create_propan_test_run(coverage_stash, exe, mode, case.path, case.reference);
-        switch (case.result) {
-            .silent => run.expectStdErrEqual(""),
-            .failure => |messages| {
-                run.expectExitCode(1);
-                for (messages) |message| run.expectStdErrMatch(message);
-            },
+        // The native runner reports fuzz-test discovery through Zig's server protocol.
+        const run = b.addRunArtifact(tests);
+        run.step.name = "run Propan test suite";
+        // Coverage writes a report outside Zig's cache.
+        run.has_side_effects = kcov_path != null;
+        // Include imported sources, FILE payloads, and Spin2 references read at runtime.
+        var fixture_paths: std.ArrayList([]const u8) = .empty;
+        for ([_][]const u8{ "tests/propan", "examples" }) |path| {
+            var dir = try b.build_root.handle.openDir(b.graph.io, path, .{ .iterate = true });
+            defer dir.close(b.graph.io);
+            var walker = try dir.walk(b.allocator);
+            defer walker.deinit();
+            while (try walker.next(b.graph.io)) |entry| {
+                if (entry.kind == .file)
+                    try fixture_paths.append(b.allocator, b.fmt("{s}/{s}", .{ path, entry.path }));
+            }
         }
+        std.mem.sort([]const u8, fixture_paths.items, {}, struct {
+            fn lessThan(_: void, lhs: []const u8, rhs: []const u8) bool {
+                return std.mem.lessThan(u8, lhs, rhs);
+            }
+        }.lessThan);
+        for (fixture_paths.items) |path| run.addFileInput(b.path(path));
+        run.setCwd(b.path("."));
         test_step.dependOn(&run.step);
     }
 }
-
-fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
-    const step = b.allocator.create(std.Build.Step) catch @panic("OOM");
-    step.* = .init(.{
-        .id = .custom,
-        .name = b.fmt("{s}", .{name}),
-        .owner = b,
-    });
-    return step;
-}
-
-const examples: []const []const u8 = &[_][]const u8{
-    "examples/propio-client.propan",
-    "examples/sumloop.propan",
-};
-
-const parser_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
-    "./tests/propan/parser/labels.propan",
-    "./tests/propan/parser/conditions.propan",
-    "./tests/propan/parser/effects.propan",
-    "./tests/propan/parser/values.propan",
-    "./tests/propan/parser/escape_sequences.propan",
-    "./tests/propan/parser/basic_instruction_layout.propan",
-    "./tests/propan/parser/directives.propan",
-    "./tests/propan/parser/fncalls.propan",
-    "./tests/propan/parser/expressions.propan",
-    "./tests/propan/parser/comments.propan",
-    "./tests/propan/parser/amiguity.propan",
-};
-
-const regression_tests: []const []const u8 = &[_][]const u8{
-    "tests/propan/sema/spin2-reserved-names.propan",
-    "tests/propan/sema/spin2-quoted-comments.propan",
-    "tests/propan/sema/spin2-case-sensitive-symbols.propan",
-    "tests/propan/sema/spin2-name-collisions.propan",
-    "tests/propan/sema/direct-augmentation.propan",
-    "tests/propan/sema/spin2-dotted-local-labels.propan",
-    "tests/propan/sema/nop-encoding.propan",
-    "tests/propan/sema/spin2-register-origins.propan",
-    "tests/propan/sema/spin2-dotted-constants.propan",
-    "tests/propan/sema/backslash-escapes.propan",
-    "tests/propan/sema/boolean-enumerators.propan",
-    "tests/propan/sema/empty-repetition.propan",
-    // TODO: Implement "failing tests" "tests/propan/regressions/null-in-assert.propan",
-};
-
-const parser_diagnostic_tests: []const []const u8 = &.{
-    "tests/propan/parser/diagnostics/hexadecimal-escape-tail.propan",
-    "tests/propan/parser/diagnostics/incomplete-binary.propan",
-    "tests/propan/parser/diagnostics/incomplete-unary.propan",
-    "tests/propan/parser/diagnostics/incomplete-constant.propan",
-    "tests/propan/parser/diagnostics/inactive-conditional-syntax.propan",
-    "tests/propan/parser/diagnostics/invalid-condition.propan",
-    "tests/propan/parser/diagnostics/missing-parenthesis.propan",
-    "tests/propan/parser/diagnostics/missing-function-argument.propan",
-    "tests/propan/parser/diagnostics/long-character.propan",
-    "tests/propan/parser/diagnostics/lone-string-quote.propan",
-    "tests/propan/parser/diagnostics/lone-character-quote.propan",
-    "tests/propan/regressions/check-list-mismatch.propan",
-    "tests/propan/regressions/check-list-parser-errors.propan",
-    "tests/propan/parser/diagnostics/incomplete-escapes.propan",
-    "tests/propan/parser/diagnostics/empty-character.propan",
-    "tests/propan/parser/diagnostics/invalid-escape-warning.propan",
-    "tests/propan/parser/diagnostics/del-character.propan",
-};
-
-const sema_diagnostic_tests: []const []const u8 = &.{
-    "tests/propan/sema/diagnostics/aug-register-operands.propan",
-    "tests/propan/sema/diagnostics/aug-nonnumeric-values.propan",
-    "tests/propan/sema/diagnostics/aug-whole-pointer.propan",
-    "tests/propan/sema/diagnostics/augmented-constant.propan",
-    "tests/propan/sema/diagnostics/aug-noninstruction-expressions.propan",
-    "tests/propan/sema/diagnostics/aug-layout-expressions.propan",
-    "tests/propan/sema/diagnostics/aug-conditional-expressions.propan",
-    "tests/propan/sema/diagnostics/conditional-nop.propan",
-    "tests/propan/sema/conditional-constant-warning-once.propan",
-    "tests/propan/sema/register-address-modes.propan",
-    "tests/propan/sema/diagnostics/localaddr-register-modes.propan",
-    "tests/propan/sema/diagnostics/localaddr-constant-mode.propan",
-    "tests/propan/sema/diagnostics/localaddr-conditional-mode.propan",
-    "tests/propan/sema/diagnostics/pointer-expression-operand-types.propan",
-    "tests/propan/sema/diagnostics/assert-operand-warning-once.propan",
-    "tests/propan/sema/at-execution-distance.propan",
-    "tests/propan/sema/diagnostics/at-execution-mode-mismatch.propan",
-    "tests/propan/sema/diagnostics/at-hub-unaligned-delta.propan",
-    "tests/propan/sema/diagnostics/conditional-unknown-function.propan",
-    "tests/propan/sema/diagnostics/conditional-structure.propan",
-    "tests/propan/sema/diagnostics/conditional-values.propan",
-    "tests/propan/sema/diagnostics/conditional-arity.propan",
-    "tests/propan/sema/diagnostics/array-zero.propan",
-    "tests/propan/sema/diagnostics/array-negative.propan",
-    "tests/propan/sema/diagnostics/constant-cycle.propan",
-    "tests/propan/sema/diagnostics/layout-constant-label.propan",
-    "tests/propan/sema/diagnostics/layout-constant-known-label.propan",
-    "tests/propan/sema/diagnostics/array-constant-label.propan",
-    "tests/propan/sema/diagnostics/array-invalid-utf8.propan",
-    "tests/propan/sema/diagnostics/array-too-large.propan",
-    "tests/propan/sema/diagnostics/pic-invalid.propan",
-    "tests/propan/sema/diagnostics/pic-force-absolute.propan",
-    "tests/propan/sema/diagnostics/pack-invalid.propan",
-    "tests/propan/sema/diagnostics/pack-mode-count.propan",
-    "tests/propan/sema/diagnostics/pack-offset-address-space.propan",
-    "tests/propan/sema/diagnostics/pack-offset-needs-address.propan",
-    "tests/propan/sema/diagnostics/pack-unaligned-cog.propan",
-    "tests/propan/sema/diagnostics/pack-unaligned-lut.propan",
-    "tests/propan/sema/diagnostics/invalid-origins.propan",
-    "tests/propan/sema/diagnostics/invalid-local-start.propan",
-    "tests/propan/sema/diagnostics/fit-invalid-arguments.propan",
-    "tests/propan/sema/diagnostics/fit-incompatible-label.propan",
-    "tests/propan/sema/diagnostics/local-start-incompatible-label.propan",
-    "tests/propan/sema/diagnostics/fit-over-limit.propan",
-    "tests/propan/sema/diagnostics/assert-message-with-true-condition.propan",
-    "tests/propan/sema/diagnostics/assert-relative-comparison.propan",
-    "tests/propan/sema/diagnostics/invalid-data-types.propan",
-    "tests/propan/sema/diagnostics/pointer-constant-crash.propan",
-    "tests/propan/sema/diagnostics/constant-address-crash.propan",
-    "tests/propan/sema/diagnostics/unsupported-binary-types.propan",
-    "tests/propan/sema/diagnostics/expression-evaluation-failure.propan",
-    "tests/propan/sema/diagnostics/division-overflow.propan",
-    "tests/propan/sema/diagnostics/ticks-overflow.propan",
-    "tests/propan/sema/diagnostics/invalid-constants.propan",
-    "tests/propan/regressions/check-list-parser-errors.propan",
-    "tests/propan/regressions/check-list-sema-error.propan",
-    "tests/propan/regressions/check-list-warning.propan",
-    "tests/propan/sema/diagnostics/whole-memory-length-mismatch.propan",
-    "tests/propan/sema/diagnostics/ambiguous-selection.propan",
-    "tests/propan/sema/diagnostics/file-requires-path.propan",
-    "tests/propan/sema/diagnostics/align-exceeds-address-space.propan",
-    "tests/propan/sema/diagnostics/org-requires-argument.propan",
-    "tests/propan/sema/diagnostics/reserve-requires-count.propan",
-    "tests/propan/sema/diagnostics/reserve-exceeds-cog.propan",
-    "tests/propan/sema/diagnostics/res-invalid-in-mode.propan",
-    "tests/propan/sema/diagnostics/reserve-old-spelling.propan",
-    "tests/propan/sema/diagnostics/assert-requires-operand.propan",
-    "tests/propan/sema/diagnostics/aug-must-be-root.propan",
-    "tests/propan/sema/diagnostics/aug-pointer-index-out-of-range.propan",
-    "tests/propan/sema/diagnostics/nrel-must-be-root.propan",
-    "tests/propan/sema/diagnostics/lutaddr-register.propan",
-    "tests/propan/sema/diagnostics/address-without-execution-pc.propan",
-    "tests/propan/sema/diagnostics/at-outside-scope.propan",
-    "tests/propan/sema/diagnostics/current-pc-regspace.propan",
-    "tests/propan/sema/diagnostics/current-pc-constant.propan",
-    "tests/propan/sema/diagnostics/at-target-without-hub.propan",
-    "tests/propan/sema/diagnostics/at-unaligned-delta.propan",
-    "tests/propan/sema/diagnostics/at-current-without-hub.propan",
-    "tests/propan/sema/diagnostics/positional-after-named.propan",
-    "tests/propan/sema/diagnostics/waitx-short-delay.propan",
-    "tests/propan/sema/diagnostics/align-forward-reference.propan",
-    "tests/propan/sema/diagnostics/augment-address-operand.propan",
-    "tests/propan/sema/diagnostics/org-invalid-in-data.propan",
-    "tests/propan/sema/diagnostics/org-target-exceeds-space.propan",
-    "tests/propan/sema/diagnostics/org-cannot-move-backward.propan",
-    "tests/propan/sema/diagnostics/data-in-regspace.propan",
-    "tests/propan/sema/diagnostics/code-in-data.propan",
-    "tests/propan/sema/diagnostics/branch-into-data.propan",
-    "tests/propan/sema/diagnostics/hubaddr-without-hub.propan",
-    "tests/propan/sema/diagnostics/duplicate-label.propan",
-    "tests/propan/sema/diagnostics/duplicate-local-label.propan",
-    "tests/propan/sema/diagnostics/local-label-after-global.propan",
-    "tests/propan/sema/diagnostics/local-label-after-var.propan",
-    "tests/propan/sema/diagnostics/local-label-after-segment.propan",
-    "tests/propan/sema/diagnostics/duplicate-constant.propan",
-    "tests/propan/sema/diagnostics/unknown-function.propan",
-    "tests/propan/sema/diagnostics/layout-needs-integer.propan",
-    "tests/propan/sema/diagnostics/layout-integer-out-of-range.propan",
-    "tests/propan/sema/diagnostics/instruction-operand-count.propan",
-    "tests/propan/sema/diagnostics/assert-too-many-operands.propan",
-    "tests/propan/sema/diagnostics/assert-needs-integer.propan",
-    "tests/propan/sema/diagnostics/assert-needs-string-message.propan",
-    "tests/propan/sema/diagnostics/invalid-enumerator.propan",
-    "tests/propan/sema/diagnostics/pointer-immediate-out-of-range.propan",
-    "tests/propan/sema/diagnostics/operand-out-of-range.propan",
-    "tests/propan/sema/diagnostics/branch-too-far-bytes.propan",
-    "tests/propan/sema/diagnostics/branch-too-far-instructions.propan",
-    "tests/propan/sema/diagnostics/augmented-branch-too-far.propan",
-    "tests/propan/sema/diagnostics/negative-integer-truncated.propan",
-    "tests/propan/sema/diagnostics/positive-integer-truncated.propan",
-    "tests/propan/sema/diagnostics/pointer-index-out-of-range.propan",
-    "tests/propan/sema/diagnostics/incrementing-pointer-index-out-of-range.propan",
-    "tests/propan/sema/diagnostics/pointer-index-already-set.propan",
-    "tests/propan/sema/diagnostics/increment-needs-pointer.propan",
-    "tests/propan/sema/diagnostics/unary-operator-on-register.propan",
-    "tests/propan/sema/diagnostics/unary-operator-on-enumerator.propan",
-    "tests/propan/sema/diagnostics/bang-needs-integer.propan",
-    "tests/propan/sema/diagnostics/tilde-needs-integer.propan",
-    "tests/propan/sema/diagnostics/plus-needs-integer.propan",
-    "tests/propan/sema/diagnostics/minus-needs-integer.propan",
-    "tests/propan/sema/diagnostics/at-needs-address.propan",
-    "tests/propan/sema/diagnostics/dereference-needs-address.propan",
-    "tests/propan/sema/diagnostics/address-of-needs-address.propan",
-    "tests/propan/sema/diagnostics/index-needs-register-and-integer.propan",
-    "tests/propan/sema/diagnostics/binary-mismatched-types.propan",
-    "tests/propan/sema/diagnostics/binary-operator-on-registers.propan",
-    "tests/propan/sema/diagnostics/binary-operator-on-enumerators.propan",
-    "tests/propan/sema/diagnostics/binary-operator-on-pointer.propan",
-    "tests/propan/sema/diagnostics/address-function-needs-address.propan",
-    "tests/propan/sema/diagnostics/address-function-expected-offset.propan",
-    "tests/propan/sema/diagnostics/address-function-wrong-mode.propan",
-    "tests/propan/sema/diagnostics/hubaddr-expected-offset.propan",
-    "tests/propan/sema/diagnostics/hubaddr-needs-address.propan",
-    "tests/propan/sema/diagnostics/pointer-expression-needs-ptra-ptrb.propan",
-    "tests/propan/sema/diagnostics/function-argument-count.propan",
-    "tests/propan/sema/diagnostics/function-unknown-parameter.propan",
-    "tests/propan/sema/diagnostics/function-parameter-passed-twice.propan",
-    "tests/propan/sema/diagnostics/function-missing-parameter.propan",
-    "tests/propan/sema/diagnostics/builtin-functions.propan",
-    "tests/propan/sema/diagnostics/import-invalid.propan",
-    "tests/propan/sema/diagnostics/import-missing.propan",
-    "tests/propan/sema/diagnostics/import-cycle.propan",
-    "tests/propan/sema/diagnostics/register-function-invalid.propan",
-    "tests/propan/sema/diagnostics/alti-config-invalid.propan",
-    "tests/propan/sema/diagnostics/alti-state-invalid.propan",
-    "tests/propan/sema/diagnostics/alti-state-segments.propan",
-    "tests/propan/sema/diagnostics/pin-range-wraps.propan",
-    "tests/propan/sema/diagnostics/delay-exceeds-u32.propan",
-};
-
-const compare_diagnostic_tests: []const []const u8 = &.{
-    "tests/propan/regressions/check-list-parser-errors.propan",
-    "tests/propan/regressions/check-list-sema-error.propan",
-    "tests/propan/sema/diagnostics/whole-memory-length-mismatch.propan",
-};
-
-const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
-    "tests/propan/sema/spin2-cross-segment-rep.propan",
-    "tests/propan/format/constants.propan",
-    "tests/propan/sema/conditional-compilation.propan",
-    "tests/propan/sema/pack-groups.propan",
-    "tests/propan/sema/pack-hub-code.propan",
-    "tests/propan/sema/pack-offsets.propan",
-    "tests/propan/sema/pack-values.propan",
-    "tests/propan/sema/pack.propan",
-};
-
-const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
-    "tests/propan/sema/res-labels.propan",
-    "tests/propan/sema/array-emission.propan",
-    "tests/propan/sema/array-constants.propan",
-    "tests/propan/sema/lazy-constants.propan",
-    "tests/propan/sema/pic-modes.propan",
-    "tests/propan/sema/basic-constants.propan",
-    "tests/propan/sema/basic-instruction-selection.propan",
-    "tests/propan/sema/addressing-modes.propan",
-    "tests/propan/sema/ambigious-selection.propan",
-    "tests/propan/sema/basic-label-addressing.propan",
-    "tests/propan/sema/local-labels.propan",
-    "tests/propan/sema/local-label-segments.propan",
-    "tests/propan/sema/explicit-local-start.propan",
-    "tests/propan/sema/fit-overlays.propan",
-    "tests/propan/sema/fit-modes.propan",
-    "tests/propan/sema/fit-address-labels.propan",
-    "tests/propan/sema/local-label-non-boundaries.propan",
-    "tests/propan/sema/operators.propan",
-    "tests/propan/sema/builtin-functions.propan",
-    "tests/propan/sema/alti-config-s-mode.propan",
-    "tests/propan/sema/alti-config-d-mode.propan",
-    "tests/propan/sema/alti-config-r-mode.propan",
-    "tests/propan/sema/alti-config-s-ring.propan",
-    "tests/propan/sema/alti-config-d-ring.propan",
-    "tests/propan/sema/alti-config-r-ring.propan",
-    "tests/propan/sema/alti-state-s.propan",
-    "tests/propan/sema/alti-state-d.propan",
-    "tests/propan/sema/alti-state-r.propan",
-    "tests/propan/sema/unary-plus.propan",
-    "tests/propan/sema/operator-associativity.propan",
-    "tests/propan/sema/value-hint-converter.propan",
-    "tests/propan/sema/stdlib.propan",
-    "tests/propan/sema/mixed-function-arguments.propan",
-    "tests/propan/sema/register-offset-wrap.propan",
-    "tests/propan/sema/import-basic.propan",
-    "tests/propan/sema/import-file-relative.propan",
-    "tests/propan/sema/import-once-self.propan",
-    "tests/propan/sema/import-once-alias.propan",
-    "tests/propan/sema/import-local-scope.propan",
-    "tests/propan/sema/register-function.propan",
-    "tests/propan/sema/ticks-large-duration.propan",
-    "tests/propan/sema/integer-extremes.propan",
-    "tests/propan/sema/hexadecimal-escapes.propan",
-    "tests/propan/sema/pointer-variant-order.propan",
-    "tests/propan/sema/render-roundtrip.propan",
-    "tests/propan/sema/current-pc.propan",
-    "tests/propan/sema/char-literals.propan",
-    "tests/propan/sema/aug-pointer-update.propan",
-    "tests/propan/sema/align.propan",
-    "tests/propan/sema/data-mode.propan",
-    "tests/propan/sema/check-list-regspace.propan",
-    "tests/propan/sema/file_source.propan",
-    "tests/propan/sema/lut-mode.propan",
-    "tests/propan/sema/string-emission.propan",
-    "tests/propan/sema/spin2-readable.propan",
-};
-
-const emit_compare_tests: []const []const u8 = &[_][]const u8{
-    "tests/propan/equivalence/address-byte-offsets.propan",
-    "tests/propan/equivalence/absrel_sample.propan",
-    "tests/propan/equivalence/ambigious.propan",
-    "tests/propan/equivalence/argless.propan",
-    "tests/propan/equivalence/arithmetic1.propan",
-    "tests/propan/equivalence/arithmetic2.propan",
-    "tests/propan/equivalence/aug.propan",
-    "tests/propan/equivalence/auxilary.propan",
-    "tests/propan/equivalence/branching.propan",
-    "tests/propan/equivalence/cordic.propan",
-    "tests/propan/equivalence/cursed.propan",
-    "tests/propan/equivalence/flags.propan",
-    "tests/propan/equivalence/io.propan",
-    "tests/propan/equivalence/memory-ptr.propan",
-    "tests/propan/equivalence/memory-ptr-aug.propan",
-    "tests/propan/equivalence/memory.propan",
-    "tests/propan/equivalence/metaprogramming.propan",
-    "tests/propan/equivalence/rdlong-selection-bug.propan",
-    "tests/propan/equivalence/same-source-aliases-alternating.propan",
-    "tests/propan/equivalence/same-source-aliases.propan",
-    "tests/propan/equivalence/special_effects.propan",
-    "tests/propan/equivalence/three_ops.propan",
-    "tests/propan/equivalence/hubset.propan",
-    "tests/propan/equivalence/implicit-field-aliases.propan",
-};
-
-const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
-    "tests/windtunnel/behaviour/cogstop.propan",
-    "tests/windtunnel/behaviour/output.propan",
-    "tests/windtunnel/behaviour/augs.propan",
-};
-
-const CoverageDirectoryStash = struct {
-    b: *std.Build,
-
-    list: std.ArrayList(std.Build.LazyPath) = .empty,
-    kcov_path: ?[]const u8,
-
-    fn create_test_run(cds: *CoverageDirectoryStash, exe: *std.Build.Step.Compile) *std.Build.Step.Run {
-        const run_step = std.Build.Step.Run.create(cds.b, "run propan");
-
-        if (cds.kcov_path) |path| {
-            run_step.addArg(path);
-
-            // Only report for files in the `src` directory:
-            run_step.addPrefixedDirectoryArg("--include-path=", cds.b.path("src"));
-
-            // Only collect the data, we're not interested in rendering yet.
-            run_step.addArg("--collect-only");
-
-            // Collect data into a new directory
-            const cov_dir = run_step.addOutputDirectoryArg("coverage");
-
-            cds.list.append(cds.b.allocator, cov_dir) catch @panic("out of memory");
-        }
-
-        // Then add the propan executable:
-        run_step.addArtifactArg(exe);
-        return run_step;
-    }
-};
