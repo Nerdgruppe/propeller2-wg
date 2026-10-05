@@ -1,0 +1,17 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [
+//?     0xFF091A2B, 0xF607EC78, 0,
+//?     0xFF004000, 0xFB07ED00, 0,
+//?     0xFF000000, 0xF607EC08, 0,
+//?     0xFF000000, 0xF607ED0A, 0
+//? ]
+const BIG = 0x12345678
+MOV PA, ((aug((BIG))))
+NOP
+RDLONG PA, (PTRA[((aug((256))))])
+NOP
+MOV PA, (aug((target)))
+target:
+NOP
+MOV PA, (aug(266))
+NOP

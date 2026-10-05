@@ -257,6 +257,23 @@ pub fn build(b: *std.Build) void {
         test_step.dependOn(&run.step);
     }
 
+    // Import-once identity is independent of relative, absolute, and include paths.
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArgs(&.{ "--format=none", "--test-mode=sema" });
+        run.addPrefixedDirectoryArg("--include-path=", b.path("tests/propan/sema/fixtures"));
+        run.setStdIn(.{ .bytes = b.fmt(
+            "//? PROPAN CHECK LIST\n//? mem: 0 == u8 [9]\n" ++
+                ".import \"tests/propan/sema/fixtures/import-once-alias-leaf.propan\"\n" ++
+                ".import \"{s}\"\n" ++
+                ".import \"import-once-alias-leaf.propan\"\n",
+            .{b.pathFromRoot("tests/propan/sema/fixtures/import-once-alias-leaf.propan")},
+        ) });
+        run.addArg("-");
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+    }
+
     // Diagnostics in an imported file retain its path and source excerpt.
     {
         const run = coverage_stash.create_test_run(propan_exe);
@@ -336,6 +353,14 @@ pub fn build(b: *std.Build) void {
     // Cases that require expected failures or a comparison reference.
     {
         const expected_files = b.addWriteFiles();
+        const nop_reference = expected_files.add("nop-disasm-reference.bin", "\x00\x00\x00\xF0" ++ "\x00" ** 32);
+        const nop_disasm = create_propan_test_run(&coverage_stash, propan_exe, .compare, "tests/propan/sema/nop-encoding.propan", nop_reference);
+        nop_disasm.expectExitCode(1);
+        nop_disasm.expectStdErrEqual("");
+        nop_disasm.expectStdOutMatch("expected:             ROR 0x0, 0x0");
+        nop_disasm.expectStdOutMatch("actual:               NOP");
+        nop_disasm.expectStdOutMatch("actual:               ROR 0x0, 0x0");
+        nop_disasm.expectStdOutMatch("actual:   if(C)       ROR 0x0, 0x0");
         const reference = expected_files.add("check-list-reference.bin", &.{ 1, 0, 0, 0 });
         const warning_reference = expected_files.add("check-list-warning.bin", &.{1});
         const all_modes: []const TestMode = &.{ .parser, .sema, .compare };
@@ -409,6 +434,7 @@ pub fn build(b: *std.Build) void {
             },
         };
         for (cases) |case| add_propan_test_case(&coverage_stash, propan_exe, test_step, case);
+        test_step.dependOn(&nop_disasm.step);
     }
 
     for (parser_diagnostic_tests) |path| {
@@ -446,6 +472,20 @@ pub fn build(b: *std.Build) void {
         quiet.addFileArg(source);
         quiet.expectStdErrEqual("");
         test_step.dependOn(&quiet.step);
+    }
+
+    // Preserve trailing comments after strings and character literals in Spin2.
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--format=spin2");
+        run.addFileArg(b.path("tests/propan/sema/spin2-quoted-comments.propan"));
+        run.expectStdOutMatch("' keep quote character comment\n");
+        run.expectStdOutMatch("' keep escaped quote comment\n");
+        run.expectStdOutMatch("' keep apostrophe comment\n");
+        run.expectStdOutMatch("' keep backslash comment\n");
+        run.expectStdOutMatch("' keep string comment\n");
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
     }
 
     // Render the stdlib documentation for testing
@@ -729,6 +769,18 @@ const parser_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]con
 };
 
 const regression_tests: []const []const u8 = &[_][]const u8{
+    "tests/propan/sema/spin2-reserved-names.propan",
+    "tests/propan/sema/spin2-quoted-comments.propan",
+    "tests/propan/sema/spin2-case-sensitive-symbols.propan",
+    "tests/propan/sema/spin2-name-collisions.propan",
+    "tests/propan/sema/direct-augmentation.propan",
+    "tests/propan/sema/spin2-dotted-local-labels.propan",
+    "tests/propan/sema/nop-encoding.propan",
+    "tests/propan/sema/spin2-register-origins.propan",
+    "tests/propan/sema/spin2-dotted-constants.propan",
+    "tests/propan/sema/backslash-escapes.propan",
+    "tests/propan/sema/boolean-enumerators.propan",
+    "tests/propan/sema/empty-repetition.propan",
     // TODO: Implement "failing tests" "tests/propan/regressions/null-in-assert.propan",
 };
 
@@ -753,6 +805,25 @@ const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/aug-register-operands.propan",
+    "tests/propan/sema/diagnostics/aug-nonnumeric-values.propan",
+    "tests/propan/sema/diagnostics/aug-whole-pointer.propan",
+    "tests/propan/sema/diagnostics/augmented-constant.propan",
+    "tests/propan/sema/diagnostics/aug-noninstruction-expressions.propan",
+    "tests/propan/sema/diagnostics/aug-layout-expressions.propan",
+    "tests/propan/sema/diagnostics/aug-conditional-expressions.propan",
+    "tests/propan/sema/diagnostics/conditional-nop.propan",
+    "tests/propan/sema/conditional-constant-warning-once.propan",
+    "tests/propan/sema/register-address-modes.propan",
+    "tests/propan/sema/diagnostics/localaddr-register-modes.propan",
+    "tests/propan/sema/diagnostics/localaddr-constant-mode.propan",
+    "tests/propan/sema/diagnostics/localaddr-conditional-mode.propan",
+    "tests/propan/sema/diagnostics/pointer-expression-operand-types.propan",
+    "tests/propan/sema/diagnostics/assert-operand-warning-once.propan",
+    "tests/propan/sema/at-execution-distance.propan",
+    "tests/propan/sema/diagnostics/at-execution-mode-mismatch.propan",
+    "tests/propan/sema/diagnostics/at-hub-unaligned-delta.propan",
+    "tests/propan/sema/diagnostics/conditional-unknown-function.propan",
     "tests/propan/sema/diagnostics/conditional-structure.propan",
     "tests/propan/sema/diagnostics/conditional-values.propan",
     "tests/propan/sema/diagnostics/conditional-arity.propan",
@@ -891,6 +962,7 @@ const compare_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
+    "tests/propan/sema/spin2-cross-segment-rep.propan",
     "tests/propan/format/constants.propan",
     "tests/propan/sema/conditional-compilation.propan",
     "tests/propan/sema/pack-groups.propan",
@@ -938,6 +1010,7 @@ const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests +
     "tests/propan/sema/import-basic.propan",
     "tests/propan/sema/import-file-relative.propan",
     "tests/propan/sema/import-once-self.propan",
+    "tests/propan/sema/import-once-alias.propan",
     "tests/propan/sema/import-local-scope.propan",
     "tests/propan/sema/register-function.propan",
     "tests/propan/sema/ticks-large-duration.propan",

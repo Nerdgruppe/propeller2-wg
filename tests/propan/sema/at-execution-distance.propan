@@ -1,0 +1,50 @@
+//? PROPAN CHECK LIST
+//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments
+//? mem: 0x100 <- u32 [49]
+//? mem: 0x200 <- u32 [-51]
+//? mem: 0x300 <- u32 [-502]
+//? mem: 0x400 <- u32 [207]
+//? mem: 0x500 <- u32 [-209]
+//? mem: 0x600 <- u32 [-480]
+//? mem: 0x700 <- u32 [15]
+//? mem: 0x740 <- u32 [-17]
+//? mem: 0x800 <- u32 [0xFF000000, 0xF607EC01, 0, 0]
+//? mem: 0x900 <- u32 [0]
+.cogexec 0x100, 10
+cog_source:
+LONG @cog_target
+.cogexec 0x200, 60
+cog_target:
+LONG @cog_source
+.cogexec 0x300, 511
+LONG @cog_source
+.lutexec 0x400, 0x220
+lut_source:
+LONG @lut_target
+.lutexec 0x500, 0x2f0
+lut_target:
+LONG @lut_source
+.lutexec 0x600, 0x3ff
+LONG @lut_source
+.hubexec 0x700
+hub_source:
+LONG @hub_target
+.hubexec 0x740
+hub_target:
+LONG @hub_source
+.cogexec 0x800, 100
+MOV PA, aug(@aug_target)
+NOP
+aug_target:
+NOP
+.cogexec 0x900, 10
+LONG @reserved
+var reserved:
+RES 1

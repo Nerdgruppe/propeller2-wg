@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u8 [34, 34, 39, 92, 47, 47, 34, 47, 47, 39]
+BYTE '"' // keep quote character comment
+BYTE '\"' // keep escaped quote comment
+BYTE '\'' // keep apostrophe comment
+BYTE '\\' // keep backslash comment
+BYTE "//\"//'" // keep string comment

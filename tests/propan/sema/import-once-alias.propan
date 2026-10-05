@@ -1,0 +1,4 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u8 [9]
+.import "fixtures/import-once-alias-leaf.propan"
+.import "../sema/fixtures/import-once-alias-leaf.propan"

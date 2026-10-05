@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+.org aug(16)
+.align aug(4)
+.cogexec aug(0)
+.cogexec 0, aug(1)
+RES aug(1)

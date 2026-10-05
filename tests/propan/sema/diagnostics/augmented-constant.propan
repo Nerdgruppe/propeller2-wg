@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_augmentation_requires_instruction_operand line 3
+const big = aug(0x12345678)
+MOV PA, big
+NOP

@@ -291,7 +291,7 @@ fn convert_to_type(comptime T: type, value: Value) EvalError!T {
 }
 
 const bool_lut: std.StaticStringMap(bool) = .initComptime(.{
-    .{ "true", true }, .{ "false ", false },
+    .{ "true", true }, .{ "false", false },
     .{ "yes", true },  .{ "no", false },
     .{ "on", true },   .{ "off", false },
     .{ "1", true },    .{ "0", false },

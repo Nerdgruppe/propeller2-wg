@@ -1,0 +1,14 @@
+//? PROPAN CHECK LIST
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
+
+.hubexec
+LONG localaddr(PA)
+.lutexec
+LONG localaddr(register(0))
+.data
+LONG localaddr(register(511))
+.regspace
+.assert localaddr(PTRA) == 504

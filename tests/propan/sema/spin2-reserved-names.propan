@@ -1,0 +1,43 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [
+//?     0xF607EC01, 0xF607EC02, 0xF607EC03, 0xF607EC04,
+//?     0xF607EC05, 0xF607EC06, 0xF607EC07, 0xF607EC08, 0xF607EC09,
+//?     0, 0xF603EE09, 1, 0xF603EC0B, 2, 0xF603EC0D, 3, 0xF603EE0F,
+//?     0xFCDC0201, 0xF603EE13, 0
+//? ]
+const IF_C = 1
+const WC = 2
+const ANDC = 3
+const _RET_ = 4
+const FLOAT = 5
+const LOOKUP = 6
+const BYTEFIT = 7
+const true = 8
+const pa = 9
+MOV PA, IF_C
+MOV PA, WC
+MOV PA, ANDC
+MOV PA, _RET_
+MOV PA, FLOAT
+MOV PA, LOOKUP
+MOV PA, BYTEFIT
+MOV PA, true
+MOV PA, pa
+var IF_Z:
+LONG 0
+MOV PB, IF_Z
+var WZ:
+LONG 1
+MOV PA, WZ
+var ALIGNL:
+LONG 2
+MOV PA, ALIGNL
+var _:
+LONG 3
+MOV PB, _
+scope:
+.assert cogaddr(scope) == 17
+REP @.IF_NZ, 1
+MOV PB, *.IF_NZ
+.IF_NZ:
+NOP

@@ -1,0 +1,39 @@
+//? PROPAN CHECK LIST
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_address_function_expected_offset function==cogaddr
+//? err: warn_address_function_expected_offset function==cogaddr
+//? err: warn_address_function_expected_offset function==cogaddr
+//? err: warn_address_function_expected_offset function==cogaddr
+//? err: warn_address_function_expected_offset function==cogaddr
+//? mem: 0 == u32 [1]
+
+.assert localaddr(register(0)) == 0
+.assert localaddr(PA) == 502
+.assert localaddr(register(511)) == 511
+const cog_register = localaddr(PTRA)
+.if localaddr(PB) == 503
+    LONG 1
+.else
+    .assert 0
+.endif
+
+.cogexec
+.assert localaddr(PTRB) == 505
+.hubexec
+.assert cogaddr(register(0)) == 0
+.assert cogaddr(PA) == 502
+.assert cog_register == 504
+.lutexec
+.assert cogaddr(register(511)) == 511
+.data
+.assert cogaddr(PB) == 503
+.regspace
+.assert cogaddr(PTRA) == 504
+.cogexec
+.assert localaddr(regoffset(PTRA, -504)) == 0

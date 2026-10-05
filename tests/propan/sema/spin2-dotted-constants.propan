@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [0xF607EC03, 0xF607EE05]
+const my.value = 3
+const my_value = 5
+MOV PA, my.value
+MOV PB, my_value

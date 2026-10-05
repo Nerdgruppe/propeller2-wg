@@ -221,3 +221,192 @@ Validation: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, includin
 - **Bug:** Emitting source names unchanged can produce invalid Spin2 declarations for names such as `COUNT`, `NEXT`, and `END`.
 - **Reproduction:** FlexSpin rejected generated output for `tests/propan/sema/array-constants.propan`, `lazy-constants.propan`, and `basic-instruction-selection.propan`.
 - **Fix:** Keep readable names by default and append a short suffix only for reserved names or collisions; sanitize punctuation in nonlocal names such as `foo.loop`.
+
+---
+
+## Boolean `#false` arguments are rejected (2026-10-05)
+
+- **Bug:** The shared boolean enumerator table contains `"false "` with a trailing space, so valid `#false` arguments fail with `invalid argument`.
+- **Reproduction:** Run `zig-out/bin/propan --format=none --test-mode=sema` on `.assert ticks(1000, ms=3, waitx=#false) == 3`; it exits with an expression-evaluation error.
+- **Fix:** Remove the trailing space in the shared conversion table. `tests/propan/sema/boolean-enumerators.propan` checks all six boolean word aliases through `ticks`; it is registered in the build test suite.
+
+## Repeating empty data performs billions of useless iterations (2026-10-05)
+
+- **Bug:** `repeat_value` loops once per repetition even when the input string or array is empty. An empty output can take billions of iterations to assemble.
+- **Reproduction:** Assemble `BYTE "" * 4294967295` or `BYTE [] * 4294967295` with `--format=none --test-mode=sema`. Both failed to finish within a two-second timeout; ordinary empty data finishes immediately.
+- **Fix:** Return the original empty value after validating the repetition count, before allocating or looping. `tests/propan/sema/empty-repetition.propan` covers both operand orders for strings and arrays and a nested empty string, while checking the resulting image.
+
+## Unknown functions in conditional directives crash assembly (2026-10-05)
+
+- **Bug:** Conditional filtering evaluates function calls before ordinary symbol validation. The evaluator force-unwraps the missing function lookup, aborting on an unknown function in `.if` or `.elif`, including calls through constants.
+- **Reproduction:** Assemble `.if missing_function(1)` followed by `BYTE 1` and `.endif` with `--format=none --test-mode=sema`; it panics with `attempt to use null value` in `evaluate_expr`.
+- **Fix:** Guard the lookup in the shared expression evaluator and emit the existing unknown-function diagnostic, returning `DiagnosedFailure`. `tests/propan/sema/diagnostics/conditional-unknown-function.propan` checks `.if`, `.elif`, constant indirection, and that inactive branches still skip evaluation.
+
+## `@label` uses storage distance instead of execution distance (2026-10-05)
+
+- **Finding:** The unary `@` evaluator always subtracts hub storage addresses and divides by four, even across separate cog/LUT segments with independent execution origins. Its existing TODO explicitly calls for validating that the addresses belong to the same segment. This can make `REP @target, 1` count storage distance rather than execution distance.
+- **Reproduction:** Assemble the following with `zig-out/bin/propan --format=json --output=- --no-warnings`:
+
+  ```propan
+  .cogexec 0x100, 0
+  REP @target, 1
+  .cogexec 0x200, 0
+  target:
+  NOP
+  ```
+
+  Assembly succeeds and emits REP word `0xFCDC7E01`, with first operand 63 (`(0x200 - 0x104) / 4`). Both segments start at cog PC zero; the target's execution PC is zero, not 64.
+- **Clarified semantics:** Measure from the execution PC after the instruction. Cog/LUT differences use long indices; hub-to-hub byte differences must be divisible by four and are converted to longs. Cross-segment references warn, while cross-execution-mode references error.
+- **Fix:** Subtract execution positions from the PC after the instruction, preserving subregister byte offsets for alignment checks. Require matching execution modes and emit `warn_relative_address_crosses_segments` for different segments. Keep the full post-instruction PC during layout so the final cog/LUT instruction does not wrap its end address. `.data` and `.regspace` have no execution PC. New fixtures cover forward/backward cog/LUT/hub distances, segment warnings, all six execution-mode crossings, unaligned hub distances, augmented instruction length, reserved cog addresses, and final cog/LUT PCs. The six new/updated fixtures passed direct semantic checks using `zig-0.16.0`.
+
+Validation for the initial three 2026-10-05 fixes: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including 72 unit tests, diagnostic checks, semantic fixtures, formatter and Spin2 round trips, and FlexSpin equivalence checks. All three new fixtures also passed direct semantic runs; the empty-repetition fixture completed within a three-second timeout. `zig-0.16.0 fmt --check` on changed Zig files and `git diff --check` passed. Existing report content and unrelated `TODO.md` edits were preserved.
+
+## Failed comparison assertions emit operand warnings twice (2026-10-05)
+
+- **Bug:** `evaluate_asserts` reevaluates comparison operands to construct the failure message. The second evaluation emits the same operand warnings again, including cross-segment `@` warnings.
+- **Reproduction:** Assemble `.assert ticks(1, ns=1, waitx=#on) == 1` with `--format=none`. The short-WAITX warning appears twice before the assertion failure, although the source contains one call.
+- **Fix:** Suppress shared diagnostic emission only while reevaluating operands for the failure message, then restore it before emitting the assertion error. `assert-operand-warning-once.propan` checks exact warning counts and both failure messages for `ticks` and a cross-segment `@` operand.
+
+## Escaped backslashes produce invalid-escape warnings (2026-10-05)
+
+- **Bug:** The source literal unescaper omits the standard `\\` escape, routing it through the invalid-escape warning path even though it produces the intended backslash. Pretty printing also generates this escape for literal backslashes, so round trips introduce warnings.
+- **Reproduction:** Assemble `BYTE '\\'` with `--format=none`; it succeeds but warns `invalid escape sequence: \\`.
+- **Fix:** Recognize escaped backslashes in the shared single-character escape switch. `backslash-escapes.propan` checks character and string literals, adjacent escapes, exact emitted bytes, and no warnings; the suite also checks formatter round trips.
+
+## Spin2 constants retain invalid punctuation (2026-10-05)
+
+- **Bug:** The Spin2 emitter sanitizes punctuation in label names but writes constant names verbatim. Dotted global constants are valid Propan source and produce invalid Spin2 declarations and operand references.
+- **Reproduction:** Assemble `const my.value = 3` followed by `MOV PA, my.value` with `--format=spin2`. The generated declaration is `my.value = 3`; FlexSpin rejects it with a syntax error.
+- **Fix:** Use the existing identifier sanitizer for constant declarations and references. `spin2-dotted-constants.propan` checks emitted instructions and exercises a collision between dotted and underscore names; the build suite compiles the Spin2 output with FlexSpin and compares its bytes with the flat image.
+
+## Spin2 symbolic register operands use the wrong execution origin (2026-10-05)
+
+- **Bug:** Spin2 output flattens segments into one DAT image without setting their execution origins, but substitutes label names for numeric register operands. When a cog segment's execution origin differs from its hub storage position, FlexSpin gives those labels different register numbers and silently changes instruction bytes.
+- **Reproduction:** Assemble `.cogexec 0x40, 20`, `MOV slot, 1`, `var slot:`, `LONG 0` as flat and Spin2, then compile the Spin2 with FlexSpin. The MOV is `0xF6042A01` in flat output but `0xF6042201` after the round trip: register 21 became 17.
+- **Fix:** Substitute a symbolic label only when its DAT register index matches the operand's execution register; otherwise emit the already evaluated number. `spin2-register-origins.propan` checks two independent cog origins, and its generated Spin2 must round-trip byte-for-byte through FlexSpin in the suite.
+
+## Propan accepts conditions on NOP (2026-10-05)
+
+- **Bug:** Propan accepts an explicit condition on NOP and encodes that condition nibble. These nonzero words are ROR instructions, not NOP. The original Spin2 export problem was a symptom of this semantic error; the raw-opcode fallback did not fix it.
+- **Reproduction:** Assemble `if(C) NOP` with `--format=flat`: it succeeds with word `0xC0000000`. Spin2 rejects the corresponding conditioned NOP. `return NOP` is also incorrectly accepted, even though its zero condition nibble leaves the word zero.
+- **Clarified semantics:** NOP is exactly `0x00000000` and cannot have any explicit condition. `0xF0000000` is unconditional `ROR register(0), register(0)`.
+- **Fix:** Reject any explicit condition on NOP during semantic mnemonic selection, including `return`, and keep ordinary NOP's fixed zero encoding. Remove the earlier Spin2 raw-opcode workaround. `diagnostics/conditional-nop.propan` checks five conditions and case variants; `nop-encoding.propan` checks zero-word NOP alongside nonzero ROR words. The renderer fixture now uses a valid `return ROR` spelling for the same zero word.
+
+## Spin2 REP end labels lose cross-segment execution distances (2026-10-05)
+
+- **Bug:** With the clarified `@` semantics, preserving `REP @target` in a flattened DAT image lets FlexSpin recompute the distance using hub storage positions rather than independent cog execution origins.
+- **Reproduction:** Assemble `.cogexec 0x100, 10`, `REP @target, 1`, `.cogexec 0x200, 30`, `target:`, `NOP` as flat and Spin2, then compile the Spin2 with FlexSpin. Flat output encodes `0xFCDC2601` (19 longs), while the round trip encodes `0xFCDC7E01` (63 longs).
+- **Fix:** Preserve a global REP end label only when its distance in the emitted DAT layout matches the evaluated execution distance; otherwise use the existing raw-opcode fallback. `spin2-cross-segment-rep.propan` checks the warning and exact REP word, with FlexSpin round-trip coverage.
+
+## Ordinary instruction operands accept pointer expressions (2026-10-05)
+
+- **Bug:** Instruction operand compatibility accepts pointer-expression values for ordinary register and register/immediate operands. The emitter converts them to memory-pointer bitfields but uses those bits as register indices for MOV and ADD.
+- **Reproduction:** Assemble the following with `zig-out/bin/propan --format=flat --output=pointer.bin`:
+
+  ```propan
+  MOV PA, PTRA++
+  ADD PB, PTRB[2]
+  MOV ++PTRA, 1
+  ```
+
+  Assembly succeeds without diagnostics, producing words `0xF603ED61`, `0xF103EF82`, and `0xF6068201`. Those instructions access registers 353, 386, and 321 respectively; they do not update or dereference PTRA/PTRB.
+- **Clarified semantics:** Only `Operand.Type.pointer_expr` may accept a pointer-expression value. All other instruction operand types must reject it, including MOV's register and register/immediate operands.
+- **Fix:** Reject pointer-expression values for every operand type except `pointer_expr` in the shared `can_assign_from` check. `pointer-expression-operand-types.propan` checks five rejected MOV, ADD, RDLONG, and WRLONG operands. Existing memory-pointer equivalence fixtures cover valid pointer-expression operands.
+
+Validation for the continuation: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed with all fixes and new fixtures, including 72 unit tests, diagnostic and semantic checks, formatter and Spin2 round trips, and FlexSpin equivalence checks. `zig-0.16.0 fmt --check` on changed Zig files and `git diff --check` also passed.
+
+## Spin2 local labels retain invalid punctuation (2026-10-05)
+
+- **Bug:** Local label declarations and REP end-label references bypass identifier sanitization. Dotted local names are valid Propan source but invalid Spin2.
+- **Reproduction:** Assemble `start:`, `REP @.one.two, 1`, `MOV PA, *.one.two`, `.one.two:`, `NOP` with `--format=spin2`, then compile the output with FlexSpin. The generated `.one.two` label causes a syntax error.
+- **Fix:** Sanitize local label names and disambiguate names that sanitize identically within their parent scope. Resolve REP's target symbol before emission and use the same name conversion as its declaration, while retaining the storage-distance check. `spin2-dotted-local-labels.propan` checks `.one.two` versus `.one_two` and both REP references, including formatter and FlexSpin byte-equivalence checks.
+
+## `localaddr(register)` rejects valid cogexec arguments (2026-10-05)
+
+- **Bug:** The register branch of `localaddr` unconditionally emits `err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope`, with a TODO to check the current execution mode. This rejects registers even inside `.cogexec`.
+- **Reproduction:** Assemble `.cogexec` followed by `LONG localaddr(PA)` with `--format=none`. It errors that `localaddr()` is only valid for registers in a cogexec scope, despite being in one. `.cogexec`, `const r = localaddr(PA)`, `LONG r` produces the same error and warning. The evaluator computes register number 502 in both cases before failing analysis.
+- **Clarified semantics:** `localaddr` accepts any register only in cogexec; `cogaddr` accepts any register in every mode. Constants use their declaration's execution mode. Preserve the existing advisory warning for register arguments.
+- **Fix:** Check the execution mode for register arguments rather than rejecting all `localaddr` register calls. Track declaration modes for constants and active modes during conditional filtering; no PC is provided to conditions or constants. Four fixtures cover all five modes, named and computed registers, constant declaration modes, and inactive mode directives. Existing register warnings remain advisory. Direct semantic checks passed using `zig-0.16.0`.
+
+Validation after the pointer clarification and local-label fix: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including 72 unit tests, the new diagnostic and local-label fixtures, valid memory-pointer equivalence checks, formatter round trips, and Spin2/FlexSpin byte comparisons. `zig-0.16.0 fmt --check` on changed Zig files and `git diff --check` passed. Unrelated `TODO.md` edits were preserved.
+
+## Conditional constants emit their warnings twice (2026-10-05)
+
+- **Bug:** A constant used by `.if` is evaluated once by conditional filtering and again by the main analyzer. Both evaluations emit the same warnings at the declaration, even though it appears only once.
+- **Reproduction:** Assemble `const reg = cogaddr(PA)`, `.if reg == 502`, `LONG reg`, `.endif` with `--format=none`. The register-argument warning at `cogaddr(PA)` appears twice. The clarified `localaddr(PA)` path reproduces this too.
+- **Fix:** Copy valid constant values already evaluated by the conditional probe into the main analyzer's constant cache, preserving their owned string/sequence storage and marking them evaluated. Address and pointer-expression values still undergo ordinary invalid-constant validation. `conditional-constant-warning-once.propan` checks exact counts for cogaddr, localaddr, and short-WAITX warnings, dependent register constants, declaration modes, and emitted values.
+
+## Augmented constants crash instruction emission (2026-10-05)
+
+- **Bug:** A constant can retain the augmentation flag from `aug(...)`, but instruction layout detects augmentation only in operand syntax. Emission writes an extra AUGS/AUGD word without reserving space, so a following instruction overlaps and triggers an assertion.
+- **Reproduction:** Assemble `const big = aug(0x12345678)`, `MOV PA, big`, `NOP` using `zig-out/bin/propan --format=json --output=-`. It aborts at `std.debug.assert(hub_offset >= segment_end_hub_offset)` in `emit_code`: MOV was laid out as four bytes but emitted eight.
+- **Clarified semantics:** `aug()` must appear directly on an instruction operand. Constants must not retain augmentation flags, and augmentation is invalid in data, layout, assertion, or conditional-compilation expressions.
+- **Fix:** Give expression evaluation an explicit instruction-operand context and reject `aug()` elsewhere before retaining an augmentation flag. Return immediately after diagnosing nested `aug()` calls. Four diagnostic fixtures cover constants, data, layout directives, assertions, and conditional compilation. `direct-augmentation.propan` checks exact bytes for valid augmentation of an ordinary constant and a pointer index, each followed by NOP to detect layout overlaps.
+
+Validation after the register-address clarification: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including 72 unit tests, all five new semantic/diagnostic fixtures, formatter and Spin2 round trips, and FlexSpin equivalence checks. `zig-0.16.0 fmt --check` on changed Zig files and `git diff --check` passed. At that stage, the augmented-constant crash awaited its language rule; the fix above follows the subsequent clarification.
+
+## Disassembler labels nonzero ROR words as NOP (2026-10-05)
+
+- **Bug:** The comparison-output disassembler masks condition bits for every instruction, including the zero-word NOP alias. Because NOP is checked first, words with only condition bits set are displayed as NOP instead of ROR.
+- **Reproduction:** Compare a program containing `ROR register(0), register(0)` against a different reference binary in `--test-mode=compare`. The mismatch's actual instruction is displayed as NOP for word `0xF0000000`.
+- **Fix:** Keep every bit significant when matching NOP while continuing to mask variable condition bits for other instructions. A comparison test reuses `nop-encoding.propan` and checks that zero decodes as NOP and `0xF0000000` as ROR in both expected and actual mismatch output.
+
+Validation after the NOP clarification: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including semantic rejection of conditional NOP, exact NOP/ROR encodings, mismatch disassembly, formatter and Spin2/FlexSpin round trips, and the 72-test unit suite. `zig-0.16.0 fmt --check` on changed Zig files and `git diff --check` passed. At that stage, discovery stopped at the augmented-constant rule, subsequently clarified and fixed above.
+
+Validation after the augmentation clarification: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including all 72 unit tests, the four new augmentation diagnostic fixtures, exact instruction layout, formatter round trips, and Spin2/FlexSpin byte equivalence for valid direct augmentation. Formatting and diff whitespace checks passed.
+
+## Augmentation accepts whole pointer expressions (2026-10-05)
+
+- **Bug:** `aug()` blindly retains its argument's type and adds an augmentation flag, accepting whole pointer expressions despite augmentation being defined on their indices. The preceding regression mistakenly treated this syntax as valid.
+- **Reproduction:** Assemble `RDLONG PA, aug(PTRA[256])`, followed by `NOP`, using `zig-out/bin/propan --format=flat`. It succeeds and emits the same instruction words as `RDLONG PA, PTRA[aug(256)]`.
+- **Clarified semantics:** `PTRA[aug(256)]` is correct; `aug(PTRA[256])` is forbidden. Pointer increments also keep augmentation on their index.
+- **Fix:** Reject pointer-expression arguments in the shared `aug()` evaluator with a diagnostic explaining that the index must be augmented. Correct `direct-augmentation.propan` to use `PTRA[aug(256)]` with the same expected bytes. `aug-whole-pointer.propan` rejects five whole-pointer cases, including pre/post updates and an already augmented index; existing memory-pointer and pointer-update equivalence fixtures retain their valid index syntax.
+
+## Spin2 collision suffixes collide with source identifiers (2026-10-05)
+
+- **Bug:** The exporter resolves sanitized identifier collisions by appending `_p2` and a declaration index without checking whether that generated name is already a valid source identifier. The resulting Spin2 can redeclare a name or reference the wrong declaration.
+- **Reproduction:** Export `const a.b = 1`, `const a_b = 2`, `const a_b_p20 = 3`, followed by `MOV PA, a.b`, `MOV PB, a_b`, `ADD PA, a_b_p20`, with `--format=spin2`. It declares `a_b_p20` twice with different values; FlexSpin errors `Redefining a_b_p20 with a different value`. The same suffix scheme is used for global and local labels.
+- **Fix:** Reserve a generated-name prefix absent from all sanitized source identifiers, then include the declaration kind and index to distinguish constants and labels. Detect global label/constant collisions in both directions. `spin2-name-collisions.propan` checks exact instruction/data words and exercises original suffix collisions, two occupied generated prefixes, constant/label collisions, global labels, and scoped REP targets; its exported Spin2 compiles with identical bytes in FlexSpin.
+
+## Import-once identity changes with the search path (2026-10-05)
+
+- **Bug:** Import identity is a search-directory index plus its relative path. The same file therefore gets different identities when referenced through an absolute path, an include directory, or its original source directory. `.import once` can emit the file more than once and cycle detection can revisit the root before recognizing a cycle.
+- **Reproduction:** Create `/tmp/propan-import-once-alias.propan` containing `.import once`, `.import "/tmp/propan-import-once-alias.propan"`, and `BYTE 1`. Assemble with `--format=flat`: the image contains `01 01` instead of one byte `01`.
+- **Fix:** Key the root and imported source cache, active-import set, and import-once set by canonical file paths, while retaining the original display path and directory for diagnostics and relative imports. Preserve stdin's synthetic identity. `import-once-alias.propan` checks equivalent relative paths; a CLI regression checks source-directory, absolute, and include-directory references to the same leaf. The original absolute self-import reproducer now emits one byte.
+
+## Augmentation of register-valued operands leaks into following instructions (2026-10-05)
+
+- **Bug:** `aug()` retains register usage and emission inserts an AUGS/AUGD prefix even when the instruction operand is encoded as a register. That instruction does not consume the queued immediate augmentation, which can change a later instruction's meaning.
+- **Reproduction:** Assemble `MOV PA, aug(PB)` followed by `RDLONG PA, PTRA[1]` with `--format=flat`. It succeeds with words `0xFF000000`, `0xF603EDF7`, and `0xFB07ED01`. The MOV uses a register S operand and leaves AUGS queued; the following pointer read is then interpreted as an augmented immediate address `0x101`. The shipped silicon documentation describes the different augmented hub-memory operand layouts.
+- **Clarified semantics:** Augmentation is valid only for immediates. Register values and values with register usage, such as `aug(*label)`, must always error, including bare PTRA/PTRB before pointer-expression conversion.
+- **Fix:** Require literal usage and an integer or address value in the shared `aug()` evaluator, before applying its flag or converting bare PTRA/PTRB into pointer expressions. `aug-register-operands.propan` rejects named/computed registers, register constants, data labels, explicit register usage, and register-valued pointer indices. `aug-nonnumeric-values.propan` also checks strings, arrays, and enumerators. The positive direct-augmentation fixture now covers immediate code-label addresses alongside integer constants and augmented pointer indices.
+
+Validation for the preceding continuation: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including all 72 unit tests, whole-pointer augmentation diagnostics, valid augmented pointer indices, Spin2 name-collision byte equivalence, canonical import-once identities, and all formatter/Spin2 round trips. `zig-0.16.0 fmt --check` on changed Zig files and `git diff --check` passed. Unrelated `TODO.md` changes remain preserved. At that stage, register-valued augmentation awaited the subsequent clarification above.
+
+## Spin2 references collapse case-distinct symbols (2026-10-05)
+
+- **Bug:** Propan resolves symbols case-sensitively, but the Spin2 exporter looks up operand names case-insensitively. It gives case-distinct declarations separate generated names, then selects the first declaration for both references, silently changing instruction bytes.
+- **Reproduction:** Export `const Foo = 1`, `const foo = 2`, `MOV PA, Foo`, `MOV PB, foo` with `--format=spin2` and compile it with FlexSpin. Both MOVs refer to the generated name for `Foo`, so the second immediate is 1 instead of 2. The flat binaries differ at byte 5. Label lookup and REP target lookup use the same incorrect name comparison.
+- **Fix:** Resolve constant, label, and REP references with exact Propan identifier spelling, while retaining case-insensitive collision detection for Spin2 declarations. Apply the special `altered` spelling only to the exact builtin name, allowing a distinct user `Altered` constant. `spin2-case-sensitive-symbols.propan` checks exact bytes for case-distinct constants, global/local labels, case-distinct parent scopes, mixed constant/label names, and the builtin versus user constant; FlexSpin output matches the flat image.
+
+## Spin2 drops comments after quote character literals (2026-10-05)
+
+- **Bug:** The Spin2 source-comment scanner tracks double-quoted strings but ignores single-quoted character literals. A double quote inside a character literal opens a phantom string, hiding the actual trailing comment.
+- **Reproduction:** Export `BYTE '"' // keep this comment` or `BYTE '\"' // keep escaped quote comment` with `--format=spin2`. The BYTE is present but its trailing comment disappears, while a normal comment after a string is retained.
+- **Fix:** Track the active quote delimiter, recognizing both strings and character literals and skipping escapes only inside them. `spin2-quoted-comments.propan` checks the character/string bytes and round trips; a CLI output check verifies all five trailing comments survive, including quote, apostrophe, backslash, and embedded `//` cases.
+
+## Spin2 identifier sanitizer misses operand keywords (2026-10-05)
+
+- **Bug:** Exported identifier collision handling recognizes instruction mnemonics and a small directive list, but misses PASM condition and effect keywords. Valid Propan names can therefore become keyword tokens in Spin2 operand positions.
+- **Reproduction:** Export `const IF_C = 1` and `MOV PA, IF_C` with `--format=spin2`, then compile it with FlexSpin. The emitted `MOV 502, #IF_C` fails with a syntax error. No Propan error is reported.
+- **Fix:** Reserve the PASM condition-name family and effect names, extend the Spin2 language/DAT keyword list, and reuse the standard library's predefined constant and register names. Conflicts use the existing generated-name path, retaining ordinary readable identifiers. `spin2-reserved-names.propan` checks immediate and register operands named after condition/effect words, language tokens, builtins, and the single underscore; its Spin2 output must compile and match the flat bytes in FlexSpin.
+
+Validation after the register-augmentation clarification: `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including all 72 unit tests, register and nonnumeric augmentation rejection, valid immediate/address and pointer-index augmentation, case-sensitive symbol references, reserved identifier byte equivalence, preserved Spin2 comments, and all formatter/Spin2 round trips. `zig-0.16.0 fmt --check` on changed Zig files and `git diff --check` passed. Unrelated `TODO.md` changes remain preserved.
+
+## Parentheses incorrectly reject direct augmentation (2026-10-05)
+
+- **Bug:** Ordinary parentheses increment expression nesting, so the evaluator treats a wrapped instruction operand as a nested augmentation call.
+- **Reproduction:** Assemble `MOV PA, (aug(266))`. It fails with `aug() must be the root of an expression`, while the equivalent unwrapped operand succeeds.
+- **Clarified semantics:** Parentheses are transparent wrapping. Wrapped direct operands and pointer indices retain their eligibility for augmentation; actual operators and function arguments still introduce nesting.
+- **Fix:** Keep the existing nesting depth when evaluating a parenthesized expression. The direct-augmentation checklist now checks wrapped immediate constants, code-label addresses, pointer operands/indices, and the exact `MOV PA, (aug(266))` example. Negative checks retain rejection inside arithmetic and function arguments, including wrapped nested calls.
+- **Validation:** `zig-0.16.0 build install test -Dwith-flexspin -j4` passed, including all 72 unit tests, checklist regressions, formatter round trips, and FlexSpin byte comparisons. `zig-0.16.0 fmt --check src/propan/sema.zig` and `git diff --check` passed. Further bug searching stopped at the user's request after this fix.

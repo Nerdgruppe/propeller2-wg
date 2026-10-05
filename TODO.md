@@ -21,12 +21,6 @@
 
 ## New Features
 
-### `propan fmt`
-
-Implement auto-formatting for propan code.
-
-This needs further specification.
-
 ### Groups
 
 Groups are similar to ELF sections with garbage collection.
@@ -67,19 +61,12 @@ RDLONG dst, reloc(#offset, 256) // reads from #offset+256
     - `int`: The relocation is assumed to be any kind of 32 bit integer.
 - `reloc(<tag>, <value>)`: Attaches relocation metadata to `<value>`, such that `<value>` can later be patched by the
   relocation identified by `<tag>`.
+- Relocations can still have operations applied to them, but these are only additions/subtractions and shifts.
+  - `2 * reloc(…)` is considered a shift.
+- There can be multiple relocations applied to a single location
 
 ## Under Consideration
 
 ### SPIN DEBUG
 
 Currently, Propan does not support the "debug()" syntax from SPIN2
-
-### PASM2/SPIN2 emission
-
-Implement `propan --format=spin2` which emits a text file that is compatible with
-the SPIN ecosystem.
-
-This file should not contain just a long `BYTE` block, but preferrably textual
-instructions, data blocks, and labels.
-
-For this, we need extensive flexspin-oracle testing.

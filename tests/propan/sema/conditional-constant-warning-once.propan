@@ -1,0 +1,16 @@
+//? PROPAN CHECK LIST
+//? err: warn_address_function_expected_offset function==cogaddr
+//? err: warn_address_function_expected_offset function==localaddr
+//? err: warn_waitx_delay_too_short
+//? mem: 0 == u32 [502, 0, 511]
+
+const reg = cogaddr(PA)
+const delay = ticks(1, ns=1, waitx=#on)
+const last_register = register(511)
+const cog_index = localaddr(last_register)
+.hubexec
+.if reg == 502 and delay == 0 and cog_index == 511
+    LONG reg, delay, cog_index
+.else
+    .assert 0
+.endif

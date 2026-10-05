@@ -1,0 +1,20 @@
+//? PROPAN CHECK LIST
+//? err: err_address_space_mismatch subject=="@"
+//? err: err_address_space_mismatch subject=="@"
+//? err: err_address_space_mismatch subject=="@"
+//? err: err_address_space_mismatch subject=="@"
+//? err: err_address_space_mismatch subject=="@"
+//? err: err_address_space_mismatch subject=="@"
+//? err: err_address_has_no_execution_pc
+.cogexec 0x100
+cog_label:
+LONG @lut_label, @hub_label
+.lutexec 0x200
+lut_label:
+LONG @cog_label, @hub_label
+.hubexec 0x300
+hub_label:
+LONG @cog_label, @lut_label
+.data 0x400
+data_label:
+LONG @data_label

@@ -12,7 +12,7 @@ if(C != Z) RDLONG PA, --PTRB
 if(!C & Z) RDLONG PA, PTRA[NUMBER]
 if(C | !Z) RDLONG PA, ++PTRB[2]
 if(>=) ADD PTRA, 1 :wc
-return NOP
+return ROR register(0), register(0)
 JMP target
 target:
 var slot:

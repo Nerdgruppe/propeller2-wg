@@ -214,7 +214,6 @@ pub fn main(init: std.process.Init) !u8 {
     };
     source_file.* = try .init(init.arena.allocator(), source_path, source_text);
     source_file.relative_path = std.fs.path.basename(source_file.path);
-    source_file.identity = try std.fmt.allocPrint(init.arena.allocator(), "0:{s}", .{source_file.relative_path});
     try diagnostics_collection.register_source_file(source_file);
 
     var check_list_value: ?check_list.List = if (cli.options.@"test-mode" != null)
@@ -548,7 +547,7 @@ fn disasm(buffer: []u8, encoded: u32) ![]const u8 {
     var writer: std.Io.Writer = .fixed(buffer);
 
     for (stdlib.p2.instructions) |instr| {
-        var ignore_mask: u32 = 0xF000_0000; // we mask the condition by default
+        var ignore_mask: u32 = if (std.ascii.eqlIgnoreCase(instr.mnemonic, "NOP")) 0 else 0xF000_0000;
 
         for (instr.operands) |op| {
             ignore_mask |= op.slot.mask();

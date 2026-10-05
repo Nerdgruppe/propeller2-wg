@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: err_augmentation_requires_pointer_index
+//? err: err_augmentation_requires_pointer_index
+//? err: err_augmentation_requires_pointer_index
+//? err: err_augmentation_requires_pointer_index
+//? err: err_augmentation_requires_pointer_index
+RDLONG PA, aug(PTRA[256])
+RDLONG PA, aug(PTRB++[256])
+RDWORD PA, aug(--PTRA[256])
+WRBYTE PB, aug(PTRB++)
+RDLONG PA, aug(PTRA[aug(256)])
