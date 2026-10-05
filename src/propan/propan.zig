@@ -1,15 +1,17 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const frontend = @import("frontend.zig");
-const sema = @import("sema.zig");
+pub const frontend = @import("frontend.zig");
+pub const sema = @import("sema.zig");
 const emit = @import("emit.zig");
 const listfile = @import("listfile.zig");
 const check_list = @import("check_list.zig");
-const diagnostics = @import("diagnostics.zig");
-const stdlib = @import("stdlib/stdlib.zig");
-const Module = @import("Module.zig");
-const SourceFile = @import("SourceFile.zig");
+pub const diagnostics = @import("diagnostics.zig");
+pub const stdlib = @import("stdlib/stdlib.zig");
+pub const mode_directive = @import("mode_directive.zig");
+pub const eval = @import("stdlib/eval.zig");
+pub const Module = @import("Module.zig");
+pub const SourceFile = @import("SourceFile.zig");
 
 const args_parser = @import("args");
 

@@ -1043,7 +1043,7 @@ const patterns = struct {
             return null;
 
         var i: usize = 1;
-        while (true) {
+        while (i < str.len) {
             switch (str[i]) {
                 // The end of the string, length includes the string delimiter:
                 delim => return i + 1,
@@ -1059,9 +1059,8 @@ const patterns = struct {
             }
 
             i += 1;
-            if (i >= str.len)
-                return null;
         }
+        return null;
     }
 
     fn string_literal(str: []const u8) ?usize {
