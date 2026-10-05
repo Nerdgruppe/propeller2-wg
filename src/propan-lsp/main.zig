@@ -3,6 +3,7 @@ const lsp = @import("lsp");
 const propan = @import("propan");
 const analysis = @import("document.zig");
 const completion = @import("completion.zig");
+const values = @import("values.zig");
 
 pub const std_options: std.Options = .{ .log_level = .warn };
 
@@ -123,7 +124,17 @@ pub const Handler = struct {
     pub fn @"textDocument/hover"(self: *Handler, arena: std.mem.Allocator, params: lsp.types.Hover.Params) !?lsp.types.Hover {
         var doc = (try self.document(arena, params.textDocument.uri, true)) orelse return null;
         defer doc.deinit();
-        const token = doc.at(lsp.offsets.positionToIndex(doc.source.text, params.position, self.encoding)) orelse return null;
+        const index = lsp.offsets.positionToIndex(doc.source.text, params.position, self.encoding);
+        const token_at = doc.at(index);
+        if (doc.valueAt(index)) |evaluated| {
+            if (token_at == null or (evaluated.value.value == .pointer_expr and token_at.?.kind != .function and token_at.?.kind != .parameter)) {
+                return .{
+                    .range = self.range(doc, evaluated.span),
+                    .contents = .{ .markup_content = .{ .kind = .markdown, .value = try values.hover(arena, "Expression", evaluated.value) } },
+                };
+            }
+        }
+        const token = token_at orelse return null;
         const value = switch (token.kind) {
             .mnemonic => try std.fmt.allocPrint(arena, "**{s}**\n\n{s}", .{ token.name, analysis.directiveDocs(token.name) orelse "Propeller 2 instruction. Instruction documentation is coming soon." }),
             .function => if (analysis.function(token.name)) |func| try analysis.functionDocs(arena, token.name, func) else return null,
@@ -132,13 +143,17 @@ pub const Handler = struct {
                 break :blk try std.fmt.allocPrint(arena, "**{s}: {t}**\n\n{s}", .{ param.name, param.type, if (param.docs.len > 0) param.docs else "Value passed to this builtin function parameter." });
             },
             .constant => if (doc.constant(token.name)) |v|
-                try std.fmt.allocPrint(arena, "**{s}**\n\nType: `{t}`\n\nValue: `{f}`", .{ token.name, v.value, v })
+                try values.hover(arena, token.name, v)
             else
-                try std.fmt.allocPrint(arena, "**{s}**\n\nConstant; value unavailable until the document assembles successfully.", .{token.name}),
+                try std.fmt.allocPrint(arena, "**{s}**\n\n```text\ntype: unavailable\nusage: unavailable\nvalue: unavailable until the document assembles successfully\n```", .{token.name}),
             .code_label, .var_label => blk: {
                 const decl = doc.definition(token.name, token.scope) orelse return null;
-                const info = try labelInfo(arena, doc, decl);
-                break :blk try std.fmt.allocPrint(arena, "**{s}**\n\nUsage: {s} ({s})\n\n{s}", .{ token.name, if (decl.kind == .code_label) "code label" else "variable label", if (decl.kind == .code_label) "literal address" else "register address", info });
+                const usage: propan.eval.Value.UsageHint = if (decl.kind == .code_label) .literal else .register;
+                const info = if (doc.label(token)) |symbol|
+                    try values.hover(arena, token.name, .address(symbol.label, usage))
+                else
+                    try std.fmt.allocPrint(arena, "**{s}**\n\n```text\ntype: address\nusage: {t}\nvalue: unavailable until the document assembles successfully\n```", .{ token.name, usage });
+                break :blk try std.fmt.allocPrint(arena, "{s}\nReferences: {d}", .{ info, doc.references(decl) });
             },
         };
         return .{ .range = self.range(doc, token.span), .contents = .{ .markup_content = .{ .kind = .markdown, .value = value } } };

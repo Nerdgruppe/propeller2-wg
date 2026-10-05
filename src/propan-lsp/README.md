@@ -10,6 +10,13 @@ Supported requests:
 - Hover: assembler directives and declarations (syntax and behavior), mnemonics
   (placeholder documentation), builtin functions and arguments,
   constant values/types, and label usage/addresses/reference counts.
+  Value hovers and function defaults show `type`, `usage`, and `value`. Integers
+  include decimal and signed hexadecimal on separate lines; strings use JSON
+  escapes; sequences use JSON arrays; registers include their number and special
+  name where available. Addresses show hub/local addresses and any byte offset
+  within a long. Enumerators use `#name`, and pointer expressions use assembly
+  syntax. Evaluated instruction operands and constant expressions also support
+  value hover, while function and parameter documentation retains precedence.
 - Go to definition: constants and code/variable labels, including scoped locals.
 - Semantic tokens: distinct mnemonic, code label, variable label, and constant
   types; the VS Code extension maps them to theme scopes.

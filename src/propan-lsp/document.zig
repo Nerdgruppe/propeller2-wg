@@ -1,6 +1,7 @@
 const std = @import("std");
 const propan = @import("propan");
 const ast = propan.frontend.ast;
+const values = @import("values.zig");
 
 pub const Kind = enum(u32) { mnemonic, code_label, var_label, constant, function, parameter };
 pub const Token = struct {
@@ -229,6 +230,32 @@ pub const Document = struct {
         };
         return propan.stdlib.p2.constants.get(name) orelse propan.stdlib.common.constants.get(name);
     }
+
+    pub fn valueAt(doc: Document, index: usize) ?struct { span: ast.SourceSpan, value: propan.eval.Value } {
+        const parsed = doc.parsed orelse return null;
+        const module = doc.module orelse return null;
+        for (parsed.file.sequence) |entry| switch (entry) {
+            .constant => |con| {
+                const span = con.value.span();
+                if (index >= span.start and index < span.end) {
+                    return .{ .span = span, .value = doc.constant(con.identifier) orelse continue };
+                }
+            },
+            .instruction => |instruction| {
+                for (instruction.arguments, 0..) |argument, argument_index| {
+                    const span = argument.span();
+                    if (index < span.start or index >= span.end) continue;
+                    const location = instruction.span.location();
+                    for (module.line_data) |line| {
+                        if (line.location.line != location.line or line.location.column != location.column or argument_index >= line.operands.len) continue;
+                        return .{ .span = span, .value = line.operands[argument_index].value };
+                    }
+                }
+            },
+            else => {},
+        };
+        return null;
+    }
 };
 
 pub fn scopeId(scope: ?ast.LocalScope) ?usize {
@@ -288,8 +315,12 @@ pub fn functionDocs(allocator: std.mem.Allocator, name: []const u8, f: Function)
     try out.writer.print("**{s}**\n\n{s}\n\n", .{ name, f.docs });
     for (f.params) |p| {
         try out.writer.print("- `{s}: {t}`: {s}", .{ p.name, p.type, p.docs });
-        if (p.default_value) |v| try out.writer.print(" (default: `{f}`)", .{v});
         try out.writer.writeByte('\n');
+        if (p.default_value) |v| {
+            try out.writer.writeAll("\nDefault:\n\n```text\n");
+            try values.write(&out.writer, v);
+            try out.writer.writeAll("\n```\n\n");
+        }
     }
     return try out.toOwnedSlice();
 }

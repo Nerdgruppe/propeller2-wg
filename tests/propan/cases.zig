@@ -23,6 +23,7 @@ pub const regression_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/sema/pc-addresses.propan",
     "tests/propan/sema/lsp-metadata.propan",
     "tests/propan/sema/lsp-intrinsics.propan",
+    "tests/propan/sema/lsp-values.propan",
     "tests/propan/sema/spin2-reserved-names.propan",
     "tests/propan/sema/spin2-quoted-comments.propan",
     "tests/propan/sema/spin2-case-sensitive-symbols.propan",

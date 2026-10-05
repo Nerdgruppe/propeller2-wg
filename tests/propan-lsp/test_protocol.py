@@ -123,6 +123,70 @@ def run():
         c.change('.COGEXEC\nlong 1\n')
         assert 'cog RAM' in c.at('hover', 0, 1)['contents']['value']
         assert '32-bit data' in c.at('hover', 1, 1)['contents']['value']
+        value_source = (ROOT / 'tests/propan/sema/lsp-values.propan').read_text()
+        c.change(value_source)
+
+        def value_hover(name):
+            line, source = next((i, line) for i, line in enumerate(value_source.splitlines())
+                                if line.startswith('const ' + name + ' ='))
+            display = c.at('hover', line, 6)['contents']['value']
+            assert 'type: ' in display and 'usage: ' in display and 'value: ' in display, display
+            assert 'Value(' not in display, display
+            return display
+
+        for name, decimal, hexadecimal in (
+            ('positive', '42', '0x2A'), ('negative', '-1', '-0x1'),
+            ('minimum', '-9223372036854775808', '-0x8000000000000000'),
+            ('large', '81985529216486895', '0x123456789ABCDEF'),
+        ):
+            display = value_hover(name)
+            assert 'type: int\nusage: literal' in display, display
+            assert f'value: {decimal} (decimal)\n       {hexadecimal} (hexadecimal)' in display, display
+        for name, expected in (
+            ('text', 'quote:" slash:\\ newline:\n tab:\t nul:\x00 emoji:😀 ```'),
+            ('binary', '\u00ff\x00'), ('items', [1, -2, 42]),
+            ('empty_items', []), ('empty_text', ''),
+        ):
+            display = value_hover(name)
+            encoded = display.split('value: ', 1)[1].split('\n```', 1)[0]
+            assert json.loads(encoded) == expected, display
+        assert 'value: 7 (0x007)' in value_hover('ordinary')
+        assert 'value: 0 (0x000)' in value_hover('zero_register')
+        assert 'altered' not in value_hover('zero_register')
+        assert 'type: register\nusage: register' in value_hover('special')
+        assert 'value: 504 (0x1F8, PTRA)' in value_hover('special')
+        assert 'value: #on' in value_hover('flag')
+        label_values = {
+            'entry:': ('literal', 'hub: $00000', 'local: $000 (cog, longs)'),
+            'var second:': ('register', 'hub: $00005', 'local: $001 (cog, longs)'),
+            'lut_entry:': ('literal', 'hub: $0000C', 'local: $200 (lut, longs)'),
+            'hub_entry:': ('literal', 'hub: $00010', 'local: $010 (hub, bytes)'),
+            'var payload:': ('register', 'hub: $00014', 'local: none'),
+            'var reserved:': ('register', 'hub: none', 'local: $000 (regspace, longs)'),
+        }
+        for prefix, (usage, hub, local) in label_values.items():
+            line, source = next((i, line) for i, line in enumerate(value_source.splitlines())
+                                if line.startswith(prefix))
+            column = 4 if prefix.startswith('var ') else 0
+            display = c.at('hover', line, column)['contents']['value']
+            assert f'type: address\nusage: {usage}' in display, display
+            assert hub in display and local in display, display
+            if prefix == 'var second:':
+                assert 'byte offset within long: 1' in display, display
+        line, source = next((i, line) for i, line in enumerate(value_source.splitlines())
+                            if line.startswith('RDBYTE'))
+        pointer = c.at('hover', line, source.index('PTRA'))['contents']['value']
+        assert 'type: pointer_expr\nusage: register\nvalue: PTRA++[2]' in pointer, pointer
+        register = c.at('hover', line, source.index('PA,'))['contents']['value']
+        assert 'value: 502 (0x1F6, PA)' in register, register
+        # Literal expressions use the same view as constant definitions.
+        line, source = next((i, line) for i, line in enumerate(value_source.splitlines())
+                            if line.startswith('const positive ='))
+        assert 'value: 42 (decimal)' in c.at('hover', line, source.index('42'))['contents']['value']
+        c.change('const time = ticks(100000000, ns=10)\n')
+        defaults = c.at('hover', 0, 14)['contents']['value']
+        assert 'Default:' in defaults and 'type: int\nusage: literal' in defaults, defaults
+        assert 'Value(' not in defaults, defaults
         # Exercise intrinsic metadata across analysis, hover, and completion calls.
         intrinsics = (ROOT / 'tests/propan/sema/lsp-intrinsics.propan').read_text()
         c.change(intrinsics)
@@ -159,8 +223,8 @@ def run():
         assert '42' in c.at('hover', 4, 7)['contents']['value']
         assert 'UTF-8 string' in c.at('hover', 5, 19)['contents']['value']
         assert 'text' in c.at('hover', 5, 13)['contents']['value']
-        assert 'Hub: 0x8' in c.at('hover', 7, 11)['contents']['value']
-        assert 'PC/local: 0x2' in c.at('hover', 9, 5)['contents']['value']
+        assert 'hub: $00008' in c.at('hover', 7, 11)['contents']['value']
+        assert 'local: $002' in c.at('hover', 9, 5)['contents']['value']
         assert c.at('definition', 7, 18)['range']['start'] == {'line': 4, 'character': 6}
         assert c.at('definition', 7, 11)['range']['start'] == {'line': 9, 'character': 4}
         assert c.at('definition', 8, 12)['range']['start']['line'] == 8
