@@ -8,7 +8,7 @@ quicksum:
 .loop:          REP     @.end,      8
                 ALTI    reg_state,  alti_mode
                 ADD     altered,    0
-.end:           RET                            :wcz
+.end:           RET                             :wcz
 
 var reg_state:
                 // store R, D, S pointers
@@ -33,10 +33,11 @@ var alti_mode:
                             r_ring=#8,
                         )
 
-.align 8
+.align  8
 
-buf_a:          LONG    1, 2, 3, 4, 5, 6, 7, 8
+buf_a:          LONG    1,  2,  3,  4,  5,  6,  7,  8
 
-buf_b:          LONG    9, 10, 11, 12, 13, 14, 15
+buf_b:          LONG    9,  10, 11, 12, 13, 14, 15
 
-buf_c:          LONG    0, 0, 0, 0, 0, 0, 0, 0
+buf_c:          LONG    0,  0,  0,  0,  0,  0,  0,  0
+

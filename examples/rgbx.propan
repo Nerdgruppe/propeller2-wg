@@ -1,75 +1,95 @@
-.org 0x0000
+.org    0x0000
 
 pix_driver:
-         SETQ    10 - 1                         // get 10 longs from hub
-         RDLONG  connect, ptra
+                SETQ    10 - 1                  // get 10 longs from hub
+                RDLONG  connect,    ptra
 
-         MOV     t1, 0
-         WRLONG  t1, ptra                       // tell hub we're connected
+                MOV     t1,         0
+                WRLONG  t1,         ptra        // tell hub we're connected
 
 rgbx_main:
-         RDLONG  connect, ptra :wz               // check for new connection
-  if(!Z) JMP     pix_driver
+                RDLONG  connect,    ptra        :wz // check for new connection
+    if(!Z)      JMP     pix_driver
 
-         MOV     addr, p_hub                    // point to rgbbuf[0]
-         MOV     npix, pixcount                 // set // active pixels
+                MOV     addr,       p_hub           // point to rgbbuf[0]
+                MOV     npix,       pixcount        // set // active pixels
 
 frame_loop:
-         RDLONG  colorbits, addr                // read a channel
-         ADD     addr, 4                        // point to next
-         TJZ     swapflag, shift_out            // skip fix if swap = 0
+                RDLONG  colorbits,  addr            // read a channel
+                ADD     addr,       4               // point to next
+                TJZ     swapflag,   shift_out       // skip fix if swap = 0
 
         // Correct placement of rg color bytes
         // -- $RR_GG_BB_WW --> $GG_RR_BB_WW
 
-         MOV     t1, colorbits                  // copy
-         SHR     t1, 16                         // isolate r & g
-         SETBYTE colorbits, t1, 3               // colorbits.byte[3] = g
-         SHR     t1, 8
-         SETBYTE colorbits, t1, 2               // colorbits.byte[2] = r
+                MOV     t1,         colorbits       // copy
+                SHR     t1,         16              // isolate r & g
+                SETBYTE colorbits,  t1, 3           // colorbits.byte[3] = g
+                SHR     t1,         8
+                SETBYTE colorbits,  t1, 2           // colorbits.byte[2] = r
 
 shift_out:
-         GETCT   bittimer                       // start timing frame
+                GETCT   bittimer                    // start timing frame
 
-         REP     @.bitz, pixelbits              // loop through all bits
-         ROL     colorbits, 1 :wc               // get MSB
-         DRVH    tx                             // pin on
-  if(!C) WAITX   bit0hi                         // hold for bit timing
-  if(C)  WAITX   bit1hi
-         DRVL    tx                             // pin off
-         ADDCT1  bittimer, cycletix             // update cycle timer
-         WAITCT1                                // let cycle finish
+                REP     @.bitz,     pixelbits       // loop through all bits
+                ROL     colorbits,  1           :wc // get MSB
+                DRVH    tx                          // pin on
+    if(!C)      WAITX   bit0hi                      // hold for bit timing
+    if(C)       WAITX   bit1hi
+                DRVL    tx                          // pin off
+                ADDCT1  bittimer,   cycletix        // update cycle timer
+                WAITCT1                             // let cycle finish
 .bitz:
 
-next_pixel:        DJNZ    npix, frame_loop     // done with all leds?
+next_pixel:
+                DJNZ    npix,   frame_loop      // done with all leds?
 
-reset_delay:        GETCT   bittimer            // reset delay
-         ADDCT1  bittimer, resettix
-         WAITCT1
+reset_delay:
+                GETCT   bittimer                    // reset delay
+                ADDCT1  bittimer,   resettix
+                WAITCT1
 
-         JMP     rgbx_main                      // back to top
+                JMP     rgbx_main                   // back to top
 
 // --------------------------------------------------------------------------------------------------
 
-var connect:    .reserve    1
-var p_hub:      .reserve    1
-var pixcount:   .reserve    1
-var tx:         .reserve    1
-var pixelbits:  .reserve    1
-var resettix:   .reserve    1
-var swapflag:   .reserve    1
-var bit0hi:     .reserve    1
-var bit1hi:     .reserve    1
-var cycletix:   .reserve    1
+var connect:
+.reserve    1
+var p_hub:
+.reserve    1
+var pixcount:
+.reserve    1
+var tx:
+.reserve    1
+var pixelbits:
+.reserve    1
+var resettix:
+.reserve    1
+var swapflag:
+.reserve    1
+var bit0hi:
+.reserve    1
+var bit1hi:
+.reserve    1
+var cycletix:
+.reserve    1
 
-var addr:       .reserve    1
-var npix:       .reserve    1
-var colorbits:  .reserve    1
+var addr:
+.reserve    1
+var npix:
+.reserve    1
+var colorbits:
+.reserve    1
 
-var bittimer:   .reserve    1
+var bittimer:
+.reserve    1
 
-var t1:         .reserve    1
-var t2:         .reserve    1
-var t3:         .reserve    1
+var t1:
+.reserve    1
+var t2:
+.reserve    1
+var t3:
+.reserve    1
 
 .fit    496
+

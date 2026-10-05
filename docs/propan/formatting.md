@@ -17,7 +17,9 @@ Instruction columns advance to multiples of four:
 | First operand                        | 24          |
 | Parameters of a wrapped operand call | 28          |
 
-Later operands align in shared columns within an assembly block. Effects and
+Later operands align in shared columns within an assembly block. Each operand
+column is sized using preceding operands only from instructions that reach that
+column. A final operand never widens the next operand's column. Effects and
 trailing comments also align to multiples of four. A column moves to the next
 four-space boundary when the preceding text would overlap it. Nonlocal labels
 and execution or data mode directives start new assembly blocks; local labels

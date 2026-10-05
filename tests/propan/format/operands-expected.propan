@@ -1,0 +1,14 @@
+demo:
+                DEMO    foo
+                DEMO    foo,    bar
+                DEMO    very_long_foo_bar
+                DEMO    foo,    0
+                DEMO    foo,    0,              third
+                DEMO    foo,    longeroperand,  third
+                DEMO    0,      0
+                DEMO    foo,    very_long_final_second_operand
+
+short:
+                DEMO    x,  y
+                DEMO    exceptionally_long_final_operand
+

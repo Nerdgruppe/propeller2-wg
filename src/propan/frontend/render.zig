@@ -459,7 +459,7 @@ const OperandColumns = struct {
             const entry = entries.next().?;
             if (entry != .row or entry.row.line != .instruction) continue;
             const instr = entry.row.line.instruction;
-            if (is_directive(instr) or instr.arguments.len <= index) continue;
+            if (is_directive(instr) or instr.arguments.len <= index + 1) continue;
             const content: Content = .{ .line = entry.row.line, .comments = &.{}, .expression = instr.arguments[index] };
             width_value = @max(width_value, content.width());
         }

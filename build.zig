@@ -462,6 +462,7 @@ pub fn build(b: *std.Build) void {
         .{ .input = "tests/propan/format/input.propan", .expected = @embedFile("tests/propan/format/expected.propan") },
         .{ .input = "tests/propan/format/layout-input.propan", .expected = @embedFile("tests/propan/format/layout-expected.propan") },
         .{ .input = "tests/propan/format/constants.propan", .expected = @embedFile("tests/propan/format/constants-expected.propan") },
+        .{ .input = "tests/propan/format/operands-input.propan", .expected = @embedFile("tests/propan/format/operands-expected.propan") },
     }) |fixture| {
         const run = coverage_stash.create_test_run(propan_exe);
         run.addArg("--pretty-print");
