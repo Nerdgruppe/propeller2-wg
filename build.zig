@@ -433,6 +433,20 @@ pub fn build(b: *std.Build) void {
         no_input.expectStdErrMatch("missing input files");
         test_step.dependOn(&no_input.step);
     }
+    {
+        const source = b.path("tests/propan/sema/pack-values.propan");
+        const normal = coverage_stash.create_test_run(propan_exe);
+        normal.addArg("--format=none");
+        normal.addFileArg(source);
+        normal.expectStdErrMatch("warning:");
+        test_step.dependOn(&normal.step);
+
+        const quiet = coverage_stash.create_test_run(propan_exe);
+        quiet.addArgs(&.{ "--format=none", "--no-warnings" });
+        quiet.addFileArg(source);
+        quiet.expectStdErrEqual("");
+        test_step.dependOn(&quiet.step);
+    }
 
     // Render the stdlib documentation for testing
     {
@@ -492,6 +506,37 @@ pub fn build(b: *std.Build) void {
                 const run = create_propan_test_run(&coverage_stash, propan_exe, .sema, accept_file, null);
                 run.has_side_effects = true;
                 sema_tests.dependOn(&run.step);
+            }
+
+            const formatter_tests = make_sequencing_step(b, "formatter round-trip tests");
+            formatter_tests.dependOn(sema_tests);
+            test_step.dependOn(formatter_tests);
+
+            for (sema_accept_tests) |accept_file| {
+                const original = coverage_stash.create_test_run(propan_exe);
+                original.addArgs(&.{ "--format=flat", "--no-warnings" });
+                const reference = original.addPrefixedOutputFileArg("--output=", "original.bin");
+                original.addFileArg(b.path(accept_file));
+                original.expectExitCode(0);
+
+                const format = coverage_stash.create_test_run(propan_exe);
+                format.addArgs(&.{ "--no-warnings", "--pretty-print" });
+                format.addFileArg(b.path(accept_file));
+                const formatted = format.captureStdOut(.{ .basename = "formatted.propan" });
+                format.expectExitCode(0);
+
+                const reassemble = coverage_stash.create_test_run(propan_exe);
+                reassemble.setCwd(b.path(std.fs.path.dirname(accept_file) orelse "."));
+                reassemble.setStdIn(.{ .lazy_path = formatted });
+                reassemble.addArgs(&.{ "--format=flat", "--no-warnings" });
+                const rebuilt = reassemble.addPrefixedOutputFileArg("--output=", "formatted.bin");
+                reassemble.addArg("-");
+                reassemble.expectExitCode(0);
+
+                const check = b.addRunArtifact(flat_checker);
+                check.addFileArg(reference);
+                check.addFileArg(rebuilt);
+                formatter_tests.dependOn(&check.step);
             }
 
             const spin2_tests = make_sequencing_step(b, "Spin2 round-trip tests");

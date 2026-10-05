@@ -31,6 +31,7 @@ const CliArgs = struct {
     @"test-mode": ?TestMode = null,
     @"compare-to": []const u8 = "",
     verbose: bool = false,
+    @"no-warnings": bool = false,
     format: emit.BinaryFormat = .flat,
     @"fill-byte": u8 = 0x00,
     @"list-file": []const u8 = "",
@@ -58,6 +59,7 @@ const CliArgs = struct {
             .help = "Prints this help text",
             .output = "Sets the path of the output file.",
             .verbose = "Enables debug logging",
+            .@"no-warnings" = "Suppresses warning diagnostics on the command line",
             .format = "Selects the binary format to use",
             .@"fill-byte" = "The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.",
             .@"list-file" = "Writes a list file to the given path. Use '-' to write to stdout.",
@@ -86,6 +88,8 @@ pub fn main(init: std.process.Init) !u8 {
 
     var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
     defer cli.deinit();
+
+    diagnostic_render_options.include_warnings = !cli.options.@"no-warnings";
 
     if (cli.options.@"render-stdlib-docs".len > 0) {
         var file = if (std.mem.eql(u8, cli.options.@"render-stdlib-docs", "-"))
