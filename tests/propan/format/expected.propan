@@ -24,3 +24,7 @@ third:
                        1000,
                        ms=3,
                    )  // trailing-comma call
+math:
+const PLUS = + +1
+const MINUS = - -1
+              BYTE PLUS, MINUS

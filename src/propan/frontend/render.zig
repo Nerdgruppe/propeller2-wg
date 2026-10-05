@@ -9,7 +9,6 @@ const Row = struct {
     line: ast.Line,
     trailing_comment: ?[]const u8 = null,
     inner_comments: []const ast.Comment = &.{},
-    leading_comments: []const ast.Comment = &.{},
     rendered: []const u8 = "",
     condition: []const u8 = "",
 };
@@ -118,27 +117,6 @@ fn write_block(allocator: std.mem.Allocator, writer: anytype, entries: []Entry) 
     for (entries) |*entry| {
         if (entry.* != .row) continue;
         const row = &entry.row;
-        var inner: std.ArrayListUnmanaged(ast.Comment) = .empty;
-        var leading: std.ArrayListUnmanaged(ast.Comment) = .empty;
-        for (row.inner_comments) |comment| {
-            const in_empty_call = switch (row.line) {
-                .constant => |con| comment_in_empty_call(con.value, comment.span.location()),
-                .instruction => |instr| blk: {
-                    for (instr.arguments) |arg| {
-                        if (comment_in_empty_call(arg, comment.span.location())) break :blk true;
-                    }
-                    break :blk false;
-                },
-                else => false,
-            };
-            if (in_empty_call) {
-                try leading.append(allocator, comment);
-            } else {
-                try inner.append(allocator, comment);
-            }
-        }
-        row.inner_comments = try inner.toOwnedSlice(allocator);
-        row.leading_comments = try leading.toOwnedSlice(allocator);
         switch (row.line) {
             .instruction => |instr| {
                 if (!is_directive(instr)) mnemonic_width = @max(mnemonic_width, instr.mnemonic.len);
@@ -174,7 +152,6 @@ fn write_block(allocator: std.mem.Allocator, writer: anytype, entries: []Entry) 
             .blank => try writer.writeByte('\n'),
             .comment => |comment| try writer.print("{s}\n", .{comment}),
             .row => |row| {
-                for (row.leading_comments) |comment| try writer.print("{s}\n", .{comment.text});
                 var column: usize = 0;
                 switch (row.line) {
                     .label => |label| {
@@ -231,29 +208,6 @@ pub fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
 
 fn is_directive(instr: ast.Instruction) bool {
     return std.mem.startsWith(u8, instr.mnemonic, ".");
-}
-
-fn comment_in_empty_call(expr: ast.Expression, location: ast.Location) bool {
-    return switch (expr) {
-        .function_call => |call| blk: {
-            if (call.arguments.len == 0 and
-                location_before(call.span.location(), location) and location_before(location, call.span.at(call.span.end - 1).location())) break :blk true;
-            for (call.arguments) |arg| {
-                if (comment_in_empty_call(arg.value, location)) break :blk true;
-            }
-            break :blk false;
-        },
-        .wrapped => |value| comment_in_empty_call(value.value.*, location),
-        .sequence => |value| blk: {
-            for (value.items) |item| {
-                if (comment_in_empty_call(item, location)) break :blk true;
-            }
-            break :blk false;
-        },
-        .unary_transform => |value| comment_in_empty_call(value.value.*, location),
-        .binary_transform => |value| comment_in_empty_call(value.lhs.*, location) or comment_in_empty_call(value.rhs.*, location),
-        else => false,
-    };
 }
 
 fn last_line_width(value: []const u8) usize {
@@ -416,11 +370,20 @@ const ExpressionPrinter = struct {
                     try self.write(if (value.operator == .post_increment) "++" else "--");
                 } else {
                     try self.before(value.operator_span.location());
-                    try self.write(switch (value.operator) {
+                    const prefix = switch (value.operator) {
                         .pre_increment => "++",
                         .pre_decrement => "--",
                         else => @tagName(value.operator),
-                    });
+                    };
+                    try self.write(prefix);
+                    if (value.value.* == .unary_transform) {
+                        const child_prefix: u8 = switch (value.value.unary_transform.operator) {
+                            .@"+", .pre_increment => '+',
+                            .@"-", .pre_decrement => '-',
+                            else => 0,
+                        };
+                        if (prefix[prefix.len - 1] == child_prefix) try self.write(" ");
+                    }
                     try self.operand(value.value.*, unary_precedence, false);
                 }
             },

@@ -125,7 +125,7 @@ test "pretty printer aligns blocks and preserves comments and emitted bytes" {
     }
 }
 
-test "comment in an empty call stays outside its one-line argument list" {
+test "comment in an empty call stays inside its parentheses" {
     const source = "const X = foo( // inside empty call\n)\n";
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
@@ -135,5 +135,10 @@ test "comment in an empty call stays outside its one-line argument list" {
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
     try frontend.render.pretty_print_alloc(std.testing.allocator, &output.writer, parsed.file);
-    try std.testing.expectEqualStrings("// inside empty call\nconst X = foo()\n", output.written());
+    try std.testing.expectEqualStrings("const X = foo(  // inside empty call\n          )\n", output.written());
+
+    var reparsing: frontend.Parser = .init(output.written(), "empty-call-formatted.propan", &collection);
+    var reparsed = try reparsing.parse(std.testing.allocator);
+    defer reparsed.deinit();
+    try std.testing.expectEqual(@as(usize, 1), reparsed.file.comments.len);
 }
