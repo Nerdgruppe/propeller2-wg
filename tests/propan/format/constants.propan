@@ -1,0 +1,13 @@
+const A = 1
+const LONG_NAME = 2
+const SUM = (A + // keep the expression comment
+    LONG_NAME)
+
+
+
+const B = 3
+const MULTILINE = ticks(1000, ms=1,)
+
+root:
+.c: if(C) mOv PTRA, SUM
+data: lOnG A, LONG_NAME, B, MULTILINE

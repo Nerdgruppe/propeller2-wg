@@ -69,7 +69,7 @@ fn render_symbols(allocator: std.mem.Allocator, writer: *std.Io.Writer, inputs: 
                         .pc = try format_pc(allocator, matched.label.local),
                         .name = matched.name,
                         .value = "",
-                        .source = input_source_line(input, label.location),
+                        .source = input_source_line(input, label.span.location()),
                     });
                 },
 
@@ -81,7 +81,7 @@ fn render_symbols(allocator: std.mem.Allocator, writer: *std.Io.Writer, inputs: 
                         .pc = "---",
                         .name = value.name,
                         .value = try format_value(allocator, value.value),
-                        .source = input_source_line(input, constant.location),
+                        .source = input_source_line(input, constant.span.location()),
                     });
                 },
             }
@@ -234,7 +234,7 @@ fn find_label_symbol_once(module: Module, label: frontend.ast.Label, parent: ?[]
     for (module.symbols, used) |symbol, *was_used| {
         if (was_used.*) continue;
         if (symbol.source_location) |location| {
-            if (!same_location(location, label.location)) continue;
+            if (!same_location(location, label.span.location())) continue;
         }
         const matches = if (label.identifier[0] == '.' and parent != null)
             std.mem.startsWith(u8, symbol.name, parent.?) and
@@ -301,7 +301,7 @@ fn input_source_line(input: Input, location: frontend.ast.Location) []const u8 {
 }
 
 fn format_exec_mode(allocator: std.mem.Allocator, mode: eval.ExecMode) ![]const u8 {
-    return if (mode == .data or mode == .regspace) @tagName(mode) else std.fmt.allocPrint(allocator, "{s}exec", .{@tagName(mode)});
+    return if (mode == .data or mode == .regspace) @tagName(mode) else std.fmt.allocPrint(allocator, "{t}exec", .{mode});
 }
 
 fn format_hub(allocator: std.mem.Allocator, address: anytype) ![]const u8 {
@@ -421,36 +421,41 @@ test "render list file with symbols and segment body" {
     };
     defer module.deinit();
 
+    var source_ref: SourceFile = try .init(std.testing.allocator, path, source);
+    defer source_ref.deinit(std.testing.allocator);
     const ast_file: frontend.ast.File = .{
+        .source = &source_ref,
         .sequence = &.{
             .{ .constant = .{
-                .location = loc(path, 1),
+                .span = .{ .source = &source_ref, .start = 0, .end = 23 },
                 .identifier = "CLK",
                 .value = .{ .integer = .{
-                    .location = loc(path, 1),
+                    .span = .{ .source = &source_ref, .start = 0, .end = 23 },
                     .source_text = "200_000_000",
                     .value = 200_000_000,
                 } },
             } },
             .{ .label = .{
-                .location = loc(path, 2),
+                .span = .{ .source = &source_ref, .start = 24, .end = 31 },
                 .identifier = "_start",
                 .type = .code,
             } },
             .{ .instruction = .{
-                .location = loc(path, 3),
+                .span = .{ .source = &source_ref, .start = 36, .end = 39 },
+                .mnemonic_span = .{ .source = &source_ref, .start = 36, .end = 39 },
                 .mnemonic = "NOP",
                 .arguments = &.{},
                 .condition = null,
                 .effect = null,
             } },
             .{ .label = .{
-                .location = loc(path, 4),
+                .span = .{ .source = &source_ref, .start = 40, .end = 52 },
                 .identifier = "storage",
                 .type = .@"var",
             } },
             .{ .instruction = .{
-                .location = loc(path, 5),
+                .span = .{ .source = &source_ref, .start = 57, .end = 66 },
+                .mnemonic_span = .{ .source = &source_ref, .start = 57, .end = 61 },
                 .mnemonic = "BYTE",
                 .arguments = &.{},
                 .condition = null,
@@ -464,7 +469,7 @@ test "render list file with symbols and segment body" {
 
     try render(&output.writer, &.{
         .{
-            .source_file = &.{ .path = path, .identity = path, .text = source },
+            .source_file = &source_ref,
             .ast_file = ast_file,
             .module = module,
         },

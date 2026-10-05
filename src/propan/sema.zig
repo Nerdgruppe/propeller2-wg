@@ -5,6 +5,7 @@ const eval = @import("stdlib/eval.zig");
 const frontend = @import("frontend.zig");
 const ast = frontend.ast;
 const diagnostics = @import("diagnostics.zig");
+const SourceFile = @import("SourceFile.zig");
 const mode_directive = @import("mode_directive.zig");
 
 const logger = std.log.scoped(.sema);
@@ -189,7 +190,7 @@ pub fn analyze(allocator: std.mem.Allocator, file: ast.File, options: AnalyzeOpt
         try constants.append(output_allocator, .{
             .name = try output_allocator.dupe(u8, con.identifier),
             .value = try copy_value(output_allocator, sym.value.?),
-            .location = try copy_location(output_allocator, con.location),
+            .location = try copy_location(output_allocator, con.span.location()),
         });
     }
 
@@ -242,7 +243,7 @@ fn copy_value(allocator: std.mem.Allocator, value: Value) !Value {
 fn number_style(expr: ast.Expression) Module.LineData.NumberStyle {
     return switch (expr) {
         .integer => |literal| if (std.mem.startsWith(u8, literal.source_text, "0x") or std.mem.startsWith(u8, literal.source_text, "0X") or std.mem.startsWith(u8, literal.source_text, "$")) .hex else .decimal,
-        .wrapped => |inner| number_style(inner.*),
+        .wrapped => |inner| number_style(inner.value.*),
         else => .hex,
     };
 }
@@ -298,27 +299,27 @@ const ConditionalFilter = struct {
         }
         for (filter.frames.items) |frame|
             try filter.probe.emit_diag(frame.location, .err_unterminated_conditional_if);
-        return .{ .sequence = try output.toOwnedSlice(filter.allocator) };
+        return .{ .span = file.span, .sequence = try output.toOwnedSlice(filter.allocator), .comments = file.comments, .source = file.source };
     }
 
     fn directive(filter: *ConditionalFilter, instr: ast.Instruction, kind: Directive) !void {
         const expected: usize = if (kind == .if_ or kind == .elif) 1 else 0;
         const valid_args = instr.arguments.len == expected;
-        if (!valid_args) try filter.probe.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{
+        if (!valid_args) try filter.probe.emit_diag(instr.location(), .{ .err_argument_count_mismatch = .{
             .subject = instr.mnemonic,
             .min = expected,
             .max = expected,
             .found = instr.arguments.len,
         } });
         if (instr.condition != null or instr.effect != null)
-            try filter.probe.emit_diag(instr.location, .err_conditional_directive_requires_plain_line);
+            try filter.probe.emit_diag(instr.location(), .err_conditional_directive_requires_plain_line);
 
         switch (kind) {
             .none => unreachable,
             .if_ => {
                 const enabled = if (filter.active and valid_args) try filter.eval_condition(instr) else false;
                 try filter.frames.append(filter.allocator, .{
-                    .location = instr.location,
+                    .location = instr.location(),
                     .parent_active = filter.active,
                     .branch_taken = enabled,
                     .active = enabled,
@@ -327,14 +328,14 @@ const ConditionalFilter = struct {
             },
             .elif, .else_, .endif => {
                 if (filter.frames.items.len == 0) {
-                    try filter.probe.emit_diag(instr.location, .{ .err_conditional_directive_without_if = .{ .text = instr.mnemonic } });
+                    try filter.probe.emit_diag(instr.location(), .{ .err_conditional_directive_without_if = .{ .text = instr.mnemonic } });
                     return;
                 }
                 const frame = &filter.frames.items[filter.frames.items.len - 1];
                 switch (kind) {
                     .elif => {
                         if (frame.else_seen) {
-                            try filter.probe.emit_diag(instr.location, .err_conditional_branch_after_else);
+                            try filter.probe.emit_diag(instr.location(), .err_conditional_branch_after_else);
                             frame.active = false;
                         } else {
                             frame.active = if (frame.parent_active and !frame.branch_taken and valid_args)
@@ -347,7 +348,7 @@ const ConditionalFilter = struct {
                     },
                     .else_ => {
                         if (frame.else_seen) {
-                            try filter.probe.emit_diag(instr.location, .err_conditional_branch_after_else);
+                            try filter.probe.emit_diag(instr.location(), .err_conditional_branch_after_else);
                             frame.active = false;
                         } else {
                             frame.else_seen = true;
@@ -368,15 +369,15 @@ const ConditionalFilter = struct {
 
     fn eval_condition(filter: *ConditionalFilter, instr: ast.Instruction) !bool {
         filter.prepare_refs(instr.arguments[0]) catch |err| {
-            try filter.probe.emit_eval_error(instr.location, .expression, err);
+            try filter.probe.emit_eval_error(instr.location(), .expression, err);
             return false;
         };
         const value = filter.probe.evaluate_root_expr(instr.arguments[0], .{}) catch |err| {
-            try filter.probe.emit_eval_error(instr.location, .expression, err);
+            try filter.probe.emit_eval_error(instr.location(), .expression, err);
             return false;
         };
         if (value.value != .int) {
-            try filter.probe.emit_diag(instr.location, .{ .err_expected_value_type = .{
+            try filter.probe.emit_diag(instr.location(), .{ .err_expected_value_type = .{
                 .subject = instr.mnemonic,
                 .expected = .int,
                 .actual = value.value,
@@ -394,7 +395,7 @@ const ConditionalFilter = struct {
         if (filter.resolving.contains(name)) return error.UndefinedSymbol;
         try filter.resolving.put(filter.allocator, name, {});
         defer _ = filter.resolving.remove(name);
-        sym.type = .{ .constant = con.location };
+        sym.type = .{ .constant = con.span.location() };
         try filter.prepare_refs(con.value);
         const value = try filter.probe.evaluate_root_expr(con.value, .{});
         (try filter.probe.get_symbol_info(name)).value = value;
@@ -412,7 +413,7 @@ const ConditionalFilter = struct {
                     if (sym.type != .builtin) return error.UndefinedSymbol;
                 } else return error.UndefinedSymbol;
             },
-            .wrapped => |inner| try filter.prepare_refs(inner.*),
+            .wrapped => |inner| try filter.prepare_refs(inner.value.*),
             .sequence => |seq| for (seq.items) |item| try filter.prepare_refs(item),
             .unary_transform => |op| try filter.prepare_refs(op.value.*),
             .binary_transform => |op| {
@@ -451,7 +452,7 @@ const ConditionalFilter = struct {
                 }
                 return .{ .instruction = instr };
             },
-            .empty => return .empty,
+            .empty => |span| return .{ .empty = span },
         }
     }
 
@@ -464,8 +465,8 @@ const ConditionalFilter = struct {
             },
             .wrapped => |old| {
                 const inner = try filter.allocator.create(ast.Expression);
-                inner.* = try filter.rebind_expr(old.*);
-                return .{ .wrapped = inner };
+                inner.* = try filter.rebind_expr(old.value.*);
+                return .{ .wrapped = .{ .span = old.span, .value = inner } };
             },
             .sequence => |old| {
                 var seq = old;
@@ -596,7 +597,7 @@ const Analyzer = struct {
         ana.mnemonics.putAssumeCapacityNoClobber(".pack", .pack);
         ana.mnemonics.putAssumeCapacityNoClobber(".pic", .pic);
         ana.mnemonics.putAssumeCapacityNoClobber(".org", .org);
-        ana.mnemonics.putAssumeCapacityNoClobber(".reserve", .reserve);
+        ana.mnemonics.putAssumeCapacityNoClobber("RES", .res);
         ana.mnemonics.putAssumeCapacityNoClobber(".regspace", .regspace);
         ana.mnemonics.putAssumeCapacityNoClobber(".data", .data);
         ana.mnemonics.putAssumeCapacityNoClobber("FILE", .file);
@@ -755,7 +756,7 @@ const Analyzer = struct {
                 if (all_eq and effects_overlap) {
                     std.log.err("{s}, {s}", .{ instr.mnemonic, other.mnemonic });
                     for (other.operands) |op| {
-                        std.log.err("ops: {s}", .{@tagName(op.type)});
+                        std.log.err("ops: {t}", .{op.type});
                     }
                     return error.DuplicateInstruction;
                 }
@@ -773,7 +774,7 @@ const Analyzer = struct {
                 .label => |lbl| {
                     const sym = try ana.get_label_info(lbl.identifier, lbl.local_scope);
                     if (sym.type != .undefined) {
-                        try ana.emit_diag(lbl.location, .{
+                        try ana.emit_diag(lbl.span.location(), .{
                             .err_duplicate_definition = .{
                                 .name = lbl.identifier,
                                 .previous = .{ .symbol = sym.type },
@@ -781,22 +782,22 @@ const Analyzer = struct {
                         });
                     } else {
                         sym.type = switch (lbl.type) {
-                            .@"var" => .{ .data = lbl.location },
-                            .code => .{ .code = lbl.location },
+                            .@"var" => .{ .data = lbl.span.location() },
+                            .code => .{ .code = lbl.span.location() },
                         };
                     }
                 },
                 .constant => |*con| {
                     const sym = try ana.get_symbol_info(con.identifier);
                     if (sym.type != .undefined) {
-                        try ana.emit_diag(con.location, .{
+                        try ana.emit_diag(con.span.location(), .{
                             .err_duplicate_definition = .{
                                 .name = con.identifier,
                                 .previous = .{ .symbol = sym.type },
                             },
                         });
                     } else {
-                        sym.type = .{ .constant = con.location };
+                        sym.type = .{ .constant = con.span.location() };
                         sym.constant = con;
                     }
                 },
@@ -833,16 +834,16 @@ const Analyzer = struct {
                 const sym = try ana.get_label_info(symref.symbol_name, symref.local_scope);
                 sym.referenced = true;
                 if (sym.type == .undefined) {
-                    try ana.emit_diag(symref.location, .{
+                    try ana.emit_diag(symref.span.location(), .{
                         .err_undefined_reference_to_symbol_at = .{
                             .name = symref.symbol_name,
-                            .reference_location = symref.location,
+                            .reference_location = symref.span.location(),
                         },
                     });
                 }
             },
 
-            .wrapped => |inner| try ana.validate_expr_symbol_refs(inner.*),
+            .wrapped => |inner| try ana.validate_expr_symbol_refs(inner.value.*),
             .sequence => |seq| for (seq.items) |item| try ana.validate_expr_symbol_refs(item),
 
             .unary_transform => |trafo| try ana.validate_expr_symbol_refs(trafo.value.*),
@@ -852,7 +853,7 @@ const Analyzer = struct {
             },
             .function_call => |fncall| {
                 if (ana.get_function(fncall.function) == null) {
-                    try ana.emit_diag(fncall.location, .{
+                    try ana.emit_diag(fncall.span.location(), .{
                         .err_unknown_function = .{
                             .function = fncall.function,
                         },
@@ -919,7 +920,7 @@ const Analyzer = struct {
 
         for (ana.instructions) |*instr| {
             const mnemonic = ana.get_mnemonic(instr.ast_node.mnemonic) orelse {
-                try ana.emit_diag(instr.ast_node.location, .{
+                try ana.emit_diag(instr.ast_node.location(), .{
                     .err_unknown_mnemonic = .{
                         .mnemonic = instr.ast_node.mnemonic,
                     },
@@ -930,25 +931,25 @@ const Analyzer = struct {
             instr.mnemonic = mnemonic;
 
             instr.byte_size = switch (mnemonic.*) {
-                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .reserve, .assert, .fit, .@"align", .pack, .pic => 0,
+                .cogexec, .lutexec, .hubexec, .regspace, .data, .org, .res, .assert, .fit, .@"align", .pack, .pic => 0,
 
                 .file => blk: {
                     if (instr.ast_node.arguments.len != 1 or instr.ast_node.arguments[0] != .string) {
-                        try ana.emit_diag(instr.ast_node.location, .err_file_requires_one_string_literal_path);
+                        try ana.emit_diag(instr.ast_node.location(), .err_file_requires_one_string_literal_path);
                         break :blk 0;
                     }
                     const io = ana.options.io orelse {
-                        try ana.emit_diag(instr.ast_node.location, .err_file_requires_file_i_o);
+                        try ana.emit_diag(instr.ast_node.location(), .err_file_requires_file_i_o);
                         break :blk 0;
                     };
-                    const dir = if (instr.ast_node.location.source) |source|
+                    const dir = if (instr.ast_node.location().source) |source|
                         std.fs.path.dirname(source) orelse "."
                     else
                         ".";
                     const path = instr.ast_node.arguments[0].string.value;
                     const resolved = if (std.fs.path.isAbsolute(path)) path else try std.fs.path.join(ana.arena.allocator(), &.{ dir, path });
                     instr.file_data = std.Io.Dir.cwd().readFileAlloc(io, resolved, ana.arena.allocator(), .limited(512 * 1024)) catch |err| {
-                        try ana.emit_diag(instr.ast_node.location, .{
+                        try ana.emit_diag(instr.ast_node.location(), .{
                             .err_cannot_read_file = .{
                                 .path = resolved,
                                 .reason = err,
@@ -974,7 +975,7 @@ const Analyzer = struct {
 
     fn has_augment(ana: *Analyzer, expr: ast.Expression) bool {
         return switch (expr) {
-            .wrapped => |inner| ana.has_augment(inner.*),
+            .wrapped => |inner| ana.has_augment(inner.value.*),
             .unary_transform => |op| ana.has_augment(op.value.*),
             .binary_transform => |op| op.operator == .array_index and ana.has_augment(op.rhs.*),
             .function_call => |call| if (ana.get_function(call.function)) |func| func.* == .aug else false,
@@ -1003,12 +1004,12 @@ const Analyzer = struct {
                     const sym = ana.get_label_info(lbl.identifier, lbl.local_scope) catch unreachable;
                     sym.offset = cursor.offset;
                     if (cursor.hub >= 0x80000 and !cursor.reserved and cursor.mode != .regspace) {
-                        try ana.emit_diag(lbl.location, .{ .err_address_outside_space = .{ .subject = .label, .space = .hub, .actual = cursor.hub, .max_exclusive = 0x80000 } });
+                        try ana.emit_diag(lbl.span.location(), .{ .err_address_outside_space = .{ .subject = .label, .space = .hub, .actual = cursor.hub, .max_exclusive = 0x80000 } });
                     }
                     switch (cursor.mode) {
                         .cog, .lut, .regspace => {
                             if (cursor.local_bytes >= 0x200 * 4) {
-                                try ana.emit_diag(lbl.location, .{ .err_address_outside_space = .{ .subject = .label, .space = cursor.mode, .actual = cursor.local_bytes / 4 + @as(u32, if (cursor.mode == .lut) 0x200 else 0), .max_exclusive = if (cursor.mode == .lut) 0x400 else 0x200 } });
+                                try ana.emit_diag(lbl.span.location(), .{ .err_address_outside_space = .{ .subject = .label, .space = cursor.mode, .actual = cursor.local_bytes / 4 + @as(u32, if (cursor.mode == .lut) 0x200 else 0), .max_exclusive = if (cursor.mode == .lut) 0x400 else 0x200 } });
                             }
                         },
                         .hub, .data => {},
@@ -1033,7 +1034,7 @@ const Analyzer = struct {
                                 .cog, .lut, .regspace => 2,
                             };
                             if (instr.arguments.len > max_args) {
-                                try ana.emit_diag(instr.location, .{
+                                try ana.emit_diag(instr.location(), .{
                                     .err_argument_count_mismatch = .{
                                         .subject = instr.mnemonic,
                                         .min = 0,
@@ -1045,22 +1046,22 @@ const Analyzer = struct {
                             var hub_offset: ?u32 = null;
                             if (instr.arguments.len >= 1 and instr.arguments.len <= max_args) {
                                 const hub_start = TaggedAddress.init(cursor.offset.segment_id, std.math.cast(u20, cursor.hub), .hub);
-                                hub_offset = try ana.layout_integer(instr.arguments[0], instr.location, instr.mnemonic, hub_start, null);
+                                hub_offset = try ana.layout_integer(instr.arguments[0], instr.location(), instr.mnemonic, hub_start, null);
                             }
                             if (hub_offset) |addr| {
                                 if (addr > 0x80000) {
-                                    try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .origin, .space = .hub, .actual = addr, .max_exclusive = 0x80001 } });
+                                    try ana.emit_diag(instr.location(), .{ .err_address_outside_space = .{ .subject = .origin, .space = .hub, .actual = addr, .max_exclusive = 0x80001 } });
                                     continue;
                                 }
                             }
                             var local_start: ?u32 = null;
                             if (instr.arguments.len == 2 and max_args == 2) {
-                                local_start = try ana.layout_integer(instr.arguments[1], instr.location, instr.mnemonic, cursor.offset, mode);
+                                local_start = try ana.layout_integer(instr.arguments[1], instr.location(), instr.mnemonic, cursor.offset, mode);
                                 if (local_start) |target| {
                                     const min: u32 = if (mode == .lut) 0x200 else 0;
                                     const max: u32 = if (mode == .lut) 0x400 else 0x200;
                                     if (target < min or target > max) {
-                                        try ana.emit_diag(instr.location, .{ .err_numeric_value_out_of_range = .{ .subject = "local start", .min = min, .max = max, .actual = target } });
+                                        try ana.emit_diag(instr.location(), .{ .err_numeric_value_out_of_range = .{ .subject = "local start", .min = min, .max = max, .actual = target } });
                                         continue;
                                     }
                                 }
@@ -1074,7 +1075,7 @@ const Analyzer = struct {
 
                         .@"align" => blk: {
                             if (coded.ast_node.arguments.len != 1) {
-                                try ana.emit_diag(coded.ast_node.location, .{
+                                try ana.emit_diag(coded.ast_node.location(), .{
                                     .err_argument_count_mismatch = .{
                                         .subject = ".align",
                                         .min = 1,
@@ -1092,19 +1093,19 @@ const Analyzer = struct {
                                     .int => |int| {
                                         if (std.math.cast(u32, int)) |alignment| {
                                             if (alignment == 0 or !std.math.isPowerOfTwo(alignment)) {
-                                                try ana.emit_diag(coded.ast_node.location, .{
+                                                try ana.emit_diag(coded.ast_node.location(), .{
                                                     .err_align_value_must_be_a_nonzero_power_of_two = .{
                                                         .value = alignment,
                                                     },
                                                 });
                                             } else if (alignment > 0x80000) {
-                                                try ana.emit_diag(coded.ast_node.location, .{ .err_numeric_value_out_of_range = .{ .subject = ".align value", .min = 1, .max = 0x80000, .actual = alignment } });
+                                                try ana.emit_diag(coded.ast_node.location(), .{ .err_numeric_value_out_of_range = .{ .subject = ".align value", .min = 1, .max = 0x80000, .actual = alignment } });
                                             } else {
                                                 cursor.alignas(alignment);
                                                 coded.start_addr = cursor.offset;
                                             }
                                         } else {
-                                            try ana.emit_diag(coded.ast_node.location, .{
+                                            try ana.emit_diag(coded.ast_node.location(), .{
                                                 .err_numeric_value_out_of_range = .{
                                                     .subject = ".align value",
                                                     .min = 0,
@@ -1115,7 +1116,7 @@ const Analyzer = struct {
                                         }
                                     },
                                     else => {
-                                        try ana.emit_diag(coded.ast_node.location, .{
+                                        try ana.emit_diag(coded.ast_node.location(), .{
                                             .err_expected_value_type = .{
                                                 .subject = ".align value",
                                                 .expected = .int,
@@ -1126,16 +1127,16 @@ const Analyzer = struct {
                                 }
                             } else |err| {
                                 if (err == error.UndefinedSymbol) {
-                                    try ana.emit_diag(coded.ast_node.location, .err_align_references_label);
+                                    try ana.emit_diag(coded.ast_node.location(), .err_align_references_label);
                                 } else {
-                                    try ana.emit_eval_error(coded.ast_node.location, .alignment, err);
+                                    try ana.emit_eval_error(coded.ast_node.location(), .alignment, err);
                                 }
                             }
                         },
 
                         .pack => {
                             if (instr.arguments.len != 1) {
-                                try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".pack", .min = 1, .max = 1, .found = instr.arguments.len } });
+                                try ana.emit_diag(instr.location(), .{ .err_argument_count_mismatch = .{ .subject = ".pack", .min = 1, .max = 1, .found = instr.arguments.len } });
                             } else {
                                 const name = if (instr.arguments[0] == .symbol) instr.arguments[0].symbol.symbol_name else "";
                                 if (std.ascii.eqlIgnoreCase(name, "off")) {
@@ -1147,7 +1148,7 @@ const Analyzer = struct {
                                 } else if (std.ascii.eqlIgnoreCase(name, "long")) {
                                     cursor.pack = 4;
                                 } else {
-                                    try ana.emit_diag(instr.location, .err_invalid_pack_mode);
+                                    try ana.emit_diag(instr.location(), .err_invalid_pack_mode);
                                 }
                                 warned_packed_code = false;
                             }
@@ -1155,7 +1156,7 @@ const Analyzer = struct {
 
                         .pic => {
                             if (instr.arguments.len != 1) {
-                                try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".pic", .min = 1, .max = 1, .found = instr.arguments.len } });
+                                try ana.emit_diag(instr.location(), .{ .err_argument_count_mismatch = .{ .subject = ".pic", .min = 1, .max = 1, .found = instr.arguments.len } });
                             } else {
                                 const name = if (instr.arguments[0] == .symbol) instr.arguments[0].symbol.symbol_name else "";
                                 inline for (std.meta.tags(PicMode)) |mode| {
@@ -1164,16 +1165,16 @@ const Analyzer = struct {
                                         break;
                                     }
                                 }
-                                if (coded.pic_mode == null) try ana.emit_diag(instr.location, .err_invalid_pic_mode);
+                                if (coded.pic_mode == null) try ana.emit_diag(instr.location(), .err_invalid_pic_mode);
                             }
                         },
 
                         .org => {
                             if (cursor.mode == .data) {
-                                try ana.emit_diag(instr.location, .{ .err_directive_invalid_in_mode = .{ .directive = ".org", .mode = cursor.mode } });
+                                try ana.emit_diag(instr.location(), .{ .err_directive_invalid_in_mode = .{ .directive = ".org", .mode = cursor.mode } });
                             } else if (instr.arguments.len != 1) {
-                                try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".org", .min = 1, .max = 1, .found = instr.arguments.len } });
-                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".org", cursor.offset, null)) |target| {
+                                try ana.emit_diag(instr.location(), .{ .err_argument_count_mismatch = .{ .subject = ".org", .min = 1, .max = 1, .found = instr.arguments.len } });
+                            } else if (try ana.layout_integer(instr.arguments[0], instr.location(), ".org", cursor.offset, null)) |target| {
                                 const max: u32 = switch (cursor.mode) {
                                     .cog, .regspace => 0x200,
                                     .lut => 0x400,
@@ -1181,7 +1182,7 @@ const Analyzer = struct {
                                     .data => unreachable,
                                 };
                                 if (target > max or (cursor.mode == .lut and target < 0x200)) {
-                                    try ana.emit_diag(instr.location, .{ .err_numeric_value_out_of_range = .{ .subject = ".org target", .min = if (cursor.mode == .lut) 0x200 else 0, .max = max, .actual = target } });
+                                    try ana.emit_diag(instr.location(), .{ .err_numeric_value_out_of_range = .{ .subject = ".org target", .min = if (cursor.mode == .lut) 0x200 else 0, .max = max, .actual = target } });
                                     continue;
                                 }
                                 const current = if (cursor.mode == .hub) cursor.hub else cursor.local_bytes;
@@ -1191,7 +1192,7 @@ const Analyzer = struct {
                                     else => target * 4,
                                 };
                                 if (requested < current) {
-                                    try ana.emit_diag(instr.location, .err_org_cannot_move_pc_backward);
+                                    try ana.emit_diag(instr.location(), .err_org_cannot_move_pc_backward);
                                 } else {
                                     cursor.org(target);
                                     coded.start_addr = cursor.offset;
@@ -1199,14 +1200,14 @@ const Analyzer = struct {
                             }
                         },
 
-                        .reserve => {
+                        .res => {
                             if (cursor.mode != .cog and cursor.mode != .regspace) {
-                                try ana.emit_diag(instr.location, .{ .err_directive_invalid_in_mode = .{ .directive = ".reserve", .mode = cursor.mode } });
+                                try ana.emit_diag(instr.location(), .{ .err_directive_invalid_in_mode = .{ .directive = "RES", .mode = cursor.mode } });
                             } else if (instr.arguments.len != 1) {
-                                try ana.emit_diag(instr.location, .{ .err_argument_count_mismatch = .{ .subject = ".reserve", .min = 1, .max = 1, .found = instr.arguments.len } });
-                            } else if (try ana.layout_integer(instr.arguments[0], instr.location, ".reserve", cursor.offset, null)) |count| {
+                                try ana.emit_diag(instr.location(), .{ .err_argument_count_mismatch = .{ .subject = "RES", .min = 1, .max = 1, .found = instr.arguments.len } });
+                            } else if (try ana.layout_integer(instr.arguments[0], instr.location(), "RES", cursor.offset, null)) |count| {
                                 if (cursor.local_bytes / 4 > 0x200 or count > 0x200 - @min(cursor.local_bytes / 4, 0x200)) {
-                                    try ana.emit_diag(instr.location, .{ .err_numeric_value_out_of_range = .{ .subject = ".reserve count", .min = 0, .max = 0x200 - @min(cursor.local_bytes / 4, 0x200), .actual = count } });
+                                    try ana.emit_diag(instr.location(), .{ .err_numeric_value_out_of_range = .{ .subject = "RES count", .min = 0, .max = 0x200 - @min(cursor.local_bytes / 4, 0x200), .actual = count } });
                                 } else {
                                     cursor.reserve(count);
                                     coded.start_addr = cursor.offset;
@@ -1216,7 +1217,7 @@ const Analyzer = struct {
 
                         .long, .word, .byte, .file => {
                             if (cursor.mode == .regspace or cursor.reserved) {
-                                try ana.emit_diag(instr.location, .err_cannot_emit_data_after_reserve_or_inside_regspace);
+                                try ana.emit_diag(instr.location(), .err_cannot_emit_data_after_reserve_or_inside_regspace);
                             } else {
                                 const unit: u32 = switch (coded.mnemonic.?.*) {
                                     .long => 4,
@@ -1242,15 +1243,15 @@ const Analyzer = struct {
 
                         .encoded => {
                             if (cursor.mode == .data or cursor.mode == .regspace or cursor.reserved) {
-                                try ana.emit_diag(instr.location, .err_cannot_emit_code_in_this_segment);
+                                try ana.emit_diag(instr.location(), .err_cannot_emit_code_in_this_segment);
                             } else {
                                 cursor.align_data(if (cursor.pack == 0) 4 else cursor.pack);
                                 if ((cursor.mode == .cog or cursor.mode == .lut) and cursor.local_bytes % 4 != 0) {
-                                    try ana.emit_diag(instr.location, .err_unaligned_cog_lut_instruction);
+                                    try ana.emit_diag(instr.location(), .err_unaligned_cog_lut_instruction);
                                     continue;
                                 }
                                 if (cursor.pack != 0 and cursor.pack != 4 and !warned_packed_code) {
-                                    try ana.emit_diag(instr.location, .warn_unaligned_code);
+                                    try ana.emit_diag(instr.location(), .warn_unaligned_code);
                                     warned_packed_code = true;
                                 }
                                 coded.start_addr = cursor.offset;
@@ -1258,15 +1259,15 @@ const Analyzer = struct {
                             }
                         },
                     }
-                    if (cursor.hub > 0x80000) try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .cursor, .space = .hub, .actual = cursor.hub, .max_exclusive = 0x80001 } });
+                    if (cursor.hub > 0x80000) try ana.emit_diag(instr.location(), .{ .err_address_outside_space = .{ .subject = .cursor, .space = .hub, .actual = cursor.hub, .max_exclusive = 0x80001 } });
                     switch (cursor.mode) {
                         .cog, .regspace => {
                             if (cursor.local_bytes > 0x200 * 4)
-                                try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .cursor, .space = cursor.mode, .actual = cursor.local_bytes / 4, .max_exclusive = 0x201 } });
+                                try ana.emit_diag(instr.location(), .{ .err_address_outside_space = .{ .subject = .cursor, .space = cursor.mode, .actual = cursor.local_bytes / 4, .max_exclusive = 0x201 } });
                         },
                         .lut => {
                             if (cursor.local_bytes > 0x200 * 4)
-                                try ana.emit_diag(instr.location, .{ .err_address_outside_space = .{ .subject = .cursor, .space = .lut, .actual = 0x200 + cursor.local_bytes / 4, .max_exclusive = 0x401 } });
+                                try ana.emit_diag(instr.location(), .{ .err_address_outside_space = .{ .subject = .cursor, .space = .lut, .actual = 0x200 + cursor.local_bytes / 4, .max_exclusive = 0x401 } });
                         },
                         .data, .hub => {},
                     }
@@ -1326,7 +1327,7 @@ const Analyzer = struct {
     fn is_expandable_inner(ana: *Analyzer, expr: ast.Expression, visiting: *std.StringHashMapUnmanaged(void)) std.mem.Allocator.Error!bool {
         return switch (expr) {
             .string, .sequence => true,
-            .wrapped => |inner| try ana.is_expandable_inner(inner.*, visiting),
+            .wrapped => |inner| try ana.is_expandable_inner(inner.value.*, visiting),
             .symbol => |sym| blk: {
                 const value = ana.constant_expression(sym.symbol_name) orelse break :blk false;
                 if (visiting.contains(sym.symbol_name)) break :blk false;
@@ -1352,7 +1353,7 @@ const Analyzer = struct {
                 }
                 break :blk total;
             },
-            .wrapped => |inner| return ana.data_expr_count(inner.*, start),
+            .wrapped => |inner| return ana.data_expr_count(inner.value.*, start),
             .symbol => blk: {
                 if (!(try ana.is_expandable(expr))) break :blk 1;
                 const value = ana.evaluate_root_expr(expr, .{ .start = start }) catch |err| {
@@ -1394,7 +1395,7 @@ const Analyzer = struct {
         var count: u64 = 0;
         for (instr.arguments) |arg| count += try ana.data_expr_count(arg, start);
         if (count * unit > 0x80000) {
-            try ana.emit_diag(instr.location, .err_array_output_too_large);
+            try ana.emit_diag(instr.location(), .err_array_output_too_large);
             return 0;
         }
         return @intCast(count * unit);
@@ -1503,7 +1504,7 @@ const Analyzer = struct {
         }) catch |err| {
             if (err == error.ConstantNeedsLabelDuringLayout) return err;
             (ana.symbols.getPtr(name).?).constant_state = .failed;
-            try ana.emit_eval_error(con.location, .expression, err);
+            try ana.emit_eval_error(con.span.location(), .expression, err);
             return error.DiagnosedFailure;
         };
         if (ana.error_count != errors_before) {
@@ -1515,12 +1516,12 @@ const Analyzer = struct {
             .int, .string, .sequence, .enumerator => {},
             .register => {},
             .address => {
-                try ana.emit_diag(con.location, .{ .err_constant_requires_integer_not_offset = .{ .name = name } });
+                try ana.emit_diag(con.span.location(), .{ .err_constant_requires_integer_not_offset = .{ .name = name } });
                 (ana.symbols.getPtr(name).?).constant_state = .failed;
                 return error.DiagnosedFailure;
             },
             .pointer_expr => {
-                try ana.emit_diag(con.location, .err_constants_cannot_store_pointer_expression);
+                try ana.emit_diag(con.span.location(), .err_constants_cannot_store_pointer_expression);
                 (ana.symbols.getPtr(name).?).constant_state = .failed;
                 return error.DiagnosedFailure;
             },
@@ -1536,7 +1537,7 @@ const Analyzer = struct {
         for (ana.file.sequence) |seq| {
             if (seq != .constant) continue;
             _ = ana.resolve_constant(seq.constant.identifier) catch |err| {
-                try ana.emit_eval_error(seq.constant.location, .expression, err);
+                try ana.emit_eval_error(seq.constant.span.location(), .expression, err);
             };
         }
     }
@@ -1559,7 +1560,7 @@ const Analyzer = struct {
             }
             for (args, instr.ast_node.arguments) |*value, expr| {
                 value.* = ana.evaluate_root_expr(expr, .{ .after = instr.end_addr, .start = instr.start_addr, .fit_pc = instr.fit_pc }) catch |err| {
-                    try ana.emit_eval_error(instr.ast_node.location, .expression, err);
+                    try ana.emit_eval_error(instr.ast_node.location(), .expression, err);
                     value.* = .int(0);
                     continue;
                 };
@@ -1578,7 +1579,7 @@ const Analyzer = struct {
                     .long => 4,
                     else => unreachable,
                 };
-                if (count * unit != instr.byte_size.?) try ana.emit_diag(instr.ast_node.location, .err_array_length_requires_layout_known);
+                if (count * unit != instr.byte_size.?) try ana.emit_diag(instr.ast_node.location(), .err_array_length_requires_layout_known);
             }
 
             instr.arguments = args;
@@ -1618,7 +1619,7 @@ const Analyzer = struct {
                 alternatives.appendBounded(option) catch @panic("array too small");
             }
             if (alternatives.items.len == 0) {
-                try ana.emit_diag(instr.ast_node.location, .{
+                try ana.emit_diag(instr.ast_node.location(), .{
                     .err_instruction_operand_count_unmatched = .{
                         .mnemonic = instr.ast_node.mnemonic,
                         .found = instr.arguments.len,
@@ -1636,7 +1637,7 @@ const Analyzer = struct {
 
             logger.debug("  args:", .{});
             for (instr.arguments) |arg| {
-                logger.debug("  - {s}: {s} aug={}", .{ @tagName(arg.value), @tagName(arg.flags.usage), arg.flags.augment });
+                logger.debug("  - {t}: {t} aug={}", .{ arg.value, arg.flags.usage, arg.flags.augment });
             }
             logger.debug("  alts:", .{});
 
@@ -1647,8 +1648,8 @@ const Analyzer = struct {
                 var can_assign = true;
                 for (alt.operands, instr.arguments) |op, arg| {
                     const op_ok = op.type.can_assign_from(arg);
-                    logger.debug("    - {s}; type ok={}", .{
-                        @tagName(op.type),
+                    logger.debug("    - {t}; type ok={}", .{
+                        op.type,
                         op_ok,
                     });
                     if (!op_ok) {
@@ -1656,7 +1657,7 @@ const Analyzer = struct {
                     }
                 }
                 if (instr.ast_node.effect) |effect| {
-                    if (!alt.effects.contains(effect)) {
+                    if (!alt.effects.contains(effect.type)) {
                         logger.debug("      : non-matching effect", .{});
                         can_assign = false;
                     }
@@ -1705,7 +1706,7 @@ const Analyzer = struct {
                         // neither use pointer_reg, so fall through into regular handling:
                     }
 
-                    try ana.emit_diag(instr.ast_node.location, .{
+                    try ana.emit_diag(instr.ast_node.location(), .{
                         .err_ambigious_instruction_selection_for = .{
                             .mnemonic = alt.mnemonic,
                         },
@@ -1716,7 +1717,7 @@ const Analyzer = struct {
             }
 
             instr.instruction = selection orelse {
-                try ana.emit_diag(instr.ast_node.location, .{
+                try ana.emit_diag(instr.ast_node.location(), .{
                     .err_ambigious_instruction_selection_for = .{
                         .mnemonic = instr.ast_node.mnemonic,
                     },
@@ -1808,13 +1809,13 @@ const Analyzer = struct {
 
             const with_message = switch (instr.arguments.len) {
                 0 => {
-                    try ana.emit_diag(instr.ast_node.location, .{ .err_argument_count_mismatch = .{ .subject = directive, .min = 1, .max = 2, .found = 0 } });
+                    try ana.emit_diag(instr.ast_node.location(), .{ .err_argument_count_mismatch = .{ .subject = directive, .min = 1, .max = 2, .found = 0 } });
                     continue;
                 },
                 1 => false,
                 2 => true,
                 else => blk: {
-                    try ana.emit_diag(instr.ast_node.location, .{
+                    try ana.emit_diag(instr.ast_node.location(), .{
                         .err_argument_count_mismatch = .{
                             .subject = directive,
                             .min = 1,
@@ -1835,7 +1836,7 @@ const Analyzer = struct {
                     .int => |number| number,
                     .address => |address| if (mode == .hub or mode == .data)
                         address.hub_address orelse {
-                            try ana.emit_diag(instr.ast_node.location, .{ .err_address_space_mismatch = .{
+                            try ana.emit_diag(instr.ast_node.location(), .{ .err_address_space_mismatch = .{
                                 .subject = ".fit limit",
                                 .expected = .initOne(mode),
                                 .actual = .initOne(std.meta.activeTag(address.local)),
@@ -1843,16 +1844,16 @@ const Analyzer = struct {
                             continue;
                         }
                     else
-                        (try ana.local_address_value(address, mode, instr.ast_node.location, ".fit limit")) orelse continue,
+                        (try ana.local_address_value(address, mode, instr.ast_node.location(), ".fit limit")) orelse continue,
                     else => {
-                        try ana.emit_diag(instr.ast_node.location, .{ .err_expected_value_type = .{ .subject = ".fit limit", .expected = .int, .actual = condition.value } });
+                        try ana.emit_diag(instr.ast_node.location(), .{ .err_expected_value_type = .{ .subject = ".fit limit", .expected = .int, .actual = condition.value } });
                         continue;
                     },
                 };
                 break :blk @as(i64, instr.fit_pc.?) <= limit;
             } else blk: {
                 if (condition.value != .int) {
-                    try ana.emit_diag(instr.ast_node.location, .{ .err_expected_value_type = .{ .subject = ".assert condition", .expected = .int, .actual = condition.value } });
+                    try ana.emit_diag(instr.ast_node.location(), .{ .err_expected_value_type = .{ .subject = ".assert condition", .expected = .int, .actual = condition.value } });
                     continue;
                 }
                 break :blk condition.value.int != 0;
@@ -1863,7 +1864,7 @@ const Analyzer = struct {
                 const msg = instr.arguments[1];
 
                 if (msg.value != .string) {
-                    try ana.emit_diag(instr.ast_node.location, .{
+                    try ana.emit_diag(instr.ast_node.location(), .{
                         .err_expected_value_type = .{
                             .subject = if (is_fit) ".fit message" else ".assert message",
                             .expected = .string,
@@ -1901,7 +1902,7 @@ const Analyzer = struct {
                 }
             }
 
-            try ana.emit_diag(instr.ast_node.location, .{
+            try ana.emit_diag(instr.ast_node.location(), .{
                 .err_assertion_failed = .{
                     .message = message,
                 },
@@ -1939,7 +1940,7 @@ const Analyzer = struct {
                         try ana.line_data.append(segment_allocator, .{
                             .offset = label_hub,
                             .length = 0,
-                            .location = lbl.location,
+                            .location = lbl.span.location(),
                             .pc = sym.offset.?.get_local(.pc),
                         });
                     }
@@ -1965,7 +1966,7 @@ const Analyzer = struct {
                     continue :seq_loop;
                 },
 
-                .@"align", .pack, .org, .reserve => continue :seq_loop,
+                .@"align", .pack, .org, .res => continue :seq_loop,
 
                 .cogexec, .lutexec, .hubexec, .regspace, .data => {
                     const new_mode = mode_directive.from_name(instr.ast_node.mnemonic).?;
@@ -1996,7 +1997,7 @@ const Analyzer = struct {
 
             if (hub_offset > segment_end_hub_offset) {
                 try current_segment.writer().splatByteAll(ana.options.fill_byte, hub_offset - segment_end_hub_offset);
-                try ana.emit_diag(instr.ast_node.location, .{
+                try ana.emit_diag(instr.ast_node.location(), .{
                     .warn_emitted_padding_byte_s = .{
                         .count = hub_offset - segment_end_hub_offset,
                     },
@@ -2007,7 +2008,7 @@ const Analyzer = struct {
             line_info.* = .{
                 .offset = hub_offset,
                 .length = 0,
-                .location = instr.ast_node.location,
+                .location = instr.ast_node.location(),
                 .pc = instr.start_addr.?.get_local(.pc),
                 .kind = switch (mnemonic) {
                     .encoded => .code,
@@ -2019,7 +2020,7 @@ const Analyzer = struct {
                 },
                 .mnemonic = if (mnemonic == .encoded) instr.ast_node.mnemonic else null,
                 .condition = if (instr.ast_node.condition) |condition| condition.type else null,
-                .effect = instr.ast_node.effect,
+                .effect = if (instr.ast_node.effect) |effect| effect.type else null,
             };
             if (mnemonic == .encoded) {
                 const operands = try segment_allocator.alloc(Module.LineData.Operand, instr.arguments.len);
@@ -2055,7 +2056,7 @@ const Analyzer = struct {
             }
             defer line_info.length = @intCast((current_segment.hub_offset + current_segment.len()) - hub_offset);
 
-            logger.debug("emit {s}", .{@tagName(mnemonic)});
+            logger.debug("emit {t}", .{mnemonic});
 
             switch (mnemonic) {
                 .assert,
@@ -2066,7 +2067,7 @@ const Analyzer = struct {
                 .regspace,
                 .data,
                 .org,
-                .reserve,
+                .res,
                 .@"align",
                 .pack,
                 .pic,
@@ -2123,7 +2124,7 @@ const Analyzer = struct {
                     try condition_slot.write(&output, @intFromEnum(cond_code));
 
                     if (instr.ast_node.effect) |effect| {
-                        const write_mask = effect.get_write_mask();
+                        const write_mask = effect.type.get_write_mask();
 
                         if (write_mask.c) {
                             const slot = encoded.c_effect_slot orelse return error.BadInstructionEncoding;
@@ -2523,7 +2524,7 @@ const Analyzer = struct {
             .regspace, .data => unreachable,
         };
 
-        logger.debug("pcrel: cog={} hub={} target={}:{s} => rel {}", .{ cog_pc, hub_pc, int, @tagName(exec_mode), delta33 });
+        logger.debug("pcrel: cog={} hub={} target={}:{t} => rel {}", .{ cog_pc, hub_pc, int, exec_mode, delta33 });
 
         switch (mode) {
             .default => {
@@ -2754,8 +2755,9 @@ const Analyzer = struct {
 
     fn evaluate_expr(ana: *Analyzer, expr: ast.Expression, context: EvalContext, nesting: usize) EvalError!eval.Value {
         switch (expr) {
-            .wrapped => |inner| return try ana.evaluate_expr(inner.*, context, nesting + 1),
-            .current_pc => |location| {
+            .wrapped => |inner| return try ana.evaluate_expr(inner.value.*, context, nesting + 1),
+            .current_pc => |span| {
+                const location = span.location();
                 if (context.constant) {
                     try ana.emit_diag(location, .err_current_pc_unavailable);
                     return error.DiagnosedFailure;
@@ -2824,12 +2826,12 @@ const Analyzer = struct {
                     .pre_increment,
                     => {
                         var ptr_expr: eval.PointerExpression = switch (value.value) {
-                            .register => |reg| try ana.ptr_expr_from_reg(op.location, reg),
+                            .register => |reg| try ana.ptr_expr_from_reg(op.operator_span.location(), reg),
 
                             .pointer_expr => |ptr_expr| ptr_expr,
 
                             else => blk: {
-                                try ana.emit_diag(op.location, .{
+                                try ana.emit_diag(op.operator_span.location(), .{
                                     .err_operator_invalid_operand_type = .{
                                         .operator = .{ .unary = op.operator },
                                         .value_type = value.value,
@@ -2845,14 +2847,14 @@ const Analyzer = struct {
                         };
 
                         if (ptr_expr.index != null and ptr_expr.increment != .none) {
-                            try ana.emit_diag(op.location, .{
+                            try ana.emit_diag(op.operator_span.location(), .{
                                 .err_pointer_modifier_already_set = .{
                                     .operator = .{ .unary = op.operator },
                                     .modifier = .index,
                                 },
                             });
                         } else if (ptr_expr.increment != .none) {
-                            try ana.emit_diag(op.location, .{
+                            try ana.emit_diag(op.operator_span.location(), .{
                                 .err_pointer_modifier_already_set = .{
                                     .operator = .{ .unary = op.operator },
                                     .modifier = .increment,
@@ -2877,7 +2879,7 @@ const Analyzer = struct {
                 }
 
                 if (value.value == .register) {
-                    try ana.emit_diag(op.location, .{
+                    try ana.emit_diag(op.operator_span.location(), .{
                         .err_operator_invalid_operand_type = .{
                             .operator = .{ .unary = op.operator },
                             .value_type = .register,
@@ -2886,7 +2888,7 @@ const Analyzer = struct {
                     return value;
                 }
                 if (value.value == .enumerator) {
-                    try ana.emit_diag(op.location, .{
+                    try ana.emit_diag(op.operator_span.location(), .{
                         .err_operator_invalid_operand_type = .{
                             .operator = .{ .unary = op.operator },
                             .value_type = .enumerator,
@@ -2904,7 +2906,7 @@ const Analyzer = struct {
 
                     .@"!", .@"~", .@"+", .@"-" => {
                         if (value.value != .int) {
-                            try ana.emit_diag(op.location, .{
+                            try ana.emit_diag(op.operator_span.location(), .{
                                 .err_operator_invalid_operand_type = .{
                                     .operator = .{ .unary = op.operator },
                                     .value_type = value.value,
@@ -2922,7 +2924,7 @@ const Analyzer = struct {
                     },
                     .@"@" => {
                         if (value.value != .address) {
-                            try ana.emit_diag(op.location, .{
+                            try ana.emit_diag(op.operator_span.location(), .{
                                 .err_operator_invalid_operand_type = .{
                                     .operator = .{ .unary = op.operator },
                                     .value_type = value.value,
@@ -2932,7 +2934,7 @@ const Analyzer = struct {
                         }
 
                         const local_offset: TaggedAddress = context.after orelse {
-                            try ana.emit_diag(op.location, .err_operator_at_cannot_be_used_in_this_scope);
+                            try ana.emit_diag(op.operator_span.location(), .err_operator_at_cannot_be_used_in_this_scope);
                             return .int(0);
                         };
                         const target_offset: TaggedAddress = value.value.address;
@@ -2940,25 +2942,25 @@ const Analyzer = struct {
                         // TODO: Validate local_offset and target_offset point into the same segment
 
                         const local_hub_addr: u32 = local_offset.hub_address orelse {
-                            try ana.emit_diag(op.location, .{ .err_address_has_no_hub_location = .current });
+                            try ana.emit_diag(op.operator_span.location(), .{ .err_address_has_no_hub_location = .current });
                             return .int(0);
                         };
                         const target_hub_addr: u32 = target_offset.hub_address orelse {
-                            try ana.emit_diag(op.location, .{ .err_address_has_no_hub_location = .target });
+                            try ana.emit_diag(op.operator_span.location(), .{ .err_address_has_no_hub_location = .target });
                             return .int(0);
                         };
 
                         const jmp_delta = @as(i33, target_hub_addr) - @as(i33, local_hub_addr);
 
                         if (@mod(jmp_delta, 4) != 0) {
-                            try ana.emit_diag(op.location, .err_address_delta_not_divisible_by_four);
+                            try ana.emit_diag(op.operator_span.location(), .err_address_delta_not_divisible_by_four);
                         }
 
                         return .int(@divTrunc(jmp_delta, 4));
                     },
                     .@"*" => {
                         if (value.value != .address) {
-                            try ana.emit_diag(op.location, .{
+                            try ana.emit_diag(op.operator_span.location(), .{
                                 .err_operator_invalid_operand_type = .{
                                     .operator = .{ .unary = op.operator },
                                     .value_type = value.value,
@@ -2970,7 +2972,7 @@ const Analyzer = struct {
                                 .init_hub(undefined, 0), .literal);
                         }
                         if (value.flags.usage == .register) {
-                            try ana.emit_diag(op.location, .{ .warn_operator_no_effect = .{ .operator = op.operator, .label = .data } });
+                            try ana.emit_diag(op.operator_span.location(), .{ .warn_operator_no_effect = .{ .operator = op.operator, .label = .data } });
                         }
                         return .{
                             .value = value.value,
@@ -2983,7 +2985,7 @@ const Analyzer = struct {
                     },
                     .@"&" => {
                         if (value.value != .address) {
-                            try ana.emit_diag(op.location, .{
+                            try ana.emit_diag(op.operator_span.location(), .{
                                 .err_operator_invalid_operand_type = .{
                                     .operator = .{ .unary = op.operator },
                                     .value_type = value.value,
@@ -2992,7 +2994,7 @@ const Analyzer = struct {
                             return .address(.init_hub(undefined, 0), .literal);
                         }
                         if (value.flags.usage == .literal) {
-                            try ana.emit_diag(op.location, .{ .warn_operator_no_effect = .{ .operator = op.operator, .label = .code } });
+                            try ana.emit_diag(op.operator_span.location(), .{ .warn_operator_no_effect = .{ .operator = op.operator, .label = .code } });
                         }
                         return .{
                             .value = value.value,
@@ -3008,7 +3010,7 @@ const Analyzer = struct {
             .binary_transform => |op| {
                 const lhs = try ana.evaluate_expr(op.lhs.*, context, nesting + 1);
                 var index_expr = op.rhs.*;
-                while (index_expr == .wrapped) index_expr = index_expr.wrapped.*;
+                while (index_expr == .wrapped) index_expr = index_expr.wrapped.value.*;
                 const augmented_index = op.operator == .array_index and
                     (lhs.value == .pointer_expr or (lhs.value == .register and (lhs.value.register == PTRA or lhs.value.register == PTRB))) and
                     index_expr == .function_call and
@@ -3023,7 +3025,7 @@ const Analyzer = struct {
                     const rhs_ok = (rhs_type == .int);
 
                     if (!lhs_ok or !rhs_ok) {
-                        try ana.emit_diag(op.location, .{
+                        try ana.emit_diag(op.operator_span.location(), .{
                             .err_operator_invalid_operand_types = .{
                                 .operator = .{ .binary = op.operator },
                                 .lhs_type = lhs_type,
@@ -3040,11 +3042,11 @@ const Analyzer = struct {
 
                     const src_expr: eval.PointerExpression = switch (lhs.value) {
                         .pointer_expr => |ptr_expr| ptr_expr,
-                        .register => |reg| try ana.ptr_expr_from_reg(op.location, reg),
+                        .register => |reg| try ana.ptr_expr_from_reg(op.operator_span.location(), reg),
                         else => unreachable,
                     };
                     if (src_expr.index != null) {
-                        try ana.emit_diag(op.location, .{ .err_pointer_modifier_already_set = .{ .operator = .{ .binary = op.operator }, .modifier = .index } });
+                        try ana.emit_diag(op.operator_span.location(), .{ .err_pointer_modifier_already_set = .{ .operator = .{ .binary = op.operator }, .modifier = .index } });
                     }
 
                     var dst_expr = src_expr;
@@ -3062,13 +3064,13 @@ const Analyzer = struct {
 
                 if (op.operator == .@"*") {
                     if (lhs_type == .int and (rhs_type == .string or rhs_type == .sequence))
-                        return try ana.repeat_value(op.location, rhs, lhs.value.int);
+                        return try ana.repeat_value(op.operator_span.location(), rhs, lhs.value.int);
                     if (rhs_type == .int and (lhs_type == .string or lhs_type == .sequence))
-                        return try ana.repeat_value(op.location, lhs, rhs.value.int);
+                        return try ana.repeat_value(op.operator_span.location(), lhs, rhs.value.int);
                 }
 
                 if (lhs_type != rhs_type) {
-                    try ana.emit_diag(op.location, .{
+                    try ana.emit_diag(op.operator_span.location(), .{
                         .err_operator_invalid_operand_types = .{
                             .operator = .{ .binary = op.operator },
                             .lhs_type = lhs_type,
@@ -3080,10 +3082,10 @@ const Analyzer = struct {
 
                 switch (lhs_type) {
                     .int => return .int(
-                        try ana.execute_int_op(op.location, lhs.value.int, rhs.value.int, op.operator),
+                        try ana.execute_int_op(op.operator_span.location(), lhs.value.int, rhs.value.int, op.operator),
                     ),
                     .register => {
-                        try ana.emit_diag(op.location, .{
+                        try ana.emit_diag(op.operator_span.location(), .{
                             .err_operator_invalid_operand_type = .{
                                 .operator = .{ .binary = op.operator },
                                 .value_type = .register,
@@ -3092,7 +3094,7 @@ const Analyzer = struct {
                         return .register(0);
                     },
                     .enumerator => {
-                        try ana.emit_diag(op.location, .{
+                        try ana.emit_diag(op.operator_span.location(), .{
                             .err_operator_invalid_operand_type = .{
                                 .operator = .{ .binary = op.operator },
                                 .value_type = .enumerator,
@@ -3101,7 +3103,7 @@ const Analyzer = struct {
                         return .enumerator("");
                     },
                     .pointer_expr => {
-                        try ana.emit_diag(op.location, .{
+                        try ana.emit_diag(op.operator_span.location(), .{
                             .err_operator_invalid_operand_type = .{
                                 .operator = .{ .binary = op.operator },
                                 .value_type = .pointer_expr,
@@ -3110,7 +3112,7 @@ const Analyzer = struct {
                         return .enumerator("");
                     },
                     .address, .string, .sequence => {
-                        try ana.emit_diag(op.location, .{
+                        try ana.emit_diag(op.operator_span.location(), .{
                             .err_operator_invalid_operand_type = .{
                                 .operator = .{ .binary = op.operator },
                                 .value_type = lhs_type,
@@ -3138,7 +3140,7 @@ const Analyzer = struct {
                     .user => |f| {
                         const ctx: FunctionCallContext = .{
                             .ana = ana,
-                            .location = fncall.location,
+                            .location = fncall.span.location(),
                         };
 
                         return f.invoke(ctx, argv) catch |err| switch (err) {
@@ -3150,7 +3152,7 @@ const Analyzer = struct {
                     .aug => {
                         std.debug.assert(argv.len == 1);
                         if (nesting != 0) {
-                            try ana.emit_diag(fncall.arguments[0].location, .{ .err_function_must_be_root = .{ .function = "aug" } });
+                            try ana.emit_diag(fncall.arguments[0].span.location(), .{ .err_function_must_be_root = .{ .function = "aug" } });
                         }
                         var value = argv[0];
                         value.flags.augment = true;
@@ -3160,7 +3162,7 @@ const Analyzer = struct {
                     .nrel => {
                         std.debug.assert(argv.len == 1);
                         if (nesting != 0) {
-                            try ana.emit_diag(fncall.arguments[0].location, .{ .err_function_must_be_root = .{ .function = "nrel" } });
+                            try ana.emit_diag(fncall.arguments[0].span.location(), .{ .err_function_must_be_root = .{ .function = "nrel" } });
                         }
                         var value = argv[0];
                         value.flags.addressing = .absolute;
@@ -3171,7 +3173,7 @@ const Analyzer = struct {
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         if (value.value != .address) {
-                            try ana.emit_diag(fncall.arguments[0].location, .{ .err_expected_value_type = .{
+                            try ana.emit_diag(fncall.arguments[0].span.location(), .{ .err_expected_value_type = .{
                                 .subject = fncall.function,
                                 .expected = .address,
                                 .actual = value.value,
@@ -3183,7 +3185,7 @@ const Analyzer = struct {
                         const byte_offset: u2 = switch (address.local) {
                             .cog, .lut, .regspace => address.subreg_byte,
                             .hub, .data => {
-                                try ana.emit_diag(fncall.arguments[0].location, .{ .err_address_space_mismatch = .{
+                                try ana.emit_diag(fncall.arguments[0].span.location(), .{ .err_address_space_mismatch = .{
                                     .subject = fncall.function,
                                     .expected = .initMany(&.{ .cog, .lut, .regspace }),
                                     .actual = .initOne(std.meta.activeTag(address.local)),
@@ -3201,12 +3203,12 @@ const Analyzer = struct {
                             .localaddr => .localaddr,
                             else => unreachable,
                         };
-                        const loc = fncall.arguments[0].location;
+                        const loc = fncall.arguments[0].span.location();
                         std.debug.assert(argv.len == 1);
                         const value = argv[0];
                         switch (value.value) {
                             .string, .sequence, .enumerator, .pointer_expr => {
-                                try ana.emit_diag(fncall.arguments[0].location, .{
+                                try ana.emit_diag(fncall.arguments[0].span.location(), .{
                                     .err_address_function_invalid_operand_type = .{
                                         .function = address_function,
                                         .value_type = value.value,
@@ -3234,7 +3236,7 @@ const Analyzer = struct {
                                     try ana.emit_diag(loc, .err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope);
                                 }
 
-                                try ana.emit_diag(fncall.arguments[0].location, .{
+                                try ana.emit_diag(fncall.arguments[0].span.location(), .{
                                     .warn_address_function_expected_offset = .{
                                         .function = address_function,
                                         .value_type = value.value,
@@ -3253,7 +3255,7 @@ const Analyzer = struct {
 
                                 if (maybe_expected_type) |expected| {
                                     if (offset.local != expected and !(expected == .cog and offset.local == .regspace)) {
-                                        try ana.emit_diag(fncall.arguments[0].location, .{
+                                        try ana.emit_diag(fncall.arguments[0].span.location(), .{
                                             .err_expected_offset_of_type_but_got_type = .{
                                                 .function = address_function,
                                                 .expected_type = expected,
@@ -3278,7 +3280,7 @@ const Analyzer = struct {
                         const value = argv[0];
                         switch (value.value) {
                             .int => {
-                                try ana.emit_diag(fncall.arguments[0].location, .{
+                                try ana.emit_diag(fncall.arguments[0].span.location(), .{
                                     .warn_address_function_expected_offset = .{
                                         .function = .hubaddr,
                                         .value_type = value.value,
@@ -3287,7 +3289,7 @@ const Analyzer = struct {
                                 return value;
                             },
                             .string, .sequence, .register, .enumerator, .pointer_expr => {
-                                try ana.emit_diag(fncall.arguments[0].location, .{
+                                try ana.emit_diag(fncall.arguments[0].span.location(), .{
                                     .err_address_function_invalid_operand_type = .{
                                         .function = .hubaddr,
                                         .value_type = value.value,
@@ -3297,7 +3299,7 @@ const Analyzer = struct {
                             },
                             .address => |address| {
                                 const hub = address.hub_address orelse {
-                                    try ana.emit_diag(fncall.arguments[0].location, .{ .err_address_has_no_hub_location = .hubaddr_argument });
+                                    try ana.emit_diag(fncall.arguments[0].span.location(), .{ .err_address_has_no_hub_location = .hubaddr_argument });
                                     return .int(0);
                                 };
                                 return .int(hub);
@@ -3392,13 +3394,13 @@ const Analyzer = struct {
             var ok = true;
             for (fncall.arguments[first_kwarg_index..]) |arg| {
                 if (arg.name == null) {
-                    try ana.emit_diag(arg.location, .err_positional_after_named_argument);
+                    try ana.emit_diag(arg.span.location(), .err_positional_after_named_argument);
                     ok = false;
                 }
             }
 
             if (fncall.arguments.len < params.len - default_arg_count or fncall.arguments.len > params.len) {
-                try ana.emit_diag(fncall.location, .{
+                try ana.emit_diag(fncall.span.location(), .{
                     .err_argument_count_mismatch = .{
                         .subject = fncall.function,
                         .min = params.len - default_arg_count,
@@ -3451,7 +3453,7 @@ const Analyzer = struct {
 
                 const index = index_of_param(params, arg.name.?) orelse {
                     ok = false;
-                    try ana.emit_diag(arg.location, .{
+                    try ana.emit_diag(arg.span.location(), .{
                         .err_has_no_parameter_named = .{
                             .function = fncall.function,
                             .parameter = arg.name.?,
@@ -3461,7 +3463,7 @@ const Analyzer = struct {
                 };
                 if (index < first_kwarg_index) {
                     ok = false;
-                    try ana.emit_diag(arg.location, .{
+                    try ana.emit_diag(arg.span.location(), .{
                         .err_parameter_already_passed = .{
                             .parameter = arg.name.?,
                             .function = fncall.function,
@@ -3475,11 +3477,11 @@ const Analyzer = struct {
                 for (kw_argin[i + 1 ..]) |arg2| {
                     if (std.mem.eql(u8, arg1.name.?, arg2.name.?)) {
                         ok = false;
-                        try ana.emit_diag(arg2.location, .{
+                        try ana.emit_diag(arg2.span.location(), .{
                             .err_parameter_already_passed = .{
                                 .parameter = arg1.name.?,
                                 .function = fncall.function,
-                                .previous = .{ .named = arg1.location },
+                                .previous = .{ .named = arg1.span.location() },
                             },
                         });
                     }
@@ -3506,7 +3508,7 @@ const Analyzer = struct {
                 if (!argv_ok.isSet(index)) {
                     // This error can only happen for non-defaulted parameters
                     std.debug.assert(param.default_value == null);
-                    try ana.emit_diag(fncall.location, .{
+                    try ana.emit_diag(fncall.span.location(), .{
                         .err_missing_parameter_for_function = .{
                             .parameter = param.name,
                             .function = fncall.function,
@@ -3700,9 +3702,8 @@ test "semantic errors are collected" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3725,9 +3726,8 @@ test "invalid alignments produce semantic errors" {
     for ([_][]const u8{ ".align 0\n", ".align 3\n" }) |source| {
         var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
         defer diagnostics_collection.deinit();
-        try diagnostics_collection.register_source("test.propan", source);
-
-        var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+        const source_file = try diagnostics_collection.register_source("test.propan", source);
+        var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
         var parsed = try parser.parse(std.testing.allocator);
         defer parsed.deinit();
 
@@ -3754,9 +3754,8 @@ test "final segment retains the label segment ID" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3782,7 +3781,9 @@ test "CALLD encoding selection is independent of variant order" {
     ;
     var collection: diagnostics.Collection = .init(std.testing.allocator);
     defer collection.deinit();
-    var parser: frontend.Parser = .init(source, "pointer-order.propan", &collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "pointer-order.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: frontend.Parser = .init(&parser_source, &collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3823,9 +3824,8 @@ test "semantic warnings are collected without failing analysis" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: frontend.Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: frontend.Parser = .init(source_file, &diagnostics_collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
 
@@ -3902,8 +3902,8 @@ test Cursor {
 }
 
 fn analyze_test_source(source: []const u8, path: []const u8, collection: *diagnostics.Collection, options: AnalyzeOptions) !Module {
-    try collection.register_source(path, source);
-    var parser: frontend.Parser = .init(source, path, collection);
+    const source_file = try collection.register_source(path, source);
+    var parser: frontend.Parser = .init(source_file, collection);
     var parsed = try parser.parse(std.testing.allocator);
     defer parsed.deinit();
     return analyze(std.testing.allocator, parsed.file, options, collection);
@@ -4060,12 +4060,12 @@ test "reserve, regspace, and data labels" {
     const source =
         \\.cogexec 0x100
         \\LONG 1
-        \\.reserve 2
+        \\RES 2
         \\var cogvar:
         \\.regspace
         \\.org 0x1F0
         \\var reg:
-        \\.reserve 2
+        \\RES 2
         \\var reg2:
         \\.data 0x200
         \\table:
@@ -4096,7 +4096,7 @@ test "regspace labels work as cog register operands" {
     const source =
         \\.regspace
         \\var temp:
-        \\.reserve 1
+        \\RES 1
         \\.cogexec 0x100
         \\MOV temp, 1
     ;
@@ -4214,7 +4214,7 @@ test "one-past-end hub cursor emits no segment" {
 test "segment layout rejects overlaps and invalid emission" {
     const cases = [_][]const u8{
         ".hubexec 0x100\nBYTE 1\n.data 0x100\nBYTE 2\n",
-        ".cogexec\n.reserve 1\nLONG 2\n",
+        ".cogexec\nRES 1\nLONG 2\n",
         ".regspace\nBYTE 1\n",
         ".data\nNOP\n",
         ".data\n.org 4\n",
@@ -4226,7 +4226,7 @@ test "segment layout rejects overlaps and invalid emission" {
         ".lutexec\n.org 0x200\nLONG 0\n.org 0x200\n",
         ".cogexec\n.org 4\n.org 3\n",
         ".regspace\nvar x:\n.assert hubaddr(x) == 0\n",
-        ".cogexec\n.reserve 1\nvar x:\n.assert hubaddr(x) == 0\n",
+        ".cogexec\nRES 1\nvar x:\n.assert hubaddr(x) == 0\n",
     };
     for (cases) |source| {
         var collection: diagnostics.Collection = .init(std.testing.allocator);
@@ -4377,7 +4377,7 @@ const Mnemonic = union(enum) {
     regspace,
     data,
     org,
-    reserve,
+    res,
     @"align",
     pack,
     pic,

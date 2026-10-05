@@ -25,7 +25,7 @@ LONG $
 
 .regspace $, 0x1fe
 var slot:
-.reserve 1
+RES 1
 
 .cogexec $, 0
 cog_after_regspace:

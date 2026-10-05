@@ -9,5 +9,5 @@ LONG 0
 .assert hubaddr(.loop) == 0x100
 .align 4
 .assert hubaddr(.loop) == 0x100
-.reserve 0
+RES 0
 .assert hubaddr(.loop) == 0x100

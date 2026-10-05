@@ -17,9 +17,9 @@ NOP
 
 .regspace $, 0x1fe
 var reg_start:
-.reserve 1
+RES 1
 .regspace $, reg_start
-.reserve 1
+RES 1
 .fit 0x1ff
 
 .hubexec $

@@ -9,18 +9,16 @@ const SourceFile = @import("../SourceFile.zig");
 const logger = std.log.scoped(.parser);
 
 pub const Parser = struct {
+    source: *const SourceFile,
     tokenizer: Tokenizer,
     diagnostics: *diagnostics.Collection,
 
-    pub fn init(source_code: []const u8, file_name: ?[]const u8, diagnostics_collection: *diagnostics.Collection) Parser {
+    pub fn init(source: *const SourceFile, diagnostics_collection: *diagnostics.Collection) Parser {
         return .{
-            .tokenizer = .init(source_code, file_name),
+            .source = source,
+            .tokenizer = .init(source.text, source.path),
             .diagnostics = diagnostics_collection,
         };
-    }
-
-    pub fn init_file(source: *const SourceFile, diagnostics_collection: *diagnostics.Collection) Parser {
-        return .init(source.text, source.path, diagnostics_collection);
     }
 
     pub fn parse(parser: *Parser, allocator: std.mem.Allocator) !ParsedFile {
@@ -33,6 +31,7 @@ pub const Parser = struct {
             .arena = arena.allocator(),
             .core = .init(&parser.tokenizer),
             .diagnostics = parser.diagnostics,
+            .source_ref = parser.source,
         };
 
         core.accept_file(&sequence) catch |err| {
@@ -45,10 +44,20 @@ pub const Parser = struct {
         if (!core.ok)
             return error.SyntaxError;
 
+        var comments: std.ArrayListUnmanaged(ast.Comment) = .empty;
+        var comment_tokenizer: Tokenizer = .init(parser.tokenizer.source, parser.tokenizer.current_location.source);
+        while (try comment_tokenizer.next()) |token| {
+            if (token.type == .comment)
+                try comments.append(arena.allocator(), .{ .span = core.token_span(token), .text = token.text });
+        }
+
         return .{
             .arena = arena,
             .file = .{
+                .span = .{ .source = parser.source, .start = 0, .end = @intCast(parser.source.text.len) },
                 .sequence = try sequence.toOwnedSlice(arena.allocator()),
+                .comments = try comments.toOwnedSlice(arena.allocator()),
+                .source = parser.source,
             },
         };
     }
@@ -57,17 +66,27 @@ pub const Parser = struct {
         arena: std.mem.Allocator,
         core: ptk.ParserCore(Tokenizer, .{ .whitespace, .comment }),
         diagnostics: *diagnostics.Collection,
+        source_ref: *const SourceFile,
         lf_is_whitespace: bool = false,
         ok: bool = true,
         local_scope: ast.LocalScope = .{ .id = 0, .parent = null },
 
-        fn label(c: *Core, location: ast.Location, name: []const u8, kind: ast.Label.Type) ast.Label {
+        fn token_span(c: *Core, token: Token) ast.SourceSpan {
+            const start = @intFromPtr(token.text.ptr) - @intFromPtr(c.source_ref.text.ptr);
+            return .{ .source = c.source_ref, .start = @intCast(start), .end = @intCast(start + token.text.len) };
+        }
+
+        fn through_current(c: *Core, start: ast.SourceSpan) ast.SourceSpan {
+            return .{ .source = c.source_ref, .start = start.start, .end = @intCast(c.core.tokenizer.offset) };
+        }
+
+        fn label(c: *Core, token: Token, name: []const u8, kind: ast.Label.Type) ast.Label {
             if (name[0] != '.') {
                 c.local_scope.id += 1;
                 c.local_scope.parent = name;
             }
             return .{
-                .location = location,
+                .span = c.token_span(token),
                 .identifier = name,
                 .type = kind,
                 .local_scope = if (name[0] == '.') c.local_scope else null,
@@ -108,14 +127,14 @@ pub const Parser = struct {
             const token = if (try c.next_token()) |token| token else return null;
 
             switch (token.type) {
-                .linefeed => return .empty,
+                .linefeed => return .{ .empty = c.token_span(token) },
 
                 .@"var" => {
                     const name = try c.accept_one(.designator);
-                    return .{ .label = c.label(token.location, name.text[0 .. name.text.len - 1], .@"var") };
+                    return .{ .label = c.label(token, name.text[0 .. name.text.len - 1], .@"var") };
                 },
 
-                .designator => return .{ .label = c.label(token.location, token.text[0 .. token.text.len - 1], .code) },
+                .designator => return .{ .label = c.label(token, token.text[0 .. token.text.len - 1], .code) },
 
                 .@"const" => {
                     const name = try c.accept_one(.identifier);
@@ -124,11 +143,13 @@ pub const Parser = struct {
 
                     const value = try c.accept_expression();
 
+                    const span = c.through_current(c.token_span(token));
+
                     try c.accept_eol_or_eof();
 
                     return .{
                         .constant = .{
-                            .location = token.location,
+                            .span = span,
                             .identifier = name.text,
                             .value = value,
                         },
@@ -137,7 +158,8 @@ pub const Parser = struct {
 
                 .@"if" => {
                     // if(X) mnemonic ...
-                    const condition = try c.accept_condition();
+                    var condition = try c.accept_condition();
+                    condition.span.start = c.token_span(token).start;
                     const mnemonic = try c.accept_one(.identifier);
 
                     return .{
@@ -147,7 +169,7 @@ pub const Parser = struct {
 
                 .@"return" => {
                     // return mnemonic ...
-                    const condition: ast.ConditionNode = .{ .location = token.location, .type = .@"return" };
+                    const condition: ast.ConditionNode = .{ .span = c.token_span(token), .type = .@"return" };
                     const mnemonic = try c.accept_one(.identifier);
 
                     return .{
@@ -196,13 +218,13 @@ pub const Parser = struct {
                 if (core.accept_one(.linefeed)) |_| {} else |_| {}
             }
 
-            var effect: ?ast.Effect = null;
+            var effect: ?ast.EffectNode = null;
 
             if (core.accept_one(.effect)) |effect_token| {
                 const ok = for (allowed_effect_names) |ef| {
                     const name, const eff = ef;
                     if (std.ascii.eqlIgnoreCase(name, effect_token.text)) {
-                        effect = eff;
+                        effect = .{ .span = core.token_span(effect_token), .type = eff };
                         break true;
                     }
                 } else false;
@@ -216,6 +238,7 @@ pub const Parser = struct {
                 }
             } else |_| {}
 
+            const span = core.through_current(core.token_span(mnemonic));
             try core.accept_eol_or_eof();
 
             if (ends_local_scope(mnemonic.text)) {
@@ -224,7 +247,8 @@ pub const Parser = struct {
             }
 
             return .{
-                .location = mnemonic.location,
+                .span = .{ .source = core.source_ref, .start = if (condition) |cond| cond.span.start else span.start, .end = span.end },
+                .mnemonic_span = core.token_span(mnemonic),
                 .condition = condition,
                 .mnemonic = mnemonic.text,
                 .effect = effect,
@@ -294,7 +318,8 @@ pub const Parser = struct {
 
                         lhs = .{
                             .binary_transform = .{
-                                .location = token.location,
+                                .span = .{ .source = core.source_ref, .start = lhs.span().start, .end = rhs.span().end },
+                                .operator_span = core.token_span(token),
                                 .operator = op,
                                 .lhs = lhs_node,
                                 .rhs = rhs_node,
@@ -366,7 +391,8 @@ pub const Parser = struct {
 
                 return .{
                     .unary_transform = .{
-                        .location = token.location,
+                        .span = .{ .source = core.source_ref, .start = core.token_span(token).start, .end = value.span().end },
+                        .operator_span = core.token_span(token),
                         .operator = operator,
                         .value = try core.move_to_heap(ast.Expression, value),
                     },
@@ -389,17 +415,20 @@ pub const Parser = struct {
             });
 
             switch (which) {
-                .@"$" => return .{ .current_pc = token.location },
+                .@"$" => return .{ .current_pc = core.token_span(token) },
                 .@"(" => {
                     const whitespace = core.push_ignore_whitespace();
                     defer whitespace.pop();
 
                     const value = try core.accept_expression();
 
-                    _ = try core.accept_one(.@")");
+                    const closing = try core.accept_one(.@")");
 
                     return .{
-                        .wrapped = try core.move_to_heap(ast.Expression, value),
+                        .wrapped = .{
+                            .span = .{ .source = core.source_ref, .start = core.token_span(token).start, .end = core.token_span(closing).end },
+                            .value = try core.move_to_heap(ast.Expression, value),
+                        },
                     };
                 },
                 .@"[" => {
@@ -408,20 +437,27 @@ pub const Parser = struct {
 
                     var items: std.ArrayListUnmanaged(ast.Expression) = .empty;
                     defer items.deinit(core.arena);
-                    if (core.accept_one(.@"]")) |_| {} else |_| {
+                    var end_offset = core.token_span(token).end;
+                    if (core.accept_one(.@"]")) |closing| {
+                        end_offset = core.token_span(closing).end;
+                    } else |_| {
                         while (true) {
                             try items.append(core.arena, try core.accept_expression());
-                            const terminator, _ = try core.accept_any(&.{ .@",", .@"]" });
+                            const terminator, const terminator_token = try core.accept_any(&.{ .@",", .@"]" });
+                            if (terminator == .@"]") end_offset = core.token_span(terminator_token).end;
                             if (terminator == .@"]") break;
-                            if (core.accept_one(.@"]")) |_| break else |_| {}
+                            if (core.accept_one(.@"]")) |closing| {
+                                end_offset = core.token_span(closing).end;
+                                break;
+                            } else |_| {}
                         }
                     }
-                    return .{ .sequence = .{ .location = token.location, .items = try items.toOwnedSlice(core.arena) } };
+                    return .{ .sequence = .{ .span = .{ .source = core.source_ref, .start = core.token_span(token).start, .end = end_offset }, .items = try items.toOwnedSlice(core.arena) } };
                 },
 
                 .integer => return .{
                     .integer = .{
-                        .location = token.location,
+                        .span = core.token_span(token),
                         .source_text = token.text,
                         .value = core.parse_int(token.text) catch blk: {
                             try core.emit_diag(token.location, .{
@@ -435,7 +471,7 @@ pub const Parser = struct {
                 },
                 .enumerator => return .{
                     .enumerator = .{
-                        .location = token.location,
+                        .span = core.token_span(token),
                         .symbol_name = token.text[1..],
                     },
                 },
@@ -454,7 +490,7 @@ pub const Parser = struct {
                             .function_call = .{
                                 .arguments = args,
                                 .has_trailing_comma = trailing_comma,
-                                .location = token.location,
+                                .span = core.through_current(core.token_span(token)),
                                 .function = token.text,
                             },
                         };
@@ -463,7 +499,7 @@ pub const Parser = struct {
                     // All other expressions consume regular expressions:
                     var result_expr: ast.Expression = .{
                         .symbol = .{
-                            .location = token.location,
+                            .span = core.token_span(token),
                             .symbol_name = token.text,
                             .local_scope = if (token.text[0] == '.') core.local_scope else null,
                         },
@@ -478,7 +514,8 @@ pub const Parser = struct {
                         const value = try core.move_to_heap(ast.Expression, result_expr);
                         result_expr = .{
                             .unary_transform = .{
-                                .location = op_tok.location,
+                                .span = .{ .source = core.source_ref, .start = value.span().start, .end = core.token_span(op_tok).end },
+                                .operator_span = core.token_span(op_tok),
                                 .operator = op,
                                 .value = value,
                             },
@@ -493,13 +530,14 @@ pub const Parser = struct {
 
                         const index = try core.accept_expression();
 
-                        _ = try core.accept_one(.@"]");
+                        const closing = try core.accept_one(.@"]");
 
                         const lhs = try core.move_to_heap(ast.Expression, result_expr);
                         const rhs = try core.move_to_heap(ast.Expression, index);
                         result_expr = .{
                             .binary_transform = .{
-                                .location = open_tok.location,
+                                .span = .{ .source = core.source_ref, .start = lhs.span().start, .end = core.token_span(closing).end },
+                                .operator_span = core.token_span(open_tok),
                                 .operator = .array_index,
                                 .lhs = lhs,
                                 .rhs = rhs,
@@ -515,7 +553,7 @@ pub const Parser = struct {
                     if (string.len == 1) {
                         return .{
                             .integer = .{
-                                .location = token.location,
+                                .span = core.token_span(token),
                                 .source_text = token.text,
                                 .value = string[0],
                             },
@@ -539,7 +577,7 @@ pub const Parser = struct {
 
                     return .{
                         .integer = .{
-                            .location = token.location,
+                            .span = core.token_span(token),
                             .source_text = token.text,
                             .value = codepoint,
                         },
@@ -550,7 +588,7 @@ pub const Parser = struct {
 
                     return .{
                         .string = .{
-                            .location = token.location,
+                            .span = core.token_span(token),
                             .source_text = token.text,
                             .value = string,
                         },
@@ -583,7 +621,7 @@ pub const Parser = struct {
                 const value = try core.accept_expression();
 
                 try argv.append(core.arena, .{
-                    .location = if (maybe_name) |tok| tok.location else value.location(),
+                    .span = .{ .source = core.source_ref, .start = if (maybe_name) |tok| core.token_span(tok).start else value.span().start, .end = value.span().end },
                     .name = if (maybe_name) |tok| tok.text else null,
                     .value = value,
                 });
@@ -737,7 +775,7 @@ pub const Parser = struct {
         // if(C \| !Z)`
         // if(C \| Z)`, `if(<=)`
         fn accept_condition(core: *Core) !ast.ConditionNode {
-            _ = try core.accept_one(.@"(");
+            const open = try core.accept_one(.@"(");
 
             const which_lhs, var lhs_token = try core.accept_any(&.{
                 .identifier,
@@ -786,11 +824,11 @@ pub const Parser = struct {
                     if (which_op == .@")") {
                         switch (lhs) {
                             .c => return .{
-                                .location = lhs_token.location,
+                                .span = core.through_current(core.token_span(open)),
                                 .type = .{ .c_is = lhs_level },
                             },
                             .z => return .{
-                                .location = lhs_token.location,
+                                .span = core.through_current(core.token_span(open)),
                                 .type = .{ .z_is = lhs_level },
                             },
                         }
@@ -840,7 +878,7 @@ pub const Parser = struct {
 
             _ = try core.accept_one(.@")");
             return .{
-                .location = lhs_token.location,
+                .span = core.through_current(core.token_span(open)),
                 .type = cond,
             };
         }
@@ -867,7 +905,7 @@ pub const Parser = struct {
                     return .{ @field(AcceptKey(options), @tagName(opt)), token };
             }
 
-            logger.debug("failed to accept token {s}. expected one of {any}", .{ @tagName(token.type), options });
+            logger.debug("failed to accept token {t}. expected one of {any}", .{ token.type, options });
 
             return error.UnexpectedToken;
         }
@@ -911,6 +949,7 @@ pub const Parser = struct {
 
 pub const ParsedFile = struct {
     arena: std.heap.ArenaAllocator,
+    /// Borrows its SourceFile, which must outlive the parsed AST.
     file: ast.File,
 
     pub fn deinit(parsed: *ParsedFile) void {
@@ -1159,7 +1198,9 @@ fn fuzz_parser_bytes(input: []const u8) !void {
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
 
-    var parser: Parser = .init(input, null, &diagnostics_collection);
+    var parser_source: SourceFile = try .init(std.testing.allocator, "fuzz.propan", input);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: Parser = .init(&parser_source, &diagnostics_collection);
 
     var parsed = parser.parse(std.testing.allocator) catch {
         // parser errors are oke
@@ -1187,9 +1228,8 @@ test "parser records syntax diagnostics" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: Parser = .init(source_file, &diagnostics_collection);
     const result = parser.parse(std.testing.allocator);
 
     try std.testing.expectError(error.SyntaxError, result);
@@ -1211,9 +1251,8 @@ test "unknown instruction effect is rejected" {
 
     var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
     defer diagnostics_collection.deinit();
-    try diagnostics_collection.register_source("test.propan", source);
-
-    var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+    const source_file = try diagnostics_collection.register_source("test.propan", source);
+    var parser: Parser = .init(source_file, &diagnostics_collection);
     try std.testing.expectError(error.SyntaxError, parser.parse(std.testing.allocator));
 
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
@@ -1230,9 +1269,8 @@ test "recoverable parser diagnostics reject the source" {
     }) |source| {
         var diagnostics_collection: diagnostics.Collection = .init(std.testing.allocator);
         defer diagnostics_collection.deinit();
-        try diagnostics_collection.register_source("test.propan", source);
-
-        var parser: Parser = .init(source, "test.propan", &diagnostics_collection);
+        const source_file = try diagnostics_collection.register_source("test.propan", source);
+        var parser: Parser = .init(source_file, &diagnostics_collection);
         try std.testing.expectError(error.SyntaxError, parser.parse(std.testing.allocator));
         try std.testing.expect(diagnostics_collection.has_errors());
     }
@@ -1293,12 +1331,14 @@ test "parse conditions (positive)" {
         var tok: Tokenizer = .init(expectation.input, null);
 
         var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
-        errdefer arena.deinit();
+        defer arena.deinit();
+        const source: SourceFile = try .init(arena.allocator(), "condition.propan", expectation.input);
 
         var core: Parser.Core = .{
             .arena = arena.allocator(),
             .core = .init(&tok),
             .diagnostics = &diagnostics_collection,
+            .source_ref = &source,
         };
 
         const cond = try core.accept_condition();
@@ -1351,12 +1391,14 @@ test "parse effect (positive)" {
             var tok: Tokenizer = .init(input, null);
 
             var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
-            errdefer arena.deinit();
+            defer arena.deinit();
+            const source: SourceFile = try .init(arena.allocator(), "effect.propan", input);
 
             var core: Parser.Core = .{
                 .arena = arena.allocator(),
                 .core = .init(&tok),
                 .diagnostics = &diagnostics_collection,
+                .source_ref = &source,
             };
 
             const identifier = try core.accept_one(.identifier);
@@ -1365,7 +1407,56 @@ test "parse effect (positive)" {
 
             try std.testing.expectEqualStrings("NOP", instr.mnemonic);
 
-            try std.testing.expectEqual(expectation.expected, instr.effect);
+            try std.testing.expectEqual(expectation.expected, instr.effect.?.type);
         }
     }
+}
+
+test "AST spans retain source offsets and diagnostic positions" {
+    const source =
+        \\// heading
+        \\outer: if(C) add foo + 1, bar :wc // tail
+        \\
+    ;
+    var collection: diagnostics.Collection = .init(std.testing.allocator);
+    defer collection.deinit();
+    var parser_source: SourceFile = try .init(std.testing.allocator, "sample.propan", source);
+    defer parser_source.deinit(std.testing.allocator);
+    var parser: Parser = .init(&parser_source, &collection);
+    var parsed = try parser.parse(std.testing.allocator);
+    defer parsed.deinit();
+
+    const file = parsed.file;
+    try std.testing.expectEqual(&parser_source, file.source);
+    try std.testing.expectEqual(file.source, file.span.source.?);
+    try std.testing.expectEqual(source.len, file.span.end);
+    try std.testing.expectEqualStrings("// heading", file.comments[0].span.source.?.text[file.comments[0].span.start..file.comments[0].span.end]);
+    try std.testing.expectEqualStrings("// tail", file.comments[1].span.source.?.text[file.comments[1].span.start..file.comments[1].span.end]);
+
+    const label = for (file.sequence) |line| {
+        if (line == .label) break line.label;
+    } else unreachable;
+    try std.testing.expectEqualStrings("outer:", source[label.span.start..label.span.end]);
+
+    const instruction = for (file.sequence) |line| {
+        if (line == .instruction) break line.instruction;
+    } else unreachable;
+    try std.testing.expectEqualStrings("if(C) add foo + 1, bar :wc", source[instruction.span.start..instruction.span.end]);
+    try std.testing.expectEqualStrings("add", source[instruction.mnemonic_span.start..instruction.mnemonic_span.end]);
+    try std.testing.expectEqualStrings("if(C)", source[instruction.condition.?.span.start..instruction.condition.?.span.end]);
+    try std.testing.expectEqualStrings(":wc", source[instruction.effect.?.span.start..instruction.effect.?.span.end]);
+    try std.testing.expectEqual(@as(u32, 2), instruction.location().line);
+    try std.testing.expectEqual(@as(u32, 14), instruction.location().column);
+
+    const binary = instruction.arguments[0].binary_transform;
+    try std.testing.expectEqualStrings("foo + 1", source[binary.span.start..binary.span.end]);
+    try std.testing.expectEqualStrings("+", source[binary.operator_span.start..binary.operator_span.end]);
+    try std.testing.expectEqual(@as(u32, 22), binary.operator_span.location().column);
+
+    var second_parser: Parser = .init(&parser_source, &collection);
+    var second_parsed = try second_parser.parse(std.testing.allocator);
+    defer second_parsed.deinit();
+    try std.testing.expectEqual(file.source, second_parsed.file.source);
+    try std.testing.expectEqual(file.source, second_parsed.file.comments[0].span.source.?);
+    try std.testing.expectEqual(@as(u32, 2), second_parsed.file.comments[1].span.location().line);
 }

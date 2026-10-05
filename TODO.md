@@ -17,7 +17,7 @@
 
 ## Priority Fixes / Tasks
 
-*empty*
+- *empty*
 
 ## New Features
 

@@ -1,0 +1,29 @@
+// formatter fixture
+.cogexec    // first segment
+first:
+                MOV     PTRA,   1   :wc // leading instruction
+.local:
+    if(!C & !Z) MOV     PTRA,   3   :wz // local label stays in block
+                NOP                     // no operands
+
+second:         LONG    ticks(1000, ms=3)       // one-line call
+const SUM = (1 +    // expression comment
+            2)
+
+.hubexec    0x100   // second segment
+third:          LONG    ticks(
+                            1000,
+                            ms=ticks(
+                                1000,   // nested call comment
+                                ms=1,
+                            ),
+                        )
+                LONG    ticks(
+                            1000,
+                            ms=3,
+                        )       // trailing-comma call
+math:
+const PLUS  = + +1
+const MINUS = - -1
+                BYTE    PLUS,   MINUS
+

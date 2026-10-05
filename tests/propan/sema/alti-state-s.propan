@@ -9,5 +9,5 @@ LONG 0
 .regspace
 .org 0x1ff
 var reg_s:
-.reserve 1
+RES 1
 .assert alti.state(reg_s, 0, 0) == 0b00000000000000_000000000_111111111

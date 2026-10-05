@@ -2,23 +2,65 @@ const std = @import("std");
 const ptk = @import("ptk");
 
 const parser = @import("parser.zig");
+const SourceFile = @import("../SourceFile.zig");
 
 const Token = parser.Token;
 pub const Location = ptk.Location;
 
+/// Byte offsets are half-open and refer to one parsed source file.
+pub const SourceSpan = struct {
+    source: ?*const SourceFile = null,
+    start: u32,
+    end: u32,
+
+    pub const empty: SourceSpan = .{ .start = 0, .end = 0 };
+
+    pub fn location(span: SourceSpan) Location {
+        const source = span.source orelse return .empty;
+        const offset: usize = @min(span.start, source.text.len);
+        var lower: usize = 0;
+        var upper: usize = source.line_starts.len;
+        while (lower + 1 < upper) {
+            const mid = lower + (upper - lower) / 2;
+            if (source.line_starts[mid] <= offset) lower = mid else upper = mid;
+        }
+        return .{
+            .source = source.path,
+            .line = @intCast(lower + 1),
+            .column = @intCast(offset - source.line_starts[lower] + 1),
+        };
+    }
+
+    pub fn endLocation(span: SourceSpan) Location {
+        return (SourceSpan{ .source = span.source, .start = span.end, .end = span.end }).location();
+    }
+
+    pub fn at(span: SourceSpan, offset: u32) SourceSpan {
+        return .{ .source = span.source, .start = offset, .end = offset + 1 };
+    }
+};
+
 pub const File = struct {
+    span: SourceSpan = .empty,
     sequence: []const Line,
+    comments: []const Comment = &.{},
+    source: *const SourceFile,
+};
+
+pub const Comment = struct {
+    span: SourceSpan,
+    text: []const u8,
 };
 
 pub const Line = union(enum) {
-    empty,
+    empty: SourceSpan,
     label: Label,
     constant: Constant,
     instruction: Instruction,
 };
 
 pub const Label = struct {
-    location: Location,
+    span: SourceSpan,
     identifier: []const u8,
     type: Type,
     local_scope: ?LocalScope = null,
@@ -35,29 +77,39 @@ pub const LocalScope = struct {
 };
 
 pub const Constant = struct {
-    location: Location,
+    span: SourceSpan,
     identifier: []const u8,
     value: Expression,
 };
 
 pub const Instruction = struct {
-    location: Location,
+    span: SourceSpan,
+    mnemonic_span: SourceSpan,
     mnemonic: []const u8,
 
     arguments: []const Expression,
 
     condition: ?ConditionNode,
-    effect: ?Effect,
+    effect: ?EffectNode,
+
+    pub fn location(instruction: Instruction) Location {
+        return instruction.mnemonic_span.location();
+    }
 };
 
 pub const ConditionNode = struct {
-    location: Location,
+    span: SourceSpan,
     type: Condition,
 };
 
+pub const EffectNode = struct {
+    span: SourceSpan,
+    type: Effect,
+};
+
 pub const Expression = union(enum) {
-    wrapped: *Expression,
-    current_pc: Location,
+    wrapped: WrappedExpression,
+    current_pc: SourceSpan,
     integer: IntegerLiteral,
     enumerator: SymbolReference,
     string: StringLiteral,
@@ -68,59 +120,74 @@ pub const Expression = union(enum) {
 
     function_call: FunctionInvocation,
 
+    pub fn span(expr: Expression) SourceSpan {
+        return switch (expr) {
+            .current_pc => |value| value,
+            inline else => |value| value.span,
+        };
+    }
+
     pub fn location(expr: Expression) Location {
         return switch (expr) {
-            .wrapped => |value| value.location(),
-            .current_pc => |loc| loc,
-            inline else => |value| value.location,
+            .wrapped => |value| value.value.location(),
+            .unary_transform => |value| value.operator_span.location(),
+            .binary_transform => |value| value.operator_span.location(),
+            else => expr.span().location(),
         };
     }
 };
 
+pub const WrappedExpression = struct {
+    span: SourceSpan,
+    value: *Expression,
+};
+
 pub const IntegerLiteral = struct {
-    location: Location,
+    span: SourceSpan,
     source_text: []const u8,
     value: u63,
 };
 
 pub const StringLiteral = struct {
-    location: Location,
+    span: SourceSpan,
     source_text: []const u8,
     value: []const u8,
 };
 
 pub const SequenceLiteral = struct {
-    location: Location,
+    span: SourceSpan,
     items: []const Expression,
 };
 
 pub const SymbolReference = struct {
-    location: Location,
+    span: SourceSpan,
     symbol_name: []const u8,
     local_scope: ?LocalScope = null,
 };
 
 pub const UnaryTransform = struct {
-    location: Location,
+    span: SourceSpan,
+    operator_span: SourceSpan,
     value: *Expression,
     operator: UnaryOperator,
 };
 
 pub const BinaryTransform = struct {
-    location: Location,
+    span: SourceSpan,
+    operator_span: SourceSpan,
     lhs: *Expression,
     rhs: *Expression,
     operator: BinaryOperator,
 };
 
 pub const FunctionInvocation = struct {
-    location: Location,
+    span: SourceSpan,
     function: []const u8,
     arguments: []const Argument,
     has_trailing_comma: bool,
 
     pub const Argument = struct {
-        location: Location,
+        span: SourceSpan,
         name: ?[]const u8,
         value: Expression,
     };

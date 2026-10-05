@@ -121,7 +121,7 @@ pub const Value = struct {
             .enumerator => |v| try writer.print("#{s}", .{v}),
             .pointer_expr => |v| try writer.print("{f}", .{v}),
         }
-        try writer.print(", {s})", .{@tagName(val.flags.usage)});
+        try writer.print(", {t})", .{val.flags.usage});
         // }
     }
 };
@@ -142,7 +142,7 @@ pub const PointerExpression = struct {
     },
     index: ?i64,
 
-    pub fn format(ptr_expr: PointerExpression, writer: anytype) !void {
+    pub fn format(ptr_expr: PointerExpression, writer: *std.Io.Writer) !void {
         switch (ptr_expr.increment) {
             .none => {},
             .pre_increment => try writer.writeAll("++"),
@@ -151,7 +151,7 @@ pub const PointerExpression = struct {
             .post_decrement => {},
         }
 
-        try writer.print("{s}", .{@tagName(ptr_expr.pointer)});
+        try writer.print("{t}", .{ptr_expr.pointer});
 
         switch (ptr_expr.increment) {
             .none => {},
@@ -170,7 +170,7 @@ pub const PointerExpression = struct {
 pub const Register = enum(u9) {
     _,
 
-    pub fn format(reg: Register, writer: anytype) !void {
+    pub fn format(reg: Register, writer: *std.Io.Writer) !void {
         try writer.print("r{}", .{@intFromEnum(reg)});
     }
 };
@@ -243,9 +243,9 @@ pub const TaggedAddress = struct {
 
     pub fn format(offset: TaggedAddress, writer: *std.Io.Writer) !void {
         switch (offset.local) {
-            .cog, .regspace => |pc| try writer.print("Address(segment=#{}, hub={?}, {s}=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, @tagName(offset.local), pc }),
+            .cog, .regspace => |pc| try writer.print("Address(segment=#{}, hub={?}, {t}=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, offset.local, pc }),
             .lut => |index| try writer.print("Address(segment=#{}, hub={?}, lut=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, index }),
-            .hub, .data => try writer.print("Address(segment=#{}, hub={?}, mode={s})", .{ @intFromEnum(offset.segment_id), offset.hub_address, @tagName(offset.local) }),
+            .hub, .data => try writer.print("Address(segment=#{}, hub={?}, mode={t})", .{ @intFromEnum(offset.segment_id), offset.hub_address, offset.local }),
         }
     }
 };

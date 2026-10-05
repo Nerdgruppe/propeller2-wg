@@ -433,6 +433,20 @@ pub fn build(b: *std.Build) void {
         no_input.expectStdErrMatch("missing input files");
         test_step.dependOn(&no_input.step);
     }
+    {
+        const source = b.path("tests/propan/sema/pack-values.propan");
+        const normal = coverage_stash.create_test_run(propan_exe);
+        normal.addArg("--format=none");
+        normal.addFileArg(source);
+        normal.expectStdErrMatch("warning:");
+        test_step.dependOn(&normal.step);
+
+        const quiet = coverage_stash.create_test_run(propan_exe);
+        quiet.addArgs(&.{ "--format=none", "--no-warnings" });
+        quiet.addFileArg(source);
+        quiet.expectStdErrEqual("");
+        test_step.dependOn(&quiet.step);
+    }
 
     // Render the stdlib documentation for testing
     {
@@ -441,6 +455,37 @@ pub fn build(b: *std.Build) void {
         run.expectStdOutMatch("<!doctype html>");
         run.expectStdOutMatch(">P_DAC_DITHER_PWM<");
         run.expectStdOutMatch(">popcnt<");
+        test_step.dependOn(&run.step);
+    }
+
+    for ([_]struct { input: []const u8, expected: []const u8 }{
+        .{ .input = "tests/propan/format/input.propan", .expected = @embedFile("tests/propan/format/expected.propan") },
+        .{ .input = "tests/propan/format/layout-input.propan", .expected = @embedFile("tests/propan/format/layout-expected.propan") },
+        .{ .input = "tests/propan/format/constants.propan", .expected = @embedFile("tests/propan/format/constants-expected.propan") },
+        .{ .input = "tests/propan/format/operands-input.propan", .expected = @embedFile("tests/propan/format/operands-expected.propan") },
+        .{ .input = "tests/propan/sema/res-labels.propan", .expected = @embedFile("tests/propan/format/res-expected.propan") },
+    }) |fixture| {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--pretty-print");
+        run.addFileArg(b.path(fixture.input));
+        run.expectStdOutEqual(fixture.expected);
+        run.expectStdErrEqual("");
+        test_step.dependOn(&run.step);
+
+        const again = coverage_stash.create_test_run(propan_exe);
+        again.addArgs(&.{ "--pretty-print", "-" });
+        again.setStdIn(.{ .bytes = fixture.expected });
+        again.expectStdOutEqual(fixture.expected);
+        again.expectStdErrEqual("");
+        test_step.dependOn(&again.step);
+    }
+    {
+        const run = coverage_stash.create_test_run(propan_exe);
+        run.addArg("--pretty-print");
+        run.addFileArg(b.path("tests/propan/parser/diagnostics/missing-parenthesis.propan"));
+        run.expectExitCode(1);
+        run.expectStdOutEqual("");
+        run.expectStdErrMatch("error:");
         test_step.dependOn(&run.step);
     }
 
@@ -474,6 +519,37 @@ pub fn build(b: *std.Build) void {
                 const run = create_propan_test_run(&coverage_stash, propan_exe, .sema, accept_file, null);
                 run.has_side_effects = true;
                 sema_tests.dependOn(&run.step);
+            }
+
+            const formatter_tests = make_sequencing_step(b, "formatter round-trip tests");
+            formatter_tests.dependOn(sema_tests);
+            test_step.dependOn(formatter_tests);
+
+            for (sema_accept_tests) |accept_file| {
+                const original = coverage_stash.create_test_run(propan_exe);
+                original.addArgs(&.{ "--format=flat", "--no-warnings" });
+                const reference = original.addPrefixedOutputFileArg("--output=", "original.bin");
+                original.addFileArg(b.path(accept_file));
+                original.expectExitCode(0);
+
+                const format = coverage_stash.create_test_run(propan_exe);
+                format.addArgs(&.{ "--no-warnings", "--pretty-print" });
+                format.addFileArg(b.path(accept_file));
+                const formatted = format.captureStdOut(.{ .basename = "formatted.propan" });
+                format.expectExitCode(0);
+
+                const reassemble = coverage_stash.create_test_run(propan_exe);
+                reassemble.setCwd(b.path(std.fs.path.dirname(accept_file) orelse "."));
+                reassemble.setStdIn(.{ .lazy_path = formatted });
+                reassemble.addArgs(&.{ "--format=flat", "--no-warnings" });
+                const rebuilt = reassemble.addPrefixedOutputFileArg("--output=", "formatted.bin");
+                reassemble.addArg("-");
+                reassemble.expectExitCode(0);
+
+                const check = b.addRunArtifact(flat_checker);
+                check.addFileArg(reference);
+                check.addFileArg(rebuilt);
+                formatter_tests.dependOn(&check.step);
             }
 
             const spin2_tests = make_sequencing_step(b, "Spin2 round-trip tests");
@@ -521,7 +597,7 @@ pub fn build(b: *std.Build) void {
             sumloop.expectStdOutMatch(".loop\n  REP @.end, #8");
             sumloop.expectStdOutMatch("  ADD 0-0, #0");
             sumloop.expectStdOutMatch(".end\n  RET wcz");
-            sumloop.expectStdOutMatch("BYTE 0[8] ' .align 8");
+            sumloop.expectStdOutMatch("BYTE 0[8] ' .align  8");
             spin2_tests.dependOn(&sumloop.step);
 
             const equivalence_tests = make_sequencing_step(b, "equivalence tests");
@@ -591,7 +667,7 @@ fn create_propan_test_run(
 ) *std.Build.Step.Run {
     const run = coverage_stash.create_test_run(exe);
     run.addArg("--format=none");
-    run.addArg(coverage_stash.b.fmt("--test-mode={s}", .{@tagName(mode)}));
+    run.addArg(coverage_stash.b.fmt("--test-mode={t}", .{mode}));
     if (mode == .compare) {
         if (reference) |file| {
             run.addPrefixedFileArg("--compare-to=", file);
@@ -722,6 +798,8 @@ const sema_diagnostic_tests: []const []const u8 = &.{
     "tests/propan/sema/diagnostics/org-requires-argument.propan",
     "tests/propan/sema/diagnostics/reserve-requires-count.propan",
     "tests/propan/sema/diagnostics/reserve-exceeds-cog.propan",
+    "tests/propan/sema/diagnostics/res-invalid-in-mode.propan",
+    "tests/propan/sema/diagnostics/reserve-old-spelling.propan",
     "tests/propan/sema/diagnostics/assert-requires-operand.propan",
     "tests/propan/sema/diagnostics/aug-must-be-root.propan",
     "tests/propan/sema/diagnostics/aug-pointer-index-out-of-range.propan",
@@ -813,6 +891,7 @@ const compare_diagnostic_tests: []const []const u8 = &.{
 };
 
 const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const u8{
+    "tests/propan/format/constants.propan",
     "tests/propan/sema/conditional-compilation.propan",
     "tests/propan/sema/pack-groups.propan",
     "tests/propan/sema/pack-hub-code.propan",
@@ -822,6 +901,7 @@ const sema_accept_tests: []const []const u8 = common_accept_tests ++ &[_][]const
 };
 
 const common_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
+    "tests/propan/sema/res-labels.propan",
     "tests/propan/sema/array-emission.propan",
     "tests/propan/sema/array-constants.propan",
     "tests/propan/sema/lazy-constants.propan",

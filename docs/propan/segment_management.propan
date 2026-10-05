@@ -24,7 +24,8 @@
 // only legal in cogexec or regspace.
 // use case: allocating uninitialized data registers. These registers
 // won't have a defined initial value.
-.reserve ${count}
+RES ${count}
+var scratch: RES 1 // labels may share the reservation's line
 
 // starts new segment,
 // switches mode into "cog exec" mode and sets PC = 0x000

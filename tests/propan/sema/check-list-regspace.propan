@@ -5,6 +5,6 @@
 //? mem: 0x20 <- hex [00 00 00 00]
 .regspace
 var slot:
-.reserve 1
+RES 1
 .cogexec 0x20
 LONG 0

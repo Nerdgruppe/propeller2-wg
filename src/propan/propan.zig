@@ -31,11 +31,13 @@ const CliArgs = struct {
     @"test-mode": ?TestMode = null,
     @"compare-to": []const u8 = "",
     verbose: bool = false,
+    @"no-warnings": bool = false,
     format: emit.BinaryFormat = .flat,
     @"fill-byte": u8 = 0x00,
     @"list-file": []const u8 = "",
     @"include-path": []const u8 = "",
     @"render-stdlib-docs": []const u8 = "",
+    @"pretty-print": []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
@@ -47,7 +49,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-I <path>] [-o <output>] <source>",
+        .usage_summary = "[-h] [-I <path>] [-o <output>] <source> | --pretty-print <path>",
 
         .full_text =
         \\Propan is an assembler for the Propeller 2 architecture.
@@ -57,11 +59,13 @@ const CliArgs = struct {
             .help = "Prints this help text",
             .output = "Sets the path of the output file.",
             .verbose = "Enables debug logging",
+            .@"no-warnings" = "Suppresses warning diagnostics on the command line",
             .format = "Selects the binary format to use",
             .@"fill-byte" = "The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.",
             .@"list-file" = "Writes a list file to the given path. Use '-' to write to stdout.",
             .@"include-path" = "Adds an import search path. May be specified more than once.",
             .@"render-stdlib-docs" = "Renders the standard library documentation as an HTML file",
+            .@"pretty-print" = "Pretty-prints a Propan source file to stdout. Use '-' for stdin.",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -84,6 +88,8 @@ pub fn main(init: std.process.Init) !u8 {
 
     var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
     defer cli.deinit();
+
+    diagnostic_render_options.include_warnings = !cli.options.@"no-warnings";
 
     if (cli.options.@"render-stdlib-docs".len > 0) {
         var file = if (std.mem.eql(u8, cli.options.@"render-stdlib-docs", "-"))
@@ -126,6 +132,34 @@ pub fn main(init: std.process.Init) !u8 {
         return 0;
     }
 
+    if (cli.options.@"pretty-print".len > 0) {
+        if (cli.positionals.len != 0)
+            return try usage_mistake(&diagnostics_collection, .err_multiple_input_files_are_not_supported);
+
+        const path = cli.options.@"pretty-print";
+        const source = if (std.mem.eql(u8, path, "-")) blk: {
+            var buffer: [8192]u8 = undefined;
+            var reader = std.Io.File.stdin().reader(init.io, &buffer);
+            var contents: std.Io.Writer.Allocating = .init(init.arena.allocator());
+            _ = try reader.interface.streamRemaining(&contents.writer);
+            break :blk try contents.toOwnedSlice();
+        } else try std.Io.Dir.cwd().readFileAlloc(init.io, path, init.arena.allocator(), .limited(1 << 20));
+
+        const source_file: SourceFile = try .init(init.arena.allocator(), path, source);
+        var parser: frontend.Parser = .init(&source_file, &diagnostics_collection);
+        var parsed = parser.parse(init.arena.allocator()) catch |err| switch (err) {
+            error.OutOfMemory => return err,
+            else => return 1,
+        };
+        defer parsed.deinit();
+
+        var buffer: [8192]u8 = undefined;
+        var stdout = std.Io.File.stdout().writer(init.io, &buffer);
+        try frontend.render.pretty_print(&stdout.interface, parsed.file);
+        try stdout.interface.flush();
+        return 0;
+    }
+
     const output_format = cli.options.format;
     if (output_format.is_binary() and cli.options.output.len == 0) {
         return try usage_mistake(&diagnostics_collection, .{
@@ -158,11 +192,8 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     const source_file = try init.arena.allocator().create(SourceFile);
-    source_file.path = try init.arena.allocator().dupe(u8, input_path);
-    source_file.dir_index = 0;
-    source_file.relative_path = std.fs.path.basename(source_file.path);
-    source_file.identity = try std.fmt.allocPrint(init.arena.allocator(), "0:{s}", .{source_file.relative_path});
-    source_file.text = blk: {
+    const source_path = try init.arena.allocator().dupe(u8, input_path);
+    const source_text = blk: {
         if (std.mem.eql(u8, input_path, "-")) {
             std.log.debug("loading stdin...", .{});
             var buf: [8192]u8 = undefined;
@@ -178,9 +209,12 @@ pub fn main(init: std.process.Init) !u8 {
         } else {
             std.log.debug("loading {s}...", .{input_path});
 
-            break :blk try dirs[0].readFileAlloc(init.io, source_file.relative_path, init.arena.allocator(), .limited(1 << 20));
+            break :blk try dirs[0].readFileAlloc(init.io, std.fs.path.basename(source_path), init.arena.allocator(), .limited(1 << 20));
         }
     };
+    source_file.* = try .init(init.arena.allocator(), source_path, source_text);
+    source_file.relative_path = std.fs.path.basename(source_file.path);
+    source_file.identity = try std.fmt.allocPrint(init.arena.allocator(), "0:{s}", .{source_file.relative_path});
     try diagnostics_collection.register_source_file(source_file);
 
     var check_list_value: ?check_list.List = if (cli.options.@"test-mode" != null)

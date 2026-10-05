@@ -28,6 +28,9 @@ Options:
 [user@machine propeller2-wg]$ 
 ```
 
+To format a Propan source file, run `./zig-out/bin/propan --pretty-print source.propan`.
+Formatted source is written to stdout; use `--pretty-print -` to read from stdin.
+
 If you want to also have the tools [loadp2](https://github.com/totalspectrum/loadp2) and [flexspin](https://github.com/totalspectrum/flexprop), you can use `-Dwith-flexspin` on the `zig build` invocation:
 
 ```sh-session

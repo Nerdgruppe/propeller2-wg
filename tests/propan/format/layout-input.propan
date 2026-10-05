@@ -1,0 +1,61 @@
+   // before a directive
+.cogexec
+     // before a label
+code: MOV PTRA, 1 :wc // instruction columns
+   // before a mnemonic
+  // part of the same comment block
+MOV PTRB, 345 :wz
+.loop: ADD PTRA, 1
+.abcdefghijklm: NOP
+.abcdefghijklmn: NOP
+.c: if(C) MOV PTRA, 1
+.condition: if(C) MOV PTRA, 1
+.done: RET
+
+
+
+
+     // isolated comment block keeps its indentation
+   // aligned with the first comment
+
+
+
+abcdefghijklmn: LONG 1, 20, 300
+abcdefghijklmno: LONG 4
+bytes: byte 5, 6
+words: wOrD 7, 8
+var value: LONG 9
+spaced:
+
+LONG 10
+blocked:
+  // prevents folding the label
+BYTE 10
+inline: // also prevents folding
+LONG 11
+.local_blocked:
+ // prevents folding a local label
+NOP
+constants:
+.constant_label:
+const VALUE = 12
+LONG ticks(1000, ms=ticks(1000, ms=1,),) // wrapped parameters
+.data
+payload: FILE "../sema/fixtures/payload.txt"
+
+
+
+const C = 10
+const C1 = 20
+const C2 = 300
+
+const B = 3000
+
+
+const A = 10
+const AA = 10
+const AAA = 10
+const AAAA = 10
+const AAA = 10
+const AA = 10
+const AAAAAAAAA = 10
