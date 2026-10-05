@@ -142,7 +142,7 @@ pub const PointerExpression = struct {
     },
     index: ?i64,
 
-    pub fn format(ptr_expr: PointerExpression, writer: anytype) !void {
+    pub fn format(ptr_expr: PointerExpression, writer: *std.Io.Writer) !void {
         switch (ptr_expr.increment) {
             .none => {},
             .pre_increment => try writer.writeAll("++"),
@@ -170,7 +170,7 @@ pub const PointerExpression = struct {
 pub const Register = enum(u9) {
     _,
 
-    pub fn format(reg: Register, writer: anytype) !void {
+    pub fn format(reg: Register, writer: *std.Io.Writer) !void {
         try writer.print("r{}", .{@intFromEnum(reg)});
     }
 };

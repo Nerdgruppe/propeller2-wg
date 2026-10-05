@@ -19,11 +19,11 @@ const Entry = union(enum) {
     row: Row,
 };
 
-pub fn pretty_print(writer: anytype, file: ast.File) !void {
+pub fn pretty_print(writer: *std.Io.Writer, file: ast.File) !void {
     try pretty_print_alloc(std.heap.page_allocator, writer, file);
 }
 
-pub fn pretty_print_alloc(allocator: std.mem.Allocator, writer: anytype, file: ast.File) !void {
+pub fn pretty_print_alloc(allocator: std.mem.Allocator, writer: *std.Io.Writer, file: ast.File) !void {
     var arena_state: std.heap.ArenaAllocator = .init(allocator);
     defer arena_state.deinit();
     const arena = arena_state.allocator();
@@ -111,7 +111,7 @@ fn append_gap_line(allocator: std.mem.Allocator, entries: *std.ArrayListUnmanage
     } else try entries.append(allocator, .blank);
 }
 
-fn write_block(allocator: std.mem.Allocator, writer: anytype, entries: []Entry) !void {
+fn write_block(allocator: std.mem.Allocator, writer: *std.Io.Writer, entries: []Entry) !void {
     var mnemonic_width: usize = 0;
     for (entries) |*entry| {
         if (entry.* != .row) continue;
@@ -200,7 +200,7 @@ fn write_block(allocator: std.mem.Allocator, writer: anytype, entries: []Entry) 
     }
 }
 
-pub fn pretty_print_expr(writer: anytype, expr: ast.Expression) !void {
+pub fn pretty_print_expr(writer: *std.Io.Writer, expr: ast.Expression) !void {
     var printer: ExpressionPrinter = .{ .writer = writer, .comments = &.{} };
     try printer.expression(expr);
 }
@@ -213,18 +213,18 @@ fn last_line_width(value: []const u8) usize {
     return value.len - (if (std.mem.lastIndexOfScalar(u8, value, '\n')) |index| index + 1 else 0);
 }
 
-fn pad_to(writer: anytype, column: *usize, target: usize) !void {
+fn pad_to(writer: *std.Io.Writer, column: *usize, target: usize) !void {
     const count = if (column.* >= target) @as(usize, 1) else target - column.*;
     for (0..count) |_| try writer.writeByte(' ');
     column.* += count;
 }
 
-fn write_text(writer: anytype, column: *usize, text: []const u8) !void {
+fn write_text(writer: *std.Io.Writer, column: *usize, text: []const u8) !void {
     try writer.writeAll(text);
     column.* += text.len;
 }
 
-fn write_multiline(writer: anytype, column: *usize, continuation: usize, text: []const u8) !void {
+fn write_multiline(writer: *std.Io.Writer, column: *usize, continuation: usize, text: []const u8) !void {
     for (text) |char| {
         if (char == '\n') {
             try writer.writeByte('\n');
