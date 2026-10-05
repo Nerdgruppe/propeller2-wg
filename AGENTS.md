@@ -97,6 +97,10 @@ There's a `justfile` in the workspace root which has these recipies:
   - `src/windtunnel/sim/decode.zig` with `utility/gen_windtunnel.py decoder ...`.
 - `regenerate-windtunnel-executor`: Regenerates the contents of `src/windtunnel/sim/execute.zig` with `utility/gen_windtunnel.py executor ...`. Use with care!
 - `just setup-venv`: Sets up a virtual environment in the repository. Do not use unless explicitly asked to!
+- Do not depend on external tools unless it's optional. This is done to keep the system maintainable. This means:
+  - dotnet projects just use their compiled binary, do not invoke external tools
+  - zig projects just use their compiled binary, do not invoke external tools
+  - python projects just use their compiled binary, do not invoke external tools
 
 ### Zig-based Projects
 

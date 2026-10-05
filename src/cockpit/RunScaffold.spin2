@@ -1,0 +1,30 @@
+DAT
+        org 0
+        hubset ##$010009FB
+        wrpin #$7c, #62
+        wxpin ##${{UART_CFG}}, #62
+        dirh #62
+        wrpin #$3e, #63
+        wxpin ##${{UART_CFG}}, #63
+        dirh #63
+        waitx ##20_000_000
+
+        ' {{SNIPPET}}
+        cogid pa
+        cogstop pa
+
+write_byte
+        wypin pa, #62
+        waitx #1
+.wait   rdpin tx_status, #62 wc
+  if_c  jmp #.wait
+        ret
+
+read_byte
+        testpn #63 wz
+  if_z  ret
+        rdpin pa, #63
+        shr pa, #24
+        ret
+
+tx_status res 1

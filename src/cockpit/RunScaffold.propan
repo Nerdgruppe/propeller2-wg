@@ -1,0 +1,34 @@
+const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART_CFG = SmartPin.UartTx.config(baud={{BAUDRATE}}, bits=8, clk=200_000_000)
+const TX_PIN = 62
+const RX_PIN = 63
+
+.cogexec 0
+        HUBSET aug(CLOCK_MODE)
+        WRPIN P_TT_01 | P_ASYNC_TX, TX_PIN
+        WXPIN aug(UART_CFG), TX_PIN
+        DIRH TX_PIN
+        WRPIN P_ASYNC_RX, RX_PIN
+        WXPIN aug(UART_CFG), RX_PIN
+        DIRH RX_PIN
+        WAITX aug(20_000_000)
+
+        // {{SNIPPET}}
+        COGID PA
+        COGSTOP PA
+
+write_byte:
+        WYPIN PA, TX_PIN
+        WAITX 1
+.wait:  RDPIN tx_status, TX_PIN :wc
+if(C)   JMP .wait
+        RET
+
+read_byte:
+        TESTPN RX_PIN :wz
+if(Z)   RET
+        RDPIN PA, RX_PIN
+        SHR PA, 24
+        RET
+
+var tx_status: LONG 0
