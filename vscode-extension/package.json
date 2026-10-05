@@ -1,7 +1,7 @@
 {
   "name": "propan-assembler",
   "displayName": "Propan Assembler",
-  "description": "Language support for the alternative Propeller 2 assembler Propan\"",
+  "description": "Language support for the Propeller 2 assembler Propan",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.91.1"
@@ -9,15 +9,27 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:propan"
+  ],
   "browser": "./dist/web/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "propan-assembler.helloWorld",
-        "title": "Hello World"
+        "command": "propan.restartLsp",
+        "title": "Restart LSP",
+        "category": "Propan",
+        "enablement": "!isWeb"
       }
     ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "propan.restartLsp",
+          "when": "!isWeb"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "propan",
@@ -34,6 +46,47 @@
         "scopeName": "source.propan",
         "path": "./propan/tmGrammar.json"
       }
+    ],
+    "semanticTokenTypes": [
+      {
+        "id": "propanMnemonic",
+        "superType": "keyword",
+        "description": "Propan instruction mnemonic or directive"
+      },
+      {
+        "id": "propanCodeLabel",
+        "superType": "function",
+        "description": "Propan code label"
+      },
+      {
+        "id": "propanVarLabel",
+        "superType": "variable",
+        "description": "Propan variable label"
+      },
+      {
+        "id": "propanConstant",
+        "superType": "variable",
+        "description": "Propan constant"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "propan",
+        "scopes": {
+          "propanMnemonic": [
+            "keyword.control.propan"
+          ],
+          "propanCodeLabel": [
+            "entity.name.function.propan"
+          ],
+          "propanVarLabel": [
+            "variable.other.propan"
+          ],
+          "propanConstant": [
+            "constant.other.propan"
+          ]
+        }
+      }
     ]
   },
   "scripts": {
@@ -47,12 +100,15 @@
     "package-web": "npm run check-types && npm run lint && node esbuild.js --production",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
+    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
+    "compile": "npm run compile-web",
+    "package": "npm run package-web"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@types/assert": "^1.5.11",
     "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.43",
     "@types/vscode": "^1.91.1",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
@@ -66,6 +122,11 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@vscode/vsce": "^3.3.2"
-  }
+    "@vscode/vsce": "^3.3.2",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "main": "./dist/desktop/extension.js",
+  "extensionKind": [
+    "workspace"
+  ]
 }

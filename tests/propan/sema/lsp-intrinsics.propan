@@ -1,0 +1,17 @@
+//? PROPAN CHECK LIST
+//? sym: entry code:0:0
+//? sym: slot data:4:1
+//? sym: lut_entry code:16:0
+.cogexec
+entry: NOP
+var slot: LONG 0
+WAITX aug(3)
+const absolute = nrel(3)
+const hub = hubaddr(entry)
+const cog = cogaddr(slot)
+const local = localaddr(slot)
+const byte = byteoffset(slot)
+const word = wordoffset(slot)
+.lutexec
+lut_entry: NOP
+const lut = lutaddr(lut_entry)

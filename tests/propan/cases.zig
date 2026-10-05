@@ -18,6 +18,9 @@ pub const parser_accept_tests: []const []const u8 = common_accept_tests ++ &[_][
 };
 
 pub const regression_tests: []const []const u8 = &[_][]const u8{
+    "tests/propan/sema/lsp-metadata.propan",
+    "tests/propan/sema/lsp-intrinsics.propan",
+    "tests/propan/sema/lsp-values.propan",
     "tests/propan/sema/spin2-reserved-names.propan",
     "tests/propan/sema/spin2-quoted-comments.propan",
     "tests/propan/sema/spin2-case-sensitive-symbols.propan",
@@ -34,6 +37,7 @@ pub const regression_tests: []const []const u8 = &[_][]const u8{
 };
 
 pub const parser_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/parser/diagnostics/unterminated-escaped-string.propan",
     "tests/propan/parser/diagnostics/hexadecimal-escape-tail.propan",
     "tests/propan/parser/diagnostics/incomplete-binary.propan",
     "tests/propan/parser/diagnostics/incomplete-unary.propan",

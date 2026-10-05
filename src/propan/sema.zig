@@ -4365,14 +4365,31 @@ pub const Function = union(enum) {
     // stdlib functions are defined as "generic" ones:
     user: UserFunction,
 
-    pub fn get_parameters(func: Function) []const Parameter {
+    pub fn get_docs(func: Function) []const u8 {
         return switch (func) {
-            .aug => &.{.init("value", .int)},
-            .nrel => &.{.init("addr", .int)},
-            .hubaddr => &.{.init("addr", .address)},
-            .cogaddr => &.{.init("addr", .address)},
-            .lutaddr => &.{.init("addr", .address)},
-            .localaddr, .byteoffset, .wordoffset => &.{.init("addr", .address)},
+            .aug => "Encode an immediate instruction operand with AUGS/AUGD, allowing values beyond the instruction's immediate field. Use aug(value) as the outermost operand expression, or augment a pointer index with PTRA[aug(index)]. It is not valid in constant definitions. The value itself is unchanged.",
+            .nrel => "Force absolute rather than PC-relative addressing for an instruction operand. Use nrel(addr) as the outermost operand expression. The value itself is unchanged; only its addressing mode changes.",
+            .hubaddr => "Return a label's hub byte address as an integer, independent of its execution mode. Labels in register space have no hub address.",
+            .cogaddr => "Return a cog or register-space label's register index as an integer (0 through $1FF). Hub, LUT, and data labels are not accepted.",
+            .lutaddr => "Return a LUT label's long index as an integer (0 through $1FF). This is the LUT data index; the execution PC is this index plus $200.",
+            .localaddr => "Return a label's local data address as an integer: a register index for cog/register space, a long index for LUT, or a byte address for hub execution. Data-only labels have no local address. Hardware register operands are accepted only in cog execution mode.",
+            .byteoffset => "Return a cog, LUT, or register-space label's byte offset within its containing long (0 through 3). Useful for packed BYTE data; hub and data-only labels are not accepted.",
+            .wordoffset => "Return a cog, LUT, or register-space label's word offset within its containing long (0 or 1), computed as byteoffset(addr) / 2. Hub and data-only labels are not accepted.",
+            .user => |f| f.docs,
+        };
+    }
+
+    pub fn get_parameters(func: Function) []const Parameter {
+        // Callers retain these slices, so intrinsic metadata needs static storage.
+        return switch (func) {
+            .aug => comptime &.{Parameter{ .name = "value", .type = .int, .docs = "Immediate integer or literal label address to encode with augmentation." }},
+            .nrel => comptime &.{Parameter{ .name = "addr", .type = .int, .docs = "Integer or label address to encode with absolute addressing." }},
+            .hubaddr => comptime &.{Parameter{ .name = "addr", .type = .address, .docs = "Label with an allocated hub address; register-space labels are not accepted." }},
+            .cogaddr => comptime &.{Parameter{ .name = "addr", .type = .address, .docs = "Cog or register-space label whose register index should be returned." }},
+            .lutaddr => comptime &.{Parameter{ .name = "addr", .type = .address, .docs = "LUT label whose data index (without the $200 execution-PC base) should be returned." }},
+            .localaddr => comptime &.{Parameter{ .name = "addr", .type = .address, .docs = "Label with a local address, or a hardware register in cog execution mode." }},
+            .byteoffset => comptime &.{Parameter{ .name = "addr", .type = .address, .docs = "Cog, LUT, or register-space label whose byte position within a long should be returned." }},
+            .wordoffset => comptime &.{Parameter{ .name = "addr", .type = .address, .docs = "Cog, LUT, or register-space label whose word position within a long should be returned." }},
             .user => |f| f.params,
         };
     }
