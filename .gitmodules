@@ -4,3 +4,6 @@
 [submodule "docs/p2docs.github.io"]
 	path = docs/p2docs.github.io
 	url = https://github.com/p2docs/p2docs.github.io
+[submodule "vendor/lsp-kit"]
+	path = vendor/lsp-kit
+	url = https://github.com/zigtools/lsp-kit

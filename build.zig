@@ -35,6 +35,7 @@ pub fn build(b: *std.Build) !void {
     const serial_mod = serial_dep.module("serial");
     const ptk_mod = ptk_dep.module("parser-toolkit");
     const args_mod = args_dep.module("args");
+    const lsp_mod = b.dependency("lsp_kit", .{ .target = target, .optimize = optimize }).module("lsp");
 
     const fb: FastBuild = .{
         .b = b,
@@ -71,6 +72,17 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "args", .module = args_mod },
         },
     });
+
+    const propan_lsp_mod = b.createModule(.{
+        .root_source_file = b.path("src/propan-lsp/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "propan", .module = propan_mod },
+            .{ .name = "lsp", .module = lsp_mod },
+        },
+    });
+    fb.installArtifact(b.addExecutable(.{ .name = "propan-lsp", .root_module = propan_lsp_mod }));
 
     {
         const exe = b.addExecutable(.{

@@ -10,7 +10,7 @@ Install [Zig 0.16](https://ziglang.org/download/#release-0.16.0), then build the
 [user@machine propeller2-wg]$ zig build -Doptimize=ReleaseSafe
 [user@machine propeller2-wg]$
 [user@machine propeller2-wg]$ ls ./zig-out/bin/
-propan  turboprop  windtunnel
+propan  propan-lsp  turboprop  windtunnel
 [user@machine propeller2-wg]$ ./zig-out/bin/propan --help
 Usage: ./zig-out/bin/propan [-h] [-o <output>] <sources...>
 
@@ -27,6 +27,9 @@ Options:
       --list-file    Writes a list file to the given path. Use '-' to write to stdout.
 [user@machine propeller2-wg]$ 
 ```
+
+The build also installs [propan-lsp](src/propan-lsp/), a stdio language server.
+The [VS Code extension](vscode-extension/) launches it in desktop hosts.
 
 To format a Propan source file, run `./zig-out/bin/propan --pretty-print source.propan`.
 Formatted source is written to stdout; use `--pretty-print -` to read from stdin.
