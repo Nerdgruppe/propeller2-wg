@@ -173,7 +173,23 @@ pub fn build(b: *std.Build) !void {
         });
         const install = b.addInstallArtifact(tests, .{});
         test_step.dependOn(&install.step);
-        const run = std.Build.Step.Run.create(b, "run Propan test suite");
+        const kcov_path = b.findProgram(&.{"kcov"}, &.{}) catch null;
+        if (kcov_path) |kcov| {
+            tests.setExecCmd(&.{
+                kcov,
+                "--clean",
+                b.fmt("--include-path={s}", .{b.pathFromRoot("src")}),
+                ".coverage",
+                null, // addRunArtifact inserts the test executable here.
+            });
+        } else {
+            std.log.warn("could not find kcov, not generating coverage", .{});
+        }
+        // The native runner reports fuzz-test discovery through Zig's server protocol.
+        const run = b.addRunArtifact(tests);
+        run.step.name = "run Propan test suite";
+        // Coverage writes a report outside Zig's cache.
+        run.has_side_effects = kcov_path != null;
         // Include imported sources, FILE payloads, and Spin2 references read at runtime.
         var fixture_paths: std.ArrayList([]const u8) = .empty;
         for ([_][]const u8{ "tests/propan", "examples" }) |path| {
@@ -192,17 +208,6 @@ pub fn build(b: *std.Build) !void {
             }
         }.lessThan);
         for (fixture_paths.items) |path| run.addFileInput(b.path(path));
-        run.expectExitCode(0);
-        if (b.findProgram(&.{"kcov"}, &.{})) |kcov| {
-            // Coverage writes a report outside Zig's cache.
-            run.has_side_effects = true;
-            run.addArgs(&.{ kcov, "--clean" });
-            run.addPrefixedDirectoryArg("--include-path=", b.path("src"));
-            run.addArg(".coverage");
-        } else |_| {
-            std.log.warn("could not find kcov, not generating coverage", .{});
-        }
-        run.addArtifactArg(tests);
         run.setCwd(b.path("."));
         test_step.dependOn(&run.step);
     }

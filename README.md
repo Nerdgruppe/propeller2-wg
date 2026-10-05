@@ -38,6 +38,9 @@ If `kcov` is installed, the build captures coverage in `.coverage/propan-tests/`
 The installed `zig-out/bin/propan-tests` executable can also be run directly from
 the repository root without coverage collection.
 
+Run `zig-0.16.0 build test --fuzz` to start Zig's native fuzzer, or use
+`--fuzz=10K` for a bounded run. Fuzz-test discovery uses Zig's test-server protocol.
+
 If you want to also have the tools [loadp2](https://github.com/totalspectrum/loadp2) and [flexspin](https://github.com/totalspectrum/flexprop), you can use `-Dwith-flexspin` on the `zig build` invocation:
 
 ```sh-session
