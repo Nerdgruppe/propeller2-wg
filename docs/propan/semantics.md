@@ -67,7 +67,7 @@ Outside conditional compilation, constants may refer to other constants in eithe
 
 Labels bind to the location before a following value's implicit padding. Place `.align` before a label when the label must name that aligned value.
 
-`byteoffset(label)` returns the byte position within a cog/LUT register (0–3). `wordoffset(label)` returns that position divided by two (0–1). Both require a cog, LUT, or regspace label. These can supply the selector for `GETBYTE`/`SETBYTE` or `GETWORD`/`SETWORD` when accessing packed cog/LUT data. A word beginning at an odd byte position spans two word fields and cannot be accessed as one word with that selector.
+`byteoffset(label)` returns the byte position within a cog/LUT register (0–3). `wordoffset(label)` returns that position divided by two (0–1). Both require a cog, LUT, or regspace label. These can supply the selector for `GETBYTE`/`SETBYTE` or `GETWORD`/`SETWORD` when accessing packed cog/LUT data. A word beginning at an odd byte position spans two word fields; `wordoffset()` errors at byte offsets 1 and 3 to prevent truncation.
 
 `@label` returns the signed execution distance in longs from the PC after the current instruction to the label. Cog and LUT distances use execution addresses, independent of hub storage origins. Hub byte distances are divided by four; a distance not divisible by four is an error. References between different execution modes are errors. References between segments in the same execution mode are allowed and warn. `.data` and `.regspace` have no execution PC for this operator.
 
@@ -78,3 +78,11 @@ Pointer expressions such as `PTRA++` and `PTRB[2]` are accepted only by instruct
 `NOP` has exactly the word `0x00000000` and accepts no explicit instruction condition, including `return`. Nonzero words in the ROR encoding are ROR instructions; `ROR register(0), register(0)` encodes as `0xF0000000`.
 
 `aug(value)` requires an instruction operand and an immediate value (an integer or address with literal usage). Parentheses are transparent wrapping, so `MOV PA, (aug(266))` is valid; operators and function arguments still introduce nesting and cannot contain `aug()`. Register values and values with register usage, such as `aug(PB)`, `aug(slot)` for a data label, and `aug(*label)`, are errors. It is also invalid in constant declarations, data, layout directives, assertions, and conditional-compilation expressions. An ordinary immediate constant may supply its value, for example `MOV PA, aug(BIG)`. In pointer expressions, augmentation applies to the index: `PTRA[aug(256)]` and `PTRA++[aug(256)]` are valid; `aug(PTRA[256])` and `aug(PTRA++)` are errors.
+
+`pcaddr(label)` returns an execution PC: 0–0x1FF for cog labels, 0x200–0x3FF for LUT labels, and the hub byte address for hub labels. Hub addresses at or below 0x400 are errors. Data and regspace labels have no execution PC. `localaddr(label)` instead returns the local storage index, so LUT indices remain 0–0x1FF.
+
+Starting a `.hubexec` segment below 0x400 warns that regular branches cannot reach that PC. A `.cogexec` PC reaching 496 warns about interrupt registers, reaching 502 warns about pointer registers, and reaching 506 is an error because those locations are I/O registers. Each boundary is diagnosed once per segment, including explicit origins and layout directives.
+
+`bitrange(low, high, wrap=...)` supports ranges wrapping from bit 31 to bit 0, matching `pinrange` within a pin group. A reversed range warns when `wrap` is omitted, is allowed with `wrap=#true`, and errors with `wrap=#false`.
+
+Implicit AUGS/AUGD instructions inherit their instruction's condition. Instructions that only update C/Z, such as CMP, TEST, and MODCZ, warn when no effect is supplied.

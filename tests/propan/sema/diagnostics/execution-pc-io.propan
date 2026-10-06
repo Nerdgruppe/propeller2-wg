@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: warn_cogexec_pc_in_interrupt_registers line 5
+//? err: warn_cogexec_pc_in_pointer_registers line 5
+//? err: err_cogexec_pc_in_io_registers line 6
+.cogexec 0, 505
+NOP

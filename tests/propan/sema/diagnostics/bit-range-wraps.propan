@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: warn_bit_range_wraps line 4 start==10 end==0
+//? err: err_bit_range_wraps line 5 start==31 end==0
+LONG bitrange(10, 0)
+LONG bitrange(31, 0, wrap=#false)

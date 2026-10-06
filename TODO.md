@@ -8,12 +8,8 @@
 - `.address => @panic("TODO: Implement binary operators on offsets."),`
 - `.string => @panic("TODO: Implement binary operators on strings."),`
 - Plan to allow access to local labels somehow?
-- Regular `.cogexec` must auto-fit into 496, 502 or 506 instead of 512 registers
-- Warning for `.hubexec` below `$400` (would be PC inside LUT/cog)
 - Enable "-Dx=y" on the CLI
-- Implement warning/error for `EncodedInstruction.Flags.wcz_not_used`
 - Fully define the compatibility matrix for implicit jumping/referencing between segments.
-- wordoffset must error/warn on byteoffset() == 1/3
 
 ## Priority Fixes / Tasks
 

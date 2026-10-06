@@ -390,14 +390,20 @@ pub const functions = define.namespace(.{
         pub const params = .{
             .low = .{ .docs = "The index of the lowest bit in the range." },
             .high = .{ .docs = "The index of the highest bit in the range." },
+            .wrap = .{ .docs = "If unset, warns when the range wraps; false forbids wrapping.", .default = .unset },
         };
 
-        pub fn invoke(low: u5, high: u5) !u10 {
-            if (high < low)
-                return error.InvalidArg; // TODO: Diagnostic
+        pub fn invoke(ctx: EvalContext, low: u5, high: u5, wrap: OptionalBoolean) !u10 {
+            if (high < low) {
+                if (wrap.as_bool() == null) {
+                    try ctx.emit_diag(.{ .warn_bit_range_wraps = .{ .start = low, .end = high } });
+                } else if (wrap.as_bool() == false) {
+                    try ctx.emit_diag(.{ .err_bit_range_wraps = .{ .start = low, .end = high } });
+                }
+            }
             return @bitCast(BitField{
                 .base = low,
-                .extra_bits = high - low,
+                .extra_bits = high -% low,
             });
         }
     }),

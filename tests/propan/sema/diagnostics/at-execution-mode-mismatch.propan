@@ -1,11 +1,12 @@
 //? PROPAN CHECK LIST
-//? err: err_address_space_mismatch subject=="@"
-//? err: err_address_space_mismatch subject=="@"
-//? err: err_address_space_mismatch subject=="@"
-//? err: err_address_space_mismatch subject=="@"
-//? err: err_address_space_mismatch subject=="@"
-//? err: err_address_space_mismatch subject=="@"
-//? err: err_address_has_no_execution_pc
+//? err: err_address_space_mismatch line 12 subject=="@"
+//? err: err_address_space_mismatch line 12 subject=="@"
+//? err: err_address_space_mismatch line 15 subject=="@"
+//? err: err_address_space_mismatch line 15 subject=="@"
+//? err: err_address_space_mismatch line 18 subject=="@"
+//? err: err_address_space_mismatch line 18 subject=="@"
+//? err: err_address_has_no_execution_pc line 21
+//? err: warn_hubexec_pc_below_branch_range line 16
 .cogexec 0x100
 cog_label:
 LONG @lut_label, @hub_label

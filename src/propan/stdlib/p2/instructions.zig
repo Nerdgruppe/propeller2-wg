@@ -325,6 +325,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "CMP",
         .binary = 0x02000000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -344,6 +345,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "CMPX",
         .binary = 0x02200000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -363,6 +365,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "CMPS",
         .binary = 0x02400000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -382,6 +385,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "CMPSX",
         .binary = 0x02600000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -401,6 +405,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "CMPR",
         .binary = 0x02800000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -420,6 +425,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "CMPM",
         .binary = 0x02a00000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -1495,6 +1501,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "TEST",
         .binary = 0x07c00000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -1514,6 +1521,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "TEST",
         .binary = 0x07c00000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -1530,6 +1538,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "TESTN",
         .binary = 0x07e00000,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // D
                 .slot = .init(9, 9),
@@ -5928,6 +5937,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "MODCZ",
         .binary = 0x0d64006f,
         .effects = .from_list(&.{ .none, .wc, .wcz, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // c
                 .slot = .init(13, 4),
@@ -5947,6 +5957,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "MODC",
         .binary = 0x0d64006f,
         .effects = .from_list(&.{ .none, .wc }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // c
                 .slot = .init(13, 4),
@@ -5961,6 +5972,7 @@ pub const p2_instructions: []const sema.EncodedInstruction = &.{
         .mnemonic = "MODZ",
         .binary = 0x0d64006f,
         .effects = .from_list(&.{ .none, .wz }),
+        .flags = .{ .wcz_not_used = .warn },
         .operands = &.{
             .{ // z
                 .slot = .init(9, 4),

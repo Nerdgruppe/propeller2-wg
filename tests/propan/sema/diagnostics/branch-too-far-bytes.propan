@@ -1,4 +1,5 @@
 //? PROPAN CHECK LIST
-//? err: err_branch_too_far line 4 distance==4294967291 unit==bytes
+//? err: err_branch_too_far line 5 distance==4294967291 unit==bytes
+//? err: warn_hubexec_pc_below_branch_range line 4
 .hubexec
 JMP 0xFFFFFFFF

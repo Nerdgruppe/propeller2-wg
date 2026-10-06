@@ -1,0 +1,28 @@
+//? PROPAN CHECK LIST
+//? err: warn_emitted_padding_byte_s line 19 count==16
+//? err: warn_hubexec_pc_below_branch_range line 10
+//? err: warn_hubexec_pc_below_branch_range line 13
+//? err: warn_cogexec_pc_in_interrupt_registers line 16
+//? err: warn_cogexec_pc_in_pointer_registers line 19
+//? err: warn_cogexec_pc_in_interrupt_registers line 22
+//? err: warn_cogexec_pc_in_pointer_registers line 22
+
+.hubexec 0x3FF
+BYTE 0
+.hubexec 0x400
+.hubexec 0
+.org 0x400
+.cogexec $, 495
+NOP
+NOP
+.org 501
+NOP
+NOP
+// A new segment can start directly in the pointer register region.
+.cogexec $, 502
+NOP
+// LUT and register-space limits stay independent of the cog execution limit.
+.lutexec $, 0x3FF
+NOP
+.regspace $, 511
+RES 1

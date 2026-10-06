@@ -17,7 +17,6 @@ WORD 0x1234
 GETWORD result, word_field, wordoffset(word_field)
 .assert cogaddr(field) == 0
 .assert byteoffset(field) == 1
-.assert wordoffset(field) == 0
 .assert byteoffset(result) == 0
 .assert cogaddr(word_field) == 3
 .assert byteoffset(word_field) == 2

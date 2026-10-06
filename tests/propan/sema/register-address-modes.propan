@@ -1,17 +1,18 @@
 //? PROPAN CHECK LIST
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_address_function_expected_offset function==cogaddr
-//? err: warn_address_function_expected_offset function==cogaddr
-//? err: warn_address_function_expected_offset function==cogaddr
-//? err: warn_address_function_expected_offset function==cogaddr
-//? err: warn_address_function_expected_offset function==cogaddr
+//? err: warn_address_function_expected_offset line 17 function==localaddr
+//? err: warn_address_function_expected_offset line 18 function==localaddr
+//? err: warn_address_function_expected_offset line 19 function==localaddr
+//? err: warn_address_function_expected_offset line 20 function==localaddr
+//? err: warn_address_function_expected_offset line 21 function==localaddr
+//? err: warn_address_function_expected_offset line 28 function==localaddr
+//? err: warn_address_function_expected_offset line 40 function==localaddr
+//? err: warn_address_function_expected_offset line 30 function==cogaddr
+//? err: warn_address_function_expected_offset line 31 function==cogaddr
+//? err: warn_address_function_expected_offset line 34 function==cogaddr
+//? err: warn_address_function_expected_offset line 36 function==cogaddr
+//? err: warn_address_function_expected_offset line 38 function==cogaddr
 //? mem: 0 == u32 [1]
+//? err: warn_hubexec_pc_below_branch_range line 29
 
 .assert localaddr(register(0)) == 0
 .assert localaddr(PA) == 502

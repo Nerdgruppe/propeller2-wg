@@ -1,7 +1,8 @@
 //? PROPAN CHECK LIST
-//? err: err_directive_invalid_in_mode line 7 directive=="RES" mode==lut
-//? err: err_directive_invalid_in_mode line 9 directive=="RES" mode==hub
-//? err: err_directive_invalid_in_mode line 11 directive=="RES" mode==data
+//? err: err_directive_invalid_in_mode line 8 directive=="RES" mode==lut
+//? err: err_directive_invalid_in_mode line 10 directive=="RES" mode==hub
+//? err: err_directive_invalid_in_mode line 12 directive=="RES" mode==data
+//? err: warn_hubexec_pc_below_branch_range line 9
 
 .lutexec
 RES 1

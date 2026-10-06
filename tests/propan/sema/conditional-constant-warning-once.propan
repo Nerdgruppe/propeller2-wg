@@ -1,8 +1,9 @@
 //? PROPAN CHECK LIST
-//? err: warn_address_function_expected_offset function==cogaddr
-//? err: warn_address_function_expected_offset function==localaddr
-//? err: warn_waitx_delay_too_short
+//? err: warn_address_function_expected_offset line 8 function==cogaddr
+//? err: warn_address_function_expected_offset line 11 function==localaddr
+//? err: warn_waitx_delay_too_short line 9
 //? mem: 0 == u32 [502, 0, 511]
+//? err: warn_hubexec_pc_below_branch_range line 12
 
 const reg = cogaddr(PA)
 const delay = ticks(1, ns=1, waitx=#on)

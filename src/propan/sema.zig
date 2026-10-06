@@ -595,12 +595,13 @@ const Analyzer = struct {
             .options = options,
             .diagnostics = diagnostics_collection,
         };
-        try ana.functions.ensureUnusedCapacity(allocator, 8);
+        try ana.functions.ensureUnusedCapacity(allocator, 9);
 
         ana.functions.putAssumeCapacityNoClobber("hubaddr", .hubaddr);
         ana.functions.putAssumeCapacityNoClobber("cogaddr", .cogaddr);
         ana.functions.putAssumeCapacityNoClobber("lutaddr", .lutaddr);
         ana.functions.putAssumeCapacityNoClobber("localaddr", .localaddr);
+        ana.functions.putAssumeCapacityNoClobber("pcaddr", .pcaddr);
         ana.functions.putAssumeCapacityNoClobber("byteoffset", .byteoffset);
         ana.functions.putAssumeCapacityNoClobber("wordoffset", .wordoffset);
         ana.functions.putAssumeCapacityNoClobber("aug", .aug);
@@ -1054,6 +1055,7 @@ const Analyzer = struct {
                         coded.end_pc = cursor.fit_position();
                     }
 
+                    const previous_cursor = cursor;
                     switch (coded.mnemonic.?.*) {
                         .assert => {},
                         .fit => coded.fit_pc = cursor.fit_position(),
@@ -1290,17 +1292,62 @@ const Analyzer = struct {
                             }
                         },
                     }
-                    if (cursor.hub > 0x80000) try ana.emit_diag(instr.location(), .{ .err_address_outside_space = .{ .subject = .cursor, .space = .hub, .actual = cursor.hub, .max_exclusive = 0x80001 } });
+
+                    if (cursor.hub > 0x80000) {
+                        try ana.emit_diag(instr.location(), .{
+                            .err_address_outside_space = .{
+                                .subject = .cursor,
+                                .space = .hub,
+                                .actual = cursor.hub,
+                                .max_exclusive = 0x80001,
+                            },
+                        });
+                    }
+
+                    const IRQ_REG_THRESHOLD = 496 * 4;
+                    const PTR_REG_THRESHOLD = 502 * 4;
+                    const IO_REG_THRESHOLD = 506 * 4;
+
                     switch (cursor.mode) {
                         .cog, .regspace => {
-                            if (cursor.local_bytes > 0x200 * 4)
-                                try ana.emit_diag(instr.location(), .{ .err_address_outside_space = .{ .subject = .cursor, .space = cursor.mode, .actual = cursor.local_bytes / 4, .max_exclusive = 0x201 } });
+                            const previous_bytes = if (cursor.offset.segment_id == previous_cursor.offset.segment_id) previous_cursor.local_bytes else 0;
+                            if (previous_bytes < IRQ_REG_THRESHOLD and cursor.local_bytes >= IRQ_REG_THRESHOLD) {
+                                try ana.emit_diag(instr.location(), .warn_cogexec_pc_in_interrupt_registers);
+                            }
+                            if (previous_bytes < PTR_REG_THRESHOLD and cursor.local_bytes >= PTR_REG_THRESHOLD) {
+                                try ana.emit_diag(instr.location(), .warn_cogexec_pc_in_pointer_registers);
+                            }
+                            if (previous_bytes < IO_REG_THRESHOLD and cursor.local_bytes >= IO_REG_THRESHOLD) {
+                                try ana.emit_diag(instr.location(), .err_cogexec_pc_in_io_registers);
+                            }
+                            if (cursor.local_bytes > 0x200 * 4) {
+                                try ana.emit_diag(instr.location(), .{
+                                    .err_address_outside_space = .{
+                                        .subject = .cursor,
+                                        .space = cursor.mode,
+                                        .actual = cursor.local_bytes / 4,
+                                        .max_exclusive = 0x201,
+                                    },
+                                });
+                            }
                         },
                         .lut => {
                             if (cursor.local_bytes > 0x200 * 4)
-                                try ana.emit_diag(instr.location(), .{ .err_address_outside_space = .{ .subject = .cursor, .space = .lut, .actual = 0x200 + cursor.local_bytes / 4, .max_exclusive = 0x401 } });
+                                try ana.emit_diag(instr.location(), .{
+                                    .err_address_outside_space = .{
+                                        .subject = .cursor,
+                                        .space = .lut,
+                                        .actual = 0x200 + cursor.local_bytes / 4,
+                                        .max_exclusive = 0x401,
+                                    },
+                                });
                         },
-                        .data, .hub => {},
+                        .hub => {
+                            if (cursor.offset.segment_id != previous_cursor.offset.segment_id and cursor.hub < 0x400) {
+                                try ana.emit_diag(instr.location(), .warn_hubexec_pc_below_branch_range);
+                            }
+                        },
+                        .data => {},
                     }
                 },
             }
@@ -1757,6 +1804,14 @@ const Analyzer = struct {
                 });
                 continue :current_instr;
             };
+
+            if (instr.ast_node.effect == null) {
+                switch (instr.instruction.?.flags.wcz_not_used) {
+                    .ignore => {},
+                    .warn => try ana.emit_diag(instr.ast_node.location(), .warn_instruction_without_effect),
+                    .err => try ana.emit_diag(instr.ast_node.location(), .{ .err_cannot_be_used_without_effect_operator = .{ .mnemonic = instr.ast_node.mnemonic } }),
+                }
+            }
 
             switch (ana.options.blank_pointer_expr) {
                 .as_register => {}, // keep as-is
@@ -2501,19 +2556,22 @@ const Analyzer = struct {
                         }
                     }
 
+                    const aug_condition = @as(u32, @intFromEnum(cond_code)) << 28;
+                    const augs_pattern: u32 = 0b0000_1111000_000_000000000_000000000;
+                    const augd_pattern: u32 = 0b0000_1111100_000_000000000_000000000;
                     if (aug.flip and ana.options.flip_augs_on_pcrel) {
                         if (aug.s) |s| {
-                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111000_000_000000000_000000000) | s, .little);
+                            try current_segment.writer().writeInt(u32, augs_pattern | aug_condition | s, .little);
                         }
                         if (aug.d) |d| {
-                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111100_000_000000000_000000000) | d, .little);
+                            try current_segment.writer().writeInt(u32, augd_pattern | aug_condition | d, .little);
                         }
                     } else {
                         if (aug.d) |d| {
-                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111100_000_000000000_000000000) | d, .little);
+                            try current_segment.writer().writeInt(u32, augd_pattern | aug_condition | d, .little);
                         }
                         if (aug.s) |s| {
-                            try current_segment.writer().writeInt(u32, @as(u32, 0b1111_1111000_000_000000000_000000000) | s, .little);
+                            try current_segment.writer().writeInt(u32, augs_pattern | aug_condition | s, .little);
                         }
                     }
 
@@ -3260,14 +3318,19 @@ const Analyzer = struct {
                                 return .int(0);
                             },
                         };
+                        if (func.* == .wordoffset and byte_offset % 2 != 0) {
+                            try ana.emit_diag(fncall.arguments[0].span.location(), .{ .err_wordoffset_unaligned = .{ .value = byte_offset } });
+                            return .int(0);
+                        }
                         return .int(if (func.* == .byteoffset) byte_offset else byte_offset / 2);
                     },
 
-                    .cogaddr, .lutaddr, .localaddr => {
+                    .cogaddr, .lutaddr, .localaddr, .pcaddr => {
                         const address_function: diagnostics.AddressFunction = switch (func.*) {
                             .cogaddr => .cogaddr,
                             .lutaddr => .lutaddr,
                             .localaddr => .localaddr,
+                            .pcaddr => .pcaddr,
                             else => unreachable,
                         };
                         const loc = fncall.arguments[0].span.location();
@@ -3298,10 +3361,10 @@ const Analyzer = struct {
                                 if (func.* == .lutaddr) {
                                     try ana.emit_diag(loc, .{ .err_address_function_invalid_operand_type = .{ .function = .lutaddr, .value_type = .register } });
                                     return .int(0);
-                                } else if (func.* == .localaddr) {
+                                } else if (func.* == .localaddr or func.* == .pcaddr) {
                                     const mode = context.exec_mode orelse if (context.start) |start| std.meta.activeTag(start.local) else null;
                                     if (mode != .cog) {
-                                        try ana.emit_diag(loc, .err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope);
+                                        try ana.emit_diag(loc, if (func.* == .pcaddr) .err_pcaddr_is_only_valid_for_registers_in_a_cogexec_scope else .err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope);
                                         return .int(0);
                                     }
                                 }
@@ -3319,7 +3382,7 @@ const Analyzer = struct {
                                 const maybe_expected_type: ?eval.ExecMode = switch (func.*) {
                                     .lutaddr => .lut,
                                     .cogaddr => .cog,
-                                    .localaddr => null,
+                                    .localaddr, .pcaddr => null,
                                     else => unreachable,
                                 };
 
@@ -3336,7 +3399,17 @@ const Analyzer = struct {
                                     }
                                 }
 
-                                const local = offset.get_local(.data) orelse {
+                                if (func.* == .pcaddr) {
+                                    if (offset.local == .regspace or offset.local == .data) {
+                                        try ana.emit_diag(loc, .err_address_has_no_execution_pc);
+                                        return .int(0);
+                                    }
+                                    if (offset.local == .hub and offset.hub_address != null and offset.hub_address.? <= 0x400) {
+                                        try ana.emit_diag(loc, .{ .err_pcaddr_hub_address_not_reachable = .{ .value = offset.hub_address.? } });
+                                        return .int(0);
+                                    }
+                                }
+                                const local = offset.get_local(if (func.* == .pcaddr) .pc else .data) orelse {
                                     try ana.emit_diag(loc, .err_address_has_no_execution_pc);
                                     return .int(0);
                                 };
@@ -4359,6 +4432,7 @@ pub const Function = union(enum) {
     cogaddr,
     lutaddr,
     localaddr,
+    pcaddr,
     byteoffset,
     wordoffset,
 
@@ -4372,7 +4446,7 @@ pub const Function = union(enum) {
             .hubaddr => &.{.init("addr", .address)},
             .cogaddr => &.{.init("addr", .address)},
             .lutaddr => &.{.init("addr", .address)},
-            .localaddr, .byteoffset, .wordoffset => &.{.init("addr", .address)},
+            .localaddr, .pcaddr, .byteoffset, .wordoffset => &.{.init("addr", .address)},
             .user => |f| f.params,
         };
     }

@@ -1,0 +1,19 @@
+//? PROPAN CHECK LIST
+//? err: err_wordoffset_unaligned line 12 value==1
+//? err: err_wordoffset_unaligned line 12 value==3
+//? err: err_wordoffset_unaligned line 19 value==1
+//? err: err_wordoffset_unaligned line 19 value==3
+.pack byte
+BYTE 0
+var odd_one:
+BYTE 0, 0
+var odd_three:
+BYTE 0
+LONG wordoffset(odd_one), wordoffset(odd_three)
+.lutexec
+BYTE 0
+var lut_one:
+BYTE 0, 0
+var lut_three:
+BYTE 0
+LONG wordoffset(lut_one), wordoffset(lut_three)

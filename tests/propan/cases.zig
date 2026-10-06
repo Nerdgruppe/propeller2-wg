@@ -18,6 +18,9 @@ pub const parser_accept_tests: []const []const u8 = common_accept_tests ++ &[_][
 };
 
 pub const regression_tests: []const []const u8 = &[_][]const u8{
+    "tests/propan/sema/conditional-augmentation.propan",
+    "tests/propan/sema/bit-range-wrapping.propan",
+    "tests/propan/sema/pc-addresses.propan",
     "tests/propan/sema/spin2-reserved-names.propan",
     "tests/propan/sema/spin2-quoted-comments.propan",
     "tests/propan/sema/spin2-case-sensitive-symbols.propan",
@@ -54,6 +57,13 @@ pub const parser_diagnostic_tests: []const []const u8 = &.{
 };
 
 pub const sema_diagnostic_tests: []const []const u8 = &.{
+    "tests/propan/sema/diagnostics/bit-range-wraps.propan",
+    "tests/propan/sema/diagnostics/pc-addresses.propan",
+    "tests/propan/sema/diagnostics/execution-pc-warnings.propan",
+    "tests/propan/sema/diagnostics/execution-pc-io.propan",
+    "tests/propan/sema/diagnostics/execution-pc-io-origin.propan",
+    "tests/propan/sema/diagnostics/word-offset-unaligned.propan",
+    "tests/propan/sema/diagnostics/instruction-without-effect.propan",
     "tests/propan/sema/diagnostics/aug-register-operands.propan",
     "tests/propan/sema/diagnostics/aug-nonnumeric-values.propan",
     "tests/propan/sema/diagnostics/aug-whole-pointer.propan",

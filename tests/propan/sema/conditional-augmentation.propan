@@ -1,0 +1,18 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [
+//?     0xAF091A2B, 0xA607EC78,
+//?     0x5F800001, 0x5C6FD161,
+//?     0xCF800001, 0xCF000002, 0xCC0C0000,
+//?     0xFF091A2B, 0xF607EC78,
+//?     0x0F091A2B, 0x0607EC78,
+//?     0xAF000000, 0xAF800001, 0xAB4C0000
+//? ]
+
+if(Z) MOV PA, aug(0x12345678)
+if(!Z) PUSHA aug(1000)
+if(C) WRPIN aug(512), aug(1024)
+MOV PA, aug(0x12345678)
+return MOV PA, aug(0x12345678)
+// PC-relative sources use the reversed AUGS/AUGD order.
+if(Z) CALLPA aug(512), aug(target)
+target:

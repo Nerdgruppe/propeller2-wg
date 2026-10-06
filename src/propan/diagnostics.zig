@@ -32,7 +32,7 @@ pub const SymbolDefinition = union(enum) {
 
 pub const Level = enum { @"error", warning, info };
 pub const ChecklistSymbolType = enum { code, data, constant, builtin };
-pub const AddressFunction = enum { hubaddr, cogaddr, lutaddr, localaddr };
+pub const AddressFunction = enum { hubaddr, cogaddr, lutaddr, localaddr, pcaddr };
 pub const EvaluationFailure = enum {
     out_of_memory,
     undefined_symbol,
@@ -190,6 +190,7 @@ pub const Kind = union(enum) {
     err_checklist_whole_memory_comparison_must_start_at_zero,
     err_constant_requires_integer_not_offset: Name,
     err_constants_cannot_store_pointer_expression,
+    err_cogexec_pc_in_io_registers,
     err_current_pc_unavailable,
     err_directive_invalid_in_mode: DirectiveMode,
     err_duplicate_definition: DuplicateDefinition,
@@ -223,9 +224,11 @@ pub const Kind = union(enum) {
     err_invalid_unicode_escape_format,
     err_is_not_a_valid_enumerator: Key,
     err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope,
+    err_pcaddr_is_only_valid_for_registers_in_a_cogexec_scope,
     err_missing_parameter_for_function: ParameterFunction,
     err_multiple_input_files_are_not_supported,
     err_numeric_value_out_of_range: NumericRange,
+    err_pcaddr_hub_address_not_reachable: Value,
     err_operand_usage_mismatch: OperandUsage,
     err_operator_at_cannot_be_used_in_this_scope,
     err_operator_invalid_operand_type: OperatorValueType,
@@ -255,7 +258,12 @@ pub const Kind = union(enum) {
     err_unterminated_escape_sequence,
     err_usage_cannot_emit_to_stdio: Format,
     err_usage_missing_input_files,
+    err_wordoffset_unaligned: Value,
     warn_address_function_expected_offset: FunctionValueType,
+    warn_hubexec_pc_below_branch_range,
+    warn_cogexec_pc_in_interrupt_registers,
+    warn_cogexec_pc_in_pointer_registers,
+    warn_instruction_without_effect,
     warn_alti_state_segment_mismatch,
     warn_branch_into_data,
     warn_emitted_padding_byte_s: Count,
@@ -266,6 +274,8 @@ pub const Kind = union(enum) {
     warn_jump_between_exec_modes: SourceModeTargetMode,
     warn_operator_no_effect: OperatorNoEffect,
     warn_pin_range_wraps: StartEnd,
+    warn_bit_range_wraps: StartEnd,
+    err_bit_range_wraps: StartEnd,
     warn_relative_address_crosses_segments,
     warn_symbol_has_no_references: Name,
     warn_waitx_delay_too_short,
@@ -287,6 +297,13 @@ pub const Kind = union(enum) {
 
     pub fn render(self: Kind, writer: *std.Io.Writer) !void {
         switch (self) {
+            .err_cogexec_pc_in_io_registers => try writer.writeAll(".cogexec PC is at or above 506 (I/O registers)"),
+            .err_wordoffset_unaligned => |v| try writer.print("wordoffset() cannot represent byte offset {} without truncation", .{v.value}),
+            .err_pcaddr_hub_address_not_reachable => |v| try writer.print("pcaddr() cannot represent hub address 0x{X}: hub addresses must be above 0x400", .{v.value}),
+            .warn_hubexec_pc_below_branch_range => try writer.writeAll("The PC at this location cannot be reached through regular branches."),
+            .warn_cogexec_pc_in_interrupt_registers => try writer.writeAll(".cogexec PC is at or above 496 (interrupt registers)"),
+            .warn_cogexec_pc_in_pointer_registers => try writer.writeAll(".cogexec PC is at or above 502 (pointer registers)"),
+            .warn_instruction_without_effect => try writer.writeAll("instruction is effectively a NOP without an effect (:wc, :wz, :wcz)"),
             .err_checklist_err_requires_one_diagnostic_code => try writer.writeAll("checklist err requires one diagnostic code"),
             .err_invalid_checklist_diagnostic_code => |v| try writer.print("invalid checklist diagnostic code '{s}'", .{v.token}),
             .err_invalid_checklist_diagnostic_constraint => |v| try writer.print("invalid checklist diagnostic constraint '{s}'", .{v.token}),
@@ -371,6 +388,7 @@ pub const Kind = union(enum) {
             .err_operator_at_cannot_be_used_in_this_scope => try writer.print("Operator '@' cannot be used in this scope", .{}),
             .warn_relative_address_crosses_segments => try writer.writeAll("'@' refers to an address in a different segment"),
             .err_address_delta_not_divisible_by_four => try writer.print("'@' cannot be applied to a offset range which is non-divisible by 4", .{}),
+            .err_pcaddr_is_only_valid_for_registers_in_a_cogexec_scope => try writer.writeAll("pcaddr() is only valid for registers in a cogexec scope"),
             .err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope => try writer.print("localaddr() is only valid for registers in a cogexec scope", .{}),
             .err_expected_offset_of_type_but_got_type => |v| try writer.print("{t}() expected offset of type {t}, but got type {t}.", .{ v.function, v.expected_type, v.actual_type }),
             .err_address_has_no_execution_pc => try writer.print("address has no execution PC", .{}),
@@ -389,6 +407,8 @@ pub const Kind = union(enum) {
             .err_invalid_unicode_escape_format => try writer.print("unicode escape sequence must have the format \\u{{...}} where ... is a hexadecimal notation of the code point", .{}),
             .warn_invalid_escape_sequence => |v| try writer.print("invalid escape sequence: \\{c}", .{v.character}),
             .err_pins_and_are_not_in_the_same_pin_group => |v| try writer.print("Pins {} and {} are not in the same pin group", .{ v.start, v.end }),
+            .warn_bit_range_wraps => |v| try writer.print("the bit range from {} to {} wraps inside its register", .{ v.start, v.end }),
+            .err_bit_range_wraps => |v| try writer.print("the bit range from {} to {} wraps inside its register", .{ v.start, v.end }),
             .warn_pin_range_wraps => |v| try writer.print("The pin range from {} to {} wraps inside its register. Add wrap=#on to mute this, or wrap=#off to make it an error.", .{ v.start, v.end }),
             .err_the_pin_range_from_to_wraps_inside_its_register => |v| try writer.print("The pin range from {} to {} wraps inside its register.", .{ v.start, v.end }),
             .warn_waitx_delay_too_short => try writer.print("Requested delay time is less than 2 periods. It's recommended to remove the WAITX in question.", .{}),

@@ -1,15 +1,15 @@
 //? PROPAN CHECK LIST
-//? err: warn_relative_address_crosses_segments
-//? err: warn_relative_address_crosses_segments
-//? err: warn_relative_address_crosses_segments
-//? err: warn_relative_address_crosses_segments
-//? err: warn_relative_address_crosses_segments
-//? err: warn_relative_address_crosses_segments
-//? err: warn_relative_address_crosses_segments
-//? err: warn_relative_address_crosses_segments
+//? err: warn_relative_address_crosses_segments line 22
+//? err: warn_relative_address_crosses_segments line 25
+//? err: warn_relative_address_crosses_segments line 27
+//? err: warn_relative_address_crosses_segments line 30
+//? err: warn_relative_address_crosses_segments line 33
+//? err: warn_relative_address_crosses_segments line 35
+//? err: warn_relative_address_crosses_segments line 38
+//? err: warn_relative_address_crosses_segments line 41
 //? mem: 0x100 <- u32 [49]
 //? mem: 0x200 <- u32 [-51]
-//? mem: 0x300 <- u32 [-502]
+//? mem: 0x300 <- u32 [-485]
 //? mem: 0x400 <- u32 [207]
 //? mem: 0x500 <- u32 [-209]
 //? mem: 0x600 <- u32 [-480]
@@ -23,7 +23,7 @@ LONG @cog_target
 .cogexec 0x200, 60
 cog_target:
 LONG @cog_source
-.cogexec 0x300, 511
+.cogexec 0x300, 494
 LONG @cog_source
 .lutexec 0x400, 0x220
 lut_source:

@@ -1,6 +1,7 @@
 //? PROPAN CHECK LIST
-//? err: err_address_space_mismatch line 7
-//? err: err_address_space_mismatch line 11
+//? err: err_address_space_mismatch line 8
+//? err: err_address_space_mismatch line 12
+//? err: warn_hubexec_pc_below_branch_range line 9
 .data 0x101
 data_label:
 BYTE 0

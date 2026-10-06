@@ -1,8 +1,9 @@
 //? PROPAN CHECK LIST
-//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
-//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
-//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
-//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope line 9
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope line 11
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope line 13
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope line 15
+//? err: warn_hubexec_pc_below_branch_range line 8
 
 .hubexec
 LONG localaddr(PA)

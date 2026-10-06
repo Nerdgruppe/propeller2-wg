@@ -84,6 +84,12 @@ def render_zig(stream: io.IOBase, instructions: list[Instruction]) -> None:
             stream.write(f".{FLAG_ZIG_FIELD[flag]}")
 
         stream.write(" }),\n")
+        # These instructions only update C/Z; without an effect they do nothing.
+        if instr.name in {
+            "CMP", "CMPX", "CMPS", "CMPSX", "CMPR", "CMPM",
+            "TEST", "TESTN", "MODC", "MODZ", "MODCZ",
+        }:
+            stream.write("        .flags = .{ .wcz_not_used = .warn },\n")
         stream.write("        .operands = &.{\n")
         for op in instr.operands:
             mapping = OP_MAPPING[op]

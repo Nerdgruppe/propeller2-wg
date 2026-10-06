@@ -10,7 +10,6 @@ BYTE 0x44
 .assert cogaddr(second) == 0
 .assert byteoffset(second) == 1
 .assert byteoffset(fourth) == 3
-.assert wordoffset(fourth) == 1
 .pack word
 BYTE 0x55
 WORD 0x7766

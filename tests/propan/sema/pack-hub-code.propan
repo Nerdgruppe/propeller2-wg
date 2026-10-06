@@ -1,6 +1,7 @@
 //? PROPAN CHECK LIST
-//? err: warn_unaligned_code line 7
+//? err: warn_unaligned_code line 8
 //? mem: 0x101 <- hex [AB 00 00 00 00 00 00 00 00]
+//? err: warn_hubexec_pc_below_branch_range line 5
 .hubexec 0x101
 .pack byte
 BYTE 0xAB
