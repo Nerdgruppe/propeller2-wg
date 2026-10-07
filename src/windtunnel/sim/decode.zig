@@ -1076,21 +1076,21 @@ pub fn decode(raw: u32) OpCode {
         return .tjv;
     if ((raw & 0x0FE001FF) == 0x0D60001F)
         return .waitx;
-    if ((raw & 0x0FE001FF) == 0x0D600040)
+    if ((raw & 0x0FE001FF) == 0x0D600040 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testp;
-    if ((raw & 0x0FE001FF) == 0x0D600041)
+    if ((raw & 0x0FE001FF) == 0x0D600041 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testpn;
-    if ((raw & 0x0FE001FF) == 0x0D600042)
+    if ((raw & 0x0FE001FF) == 0x0D600042 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testp_and;
-    if ((raw & 0x0FE001FF) == 0x0D600043)
+    if ((raw & 0x0FE001FF) == 0x0D600043 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testpn_and;
-    if ((raw & 0x0FE001FF) == 0x0D600044)
+    if ((raw & 0x0FE001FF) == 0x0D600044 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testp_or;
-    if ((raw & 0x0FE001FF) == 0x0D600045)
+    if ((raw & 0x0FE001FF) == 0x0D600045 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testpn_or;
-    if ((raw & 0x0FE001FF) == 0x0D600046)
+    if ((raw & 0x0FE001FF) == 0x0D600046 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testp_xor;
-    if ((raw & 0x0FE001FF) == 0x0D600047)
+    if ((raw & 0x0FE001FF) == 0x0D600047 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testpn_xor;
     if ((raw & 0x0FE001FF) == 0x0D600040)
         return .dirl;

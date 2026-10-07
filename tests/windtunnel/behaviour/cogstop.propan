@@ -1,3 +1,7 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? oracle: off "cog termination is not observable over UART"
+
 
 
 _start:

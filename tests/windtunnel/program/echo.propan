@@ -1,0 +1,63 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? stdin: hex [00 80 ff]
+//? stdin-after: "READY\n"
+//? stdout: "READY\n\x00\x80\xff"
+//? max-cycles: 30_000_000
+//? timeout-ms: 1000
+//? baudrate: 38_400
+
+const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART_CFG = SmartPin.UartTx.config(baud=38_400, bits=8, clk=200_000_000)
+
+.cogexec
+    HUBSET aug(CLOCK_MODE)
+    WRPIN P_TT_01 | P_ASYNC_TX, 62
+    WXPIN aug(UART_CFG), 62
+    DIRH 62
+    WRPIN P_ASYNC_RX, 63
+    WXPIN aug(UART_CFG), 63
+    DIRH 63
+    WAITX aug(20_000_000)
+    CALLPA aug(hubaddr(ready)), write_str
+    // Read the complete short packet before echoing, keeping up with RX.
+    CALL read_byte
+    MOV first, PA
+    CALL read_byte
+    MOV second, PA
+    CALL read_byte
+    MOV third, PA
+    MOV PA, first
+    CALL write_byte
+    MOV PA, second
+    CALL write_byte
+    MOV PA, third
+    CALL write_byte
+_end:
+    JMP _end
+
+read_byte:
+    TESTP 63 :wc
+if(!C) JMP read_byte
+    RDPIN PA, 63
+    SHR PA, 24
+    RET
+write_str:
+    RDFAST 0, PA
+.next:
+    RFBYTE PA :wz
+if(!Z) CALL write_byte
+    return TJNZ PA, .next
+write_byte:
+    WYPIN PA, 62
+    WAITX 1
+.wait:
+    TESTP 62 :wc
+if(!C) JMP .wait
+    RET
+
+var first: LONG 0
+var second: LONG 0
+var third: LONG 0
+ready: BYTE "READY\n", 0

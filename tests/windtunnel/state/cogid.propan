@@ -1,0 +1,8 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[result] == 0
+
+_start:
+    COGID result
+    JMP nrel(_end)
+var result: LONG 0xffff_ffff

@@ -1,0 +1,8 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: hub[buffer] == hex [ff]
+//? post: cog[0].c == false
+
+    JMP nrel(_end)
+.data
+buffer: BYTE 0xff

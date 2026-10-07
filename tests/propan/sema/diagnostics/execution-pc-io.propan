@@ -1,6 +1,11 @@
 //? PROPAN CHECK LIST
-//? err: warn_cogexec_pc_in_interrupt_registers line 5
-//? err: warn_cogexec_pc_in_pointer_registers line 5
-//? err: err_cogexec_pc_in_io_registers line 6
+//? err: warn_cogexec_pc_in_interrupt_registers line 8
+//? err: warn_cogexec_pc_in_pointer_registers line 8
+//? err: err_cogexec_pc_in_io_registers line 9
+//? err: warn_cogexec_pc_in_interrupt_registers line 10
+//? err: warn_cogexec_pc_in_pointer_registers line 10
+//? err: err_cogexec_pc_in_io_registers line 11
 .cogexec 0, 505
 NOP
+.regspace $, 505
+RES 1

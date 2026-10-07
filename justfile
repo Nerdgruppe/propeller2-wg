@@ -13,7 +13,7 @@ build:
         test
 
 test:
-    {{zig}} build install test -Dwith-flexspin 
+    {{zig}} build install test -Dwith-flexspin -Dwith-p2aas
 
 # Regenerates src/windtunnel/sim/{encoding,decode}.zig files
 update-windtunnel:

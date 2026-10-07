@@ -1,0 +1,18 @@
+//? WINDTUNNEL CHECK LIST
+//? cog: 7
+//? timeout-ms: 1000
+//? pre: cog[7].c = false
+//? pre: cog[7].z = true
+//? post: cog[7].reg[result] == 7
+//? post: cog[7].reg[0x40] == 0x8000_0001
+//? post: cog[7].reg[0x180] == 0x1234_5678
+//? post: cog[7].reg[0x1ef] == -1
+//? post: cog[7].c == false
+//? post: cog[7].z == true
+
+    MOV register(0x40), aug(0x8000_0001)
+    MOV register(0x180), aug(0x1234_5678)
+    MOV register(0x1ef), aug(-1)
+    COGID result
+    JMP nrel(_end)
+var result: LONG 0xffff_ffff

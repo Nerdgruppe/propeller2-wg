@@ -2,4 +2,8 @@
 //? err: warn_cogexec_pc_in_interrupt_registers
 //? err: warn_cogexec_pc_in_pointer_registers
 //? err: err_cogexec_pc_in_io_registers
+//? err: warn_cogexec_pc_in_interrupt_registers
+//? err: warn_cogexec_pc_in_pointer_registers
+//? err: err_cogexec_pc_in_io_registers
 .cogexec 0, 506
+.regspace $, 506

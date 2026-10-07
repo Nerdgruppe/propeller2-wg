@@ -1,0 +1,11 @@
+//? WINDTUNNEL CHECK LIST
+//? cog: 5
+//? timeout-ms: 1000
+//? post: cog[5].reg[result] == 5
+
+    JMP tail
+    LONG [0] * 490
+tail:
+    COGID result
+    JMP nrel(_end)
+var result: LONG 0
