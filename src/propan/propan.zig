@@ -8,7 +8,7 @@ const listfile = @import("listfile.zig");
 const check_list = @import("check_list.zig");
 const diagnostics = @import("diagnostics.zig");
 const stdlib = @import("stdlib/stdlib.zig");
-const Module = @import("Module.zig");
+pub const Module = @import("Module.zig");
 const SourceFile = @import("SourceFile.zig");
 
 const args_parser = @import("args");
@@ -18,6 +18,52 @@ pub const std_options: std.Options = .{
     .log_level = .debug,
     .logFn = writeLog,
 };
+
+/// Assembled image and source metadata, owned by the caller.
+pub const AssemblyResult = struct {
+    module: Module,
+    image: []u8,
+    allocator: std.mem.Allocator,
+
+    pub fn deinit(result: *AssemblyResult) void {
+        result.module.deinit();
+        result.allocator.free(result.image);
+    }
+};
+
+pub fn assemble(allocator: std.mem.Allocator, io: std.Io, path: []const u8, text: []const u8, errors: *std.Io.Writer) !AssemblyResult {
+    var arena: std.heap.ArenaAllocator = .init(allocator);
+    defer arena.deinit();
+    var collection: diagnostics.Collection = .init(allocator);
+    defer collection.deinit();
+    defer collection.render(errors, .{ .include_warnings = false, .include_infos = false }) catch {};
+    var source = try SourceFile.init(arena.allocator(), path, text);
+    source.relative_path = std.fs.path.basename(path);
+    try collection.register_source_file(&source);
+    var dir = try std.Io.Dir.cwd().openDir(io, std.fs.path.dirname(path) orelse ".", .{});
+    defer dir.close(io);
+    var dirs = [_]std.Io.Dir{dir};
+    var expander = frontend.imports.Expander.init(arena.allocator(), io, &collection, &dirs, &.{});
+    defer expander.deinit();
+    const ast = expander.expand(&source) catch return error.AssemblyFailed;
+    if (collection.has_errors()) return error.AssemblyFailed;
+    var module = sema.analyze(allocator, ast, .{
+        .io = io,
+        .blank_pointer_expr = .as_ptr_epxr,
+        .rebind_scopes = expander.did_import,
+    }, &collection) catch |err| switch (err) {
+        error.SemanticErrors => return error.AssemblyFailed,
+        else => return err,
+    };
+    errdefer module.deinit();
+    if (collection.has_errors()) return error.AssemblyFailed;
+    var size: usize = 0;
+    for (module.segments) |segment| size = @max(size, segment.hub_offset + segment.data.len);
+    const image = try allocator.alloc(u8, size);
+    @memset(image, 0);
+    for (module.segments) |segment| @memcpy(image[segment.hub_offset..][0..segment.data.len], segment.data);
+    return .{ .module = module, .image = image, .allocator = allocator };
+}
 
 pub const TestMode = enum {
     parser,

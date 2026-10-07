@@ -199,8 +199,10 @@ test "RingBufferFuzzer" {
     try std.testing.fuzz({}, fuzz_ring_buffer, .{});
 }
 
-fn fuzz_ring_buffer(ctx: void, input: []const u8) anyerror!void {
+fn fuzz_ring_buffer(ctx: void, smith: *std.testing.Smith) anyerror!void {
     _ = ctx;
+    var storage: [1024]u8 = undefined;
+    const input = storage[0..smith.slice(&storage)];
     var buffer = RingBuffer(u64, 16){};
 
     var next_push_item: u64 = 0;

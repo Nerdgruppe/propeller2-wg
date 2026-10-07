@@ -1,0 +1,17 @@
+//? WINDTUNNEL CHECK LIST
+//? cog: 1
+//? timeout-ms: 1000
+//? post: cog[1].reg[0x1f0] == 0x1234_5678
+//? post: cog[1].reg[0x1f5] == 0xffff_0000
+//? post: cog[1].reg[0x1f6] == 0x8765_4321
+//? post: cog[1].reg[0x1f7] == 0x1357_9bdf
+//? post: cog[1].reg[0x1f8] == 0xfedc_ba98
+//? post: cog[1].reg[0x1f9] == 0x2468_ace0
+
+    MOV register(0x1f0), aug(0x1234_5678)
+    MOV register(0x1f5), aug(0xffff_0000)
+    MOV register(0x1f6), aug(0x8765_4321)
+    MOV register(0x1f7), aug(0x1357_9bdf)
+    MOV register(0x1f8), aug(0xfedc_ba98)
+    MOV register(0x1f9), aug(0x2468_ace0)
+    JMP nrel(_end)

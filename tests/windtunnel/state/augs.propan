@@ -1,0 +1,11 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[first] == 0x12345678
+//? post: cog[0].reg[second] == 0x101
+
+_start:
+    MOV first, aug(0x12345678)
+    MOV second, 0x101
+    JMP nrel(_end)
+var first: LONG 0
+var second: LONG 0

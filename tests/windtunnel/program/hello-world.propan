@@ -1,0 +1,8 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: .halt
+//? stdout: "Hello world!\r\n"
+//? max-cycles: 30_000_000
+//? timeout-ms: 1000
+
+.import "../../../examples/hello-world.propan"

@@ -313,10 +313,8 @@ def render_encoding(stream: io.TextIOBase, groups: Iterable[Group]) -> None:
 
         stream.write("\n")
         stream.write(
-            f"    pub fn format(grp: {grp.name}, fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {{\n"
+            f"    pub fn format(grp: {grp.name}, writer: *std.Io.Writer) !void {{\n"
         )
-        stream.write("    _ = fmt;\n")
-        stream.write("    _ = opt;\n")
         stream.write(f'    try writer.print("{grp.name}(')
 
         first = True
@@ -326,7 +324,8 @@ def render_encoding(stream: io.TextIOBase, groups: Iterable[Group]) -> None:
 
             if not first:
                 stream.write(", ")
-            stream.write(f"{fname}={{}}")
+            spec = "t" if ftype in {"Condition", "Register", "FlagModifier", "FlagExpression", "PointerReg"} else ""
+            stream.write(f"{fname}={{{spec}}}")
             first = False
         stream.write(')", .{')
 
@@ -417,7 +416,10 @@ def render_decoder(
             # skip special-cased NOP
             continue
         opcode = zig_id(caseconverter.snakecase(instr.id))
-        stream.write(f"    if((raw & 0x{instr.encoding.mask:08X}) == 0x{instr.encoding.binary:08X})\n")
+        # TESTP* shares its opcode with DIR*: one of WC/WZ selects TESTP,
+        # equal C/Z effect bits select DIR. The raw dataset leaves these variable.
+        flag_rule = " and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19)))" if instr.id.lower().startswith("testp") else ""
+        stream.write(f"    if((raw & 0x{instr.encoding.mask:08X}) == 0x{instr.encoding.binary:08X}{flag_rule})\n")
         stream.write(f"        return .{opcode};\n")
 
     stream.write("    return .invalid;\n\n")
@@ -439,8 +441,15 @@ def render_executor_stub(
             const encoding = @import("encoding.zig");
             const Cog = @import("Cog.zig");
 
+            // codegen: begin:runtimehelpers
+            // codegen: end:runtimehelpers
+
             pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
+                if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return .skip;
                 const opcode = decode.decode(state.instr);
+                defer if (opcode != .setq and opcode != .augs and opcode != .augd) {
+                    cog.setq_pending = false;
+                };
 
                 const enc: encoding.Instruction = .{ .raw = state.instr };
 
@@ -473,7 +482,7 @@ def render_executor_stub(
                         const field = comptime decode.instruction_type.get(opc);
                         const params = @field(enc, field);
 
-                        logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {}", .{ state.pc, state.instr, @tagName(opc), params });
+                        logger.info("0x{X:0>5}: 0x{X:0>8} {t}: {f}", .{ state.pc, state.instr, opc, params });
 
                         return @field(@This(), @tagName(opc))(cog, params);
                     },
@@ -484,6 +493,9 @@ def render_executor_stub(
                 result: u32,
                 c: bool,
                 z: bool,
+                implemented: bool = true,
+
+                pub const unsupported: SimpleResult = .{ .result = 0, .c = false, .z = false, .implemented = false };
 
                 pub fn simple(result: u32, c: bool, z: bool) SimpleResult {
                     return .{ .result = result, .c = c, .z = z };
@@ -582,7 +594,7 @@ def render_executor_stub(
             if has_s:
                 stream.write("    _ = s;\n")
 
-            stream.write(f'    @panic("{zig_escape(instr.display_text)} is not implemented yet!");\n')
+            stream.write('    return SimpleResult.unsupported;\n')
 
             if "z_is_reszero" in instr.tags and "c_is_resmsb" in instr.tags:
                 stream.write("    // return .autocz(result);\n")
@@ -601,7 +613,7 @@ def render_executor_stub(
             stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
             stream.write("    _ = cog;\n")
             stream.write("    _ = args;\n")
-            stream.write(f'    @panic("{zig_escape(instr.display_text)} is not implemented yet!");\n')
+            stream.write('    return .unsupported;\n')
             stream.write("    // return .next;\n")
             stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
             stream.write("}\n")

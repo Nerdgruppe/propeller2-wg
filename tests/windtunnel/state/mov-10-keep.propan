@@ -1,0 +1,14 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[value] == 0x8000_0000
+//? pre: cog[0].c = true
+//? pre: cog[0].z = false
+//? post: cog[0].reg[result] == 0x8000_0000
+//? post: cog[0].c == true
+//? post: cog[0].z == false
+
+_start:
+    MOV result, value 
+    JMP nrel(_end)
+var value: LONG 0x8000_0000
+var result: LONG 0

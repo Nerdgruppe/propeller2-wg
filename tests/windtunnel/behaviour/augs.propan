@@ -1,15 +1,15 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[first] == 0x1ff
+//? post: cog[0].reg[second] == 0x12345678
+//? post: cog[0].reg[third] == 0x101
+
 _start:
+    MOV first, 0x1ff
+    MOV second, aug(0x12345678)
+    MOV third, 0x101
+    JMP nrel(_end)
 
-    MOV tmp, 0x1FF
-    WYPIN tmp, 1    // assert: output 0x000001FF
-
-    MOV tmp, aug(0x12345678)
-    WYPIN tmp, 1    // assert: output 0x12345678
-
-    MOV tmp, 0x101
-    WYPIN tmp, 1    // assert: output 0x00000101
-
-    COGID tmp
-    COGSTOP tmp
-
-var tmp: LONG 0
+var first: LONG 0
+var second: LONG 0
+var third: LONG 0

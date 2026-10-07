@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "propeller2-cockpit": {
+      "type": "sse",
+      "url": "http://127.0.0.1:3000/mcp",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
+

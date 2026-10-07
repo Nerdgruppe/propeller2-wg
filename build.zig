@@ -1,6 +1,46 @@
 const std = @import("std");
 const cases = @import("tests/propan/cases.zig");
 
+const windtunnel_fixtures = [_][]const u8{
+    "tests/windtunnel/behaviour/augs.propan",
+    "tests/windtunnel/behaviour/cogstop.propan",
+    "tests/windtunnel/program/echo.propan",
+    "tests/windtunnel/program/hello-world.propan",
+    "tests/windtunnel/state/augd.propan",
+    "tests/windtunnel/state/augmentation.propan",
+    "tests/windtunnel/state/augs.propan",
+    "tests/windtunnel/state/cogid-7.propan",
+    "tests/windtunnel/state/cogid.propan",
+    "tests/windtunnel/state/conditions-00.propan",
+    "tests/windtunnel/state/conditions-01.propan",
+    "tests/windtunnel/state/conditions-10.propan",
+    "tests/windtunnel/state/conditions-11.propan",
+    "tests/windtunnel/state/full-cog.propan",
+    "tests/windtunnel/state/mov-00-keep.propan",
+    "tests/windtunnel/state/mov-00-wc.propan",
+    "tests/windtunnel/state/mov-00-wcz.propan",
+    "tests/windtunnel/state/mov-00-wz.propan",
+    "tests/windtunnel/state/mov-01-keep.propan",
+    "tests/windtunnel/state/mov-01-wc.propan",
+    "tests/windtunnel/state/mov-01-wcz.propan",
+    "tests/windtunnel/state/mov-01-wz.propan",
+    "tests/windtunnel/state/mov-10-keep.propan",
+    "tests/windtunnel/state/mov-10-wc.propan",
+    "tests/windtunnel/state/mov-10-wcz.propan",
+    "tests/windtunnel/state/mov-10-wz.propan",
+    "tests/windtunnel/state/mov-11-keep.propan",
+    "tests/windtunnel/state/mov-11-wc.propan",
+    "tests/windtunnel/state/mov-11-wcz.propan",
+    "tests/windtunnel/state/mov-11-wz.propan",
+    "tests/windtunnel/state/mov-zero.propan",
+    "tests/windtunnel/state/q.propan",
+    "tests/windtunnel/state/reporter-block.propan",
+    "tests/windtunnel/state/reporter-byte.propan",
+    "tests/windtunnel/state/reporter.propan",
+    "tests/windtunnel/state/return.propan",
+    "tests/windtunnel/state/snapshot-registers.propan",
+};
+
 const FastBuild = struct {
     b: *std.Build,
     no_emit_bin: bool,
@@ -18,10 +58,13 @@ pub fn build(b: *std.Build) !void {
     // Steps:
     const run_step = b.step("run", "Runs propan");
     const test_step = b.step("test", "Runs the test suite");
+    const windtunnel_test_step = b.step("test-windtunnel", "Runs Windtunnel checklist fixtures and harness tests");
 
     // Options:
     const with_flexspin = b.option(bool, "with-flexspin", "Includes FlexSpin for Spin2 round-trip and assembler equivalence tests.") orelse false;
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
+    const coverage = b.option(bool, "coverage", "Collect Propan coverage with kcov when available") orelse true;
+    const with_p2aas = b.option(bool, "with-p2aas", "Run Windtunnel hardware oracle tests through P2AAS_ENDPOINT") orelse false;
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -105,6 +148,36 @@ pub fn build(b: *std.Build) !void {
 
     _ = windtunnel_exe;
 
+    const windtunnel_suite = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel/test_suite.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "args", .module = args_mod },
+            .{ .name = "propan", .module = propan_mod },
+            .{ .name = "oracle-template", .module = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/oracle.propan.in") }) },
+        },
+    });
+    const windtunnel_tests = b.addExecutable(.{ .name = "windtunnel-tests", .root_module = windtunnel_suite });
+    fb.installArtifact(windtunnel_tests);
+    const harness_tests = b.addTest(.{ .name = "windtunnel-harness-tests", .root_module = windtunnel_suite });
+    const harness_run = b.addRunArtifact(harness_tests);
+    harness_run.setCwd(b.path("."));
+    windtunnel_test_step.dependOn(&harness_run.step);
+    const fixture_run = b.addRunArtifact(windtunnel_tests);
+    fixture_run.setCwd(b.path("."));
+    fixture_run.expectExitCode(0); // Capture stdio so Zig forwards progress updates.
+    if (with_p2aas) {
+        fixture_run.addArg("--oracle");
+        fixture_run.has_side_effects = true;
+    }
+    fixture_run.addFileInput(b.path("examples/hello-world.propan"));
+    fixture_run.addFileInput(b.path("tests/windtunnel/oracle.propan.in"));
+    fixture_run.addArgs(&windtunnel_fixtures);
+    for (windtunnel_fixtures) |path| fixture_run.addFileInput(b.path(path));
+    windtunnel_test_step.dependOn(&fixture_run.step);
+    test_step.dependOn(windtunnel_test_step);
+
     // "zig build run"
     {
         const run_cmd = b.addRunArtifact(propan_exe);
@@ -173,7 +246,7 @@ pub fn build(b: *std.Build) !void {
         });
         const install = b.addInstallArtifact(tests, .{});
         test_step.dependOn(&install.step);
-        const kcov_path = b.findProgram(&.{"kcov"}, &.{}) catch null;
+        const kcov_path = if (coverage) b.findProgram(&.{"kcov"}, &.{}) catch null else null;
         if (kcov_path) |kcov| {
             tests.setExecCmd(&.{
                 kcov,
@@ -182,7 +255,7 @@ pub fn build(b: *std.Build) !void {
                 ".coverage",
                 null, // addRunArtifact inserts the test executable here.
             });
-        } else {
+        } else if (coverage) {
             std.log.warn("could not find kcov, not generating coverage", .{});
         }
         // The native runner reports fuzz-test discovery through Zig's server protocol.
@@ -191,23 +264,15 @@ pub fn build(b: *std.Build) !void {
         // Coverage writes a report outside Zig's cache.
         run.has_side_effects = kcov_path != null;
         // Include imported sources, FILE payloads, and Spin2 references read at runtime.
-        var fixture_paths: std.ArrayList([]const u8) = .empty;
-        for ([_][]const u8{ "tests/propan", "examples" }) |path| {
-            var dir = try b.build_root.handle.openDir(b.graph.io, path, .{ .iterate = true });
-            defer dir.close(b.graph.io);
-            var walker = try dir.walk(b.allocator);
-            defer walker.deinit();
-            while (try walker.next(b.graph.io)) |entry| {
-                if (entry.kind == .file)
-                    try fixture_paths.append(b.allocator, b.fmt("{s}/{s}", .{ path, entry.path }));
-            }
-        }
-        std.mem.sort([]const u8, fixture_paths.items, {}, struct {
-            fn lessThan(_: void, lhs: []const u8, rhs: []const u8) bool {
-                return std.mem.lessThan(u8, lhs, rhs);
-            }
-        }.lessThan);
-        for (fixture_paths.items) |path| run.addFileInput(b.path(path));
+        for ([_][]const []const u8{
+            cases.parser_accept_tests,
+            cases.sema_accept_tests,
+            cases.parser_diagnostic_tests,
+            cases.sema_diagnostic_tests,
+            cases.compare_diagnostic_tests,
+            cases.support_files,
+        }) |paths| for (paths) |path| run.addFileInput(b.path(path));
+        for (cases.formatter_tests) |fixture| run.addFileInput(b.path(fixture.input));
         run.setCwd(b.path("."));
         test_step.dependOn(&run.step);
     }

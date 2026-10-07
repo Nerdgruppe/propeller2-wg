@@ -81,7 +81,7 @@ Pointer expressions such as `PTRA++` and `PTRB[2]` are accepted only by instruct
 
 `pcaddr(label)` returns an execution PC: 0–0x1FF for cog labels, 0x200–0x3FF for LUT labels, and the hub byte address for hub labels. Hub addresses at or below 0x400 are errors. Data and regspace labels have no execution PC. `localaddr(label)` instead returns the local storage index, so LUT indices remain 0–0x1FF.
 
-Starting a `.hubexec` segment below 0x400 warns that regular branches cannot reach that PC. A `.cogexec` PC reaching 496 warns about interrupt registers, reaching 502 warns about pointer registers, and reaching 506 is an error because those locations are I/O registers. Each boundary is diagnosed once per segment, including explicit origins and layout directives.
+Starting a `.hubexec` segment below 0x400 warns that regular branches cannot reach that PC. A `.cogexec` or `.regspace` cursor reaching 496 warns about interrupt registers, reaching 502 warns about pointer registers, and reaching 506 is an error because those locations are I/O registers. Each boundary is diagnosed once per segment, including explicit origins and layout directives.
 
 `bitrange(low, high, wrap=...)` supports ranges wrapping from bit 31 to bit 0, matching `pinrange` within a pin group. A reversed range warns when `wrap` is omitted, is allowed with `wrap=#true`, and errors with `wrap=#false`.
 

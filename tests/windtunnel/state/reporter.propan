@@ -1,0 +1,17 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? pre: cog[0].c = true
+//? pre: cog[0].z = false
+//? post: cog[0].reg[first] == 0x00ff_8000
+//? post: cog[0].reg[second] == -1
+//? post: hub[buffer] == hex [00 80 ff 7f 12 34 56 78]
+//? post: cog[0].c == true
+//? post: cog[0].z == false
+
+_start:
+    MOV first, first
+    JMP nrel(_end)
+var first: LONG 0x00ff_8000
+var second: LONG -1
+.data
+buffer: BYTE 0x00, 0x80, 0xff, 0x7f, 0x12, 0x34, 0x56, 0x78

@@ -21,10 +21,11 @@ hub: *Hub,
 id: u3,
 
 registers: std.EnumArray(Register, u32) = .initFill(0),
-lut: [512]u32 = undefined,
+lut: [512]u32 = @splat(0),
 
 pc: u20 = 0,
 q: u32 = 0,
+setq_pending: bool = false,
 z: bool = false,
 c: bool = false,
 q2: bool = false,
@@ -39,6 +40,12 @@ exec_mode: ExecMode = .stopped,
 
 current_instruction: ?PipelineState = null,
 next_instruction: ?PipelineState = null,
+dispatch_pc: u20 = 0,
+branched: bool = false,
+stack: [8]u32 = @splat(0),
+stack_index: u3 = 0,
+wait_until: ?u64 = null,
+fifo_address: ?u19 = null,
 
 pub fn init(hub: *Hub, id: u3) Cog {
     return .{
@@ -72,14 +79,41 @@ pub fn step(cog: *Cog) void {
     }
 
     if (cog.current_instruction) |instr| {
+        cog.dispatch_pc = instr.pc;
+        cog.branched = false;
         const result = execute.execute_instruction(cog, instr);
+        if (result == .next and instr.instr != 0 and instr.instr >> 28 == 0 and !cog.branched) {
+            cog.jump(@truncate(cog.pop()));
+        }
         switch (result) {
             .wait => {},
             .next => cog.current_instruction = null,
-            .trap => @panic("TODO: Implement trapping!"),
-            .skip => logger.info("skipped instruction", .{}),
+            .trap, .unsupported => {
+                cog.hub.fault = .{ .cog = cog.id, .pc = instr.pc, .instruction = instr.instr, .unsupported = result == .unsupported };
+                cog.exec_mode = .stopped;
+                cog.current_instruction = null;
+                cog.next_instruction = null;
+            },
+            .skip => cog.current_instruction = null,
         }
     }
+}
+
+pub fn jump(cog: *Cog, target: u20) void {
+    cog.pc = target;
+    cog.exec_mode = if (target < 0x400) .cog else .hub;
+    cog.next_instruction = null;
+    cog.branched = true;
+}
+
+pub fn push(cog: *Cog) void {
+    cog.stack[cog.stack_index] = (@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | (cog.dispatch_pc + @as(u20, if (cog.exec_mode == .hub) 4 else 1));
+    cog.stack_index +%= 1;
+}
+
+pub fn pop(cog: *Cog) u32 {
+    cog.stack_index -%= 1;
+    return cog.stack[cog.stack_index];
 }
 
 pub fn other(cog: *Cog) *Cog {
@@ -132,7 +166,7 @@ pub fn is_condition_met(cog: *Cog, cond: enums.Condition) bool {
         .IF_C_EQ_Z => (cog.c == cog.z),
         .IF_Z => cog.z,
         .IF_NC_OR_Z => !cog.c or cog.z,
-        .IF_C => cog.z,
+        .IF_C => cog.c,
         .IF_C_OR_NZ => cog.c or !cog.z,
         .IF_C_OR_Z => cog.c or cog.z,
         .IF_ALWAYS => true,
@@ -187,7 +221,12 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
             std.debug.assert(cog.pc < 0x400);
             return instr;
         },
-        .hub => @panic("TODO: Implement HUB exec"),
+        .hub => {
+            const offset = cog.pc & 0x7fffc;
+            const instr: PipelineState = .{ .pc = cog.pc, .instr = std.mem.readInt(u32, cog.hub.memory[offset..][0..4], .little) };
+            cog.pc +%= 4;
+            return instr;
+        },
     }
 }
 
@@ -196,4 +235,7 @@ pub const ExecResult = enum {
     next,
     trap,
     skip,
+    unsupported,
 };
+
+pub const Fault = struct { cog: u3, pc: u20, instruction: u32, unsupported: bool };
