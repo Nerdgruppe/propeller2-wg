@@ -44,23 +44,29 @@ pub const Input = struct {
     }
 
     fn right_shift_output(input: Input, result: u32) Output {
-        const shift: u5 = @truncate(input.s);
+        const shift = input.bit_index();
         return input.zero_output(result, .from_lsb(input.d >> (if (shift == 0) 0 else shift - 1)));
     }
 
     fn left_shift_output(input: Input, result: u32) Output {
-        const shift: u5 = @truncate(input.s);
+        const shift = input.bit_index();
         return input.zero_output(result, .from_msb(input.d << (if (shift == 0) 0 else shift - 1)));
     }
 
     fn bit_output(input: Input, result: u32) Output {
-        const bit = Flag.from_lsb(input.d >> @as(u5, @truncate(input.s)));
+        const bit = Flag.from_lsb(input.d >> input.bit_index());
         return .{ .result = result, .c = bit, .z = bit, .q = input.q };
     }
 
+    fn bit_index(input: Input) u5 {
+        const bits: types.BitIndexAndCount = @bitCast(input.s);
+        return bits.index;
+    }
+
     fn bit_mask(input: Input) u32 {
-        const extra: u5 = @truncate(if (input.setq_prefix) input.q else input.s >> 5);
-        return std.math.rotl(u32, ~@as(u32, 0) >> (31 - extra), @as(u5, @truncate(input.s)));
+        const bits: types.BitIndexAndCount = @bitCast(input.s);
+        const extra: u5 = if (input.setq_prefix) @truncate(input.q) else bits.count;
+        return std.math.rotl(u32, ~@as(u32, 0) >> (31 - extra), bits.index);
     }
 
     fn write_bits(input: Input, value: u32) Output {
@@ -93,34 +99,34 @@ fn arithmetic(input: Input, comptime signed: bool, comptime subtract: bool, comp
 // * Z = (result == 0).
 // ROR     D,{#}S   {WC/WZ/WCZ}               | Rotate right.           D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
 pub fn ROR(input: Input) Output {
-    return input.right_shift_output(std.math.rotr(u32, input.d, @as(u5, @truncate(input.s))));
+    return input.right_shift_output(std.math.rotr(u32, input.d, input.bit_index()));
 }
 
 // ROL     D,{#}S   {WC/WZ/WCZ}               | Rotate left.            D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
 pub fn ROL(input: Input) Output {
-    return input.left_shift_output(std.math.rotl(u32, input.d, @as(u5, @truncate(input.s))));
+    return input.left_shift_output(std.math.rotl(u32, input.d, input.bit_index()));
 }
 
 // SHR     D,{#}S   {WC/WZ/WCZ}               | Shift right.            D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
 pub fn SHR(input: Input) Output {
-    return input.right_shift_output(input.d >> @as(u5, @truncate(input.s)));
+    return input.right_shift_output(input.d >> input.bit_index());
 }
 
 // SHL     D,{#}S   {WC/WZ/WCZ}               | Shift left.             D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
 pub fn SHL(input: Input) Output {
-    return input.left_shift_output(input.d << @as(u5, @truncate(input.s)));
+    return input.left_shift_output(input.d << input.bit_index());
 }
 
 // RCR     D,{#}S   {WC/WZ/WCZ}               | Rotate carry right.     D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
 pub fn RCR(input: Input) Output {
-    const shift: u5 = @truncate(input.s);
+    const shift = input.bit_index();
     const value = (@as(u64, input.c.as_mask(u32)) << 32) | input.d;
     return input.right_shift_output(@truncate(value >> shift));
 }
 
 // RCL     D,{#}S   {WC/WZ/WCZ}               | Rotate carry left.      D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
 pub fn RCL(input: Input) Output {
-    const shift: u5 = @truncate(input.s);
+    const shift = input.bit_index();
     const value = (@as(u64, input.d) << 32) | input.c.as_mask(u32);
     return input.left_shift_output(@truncate((value << shift) >> 32));
 }
@@ -128,12 +134,12 @@ pub fn RCL(input: Input) Output {
 // SAR     D,{#}S   {WC/WZ/WCZ}               | Shift arithmetic right. D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
 pub fn SAR(input: Input) Output {
     const d: i32 = @bitCast(input.d);
-    return input.right_shift_output(@bitCast(d >> @as(u5, @truncate(input.s))));
+    return input.right_shift_output(@bitCast(d >> input.bit_index()));
 }
 
 // SAL     D,{#}S   {WC/WZ/WCZ}               | Shift arithmetic left.  D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
 pub fn SAL(input: Input) Output {
-    const shift: u5 = @truncate(input.s);
+    const shift = input.bit_index();
     const value = (@as(u64, input.d) << 32) | Flag.from_lsb(input.d).as_mask(u32);
     return input.left_shift_output(@truncate((value << shift) >> 32));
 }
@@ -278,13 +284,13 @@ pub fn SUMNZ(input: Input) Output {
 
 // TESTB   D,{#}S         WC/WZ               | Test bit S[4:0] of  D, write to C/Z. C/Z =          D[S[4:0]].
 pub fn TESTB(input: Input) Output {
-    const bit = Flag.from_lsb(input.d >> @as(u5, @truncate(input.s)));
+    const bit = Flag.from_lsb(input.d >> input.bit_index());
     return .{ .result = input.d, .c = bit, .z = bit, .q = input.q };
 }
 
 // TESTBN  D,{#}S         WC/WZ               | Test bit S[4:0] of !D, write to C/Z. C/Z =         !D[S[4:0]].
 pub fn TESTBN(input: Input) Output {
-    const bit = Flag.from_lsb(input.d >> @as(u5, @truncate(input.s))).not();
+    const bit = Flag.from_lsb(input.d >> input.bit_index()).not();
     return .{ .result = input.d, .c = bit, .z = bit, .q = input.q };
 }
 
@@ -476,12 +482,12 @@ pub fn DECMOD(input: Input) Output {
 
 // ZEROX   D,{#}S   {WC/WZ/WCZ}               | Zero-extend D above bit S[4:0]. C = MSB of result. *
 pub fn ZEROX(input: Input) Output {
-    return input.msb_zero_output(input.d & (~@as(u32, 0) >> (31 - @as(u5, @truncate(input.s)))));
+    return input.msb_zero_output(input.d & (~@as(u32, 0) >> (31 - input.bit_index())));
 }
 
 // SIGNX   D,{#}S   {WC/WZ/WCZ}               | Sign-extend D from bit S[4:0]. C = MSB of result. *
 pub fn SIGNX(input: Input) Output {
-    const shift = 31 - @as(u5, @truncate(input.s));
+    const shift = 31 - input.bit_index();
     const value: i32 = @bitCast(input.d << shift);
     return input.msb_zero_output(@bitCast(value >> shift));
 }
@@ -564,27 +570,33 @@ pub fn ROLWORD(input: Input, n: u1) Output {
 
 // SETR    D,{#}S                             | Set R field of D to S[8:0]. D = {D[31:28], S[8:0], D[18:0]}.
 pub fn SETR(input: Input) Output {
-    return input.unchanged_flags_output((input.d & ~@as(u32, 0x0FF8_0000)) | ((input.s & 0x1FF) << 19));
+    var fields: types.InstructionFields = @bitCast(input.d);
+    fields.r = @truncate(input.s);
+    return input.unchanged_flags_output(@bitCast(fields));
 }
 
 // SETD    D,{#}S                             | Set D field of D to S[8:0]. D = {D[31:18], S[8:0], D[8:0]}.
 pub fn SETD(input: Input) Output {
-    return input.unchanged_flags_output((input.d & ~@as(u32, 0x0003_FE00)) | ((input.s & 0x1FF) << 9));
+    var fields: types.InstructionFields = @bitCast(input.d);
+    fields.d = @truncate(input.s);
+    return input.unchanged_flags_output(@bitCast(fields));
 }
 
 // SETS    D,{#}S                             | Set S field of D to S[8:0]. D = {D[31:9], S[8:0]}.
 pub fn SETS(input: Input) Output {
-    return input.unchanged_flags_output((input.d & ~@as(u32, 0x1FF)) | (input.s & 0x1FF));
+    var fields: types.InstructionFields = @bitCast(input.d);
+    fields.s = @truncate(input.s);
+    return input.unchanged_flags_output(@bitCast(fields));
 }
 
 // DECOD   D,{#}S                             | Decode S[4:0] into D. D = 1 << S[4:0].
 pub fn DECOD(input: Input) Output {
-    return input.unchanged_flags_output(@as(u32, 1) << @as(u5, @truncate(input.s)));
+    return input.unchanged_flags_output(@as(u32, 1) << input.bit_index());
 }
 
 // BMASK   D,{#}S                             | Get LSB-justified bit mask of size (S[4:0] + 1) into D. D = ($0_0000_0002 << S[4:0]) - 1.
 pub fn BMASK(input: Input) Output {
-    return input.unchanged_flags_output(~@as(u32, 0) >> (31 - @as(u5, @truncate(input.s))));
+    return input.unchanged_flags_output(~@as(u32, 0) >> (31 - input.bit_index()));
 }
 
 // CRCBIT  D,{#}S                             | Iterate CRC value in D using C and polynomial in S. If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
@@ -633,11 +645,13 @@ pub fn MUXQ(input: Input) Output {
 // MOVBYTS D,{#}S                             | Move bytes within D, per S. D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
 pub fn MOVBYTS(input: Input) Output {
     const d = Decomposition.from(input.d).u8;
-    const selectors = Decomposition.from(input.s).u2;
-    var result: types.BitArray(u8) = .zero;
-    for (0..4) |i| {
-        result.set(@intCast(i), d.get(selectors.get(@intCast(i))));
-    }
+    const selectors: types.BytePermutation = @bitCast(input.s);
+    const result = types.BitArray(u8).from_array(.{
+        d.get(selectors.byte0),
+        d.get(selectors.byte1),
+        d.get(selectors.byte2),
+        d.get(selectors.byte3),
+    });
     return input.unchanged_flags_output(result.raw);
 }
 
@@ -751,17 +765,25 @@ const seuss_invert: u32 = 0b11101011010101010000001100101101;
 
 // RGBSQZ  D                                  | Squeeze 8:8:8 RGB value in D[31:8] into 5:6:5 value in D[15:0]. D = {15'b0, D[31:27], D[23:18], D[15:11]}.
 pub fn RGBSQZ(input: Input) Output {
-    return input.unchanged_flags_output(((input.d >> 16) & 0xF800) | ((input.d >> 13) & 0x07E0) | ((input.d >> 11) & 0x001F));
+    const rgb: types.RGBA8888 = @bitCast(input.d);
+    const result: types.RGB565 = .{
+        .r = @intCast(rgb.r >> 3),
+        .g = @intCast(rgb.g >> 2),
+        .b = @intCast(rgb.b >> 3),
+    };
+    return input.unchanged_flags_output(@as(u16, @bitCast(result)));
 }
 
 // RGBEXP  D                                  | Expand 5:6:5 RGB value in D[15:0] into 8:8:8 value in D[31:8]. D = {D[15:11,15:13], D[10:5,10:9], D[4:0,4:2], 8'b0}.
 pub fn RGBEXP(input: Input) Output {
-    const r = (input.d >> 11) & 0x1F;
-    const g = (input.d >> 5) & 0x3F;
-    const b = input.d & 0x1F;
-    return input.unchanged_flags_output(
-        ((r << 3 | r >> 2) << 24) | ((g << 2 | g >> 4) << 16) | ((b << 3 | b >> 2) << 8),
-    );
+    const rgb: types.RGB565 = @bitCast(@as(u16, @truncate(input.d)));
+    const result: types.RGBA8888 = .{
+        .r = (@as(u8, rgb.r) << 3) | (rgb.r >> 2),
+        .g = (@as(u8, rgb.g) << 2) | (rgb.g >> 4),
+        .b = (@as(u8, rgb.b) << 3) | (rgb.b >> 2),
+        .a = 0,
+    };
+    return input.unchanged_flags_output(@bitCast(result));
 }
 
 // XORO32  D                                  | Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S. D must be non-zero to iterate.
@@ -829,9 +851,14 @@ pub fn WRNZ(input: Input) Output {
 }
 
 // MODCZ   c,z      {WC/WZ/WCZ}               | Modify C and Z according to cccc and zzzz. C = cccc[{C,Z}], Z = zzzz[{C,Z}]. See "MODCZ Operand" list.
-pub fn MODCZ(input: Input, c: u4, z: u4) Output {
-    const index: u2 = (input.c.as_int(u2) << 1) | input.z.as_int(u2);
-    return .{ .result = input.d, .c = @enumFromInt(@as(u1, @truncate(c >> index))), .z = @enumFromInt(@as(u1, @truncate(z >> index))), .q = input.q };
+pub fn MODCZ(input: Input) Output {
+    const conditions: types.FlagConditions = @bitCast(@as(u9, @truncate(input.d)));
+    return .{
+        .result = input.d,
+        .c = conditions.c.evaluate(input.c, input.z),
+        .z = conditions.z.evaluate(input.c, input.z),
+        .q = input.q,
+    };
 }
 
 test "all instruction functions preserve unrelated state" {
@@ -845,7 +872,6 @@ test "all instruction functions preserve unrelated state" {
                     const out = switch (info.params.len) {
                         1 => function(input),
                         2 => function(input, 0),
-                        3 => function(input, 0, 0),
                         else => unreachable,
                     };
                     if (comptime !std.mem.eql(u8, decl.name, "CRCNIB") and !std.mem.eql(u8, decl.name, "XORO32")) {
@@ -970,12 +996,14 @@ test "bit ranges, tests, and condition truth tables" {
     for (0..4) |state| {
         input.c = .from_bool(state & 2 != 0);
         input.z = .from_bool(state & 1 != 0);
-        for (0..16) |mode| {
-            const out = MODCZ(input, @intCast(mode), @intCast(mode));
-            const expected = Flag.from_bool(mode & (@as(usize, 1) << @intCast(state)) != 0);
-            try std.testing.expectEqual(expected, out.c);
-            try std.testing.expectEqual(expected, out.z);
-            try std.testing.expectEqual(input.d, out.result);
+        for (0..256) |modifiers| {
+            var flags = input;
+            flags.d = @intCast(modifiers);
+            const out = MODCZ(flags);
+            const mask = @as(usize, 1) << @intCast(state);
+            try std.testing.expectEqual(Flag.from_bool((modifiers >> 4) & mask != 0), out.c);
+            try std.testing.expectEqual(Flag.from_bool(modifiers & mask != 0), out.z);
+            try std.testing.expectEqual(flags.d, out.result);
         }
         try std.testing.expectEqualDeep(input.unchanged_flags_output(input.d), RCZL(.{ .d = RCZR(input).result, .s = 0, .c = RCZR(input).c, .z = RCZR(input).z, .q = 0, .setq_prefix = false }));
     }
