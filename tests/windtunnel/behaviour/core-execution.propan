@@ -1,0 +1,52 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? max-cycles: 1000
+//? oracle: off "execution across cog, LUT, and hub has no UART observation"
+
+.cogexec 0
+    MODCZ _SET, _CLR :wcz
+    LOC PTRA, nrel(0x3000)
+    SETQ2 2
+    RDLONG register(0), lut_address
+    CALL lut_entry
+    JMP done
+done:
+    if(!C) JMP failure
+    if(Z) JMP failure
+    CMP passes, 7 :wz
+    if(!Z) JMP failure
+    CMP iterations, 3 :wz
+    if(!Z) JMP failure
+    CMP located, 0 :wz
+    if(!Z) JMP failure
+    COGSTOP 0
+failure:
+    JMP failure
+var lut_address: LONG hubaddr(lut_entry)
+var hub_sub_address: LONG hubaddr(hub_sub)
+var passes: LONG 0
+var iterations: LONG 0
+var count: LONG 0
+var located: LONG 0
+
+.lutexec 0x2000, 0x200
+lut_entry:
+    ADD passes, 1
+    CALL hub_entry
+    RET
+
+.hubexec 0x2100
+hub_entry:
+    ADD passes, 2
+    LOC PB, hub_sub
+    MOV located, PB
+    SUB located, hub_sub_address
+    MOV count, 3
+loop:
+    ADD iterations, 1
+    DJNZ count, loop
+    CALLA hub_sub
+    RET
+hub_sub:
+    ADD passes, 4
+    RETA

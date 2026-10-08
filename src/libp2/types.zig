@@ -3,6 +3,47 @@
 //!
 const std = @import("std");
 
+/// Hardware event IDs used by polling, waiting, branching, and interrupt selection.
+pub const EventId = enum(u4) {
+    /// Interrupt 1, 2, or 3 occurred; debug interrupts are excluded.
+    /// When used with SETINT1/SETINT2/SETINT3, ID 0 disables the interrupt source.
+    INT = 0,
+    /// The low 32 bits of the global counter reached or passed the target set by ADDCT1.
+    CT1 = 1,
+    /// The low 32 bits of the global counter reached or passed the target set by ADDCT2.
+    CT2 = 2,
+    /// The low 32 bits of the global counter reached or passed the target set by ADDCT3.
+    CT3 = 3,
+    /// The pin, LUT access, or hub lock event selected by SETSE1 occurred.
+    SE1 = 4,
+    /// The pin, LUT access, or hub lock event selected by SETSE2 occurred.
+    SE2 = 5,
+    /// The pin, LUT access, or hub lock event selected by SETSE3 occurred.
+    SE3 = 6,
+    /// The pin, LUT access, or hub lock event selected by SETSE4 occurred.
+    SE4 = 7,
+    /// INA or INB matched or mismatched the masked pin pattern configured by SETPAT.
+    PAT = 8,
+    /// The hub RAM FIFO exhausted its block count and reloaded its start address and block count.
+    FBW = 9,
+    /// The streamer's command buffer is empty and ready to accept another command.
+    XMT = 10,
+    /// The streamer finished executing its commands and became idle.
+    XFI = 11,
+    /// The streamer's numerically controlled oscillator (NCO) rolled over.
+    XRO = 12,
+    /// The streamer read LUT (lookup RAM) address 0x1FF.
+    XRL = 13,
+    /// This cog received an attention request issued by COGATN.
+    ATN = 14,
+    /// GETQX or GETQY executed with no CORDIC results available or operations in progress.
+    QMT = 15,
+
+    pub fn mask(event: EventId) u16 {
+        return @as(u16, 1) << @intFromEnum(event);
+    }
+};
+
 pub const Flag = enum(u1) {
     unset = 0,
     set = 1,

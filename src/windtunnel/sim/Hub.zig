@@ -11,6 +11,9 @@ io: IO,
 
 output_writer: ?*std.Io.Writer = null,
 fault: ?Cog.Fault = null,
+locks: [16]Lock = undefined,
+
+pub const Lock = struct { allocated: bool = false, taken: bool = false, owner: u3 = 0, id: u4 };
 
 pub fn init(hub: *Hub) void {
     hub.* = .{
@@ -26,6 +29,32 @@ pub fn init(hub: *Hub) void {
         },
         .io = .{},
     };
+    for (&hub.locks, 0..) |*lock, i| lock.* = .{ .id = @intCast(i) };
+}
+
+pub fn release_lock(hub: *Hub, lock: *Lock) void {
+    lock.taken = false;
+    hub.signal_lock(lock.id, false);
+}
+
+pub fn signal_lock(hub: *Hub, id: u4, taken: bool) void {
+    for (&hub.cogs) |*cog| {
+        cog.signal_selectable((if (taken) @as(u6, 0x10) else 0x20) | id);
+        cog.signal_selectable(0x30 | @as(u6, id));
+    }
+}
+
+pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
+    var value: u32 = 0;
+    for (0..size) |i| value |= @as(u32, hub.memory[(address +% @as(u32, @intCast(i))) & 0x7ffff]) << @intCast(i * 8);
+    return value;
+}
+
+pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool) void {
+    for (0..size) |i| {
+        const byte: u8 = @truncate(value >> @intCast(i * 8));
+        if (!masked or byte != 0) hub.memory[(address +% @as(u32, @intCast(i))) & 0x7ffff] = byte;
+    }
 }
 
 pub fn step(hub: *Hub) void {
@@ -51,12 +80,11 @@ pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u20 = 0, p
     cog.reset();
     const base = options.hub_address & 0x7fffc;
     if (options.load_image) {
-        if (base + 504 * 4 > hub.memory.len) return error.InvalidCogImage;
-        for (0..504) |i| cog.registers.values[i] = std.mem.readInt(u32, hub.memory[base + i * 4 ..][0..4], .little);
+        for (0..504) |i| cog.registers.values[i] = hub.read_memory(base + @as(u32, @intCast(i * 4)), 4);
         cog.exec_mode = .cog;
     } else {
         cog.pc = options.hub_address;
-        cog.exec_mode = .hub;
+        cog.exec_mode = if (options.hub_address < 0x400) .cog else .hub;
     }
     cog.registers.set(.PTRA, options.ptra);
     cog.registers.set(.PTRB, options.hub_address);

@@ -1,0 +1,36 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[copied0] == 0x11223344
+//? post: cog[0].reg[copied1] == 0x55667788
+//? post: cog[0].reg[copied2] == 0x99aabbcc
+//? post: cog[0].reg[delta] == 4
+//? post: cog[0].reg[fill_delta] == 4
+//? post: cog[0].reg[lut_last] == 0x99aabbcc
+//? post: hub[fill] == hex [01 00 00 80 01 00 00 80 01 00 00 80]
+
+    MOV PTRA, address
+    SETQ 2
+    ALTD index, &copied0
+    RDLONG register(0), PTRA++
+    MOV delta, PTRA
+    SUB delta, address
+    SETQ2 2
+    RDLONG register(510), aug(hubaddr(source))
+    RDLUT lut_last, 0
+    MOV PTRA, fill_address
+    SETQ 2
+    WRLONG aug(0x80000001), PTRA++
+    MOV fill_delta, PTRA
+    SUB fill_delta, fill_address
+    JMP nrel(_end)
+var address: LONG hubaddr(source)
+var fill_address: LONG hubaddr(fill)
+var index: LONG 0
+var copied0: LONG 0
+var copied1: LONG 0
+var copied2: LONG 0
+var delta: LONG 0
+var fill_delta: LONG 0
+var lut_last: LONG 0
+.data
+source: LONG 0x11223344, 0x55667788, 0x99aabbcc
+fill: LONG 0, 0, 0

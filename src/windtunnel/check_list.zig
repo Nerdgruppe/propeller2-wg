@@ -1,9 +1,14 @@
 const std = @import("std");
 
 pub const Address = union(enum) { number: u32, symbol: []const u8 };
-pub const Target = union(enum) { reg: Address, hub: Address, c, z, q };
+pub const Target = union(enum) { sym: []const u8, reg: Address, hub: Address, c, z, q };
 pub const Assignment = struct { line: u32, cog: ?u3 = null, target: Target, bytes: []const u8 };
 pub const Profile = enum { cog, program };
+pub const Run = struct {
+    name: ?[]const u8 = null,
+    pre: []const Assignment = &.{},
+    post: []const Assignment = &.{},
+};
 pub const List = struct {
     profile: Profile = .cog,
     cog: u3 = 0,
@@ -18,6 +23,25 @@ pub const List = struct {
     stdin_after: []const u8 = "",
     pre: []const Assignment = &.{},
     post: []const Assignment = &.{},
+    runs: []const Run = &.{},
+
+    /// Common patches apply first; run-local flag/Q seeds replace common seeds.
+    pub fn forRun(list: List, allocator: std.mem.Allocator, run: Run) !List {
+        var result = list;
+        var pre: std.ArrayList(Assignment) = .empty;
+        for (list.pre) |common| {
+            var replaced = false;
+            if (common.target != .sym) for (run.pre) |local| {
+                if (std.meta.activeTag(common.target) == std.meta.activeTag(local.target)) replaced = true;
+            };
+            if (!replaced) try pre.append(allocator, common);
+        }
+        try pre.appendSlice(allocator, run.pre);
+        result.pre = pre.items;
+        result.post = try std.mem.concat(allocator, Assignment, &.{ list.post, run.post });
+        result.runs = &.{};
+        return result;
+    }
 };
 
 const Token = struct { text: []const u8, line: u32 };
@@ -86,6 +110,12 @@ const Parser = struct {
         const kind = try p.take();
         p.target_cog = null;
         try p.expect("[");
+        if (std.mem.eql(u8, kind, "sym")) {
+            const a = try p.address();
+            if (a != .symbol) return p.fail("sym requires a symbol name");
+            try p.expect("]");
+            return .{ .sym = a.symbol };
+        }
         if (std.mem.eql(u8, kind, "hub")) {
             const a = try p.address();
             try p.expect("]");
@@ -227,6 +257,7 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     var list: List = .{};
     var pre: std.ArrayList(Assignment) = .empty;
     var post: std.ArrayList(Assignment) = .empty;
+    var runs: std.ArrayList(Run) = .empty;
     var seen: std.StringHashMap(void) = .init(allocator);
     while (true) {
         p.newlines();
@@ -234,10 +265,29 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
         const line = p.tokens[p.index].line;
         const name = try p.take();
         try p.expect(":");
-        if (std.mem.eql(u8, name, "pre") or std.mem.eql(u8, name, "post")) {
+        if (std.mem.eql(u8, name, "run")) {
+            const run_name = if (std.mem.eql(u8, p.peek(), "\n")) null else try p.string();
+            if (run_name) |value| {
+                if (value.len == 0) return p.fail("run name must not be empty");
+                for (runs.items) |old| if (old.name) |old_name| {
+                    if (std.mem.eql(u8, old_name, value)) return p.fail("duplicate run name");
+                };
+            }
+            if (runs.items.len == 0) {
+                list.pre = pre.items;
+                list.post = post.items;
+            } else {
+                runs.items[runs.items.len - 1].pre = pre.items;
+                runs.items[runs.items.len - 1].post = post.items;
+            }
+            pre = .empty;
+            post = .empty;
+            try runs.append(allocator, .{ .name = run_name });
+        } else if (std.mem.eql(u8, name, "pre") or std.mem.eql(u8, name, "post")) {
             const target = try p.target();
             const is_pre = std.mem.eql(u8, name, "pre");
-            if (is_pre and (target == .reg or target == .hub)) return p.fail("preconditions support only C, Z and Q");
+            if (is_pre and (target == .reg or target == .hub)) return p.fail("preconditions support only sym, C, Z and Q");
+            if (!is_pre and target == .sym) return p.fail("sym is only supported in preconditions");
             try p.expect(if (is_pre) "=" else "==");
             const bytes = switch (target) {
                 .c, .z => blk: {
@@ -247,10 +297,12 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
                     return p.fail("expected true or false");
                 },
                 .reg, .q => try p.numberBytes(4, try p.integer(try p.take())),
-                .hub => try p.block(),
+                .hub, .sym => try p.block(),
             };
-            try (if (is_pre) &pre else &post).append(allocator, .{ .line = line, .cog = p.target_cog, .target = target, .bytes = bytes });
+            const assignment: Assignment = .{ .line = line, .cog = p.target_cog, .target = target, .bytes = bytes };
+            try (if (is_pre) &pre else &post).append(allocator, assignment);
         } else {
+            if (runs.items.len != 0) return p.fail("configuration directives must precede run sections");
             const entry = try seen.getOrPut(name);
             if (entry.found_existing) return p.fail("duplicate directive");
             if (std.mem.eql(u8, name, "profile")) list.profile = std.meta.stringToEnum(Profile, try p.take()) orelse return p.fail("unknown profile") else if (std.mem.eql(u8, name, "cog")) {
@@ -275,12 +327,29 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
         }
         if (p.index < p.tokens.len) try p.expect("\n");
     }
-    for ([_][]const Assignment{ pre.items, post.items }) |assignments| for (assignments) |a| {
+    if (runs.items.len == 0) {
+        list.pre = pre.items;
+        list.post = post.items;
+        try runs.append(allocator, .{});
+    } else {
+        runs.items[runs.items.len - 1].pre = pre.items;
+        runs.items[runs.items.len - 1].post = post.items;
+    }
+    for ([_][]const Assignment{ list.pre, list.post }) |assignments| for (assignments) |a| {
         if (a.cog) |cog| if (cog != list.cog) return p.fail("state target must match selected cog");
     };
-    list.pre = pre.items;
-    list.post = post.items;
-    if (list.profile == .program and (list.cog != 0 or list.entry != null or pre.items.len != 0 or post.items.len != 0)) return p.fail("program profile does not support entry or state assignments");
+    list.runs = runs.items;
+    for (list.runs) |run| {
+        for ([_][]const Assignment{ run.pre, run.post }) |assignments| for (assignments) |a| {
+            if (a.cog) |cog| if (cog != list.cog) return p.fail("state target must match selected cog");
+        };
+        if (list.profile == .program) {
+            if (list.cog != 0 or list.entry != null or list.post.len != 0 or run.post.len != 0) return p.fail("program profile does not support entry or state assignments");
+            for ([_][]const Assignment{ list.pre, run.pre }) |assignments| for (assignments) |a| {
+                if (a.target != .sym) return p.fail("program profile supports only symbol patches as preconditions");
+            };
+        }
+    }
     if (list.profile == .cog and (list.stdin.len != 0 or list.stdout.len != 0 or list.stdin_after.len != 0)) return p.fail("cog profile reserves serial I/O for the reporter");
     if (list.stdin.len > 0 and list.stdin_after.len == 0) return p.fail("nonempty stdin requires stdin-after readiness");
     if (list.stdin_after.len > 0 and !std.mem.startsWith(u8, list.stdout, list.stdin_after)) return p.fail("stdin-after must be a prefix of expected stdout");
@@ -311,4 +380,52 @@ test "checklist values, CRLF, multiline blocks, and invalid directives" {
     const binary = try parse(arena.allocator(), "fixture", "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: hex [0080ff]\n//? stdin-after: \"READY\\n\"\n//? stdout: \"READY\\n\\x00\\x80\\xff\"\n", &errors.writer);
     try std.testing.expectEqualSlices(u8, &.{ 0, 128, 255 }, binary.stdin);
     try std.testing.expectEqualSlices(u8, "READY\n" ++ "\x00\x80\xff", binary.stdout);
+}
+
+test "run sections inherit common conditions and preserve local seeds" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+    const allocator = arena.allocator();
+    const list = try parse(allocator, "fixture",
+        \\//? WINDTUNNEL CHECK LIST
+        \\//? pre: cog[0].c = true
+        \\//? pre: sym[buffer] = u16 [ 0x1234, -1 ]
+        \\//? post: cog[0].z == false
+        \\//? run:
+        \\//? pre: cog[0].c = false
+        \\//? post: cog[0].reg[value] == 1
+        \\//? run: "a named run"
+        \\//? pre: sym[buffer] = hex [ abcd ]
+    , &errors.writer);
+    try std.testing.expectEqual(@as(usize, 2), list.runs.len);
+    try std.testing.expect(list.runs[0].name == null);
+    try std.testing.expectEqualStrings("a named run", list.runs[1].name.?);
+    const first = try list.forRun(allocator, list.runs[0]);
+    try std.testing.expectEqual(@as(usize, 2), first.pre.len);
+    try std.testing.expectEqualSlices(u8, &.{ 0x34, 0x12, 0xff, 0xff }, first.pre[0].bytes);
+    try std.testing.expectEqualSlices(u8, &.{0}, first.pre[1].bytes);
+    try std.testing.expectEqual(@as(usize, 2), first.post.len);
+    const second = try list.forRun(allocator, list.runs[1]);
+    try std.testing.expectEqual(@as(usize, 3), second.pre.len);
+    try std.testing.expectEqualSlices(u8, &.{1}, second.pre[0].bytes);
+    try std.testing.expectEqualSlices(u8, &.{ 0xab, 0xcd }, second.pre[2].bytes);
+    try std.testing.expectEqual(@as(usize, 1), second.post.len);
+    const implicit = try parse(allocator, "fixture", "//? WINDTUNNEL CHECK LIST\n//? pre: sym[value] = u32 [1]\n", &errors.writer);
+    try std.testing.expectEqual(@as(usize, 1), implicit.runs.len);
+    try std.testing.expectEqual(@as(usize, 1), (try implicit.forRun(allocator, implicit.runs[0])).pre.len);
+    for ([_][]const u8{
+        "//? run: unquoted\n",
+        "//? run: \"\"\n",
+        "//? run: \"same\"\n//? run: \"same\"\n",
+        "//? run:\n//? timeout-ms: 1000\n",
+        "//? run:\n//? post: cog[1].c == true\n",
+        "//? post: sym[value] == u32 [1]\n",
+        "//? pre: sym[42] = u32 [1]\n",
+        "//? profile: program\n//? run:\n//? pre: cog[0].c = true\n",
+    }) |body| {
+        const source = try std.fmt.allocPrint(allocator, "//? WINDTUNNEL CHECK LIST\n{s}", .{body});
+        try std.testing.expectError(error.InvalidChecklist, parse(allocator, "fixture", source, &errors.writer));
+    }
 }

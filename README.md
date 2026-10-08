@@ -40,7 +40,8 @@ the repository root without coverage collection.
 
 Run `zig-0.16.0 build install test-windtunnel` for Windtunnel alone. Its
 [`//? WINDTUNNEL CHECK LIST`](docs/windtunnel/check-list.md) annotations support
-state preconditions, postconditions, and exact UART stdin/stdout. Hardware
+multiple isolated runs per file, shared and per-run conditions, symbol-based image
+preseeding, and exact UART stdin/stdout. Hardware
 oracle runs use the native Zig WebSocket client and require a P2AAS endpoint:
 
 ```sh
@@ -50,6 +51,9 @@ P2AAS_ENDPOINT='ws://localhost:12880/' \
 
 Local runs report hardware skips. Add `-Dcoverage=false` to disable Propan's
 optional kcov collection.
+
+See [Windtunnel core coverage](docs/windtunnel/core.md) for implemented operations
+and the remaining functional and timing limitations.
 
 Run `zig-0.16.0 build test --fuzz` to start Zig's native fuzzer, or use
 `--fuzz=10K` for a bounded run. Fuzz-test discovery uses Zig's test-server protocol.

@@ -1,0 +1,69 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[stack_a_delta] == 0
+//? post: cog[0].reg[stack_b_delta] == 0
+//? post: cog[0].reg[calls] == 9
+//? post: cog[0].reg[parameter_a] == 123
+//? post: cog[0].reg[parameter_b] == 0x12345678
+//? post: cog[0].c == true
+//? post: cog[0].z == false
+
+    MOV PTRA, stack_a
+    MOV PTRB, stack_b
+    MODCZ _SET, _CLR :wcz
+    CALLA a_sub
+    CALLA a_target :wcz
+    MOV stack_a_delta, PTRA
+    SUB stack_a_delta, stack_a
+    CALLB b_target :wcz
+    CALLB b_sub
+    MOV stack_b_delta, PTRB
+    SUB stack_b_delta, stack_b
+    CALL target :wcz
+    CALLD PA, d_sub
+    CALLD link, s_target :wcz
+    CALLPA 123, parameter_sub_a
+    CALLPB aug(0x12345678), parameter_sub_b
+    JMP nrel(_end)
+a_sub:
+    ADD calls, 1
+    MODCZ _CLR, _SET :wcz
+    RETA :wcz
+b_sub:
+    ADD calls, 1
+    MODCZ _CLR, _SET :wcz
+    RETB :wcz
+stack_sub:
+    ADD calls, 1
+    MODCZ _CLR, _SET :wcz
+    RET :wcz
+d_sub:
+    ADD calls, 1
+    MODCZ _CLR, _SET :wcz
+    JMP PA :wcz
+s_sub:
+    ADD calls, 1
+    JMP link :wcz
+parameter_sub_a:
+    MOV parameter_a, PA
+    ADD calls, 1
+    RET
+parameter_sub_b:
+    MOV parameter_b, PB
+    ADD calls, 1
+    RET
+var stack_a: LONG hubaddr(a_stack)
+var stack_b: LONG hubaddr(b_stack)
+var a_target: LONG 0x80000000 | pcaddr(a_sub)
+var b_target: LONG 0x80000000 | pcaddr(b_sub)
+var target: LONG 0x80000000 | pcaddr(stack_sub)
+var s_target: LONG 0x80000000 | pcaddr(s_sub)
+var link: LONG 0
+var calls: LONG 0
+var stack_a_delta: LONG 0
+var stack_b_delta: LONG 0
+var parameter_a: LONG 0
+var parameter_b: LONG 0
+.data
+a_stack: LONG 0
+b_stack: LONG 0
