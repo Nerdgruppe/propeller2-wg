@@ -17,6 +17,7 @@ pub const Context = struct {
 };
 pub const Case = struct {
     path: []const u8,
+    run_name: []const u8,
     source: []const u8,
     list: checklist.List,
     entry: u20,
@@ -30,22 +31,57 @@ pub const Case = struct {
     stop_reason: []const u8,
 };
 
-fn evidencePath(ctx: Context, path: []const u8) ![]const u8 {
+fn evidencePath(ctx: Context, path: []const u8, run_name: []const u8) ![]const u8 {
     const stamp = std.Io.Timestamp.now(ctx.io, .real).toNanoseconds();
-    return std.fmt.allocPrint(ctx.allocator, "{s}/{s}-{x}-{d}", .{ ctx.artifacts, std.fs.path.basename(path), std.hash.Wyhash.hash(0, path), stamp });
+    return std.fmt.allocPrint(ctx.allocator, "{s}/{s}-{x}-{x}-{d}", .{ ctx.artifacts, std.fs.path.basename(path), std.hash.Wyhash.hash(0, path), std.hash.Wyhash.hash(0, run_name), stamp });
 }
 
-pub fn retainLocalFailure(ctx: Context, path: []const u8, source: []const u8, image: []const u8, seeds: []const Resolved, observations: []const Observation, simulated: []const u8, stdout: []const u8, cycles: u64, reason: anyerror) !void {
-    const directory = try evidencePath(ctx, path);
+pub fn retainLocalFailure(ctx: Context, path: []const u8, run_name: []const u8, source: []const u8, image: []const u8, seeds: []const Resolved, observations: []const Observation, simulated: []const u8, stdout: []const u8, cycles: u64, reason: anyerror) !void {
+    const directory = try evidencePath(ctx, path, run_name);
     const dir = try std.Io.Dir.cwd().createDirPathOpen(ctx.io, directory, .{});
     defer dir.close(ctx.io);
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = source });
     try dir.writeFile(ctx.io, .{ .sub_path = "original.bin", .data = image });
     var metadata: std.Io.Writer.Allocating = .init(ctx.allocator);
     defer metadata.deinit();
-    try std.json.Stringify.value(.{ .seeds = seeds, .observations = observations, .simulated = simulated, .stdout = stdout, .cycles = cycles, .stop_reason = reason }, .{}, &metadata.writer);
+    try std.json.Stringify.value(.{ .run = run_name, .seeds = seeds, .observations = observations, .simulated = simulated, .stdout = stdout, .cycles = cycles, .stop_reason = reason }, .{}, &metadata.writer);
     try dir.writeFile(ctx.io, .{ .sub_path = "simulation.json", .data = metadata.written() });
-    try ctx.errors.print("{s}: simulator evidence retained in {s}\n", .{ path, directory });
+    try ctx.errors.print("{s} [{s}]: simulator evidence retained in {s}\n", .{ path, run_name, directory });
+}
+
+/// Patch emitted bytes only, using this assembly's symbol addresses.
+pub fn patchImage(module: propan.Module, image: []u8, assignments: []const checklist.Assignment, path: []const u8, errors: *std.Io.Writer) !void {
+    for (assignments) |assignment| {
+        if (assignment.target != .sym) continue;
+        patchSymbol(module, image, assignment.target.sym, assignment.bytes) catch |err| {
+            try errors.print("{s}:{d}: patch sym[{s}]: {t}\n", .{ path, assignment.line, assignment.target.sym, err });
+            return err;
+        };
+    }
+}
+
+fn patchSymbol(module: propan.Module, image: []u8, name: []const u8, bytes: []const u8) !void {
+    var found: ?u32 = null;
+    for (module.symbols) |symbol| {
+        if (!std.mem.eql(u8, symbol.name, name)) continue;
+        if (found != null) return error.AmbiguousSymbol;
+        found = symbol.label.hub_address orelse return error.InvalidSymbolKind;
+    }
+    const offset = found orelse return error.UnknownSymbol;
+    if (bytes.len == 0) return error.EmptyPatch;
+    if (reservedMemory(module, offset, bytes.len)) return error.ReservedMemory;
+    if (offset > image.len or bytes.len > image.len - offset) return error.PatchOutsideImage;
+    for (offset..offset + bytes.len) |index| {
+        var defined = false;
+        for (module.segments) |segment| {
+            if (index >= segment.hub_offset and index < segment.hub_offset + segment.data.len) {
+                defined = true;
+                break;
+            }
+        }
+        if (!defined) return error.UndefinedMemory;
+    }
+    @memcpy(image[offset..][0..bytes.len], bytes);
 }
 
 pub const snapshot_length = 506 * 4 + 4 + 2 + 2;
@@ -131,9 +167,10 @@ pub fn run(ctx: Context, case: Case) !Status {
     if (ctx.endpoint.len == 0 and !ctx.prepare_only) return .skipped;
     var prepared: ?propan.AssemblyResult = if (case.list.profile == .cog) try assemble(ctx, case.path, case.list, case.seeds, case.observations, case.entry, true) else null;
     defer if (prepared) |*image| image.deinit();
+    if (prepared) |*p| try patchImage(p.module, p.image, case.list.pre, case.path, ctx.errors);
     const image = if (prepared) |p| p.image else case.original_image;
     const allocator = ctx.allocator;
-    const directory = try evidencePath(ctx, case.path);
+    const directory = try evidencePath(ctx, case.path, case.run_name);
     const dir = try std.Io.Dir.cwd().createDirPathOpen(ctx.io, directory, .{});
     defer dir.close(ctx.io);
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = case.source });
@@ -142,7 +179,7 @@ pub fn run(ctx: Context, case: Case) !Status {
     if (prepared) |p| if (p.module.sources.len > 0) try dir.writeFile(ctx.io, .{ .sub_path = "oracle.propan", .data = p.module.sources[0].text });
     var metadata: std.Io.Writer.Allocating = .init(allocator);
     defer metadata.deinit();
-    try std.json.Stringify.value(.{ .seeds = case.seeds, .observations = case.observations, .simulated = case.simulated, .stdout = case.stdout, .cycles = case.cycles, .stop_reason = case.stop_reason }, .{}, &metadata.writer);
+    try std.json.Stringify.value(.{ .run = case.run_name, .patches = case.list.pre, .seeds = case.seeds, .observations = case.observations, .simulated = case.simulated, .stdout = case.stdout, .cycles = case.cycles, .stop_reason = case.stop_reason }, .{}, &metadata.writer);
     try dir.writeFile(ctx.io, .{ .sub_path = "simulation.json", .data = metadata.written() });
     const request: p2aas.Request = .{
         .image = image,
@@ -167,10 +204,10 @@ pub fn run(ctx: Context, case: Case) !Status {
     }, .{}, &request_json.writer);
     try dir.writeFile(ctx.io, .{ .sub_path = "request.json", .data = request_json.written() });
     if (ctx.prepare_only) {
-        try ctx.errors.print("{s}: oracle image prepared in {s}\n", .{ case.path, directory });
+        try ctx.errors.print("{s} [{s}]: oracle image prepared in {s}\n", .{ case.path, case.run_name, directory });
         return .prepared;
     }
-    errdefer ctx.errors.print("{s}: oracle evidence retained in {s}\n", .{ case.path, directory }) catch {};
+    errdefer ctx.errors.print("{s} [{s}]: oracle evidence retained in {s}\n", .{ case.path, case.run_name, directory }) catch {};
     var output: std.ArrayList(u8) = .empty;
     defer output.deinit(allocator);
     var transport: std.Io.Writer.Allocating = .init(allocator);

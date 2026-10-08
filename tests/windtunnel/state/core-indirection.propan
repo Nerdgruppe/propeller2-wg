@@ -1,0 +1,74 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[from_source] == 0x12345678
+//? post: cog[0].reg[target] == 77
+//? post: cog[0].reg[redirected] == 15
+//? post: cog[0].reg[sum] == 10
+//? post: cog[0].reg[nibble] == 5
+//? post: cog[0].reg[byte_value] == 0x56
+//? post: cog[0].reg[word_value] == 0x1234
+//? post: cog[0].reg[lanes] == 0xbbccda00
+//? post: cog[0].reg[bit_value] == 8
+//? post: cog[0].reg[executed] == 9
+//? post: cog[0].reg[cancelled] == 123
+//? post: cog[0].reg[index] == 1
+//? post: cog[0].reg[source_pointer] == 0x12345679
+
+    ALTS source_pointer, 0
+    MOV from_source, register(0)
+    ALTD destination_pointer, 0
+    MOV register(0), 77
+    ALTR result_pointer, 0
+    ADD sum, 5
+    ALTGN nibble_index, &source
+    GETNIB nibble, register(0), 0
+    ALTGB byte_index, &source
+    GETBYTE byte_value, register(0), 0
+    ALTGW word_index, &source
+    GETWORD word_value, register(0), 0
+    ALTSN lane_nibble, &lanes
+    SETNIB register(0), 0xa, 0
+    ALTSB lane_byte, &lanes
+    SETBYTE register(0), 0xda, 0
+    ALTSW lane_word, &lanes
+    SETWORD register(0), word_data, 0
+    ALTB bit_index, &bit_value
+    BITH register(0), bit_index
+    ALTI instruction, 0b101_100_100
+    NOP
+    ALTI instruction, 0b001_000_000
+    MOV cancelled, 0
+    ALTS index, increment
+    MOV register(0), 0
+    AUGS 0x12345600
+    ALTD zero, &source_pointer
+    MOV register(0), 0x78
+    ADD source_pointer, 1
+    JMP nrel(_end)
+var source: LONG 0x12345678
+var source_pointer: LONG cogaddr(source)
+var destination_pointer: LONG target
+var result_pointer: LONG redirected
+var target: LONG 0
+var redirected: LONG 0
+var sum: LONG 10
+var from_source: LONG 0
+var nibble_index: LONG 3
+var byte_index: LONG 1
+var word_index: LONG 1
+var nibble: LONG 0
+var byte_value: LONG 0
+var word_value: LONG 0
+var lane_nibble: LONG 2
+var lane_byte: LONG 1
+var lane_word: LONG 1
+var lanes: LONG 0
+var bit_index: LONG 3
+var bit_value: LONG 0
+var instruction: LONG 0xf6040009 | (cogaddr(executed) << 9)
+var executed: LONG 0
+var cancelled: LONG 123
+var index: LONG 0
+var increment: LONG 512
+var zero: LONG 0
+var word_data: LONG 0xbbcc

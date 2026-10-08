@@ -8,6 +8,7 @@ const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const execute = @import("execute.zig");
 const enums = @import("enums.zig");
+const EventId = @import("p2").types.EventId;
 
 pub const Register = enums.Register;
 
@@ -21,16 +22,20 @@ hub: *Hub,
 id: u3,
 
 registers: std.EnumArray(Register, u32) = .initFill(0),
+/// Underlying RAM at $1F8..$1FF, bypassed by ordinary special-register access.
+ram_tail: [8]u32 = @splat(0),
 lut: [512]u32 = @splat(0),
 
 pc: u20 = 0,
 q: u32 = 0,
 setq_pending: bool = false,
+block_pointer_delta: bool = false,
 z: bool = false,
 c: bool = false,
 q2: bool = false,
 
 augs: u32 = 0,
+augs_pending: bool = false,
 augd: u32 = 0,
 
 lut_sharing: bool = false,
@@ -45,6 +50,23 @@ branched: bool = false,
 stack: [8]u32 = @splat(0),
 wait_until: ?u64 = null,
 fifo_address: ?u19 = null,
+ct_targets: [3]?u32 = @splat(null),
+events: u16 = 0,
+selectable_events: [4]?u6 = @splat(null),
+ct_low: ?u32 = null,
+pixel_pivot: u8 = 0,
+pixel_mode: u6 = 0,
+memory_transfer: ?MemoryTransfer = null,
+
+pub const MemoryTransfer = struct {
+    address: u32,
+    remaining: u64,
+    reg: u9,
+    lut: bool,
+    immediate: ?u32 = null,
+    no_result: bool = false,
+    block: bool = false,
+};
 
 pub fn init(hub: *Hub, id: u3) Cog {
     return .{
@@ -56,7 +78,18 @@ pub fn init(hub: *Hub, id: u3) Cog {
 pub fn reset(cog: *Cog) void {
     const id = cog.id;
     const hub = cog.hub;
+    const registers = cog.registers;
+    const ram_tail = cog.ram_tail;
+    const lut = cog.lut;
+    for (&hub.locks) |*lock| {
+        if (lock.taken and lock.owner == id) hub.release_lock(lock);
+    }
     cog.* = .init(hub, id);
+    // Cog and LUT RAM survive COGSTOP and no-load COGINIT.
+    cog.registers = registers;
+    cog.ram_tail = ram_tail;
+    cog.lut = lut;
+    for ([_]Register{ .PTRA, .PTRB, .DIRA, .DIRB, .OUTA, .OUTB }) |reg| cog.registers.set(reg, 0);
 }
 
 pub fn step(cog: *Cog) void {
@@ -64,6 +97,13 @@ pub fn step(cog: *Cog) void {
         std.debug.assert(cog.next_instruction == null);
         std.debug.assert(cog.current_instruction == null);
         return;
+    }
+
+    for (&cog.ct_targets, [3]EventId{ .CT1, .CT2, .CT3 }) |*target, event| {
+        if (target.*) |value| if (value == @as(u32, @truncate(cog.hub.counter))) {
+            cog.events |= event.mask();
+            target.* = null;
+        };
     }
 
     if (cog.current_instruction == null) {
@@ -118,9 +158,26 @@ pub fn pop(cog: *Cog) u32 {
 }
 
 pub fn call(cog: *Cog, target: u20) void {
-    const return_pc = cog.dispatch_pc +% @as(u20, if (cog.exec_mode == .hub) 4 else 1);
-    cog.push((@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | return_pc);
+    cog.push(cog.return_address());
     cog.jump(target);
+}
+
+pub fn return_address(cog: *Cog) u32 {
+    const pc = cog.dispatch_pc +% @as(u20, if (cog.exec_mode == .hub) 4 else 1);
+    return (@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | pc;
+}
+
+pub fn write_result(cog: *Cog, reg: Register, value: u32) void {
+    if (cog.current_instruction) |state| {
+        if (state.no_result) return;
+        cog.write_reg(state.alt_r orelse reg, value);
+    } else cog.write_reg(reg, value);
+}
+
+pub fn signal_selectable(cog: *Cog, config: u6) void {
+    for (cog.selectable_events, [4]EventId{ .SE1, .SE2, .SE3, .SE4 }) |selection, event| {
+        if (selection != null and selection.? == config) cog.events |= event.mask();
+    }
 }
 
 pub fn other(cog: *Cog) *Cog {
@@ -150,11 +207,19 @@ pub fn read_reg(cog: *Cog, reg: Register) u32 {
 
 pub fn write_lut(cog: *Cog, addr: u9, value: u32) void {
     cog.lut[addr] = value;
-    if (cog.lut_sharing)
+    if (cog.other().lut_sharing)
         cog.other().lut[addr] = value;
+    if (addr >= 0x1fc) {
+        cog.signal_selectable(4 | (@as(u6, @truncate(addr)) & 3));
+        cog.other().signal_selectable(12 | (@as(u6, @truncate(addr)) & 3));
+    }
 }
 
 pub fn read_lut(cog: *Cog, addr: u9) u32 {
+    if (addr >= 0x1fc) {
+        cog.signal_selectable(@as(u6, @truncate(addr)) & 3);
+        cog.other().signal_selectable(8 | (@as(u6, @truncate(addr)) & 3));
+    }
     return cog.lut[addr];
 }
 
@@ -196,12 +261,14 @@ pub const PipelineState = struct {
     alt_d: ?Register = null,
     /// Full source value forwarded by SCA, SCAS or XORO32 to this instruction.
     s_value: ?u32 = null,
+    no_result: bool = false,
 };
 
 /// Fetches the last value set up by 'AUGS' and resets the value.
 pub fn fetch_augs(cog: *Cog) u32 {
     const augs = cog.augs;
     cog.augs = 0;
+    cog.augs_pending = false;
     return augs;
 }
 

@@ -63,6 +63,7 @@ fn codeAddress(module: propan.Module, name: []const u8) !u20 {
 
 fn resolve(module: propan.Module, assignment: checklist.Assignment) !Resolved {
     const kind: Kind = switch (assignment.target) {
+        .sym => return error.InvalidPrecondition,
         .reg => .reg,
         .hub => .hub,
         .c => .c,
@@ -72,6 +73,7 @@ fn resolve(module: propan.Module, assignment: checklist.Assignment) !Resolved {
     const offset = switch (assignment.target) {
         .reg, .hub => |a| try address(module, a, kind),
         .c, .z, .q => 0,
+        .sym => unreachable,
     };
     const len: u32 = @intCast(assignment.bytes.len);
     if (len == 0) return error.EmptyObservation;
@@ -142,8 +144,19 @@ fn read(hub: *Hub, cog: u3, observation: Observation, out: *std.Io.Writer) !void
 fn runSource(ctx: Context, path: []const u8, source: []const u8) !oracle.Status {
     var arena: std.heap.ArenaAllocator = .init(ctx.allocator);
     defer arena.deinit();
+    const list = try checklist.parse(arena.allocator(), path, source, ctx.errors);
+    var status: oracle.Status = .skipped;
+    for (list.runs, 1..) |run, index| {
+        const name = run.name orelse try std.fmt.allocPrint(arena.allocator(), "run {d}", .{index});
+        status = try runOne(ctx, path, source, try list.forRun(arena.allocator(), run), name);
+    }
+    return status;
+}
+
+fn runOne(ctx: Context, path: []const u8, source: []const u8, list: checklist.List, run_name: []const u8) !oracle.Status {
+    var arena: std.heap.ArenaAllocator = .init(ctx.allocator);
+    defer arena.deinit();
     const allocator = arena.allocator();
-    const list = try checklist.parse(allocator, path, source, ctx.errors);
     const oracle_ctx: oracle.Context = .{ .allocator = ctx.allocator, .io = ctx.io, .errors = ctx.errors };
     var compiled = if (list.profile == .cog) try oracle.assemble(oracle_ctx, path, list, &.{}, &.{}, 1, false) else try propan.assemble(ctx.allocator, ctx.io, path, source, ctx.errors);
     defer compiled.deinit();
@@ -165,6 +178,7 @@ fn runSource(ctx: Context, path: []const u8, source: []const u8) !oracle.Status 
     }
     for ([_][]const checklist.Assignment{ list.pre, list.post }, 0..) |assignments, group| {
         for (assignments) |assignment| {
+            if (assignment.target == .sym) continue;
             const resolved = resolve(compiled.module, assignment) catch |err| {
                 try ctx.errors.print("{s}:{d}: {t}\n", .{ path, assignment.line, err });
                 return err;
@@ -190,6 +204,8 @@ fn runSource(ctx: Context, path: []const u8, source: []const u8) !oracle.Status 
         compiled = initialized;
         stop = try codeAddress(compiled.module, "_wt_stop");
     }
+    try oracle.patchImage(compiled.module, compiled.image, list.pre, path, ctx.errors);
+    if (list.profile == .cog) try validateLayout(compiled.module, compiled.image, stop.?);
     const hub = try allocator.create(Hub);
     hub.init();
     @memcpy(hub.memory[0..compiled.image.len], compiled.image);
@@ -204,7 +220,7 @@ fn runSource(ctx: Context, path: []const u8, source: []const u8) !oracle.Status 
             var snapshot: std.Io.Writer.Allocating = .init(allocator);
             defer snapshot.deinit();
             if (captured.written().len != 0) snapshot.writer.writeAll(captured.written()) catch {} else for (observations.items) |o| read(hub, list.cog, o, &snapshot.writer) catch {};
-            oracle.retainLocalFailure(.{ .allocator = allocator, .io = ctx.io, .errors = ctx.errors, .artifacts = ctx.options.@"artifact-dir" }, path, source, compiled.image, pre.items, observations.items, snapshot.written(), stdout.written(), hub.counter, err) catch {};
+            oracle.retainLocalFailure(.{ .allocator = allocator, .io = ctx.io, .errors = ctx.errors, .artifacts = ctx.options.@"artifact-dir" }, path, run_name, source, compiled.image, pre.items, observations.items, snapshot.written(), stdout.written(), hub.counter, err) catch {};
         }
     }
     var reached = false;
@@ -227,15 +243,22 @@ fn runSource(ctx: Context, path: []const u8, source: []const u8) !oracle.Status 
             if (hub.cogs[list.cog].current_instruction orelse hub.cogs[list.cog].next_instruction) |instruction| try validateDispatch(compiled.module, dut_origin, instruction);
         }
         hub.step();
-        // WAITX cannot make progress before its deadline. With no other cog or
-        // pending UART event, advancing the counter preserves observable state.
+        // With no other cog or pending UART event, jump to the next deadline.
+        // Counter events must still be visited while WAITX or a timed WAIT stalls.
         if (hub.cogs[0].wait_until) |deadline| {
             var alone = true;
             for (hub.cogs[1..]) |cog| if (cog.exec_mode != .stopped) {
                 alone = false;
                 break;
             };
-            if (alone and !hub.io.txBusy() and hub.io.input_index == hub.io.input.len) hub.counter = @min(deadline, list.max_cycles);
+            if (alone and !hub.io.txBusy() and hub.io.input_index == hub.io.input.len) {
+                var next = deadline;
+                for (hub.cogs[0].ct_targets) |target| if (target) |value| {
+                    const delta = value -% @as(u32, @truncate(hub.counter));
+                    next = @min(next, hub.counter + delta);
+                };
+                hub.counter = @min(next, list.max_cycles);
+            }
         }
         if (!supplied_stdin and stdout.written().len >= list.stdin_after.len) {
             if (!std.mem.startsWith(u8, stdout.written(), list.stdin_after)) return error.ReadinessMismatch;
@@ -295,6 +318,7 @@ fn runSource(ctx: Context, path: []const u8, source: []const u8) !oracle.Status 
         .prepare_only = ctx.options.@"prepare-oracle",
     }, .{
         .path = path,
+        .run_name = run_name,
         .source = source,
         .list = list,
         .entry = entry,
@@ -351,18 +375,34 @@ pub fn main(init: std.process.Init) !u8 {
     // The build runner treats captured stderr as diagnostics.
     const report_success = !init.environ_map.contains("ZIG_PROGRESS");
     var failed: usize = 0;
+    var total_runs: usize = 0;
+    var failed_runs: usize = 0;
     for (paths.items) |path| {
         const fixture_progress = progress.start(path, 0);
         defer fixture_progress.end();
         const source = try std.Io.Dir.cwd().readFileAlloc(init.io, path, allocator, .limited(1 << 20));
-        const status = runSource(.{ .allocator = init.gpa, .io = init.io, .errors = &stderr.interface, .options = cli.options, .endpoint = endpoint }, path, source) catch |err| {
+        var arena: std.heap.ArenaAllocator = .init(init.gpa);
+        defer arena.deinit();
+        const list = checklist.parse(arena.allocator(), path, source, &stderr.interface) catch |err| {
             try stderr.interface.print("FAIL {s}: {t}\n", .{ path, err });
             failed += 1;
             continue;
         };
-        if (report_success) try stderr.interface.print("PASS {s} (oracle {t})\n", .{ path, status });
+        var fixture_failed = false;
+        for (list.runs, 1..) |run, index| {
+            total_runs += 1;
+            const name = run.name orelse try std.fmt.allocPrint(arena.allocator(), "run {d}", .{index});
+            const status = runOne(.{ .allocator = init.gpa, .io = init.io, .errors = &stderr.interface, .options = cli.options, .endpoint = endpoint }, path, source, try list.forRun(arena.allocator(), run), name) catch |err| {
+                try stderr.interface.print("FAIL {s} [{s}]: {t}\n", .{ path, name, err });
+                fixture_failed = true;
+                failed_runs += 1;
+                continue;
+            };
+            if (report_success) try stderr.interface.print("PASS {s} [{s}] (oracle {t})\n", .{ path, name, status });
+        }
+        if (fixture_failed) failed += 1;
     }
-    if (report_success or failed != 0) try stderr.interface.print("{d} fixtures: {d} passed, {d} failed\n", .{ paths.items.len, paths.items.len - failed, failed });
+    if (report_success or failed != 0) try stderr.interface.print("{d} fixtures: {d} passed, {d} failed; {d} runs: {d} passed, {d} failed\n", .{ paths.items.len, paths.items.len - failed, failed, total_runs, total_runs - failed_runs, failed_runs });
     return if (failed == 0) 0 else 1;
 }
 
@@ -383,6 +423,7 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
     _ = try runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[result] == 7\n" ++ code);
     try std.testing.expectError(error.AssertionFailed, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[result] == 8\n" ++ code));
     try std.testing.expectError(error.CycleLimit, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? max-cycles: 1\n//? post: cog[0].reg[result] == 7\n" ++ code));
+    try std.testing.expectError(error.CycleLimit, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? max-cycles: 100\n//? post: cog[0].reg[value] == 0\n\nSETQ aug(0xffffffff)\nRDLONG value, PTRA\nJMP nrel(_end)\nvar value: LONG 0\n"));
     try std.testing.expectError(error.DuplicatePrecondition, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: cog[0].c = true\n//? pre: cog[0].c = false\n" ++ code));
     try std.testing.expectError(error.UnknownSymbol, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[missing] == 7\n" ++ code));
     try std.testing.expectError(error.InvalidChecklist, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: cog[0].reg[1] = 0\n" ++ code));
@@ -395,4 +436,103 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
     try std.testing.expectError(error.UnsupportedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWXPIN 'x', 1\nCOGSTOP 0\n"));
     try std.testing.expectError(error.UnsupportedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWYPIN 1, 1\nCOGSTOP 0\n"));
     try std.testing.expectError(error.ReadinessNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: \"x\"\n//? stdin-after: \"READY\"\n//? stdout: \"READYx\"\n\n.cogexec\nCOGSTOP 0\n"));
+}
+
+test "runs patch cog and hub initialization independently" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+    const ctx: Context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer, .retain_failures = false };
+    _ = try runTemporary(ctx,
+        \\//? WINDTUNNEL CHECK LIST
+        \\//? pre: sym[value] = u32 [1]
+        \\//? post: cog[0].reg[value] == 2
+        \\//? post: hub[buffer] == u32 [2]
+        \\//? run: "zero"
+        \\//? pre: sym[buffer] = u8 [0, 0, 0, 0]
+        \\//? pre: cog[0].c = true
+        \\//? post: cog[0].reg[loaded] == 0
+        \\//? post: cog[0].c == true
+        \\//? run:
+        \\//? post: cog[0].reg[loaded] == 0x01020304
+        \\//? post: cog[0].c == false
+        \\//? run: "partial"
+        \\//? pre: sym[buffer] = hex [ff]
+        \\//? post: cog[0].reg[loaded] == 0x010203ff
+        \\//? post: cog[0].c == false
+        \\//? run: "restored"
+        \\//? post: cog[0].reg[loaded] == 0x01020304
+        \\//? post: cog[0].c == false
+        \\
+        \\RDLONG loaded, aug(hubaddr(buffer))
+        \\ADD value, 1
+        \\WRLONG value, aug(hubaddr(buffer))
+        \\JMP nrel(_end)
+        \\var value: LONG 0xffffffff
+        \\var loaded: LONG 0
+        \\.data
+        \\buffer: LONG 0x01020304
+    );
+    const code = "\nJMP nrel(_end)\nvar value: LONG 0\n";
+    try std.testing.expectError(error.UnknownSymbol, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[missing] = u32 [1]\n" ++ code));
+    try std.testing.expectError(error.EmptyPatch, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[value] = u32 []\n" ++ code));
+    try std.testing.expectError(error.ReservedMemory, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[_wt_reg_snapshot] = u32 [1]\n" ++ code));
+    try std.testing.expectError(error.UndefinedMemory, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[value] = u32 [1, 2]\n" ++ code));
+    // Program fixtures can patch initialization without the cog reporter.
+    _ = try runTemporary(ctx,
+        \\//? WINDTUNNEL CHECK LIST
+        \\//? profile: program
+        \\//? pre: sym[stopper] = u32 [0]
+        \\
+        \\.cogexec
+        \\COGSTOP stopper
+        \\var stopper: LONG 7
+    );
+}
+
+test "oracle preparation applies patches to every run and records run identity" {
+    var tmp = std.testing.tmpDir(.{ .iterate = true });
+    defer tmp.cleanup();
+    const artifacts = try tmp.dir.realPathFileAlloc(std.testing.io, ".", std.testing.allocator);
+    defer std.testing.allocator.free(artifacts);
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+    const ctx: Context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer, .options = .{ .@"prepare-oracle" = true, .@"artifact-dir" = artifacts }, .retain_failures = false };
+    try std.testing.expectEqual(oracle.Status.prepared, try runTemporary(ctx,
+        \\//? WINDTUNNEL CHECK LIST
+        \\//? post: cog[0].reg[value] == 0x76543210
+        \\//? post: cog[0].reg[next] == 0xfedcba98
+        \\//? pre: sym[value] = u32 [0x76543210, 0xfedcba98]
+        \\//? run: "first"
+        \\//? run: "second"
+        \\
+        \\JMP nrel(_end)
+        \\var value: LONG 0x01234567
+        \\var next: LONG 0x89abcdef
+    ));
+    var walker = try tmp.dir.walk(std.testing.allocator);
+    defer walker.deinit();
+    var images: usize = 0;
+    var metadata: usize = 0;
+    var names: [2]bool = .{ false, false };
+    while (try walker.next(std.testing.io)) |file| {
+        if (file.kind != .file) continue;
+        if (std.mem.eql(u8, file.basename, "original.bin") or std.mem.eql(u8, file.basename, "uploaded.bin")) {
+            const image = try tmp.dir.readFileAlloc(std.testing.io, file.path, std.testing.allocator, .limited(1 << 20));
+            defer std.testing.allocator.free(image);
+            try std.testing.expect(std.mem.indexOf(u8, image, &.{ 0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe }) != null);
+            images += 1;
+        } else if (std.mem.eql(u8, file.basename, "simulation.json")) {
+            const json = try tmp.dir.readFileAlloc(std.testing.io, file.path, std.testing.allocator, .limited(1 << 20));
+            defer std.testing.allocator.free(json);
+            var parsed = try std.json.parseFromSlice(std.json.Value, std.testing.allocator, json, .{});
+            defer parsed.deinit();
+            const name = parsed.value.object.get("run").?.string;
+            const index: usize = if (std.mem.eql(u8, name, "first")) 0 else if (std.mem.eql(u8, name, "second")) 1 else return error.UnexpectedRunName;
+            try std.testing.expect(!names[index]);
+            names[index] = true;
+            metadata += 1;
+        }
+    }
+    try std.testing.expectEqual(@as(usize, 4), images);
+    try std.testing.expectEqual(@as(usize, 2), metadata);
 }
