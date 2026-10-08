@@ -43,7 +43,6 @@ next_instruction: ?PipelineState = null,
 dispatch_pc: u20 = 0,
 branched: bool = false,
 stack: [8]u32 = @splat(0),
-stack_index: u3 = 0,
 wait_until: ?u64 = null,
 fifo_address: ?u19 = null,
 
@@ -106,14 +105,22 @@ pub fn jump(cog: *Cog, target: u20) void {
     cog.branched = true;
 }
 
-pub fn push(cog: *Cog) void {
-    cog.stack[cog.stack_index] = (@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | (cog.dispatch_pc + @as(u20, if (cog.exec_mode == .hub) 4 else 1));
-    cog.stack_index +%= 1;
+pub fn push(cog: *Cog, value: u32) void {
+    std.mem.copyBackwards(u32, cog.stack[1..], cog.stack[0..7]);
+    cog.stack[0] = value;
 }
 
 pub fn pop(cog: *Cog) u32 {
-    cog.stack_index -%= 1;
-    return cog.stack[cog.stack_index];
+    const value = cog.stack[0];
+    // Entry 7 stays unchanged, so repeated pops eventually repeat that value.
+    std.mem.copyForwards(u32, cog.stack[0..7], cog.stack[1..]);
+    return value;
+}
+
+pub fn call(cog: *Cog, target: u20) void {
+    const return_pc = cog.dispatch_pc +% @as(u20, if (cog.exec_mode == .hub) 4 else 1);
+    cog.push((@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | return_pc);
+    cog.jump(target);
 }
 
 pub fn other(cog: *Cog) *Cog {
