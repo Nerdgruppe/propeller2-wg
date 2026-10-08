@@ -89,6 +89,12 @@ pub fn build(b: *std.Build) !void {
 
     // Build:
 
+    const mod_p2 = b.createModule(.{
+        .root_source_file = b.path("src/libp2/propeller2.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
     const turboprop_mod = b.addModule("turboprop", .{
         .root_source_file = b.path("src/turboprop/turboprop.zig"),
         .target = target,
@@ -104,6 +110,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
             .{ .name = "ptk", .module = ptk_mod },
             .{ .name = "args", .module = args_mod },
         },
@@ -114,6 +121,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
             .{ .name = "args", .module = args_mod },
         },
     });
@@ -167,6 +175,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
             .{ .name = "args", .module = args_mod },
             .{ .name = "propan", .module = propan_mod },
             .{ .name = "oracle-template", .module = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/oracle.propan.in") }) },
