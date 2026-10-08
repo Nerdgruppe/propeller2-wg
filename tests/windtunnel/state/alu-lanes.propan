@@ -1,0 +1,35 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[nibble] == 0xf2345678
+//? post: cog[0].reg[nibble_read] == 8
+//? post: cog[0].reg[nibble_rotate] == 0x2345678c
+//? post: cog[0].reg[byte] == 0x12ef5678
+//? post: cog[0].reg[byte_read] == 0xcd
+//? post: cog[0].reg[byte_rotate] == 0x34567889
+//? post: cog[0].reg[word] == 0xcdef5678
+//? post: cog[0].reg[word_read] == 0x89ab
+//? post: cog[0].reg[word_rotate] == 0x567889ab
+//? post: cog[0].reg[reversed] == 0x78563412
+//? post: cog[0].reg[source] == 0x89abcdef
+
+    SETNIB nibble, 15, 7
+    GETNIB nibble_read, source, 7
+    ROLNIB nibble_rotate, source, 3
+    SETBYTE byte, source, 2
+    GETBYTE byte_read, source, 1
+    ROLBYTE byte_rotate, source, 3
+    SETWORD word, source, 1
+    GETWORD word_read, source, 1
+    ROLWORD word_rotate, source, 1
+    MOVBYTS reversed, 0x1b
+    JMP nrel(_end)
+var source: LONG 0x89abcdef
+var nibble: LONG 0x12345678
+var nibble_read: LONG 0
+var nibble_rotate: LONG 0x12345678
+var byte: LONG 0x12345678
+var byte_read: LONG 0
+var byte_rotate: LONG 0x12345678
+var word: LONG 0x12345678
+var word_read: LONG 0
+var word_rotate: LONG 0x12345678
+var reversed: LONG 0x12345678

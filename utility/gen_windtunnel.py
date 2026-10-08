@@ -7,7 +7,6 @@ import sys
 import logging
 import sys
 import textwrap
-import caseconverter
 
 from typing import Iterable, Callable
 
@@ -21,6 +20,10 @@ from common import (
 )
 
 DATA_ROOT = Path(__file__).parent / ".." / "data" / "encoding"
+
+
+def snakecase(name: str) -> str:
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).replace("-", "_").lower()
 
 
 @dataclass
@@ -300,7 +303,7 @@ def render_encoding(stream: io.TextIOBase, groups: Iterable[Group]) -> None:
     )
 
     for grp in sorted(groups, key=lambda g: g.encoding):
-        stream.write(f"    {caseconverter.snakecase(grp.name)}: {grp.name},\n")
+        stream.write(f"    {snakecase(grp.name)}: {grp.name},\n")
 
     stream.write("};\n\n")
 
@@ -370,7 +373,7 @@ def render_decoder(
     )
 
     for instr in sorted(instructions, key=lambda i: i.id):
-        opcode = zig_id(caseconverter.snakecase(instr.id))
+        opcode = zig_id(snakecase(instr.id))
         stream.write(f"    {opcode},\n")
 
     stream.write(
@@ -393,8 +396,8 @@ def render_decoder(
 
         grp = groups[key]
 
-        opcode = zig_id(caseconverter.snakecase(instr.id))
-        grpname = zig_id(caseconverter.snakecase(grp.name))
+        opcode = zig_id(snakecase(instr.id))
+        grpname = zig_id(snakecase(grp.name))
 
         stream.write(f'        .{opcode} = "{grpname}",\n')
 
@@ -412,13 +415,13 @@ def render_decoder(
     )
 
     for instr in sorted(instructions, key=lambda i: i.encoding.variable_bits, reverse=True):
-        if instr.encoding.binary == 0:
+        if instr.id == "nop":
             # skip special-cased NOP
             continue
-        opcode = zig_id(caseconverter.snakecase(instr.id))
-        # TESTP* shares its opcode with DIR*: one of WC/WZ selects TESTP,
-        # equal C/Z effect bits select DIR. The raw dataset leaves these variable.
-        flag_rule = " and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19)))" if instr.id.lower().startswith("testp") else ""
+        opcode = zig_id(snakecase(instr.id))
+        # TESTB*/TESTP* share opcodes with BIT*/DIR*: unequal C/Z bits select
+        # the test, equal bits select the bit/pin modification instruction.
+        flag_rule = " and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19)))" if instr.id.lower().startswith(("testb", "testp")) else ""
         stream.write(f"    if((raw & 0x{instr.encoding.mask:08X}) == 0x{instr.encoding.binary:08X}{flag_rule})\n")
         stream.write(f"        return .{opcode};\n")
 
@@ -431,6 +434,8 @@ def render_executor_stub(
     instructions: Iterable[Instruction],
     groups: dict[str, Group],
 ) -> None:
+    alu_source = (DATA_ROOT / "../../src/libp2/alu.zig").read_text(encoding="utf-8")
+    alu_functions = set(re.findall(r"^pub fn ([A-Z][A-Z0-9_]*)\(", alu_source, re.MULTILINE)) - {"BITRND"}
     stream.write(
         textwrap.dedent(
             """
@@ -440,6 +445,7 @@ def render_executor_stub(
             const decode = @import("decode.zig");
             const encoding = @import("encoding.zig");
             const Cog = @import("Cog.zig");
+            const alu = @import("p2").alu;
 
             // codegen: begin:runtimehelpers
             // codegen: end:runtimehelpers
@@ -460,18 +466,17 @@ def render_executor_stub(
     )
 
     for instr in instructions:
-        if "simple_exec" not in instr.tags:
+        opcode = snakecase(instr.id)
+        if opcode.upper() not in alu_functions:
+            if opcode == "bitrnd" or "simple_exec" in instr.tags:
+                stream.write(f".{zig_id(opcode)} => return .unsupported,\n")
             continue
-
-        opcode = caseconverter.snakecase(instr.id)
-
+        assert instr.register_access in (None, "D"), instr.id
         grp_key = str(instr.encoding).replace("1", "_").replace("0", "_")
         grp = groups[grp_key]
-
-        grpname = zig_id(grp.name)
-
+        writes_result = "true" if instr.register_access == "D" else "false"
         stream.write(
-            f"inline .{zig_id(opcode)} => |opc| return execute_simple(cog, state, encoding.{grpname}, enc.{caseconverter.snakecase(grpname)}, @tagName(opc)),\n"
+            f".{zig_id(opcode)} => return execute_alu(cog, state, enc.{snakecase(grp.name)}, alu.{opcode.upper()}, {writes_result}),\n"
         )
 
     stream.write(
@@ -489,31 +494,6 @@ def render_executor_stub(
                 }
             }
 
-            const SimpleResult = struct {
-                result: u32,
-                c: bool,
-                z: bool,
-                implemented: bool = true,
-
-                pub const unsupported: SimpleResult = .{ .result = 0, .c = false, .z = false, .implemented = false };
-
-                pub fn simple(result: u32, c: bool, z: bool) SimpleResult {
-                    return .{ .result = result, .c = c, .z = z };
-                }
-
-                pub fn autoz(result: u32, c: bool) SimpleResult {
-                    return .{ .result = result, .c = c, .z = (result == 0) };
-                }
-
-                pub fn autoc(result: u32, z: bool) SimpleResult {
-                    return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = z };
-                }
-                
-                pub fn autocz(result: u32) SimpleResult {
-                    return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = (result == 0) };
-                }
-            };
-
             // codegen: begin:globalcode
             // TODO: Implement global stuff here
             // codegen: end:globalcode
@@ -524,6 +504,8 @@ def render_executor_stub(
     last_grp = None
 
     for instr in sorted(instructions, key=lambda i: (i.group, i.iid, i.id)):
+        if snakecase(instr.id).upper() in alu_functions or instr.id == "bitrnd" or "simple_exec" in instr.tags:
+            continue
         if instr.group != last_grp:
             stream.write(
                 textwrap.dedent(
@@ -544,7 +526,7 @@ def render_executor_stub(
 
         grp = groups[key]
 
-        opcode = caseconverter.snakecase(instr.id)
+        opcode = snakecase(instr.id)
         grpname = zig_id(grp.name)
 
         stream.write("\n\n")
@@ -558,65 +540,24 @@ def render_executor_stub(
             f"/// access:      mem={instr.memory_access}, reg={instr.register_access}, stack={instr.stack_access}\n"
         )
 
-        if "simple_exec" in instr.tags:
-            grp_key = str(instr.encoding).replace("1", "_").replace("0", "_")
-            grp = groups[grp_key]
+        stream.write(f"pub fn {zig_id(opcode)}(cog: *Cog, args: encoding.{grpname}) Cog.ExecResult {{\n")
+        stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
+        stream.write("    _ = cog;\n")
+        stream.write("    _ = args;\n")
+        stream.write('    return .unsupported;\n')
+        stream.write("    // return .next;\n")
+        stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
+        stream.write("}\n")
+    stream.write('\ntest "all deterministic ALU opcodes delegate to libp2" {\n')
+    for instr in instructions:
+        opcode = snakecase(instr.id)
+        if opcode.upper() in alu_functions:
+            writes_result = "true" if instr.register_access == "D" else "false"
+            stream.write(
+                f"    try test_alu_dispatch(.{zig_id(opcode)}, 0x{instr.encoding.binary:08X}, alu.{opcode.upper()}, {writes_result});\n"
+            )
+    stream.write("}\n\n// codegen: begin:executortests\n// codegen: end:executortests\n")
 
-            field_keys = [k for k, _ in grp.fields]
-            assert "cond" in field_keys
-
-            has_d = "d" in field_keys
-            if has_d:
-                pass
-            else:
-                assert "d_imm" not in field_keys
-
-            has_s = "s" in field_keys
-            if has_s:
-                pass
-            else:
-                assert "s_imm" not in field_keys
-
-            mods_c = "c_mod" in field_keys
-            mods_z = "z_mod" in field_keys
-
-            stream.write(f"pub fn {zig_id(opcode)}(cog: *Cog")
-            if has_d:
-                stream.write(", d: u32")
-            if has_s:
-                stream.write(", s: u32")
-
-            stream.write(") SimpleResult {\n")
-            stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
-            stream.write("    _ = cog;\n")
-            if has_d:
-                stream.write("    _ = d;\n")
-            if has_s:
-                stream.write("    _ = s;\n")
-
-            stream.write('    return SimpleResult.unsupported;\n')
-
-            if "z_is_reszero" in instr.tags and "c_is_resmsb" in instr.tags:
-                stream.write("    // return .autocz(result);\n")
-            elif "z_is_reszero" in instr.tags:
-                stream.write("    // return .autoz(result, c);\n")
-            elif "c_is_resmsb" in instr.tags:
-                stream.write("    // return .autoc(result, z);\n")
-            else:
-                stream.write("    // return .simple(result, c, z);\n")
-
-            stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
-            stream.write("}\n")
-
-        else:
-            stream.write(f"pub fn {zig_id(opcode)}(cog: *Cog, args: encoding.{grpname}) Cog.ExecResult {{\n")
-            stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
-            stream.write("    _ = cog;\n")
-            stream.write("    _ = args;\n")
-            stream.write('    return .unsupported;\n')
-            stream.write("    // return .next;\n")
-            stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
-            stream.write("}\n")
 
 
 if __name__ == "__main__":

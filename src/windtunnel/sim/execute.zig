@@ -4,6 +4,7 @@ const logger = std.log.scoped(.execute);
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const Cog = @import("Cog.zig");
+const alu = @import("p2").alu;
 
 // codegen: begin:runtimehelpers
 fn operandD(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
@@ -11,7 +12,9 @@ fn operandD(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
 }
 
 fn operandS(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
-    return if (immediate) @intFromEnum(reg) | cog.fetch_augs() else cog.read_reg(reg);
+    const selected = if (cog.current_instruction) |state| state.alt_s orelse reg else reg;
+    const source = if (immediate) @intFromEnum(selected) | cog.fetch_augs() else cog.read_reg(selected);
+    return if (cog.current_instruction) |state| state.s_value orelse source else source;
 }
 
 fn branchA(cog: *Cog, args: encoding.AbsPointer) u20 {
@@ -22,10 +25,11 @@ fn branchA(cog: *Cog, args: encoding.AbsPointer) u20 {
 }
 
 fn branchS(cog: *Cog, reg: Cog.Register, immediate: bool) u20 {
-    if (!immediate) return @truncate(cog.read_reg(reg));
-    const aug = cog.fetch_augs();
-    const raw: u20 = @truncate(@intFromEnum(reg) | aug);
-    const displacement: u20 = if (aug != 0) raw else @bitCast(@as(i20, @as(i9, @bitCast(@as(u9, @intFromEnum(reg))))));
+    const augmented = cog.augs != 0;
+    const substituted = if (cog.current_instruction) |state| state.s_value != null else false;
+    const raw: u20 = @truncate(operandS(cog, reg, immediate));
+    if (!immediate) return raw;
+    const displacement: u20 = if (augmented or substituted) raw else @bitCast(@as(i20, @as(i9, @bitCast(@as(u9, @truncate(raw))))));
     return cog.dispatch_pc +% @as(u20, if (cog.exec_mode == .hub) 4 else 1) +% (displacement *% @as(u20, if (cog.exec_mode == .hub) 4 else 1));
 }
 // codegen: end:runtimehelpers
@@ -41,103 +45,119 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
 
     switch (opcode) {
         .invalid => return .trap,
-        inline .ror => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rol => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .shr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .shl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rcr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rcl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sar => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sal => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .add => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .addx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .adds => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .addsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sub => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmp => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmps => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpm => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpsub => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fge => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fle => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fges => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fles => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_and => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_and => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_or => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_or => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bith => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitrnd => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnot => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"and" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .andn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"or" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .mov => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .not => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .abs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .neg => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .incmod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .decmod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .zerox => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .signx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .encod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .ones => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"test" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .setr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .setd => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .sets => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .decod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .bmask => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .muxnits => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .muxnibs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .movbyts => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .mul => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_ZFlag, enc.both_d_simm_zflag, @tagName(opc)),
-        inline .muls => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_ZFlag, enc.both_d_simm_zflag, @tagName(opc)),
-        inline .splitb => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .mergeb => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .splitw => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .mergew => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .seussf => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .seussr => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rgbsqz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rgbexp => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rev => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rczr => |opc| return execute_simple(cog, state, encoding.Only_D_Flags, enc.only_d_flags, @tagName(opc)),
-        inline .rczl => |opc| return execute_simple(cog, state, encoding.Only_D_Flags, enc.only_d_flags, @tagName(opc)),
-        inline .wrc => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrnc => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrnz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
+        .ror => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ROR, true),
+        .rol => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ROL, true),
+        .shr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SHR, true),
+        .shl => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SHL, true),
+        .rcr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.RCR, true),
+        .rcl => return execute_alu(cog, state, enc.both_d_simm_flags, alu.RCL, true),
+        .sar => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SAR, true),
+        .sal => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SAL, true),
+        .add => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADD, true),
+        .addx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADDX, true),
+        .adds => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADDS, true),
+        .addsx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADDSX, true),
+        .sub => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUB, true),
+        .subx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBX, true),
+        .subs => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBS, true),
+        .subsx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBSX, true),
+        .cmp => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMP, false),
+        .cmpx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPX, false),
+        .cmps => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPS, false),
+        .cmpsx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPSX, false),
+        .cmpr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPR, false),
+        .cmpm => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPM, false),
+        .subr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBR, true),
+        .cmpsub => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPSUB, true),
+        .fge => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FGE, true),
+        .fle => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FLE, true),
+        .fges => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FGES, true),
+        .fles => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FLES, true),
+        .sumc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMC, true),
+        .sumnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMNC, true),
+        .sumz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMZ, true),
+        .sumnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMNZ, true),
+        .testb => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB, false),
+        .testbn => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN, false),
+        .testb_and => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB_AND, false),
+        .testbn_and => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN_AND, false),
+        .testb_or => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB_OR, false),
+        .testbn_or => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN_OR, false),
+        .testb_xor => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB_XOR, false),
+        .testbn_xor => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN_XOR, false),
+        .bitl => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITL, true),
+        .bith => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITH, true),
+        .bitc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITC, true),
+        .bitnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITNC, true),
+        .bitz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITZ, true),
+        .bitnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITNZ, true),
+        .bitrnd => return .unsupported,
+        .bitnot => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITNOT, true),
+        .@"and" => return execute_alu(cog, state, enc.both_d_simm_flags, alu.AND, true),
+        .andn => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ANDN, true),
+        .@"or" => return execute_alu(cog, state, enc.both_d_simm_flags, alu.OR, true),
+        .xor => return execute_alu(cog, state, enc.both_d_simm_flags, alu.XOR, true),
+        .muxc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXC, true),
+        .muxnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXNC, true),
+        .muxz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXZ, true),
+        .muxnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXNZ, true),
+        .mov => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MOV, true),
+        .not => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NOT, true),
+        .abs => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ABS, true),
+        .neg => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEG, true),
+        .negc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGC, true),
+        .negnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGNC, true),
+        .negz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGZ, true),
+        .negnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGNZ, true),
+        .incmod => return execute_alu(cog, state, enc.both_d_simm_flags, alu.INCMOD, true),
+        .decmod => return execute_alu(cog, state, enc.both_d_simm_flags, alu.DECMOD, true),
+        .zerox => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ZEROX, true),
+        .signx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SIGNX, true),
+        .encod => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ENCOD, true),
+        .ones => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ONES, true),
+        .@"test" => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TEST, false),
+        .testn => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTN, false),
+        .setnib => return execute_alu(cog, state, enc.both_d_simm_n3, alu.SETNIB, true),
+        .getnib => return execute_alu(cog, state, enc.both_d_simm_n3, alu.GETNIB, true),
+        .rolnib => return execute_alu(cog, state, enc.both_d_simm_n3, alu.ROLNIB, true),
+        .setbyte => return execute_alu(cog, state, enc.both_d_simm_n2, alu.SETBYTE, true),
+        .getbyte => return execute_alu(cog, state, enc.both_d_simm_n2, alu.GETBYTE, true),
+        .rolbyte => return execute_alu(cog, state, enc.both_d_simm_n2, alu.ROLBYTE, true),
+        .setword => return execute_alu(cog, state, enc.both_d_simm_n1, alu.SETWORD, true),
+        .getword => return execute_alu(cog, state, enc.both_d_simm_n1, alu.GETWORD, true),
+        .rolword => return execute_alu(cog, state, enc.both_d_simm_n1, alu.ROLWORD, true),
+        .setr => return execute_alu(cog, state, enc.both_d_simm, alu.SETR, true),
+        .setd => return execute_alu(cog, state, enc.both_d_simm, alu.SETD, true),
+        .sets => return execute_alu(cog, state, enc.both_d_simm, alu.SETS, true),
+        .decod => return execute_alu(cog, state, enc.both_d_simm, alu.DECOD, true),
+        .bmask => return execute_alu(cog, state, enc.both_d_simm, alu.BMASK, true),
+        .crcbit => return execute_alu(cog, state, enc.both_d_simm, alu.CRCBIT, true),
+        .crcnib => return execute_alu(cog, state, enc.both_d_simm, alu.CRCNIB, true),
+        .muxnits => return execute_alu(cog, state, enc.both_d_simm, alu.MUXNITS, true),
+        .muxnibs => return execute_alu(cog, state, enc.both_d_simm, alu.MUXNIBS, true),
+        .muxq => return execute_alu(cog, state, enc.both_d_simm, alu.MUXQ, true),
+        .movbyts => return execute_alu(cog, state, enc.both_d_simm, alu.MOVBYTS, true),
+        .mul => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.MUL, true),
+        .muls => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.MULS, true),
+        .sca => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.SCA, false),
+        .scas => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.SCAS, false),
+        .splitb => return execute_alu(cog, state, enc.only_d, alu.SPLITB, true),
+        .mergeb => return execute_alu(cog, state, enc.only_d, alu.MERGEB, true),
+        .splitw => return execute_alu(cog, state, enc.only_d, alu.SPLITW, true),
+        .mergew => return execute_alu(cog, state, enc.only_d, alu.MERGEW, true),
+        .seussf => return execute_alu(cog, state, enc.only_d, alu.SEUSSF, true),
+        .seussr => return execute_alu(cog, state, enc.only_d, alu.SEUSSR, true),
+        .rgbsqz => return execute_alu(cog, state, enc.only_d, alu.RGBSQZ, true),
+        .rgbexp => return execute_alu(cog, state, enc.only_d, alu.RGBEXP, true),
+        .xoro32 => return execute_alu(cog, state, enc.only_d, alu.XORO32, true),
+        .rev => return execute_alu(cog, state, enc.only_d, alu.REV, true),
+        .rczr => return execute_alu(cog, state, enc.only_d_flags, alu.RCZR, true),
+        .rczl => return execute_alu(cog, state, enc.only_d_flags, alu.RCZL, true),
+        .wrc => return execute_alu(cog, state, enc.only_d, alu.WRC, true),
+        .wrnc => return execute_alu(cog, state, enc.only_d, alu.WRNC, true),
+        .wrz => return execute_alu(cog, state, enc.only_d, alu.WRZ, true),
+        .wrnz => return execute_alu(cog, state, enc.only_d, alu.WRNZ, true),
+        .modcz => return execute_alu(cog, state, enc.update_flags, alu.MODCZ, false),
 
         inline else => |opc| {
             @setEvalBranchQuota(10_000);
@@ -151,97 +171,35 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
     }
 }
 
-const SimpleResult = struct {
-    result: u32,
-    c: bool,
-    z: bool,
-    implemented: bool = true,
-
-    pub const unsupported: SimpleResult = .{ .result = 0, .c = false, .z = false, .implemented = false };
-
-    pub fn simple(result: u32, c: bool, z: bool) SimpleResult {
-        return .{ .result = result, .c = c, .z = z };
-    }
-
-    pub fn autoz(result: u32, c: bool) SimpleResult {
-        return .{ .result = result, .c = c, .z = (result == 0) };
-    }
-
-    pub fn autoc(result: u32, z: bool) SimpleResult {
-        return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = z };
-    }
-
-    pub fn autocz(result: u32) SimpleResult {
-        return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = (result == 0) };
-    }
-};
-
 // codegen: begin:globalcode
-fn execute_simple(
+fn execute_alu(
     cog: *Cog,
     state: Cog.PipelineState,
-    comptime Operands: type,
-    operands: Operands,
-    comptime opcode: []const u8,
+    operands: anytype,
+    comptime function: anytype,
+    comptime writes_result: bool,
 ) Cog.ExecResult {
-    switch (Operands) {
-        encoding.Both_D_Simm_Flags => {},
-        encoding.Both_D_Simm => {},
-        encoding.Both_D_Simm_ZFlag => {},
-        encoding.Only_D => {},
-        encoding.Only_D_Flags => {},
-        else => @compileError("Unsupported simple type: " ++ @typeName(Operands)),
+    const Operands = @TypeOf(operands);
+    const is_modcz = Operands == encoding.UpdateFlags;
+    const d_reg: ?Cog.Register = if (is_modcz) null else state.alt_d orelse operands.d;
+    const source = if (@hasField(Operands, "s")) operandS(cog, state.alt_s orelse operands.s, operands.s_imm) else 0;
+    const input: alu.Input = .{
+        .d = if (is_modcz) (state.instr >> 9) & 0x1FF else cog.read_reg(d_reg.?),
+        .s = if (@hasField(Operands, "s")) state.s_value orelse source else 0,
+        .c = .from_bool(cog.c),
+        .z = .from_bool(cog.z),
+        .q = cog.q,
+        .setq_prefix = cog.setq_pending,
+    };
+    const output = if (@hasField(Operands, "n")) function(input, operands.n) else function(input);
+    if (writes_result) cog.write_reg(state.alt_r orelse d_reg.?, output.result);
+    if (@hasField(Operands, "c_mod") and operands.c_mod == .write) cog.c = output.c == .set;
+    if (@hasField(Operands, "z_mod") and operands.z_mod == .write) cog.z = output.z == .set;
+    cog.q = output.q;
+    if (output.next_s) |forwarded| {
+        // Cog.step prefetches the successor before dispatching this instruction.
+        if (cog.next_instruction) |*next| next.s_value = forwarded;
     }
-
-    const has_s = @hasField(Operands, "s");
-    const has_s_imm = @hasField(Operands, "s_imm");
-    const has_c_mod = @hasField(Operands, "c_mod");
-    const has_z_mod = @hasField(Operands, "z_mod");
-
-    if (!@hasField(Operands, "d"))
-        @compileError("Simple opcodes always a D operand!");
-
-    if (@hasField(Operands, "d_imm"))
-        @compileError("This code cannot handle immediate D yet!");
-
-    // Experimentation proves that AUGx is evalutated *after* the condition check
-    if (!cog.is_condition_met(operands.cond))
-        return .skip;
-
-    const d_reg: Cog.Register = state.alt_d orelse operands.d;
-    const r_reg: Cog.Register = state.alt_r orelse d_reg;
-
-    const d: u32 = cog.read_reg(d_reg);
-
-    const s: ?u32 = if (has_s) blk: {
-        const s_reg = state.alt_s orelse operands.s;
-
-        if (has_s_imm and operands.s_imm) {
-            break :blk @intFromEnum(s_reg) | cog.fetch_augs();
-        } else {
-            break :blk cog.read_reg(s_reg);
-        }
-    } else null;
-
-    logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {f}", .{ state.pc, state.instr, opcode, operands });
-
-    const function = @field(@This(), opcode);
-    const result: SimpleResult = if (has_s)
-        function(cog, d, s.?)
-    else
-        function(cog, d);
-
-    if (!result.implemented) return .unsupported;
-
-    cog.write_reg(r_reg, result.result);
-
-    if (has_c_mod and operands.c_mod == .write) {
-        cog.c = result.c;
-    }
-    if (has_z_mod and operands.z_mod == .write) {
-        cog.z = result.z;
-    }
-
     return .next;
 }
 // codegen: end:globalcode
@@ -3038,1894 +2996,6 @@ pub fn setluts(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 // GROUP: Math and Logic
 //
 
-/// ROR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate right.           D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn ror(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:ror
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:ror
-}
-
-/// ROL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate left.            D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rol(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rol
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:rol
-}
-
-/// SHR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift right.            D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn shr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:shr
-    _ = cog;
-    const shift: u5 = @truncate(s);
-    const last = if (shift == 0) d & 1 else (d >> (shift - 1)) & 1;
-    return .autoz(d >> shift, last != 0);
-    // codegen: end:shr
-}
-
-/// SHL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift left.             D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn shl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:shl
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:shl
-}
-
-/// RCR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate carry right.     D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rcr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rcr
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:rcr
-}
-
-/// RCL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate carry left.      D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rcl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rcl
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:rcl
-}
-
-/// SAR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift arithmetic right. D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sar(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sar
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:sar
-}
-
-/// SAL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift arithmetic left.  D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sal(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sal
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:sal
-}
-
-/// ADD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add S into D.                                  D = D + S.        C = carry of (D + S).               *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn add(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:add
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:add
-}
-
-/// ADDX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add (S + C) into D, extended.                  D = D + S + C.    C = carry of (D + S + C).           Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn addx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:addx
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:addx
-}
-
-/// ADDS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add S into D, signed.                          D = D + S.        C = correct sign of (D + S).        *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn adds(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:adds
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:adds
-}
-
-/// ADDSX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add (S + C) into D, signed and extended.       D = D + S + C.    C = correct sign of (D + S + C).    Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn addsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:addsx
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:addsx
-}
-
-/// SUB D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract S from D.                             D = D - S.        C = borrow of (D - S).              *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sub(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sub
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:sub
-}
-
-/// SUBX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract (S + C) from D, extended.             D = D - (S + C).  C = borrow of (D - (S + C)).        Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subx
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:subx
-}
-
-/// SUBS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract S from D, signed.                     D = D - S.        C = correct sign of (D - S).        *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subs
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:subs
-}
-
-/// SUBSX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract (S + C) from D, signed and extended.  D = D - (S + C).  C = correct sign of (D - (S + C)).  Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subsx
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:subsx
-}
-
-/// CMP D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to S.                                                  C = borrow of (D - S).              Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmp(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmp
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:cmp
-}
-
-/// CMPX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to (S + C), extended.                                  C = borrow of (D - (S + C)).        Z = Z AND (D == S + C).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpx
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:cmpx
-}
-
-/// CMPS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to S, signed.                                          C = correct sign of (D - S).        Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmps(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmps
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:cmps
-}
-
-/// CMPSX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to (S + C), signed and extended.                       C = correct sign of (D - (S + C)).  Z = Z AND (D == S + C).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpsx
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:cmpsx
-}
-
-/// CMPR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare S to D (reverse).                                        C = borrow of (S - D).              Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpr
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:cmpr
-}
-
-/// CMPM D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to S, get MSB of difference into C.                    C = MSB of (D - S).                 Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpm(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpm
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoc(result, z);
-    // codegen: end:cmpm
-}
-
-/// SUBR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract D from S (reverse).                   D = S - D.        C = borrow of (S - D).              *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subr
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:subr
-}
-
-/// CMPSUB D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare and subtract S from D if D >= S. If D => S then D = D - S and C = 1, else D same and C = 0.  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn cmpsub(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpsub
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:cmpsub
-}
-
-/// FGE D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D >= S. If D < S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fge(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fge
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:fge
-}
-
-/// FLE D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D <= S. If D > S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fle(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fle
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:fle
-}
-
-/// FGES D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D >= S, signed. If D < S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fges(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fges
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:fges
-}
-
-/// FLES D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D <= S, signed. If D > S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fles(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fles
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:fles
-}
-
-/// SUMC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by  C. If C = 1 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:sumc
-}
-
-/// SUMNC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by !C. If C = 0 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:sumnc
-}
-
-/// SUMZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by  Z. If Z = 1 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:sumz
-}
-
-/// SUMNZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by !Z. If Z = 0 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:sumnz
-}
-
-/// TESTB D, {#}S WC/WZ
-/// EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, write to C/Z. C/Z =          D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testb
-}
-
-/// TESTBN D, {#}S WC/WZ
-/// EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, write to C/Z. C/Z =         !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testbn
-}
-
-/// TESTB D, {#}S ANDC/ANDZ
-/// EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, AND into C/Z. C/Z = C/Z AND  D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb_and(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_and
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testb_and
-}
-
-/// TESTBN D, {#}S ANDC/ANDZ
-/// EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, AND into C/Z. C/Z = C/Z AND !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn_and(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_and
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testbn_and
-}
-
-/// TESTB D, {#}S ORC/ORZ
-/// EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, OR  into C/Z. C/Z = C/Z OR   D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb_or(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_or
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testb_or
-}
-
-/// TESTBN D, {#}S ORC/ORZ
-/// EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, OR  into C/Z. C/Z = C/Z OR  !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn_or(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_or
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testbn_or
-}
-
-/// TESTB D, {#}S XORC/XORZ
-/// EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, XOR into C/Z. C/Z = C/Z XOR  D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_xor
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testb_xor
-}
-
-/// TESTBN D, {#}S XORC/XORZ
-/// EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, XOR into C/Z. C/Z = C/Z XOR !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_xor
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testbn_xor
-}
-
-/// BITL D, {#}S {WCZ}
-/// EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = 0.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitl
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bitl
-}
-
-/// BITH D, {#}S {WCZ}
-/// EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = 1.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bith(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bith
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bith
-}
-
-/// BITC D, {#}S {WCZ}
-/// EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = C.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bitc
-}
-
-/// BITNC D, {#}S {WCZ}
-/// EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = !C.   Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bitnc
-}
-
-/// BITZ D, {#}S {WCZ}
-/// EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = Z.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bitz
-}
-
-/// BITNZ D, {#}S {WCZ}
-/// EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = !Z.   Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bitnz
-}
-
-/// BITRND D, {#}S {WCZ}
-/// EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = RNDs. Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitrnd(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitrnd
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bitrnd
-}
-
-/// BITNOT D, {#}S {WCZ}
-/// EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Toggle bits D[S[9:5]+S[4:0]:S[4:0]]. Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitnot(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnot
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bitnot
-}
-
-/// AND D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: AND S into D.    D = D & S.    C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn @"and"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"and"
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:@"and"
-}
-
-/// ANDN D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: AND !S into D.   D = D & !S.   C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn andn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:andn
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:andn
-}
-
-/// OR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: OR S into D.     D = D | S.    C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn @"or"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"or"
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:@"or"
-}
-
-/// XOR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: XOR S into D.    D = D ^ S.    C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:xor
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:xor
-}
-
-/// MUXC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux  C into each D bit that is '1' in S. D = (!S & D ) | (S & {32{ C}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:muxc
-}
-
-/// MUXNC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux !C into each D bit that is '1' in S. D = (!S & D ) | (S & {32{!C}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:muxnc
-}
-
-/// MUXZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux  Z into each D bit that is '1' in S. D = (!S & D ) | (S & {32{ Z}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:muxz
-}
-
-/// MUXNZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux !Z into each D bit that is '1' in S. D = (!S & D ) | (S & {32{!Z}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:muxnz
-}
-
-/// MOV D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Move S into D. D = S. C = S[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mov(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:mov
-    _ = cog;
-    _ = d;
-    return .autocz(s);
-    // codegen: end:mov
-}
-
-/// NOT D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get !S into D. D = !S. C = !S[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn not(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:not
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:not
-}
-
-/// ABS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get absolute value of S into D. D = ABS(S). C = S[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn abs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:abs
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:abs
-}
-
-/// NEG D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S into D. D = -S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn neg(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:neg
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autocz(result);
-    // codegen: end:neg
-}
-
-/// NEGC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by  C into D. If C = 1 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autocz(result);
-    // codegen: end:negc
-}
-
-/// NEGNC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by !C into D. If C = 0 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autocz(result);
-    // codegen: end:negnc
-}
-
-/// NEGZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by  Z into D. If Z = 1 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autocz(result);
-    // codegen: end:negz
-}
-
-/// NEGNZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by !Z into D. If Z = 0 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autocz(result);
-    // codegen: end:negnz
-}
-
-/// INCMOD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Increment with modulus. If D = S then D = 0 and C = 1, else D = D + 1 and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn incmod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:incmod
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:incmod
-}
-
-/// DECMOD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Decrement with modulus. If D = 0 then D = S and C = 1, else D = D - 1 and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn decmod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:decmod
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:decmod
-}
-
-/// ZEROX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Zero-extend D above bit S[4:0]. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn zerox(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:zerox
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autocz(result);
-    // codegen: end:zerox
-}
-
-/// SIGNX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sign-extend D from bit S[4:0]. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn signx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:signx
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autocz(result);
-    // codegen: end:signx
-}
-
-/// ENCOD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get bit position of top-most '1' in S into D. D = position of top '1' in S (0..31). C = (S != 0). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn encod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:encod
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:encod
-}
-
-/// ONES D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get number of '1's in S into D. D = number of '1's in S (0..32). C = LSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn ones(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:ones
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .autoz(result, c);
-    // codegen: end:ones
-}
-
-/// TEST D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test D with S. C = parity of (D & S). Z = ((D & S) == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn @"test"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"test"
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:@"test"
-}
-
-/// TESTN D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test D with !S. C = parity of (D & !S). Z = ((D & !S) == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testn
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:testn
-}
-
-/// SETNIB D, {#}S, #N
-/// EEEE 100000N NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S[3:0] into nibble N in D, keeping rest of D same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:setnib
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:setnib
-}
-
-/// GETNIB D, {#}S, #N
-/// EEEE 100001N NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get nibble N of S into D. D = {28'b0, S.NIBBLE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn getnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:getnib
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:getnib
-}
-
-/// ROLNIB D, {#}S, #N
-/// EEEE 100010N NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate-left nibble N of S into D. D = {D[27:0], S.NIBBLE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rolnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:rolnib
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:rolnib
-}
-
-/// SETBYTE D, {#}S, #N
-/// EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S[7:0] into byte N in D, keeping rest of D same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:setbyte
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:setbyte
-}
-
-/// GETBYTE D, {#}S, #N
-/// EEEE 1000111 NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get byte N of S into D. D = {24'b0, S.BYTE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn getbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:getbyte
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:getbyte
-}
-
-/// ROLBYTE D, {#}S, #N
-/// EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate-left byte N of S into D. D = {D[23:0], S.BYTE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rolbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:rolbyte
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:rolbyte
-}
-
-/// SETWORD D, {#}S, #N
-/// EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S[15:0] into word N in D, keeping rest of D same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:setword
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:setword
-}
-
-/// GETWORD D, {#}S, #N
-/// EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get word N of S into D. D = {16'b0, S.WORD[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn getword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:getword
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:getword
-}
-
-/// ROLWORD D, {#}S, #N
-/// EEEE 1001010 0NI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate-left word N of S into D. D = {D[15:0], S.WORD[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rolword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:rolword
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:rolword
-}
-
-/// SETR D, {#}S
-/// EEEE 1001101 01I DDDDDDDDD SSSSSSSSS
-///
-/// description: Set R field of D to S[8:0]. D = {D[31:28], S[8:0], D[18:0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:setr
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:setr
-}
-
-/// SETD D, {#}S
-/// EEEE 1001101 10I DDDDDDDDD SSSSSSSSS
-///
-/// description: Set D field of D to S[8:0]. D = {D[31:18], S[8:0], D[8:0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setd(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:setd
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:setd
-}
-
-/// SETS D, {#}S
-/// EEEE 1001101 11I DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S field of D to S[8:0]. D = {D[31:9], S[8:0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sets(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sets
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:sets
-}
-
-/// DECOD D, {#}S
-/// EEEE 1001110 00I DDDDDDDDD SSSSSSSSS
-///
-/// description: Decode S[4:0] into D. D = 1 << S[4:0].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn decod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:decod
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:decod
-}
-
-/// BMASK D, {#}S
-/// EEEE 1001110 01I DDDDDDDDD SSSSSSSSS
-///
-/// description: Get LSB-justified bit mask of size (S[4:0] + 1) into D. D = ($0_0000_0002 << S[4:0]) - 1.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bmask(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bmask
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:bmask
-}
-
-/// CRCBIT D, {#}S
-/// EEEE 1001110 10I DDDDDDDDD SSSSSSSSS
-///
-/// description: Iterate CRC value in D using C and polynomial in S. If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn crcbit(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:crcbit
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:crcbit
-}
-
-/// CRCNIB D, {#}S
-/// EEEE 1001110 11I DDDDDDDDD SSSSSSSSS
-///
-/// description: Iterate CRC value in D using Q[31:28] and polynomial in S. Like CRCBIT x 4. Q = Q << 4. For long, use SETQ+'REP #1,#8'+CRCNIB.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn crcnib(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:crcnib
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:crcnib
-}
-
-/// MUXNITS D, {#}S
-/// EEEE 1001111 00I DDDDDDDDD SSSSSSSSS
-///
-/// description: For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnits(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnits
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:muxnits
-}
-
-/// MUXNIBS D, {#}S
-/// EEEE 1001111 01I DDDDDDDDD SSSSSSSSS
-///
-/// description: For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnibs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnibs
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:muxnibs
-}
-
-/// MUXQ D, {#}S
-/// EEEE 1001111 10I DDDDDDDDD SSSSSSSSS
-///
-/// description: Used after SETQ. For each '1' bit in Q, copy the corresponding bit in S into D. D = (D & !Q) | (S & Q).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxq(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:muxq
-    const s = operandS(cog, args.s, args.s_imm);
-    cog.write_reg(args.d, (cog.read_reg(args.d) & ~cog.q) | (s & cog.q));
-    return .next;
-    // codegen: end:muxq
-}
-
-/// MOVBYTS D, {#}S
-/// EEEE 1001111 11I DDDDDDDDD SSSSSSSSS
-///
-/// description: Move bytes within D, per S. D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn movbyts(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:movbyts
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:movbyts
-}
-
-/// MUL D, {#}S {WZ}
-/// EEEE 1010000 0ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: D = unsigned (D[15:0] * S[15:0]). Z = (S == 0) | (D == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mul(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:mul
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:mul
-}
-
-/// MULS D, {#}S {WZ}
-/// EEEE 1010000 1ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: D = signed (D[15:0] * S[15:0]).   Z = (S == 0) | (D == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muls(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muls
-    _ = cog;
-    _ = d;
-    _ = s;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:muls
-}
-
-/// SCA D, {#}S {WZ}
-/// EEEE 1010001 0ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn sca(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
-    // codegen: begin:sca
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:sca
-}
-
-/// SCAS D, {#}S {WZ}
-/// EEEE 1010001 1ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14. In this scheme, $4000 = 1.0 and $C000 = -1.0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn scas(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
-    // codegen: begin:scas
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:scas
-}
-
-/// SPLITB D
-/// EEEE 1101011 000 DDDDDDDDD 001100000
-///
-/// description: Split every 4th bit of D into bytes. D = {D[31], D[27], D[23], D[19], ...D[12], D[8], D[4], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn splitb(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:splitb
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:splitb
-}
-
-/// MERGEB D
-/// EEEE 1101011 000 DDDDDDDDD 001100001
-///
-/// description: Merge bits of bytes in D. D = {D[31], D[23], D[15], D[7], ...D[24], D[16], D[8], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mergeb(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:mergeb
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:mergeb
-}
-
-/// SPLITW D
-/// EEEE 1101011 000 DDDDDDDDD 001100010
-///
-/// description: Split odd/even bits of D into words. D = {D[31], D[29], D[27], D[25], ...D[6], D[4], D[2], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn splitw(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:splitw
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:splitw
-}
-
-/// MERGEW D
-/// EEEE 1101011 000 DDDDDDDDD 001100011
-///
-/// description: Merge bits of words in D. D = {D[31], D[15], D[30], D[14], ...D[17], D[1], D[16], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mergew(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:mergew
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:mergew
-}
-
-/// SEUSSF D
-/// EEEE 1101011 000 DDDDDDDDD 001100100
-///
-/// description: Relocate and periodically invert bits within D. Returns to original value on 32nd iteration. Forward pattern.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn seussf(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:seussf
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:seussf
-}
-
-/// SEUSSR D
-/// EEEE 1101011 000 DDDDDDDDD 001100101
-///
-/// description: Relocate and periodically invert bits within D. Returns to original value on 32nd iteration. Reverse pattern.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn seussr(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:seussr
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:seussr
-}
-
-/// RGBSQZ D
-/// EEEE 1101011 000 DDDDDDDDD 001100110
-///
-/// description: Squeeze 8:8:8 RGB value in D[31:8] into 5:6:5 value in D[15:0]. D = {15'b0, D[31:27], D[23:18], D[15:11]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rgbsqz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rgbsqz
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:rgbsqz
-}
-
-/// RGBEXP D
-/// EEEE 1101011 000 DDDDDDDDD 001100111
-///
-/// description: Expand 5:6:5 RGB value in D[15:0] into 8:8:8 value in D[31:8]. D = {D[15:11,15:13], D[10:5,10:9], D[4:0,4:2], 8'b0}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rgbexp(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rgbexp
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:rgbexp
-}
-
-/// XORO32 D
-/// EEEE 1101011 000 DDDDDDDDD 001101000
-///
-/// description: Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S. D must be non-zero to iterate.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn xoro32(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
-    // codegen: begin:xoro32
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
-    // codegen: end:xoro32
-}
-
-/// REV D
-/// EEEE 1101011 000 DDDDDDDDD 001101001
-///
-/// description: Reverse D bits. D = D[0:31].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rev(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rev
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:rev
-}
-
-/// RCZR D {WC/WZ/WCZ}
-/// EEEE 1101011 CZ0 DDDDDDDDD 001101010
-///
-/// description: Rotate C,Z right through D. D = {C, Z, D[31:2]}. C = D[1],  Z = D[0].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rczr(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rczr
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:rczr
-}
-
-/// RCZL D {WC/WZ/WCZ}
-/// EEEE 1101011 CZ0 DDDDDDDDD 001101011
-///
-/// description: Rotate C,Z left through D.  D = {D[29:0], C, Z}. C = D[31], Z = D[30].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rczl(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rczl
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:rczl
-}
-
-/// WRC D
-/// EEEE 1101011 000 DDDDDDDDD 001101100
-///
-/// description: Write 0 or 1 to D, according to  C. D = {31'b0,  C}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrc(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrc
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:wrc
-}
-
-/// WRNC D
-/// EEEE 1101011 000 DDDDDDDDD 001101101
-///
-/// description: Write 0 or 1 to D, according to !C. D = {31'b0, !C}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrnc(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrnc
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:wrnc
-}
-
-/// WRZ D
-/// EEEE 1101011 000 DDDDDDDDD 001101110
-///
-/// description: Write 0 or 1 to D, according to  Z. D = {31'b0,  Z}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrz
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:wrz
-}
-
-/// WRNZ D
-/// EEEE 1101011 000 DDDDDDDDD 001101111
-///
-/// description: Write 0 or 1 to D, according to !Z. D = {31'b0, !Z}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrnz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrnz
-    _ = cog;
-    _ = d;
-    return SimpleResult.unsupported;
-    // return .simple(result, c, z);
-    // codegen: end:wrnz
-}
-
-/// MODCZ c, z {WC/WZ/WCZ}
-/// EEEE 1101011 CZ1 0cccczzzz 001101111
-///
-/// description: Modify C and Z according to cccc and zzzz. C = cccc[{C,Z}], Z = zzzz[{C,Z}]. See "MODCZ Operand" list.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn modcz(cog: *Cog, args: encoding.UpdateFlags) Cog.ExecResult {
-    // codegen: begin:modcz
-    const index: u2 = (@as(u2, @intFromBool(cog.c)) << 1) | @as(u2, @intFromBool(cog.z));
-    const c = (@intFromEnum(args.c_value) >> index) & 1 != 0;
-    const z = (@intFromEnum(args.z_value) >> index) & 1 != 0;
-    if (args.c_mod == .write) cog.c = c;
-    if (args.z_mod == .write) cog.z = z;
-    return .next;
-    // codegen: end:modcz
-}
-
 /// LOC PA/PB/PTRA/PTRB, #{\}A
 /// EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
 ///
@@ -6255,3 +4325,222 @@ pub fn getxacc(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // return .next;
     // codegen: end:getxacc
 }
+
+test "all deterministic ALU opcodes delegate to libp2" {
+    try test_alu_dispatch(.ror, 0x00000000, alu.ROR, true);
+    try test_alu_dispatch(.rol, 0x00200000, alu.ROL, true);
+    try test_alu_dispatch(.shr, 0x00400000, alu.SHR, true);
+    try test_alu_dispatch(.shl, 0x00600000, alu.SHL, true);
+    try test_alu_dispatch(.rcr, 0x00800000, alu.RCR, true);
+    try test_alu_dispatch(.rcl, 0x00A00000, alu.RCL, true);
+    try test_alu_dispatch(.sar, 0x00C00000, alu.SAR, true);
+    try test_alu_dispatch(.sal, 0x00E00000, alu.SAL, true);
+    try test_alu_dispatch(.add, 0x01000000, alu.ADD, true);
+    try test_alu_dispatch(.addx, 0x01200000, alu.ADDX, true);
+    try test_alu_dispatch(.adds, 0x01400000, alu.ADDS, true);
+    try test_alu_dispatch(.addsx, 0x01600000, alu.ADDSX, true);
+    try test_alu_dispatch(.sub, 0x01800000, alu.SUB, true);
+    try test_alu_dispatch(.subx, 0x01A00000, alu.SUBX, true);
+    try test_alu_dispatch(.subs, 0x01C00000, alu.SUBS, true);
+    try test_alu_dispatch(.subsx, 0x01E00000, alu.SUBSX, true);
+    try test_alu_dispatch(.cmp, 0x02000000, alu.CMP, false);
+    try test_alu_dispatch(.cmpx, 0x02200000, alu.CMPX, false);
+    try test_alu_dispatch(.cmps, 0x02400000, alu.CMPS, false);
+    try test_alu_dispatch(.cmpsx, 0x02600000, alu.CMPSX, false);
+    try test_alu_dispatch(.cmpr, 0x02800000, alu.CMPR, false);
+    try test_alu_dispatch(.cmpm, 0x02A00000, alu.CMPM, false);
+    try test_alu_dispatch(.subr, 0x02C00000, alu.SUBR, true);
+    try test_alu_dispatch(.cmpsub, 0x02E00000, alu.CMPSUB, true);
+    try test_alu_dispatch(.fge, 0x03000000, alu.FGE, true);
+    try test_alu_dispatch(.fle, 0x03200000, alu.FLE, true);
+    try test_alu_dispatch(.fges, 0x03400000, alu.FGES, true);
+    try test_alu_dispatch(.fles, 0x03600000, alu.FLES, true);
+    try test_alu_dispatch(.sumc, 0x03800000, alu.SUMC, true);
+    try test_alu_dispatch(.sumnc, 0x03A00000, alu.SUMNC, true);
+    try test_alu_dispatch(.sumz, 0x03C00000, alu.SUMZ, true);
+    try test_alu_dispatch(.sumnz, 0x03E00000, alu.SUMNZ, true);
+    try test_alu_dispatch(.testb, 0x04000000, alu.TESTB, false);
+    try test_alu_dispatch(.testbn, 0x04200000, alu.TESTBN, false);
+    try test_alu_dispatch(.testb_and, 0x04400000, alu.TESTB_AND, false);
+    try test_alu_dispatch(.testbn_and, 0x04600000, alu.TESTBN_AND, false);
+    try test_alu_dispatch(.testb_or, 0x04800000, alu.TESTB_OR, false);
+    try test_alu_dispatch(.testbn_or, 0x04A00000, alu.TESTBN_OR, false);
+    try test_alu_dispatch(.testb_xor, 0x04C00000, alu.TESTB_XOR, false);
+    try test_alu_dispatch(.testbn_xor, 0x04E00000, alu.TESTBN_XOR, false);
+    try test_alu_dispatch(.bitl, 0x04000000, alu.BITL, true);
+    try test_alu_dispatch(.bith, 0x04200000, alu.BITH, true);
+    try test_alu_dispatch(.bitc, 0x04400000, alu.BITC, true);
+    try test_alu_dispatch(.bitnc, 0x04600000, alu.BITNC, true);
+    try test_alu_dispatch(.bitz, 0x04800000, alu.BITZ, true);
+    try test_alu_dispatch(.bitnz, 0x04A00000, alu.BITNZ, true);
+    try test_alu_dispatch(.bitnot, 0x04E00000, alu.BITNOT, true);
+    try test_alu_dispatch(.@"and", 0x05000000, alu.AND, true);
+    try test_alu_dispatch(.andn, 0x05200000, alu.ANDN, true);
+    try test_alu_dispatch(.@"or", 0x05400000, alu.OR, true);
+    try test_alu_dispatch(.xor, 0x05600000, alu.XOR, true);
+    try test_alu_dispatch(.muxc, 0x05800000, alu.MUXC, true);
+    try test_alu_dispatch(.muxnc, 0x05A00000, alu.MUXNC, true);
+    try test_alu_dispatch(.muxz, 0x05C00000, alu.MUXZ, true);
+    try test_alu_dispatch(.muxnz, 0x05E00000, alu.MUXNZ, true);
+    try test_alu_dispatch(.mov, 0x06000000, alu.MOV, true);
+    try test_alu_dispatch(.not, 0x06200000, alu.NOT, true);
+    try test_alu_dispatch(.abs, 0x06400000, alu.ABS, true);
+    try test_alu_dispatch(.neg, 0x06600000, alu.NEG, true);
+    try test_alu_dispatch(.negc, 0x06800000, alu.NEGC, true);
+    try test_alu_dispatch(.negnc, 0x06A00000, alu.NEGNC, true);
+    try test_alu_dispatch(.negz, 0x06C00000, alu.NEGZ, true);
+    try test_alu_dispatch(.negnz, 0x06E00000, alu.NEGNZ, true);
+    try test_alu_dispatch(.incmod, 0x07000000, alu.INCMOD, true);
+    try test_alu_dispatch(.decmod, 0x07200000, alu.DECMOD, true);
+    try test_alu_dispatch(.zerox, 0x07400000, alu.ZEROX, true);
+    try test_alu_dispatch(.signx, 0x07600000, alu.SIGNX, true);
+    try test_alu_dispatch(.encod, 0x07800000, alu.ENCOD, true);
+    try test_alu_dispatch(.ones, 0x07A00000, alu.ONES, true);
+    try test_alu_dispatch(.@"test", 0x07C00000, alu.TEST, false);
+    try test_alu_dispatch(.testn, 0x07E00000, alu.TESTN, false);
+    try test_alu_dispatch(.setnib, 0x08000000, alu.SETNIB, true);
+    try test_alu_dispatch(.getnib, 0x08400000, alu.GETNIB, true);
+    try test_alu_dispatch(.rolnib, 0x08800000, alu.ROLNIB, true);
+    try test_alu_dispatch(.setbyte, 0x08C00000, alu.SETBYTE, true);
+    try test_alu_dispatch(.getbyte, 0x08E00000, alu.GETBYTE, true);
+    try test_alu_dispatch(.rolbyte, 0x09000000, alu.ROLBYTE, true);
+    try test_alu_dispatch(.setword, 0x09200000, alu.SETWORD, true);
+    try test_alu_dispatch(.getword, 0x09300000, alu.GETWORD, true);
+    try test_alu_dispatch(.rolword, 0x09400000, alu.ROLWORD, true);
+    try test_alu_dispatch(.setr, 0x09A80000, alu.SETR, true);
+    try test_alu_dispatch(.setd, 0x09B00000, alu.SETD, true);
+    try test_alu_dispatch(.sets, 0x09B80000, alu.SETS, true);
+    try test_alu_dispatch(.decod, 0x09C00000, alu.DECOD, true);
+    try test_alu_dispatch(.bmask, 0x09C80000, alu.BMASK, true);
+    try test_alu_dispatch(.crcbit, 0x09D00000, alu.CRCBIT, true);
+    try test_alu_dispatch(.crcnib, 0x09D80000, alu.CRCNIB, true);
+    try test_alu_dispatch(.muxnits, 0x09E00000, alu.MUXNITS, true);
+    try test_alu_dispatch(.muxnibs, 0x09E80000, alu.MUXNIBS, true);
+    try test_alu_dispatch(.muxq, 0x09F00000, alu.MUXQ, true);
+    try test_alu_dispatch(.movbyts, 0x09F80000, alu.MOVBYTS, true);
+    try test_alu_dispatch(.mul, 0x0A000000, alu.MUL, true);
+    try test_alu_dispatch(.muls, 0x0A100000, alu.MULS, true);
+    try test_alu_dispatch(.sca, 0x0A200000, alu.SCA, false);
+    try test_alu_dispatch(.scas, 0x0A300000, alu.SCAS, false);
+    try test_alu_dispatch(.splitb, 0x0D600060, alu.SPLITB, true);
+    try test_alu_dispatch(.mergeb, 0x0D600061, alu.MERGEB, true);
+    try test_alu_dispatch(.splitw, 0x0D600062, alu.SPLITW, true);
+    try test_alu_dispatch(.mergew, 0x0D600063, alu.MERGEW, true);
+    try test_alu_dispatch(.seussf, 0x0D600064, alu.SEUSSF, true);
+    try test_alu_dispatch(.seussr, 0x0D600065, alu.SEUSSR, true);
+    try test_alu_dispatch(.rgbsqz, 0x0D600066, alu.RGBSQZ, true);
+    try test_alu_dispatch(.rgbexp, 0x0D600067, alu.RGBEXP, true);
+    try test_alu_dispatch(.xoro32, 0x0D600068, alu.XORO32, true);
+    try test_alu_dispatch(.rev, 0x0D600069, alu.REV, true);
+    try test_alu_dispatch(.rczr, 0x0D60006A, alu.RCZR, true);
+    try test_alu_dispatch(.rczl, 0x0D60006B, alu.RCZL, true);
+    try test_alu_dispatch(.wrc, 0x0D60006C, alu.WRC, true);
+    try test_alu_dispatch(.wrnc, 0x0D60006D, alu.WRNC, true);
+    try test_alu_dispatch(.wrz, 0x0D60006E, alu.WRZ, true);
+    try test_alu_dispatch(.wrnz, 0x0D60006F, alu.WRNZ, true);
+    try test_alu_dispatch(.modcz, 0x0D64006F, alu.MODCZ, false);
+}
+
+// codegen: begin:executortests
+test "forwarded source stays with a waiting instruction" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    cog.write_reg(@enumFromInt(24), 0x8000);
+    // SCA r24, #2; WAITX #2; MOV r25, #7.
+    cog.write_reg(@enumFromInt(0), 0xFA24_3002);
+    cog.write_reg(@enumFromInt(1), 0xFD64_041F);
+    cog.write_reg(@enumFromInt(2), 0xF604_3207);
+    hub.step();
+    hub.step();
+    try std.testing.expectEqual(@as(?u32, 1), cog.next_instruction.?.s_value);
+    hub.step();
+    try std.testing.expectEqual(@as(?u32, 1), cog.current_instruction.?.s_value);
+    try std.testing.expect(cog.wait_until != null);
+    while (cog.current_instruction != null and hub.counter < 16) {
+        try std.testing.expectEqual(@as(?u32, 1), cog.current_instruction.?.s_value);
+        hub.step();
+    }
+    try std.testing.expect(cog.current_instruction == null);
+    try std.testing.expectEqual(@as(?u32, null), cog.next_instruction.?.s_value);
+    hub.step();
+    try std.testing.expectEqual(@as(u32, 7), cog.read_reg(@enumFromInt(25)));
+}
+
+fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime function: anytype, comptime writes_result: bool) !void {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    const field = comptime decode.instruction_type.get(opcode);
+    const Operands = @FieldType(encoding.Instruction, field);
+    var exercised: usize = 0;
+    for (0..4) |flags| {
+        for (0..4) |effects| {
+            for ([_]bool{ false, true }) |immediate| {
+                for ([_]bool{ false, true }) |altered| {
+                    hub.init();
+                    const cog = &hub.cogs[0];
+                    cog.c = flags & 2 != 0;
+                    cog.z = flags & 1 != 0;
+                    cog.q = 0x1234_5678;
+                    cog.setq_pending = true;
+                    cog.augs = 0x1234_5600;
+                    cog.augd = 0x8765_4200;
+                    var operands: Operands = @bitCast(template | 0xF000_0000);
+                    if (@hasField(Operands, "d")) operands.d = @enumFromInt(24);
+                    if (@hasField(Operands, "s")) operands.s = @enumFromInt(25);
+                    if (@hasField(Operands, "s_imm")) operands.s_imm = immediate;
+                    if (@hasField(Operands, "n")) operands.n = std.math.maxInt(@TypeOf(operands.n));
+                    if (@hasField(Operands, "c_mod")) operands.c_mod = @enumFromInt(@as(u1, @truncate(effects >> 1)));
+                    if (@hasField(Operands, "z_mod")) operands.z_mod = @enumFromInt(@as(u1, @truncate(effects)));
+                    if (Operands == encoding.UpdateFlags) {
+                        operands.c_value = @enumFromInt(10);
+                        operands.z_value = @enumFromInt(12);
+                    }
+                    const state: Cog.PipelineState = .{
+                        .pc = 1,
+                        .instr = @bitCast(operands),
+                        .alt_d = if (altered) .PTRA else null,
+                        .alt_s = if (altered) .PB else null,
+                        .alt_r = .PA,
+                    };
+                    // Some flag combinations select another opcode (BITx/TESTBx).
+                    if (decode.decode(state.instr) != opcode) continue;
+                    exercised += 1;
+                    const d_reg: Cog.Register = if (altered) .PTRA else @enumFromInt(24);
+                    const s_reg: Cog.Register = if (altered) .PB else @enumFromInt(25);
+                    cog.write_reg(d_reg, 0x8000_0001);
+                    cog.write_reg(s_reg, 0xDEAD_BEEF);
+                    cog.write_reg(.PA, 0xFEED_FACE);
+                    cog.current_instruction = state;
+                    cog.next_instruction = .{ .pc = 2, .instr = 0 };
+                    const has_s = @hasField(Operands, "s");
+                    const input: alu.Input = .{
+                        .d = if (Operands == encoding.UpdateFlags) 0xAC else 0x8000_0001,
+                        .s = if (!has_s) 0 else if (immediate) 0x1234_5600 | @as(u32, @intFromEnum(s_reg)) else 0xDEAD_BEEF,
+                        .c = .from_bool(cog.c),
+                        .z = .from_bool(cog.z),
+                        .q = cog.q,
+                        .setq_prefix = true,
+                    };
+                    const expected = if (@hasField(Operands, "n")) function(input, operands.n) else function(input);
+                    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, state));
+                    try std.testing.expectEqual(if (writes_result) expected.result else @as(u32, 0xFEED_FACE), cog.read_reg(.PA));
+                    try std.testing.expectEqual(@as(u32, 0x8000_0001), cog.read_reg(d_reg));
+                    try std.testing.expectEqual(if (@hasField(Operands, "c_mod") and operands.c_mod == .write) expected.c == .set else flags & 2 != 0, cog.c);
+                    try std.testing.expectEqual(if (@hasField(Operands, "z_mod") and operands.z_mod == .write) expected.z == .set else flags & 1 != 0, cog.z);
+                    try std.testing.expectEqual(expected.q, cog.q);
+                    try std.testing.expectEqual(expected.next_s, cog.next_instruction.?.s_value);
+                    try std.testing.expectEqual(if (has_s and immediate) @as(u32, 0) else @as(u32, 0x1234_5600), cog.augs);
+                    try std.testing.expectEqual(@as(u32, 0x8765_4200), cog.augd);
+                    try std.testing.expect(!cog.setq_pending);
+                }
+            }
+        }
+    }
+    try std.testing.expect(exercised > 0);
+}
+// codegen: end:executortests

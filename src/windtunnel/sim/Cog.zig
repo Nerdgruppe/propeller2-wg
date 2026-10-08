@@ -194,6 +194,8 @@ pub const PipelineState = struct {
     alt_r: ?Register = null,
     alt_s: ?Register = null,
     alt_d: ?Register = null,
+    /// Full source value forwarded by SCA, SCAS or XORO32 to this instruction.
+    s_value: ?u32 = null,
 };
 
 /// Fetches the last value set up by 'AUGS' and resets the value.
