@@ -102,6 +102,28 @@ There's a `justfile` in the workspace root which has these recipies:
   - zig projects just use their compiled binary, do not invoke external tools
   - python projects just use their compiled binary, do not invoke external tools
 
+### Agent-authored commits
+
+Commits produced by an AI or other agentic tool must identify the agent in the commit subject. Prefix the subject with the agent or model name in square brackets, for example:
+
+```text
+[GPT-5.6 Sol] Add Propan language reference
+```
+
+Use the actual agent/model identifier rather than copying the example when another agent performs the work. Do not rewrite existing history solely to add or change agent markers.
+
+### OKF documentation
+
+Curated, retrieval-oriented project knowledge lives under `docs/OKF/`.
+
+- Organize documentation around engineering concepts rather than mirroring source-file layout.
+- Use `index.md` as the navigation entry point for a documentation scope and `log.md` for meaningful documentation-maintenance notes.
+- Links beginning with `/` inside `docs/OKF/` are relative to the `docs/OKF/` root.
+- Prefer processed, focused documents over repeatedly deriving knowledge from large raw sources.
+- Keep provenance explicit. Distinguish implementation-defined behavior, behavior derived from tests or source, external/official facts, and unresolved questions when the distinction matters.
+- Do not infer that a feature is absent merely because one source does not mention it.
+- Temporary planning material may live in `docs/OKF/TODO.md`; remove or replace it once its items have been incorporated into durable documentation or issue tracking.
+
 ### Zig-based Projects
 
 Propan, Turboprop and Windtunnel are implemented in Zig (see `build.zig.zon` for required version).
