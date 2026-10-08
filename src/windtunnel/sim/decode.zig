@@ -756,6 +756,8 @@ pub fn decode(raw: u32) OpCode {
         return .getnib;
     if ((raw & 0x0FC00000) == 0x08800000)
         return .rolnib;
+    if ((raw & 0x0FE00000) == 0x00000000)
+        return .ror;
     if ((raw & 0x0FE00000) == 0x00200000)
         return .rol;
     if ((raw & 0x0FE00000) == 0x00400000)
@@ -818,21 +820,21 @@ pub fn decode(raw: u32) OpCode {
         return .sumz;
     if ((raw & 0x0FE00000) == 0x03E00000)
         return .sumnz;
-    if ((raw & 0x0FE00000) == 0x04000000)
+    if ((raw & 0x0FE00000) == 0x04000000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testb;
-    if ((raw & 0x0FE00000) == 0x04200000)
+    if ((raw & 0x0FE00000) == 0x04200000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testbn;
-    if ((raw & 0x0FE00000) == 0x04400000)
+    if ((raw & 0x0FE00000) == 0x04400000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testb_and;
-    if ((raw & 0x0FE00000) == 0x04600000)
+    if ((raw & 0x0FE00000) == 0x04600000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testbn_and;
-    if ((raw & 0x0FE00000) == 0x04800000)
+    if ((raw & 0x0FE00000) == 0x04800000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testb_or;
-    if ((raw & 0x0FE00000) == 0x04A00000)
+    if ((raw & 0x0FE00000) == 0x04A00000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testbn_or;
-    if ((raw & 0x0FE00000) == 0x04C00000)
+    if ((raw & 0x0FE00000) == 0x04C00000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testb_xor;
-    if ((raw & 0x0FE00000) == 0x04E00000)
+    if ((raw & 0x0FE00000) == 0x04E00000 and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19))))
         return .testbn_xor;
     if ((raw & 0x0FE00000) == 0x04000000)
         return .bitl;
