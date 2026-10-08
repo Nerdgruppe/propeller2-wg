@@ -61,6 +61,7 @@ pub fn build(b: *std.Build) !void {
     const run_step = b.step("run", "Runs propan");
     const test_step = b.step("test", "Runs the test suite");
     const windtunnel_test_step = b.step("test-windtunnel", "Runs Windtunnel checklist fixtures and harness tests");
+    const libp2_test_step = b.step("test-libp2", "Runs the libp2 test suite.");
 
     // Options:
     const with_flexspin = b.option(bool, "with-flexspin", "Includes FlexSpin for Spin2 round-trip and assembler equivalence tests.") orelse false;
@@ -200,6 +201,17 @@ pub fn build(b: *std.Build) !void {
         }
 
         run_step.dependOn(&run_cmd.step);
+    }
+
+    {
+        const libp2_tests = b.addTest(.{
+            .root_module = mod_p2,
+        });
+
+        const run_cmd = b.addRunArtifact(libp2_tests);
+
+        libp2_test_step.dependOn(&run_cmd.step);
+        run_step.dependOn(libp2_test_step);
     }
 
     // One process runs unit tests and all fixture categories.
