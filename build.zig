@@ -4,6 +4,8 @@ const cases = @import("tests/propan/cases.zig");
 const windtunnel_fixtures = [_][]const u8{
     "tests/windtunnel/behaviour/augs.propan",
     "tests/windtunnel/behaviour/cogstop.propan",
+    "tests/windtunnel/behaviour/stack-flags.propan",
+    "tests/windtunnel/behaviour/stack.propan",
     "tests/windtunnel/program/echo.propan",
     "tests/windtunnel/program/hello-world.propan",
     "tests/windtunnel/state/augd.propan",

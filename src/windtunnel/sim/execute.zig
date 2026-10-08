@@ -260,8 +260,7 @@ fn execute_simple(
 pub fn call_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
     // codegen: begin:call_a
     if (args.relative and args.address & 3 != 0) return .unsupported;
-    cog.push();
-    cog.jump(branchA(cog, args));
+    cog.call(branchA(cog, args));
     return .next;
     // codegen: end:call_a
 }
@@ -585,9 +584,8 @@ pub fn callpa(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:callpa
     const value = operandD(cog, args.d, args.d_imm);
     const target = branchS(cog, args.s, args.s_imm);
-    cog.push();
     cog.write_reg(.PA, value);
-    cog.jump(target);
+    cog.call(target);
     return .next;
     // codegen: end:callpa
 }
@@ -5052,10 +5050,8 @@ pub fn setq2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=Push
 pub fn push(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:push
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
+    cog.push(operandD(cog, args.d, args.d_imm));
+    return .next;
     // codegen: end:push
 }
 
@@ -5068,10 +5064,11 @@ pub fn push(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=Pop
 pub fn pop(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:pop
-    _ = cog;
-    _ = args;
-    return .unsupported;
-    // return .next;
+    const value = cog.pop();
+    cog.write_reg(args.d, value);
+    if (args.c_mod == .write) cog.c = value >> 31 != 0;
+    if (args.z_mod == .write) cog.z = value == 0;
+    return .next;
     // codegen: end:pop
 }
 
