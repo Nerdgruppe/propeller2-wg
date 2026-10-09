@@ -55,6 +55,10 @@ optional kcov collection.
 See [Windtunnel core coverage](docs/windtunnel/core.md) for implemented operations
 and the remaining functional and timing limitations.
 
+`zig-out/bin/windtunnel --serve` exposes a compatible P2AAS endpoint at
+`ws://127.0.0.1:21591/`. See [the server documentation](docs/windtunnel/p2aas.md)
+for protocol behavior, client interchangeability, and hardware comparisons.
+
 Run `zig-0.16.0 build test --fuzz` to start Zig's native fuzzer, or use
 `--fuzz=10K` for a bounded run. Fuzz-test discovery uses Zig's test-server protocol.
 Alongside tokenizer and parser fuzzing, two targets run the full assembler through

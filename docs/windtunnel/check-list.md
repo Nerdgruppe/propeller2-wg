@@ -139,3 +139,8 @@ directories. Enable live hardware checks with `--oracle` and `P2AAS_ENDPOINT`.
 
 See [core-pixels.propan](../../tests/windtunnel/state/core-pixels.propan) for a
 fixture using named and unnamed runs, shared seeds, overrides, and partial patches.
+
+Program-profile `run:` sections may also override `stdin`, `stdout`, and `stdin-after`.
+Omitted streams inherit the common value; an explicitly empty stream replaces it.
+Each effective run must still have a readiness marker for nonempty input, and that marker
+must be a prefix of its expected output. This allows terminal test matrices to share one source.

@@ -148,7 +148,7 @@ pub fn is_any_cog_active(hub: *Hub) bool {
 /// peripheral, FIFO, memory transfer, or writeback can advance before CT does.
 pub fn next_idle_clock(hub: *Hub) ?u64 {
     for (hub.pending_starts) |start| if (start != null) return null;
-    if (hub.io.txBusy() or hub.io.input_index != hub.io.input.len) return null;
+    if (hub.io.txBusy() or hub.io.input_index != hub.io.input.len or hub.io.rx_count != 0) return null;
     for (hub.pending_events) |edge| for (edge) |events| if (events != 0) return null;
     var next_delta: ?u64 = null;
     for (&hub.cogs) |*cog| {

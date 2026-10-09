@@ -8,6 +8,8 @@ const windtunnel_fixtures = [_][]const u8{
     "tests/windtunnel/behaviour/stack-flags.propan",
     "tests/windtunnel/behaviour/stack.propan",
     "tests/windtunnel/program/echo.propan",
+    "tests/windtunnel/program/server-terminal.propan",
+    "tests/windtunnel/program/server-loader.propan",
     "tests/windtunnel/program/hello-world.propan",
     "tests/windtunnel/program/dir-register-uart.propan",
     "tests/windtunnel/state/core-branches.propan",

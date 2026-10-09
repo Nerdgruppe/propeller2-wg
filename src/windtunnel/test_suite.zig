@@ -645,3 +645,63 @@ test "matrix runs assemble constants and select fresh cogs" {
             "MOV result, value\nADD result, adjustment\nJMP nrel(_end)\nvar result: LONG 0\n",
     );
 }
+
+/// Serve a bounded number of actual TCP connections so session cleanup is checked without a subprocess.
+fn serveTestConnections(listener: *std.Io.net.Server, count: usize) !void {
+    for (0..count) |_| {
+        const stream = try listener.accept(std.testing.io);
+        defer stream.close(std.testing.io);
+        try @import("p2aas_server.zig").handleConnection(std.testing.allocator, std.testing.io, stream, false);
+    }
+}
+
+test "native P2AAS client uses the simulator server and subsequent sessions start fresh" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+    errdefer std.debug.print("{s}\n", .{errors.written()});
+    const path = "tests/windtunnel/program/server-terminal.propan";
+    const source = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, std.testing.allocator, .limited(1 << 20));
+    defer std.testing.allocator.free(source);
+    var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, source, &errors.writer);
+    defer compiled.deinit();
+    const ip = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+    var listener = try ip.listen(std.testing.io, .{});
+    defer listener.deinit(std.testing.io);
+    const endpoint = try std.fmt.allocPrint(std.testing.allocator, "ws://127.0.0.1:{d}/", .{listener.socket.address.getPort()});
+    defer std.testing.allocator.free(endpoint);
+    var server = try std.Io.concurrent(std.testing.io, serveTestConnections, .{ &listener, 3 });
+    defer server.cancel(std.testing.io) catch {};
+    for ([_][]const u8{ "\x00\x80\xff", "ABC" }) |packet| {
+        var output: std.ArrayList(u8) = .empty;
+        defer output.deinit(std.testing.allocator);
+        try @import("p2aas.zig").run(std.testing.allocator, std.testing.io, endpoint, .{
+            .image = compiled.image,
+            .stdin = packet,
+            .ready = "!",
+            .baudrate = 115200,
+            .timeout_ms = 1000,
+        }, &output, &errors.writer);
+        try std.testing.expectEqual(@as(usize, 4), output.items.len);
+        try std.testing.expectEqualSlices(u8, packet, output.items[1..]);
+    }
+    // A simulator fault must finish the close handshake and release the board just like a transport failure.
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    const illegal_source = ".cogexec\nJMP hub_entry\n.hubexec 0x1000\nhub_entry:\nRFBYTE PA\n";
+    try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "illegal.propan", .data = illegal_source });
+    const illegal_path = try tmp.dir.realPathFileAlloc(std.testing.io, "illegal.propan", std.testing.allocator);
+    defer std.testing.allocator.free(illegal_path);
+    var illegal = try propan.assemble(std.testing.allocator, std.testing.io, illegal_path, illegal_source, &errors.writer);
+    defer illegal.deinit();
+    var output: std.ArrayList(u8) = .empty;
+    defer output.deinit(std.testing.allocator);
+    try std.testing.expectError(error.HardwareClosed, @import("p2aas.zig").run(std.testing.allocator, std.testing.io, endpoint, .{
+        .image = illegal.image,
+        .stdin = "",
+        .ready = "",
+        .baudrate = 115200,
+        .timeout_ms = 1000,
+    }, &output, &errors.writer));
+    try std.testing.expect(std.mem.find(u8, errors.written(), "P2AAS close 1011:") != null);
+    try server.await(std.testing.io);
+}

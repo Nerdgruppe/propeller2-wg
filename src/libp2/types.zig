@@ -3,6 +3,80 @@
 //!
 const std = @import("std");
 
+/// HUBSET CC: XI/XO drive and crystal loading capacitors.
+pub const CrystalMode = enum(u2) {
+    float = 0,
+    nocap = 1,
+    @"15pF" = 2,
+    @"30pF" = 3,
+};
+
+pub const ClockSource = enum(u2) {
+    rcfast = 0b00,
+    rcslow = 0b01,
+    xi = 0b10,
+    pll = 0b11,
+};
+
+/// HUBSET clock configuration: %0000_000E_DDDD_DDMM_MMMM_MMMM_PPPP_CCSS.
+/// XI division and VCO multiplication encode their factors minus one.
+/// VCO division is 2*(vco_div+1), except 15 selects division by one.
+pub const ClockMode = packed struct(u32) {
+    clock_src: ClockSource,
+    crystal: CrystalMode,
+    vco_div: u4,
+    vco_mul: u10,
+    xi_div: u6,
+    pll_on: bool,
+    _padding: u3 = 0,
+    tag: u4 = 0b0000,
+
+    /// Return the nominal system frequency in Hz; RCFAST/RCSLOW use 20 MHz/20 kHz.
+    /// Reject non-clock HUBSET operations, disabled clock sources, and unrepresentable frequencies.
+    /// Crystal/PLL settling and RC oscillator drift are not modeled.
+    pub fn get_frequency(mode: ClockMode, crystal_freq: u64) error{InvalidClockMode}!u64 {
+        if (mode.tag != 0 or mode._padding != 0) return error.InvalidClockMode;
+        if ((mode.clock_src == .xi or mode.clock_src == .pll) and mode.crystal == .float) return error.InvalidClockMode;
+        if (mode.clock_src == .pll and !mode.pll_on) return error.InvalidClockMode;
+        const frequency: u64 = switch (mode.clock_src) {
+            .rcfast => 20_000_000,
+            .rcslow => 20_000,
+            .xi => crystal_freq,
+            .pll => blk: {
+                const divider = @as(u64, mode.xi_div) + 1;
+                const multiplier = @as(u64, mode.vco_mul) + 1;
+                const post_divider: u64 = if (mode.vco_div == 15) 1 else 2 * (@as(u64, mode.vco_div) + 1);
+                break :blk std.math.cast(u64, @as(u128, crystal_freq) * multiplier / (divider * post_divider)) orelse return error.InvalidClockMode;
+            },
+        };
+        if (frequency == 0) return error.InvalidClockMode;
+        return frequency;
+    }
+};
+
+test "clock mode frequencies follow HUBSET encodings" {
+    inline for (.{
+        .{ 0xf0, 20_000_000 },
+        .{ 0xf1, 20_000 },
+        .{ 0xfe, 20_000_000 },
+        .{ 0x0100_09fb, 200_000_000 },
+        // Hardware manual's 20 MHz / 40 * 297 example, with post-divider bypass and /2.
+        .{ 0x019d_28fb, 148_500_000 },
+        .{ 0x019d_280b, 74_250_000 },
+    }) |case| {
+        const mode: ClockMode = @bitCast(@as(u32, case[0]));
+        try std.testing.expectEqual(@as(u64, case[1]), try mode.get_frequency(20_000_000));
+    }
+    const pll: ClockMode = @bitCast(@as(u32, 0x0100_09fb));
+    try std.testing.expectEqual(@as(u64, 120_000_000), try pll.get_frequency(12_000_000));
+    try std.testing.expectError(error.InvalidClockMode, pll.get_frequency(0));
+    try std.testing.expectError(error.InvalidClockMode, pll.get_frequency(std.math.maxInt(u64)));
+    for ([_]u32{ 0x1000_00f0, 0x0200_00f0, 2, 3, 0xfb }) |raw| {
+        const mode: ClockMode = @bitCast(raw);
+        try std.testing.expectError(error.InvalidClockMode, mode.get_frequency(20_000_000));
+    }
+}
+
 /// Hardware event IDs used by polling, waiting, branching, and interrupt selection.
 pub const EventId = enum(u4) {
     /// Interrupt 1, 2, or 3 occurred; debug interrupts are excluded.
