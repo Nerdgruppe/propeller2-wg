@@ -5,13 +5,13 @@
 //!
 const std = @import("std");
 
-const enums = @import("enums.zig");
+const types = @import("p2").types;
 
-pub const Register = enums.Register;
-pub const Condition = enums.Condition;
-pub const FlagModifier = enums.FlagModifier;
-pub const FlagExpression = enums.FlagExpression;
-pub const PointerReg = enums.PointerReg;
+pub const Register = types.Register;
+pub const Condition = types.Condition;
+pub const FlagModifier = types.FlagModifier;
+pub const FlagExpression = types.FlagExpression;
+pub const PointerReg = types.PointerReg;
 
 comptime {
     std.debug.assert(@bitSizeOf(Instruction) == 32);
