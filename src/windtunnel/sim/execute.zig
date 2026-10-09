@@ -2664,9 +2664,7 @@ pub fn lockrel(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 pub fn hubset(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:hubset
     const mode = operandD(cog, args.d, args.d_imm);
-    // The 200 MHz crystal/PLL setup used by the terminal fixtures.
-    if (mode != 0x0100_09fb) return .not_implemented;
-    cog.hub.io.clock_mode = mode;
+    if (!cog.hub.io.setClock(mode)) return .not_implemented;
     return .next;
     // codegen: end:hubset
 }

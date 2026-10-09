@@ -17,6 +17,8 @@ pub const std_options: std.Options = .{
 const CliArgs = struct {
     help: bool = false,
     verbose: bool = false,
+    serve: bool = false,
+    url: []const u8 = "ws://127.0.0.1:21591/",
     @"trace-pipeline": bool = false,
     image: []const u8 = "",
 
@@ -27,7 +29,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--trace-pipeline] [-i IMAGE]",
+        .usage_summary = "[-h] [-v] [--trace-pipeline] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -36,6 +38,8 @@ const CliArgs = struct {
         .option_docs = .{
             .help = "Prints this help text",
             .verbose = "Enables debug logging",
+            .serve = "Serve the P2AAS upload and terminal protocol",
+            .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
             .image = "The image file which contains the hub data.",
         },
@@ -71,6 +75,18 @@ pub fn main(init: std.process.Init) !u8 {
         );
         try stderr.interface.flush();
         return 1;
+    }
+
+    if (cli.options.serve) {
+        if (cli.options.image.len != 0) {
+            std.log.err("--serve cannot be combined with --image", .{});
+            return 1;
+        }
+        @import("p2aas_server.zig").serve(init.gpa, init.io, cli.options.url, cli.options.@"trace-pipeline") catch |err| {
+            std.log.err("P2AAS server failed: {t}", .{err});
+            return 1;
+        };
+        return 0;
     }
 
     var stdout_buffer: [4096]u8 = undefined;

@@ -1,0 +1,42 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stdout: hex [00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00]
+//? max-cycles: 30_000_000
+//? timeout-ms: 1000
+//? oracle: off "the P2AAS loader appends a checksum; p2aas_protocol.py validates that contract"
+
+// Report address zero, the first word after this image, the hub hole, and the last RAM word.
+// The protocol suite seeds a 512 KiB upload, then reloads the short image to test reset and checksum placement.
+// Keep the first instruction harmless if a buggy loader wraps its checksum onto address zero.
+.cogexec
+                NOP
+                HUBSET  aug(0x0100_09fb)
+                WRPIN   P_TT_01 | P_ASYNC_TX,                       62
+                WXPIN   aug((200_000_000 / 115200 * 65536) | 7),    62
+                DIRH    62
+                WAITX   aug(20_000_000)
+                RDLONG  value,                                      0
+                CALL    write_long
+                RDLONG  value,                                      aug(hubaddr(image_end))
+                CALL    write_long
+                RDLONG  value,                                      aug(0x80000)
+                CALL    write_long
+                RDLONG  value,                                      aug(0x7fffc)
+                CALL    write_long
+                WAITX   aug(20000)
+                COGSTOP 0
+write_long:
+                MOV     count,  4
+.loop:          GETBYTE PA,     value,  0
+                WYPIN   PA,     62
+                WAITX   1
+.wait:          TESTP   62                  :wc
+    if(!C)      JMP     .wait
+                SHR     value,  8
+                DJNZ    count,  .loop
+                RET
+var value:      LONG    0
+var count:      LONG    0
+.data
+.align  4
+image_end:

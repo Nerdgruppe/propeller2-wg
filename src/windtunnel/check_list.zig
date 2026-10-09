@@ -11,6 +11,9 @@ pub const Run = struct {
     name: ?[]const u8 = null,
     pre: []const Assignment = &.{},
     post: []const Assignment = &.{},
+    stdin: ?[]const u8 = null,
+    stdout: ?[]const u8 = null,
+    stdin_after: ?[]const u8 = null,
 };
 pub const List = struct {
     profile: Profile = .cog,
@@ -33,6 +36,9 @@ pub const List = struct {
     pub fn forRun(list: List, allocator: std.mem.Allocator, run: Run) !List {
         var result = list;
         result.cog = run.cog orelse list.cog;
+        result.stdin = run.stdin orelse list.stdin;
+        result.stdout = run.stdout orelse list.stdout;
+        result.stdin_after = run.stdin_after orelse list.stdin_after;
         var constants: std.ArrayList(Constant) = .empty;
         for (list.constants) |common| {
             var replaced = false;
@@ -312,6 +318,11 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
             for (constants.items) |old| if (std.mem.eql(u8, old.name, symbol)) return p.fail("duplicate constant");
             try p.expect("=");
             try constants.append(allocator, .{ .name = symbol, .value = try p.integer(try p.take()) });
+        } else if (runs.items.len != 0 and (std.mem.eql(u8, name, "stdin") or std.mem.eql(u8, name, "stdout") or std.mem.eql(u8, name, "stdin-after"))) {
+            const run = &runs.items[runs.items.len - 1];
+            const stream = if (std.mem.eql(u8, name, "stdin")) &run.stdin else if (std.mem.eql(u8, name, "stdout")) &run.stdout else &run.stdin_after;
+            if (stream.* != null) return p.fail("duplicate run stream");
+            stream.* = try p.stream();
         } else if (std.mem.eql(u8, name, "cog") and runs.items.len != 0) {
             const run = &runs.items[runs.items.len - 1];
             if (run.cog != null) return p.fail("duplicate run cog");
@@ -374,6 +385,12 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     }
     list.runs = runs.items;
     for (list.runs) |run| {
+        const stdin = run.stdin orelse list.stdin;
+        const stdout = run.stdout orelse list.stdout;
+        const stdin_after = run.stdin_after orelse list.stdin_after;
+        if (list.profile == .cog and (stdin.len != 0 or stdout.len != 0 or stdin_after.len != 0)) return p.fail("cog profile reserves serial I/O for the reporter");
+        if (stdin.len > 0 and stdin_after.len == 0) return p.fail("nonempty stdin requires stdin-after readiness");
+        if (stdin_after.len > 0 and !std.mem.startsWith(u8, stdout, stdin_after)) return p.fail("stdin-after must be a prefix of expected stdout");
         const selected_cog = run.cog orelse list.cog;
         for ([_][]const Assignment{ list.pre, list.post, run.pre, run.post }) |assignments| for (assignments) |a| {
             if (a.cog) |cog| if (cog != selected_cog) return p.fail("state target must match selected cog");
@@ -385,9 +402,6 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
             };
         }
     }
-    if (list.profile == .cog and (list.stdin.len != 0 or list.stdout.len != 0 or list.stdin_after.len != 0)) return p.fail("cog profile reserves serial I/O for the reporter");
-    if (list.stdin.len > 0 and list.stdin_after.len == 0) return p.fail("nonempty stdin requires stdin-after readiness");
-    if (list.stdin_after.len > 0 and !std.mem.startsWith(u8, list.stdout, list.stdin_after)) return p.fail("stdin-after must be a prefix of expected stdout");
     return list;
 }
 
@@ -500,4 +514,25 @@ test "run constants and cog selection inherit without leaking across runs" {
         const source = try std.fmt.allocPrint(allocator, "//? WINDTUNNEL CHECK LIST\n{s}", .{body});
         try std.testing.expectError(error.InvalidChecklist, parse(allocator, "fixture", source, &errors.writer));
     }
+}
+
+test "program matrix streams override common values, including an empty stream" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    var errors: std.Io.Writer.Allocating = .init(arena.allocator());
+    const source =
+        "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: \"common\"\n//? stdout: \"ready\"\n" ++
+        "//? stdin-after: \"ready\"\n//? run: \"first\"\n//? stdin: \"\"\n//? stdout: \"ready first\"\n" ++
+        "//? run: \"second\"\n//? stdin-after: \"r\"\n";
+    const list = try parse(arena.allocator(), "matrix", source, &errors.writer);
+    const first = try list.forRun(arena.allocator(), list.runs[0]);
+    const second = try list.forRun(arena.allocator(), list.runs[1]);
+    try std.testing.expectEqualStrings("", first.stdin);
+    try std.testing.expectEqualStrings("ready first", first.stdout);
+    try std.testing.expectEqualStrings("ready", first.stdin_after);
+    try std.testing.expectEqualStrings("common", second.stdin);
+    try std.testing.expectEqualStrings("ready", second.stdout);
+    try std.testing.expectEqualStrings("r", second.stdin_after);
+    try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "matrix", source ++ "//? stdin-after: \"duplicate\"\n", &errors.writer));
+    try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "matrix", "//? WINDTUNNEL CHECK LIST\n//? run:\n//? stdin: \"x\"\n", &errors.writer));
 }
