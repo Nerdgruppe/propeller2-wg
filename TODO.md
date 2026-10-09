@@ -1,9 +1,18 @@
 # TODO-List
 
-## Random Task Collection
+## Propeller 2 Documentation / P2DB
+
+### Random Task Collection
+
+- Collection of all known CPU hazards
+- 
+
+## Propan
+
+### Random Task Collection
 
 - Configuration File for analyzer options
-- `COGBRK #S` seems to be unsupported in flexspin
+- `COGBRK ##S` seems to be unsupported in flexspin
 - <https://github.com/totalspectrum/spin2cpp/issues/485>
 - `.address => @panic("TODO: Implement binary operators on offsets."),`
 - `.string => @panic("TODO: Implement binary operators on strings."),`
@@ -11,13 +20,13 @@
 - Enable "-Dx=y" on the CLI
 - Fully define the compatibility matrix for implicit jumping/referencing between segments.
 
-## Priority Fixes / Tasks
+### Priority Fixes / Tasks
 
 - *empty*
 
-## New Features
+### New Features
 
-### Groups
+#### Groups
 
 Groups are similar to ELF sections with garbage collection.
 
@@ -29,7 +38,7 @@ The default code is not in a group.
 - `.group`: Starts a new group.
 - `.endgroup`: Ends the current group and swaps back to "always emitted" context.
 
-### Relocations
+#### Relocations
 
 Required for the Ashet Home Computer:
 
@@ -38,12 +47,12 @@ can later be applied to dynamically link the resulting binary to another locatio
 
 ```propan
 
-.relocation #base     pin
-.relocation #offset   hub
+.relocation ##base     pin
+.relocation ##offset   hub
 
-RDPIN dst, reloc(#base, 10)     // emits the info that this field must be patched by the "base"
+RDPIN dst, reloc(##base, 10)     // emits the info that this field must be patched by the "base"
 
-RDLONG dst, reloc(#offset, 256) // reads from #offset+256
+RDLONG dst, reloc(##offset, 256) // reads from ##offset+256
 ```
 
 - `.relocation <tag> <type>`: Declares a new relocation key named `<tag>` of the given `<type>` hint.
@@ -61,8 +70,30 @@ RDLONG dst, reloc(#offset, 256) // reads from #offset+256
   - `2 * reloc(…)` is considered a shift.
 - There can be multiple relocations applied to a single location
 
-## Under Consideration
+### Under Consideration
 
-### SPIN DEBUG
+#### SPIN DEBUG
 
 Currently, Propan does not support the "debug()" syntax from SPIN2
+
+## Windtunnel
+
+### Random Task Collection
+
+- Debug interface
+  - Additional Breakpoints
+    - Hazards
+    - Memory Breakpoints
+    - Live Inspection
+- IO Interface Improvement
+  - Configuration file support for I/O setup
+    - Defaults to "stdio routed to pins 62/63"
+  - Model 64 distinct smart pins
+  - Create VCD
+  - Allow capture of basic digital output signals
+    - Validate against real hardware (kinda hard, needs logic analyzer for roundtrip timing)
+  - Enable logging of pin changes (out, dir, wrpin, wxpin, wypin, rdpin, rqpin, akpin)
+- P2AAS server
+  - Feature Parity with hw oracle
+- Validate/implement cog startup behavior
+  - perfect timing clone so hub writes to the coginit'd segment is both detected/logged and 
