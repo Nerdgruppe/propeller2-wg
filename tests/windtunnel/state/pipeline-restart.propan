@@ -81,52 +81,63 @@
 //? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
 
-    MOV restart_address, aug(0xa5b00000 | pcaddr(restarted))
-    MOV offset, 0
+// Measure no-load self-restart with and without WC across cogs and command phases.
+// High source bits must survive in PTRB while only low bits select the PC; one following instruction may retire without WC.
+// The expected 25-clock base includes SETQ, the pre-grant measurement spacing and no-load startup.
+
+                // 0xa5b00000 tests PTRB metadata preservation without changing the low 20-bit execution address.
+                MOV     restart_address,    aug(0xa5b00000 | pcaddr(restarted))
+                MOV     offset,             0
 phase_loop:
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    MODCZ _SET, _SET :wcz
-    GETCT start
-    SETQ 77
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,              128
+                ANDN    timer,              7
+                ADD     timer,              offset
+                ADDCT1  timer,              0
+                WAITCT1
+                MODCZ   _SET,               _SET            :wcz
+                GETCT   start
+                SETQ    77
 .if probe_wc == 1
-    COGINIT 0x20 + probe_cog, restart_address :wc
+                COGINIT 0x20 + probe_cog,   restart_address :wc
 .else
-    COGINIT 0x20 + probe_cog, restart_address
+                COGINIT 0x20 + probe_cog,   restart_address
 .endif
-    ADD fallthrough, 1
-    JMP nrel(_end)
+                // This younger instruction can finish before a no-WC restart takes effect.
+                ADD     fallthrough,        1
+                JMP     nrel(_end)
 restarted:
-    GETCT finish
-if(C) ADD failures, 1
-if(Z) ADD failures, 1
-    CMP PTRA, 77 :wz
-if(!Z) ADD failures, 1
-    CMP PTRB, restart_address :wz
-if(!Z) ADD failures, 1
-    SUB finish, start
-    AND start, 7
-    MOV expected, probe_cog
-    SUB expected, start
-    SUB expected, 4
-    AND expected, 7
-    ADD expected, 25
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP phase_loop
-    SETQ 0
-    JMP nrel(_end)
-var offset: LONG 0
-var restart_address: LONG 0
-var timer: LONG 0
-var start: LONG 0
-var finish: LONG 0
-var expected: LONG 0
-var failures: LONG 0
-var fallthrough: LONG 0
+                GETCT   finish
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     PTRA,       77              :wz
+    if(!Z)      ADD     failures,   1
+                CMP     PTRB,       restart_address :wz
+    if(!Z)      ADD     failures,   1
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   probe_cog
+                SUB     expected,   start
+                SUB     expected,   4
+                AND     expected,   7
+                ADD     expected,   25
+                CMP     finish,     expected        :wz
+    if(!Z)      ADD     failures,   1
+                ADD     offset,     1
+                CMP     offset,     8               :wz
+    if(!Z)      JMP     phase_loop
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var offset:     LONG    0
+var restart_address:
+                LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+var fallthrough:
+                LONG    0
+

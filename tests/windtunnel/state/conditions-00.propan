@@ -20,35 +20,39 @@
 //? post: cog[0].c == false
 //? post: cog[0].z == false
 
+// Check all ordinary condition codes with initial C=0, Z=0.
+// Each condition writes a separate zero-initialized result and leaves flags unchanged, so one truth table checks every condition.
+
 _start:
-    if(!C & !Z) MOV result00, 1
-    if(!C & Z) MOV result01, 1
-    if(!C) MOV result02, 1
-    if(C & !Z) MOV result03, 1
-    if(!Z) MOV result04, 1
-    if(C != Z) MOV result05, 1
-    if(!C | !Z) MOV result06, 1
-    if(C & Z) MOV result07, 1
-    if(C == Z) MOV result08, 1
-    if(Z) MOV result09, 1
-    if(!C | Z) MOV result10, 1
-    if(C) MOV result11, 1
-    if(C | !Z) MOV result12, 1
-    if(C | Z) MOV result13, 1
-    MOV result14, 1
-    JMP nrel(_end)
-var result00: LONG 0
-var result01: LONG 0
-var result02: LONG 0
-var result03: LONG 0
-var result04: LONG 0
-var result05: LONG 0
-var result06: LONG 0
-var result07: LONG 0
-var result08: LONG 0
-var result09: LONG 0
-var result10: LONG 0
-var result11: LONG 0
-var result12: LONG 0
-var result13: LONG 0
-var result14: LONG 0
+    if(!C & !Z) MOV     result00,   1
+    if(!C & Z)  MOV     result01,   1
+    if(!C)      MOV     result02,   1
+    if(C & !Z)  MOV     result03,   1
+    if(!Z)      MOV     result04,   1
+    if(C != Z)  MOV     result05,   1
+    if(!C | !Z) MOV     result06,   1
+    if(C & Z)   MOV     result07,   1
+    if(C == Z)  MOV     result08,   1
+    if(Z)       MOV     result09,   1
+    if(!C | Z)  MOV     result10,   1
+    if(C)       MOV     result11,   1
+    if(C | !Z)  MOV     result12,   1
+    if(C | Z)   MOV     result13,   1
+                MOV     result14,   1
+                JMP     nrel(_end)
+var result00:   LONG    0
+var result01:   LONG    0
+var result02:   LONG    0
+var result03:   LONG    0
+var result04:   LONG    0
+var result05:   LONG    0
+var result06:   LONG    0
+var result07:   LONG    0
+var result08:   LONG    0
+var result09:   LONG    0
+var result10:   LONG    0
+var result11:   LONG    0
+var result12:   LONG    0
+var result13:   LONG    0
+var result14:   LONG    0
+

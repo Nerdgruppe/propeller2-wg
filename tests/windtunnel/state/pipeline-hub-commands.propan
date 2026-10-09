@@ -33,230 +33,236 @@
 //? const: probe_cog = 7
 //? const: other_cog = 0
 
-    MOV offset, 0
+// Measure shared cog/lock command slots with and without returned results.
+// Command grants follow the issuing cog ID, separately from hub RAM slice rotation; release locks between samples.
+// Raw deltas are 4 clocks without a returned result or 6 with one, plus (6 + cog - start_CT) & 7.
+
+                MOV     offset, 0
 cogid_result_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    COGID scratch
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 6
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP cogid_result_loop
-    MOV offset, 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                COGID   scratch
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   6
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     cogid_result_loop
+                MOV     offset,     0
 cogid_status_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    COGID other_cog :wc
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 6
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP cogid_status_loop
-    MOV offset, 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                COGID   other_cog               :wc
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   6
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     cogid_status_loop
+                MOV     offset,     0
 cogstop_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    COGSTOP other_cog
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 4
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP cogstop_loop
-    MOV offset, 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                COGSTOP other_cog
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   4
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     cogstop_loop
+                MOV     offset,     0
 locknew_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    LOCKNEW spare :wc
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 6
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET spare
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP locknew_loop
-    MOV offset, 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                LOCKNEW spare                   :wc
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   6
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET spare
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     locknew_loop
+                MOV     offset,     0
 locktry_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    LOCKTRY lock :wc
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 6
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP locktry_loop
-    MOV offset, 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                LOCKTRY lock                    :wc
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   6
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     locktry_loop
+                MOV     offset,     0
 lockrel_query_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    LOCKREL scratch :wc
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 6
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP lockrel_query_loop
-    MOV offset, 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                LOCKREL scratch                 :wc
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   6
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     lockrel_query_loop
+                MOV     offset,     0
 lockrel_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    LOCKREL lock
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 4
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP lockrel_loop
-    MOV offset, 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                LOCKREL lock
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   4
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     lockrel_loop
+                MOV     offset,     0
 lockret_loop:
-    LOCKNEW lock
-    MOV scratch, lock
-    LOCKTRY lock :wc
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    LOCKRET lock
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, 6
-    SUB expected, start
-    ADD expected, probe_cog
-    AND expected, 7
-    ADD expected, 4
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    LOCKRET lock
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP lockret_loop
-    JMP nrel(_end)
-var offset: LONG 0
-var timer: LONG 0
-var start: LONG 0
-var finish: LONG 0
-var scratch: LONG 0
-var spare: LONG 0
-var lock: LONG 0
-var expected: LONG 0
-var failures: LONG 0
+                LOCKNEW lock
+                MOV     scratch,    lock
+                LOCKTRY lock                    :wc
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                LOCKRET lock
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   6
+                SUB     expected,   start
+                ADD     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   4
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                LOCKRET lock
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     lockret_loop
+                JMP     nrel(_end)
+var offset:     LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var scratch:    LONG    0
+var spare:      LONG    0
+var lock:       LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+

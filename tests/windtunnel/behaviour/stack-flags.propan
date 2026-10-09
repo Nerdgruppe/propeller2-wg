@@ -13,34 +13,39 @@
 //? post: cog[0].c == true
 //? post: cog[0].z == false
 
-    // Initialize every slot; the bootstrap does not clear the hardware stack.
-    PUSH 0
-    PUSH 0
-    PUSH 0
-    PUSH 0
-    PUSH 0
-    PUSH 0
-    PUSH 0
-    PUSH 0
-    POP empty :wcz
-if(!C) MOV empty_c, 1
-if(Z) MOV empty_z, 1
-    PUSH aug(0x8000_0001)
-    POP augmented :wcz
-    PUSH value
-    POP from_register :wz
-    POP sticky
-    PUSH 7
-    POP after_push
-    POP after_pop
-    JMP nrel(_end)
+// Check PUSH/POP values, flags and the sticky bottom slot of the hardware stack.
+// Eight zero pushes remove stack state left by the bootstrap before testing empty pops.
 
-var value: LONG 0x4000_0000
-var empty: LONG -1
-var empty_c: LONG 0
-var empty_z: LONG 0
-var augmented: LONG 0
-var from_register: LONG 0
-var sticky: LONG -1
-var after_push: LONG 0
-var after_pop: LONG -1
+                // Initialize every slot; the bootstrap does not clear the hardware stack.
+                PUSH    0
+                PUSH    0
+                PUSH    0
+                PUSH    0
+                PUSH    0
+                PUSH    0
+                PUSH    0
+                PUSH    0
+                POP     empty               :wcz
+    if(!C)      MOV     empty_c,    1
+    if(Z)       MOV     empty_z,    1
+                PUSH    aug(0x8000_0001)
+                POP     augmented           :wcz
+                PUSH    value
+                POP     from_register       :wz
+                POP     sticky
+                PUSH    7
+                POP     after_push
+                POP     after_pop
+                JMP     nrel(_end)
+
+var value:      LONG    0x4000_0000
+var empty:      LONG    -1
+var empty_c:    LONG    0
+var empty_z:    LONG    0
+var augmented:  LONG    0
+var from_register:
+                LONG    0
+var sticky:     LONG    -1
+var after_push: LONG    0
+var after_pop:  LONG    -1
+

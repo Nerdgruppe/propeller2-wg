@@ -65,105 +65,115 @@
 //? const: probe_cog = 7
 //? const: probe_lut = 1
 
-    MOV address, aug(hubaddr(buffer))
-    MOV PTRA, aug(hubaddr(lengths))
-    MOV length_index, 0
+// Measure SETQ/SETQ2 block reads and writes across banks, phases and alignment.
+// Lengths 1, 2, 8, 9 and 64 span single transfers and RAM rotations; SETQ2 writes need an extra source-setup clock.
+// Hardware block deltas use phase = (bank + 2 - start_CT - cog) & 7, plus length - 1 beats.
+// Read/write bases are 13/7 clocks including SETQ; unaligned blocks add one crossing clock.
+
+                MOV     address,        aug(hubaddr(buffer))
+                MOV     PTRA,           aug(hubaddr(lengths))
+                MOV     length_index,   0
 length_loop:
-    RDLONG length, PTRA++
-    SUB length, 1
-    MOV bank, 0
+                RDLONG  length, PTRA++
+                SUB     length, 1
+                MOV     bank,   0
 bank_loop:
-    MOV alignment, 0
+                MOV     alignment,  0
 alignment_loop:
-    MOV crossing, 0
-    CMP alignment, 0 :wz
-if(!Z) MOV crossing, 1
-    MOV offset, 0
+                MOV     crossing,   0
+                CMP     alignment,  0   :wz
+    if(!Z)      MOV     crossing,   1
+                MOV     offset,     0
 phase_loop:
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,          128
+                ANDN    timer,          7
+                ADD     timer,          offset
+                ADDCT1  timer,          0
+                WAITCT1
+                GETCT   start
 .if probe_lut == 1
-    SETQ2 length
+                SETQ2   length
 .else
-    SETQ length
+                SETQ    length
 .endif
-    RDLONG register(200), address
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, bank
-    ADD expected, 2
-    SUB expected, start
-    SUB expected, probe_cog
-    AND expected, 7
-    ADD expected, 13
-    ADD expected, length
-    ADD expected, crossing
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
+                RDLONG  register(200),  address
+                GETCT   finish
+                SUB     finish,         start
+                AND     start,          7
+                MOV     expected,       bank
+                ADD     expected,       2
+                SUB     expected,       start
+                SUB     expected,       probe_cog
+                AND     expected,       7
+                ADD     expected,       13
+                ADD     expected,       length
+                ADD     expected,       crossing
+                CMP     finish,         expected                :wz
+    if(!Z)      ADD     failures,       1
+                GETCT   timer
+                ADD     timer,          128
+                ANDN    timer,          7
+                ADD     timer,          offset
+                ADDCT1  timer,          0
+                WAITCT1
+                GETCT   start
 .if probe_lut == 1
-    SETQ2 length
+                SETQ2   length
 .else
-    SETQ length
+                SETQ    length
 .endif
-    WRLONG register(200), address
-    GETCT finish
-    SUB finish, start
-    AND start, 7
-    MOV expected, bank
-    ADD expected, 2
-    SUB expected, start
-    SUB expected, probe_cog
-    AND expected, 7
+                WRLONG  register(200),  address
+                GETCT   finish
+                SUB     finish,         start
+                AND     start,          7
+                MOV     expected,       bank
+                ADD     expected,       2
+                SUB     expected,       start
+                SUB     expected,       probe_cog
+                AND     expected,       7
 .if probe_lut == 1
-    CMP expected, 0 :wz
-if(Z) MOV expected, 8
+                // A zero-phase SETQ2 write misses this window during LUT source setup and waits a full rotation.
+                CMP     expected,       0                       :wz
+    if(Z)       MOV     expected,       8
 .endif
-    ADD expected, 7
-    ADD expected, length
-    ADD expected, crossing
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP phase_loop
-    ADD address, 1
-    ADD alignment, 1
-    CMP alignment, 4 :wz
-if(!Z) JMP alignment_loop
-    ADD bank, 1
-    CMP bank, 8 :wz
-if(!Z) JMP bank_loop
-    MOV address, aug(hubaddr(buffer))
-    ADD length_index, 1
-    CMP length_index, 5 :wz
-if(!Z) JMP length_loop
-    JMP nrel(_end)
-var length_index: LONG 0
-var length: LONG 0
-var bank: LONG 0
-var alignment: LONG 0
-var crossing: LONG 0
-var offset: LONG 0
-var address: LONG 0
-var start: LONG 0
-var finish: LONG 0
-var expected: LONG 0
-var failures: LONG 0
-var timer: LONG 0
+                ADD     expected,       7
+                ADD     expected,       length
+                ADD     expected,       crossing
+                CMP     finish,         expected                :wz
+    if(!Z)      ADD     failures,       1
+                ADD     offset,         1
+                CMP     offset,         8                       :wz
+    if(!Z)      JMP     phase_loop
+                ADD     address,        1
+                ADD     alignment,      1
+                CMP     alignment,      4                       :wz
+    if(!Z)      JMP     alignment_loop
+                ADD     bank,           1
+                CMP     bank,           8                       :wz
+    if(!Z)      JMP     bank_loop
+                MOV     address,        aug(hubaddr(buffer))
+                ADD     length_index,   1
+                CMP     length_index,   5                       :wz
+    if(!Z)      JMP     length_loop
+                JMP     nrel(_end)
+var length_index:
+                LONG    0
+var length:     LONG    0
+var bank:       LONG    0
+var alignment:  LONG    0
+var crossing:   LONG    0
+var offset:     LONG    0
+var address:    LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+var timer:      LONG    0
 .data
-lengths: LONG 1, 2, 8, 9, 64
-.align 32
-buffer: LONG [0x12345678] * 73
+lengths:        LONG    1,  2,  8,  9,  64
+// A 32-byte-aligned base makes successive longs select hub slices 0 through 7.
+.align  32
+buffer:         LONG    [0x12345678] * 73
+

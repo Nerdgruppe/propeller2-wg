@@ -18,17 +18,22 @@
 //? run: "cog=7"
 //? cog: 7
 
-    WRLUT 99, aug(508)
-    WRLUT 0, aug(509)
-    WRLUT 0, aug(510)
-    WRLUT 0, aug(511)
-    SETSE1 0
-    SETQ2 3
-    WRLONG register(508), aug(hubaddr(buffer))
-    POLLSE1 :wc
-if(C) MOV observed, 1
-    SETQ 0
-    JMP nrel(_end)
-var observed: LONG 0
+// Check whether SETQ2 hub writes generate LUT read events while sourcing their data.
+// They must use the LUT transfer path without issuing an architectural RDLUT event.
+
+                WRLUT   99,             aug(508)
+                WRLUT   0,              aug(509)
+                WRLUT   0,              aug(510)
+                WRLUT   0,              aug(511)
+                SETSE1  0
+                SETQ2   3
+                WRLONG  register(508),  aug(hubaddr(buffer))
+                POLLSE1                                         :wc
+    if(C)       MOV     observed,       1
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var observed:   LONG    0
 .data
-buffer: LONG [0] * 4
+buffer:         LONG    [0] * 4
+

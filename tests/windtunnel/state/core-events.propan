@@ -11,66 +11,75 @@
 //? post: cog[0].reg[timeout] == 1
 //? post: cog[0].reg[failures] == 0
 
-    COGATN 1
-    POLLATN :wc
-    WRC attention
-    POLLATN :wz
-    WRNZ attention_cleared
-    GETCT timer
-    ADDCT1 timer, 32
-    WAITCT1 :wc
-    WRNC counter_ready
-    POLLCT1 :wc
-    WRC counter_reasserted
-    GETCT timer
-    ADDCT2 timer, 32
-    WAITX 40
-    JCT2 ct2_ready
-    ADD failures, 1
+// Check attention, counter, LUT and lock events, plus SETQ wait timeouts.
+// A past counter target can reassert after polling; rearm it before testing the cleared branch. Clear Q before reporting.
+
+                COGATN  1
+                POLLATN                     :wc
+                WRC     attention
+                POLLATN                     :wz
+                WRNZ    attention_cleared
+                GETCT   timer
+                ADDCT1  timer,      32
+                WAITCT1                     :wc
+                WRNC    counter_ready
+                POLLCT1                     :wc
+                WRC     counter_reasserted
+                GETCT   timer
+                ADDCT2  timer,      32
+                WAITX   40
+                JCT2    ct2_ready
+                ADD     failures,   1
 ct2_ready:
-    ADDCT2 timer, 128
-    JNCT2 ct2_cleared
-    ADD failures, 2
+                ADDCT2  timer,      128
+                JNCT2   ct2_cleared
+                ADD     failures,   2
 ct2_cleared:
-    SETSE1 4
-    WRLUT 123, aug(508)
-    POLLSE1 :wc
-    WRC lut_ready
-    LOCKNEW lock_id :wc
-    MOV lock_event, lock_id
-    OR lock_event, 0x10
-    SETSE2 lock_event
-    LOCKTRY lock_id :wc
-    WRC lock_acquired
-    WAITSE2
-    LOCKTRY lock_id :wc
-    WRC lock_reacquired
-    MOV lock_owner, lock_id
-    LOCKREL lock_owner :wc
-    MOV lock_event, lock_id
-    OR lock_event, 0x20
-    SETSE3 lock_event
-    LOCKTRY lock_id
-    LOCKREL lock_id
-    WAITSE3
-    LOCKRET lock_id
-    GETCT timer
-    ADD timer, 32
-    SETQ timer
-    WAITATN :wcz
-    WRC timeout
-    SETQ 0
-    JMP nrel(_end)
-var attention: LONG 0
-var attention_cleared: LONG 0
-var timer: LONG 0
-var counter_ready: LONG 0
-var counter_reasserted: LONG 0
-var lut_ready: LONG 0
-var lock_id: LONG 0
-var lock_event: LONG 0
-var lock_acquired: LONG 0
-var lock_reacquired: LONG 0
-var lock_owner: LONG -1
-var timeout: LONG 0
-var failures: LONG 0
+                SETSE1  4
+                WRLUT   123,        aug(508)
+                POLLSE1                         :wc
+                WRC     lut_ready
+                LOCKNEW lock_id                 :wc
+                MOV     lock_event, lock_id
+                OR      lock_event, 0x10
+                SETSE2  lock_event
+                LOCKTRY lock_id                 :wc
+                WRC     lock_acquired
+                WAITSE2
+                LOCKTRY lock_id                 :wc
+                WRC     lock_reacquired
+                MOV     lock_owner, lock_id
+                LOCKREL lock_owner              :wc
+                MOV     lock_event, lock_id
+                OR      lock_event, 0x20
+                SETSE3  lock_event
+                LOCKTRY lock_id
+                LOCKREL lock_id
+                WAITSE3
+                LOCKRET lock_id
+                GETCT   timer
+                ADD     timer,      32
+                SETQ    timer
+                WAITATN                         :wcz
+                WRC     timeout
+                SETQ    0
+                JMP     nrel(_end)
+var attention:  LONG    0
+var attention_cleared:
+                LONG    0
+var timer:      LONG    0
+var counter_ready:
+                LONG    0
+var counter_reasserted:
+                LONG    0
+var lut_ready:  LONG    0
+var lock_id:    LONG    0
+var lock_event: LONG    0
+var lock_acquired:
+                LONG    0
+var lock_reacquired:
+                LONG    0
+var lock_owner: LONG    -1
+var timeout:    LONG    0
+var failures:   LONG    0
+

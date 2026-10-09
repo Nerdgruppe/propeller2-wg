@@ -17,79 +17,96 @@
 //? post: cog[0].reg[captured_pa] == 77
 //? post: cog[0].reg[captured_pb] == 88
 
-    ALTS source_pointer, 0
-    MOV from_source, register(0)
-    ALTD destination_pointer, 0
-    MOV register(0), 77
-    ALTR result_pointer, 0
-    ADD sum, 5
-    ALTGN nibble_index, &source
-    GETNIB nibble, register(0), 0
-    ALTGB byte_index, &source
-    GETBYTE byte_value, register(0), 0
-    ALTGW word_index, &source
-    GETWORD word_value, register(0), 0
-    ALTSN lane_nibble, &lanes
-    SETNIB register(0), 0xa, 0
-    ALTSB lane_byte, &lanes
-    SETBYTE register(0), 0xda, 0
-    ALTSW lane_word, &lanes
-    SETWORD register(0), word_data, 0
-    ALTB bit_index, &bit_value
-    BITH register(0), bit_index
-    ALTI instruction, 0b101_100_100
-    NOP
-    ALTI instruction, 0b001_000_000
-    MOV cancelled, 0
-    ALTS index, increment
-    MOV register(0), 0
-    AUGS 0x12345600
-    ALTD zero, &source_pointer
-    MOV register(0), 0x78
-    ADD source_pointer, 1
-    MOV PA, 77
-    MOV PB, 88
-    ALTR call_pointer, 0
-    CALLPA 123, capture_pa
-    ALTR call_pointer, 0
-    CALLPB 234, capture_pb
-    ALTI zero, 0b001_000_000
-    CALLPA 345, capture_pa
-    ALTI zero, 0b001_000_000
-    CALLPB 456, capture_pb
-    JMP nrel(_end)
+// Exercise ALTx lane/register redirection and ALTI substitution or result cancellation.
+// CALLPA/CALLPB must honor result redirection without changing PA/PB when their result write is canceled.
+
+                ALTS    source_pointer,         0
+                MOV     from_source,            register(0)
+                ALTD    destination_pointer,    0
+                MOV     register(0),            77
+                ALTR    result_pointer,         0
+                ADD     sum,                    5
+                ALTGN   nibble_index,           &source
+                GETNIB  nibble,                 register(0),    0
+                ALTGB   byte_index,             &source
+                GETBYTE byte_value,             register(0),    0
+                ALTGW   word_index,             &source
+                GETWORD word_value,             register(0),    0
+                ALTSN   lane_nibble,            &lanes
+                SETNIB  register(0),            0xa,            0
+                ALTSB   lane_byte,              &lanes
+                SETBYTE register(0),            0xda,           0
+                ALTSW   lane_word,              &lanes
+                SETWORD register(0),            word_data,      0
+                ALTB    bit_index,              &bit_value
+                BITH    register(0),            bit_index
+                ALTI    instruction,            0b101_100_100
+                NOP
+                ALTI    instruction,            0b001_000_000
+                MOV     cancelled,              0
+                ALTS    index,                  increment
+                MOV     register(0),            0
+                // ALTx uses this extension without consuming it; the following MOV must still see it.
+                AUGS    0x12345600
+                ALTD    zero,                   &source_pointer
+                MOV     register(0),            0x78
+                ADD     source_pointer,         1
+                // Redirect and cancel the parameter result independently of the call/return itself.
+                MOV     PA,                     77
+                MOV     PB,                     88
+                ALTR    call_pointer,           0
+                CALLPA  123,                    capture_pa
+                ALTR    call_pointer,           0
+                CALLPB  234,                    capture_pb
+                ALTI    zero,                   0b001_000_000
+                CALLPA  345,                    capture_pa
+                ALTI    zero,                   0b001_000_000
+                CALLPB  456,                    capture_pb
+                JMP     nrel(_end)
 capture_pa:
-    return MOV captured_pa, PA
+    return      MOV     captured_pa,    PA
 capture_pb:
-    return MOV captured_pb, PB
-var source: LONG 0x12345678
-var source_pointer: LONG cogaddr(source)
-var destination_pointer: LONG target
-var result_pointer: LONG redirected
-var target: LONG 0
-var redirected: LONG 0
-var sum: LONG 10
-var from_source: LONG 0
-var nibble_index: LONG 3
-var byte_index: LONG 1
-var word_index: LONG 1
-var nibble: LONG 0
-var byte_value: LONG 0
-var word_value: LONG 0
-var lane_nibble: LONG 2
-var lane_byte: LONG 1
-var lane_word: LONG 1
-var lanes: LONG 0
-var bit_index: LONG 3
-var bit_value: LONG 0
-var instruction: LONG 0xf6040009 | (cogaddr(executed) << 9)
-var executed: LONG 0
-var cancelled: LONG 123
-var index: LONG 0
-var increment: LONG 512
-var zero: LONG 0
-var word_data: LONG 0xbbcc
-var call_pointer: LONG cogaddr(call_redirected)
-var call_redirected: LONG 0
-var captured_pa: LONG 0
-var captured_pb: LONG 0
+    return      MOV     captured_pb,    PB
+var source:     LONG    0x12345678
+var source_pointer:
+                LONG    cogaddr(source)
+var destination_pointer:
+                LONG    target
+var result_pointer:
+                LONG    redirected
+var target:     LONG    0
+var redirected: LONG    0
+var sum:        LONG    10
+var from_source:
+                LONG    0
+var nibble_index:
+                LONG    3
+var byte_index: LONG    1
+var word_index: LONG    1
+var nibble:     LONG    0
+var byte_value: LONG    0
+var word_value: LONG    0
+var lane_nibble:
+                LONG    2
+var lane_byte:  LONG    1
+var lane_word:  LONG    1
+var lanes:      LONG    0
+var bit_index:  LONG    3
+var bit_value:  LONG    0
+var instruction:
+                LONG    0xf6040009 | (cogaddr(executed) << 9)
+var executed:   LONG    0
+var cancelled:  LONG    123
+var index:      LONG    0
+var increment:  LONG    512
+var zero:       LONG    0
+var word_data:  LONG    0xbbcc
+var call_pointer:
+                LONG    cogaddr(call_redirected)
+var call_redirected:
+                LONG    0
+var captured_pa:
+                LONG    0
+var captured_pb:
+                LONG    0
+

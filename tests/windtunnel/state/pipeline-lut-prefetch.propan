@@ -3,31 +3,40 @@
 //? post: cog[0].reg[spaced_value] == 2
 //? post: cog[0].reg[refetched_value] == 2
 
-    SETQ2 31
-    RDLONG register(0), aug(hubaddr(lut_code))
-    CALL lut_code
-    SETQ 0
-    JMP nrel(_end)
-var result: LONG 0
-var near_value: LONG 0
-var spaced_value: LONG 0
-var refetched_value: LONG 0
-var replacement: LONG 0xf6040002 | (cogaddr(result) << 9)
-.lutexec 0x4000, 0x200
+// Check LUT instruction prefetch when WRLUT modifies upcoming code.
+// Compare adjacent, two-NOP-separated and branch-refetched targets without asserting ambiguous same-edge collision values.
+
+                SETQ2   31
+                RDLONG  register(0),    aug(hubaddr(lut_code))
+                CALL    lut_code
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var result:     LONG    0
+var near_value: LONG    0
+var spaced_value:
+                LONG    0
+var refetched_value:
+                LONG    0
+// Encode MOV result,#2: overwrite the immediate while keeping the same result register.
+var replacement:
+                LONG    0xf6040002 | (cogaddr(result) << 9)
+.lutexec    0x4000, 0x200
 lut_code:
-    WRLUT replacement, aug(pcaddr(near_instruction) - 0x200)
+                WRLUT   replacement,    aug(pcaddr(near_instruction) - 0x200)
 near_instruction:
-    MOV result, 1
-    MOV near_value, result
-    WRLUT replacement, aug(pcaddr(spaced_instruction) - 0x200)
-    NOP
-    NOP
+                MOV     result,         1
+                MOV     near_value,     result
+                WRLUT   replacement,    aug(pcaddr(spaced_instruction) - 0x200)
+                NOP
+                NOP
 spaced_instruction:
-    MOV result, 1
-    MOV spaced_value, result
-    WRLUT replacement, aug(pcaddr(refetched_instruction) - 0x200)
-    JMP refetched_instruction
+                MOV     result,         1
+                MOV     spaced_value,   result
+                WRLUT   replacement,    aug(pcaddr(refetched_instruction) - 0x200)
+                JMP     refetched_instruction
 refetched_instruction:
-    MOV result, 1
-    MOV refetched_value, result
-    RET
+                MOV     result,             1
+                MOV     refetched_value,    result
+                RET
+

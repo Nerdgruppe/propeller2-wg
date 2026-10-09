@@ -7,15 +7,19 @@
 //? post: cog[0].reg[first] == 0x12345678
 //? post: cog[0].reg[second] == 0x101
 
+// Check that AUGS survives register-source and conditionally canceled instructions.
+// The low nine-bit immediate reconstructs the augmented value; the following immediate detects stale AUGS.
+
 _start:
-    AUGS 0x12345678
-    MOV copied, value
-if(C) MOV skipped, 1
-    MOV first, 0x12345678 & 0x1ff
-    MOV second, 0x101
-    JMP nrel(_end)
-var value: LONG 42
-var copied: LONG 0
-var skipped: LONG 0
-var first: LONG 0
-var second: LONG 0
+                AUGS    0x12345678
+                MOV     copied,     value
+    if(C)       MOV     skipped,    1
+                MOV     first,      0x12345678 & 0x1ff
+                MOV     second,     0x101
+                JMP     nrel(_end)
+var value:      LONG    42
+var copied:     LONG    0
+var skipped:    LONG    0
+var first:      LONG    0
+var second:     LONG    0
+

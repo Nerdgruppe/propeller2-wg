@@ -5,4 +5,8 @@
 //? max-cycles: 30_000_000
 //? timeout-ms: 1000
 
+// Run the shared hello-world example and compare its complete UART output.
+// Import the example rather than duplicate it, so example and simulator coverage stay in sync.
+
 .import "../../../examples/hello-world.propan"
+

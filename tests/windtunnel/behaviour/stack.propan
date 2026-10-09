@@ -11,37 +11,41 @@
 //? post: cog[0].reg[top8] == 101
 //? post: cog[0].reg[top9] == 101
 
+// Check the eight-entry hardware stack under overflow and repeated pops.
+// The ninth push discards the oldest value; pops beyond eight repeat the retained bottom slot.
+
 _start:
-    PUSH 100
-    PUSH 101
-    PUSH 102
-    PUSH 103
-    PUSH 104
-    PUSH 105
-    PUSH 106
-    PUSH 107
-    PUSH 108 // shifts the "100" out of the stack. TODO: This shall emit a warning later.
+                PUSH    100
+                PUSH    101
+                PUSH    102
+                PUSH    103
+                PUSH    104
+                PUSH    105
+                PUSH    106
+                PUSH    107
+                PUSH    108             // shifts the "100" out of the stack. TODO: This shall emit a warning later.
 
-    POP top0 // 108
-    POP top1 // 107
-    POP top2 // 106
-    POP top3 // 105
-    POP top4 // 104
-    POP top5 // 103
-    POP top6 // 102
-    POP top7 // 101
-    POP top8 // 101, will be duplicated by the stack operations
-    POP top9 // 101, will be duplicated by the stack operations
-    
-    JMP nrel(_end)
+                POP     top0            // 108
+                POP     top1            // 107
+                POP     top2            // 106
+                POP     top3            // 105
+                POP     top4            // 104
+                POP     top5            // 103
+                POP     top6            // 102
+                POP     top7            // 101
+                POP     top8            // 101, will be duplicated by the stack operations
+                POP     top9            // 101, will be duplicated by the stack operations
 
-var top0: LONG 0
-var top1: LONG 0
-var top2: LONG 0
-var top3: LONG 0
-var top4: LONG 0
-var top5: LONG 0
-var top6: LONG 0
-var top7: LONG 0
-var top8: LONG 0
-var top9: LONG 0
+                JMP     nrel(_end)
+
+var top0:       LONG    0
+var top1:       LONG    0
+var top2:       LONG    0
+var top3:       LONG    0
+var top4:       LONG    0
+var top5:       LONG    0
+var top6:       LONG    0
+var top7:       LONG    0
+var top8:       LONG    0
+var top9:       LONG    0
+

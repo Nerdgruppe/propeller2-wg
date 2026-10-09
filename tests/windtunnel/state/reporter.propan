@@ -8,10 +8,14 @@
 //? post: cog[0].c == true
 //? post: cog[0].z == false
 
+// Check register and hub-byte snapshots from the oracle reporter.
+// Zero, high-bit and all-ones patterns expose signed conversion and byte-order errors.
+
 _start:
-    MOV first, first
-    JMP nrel(_end)
-var first: LONG 0x00ff_8000
-var second: LONG -1
+                MOV     first,  first
+                JMP     nrel(_end)
+var first:      LONG    0x00ff_8000
+var second:     LONG    -1
 .data
-buffer: BYTE 0x00, 0x80, 0xff, 0x7f, 0x12, 0x34, 0x56, 0x78
+buffer:         BYTE    0x00,   0x80,   0xff,   0x7f,   0x12,   0x34,   0x56,   0x78
+

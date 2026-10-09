@@ -4,12 +4,16 @@
 //? post: cog[0].reg[second] == 0x12345678
 //? post: cog[0].reg[third] == 0x101
 
-_start:
-    MOV first, 0x1ff
-    MOV second, aug(0x12345678)
-    MOV third, 0x101
-    JMP nrel(_end)
+// Check that an augmented immediate is used once between ordinary MOV immediates.
+// The immediate before and after aug(...) expose augmentation leaking into another instruction.
 
-var first: LONG 0
-var second: LONG 0
-var third: LONG 0
+_start:
+                MOV     first,  0x1ff
+                MOV     second, aug(0x12345678)
+                MOV     third,  0x101
+                JMP     nrel(_end)
+
+var first:      LONG    0
+var second:     LONG    0
+var third:      LONG    0
+

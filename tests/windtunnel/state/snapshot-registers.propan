@@ -8,10 +8,14 @@
 //? post: cog[1].reg[0x1f8] == 0xfedc_ba98
 //? post: cog[1].reg[0x1f9] == 0x2468_ace0
 
-    MOV register(0x1f0), aug(0x1234_5678)
-    MOV register(0x1f5), aug(0xffff_0000)
-    MOV register(0x1f6), aug(0x8765_4321)
-    MOV register(0x1f7), aug(0x1357_9bdf)
-    MOV register(0x1f8), aug(0xfedc_ba98)
-    MOV register(0x1f9), aug(0x2468_ace0)
-    JMP nrel(_end)
+// Check snapshots of interrupt links, PA/PB and PTRA/PTRB.
+// Write distinct patterns before exit because the reporter reuses registers after taking the snapshot.
+
+                MOV     register(0x1f0),    aug(0x1234_5678)
+                MOV     register(0x1f5),    aug(0xffff_0000)
+                MOV     register(0x1f6),    aug(0x8765_4321)
+                MOV     register(0x1f7),    aug(0x1357_9bdf)
+                MOV     register(0x1f8),    aug(0xfedc_ba98)
+                MOV     register(0x1f9),    aug(0x2468_ace0)
+                JMP     nrel(_end)
+

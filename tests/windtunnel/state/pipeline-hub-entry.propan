@@ -321,104 +321,111 @@
 //? const: probe_alignment = 3
 //? const: probe_lut = 1
 
+// Measure cog/LUT-to-hub entry and the return to local execution.
+// Separate packed targets cover every bank and byte alignment without assembler alignment hiding unaligned entry.
+
 .if probe_lut == 1
-    SETQ2 3
-    RDLONG register(0), aug(hubaddr(lut_measure))
-    MOV return_pc, aug(pcaddr(lut_return))
+                SETQ2   3
+                RDLONG  register(0),    aug(hubaddr(lut_measure))
+                MOV     return_pc,      aug(pcaddr(lut_return))
 .else
-    MOV return_pc, cogaddr(cog_measure_return)
+                MOV     return_pc,      cogaddr(cog_measure_return)
 .endif
-    MOV PTRA, aug(hubaddr(targets))
-    MOV bank, 0
+                MOV     PTRA,           aug(hubaddr(targets))
+                MOV     bank,           0
 bank_loop:
-    RDLONG target, PTRA++
-    MOV offset, 0
+                RDLONG  target, PTRA++
+                MOV     offset, 0
 phase_loop:
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
 .if probe_lut == 1
-    JMP lut_measure
+                JMP     lut_measure
 .else
-    GETCT start
-    JMP target
+                GETCT   start
+                JMP     target
 .endif
-    ADD failures, 1
+                ADD     failures,   1
 cog_measure_return:
-    GETCT return_time
+                GETCT   return_time
 cog_return:
-    SUB return_time, finish
-    CMP return_time, 6 :wz
-if(!Z) ADD failures, 1
-    SUB finish, start
-    AND start, 7
-    MOV expected, bank
-    ADD expected, 1
-    SUB expected, start
-    SUB expected, probe_cog
-    AND expected, 7
-    ADD expected, 15
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP phase_loop
-    ADD bank, 1
-    CMP bank, 8 :wz
-if(!Z) JMP bank_loop
-    JMP nrel(_end)
-var return_pc: LONG 0
-var return_time: LONG 0
-var target: LONG 0
-var bank: LONG 0
-var offset: LONG 0
-var timer: LONG 0
-var start: LONG 0
-var finish: LONG 0
-var failures: LONG 0
-var expected: LONG 0
-.lutexec 0x3800, 0x200
+                SUB     return_time,    finish
+                CMP     return_time,    6           :wz
+    if(!Z)      ADD     failures,       1
+                SUB     finish,         start
+                AND     start,          7
+                MOV     expected,       bank
+                ADD     expected,       1
+                SUB     expected,       start
+                SUB     expected,       probe_cog
+                AND     expected,       7
+                // Measured entry cost includes FIFO startup and GETCT spacing; the preceding term is bank phase.
+                ADD     expected,       15
+                CMP     finish,         expected    :wz
+    if(!Z)      ADD     failures,       1
+                ADD     offset,         1
+                CMP     offset,         8           :wz
+    if(!Z)      JMP     phase_loop
+                ADD     bank,           1
+                CMP     bank,           8           :wz
+    if(!Z)      JMP     bank_loop
+                JMP     nrel(_end)
+var return_pc:  LONG    0
+var return_time:
+                LONG    0
+var target:     LONG    0
+var bank:       LONG    0
+var offset:     LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var failures:   LONG    0
+var expected:   LONG    0
+.lutexec    0x3800, 0x200
 lut_measure:
-    GETCT start
-    JMP target
+                GETCT   start
+                JMP     target
 lut_return:
-    GETCT return_time
-    JMP nrel(cog_return)
+                GETCT   return_time
+                JMP     nrel(cog_return)
 .data
-targets: LONG hubaddr(target0), hubaddr(target1), hubaddr(target2), hubaddr(target3), hubaddr(target4), hubaddr(target5), hubaddr(target6), hubaddr(target7)
-.pack byte
-.hubexec 16384 + probe_alignment
+targets:        LONG    hubaddr(target0),   hubaddr(target1),   hubaddr(target2),   hubaddr(target3),   hubaddr(target4),   hubaddr(target5),   hubaddr(target6),   hubaddr(target7)
+.pack   byte
+.hubexec    16384 + probe_alignment
 target0:
-    GETCT finish
-    JMP return_pc
-.hubexec 16644 + probe_alignment
+                GETCT   finish
+                JMP     return_pc
+.hubexec    16644 + probe_alignment
 target1:
-    GETCT finish
-    JMP return_pc
-.hubexec 16904 + probe_alignment
+                GETCT   finish
+                JMP     return_pc
+.hubexec    16904 + probe_alignment
 target2:
-    GETCT finish
-    JMP return_pc
-.hubexec 17164 + probe_alignment
+                GETCT   finish
+                JMP     return_pc
+.hubexec    17164 + probe_alignment
 target3:
-    GETCT finish
-    JMP return_pc
-.hubexec 17424 + probe_alignment
+                GETCT   finish
+                JMP     return_pc
+.hubexec    17424 + probe_alignment
 target4:
-    GETCT finish
-    JMP return_pc
-.hubexec 17684 + probe_alignment
+                GETCT   finish
+                JMP     return_pc
+.hubexec    17684 + probe_alignment
 target5:
-    GETCT finish
-    JMP return_pc
-.hubexec 17944 + probe_alignment
+                GETCT   finish
+                JMP     return_pc
+.hubexec    17944 + probe_alignment
 target6:
-    GETCT finish
-    JMP return_pc
-.hubexec 18204 + probe_alignment
+                GETCT   finish
+                JMP     return_pc
+.hubexec    18204 + probe_alignment
 target7:
-    GETCT finish
-    JMP return_pc
+                GETCT   finish
+                JMP     return_pc
+

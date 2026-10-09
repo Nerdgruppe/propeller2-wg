@@ -12,71 +12,77 @@
 //? post: cog[0].reg[wait1] == 5
 //? post: cog[0].reg[waitlarge] == 1028
 
-    GETCT start
-    GETCT empty
-    SUB empty, start
-    GETCT start
-    NOP
-    GETCT nop
-    SUB nop, start
-    MODCZ _CLR, _CLR :wcz
-    GETCT start
-if(C) ADD dependent, 99
-    GETCT cancelled
-    SUB cancelled, start
-    GETCT start
-    JMP branch_target
+// Measure cog pipeline throughput, waits, resource latency and dependent operands.
+// Adjacent GETCTs establish a two-clock baseline; inserted-instruction deltas include that baseline.
+
+                GETCT   start
+                GETCT   empty
+                SUB     empty,      start
+                GETCT   start
+                NOP
+                GETCT   nop
+                SUB     nop,        start
+                MODCZ   _CLR,       _CLR    :wcz
+                GETCT   start
+    if(C)       ADD     dependent,  99
+                GETCT   cancelled
+                SUB     cancelled,  start
+                GETCT   start
+                JMP     branch_target
 branch_target:
-    GETCT jump
-    SUB jump, start
-    GETCT start
-    WAITX 0
-    GETCT wait0
-    SUB wait0, start
-    GETCT start
-    WAITX 3
-    GETCT wait3
-    SUB wait3, start
-    WRLUT 17, 0
-    GETCT start
-    RDLUT scratch, 0
-    GETCT lut
-    SUB lut, start
-    GETCT start
-    ADDPIX scratch, 0
-    GETCT pixel
-    SUB pixel, start
-    GETCT high :wc
-    GETCT captured
-    GETCT capture_delta
-    SUB capture_delta, captured
-    GETCT start
-    WAITX 1
-    GETCT wait1
-    SUB wait1, start
-    // A register operand avoids including AUGD in the measured wait.
-    GETCT start
-    WAITX large_delay
-    GETCT waitlarge
-    SUB waitlarge, start
-    MOV dependent, 3
-    ADD dependent, dependent
-    ADD dependent, 2
-    JMP nrel(_end)
-var start: LONG 0
-var empty: LONG 0
-var nop: LONG 0
-var cancelled: LONG 0
-var jump: LONG 0
-var wait0: LONG 0
-var wait3: LONG 0
-var lut: LONG 0
-var pixel: LONG 0
-var scratch: LONG 0
-var dependent: LONG 0
-var high: LONG 0
-var captured: LONG 0
-var capture_delta: LONG 0
-var wait1: LONG 0
-var waitlarge: LONG 0
-var large_delay: LONG 1024
+                GETCT   jump
+                SUB     jump,           start
+                GETCT   start
+                WAITX   0
+                GETCT   wait0
+                SUB     wait0,          start
+                GETCT   start
+                WAITX   3
+                GETCT   wait3
+                SUB     wait3,          start
+                WRLUT   17,             0
+                GETCT   start
+                RDLUT   scratch,        0
+                GETCT   lut
+                SUB     lut,            start
+                GETCT   start
+                ADDPIX  scratch,        0
+                GETCT   pixel
+                SUB     pixel,          start
+                GETCT   high                        :wc
+                GETCT   captured
+                GETCT   capture_delta
+                SUB     capture_delta,  captured
+                GETCT   start
+                WAITX   1
+                GETCT   wait1
+                SUB     wait1,          start
+                // A register operand avoids including AUGD in the measured wait.
+                GETCT   start
+                WAITX   large_delay
+                GETCT   waitlarge
+                SUB     waitlarge,      start
+                MOV     dependent,      3
+                ADD     dependent,      dependent
+                ADD     dependent,      2
+                JMP     nrel(_end)
+var start:      LONG    0
+var empty:      LONG    0
+var nop:        LONG    0
+var cancelled:  LONG    0
+var jump:       LONG    0
+var wait0:      LONG    0
+var wait3:      LONG    0
+var lut:        LONG    0
+var pixel:      LONG    0
+var scratch:    LONG    0
+var dependent:  LONG    0
+var high:       LONG    0
+var captured:   LONG    0
+var capture_delta:
+                LONG    0
+var wait1:      LONG    0
+var waitlarge:  LONG    0
+var large_delay:
+                LONG    1024
+

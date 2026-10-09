@@ -385,181 +385,191 @@
 //? const: probe_alignment = 3
 //? post: cog[*].reg[checksum] == 0x456372a5
 
-// FNV-1a of all 2560 normalized GETCT phase/duration pairs; expected hashes
-// were captured from the hardware oracle. Normalize phase by adding cog ID.
-    MOV PTRA, aug(hubaddr(lengths))
-    MOV length_index, 0
+// Check data-transfer timing while hub execution consumes the same cog's FIFO.
+// Named runs vary cog, direction and byte alignment; loops sweep code/data banks, phases and block lengths.
+
+                // FNV-1a of all 2560 normalized GETCT phase/duration pairs; expected hashes
+                // were captured from the hardware oracle. Normalize phase by adding cog ID.
+                MOV     PTRA,           aug(hubaddr(lengths))
+                MOV     length_index,   0
 length_loop:
-    RDLONG length, PTRA++
-    SUB length, 1
-    MOV hub_bank, 0
+                RDLONG  length,     PTRA++
+                SUB     length,     1
+                MOV     hub_bank,   0
 hub_bank_loop:
-    MOV target_pointer, aug(hubaddr(targets))
-    MOV target_offset, hub_bank
-    SHL target_offset, 2
-    ADD target_pointer, target_offset
-    RDLONG target, target_pointer
-    MOV address, aug(hubaddr(buffer))
-    MOV bank, 0
+                MOV     target_pointer, aug(hubaddr(targets))
+                MOV     target_offset,  hub_bank
+                SHL     target_offset,  2
+                ADD     target_pointer, target_offset
+                RDLONG  target,         target_pointer
+                MOV     address,        aug(hubaddr(buffer))
+                MOV     bank,           0
 bank_loop:
-    MOV pause, 0
+                MOV     pause,  0
 pause_loop:
-    JMP target
+                JMP     target
 cog_return:
-    SUB finish, start
-    AND start, 7
-    ADD start, probe_cog
-    AND start, 7
-    XOR checksum, start
-    // MUL multiplies only the low sixteen bits of each operand.
-    MOV hash_high, checksum
-    SHR hash_high, 16
-    MUL hash_high, 0x193
-    SHL hash_high, 16
-    MOV hash_extra, checksum
-    SHL hash_extra, 24
-    MUL checksum, 0x193
-    ADD checksum, hash_high
-    ADD checksum, hash_extra
-    XOR checksum, finish
-    // MUL multiplies only the low sixteen bits of each operand.
-    MOV hash_high, checksum
-    SHR hash_high, 16
-    MUL hash_high, 0x193
-    SHL hash_high, 16
-    MOV hash_extra, checksum
-    SHL hash_extra, 24
-    MUL checksum, 0x193
-    ADD checksum, hash_high
-    ADD checksum, hash_extra
-    ADD pause, 1
-    CMP pause, 8 :wz
-if(!Z) JMP pause_loop
-    ADD address, 4
-    ADD bank, 1
-    CMP bank, 8 :wz
-if(!Z) JMP bank_loop
-    ADD hub_bank, 1
-    CMP hub_bank, 8 :wz
-if(!Z) JMP hub_bank_loop
-    ADD length_index, 1
-    CMP length_index, 5 :wz
-if(!Z) JMP length_loop
-    SETQ 0
-    JMP nrel(_end)
-var length_index: LONG 0
-var length: LONG 0
-var hub_bank: LONG 0
-var target_pointer: LONG 0
-var target_offset: LONG 0
-var target: LONG 0
-var address: LONG 0
-var bank: LONG 0
-var pause: LONG 0
-var start: LONG 0
-var finish: LONG 0
-var hash_high: LONG 0
-var hash_extra: LONG 0
-var checksum: LONG 0x811c9dc5
+                SUB     finish,         start
+                AND     start,          7
+                ADD     start,          probe_cog
+                AND     start,          7
+                XOR     checksum,       start
+                // MUL multiplies only the low sixteen bits of each operand.
+                MOV     hash_high,      checksum
+                SHR     hash_high,      16
+                MUL     hash_high,      0x193
+                SHL     hash_high,      16
+                MOV     hash_extra,     checksum
+                SHL     hash_extra,     24
+                MUL     checksum,       0x193
+                ADD     checksum,       hash_high
+                ADD     checksum,       hash_extra
+                XOR     checksum,       finish
+                // MUL multiplies only the low sixteen bits of each operand.
+                MOV     hash_high,      checksum
+                SHR     hash_high,      16
+                MUL     hash_high,      0x193
+                SHL     hash_high,      16
+                MOV     hash_extra,     checksum
+                SHL     hash_extra,     24
+                MUL     checksum,       0x193
+                ADD     checksum,       hash_high
+                ADD     checksum,       hash_extra
+                ADD     pause,          1
+                CMP     pause,          8           :wz
+    if(!Z)      JMP     pause_loop
+                ADD     address,        4
+                ADD     bank,           1
+                CMP     bank,           8           :wz
+    if(!Z)      JMP     bank_loop
+                ADD     hub_bank,       1
+                CMP     hub_bank,       8           :wz
+    if(!Z)      JMP     hub_bank_loop
+                ADD     length_index,   1
+                CMP     length_index,   5           :wz
+    if(!Z)      JMP     length_loop
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var length_index:
+                LONG    0
+var length:     LONG    0
+var hub_bank:   LONG    0
+var target_pointer:
+                LONG    0
+var target_offset:
+                LONG    0
+var target:     LONG    0
+var address:    LONG    0
+var bank:       LONG    0
+var pause:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var hash_high:  LONG    0
+var hash_extra: LONG    0
+var checksum:   LONG    0x811c9dc5
 .data
-lengths: LONG 1, 2, 8, 9, 64
-targets: LONG hubaddr(target0),hubaddr(target1),hubaddr(target2),hubaddr(target3),hubaddr(target4),hubaddr(target5),hubaddr(target6),hubaddr(target7)
-.align 32
-buffer: LONG [0] * 72
-.pack byte
-.hubexec 32768 + probe_alignment
+lengths:        LONG    1,  2,  8,  9,  64
+targets:        LONG    hubaddr(target0),   hubaddr(target1),   hubaddr(target2),   hubaddr(target3),   hubaddr(target4),   hubaddr(target5),   hubaddr(target6),   hubaddr(target7)
+// A 32-byte-aligned base makes successive longs select hub slices 0 through 7.
+.align  32
+buffer:         LONG    [0] * 72
+// Packed instructions retain the chosen byte alignment; targets are spaced 260 bytes to advance one RAM slice.
+.pack   byte
+.hubexec    32768 + probe_alignment
 target0:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
-.hubexec 33028 + probe_alignment
+                GETCT   finish
+                JMP     nrel(cog_return)
+.hubexec    33028 + probe_alignment
 target1:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
-.hubexec 33288 + probe_alignment
+                GETCT   finish
+                JMP     nrel(cog_return)
+.hubexec    33288 + probe_alignment
 target2:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
-.hubexec 33548 + probe_alignment
+                GETCT   finish
+                JMP     nrel(cog_return)
+.hubexec    33548 + probe_alignment
 target3:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
-.hubexec 33808 + probe_alignment
+                GETCT   finish
+                JMP     nrel(cog_return)
+.hubexec    33808 + probe_alignment
 target4:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
-.hubexec 34068 + probe_alignment
+                GETCT   finish
+                JMP     nrel(cog_return)
+.hubexec    34068 + probe_alignment
 target5:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
-.hubexec 34328 + probe_alignment
+                GETCT   finish
+                JMP     nrel(cog_return)
+.hubexec    34328 + probe_alignment
 target6:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
-.hubexec 34588 + probe_alignment
+                GETCT   finish
+                JMP     nrel(cog_return)
+.hubexec    34588 + probe_alignment
 target7:
-    WAITX pause
-    GETCT start
-    SETQ length
+                WAITX   pause
+                GETCT   start
+                SETQ    length
 .if probe_write == 1
-    WRLONG register(200), address
+                WRLONG  register(200),  address
 .else
-    RDLONG register(200), address
+                RDLONG  register(200),  address
 .endif
-    GETCT finish
-    JMP nrel(cog_return)
+                GETCT   finish
+                JMP     nrel(cog_return)
+

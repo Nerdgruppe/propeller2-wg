@@ -3,11 +3,15 @@
 //? post: cog[0].reg[count] == 0
 //? post: cog[0].reg[result] == 7
 
+// Check the return modifier on a branching DJNZ instruction.
+// A taken DJNZ keeps looping; only its final untaken iteration performs the implicit return.
+
 _start:
-    CALL routine
-    MOV result, 7
-    JMP nrel(_end)
+                CALL    routine
+                MOV     result, 7
+                JMP     nrel(_end)
 routine:
-    return DJNZ count, routine
-var count: LONG 3
-var result: LONG 0
+    return      DJNZ    count,  routine
+var count:      LONG    3
+var result:     LONG    0
+
