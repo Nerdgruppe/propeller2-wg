@@ -1,0 +1,1995 @@
+# Real-hardware regression expectations; see smart-pin-results.yaml.
+test-cases:
+- name: Smart pin WXPIN -> RQPIN, gap 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    RQPIN rt_result, 40
+  expect_result: 0
+- name: Smart pin WXPIN -> RQPIN, gap 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    NOP
+    RQPIN rt_result, 40
+  expect_result: 341
+- name: Smart pin WXPIN -> RQPIN, gap 3
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    WAITX 1
+    RQPIN rt_result, 40
+  expect_result: 341
+- name: Smart pin WXPIN -> RQPIN, gap 4
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    WAITX 2
+    RQPIN rt_result, 40
+  expect_result: 341
+- name: Smart pin WXPIN -> RDPIN, gap 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    RDPIN rt_result, 40
+  expect_result: 0
+- name: Smart pin WXPIN -> RDPIN, gap 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    NOP
+    RDPIN rt_result, 40
+  expect_result: 341
+- name: Smart pin WXPIN -> RDPIN, gap 3
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    WAITX 1
+    RDPIN rt_result, 40
+  expect_result: 341
+- name: Smart pin WXPIN -> RDPIN, gap 4
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    WAITX 2
+    RDPIN rt_result, 40
+  expect_result: 341
+- name: Smart pin WXPIN -> TESTP, gap 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: Smart pin WXPIN -> TESTP, gap 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    NOP
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: Smart pin WXPIN -> TESTP, gap 3
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    WAITX 1
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: Smart pin WXPIN -> TESTP, gap 4
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+  measure: |
+    WXPIN 0x155, 40
+    WAITX 2
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: Smart pin acknowledge -> TESTP, gap 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    WXPIN 0x155, 40
+    WAITX 32
+  measure: |
+    RDPIN rt_result, 40
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: Smart pin acknowledge -> TESTP, gap 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    WXPIN 0x155, 40
+    WAITX 32
+  measure: |
+    RDPIN rt_result, 40
+    NOP
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: Smart pin acknowledge -> TESTP, gap 3
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    WXPIN 0x155, 40
+    WAITX 32
+  measure: |
+    RDPIN rt_result, 40
+    WAITX 1
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: Smart pin acknowledge -> TESTP, gap 4
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    WXPIN 0x155, 40
+    WAITX 32
+  measure: |
+    RDPIN rt_result, 40
+    WAITX 2
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: Smart pin repository ignores WXPIN during reset
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    WXPIN 0x155, 40
+    WAITX 32
+    DIRL 40
+    WAITX 32
+  measure: |
+    WXPIN 0x0aa, 40
+    WAITX 32
+    RQPIN rt_result, 40
+  expect_result: 341
+- name: Smart pin collision cog 1, offset -2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(-2)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin collision cog 1, offset -1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(-1)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin collision cog 1, offset 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 511
+- name: Smart pin collision cog 1, offset 1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(1)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 341
+- name: Smart pin collision cog 1, offset 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(2)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 341
+- name: Smart pin collision cog 2, offset -2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 2, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(-2)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 2
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin collision cog 2, offset -1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 2, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(-1)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 2
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin collision cog 2, offset 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 2, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 2
+     LONG [0] * 490
+    .data
+  expect_result: 511
+- name: Smart pin collision cog 2, offset 1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 2, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(1)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 2
+     LONG [0] * 490
+    .data
+  expect_result: 341
+- name: Smart pin collision cog 2, offset 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 2, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(2)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 2
+     LONG [0] * 490
+    .data
+  expect_result: 341
+- name: Smart pin collision cog 7, offset -2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 7, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(-2)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 7
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin collision cog 7, offset -1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 7, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(-1)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 7
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin collision cog 7, offset 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 7, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 7
+     LONG [0] * 490
+    .data
+  expect_result: 511
+- name: Smart pin collision cog 7, offset 1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 7, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(1)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 7
+     LONG [0] * 490
+    .data
+  expect_result: 341
+- name: Smart pin collision cog 7, offset 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 7, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(2)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 7
+     LONG [0] * 490
+    .data
+  expect_result: 341
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(1)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(2)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 3
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(3)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 4
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(4)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 5
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(5)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 6
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(6)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin cross-cog WXPIN -> RQPIN, offset 7
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(7)
+    WAITCT1
+    RQPIN rt_result, 40
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 170
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 0
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 1
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 1
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(1)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 1
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 2
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(2)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 1
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 3
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(3)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 1
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 4
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(4)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 5
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(5)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 1
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 6
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(6)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 1
+- name: Smart pin cross-cog WXPIN -> TESTP, offset 7
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(7)
+    WAITCT1
+    TESTP 40 :wc
+    WRC rt_result
+    WAITX 128
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 1
+- name: Smart pin mixed WXPIN / WXPIN (0x0aa,)
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x100, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x0aa, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 426
+- name: Smart pin mixed WXPIN / WYPIN (2,)
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x100, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WYPIN 2, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin mixed WXPIN / WRPIN (1,)
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x100, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WRPIN 1, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin mixed WXPIN / RDPIN (register(301),)
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x100, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     RDPIN register(301), 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin mixed WXPIN / WRPIN (2,)
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x100, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WRPIN 2, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 0
+- name: Smart pin identical simultaneous WXPIN values
+  prepare: |
+    DIRL 40
+    WRPIN 2, 40
+    DIRH 40
+    WXPIN 0, 40
+    WAITX 32
+    MOV PTRA, aug(hubaddr(mailbox))
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT 1, aug(hubaddr(worker))
+  measure: |
+    GETCT target
+    ADD target, aug(2048)
+    ANDN target, 7
+    WRLONG target, PTRA
+    ADDCT1 target, aug(0)
+    WAITCT1
+    WXPIN 0x155, 40
+    WAITX 128
+    RQPIN rt_result, 40
+  data: |
+    var target: LONG 0
+    .data
+    mailbox: LONG 0
+    .cogexec 0x4000, 0
+    worker:
+     RDLONG register(300), PTRA
+     CMP register(300), 0 :wz
+     if(Z) JMP worker
+     ADDCT1 register(300), 0
+     WAITCT1
+     WXPIN 0x155, 40
+     COGSTOP 1
+     LONG [0] * 490
+    .data
+  expect_result: 341
+- name: GPIO OUTL -> TESTP, gap 0
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: GPIO OUTL -> TESTP, gap 2
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    NOP
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: GPIO OUTL -> TESTP, gap 3
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 1
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: GPIO OUTL -> TESTP, gap 4
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 2
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: GPIO OUTL -> TESTP, gap 5
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 3
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: GPIO OUTL -> TESTP, gap 6
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 4
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: GPIO OUTL -> TESTP, gap 7
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 5
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: GPIO OUTL -> TESTP, gap 8
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 6
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: GPIO OUTL -> TESTP, gap 9
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 7
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: GPIO OUTL -> TESTP, gap 10
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 8
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: GPIO OUTL -> MOV, gap 0
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 1
+- name: GPIO OUTL -> MOV, gap 2
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    NOP
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 1
+- name: GPIO OUTL -> MOV, gap 3
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 1
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 1
+- name: GPIO OUTL -> MOV, gap 4
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 2
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 1
+- name: GPIO OUTL -> MOV, gap 5
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 3
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 1
+- name: GPIO OUTL -> MOV, gap 6
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 4
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 1
+- name: GPIO OUTL -> MOV, gap 7
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 5
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 1
+- name: GPIO OUTL -> MOV, gap 8
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 6
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 0
+- name: GPIO OUTL -> MOV, gap 9
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 7
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 0
+- name: GPIO OUTL -> MOV, gap 10
+  prepare: |
+    DIRL 40
+    WRPIN 0, 40
+    OUTH 40
+    DIRH 40
+    WAITX 32
+  measure: |
+    OUTL 40
+    WAITX 8
+    MOV rt_result, INB
+    SHR rt_result, 8
+    AND rt_result, 1
+  expect_result: 0
+- name: OUT selector disabled
+  prepare: |
+    DIRL 40
+    DIRL 41
+    WRPIN aug(P_OUTBIT_A), 40
+    WRPIN 0, 41
+    OUTH 40
+    OUTH 41
+    DIRH 41
+    DIRL 40
+    WAITX 32
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: OUT selector enabled
+  prepare: |
+    DIRL 40
+    DIRL 41
+    WRPIN aug(P_OUTBIT_A), 40
+    WRPIN 0, 41
+    OUTH 40
+    OUTH 41
+    DIRH 41
+    DIRH 40
+    WAITX 32
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: neighbor selector
+  prepare: |
+    DIRL 40
+    DIRL 41
+    WRPIN aug(P_PLUS1_A), 40
+    WRPIN 0, 41
+    OUTH 40
+    OUTH 41
+    DIRH 41
+    DIRL 40
+    WAITX 32
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 1
+- name: inverted neighbor selector
+  prepare: |
+    DIRL 40
+    DIRL 41
+    WRPIN aug(P_PLUS1_A | P_INVERT_A), 40
+    WRPIN 0, 41
+    OUTH 40
+    OUTH 41
+    DIRH 41
+    DIRL 40
+    WAITX 32
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  expect_result: 0
+- name: OR 0, worker DIRL
+  prepare: |
+    DIRL 40
+    WRPIN aug(0), 40
+    OUTL 40
+    DIRH 40
+    COGINIT 1, aug(hubaddr(worker))
+    WAITX aug(2048)
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  data: |
+    .cogexec 0x4000, 0
+    worker:
+     OUTH 40
+     DIRL 40
+    halt_worker:
+     JMP halt_worker
+     LONG [0] * 495
+    .data
+  expect_result: 0
+- name: OR 0, worker DIRH
+  prepare: |
+    DIRL 40
+    WRPIN aug(0), 40
+    OUTL 40
+    DIRH 40
+    COGINIT 1, aug(hubaddr(worker))
+    WAITX aug(2048)
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  data: |
+    .cogexec 0x4000, 0
+    worker:
+     OUTH 40
+     DIRH 40
+    halt_worker:
+     JMP halt_worker
+     LONG [0] * 495
+    .data
+  expect_result: 1
+- name: OR P_OUTBIT_A, worker DIRL
+  prepare: |
+    DIRL 40
+    WRPIN aug(P_OUTBIT_A), 40
+    OUTL 40
+    DIRH 40
+    COGINIT 1, aug(hubaddr(worker))
+    WAITX aug(2048)
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  data: |
+    .cogexec 0x4000, 0
+    worker:
+     OUTH 40
+     DIRL 40
+    halt_worker:
+     JMP halt_worker
+     LONG [0] * 495
+    .data
+  expect_result: 0
+- name: OR P_OUTBIT_A, worker DIRH
+  prepare: |
+    DIRL 40
+    WRPIN aug(P_OUTBIT_A), 40
+    OUTL 40
+    DIRH 40
+    COGINIT 1, aug(hubaddr(worker))
+    WAITX aug(2048)
+  measure: |
+    TESTP 40 :wc
+    WRC rt_result
+  data: |
+    .cogexec 0x4000, 0
+    worker:
+     OUTH 40
+     DIRH 40
+    halt_worker:
+     JMP halt_worker
+     LONG [0] * 495
+    .data
+  expect_result: 1

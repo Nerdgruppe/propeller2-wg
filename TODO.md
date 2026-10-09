@@ -92,11 +92,10 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - IO Interface Improvement
   - Configuration file support for I/O setup
     - Defaults to "stdio routed to pins 62/63"
-  - Model 64 distinct smart pins
-  - Create VCD
-  - Allow capture of basic digital output signals
-    - Validate against real hardware (kinda hard, needs logic analyzer for roundtrip timing)
-  - Enable logging of pin changes (out, dir, wrpin, wxpin, wypin, rdpin, rqpin, akpin)
+  - Remaining smart modes, analog pads and global input filters
+  - Physical U(S)ART encoding/decoding and exact serial waveform timing
+  - Validate physical pad timing with a logic analyzer
+  - Optional instruction-level pin logging (VCD and collision diagnostics exist)
 - P2AAS server
   - Feature Parity with hw oracle
 - Validate/implement cog startup behavior

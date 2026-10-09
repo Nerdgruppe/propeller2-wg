@@ -101,6 +101,15 @@ There's a `justfile` in the workspace root which has these recipies:
   - dotnet projects just use their compiled binary, do not invoke external tools
   - zig projects just use their compiled binary, do not invoke external tools
   - python projects just use their compiled binary, do not invoke external tools
+- `P2AAS_ENDPOINT` is always `ws://localhost:12880/` unless stated otherwise.
+- When writing YAML files, always use `|`-based multiline strings instead of `'`-based ones.
+- Functions always need a document comment on what they do and, if necessary, why they do it
+
+### Propan Assembly Sources
+
+- Follow the official Propan coding style and use `propan --pretty-print` to format your code files.
+- Assembly typically requires good code documentation, so for each semantic block, add at least a comment
+  that explains what this block is supposed to do.
 
 ### Zig-based Projects
 
@@ -114,6 +123,10 @@ Typical workflows (started from the workspace root):
 - Instead of using `@tagName(v)` or `@errorName(v)` + `{s}` formatting, use `v` directly and `{t}` formatting.
 - Instead of `writer: anytype` use `writer: *std.Io.Writer`
 - Instead of `reader: anytype` use `reader: *std.Io.Reader`
+- Do not use `@import("...").field`. Always introduce a meaningful import alias in the file.
+- Do not use bare integers for things that are non-arithmetic.
+  - Example: `operation: u3` is not a case where an integer is appropriate, it sounds like `operation` is something one can add 3 to. Better: `operation: OperationKind` + `OperationKind = enum(u3) { ... }`.
+  - Use fully open enums for IDs that are not arithmetic values or indices.
 
 #### Propan
 

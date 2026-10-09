@@ -10,7 +10,8 @@ const Hub = @import("Hub.zig");
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const execute = @import("execute.zig");
-const types = @import("p2").types;
+const p2 = @import("p2");
+const types = p2.types;
 const EventId = types.EventId;
 
 pub const Register = types.Register;
@@ -169,7 +170,6 @@ pub fn reset(cog: *Cog) void {
     cog.ram_tail = ram_tail;
     cog.lut = lut;
     for ([_]Register{ .PTRA, .PTRB, .DIRA, .DIRB, .OUTA, .OUTB }) |reg| cog.registers.set(reg, 0);
-    if (!hub.clocking) hub.io.updateDirections(hub);
 }
 
 /// Advance instruction stages for one clock after the hub has serviced shared resources.
@@ -543,7 +543,8 @@ pub fn ram_slice(cog: *Cog) u3 {
     return (cog.hub.counter +% cog.id) % 8;
 }
 
-/// Queue an instruction write during execution, or update the live register and its peripheral effects.
+/// Queue an instruction write during execution, or update the live register.
+/// The hub forwards the combined cog I/O state once at the next clock boundary.
 pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
@@ -552,12 +553,6 @@ pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
         return;
     }
     cog.registers.set(reg, value);
-    switch (reg) {
-        .DIRA, .DIRB => if (!cog.hub.clocking) cog.hub.io.updateDirections(cog.hub),
-        .INA, .INB => {},
-        .OUTA, .OUTB => cog.hub.io.update_out(),
-        else => {},
-    }
 }
 
 /// Write underlying cog RAM, including the tail hidden by ordinary special-register access.

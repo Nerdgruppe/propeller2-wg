@@ -37,6 +37,9 @@ const UART_CFG   = SmartPin.UartTx.config(baud=38_400, bits=8, clk=200_000_000)
                 CALL    write_byte
                 MOV     PA,                     third
                 CALL    write_byte
+// Finish the final frame before the observable checkpoint.
+.flush:         RQPIN   PA,                     62          :wc
+    if(C)       JMP     .flush
 _end:
                 JMP     _end
 
@@ -63,4 +66,3 @@ var first:      LONG    0
 var second:     LONG    0
 var third:      LONG    0
 ready:          BYTE    "READY\n",  0
-

@@ -43,11 +43,14 @@ arithmetic. Windtunnel writes that word immediately after the image. At the 512 
 address is a hub hole, so this write does not wrap over address zero. The loader text commands and serial
 reset/recovery operations are internal to the hardware server and do not need a simulated serial adapter.
 
-After loading, text and binary WebSocket bytes feed the external UART on pin 63; completed UART TX frames
-on pin 62 become binary WebSocket messages. Clients must treat output as a byte stream, rather than rely
-on message boundaries. Input queues are bounded and apply backpressure; the smart-pin receive register
-can still overrun if firmware does not consume bytes. Bytes arriving with RX disabled are discarded.
-The external RX baud rate is separate from the firmware's `WXPIN` period.
+After loading, text and binary WebSocket bytes feed a Reader-backed `DataSource` attached to smart pin 63;
+completed UART TX frames on pin 62 reach a Writer-backed `DataSink` and become binary WebSocket messages.
+Clients must treat output as a byte stream, rather than rely on message boundaries. The server refills
+its Reader outside simulation steps. Input buffers are bounded and apply backpressure; bytes remain
+buffered while RX is disabled. DIR reset discards an in-flight receive frame, and completed frames can
+still overwrite unread results. Receive frame timing follows the firmware's `WXPIN` configuration.
+The `baudrate` query is accepted and validated for protocol compatibility; the simulator applies no
+separate host baud override.
 
 | Termination | Close status / reason |
 |---|---|

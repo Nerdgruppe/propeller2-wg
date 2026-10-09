@@ -232,7 +232,7 @@ const Parser = struct {
 /// Allocations belong to the caller's arena, including token and value storage.
 pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8, errors: *std.Io.Writer) !List {
     var lines = std.mem.splitScalar(u8, source, '\n');
-    if (!std.mem.eql(u8, std.mem.trimEnd(u8, lines.next() orelse "", "\r"), "//? WINDTUNNEL CHECK LIST")) {
+    if (!std.mem.eql(u8, std.mem.trim(u8, lines.next() orelse "", " \t\r"), "//? WINDTUNNEL CHECK LIST")) {
         try errors.print("{s}:1: checklist: missing WINDTUNNEL CHECK LIST header\n", .{path});
         return error.InvalidChecklist;
     }
@@ -240,8 +240,9 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     var line_number: u32 = 1;
     while (lines.next()) |raw| {
         line_number += 1;
-        if (!std.mem.startsWith(u8, raw, "//?")) break;
-        const line = std.mem.trimEnd(u8, raw[3..], "\r");
+        const comment = std.mem.trimStart(u8, raw, " \t");
+        if (!std.mem.startsWith(u8, comment, "//?")) break;
+        const line = std.mem.trimEnd(u8, comment[3..], "\r");
         var i: usize = 0;
         while (i < line.len) {
             if (std.ascii.isWhitespace(line[i])) {
@@ -413,6 +414,10 @@ test "checklist values, CRLF, multiline blocks, and invalid directives" {
     const valid = try parse(arena.allocator(), "fixture", "//? WINDTUNNEL CHECK LIST\r\n//? pre: cog[0].q = -1\r\n//? post: hub[0x2000] == u16 [\r\n//? 0x1234, -1\r\n//? ]\r\n\n", &errors.writer);
     try std.testing.expectEqualSlices(u8, &.{ 0xff, 0xff, 0xff, 0xff }, valid.pre[0].bytes);
     try std.testing.expectEqualSlices(u8, &.{ 0x34, 0x12, 0xff, 0xff }, valid.post[0].bytes);
+    // The native Propan formatter aligns these comments with the instruction column.
+    const indented = try parse(arena.allocator(), "formatted", "                //? WINDTUNNEL CHECK LIST\r\n\t//? pre: cog[0].q = -1\r\n                //? post: hub[0x2000] == u16 [\r\n\t//? 0x1234, -1\r\n                //? ]\r\n\n", &errors.writer);
+    try std.testing.expectEqualSlices(u8, valid.pre[0].bytes, indented.pre[0].bytes);
+    try std.testing.expectEqualSlices(u8, valid.post[0].bytes, indented.post[0].bytes);
     for ([_][]const u8{
         "//? typo: 1\n",                            "//? max-cycles: 0\n",             "//? timeout-ms: 99\n",                 "//? pre: cog[1].c = true\n",
         "//? pre: cog[0].reg[x] = 0x1_0000_0000\n", "//? post: hub[0] == u8 [256]\n",  "//? post: hub[0] == hex [f]\n",        "//? stdout: \"\\q\"\n",

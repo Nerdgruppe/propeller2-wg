@@ -8,6 +8,7 @@ import io
 import os
 import struct
 import urllib.parse
+import argparse
 from tempfile import NamedTemporaryFile
 from subprocess import CalledProcessError, run, Popen, PIPE
 from contextlib import contextmanager
@@ -170,7 +171,7 @@ async def run_p2aas(fixture: bytes, endpoint: str) -> list[Result]:
 
 
 def run_fixture(fixture: bytes) -> list[Result]:
-    endpoint = os.environ.get("P2AAS_ENDPOINT")
+    endpoint = os.environ.get("P2AAS_ENDPOINT", "ws://localhost:12880/")
     if endpoint:
         return asyncio.run(run_p2aas(fixture, endpoint))
 
@@ -235,8 +236,13 @@ def compact_list(seq: Iterable[T]) -> TerseList[T] | T:
 
 def main():
 
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cases", type=Path, default=TESTCASE_FILE)
+    parser.add_argument("--results", type=Path, default=TESTRESULT_FILE)
+    options = parser.parse_args()
+
     testcases: list[TestCase]
-    with TESTCASE_FILE.open("rb") as fp:
+    with options.cases.open("rb") as fp:
         yaml_data = safe_load(fp)
         assert isinstance(yaml_data, dict)
         testcases = [TestCase(**item) for item in yaml_data["test-cases"]]
@@ -316,7 +322,7 @@ def main():
         if not test_output["pass"]:
             all_ok = False
 
-    with TESTRESULT_FILE.open("w", encoding="utf-8") as fp:
+    with options.results.open("w", encoding="utf-8") as fp:
         yaml.dump(
             data={"test-results": test_results},
             stream=fp,

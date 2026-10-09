@@ -1,0 +1,443 @@
+                //? WINDTUNNEL CHECK LIST
+                //? post: cog[*].reg[failures] == 0
+                //? run: "DIRL, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 0
+                //? const: initial_bits = 1431655765
+                //? run: "DIRH, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 1
+                //? const: initial_bits = 1431655765
+                //? run: "DIRC, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 2
+                //? const: initial_bits = 1431655765
+                //? run: "DIRNC, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 3
+                //? const: initial_bits = 1431655765
+                //? run: "DIRZ, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 4
+                //? const: initial_bits = 1431655765
+                //? run: "DIRNZ, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 5
+                //? const: initial_bits = 1431655765
+                //? run: "DIRRND, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 6
+                //? const: initial_bits = 1431655765
+                //? run: "DIRNOT, initial 0x55555555"
+                //? const: pin_family = 0
+                //? const: pin_operation = 7
+                //? const: initial_bits = 1431655765
+                //? run: "OUTL, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 0
+                //? const: initial_bits = 1431655765
+                //? run: "OUTH, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 1
+                //? const: initial_bits = 1431655765
+                //? run: "OUTC, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 2
+                //? const: initial_bits = 1431655765
+                //? run: "OUTNC, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 3
+                //? const: initial_bits = 1431655765
+                //? run: "OUTZ, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 4
+                //? const: initial_bits = 1431655765
+                //? run: "OUTNZ, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 5
+                //? const: initial_bits = 1431655765
+                //? run: "OUTRND, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 6
+                //? const: initial_bits = 1431655765
+                //? run: "OUTNOT, initial 0x55555555"
+                //? const: pin_family = 1
+                //? const: pin_operation = 7
+                //? const: initial_bits = 1431655765
+                //? run: "FLTL, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 0
+                //? const: initial_bits = 1431655765
+                //? run: "FLTH, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 1
+                //? const: initial_bits = 1431655765
+                //? run: "FLTC, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 2
+                //? const: initial_bits = 1431655765
+                //? run: "FLTNC, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 3
+                //? const: initial_bits = 1431655765
+                //? run: "FLTZ, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 4
+                //? const: initial_bits = 1431655765
+                //? run: "FLTNZ, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 5
+                //? const: initial_bits = 1431655765
+                //? run: "FLTRND, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 6
+                //? const: initial_bits = 1431655765
+                //? run: "FLTNOT, initial 0x55555555"
+                //? const: pin_family = 2
+                //? const: pin_operation = 7
+                //? const: initial_bits = 1431655765
+                //? run: "DRVL, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 0
+                //? const: initial_bits = 1431655765
+                //? run: "DRVH, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 1
+                //? const: initial_bits = 1431655765
+                //? run: "DRVC, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 2
+                //? const: initial_bits = 1431655765
+                //? run: "DRVNC, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 3
+                //? const: initial_bits = 1431655765
+                //? run: "DRVZ, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 4
+                //? const: initial_bits = 1431655765
+                //? run: "DRVNZ, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 5
+                //? const: initial_bits = 1431655765
+                //? run: "DRVRND, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 6
+                //? const: initial_bits = 1431655765
+                //? run: "DRVNOT, initial 0x55555555"
+                //? const: pin_family = 3
+                //? const: pin_operation = 7
+                //? const: initial_bits = 1431655765
+                //? run: "DIRL, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 0
+                //? const: initial_bits = 2863311530
+                //? run: "DIRH, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 1
+                //? const: initial_bits = 2863311530
+                //? run: "DIRC, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 2
+                //? const: initial_bits = 2863311530
+                //? run: "DIRNC, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 3
+                //? const: initial_bits = 2863311530
+                //? run: "DIRZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 4
+                //? const: initial_bits = 2863311530
+                //? run: "DIRNZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 5
+                //? const: initial_bits = 2863311530
+                //? run: "DIRRND, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 6
+                //? const: initial_bits = 2863311530
+                //? run: "DIRNOT, initial 0xaaaaaaaa"
+                //? const: pin_family = 0
+                //? const: pin_operation = 7
+                //? const: initial_bits = 2863311530
+                //? run: "OUTL, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 0
+                //? const: initial_bits = 2863311530
+                //? run: "OUTH, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 1
+                //? const: initial_bits = 2863311530
+                //? run: "OUTC, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 2
+                //? const: initial_bits = 2863311530
+                //? run: "OUTNC, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 3
+                //? const: initial_bits = 2863311530
+                //? run: "OUTZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 4
+                //? const: initial_bits = 2863311530
+                //? run: "OUTNZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 5
+                //? const: initial_bits = 2863311530
+                //? run: "OUTRND, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 6
+                //? const: initial_bits = 2863311530
+                //? run: "OUTNOT, initial 0xaaaaaaaa"
+                //? const: pin_family = 1
+                //? const: pin_operation = 7
+                //? const: initial_bits = 2863311530
+                //? run: "FLTL, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 0
+                //? const: initial_bits = 2863311530
+                //? run: "FLTH, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 1
+                //? const: initial_bits = 2863311530
+                //? run: "FLTC, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 2
+                //? const: initial_bits = 2863311530
+                //? run: "FLTNC, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 3
+                //? const: initial_bits = 2863311530
+                //? run: "FLTZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 4
+                //? const: initial_bits = 2863311530
+                //? run: "FLTNZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 5
+                //? const: initial_bits = 2863311530
+                //? run: "FLTRND, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 6
+                //? const: initial_bits = 2863311530
+                //? run: "FLTNOT, initial 0xaaaaaaaa"
+                //? const: pin_family = 2
+                //? const: pin_operation = 7
+                //? const: initial_bits = 2863311530
+                //? run: "DRVL, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 0
+                //? const: initial_bits = 2863311530
+                //? run: "DRVH, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 1
+                //? const: initial_bits = 2863311530
+                //? run: "DRVC, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 2
+                //? const: initial_bits = 2863311530
+                //? run: "DRVNC, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 3
+                //? const: initial_bits = 2863311530
+                //? run: "DRVZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 4
+                //? const: initial_bits = 2863311530
+                //? run: "DRVNZ, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 5
+                //? const: initial_bits = 2863311530
+                //? run: "DRVRND, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 6
+                //? const: initial_bits = 2863311530
+                //? run: "DRVNOT, initial 0xaaaaaaaa"
+                //? const: pin_family = 3
+                //? const: pin_operation = 7
+                //? const: initial_bits = 2863311530
+
+                // Field mutation, unchanged surrounding bits, ORIGINAL base-bit flags, SETQ and wrapping.
+                MOV     DIRA,       aug(initial_bits)
+                MOV     OUTA,       aug(initial_bits)
+                MODCZ   _SET,       _CLR                            :wcz
+.if pin_family == 0 and pin_operation == 0
+                DIRL    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 0 and pin_operation == 1
+                DIRH    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 0 and pin_operation == 2
+                DIRC    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 0 and pin_operation == 3
+                DIRNC   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 0 and pin_operation == 4
+                DIRZ    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 0 and pin_operation == 5
+                DIRNZ   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 0 and pin_operation == 6
+                DIRRND  aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 0 and pin_operation == 7
+                DIRNOT  aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 0
+                OUTL    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 1
+                OUTH    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 2
+                OUTC    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 3
+                OUTNC   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 4
+                OUTZ    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 5
+                OUTNZ   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 6
+                OUTRND  aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 1 and pin_operation == 7
+                OUTNOT  aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 0
+                FLTL    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 1
+                FLTH    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 2
+                FLTC    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 3
+                FLTNC   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 4
+                FLTZ    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 5
+                FLTNZ   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 6
+                FLTRND  aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 2 and pin_operation == 7
+                FLTNOT  aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 0
+                DRVL    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 1
+                DRVH    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 2
+                DRVC    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 3
+                DRVNC   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 4
+                DRVZ    aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 5
+                DRVNZ   aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 6
+                DRVRND  aug(8 | (3 << 6))                           :wcz
+.endif
+.if pin_family == 3 and pin_operation == 7
+                DRVNOT  aug(8 | (3 << 6))                           :wcz
+.endif
+                WRC     op_c
+                WRZ     op_z
+.if pin_family == 0
+                MOV     sample,     DIRA
+.else
+                MOV     sample,     OUTA
+.endif
+                MOV     outside,    sample
+                ANDN    outside,    aug(0xf00)
+                CMP     outside,    aug(initial_bits & ~0xf00)      :wz
+    if(!Z)      ADD     failures,   1
+                MOV     actual,     ((initial_bits >> 8) & 1)
+                CMP     actual,     op_c                            :wz
+    if(!Z)      ADD     failures,   1
+                CMP     op_c,       op_z                            :wz
+    if(!Z)      ADD     failures,   1
+.if pin_operation == 0
+                AND     sample,     aug(0xf00)
+                CMP     sample,     aug(0)                          :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_operation == 1
+                AND     sample,     aug(0xf00)
+                CMP     sample,     aug(3840)                       :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_operation == 2
+                AND     sample,     aug(0xf00)
+                CMP     sample,     aug(3840)                       :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_operation == 3
+                AND     sample,     aug(0xf00)
+                CMP     sample,     aug(0)                          :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_operation == 4
+                AND     sample,     aug(0xf00)
+                CMP     sample,     aug(0)                          :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_operation == 5
+                AND     sample,     aug(0xf00)
+                CMP     sample,     aug(3840)                       :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_operation == 7
+                AND     sample,     aug(0xf00)
+                CMP     sample,     aug((~initial_bits) & 0xf00)    :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_family == 1
+                CMP     DIRA,       aug(initial_bits)               :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_family == 2
+                CMP     DIRA,       aug(initial_bits & ~0xf00)      :wz
+    if(!Z)      ADD     failures,   1
+.endif
+.if pin_family == 3
+                CMP     DIRA,       aug(initial_bits | 0xf00)       :wz
+    if(!Z)      ADD     failures,   1
+.endif
+                MOV     DIRA,       0
+                SETQ    1
+                DIRH    aug(8 | (3 << 6))
+                CMP     DIRA,       aug(0x300)                      :wz
+    if(!Z)      ADD     failures,   1
+                MOV     DIRA,       0
+                DIRH    aug(31 | (1 << 6))
+                CMP     DIRA,       aug(0x80000001)                 :wz
+    if(!Z)      ADD     failures,   1
+                SETQ    31
+                DIRH    8
+                CMP     DIRA,       aug(0xffffffff)                 :wz
+    if(!Z)      ADD     failures,   1
+                JMP     nrel(_end)
+var failures:   LONG    0
+var sample:     LONG    0
+var outside:    LONG    0
+var actual:     LONG    0
+var op_c:       LONG    0
+var op_z:       LONG    0
+

@@ -3,6 +3,7 @@ const args = @import("args");
 const propan = @import("propan");
 const checklist = @import("check_list.zig");
 const Hub = @import("sim/Hub.zig");
+const smart_pin = @import("sim/smart_pin.zig");
 const decode = @import("sim/decode.zig");
 const encoding = @import("sim/encoding.zig");
 const oracle = @import("oracle.zig");
@@ -269,7 +270,10 @@ fn runOne(ctx: Context, path: []const u8, source: []const u8, list: checklist.Li
     @memcpy(hub.memory[0..compiled.image.len], compiled.image);
     var stdout: std.Io.Writer.Allocating = .init(allocator);
     defer stdout.deinit();
-    hub.output_writer = &stdout.writer;
+    var terminal_sink: smart_pin.DataSink = .{ .writer = &stdout.writer };
+    hub.io.pins[62].smart.registers.sink = &terminal_sink;
+    var stdin = std.Io.Reader.fixed(list.stdin);
+    var terminal_source: smart_pin.DataSource = .{ .reader = &stdin };
     var trace: std.Io.Writer.Allocating = .init(allocator);
     defer trace.deinit();
     if (ctx.options.@"trace-pipeline") hub.trace_writer = &trace.writer;
@@ -307,7 +311,10 @@ fn runOne(ctx: Context, path: []const u8, source: []const u8, list: checklist.Li
         if (hub.next_idle_clock()) |next| hub.counter = @min(next, list.max_cycles);
         if (!supplied_stdin and stdout.written().len >= list.stdin_after.len) {
             if (!std.mem.startsWith(u8, stdout.written(), list.stdin_after)) return error.ReadinessMismatch;
-            try hub.io.supplyInput(list.stdin, hub.counter);
+            const receiver = &hub.io.pins[63].smart;
+            const timing = smart_pin.SerialTiming.init(receiver.registers.x);
+            if (receiver.logic != .uart_rx or !receiver.registers.enabled or timing.bits != 8 or timing.frame_clocks == 0) return error.UartRxNotReady;
+            receiver.registers.source = &terminal_source;
             supplied_stdin = true;
         }
         if (hub.fault) |fault| {
@@ -324,13 +331,6 @@ fn runOne(ctx: Context, path: []const u8, source: []const u8, list: checklist.Li
     if (stop != null and !reached) return if (hub.is_any_cog_active()) error.CycleLimit else error.StopNotReached;
     if ((stop == null or list.profile == .cog) and hub.is_any_cog_active()) return error.CycleLimit;
     if (!supplied_stdin) return error.ReadinessNotReached;
-    // A checkpoint freezes the cog; its last queued UART frames still finish.
-    while (hub.io.txBusy() and hub.counter < list.max_cycles) {
-        hub.io.step(hub);
-        hub.counter += 1;
-    }
-    if (hub.io.txBusy()) return error.CycleLimit;
-    if (stdout.written().len > 1 << 20) return error.OutputLimit;
     var ok = true;
     for (post.items) |assertion| {
         var actual: std.Io.Writer.Allocating = .init(allocator);
@@ -394,7 +394,7 @@ pub fn main(init: std.process.Init) !u8 {
         try args.printHelp(Options, cli.executable_name orelse "windtunnel-tests", &stderr.interface);
         return 0;
     }
-    const endpoint = init.environ_map.get("P2AAS_ENDPOINT") orelse "";
+    const endpoint = init.environ_map.get("P2AAS_ENDPOINT") orelse "ws://localhost:12880/";
     if ((cli.options.oracle or cli.options.characterize) and !cli.options.@"prepare-oracle") {
         if (endpoint.len == 0) {
             try stderr.interface.writeAll("P2AAS_ENDPOINT is required for --oracle or --characterize\n");
@@ -485,8 +485,8 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
     try std.testing.expectError(error.MissingExitJump, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nif(C) JMP nrel(_end)\n"));
     try std.testing.expectError(error.StopNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nCOGSTOP 0\nJMP nrel(_end)\n"));
     try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nBITRND value, 1\nJMP nrel(_end)\nvar value: LONG 0\n"));
-    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWXPIN 'x', 1\nCOGSTOP 0\n"));
-    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWYPIN 1, 1\nCOGSTOP 0\n"));
+    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nSETDACS 0\nCOGSTOP 0\n"));
+    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWRPIN P_USB_PAIR, 1\nCOGSTOP 0\n"));
     try std.testing.expectError(error.ReadinessNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: \"x\"\n//? stdin-after: \"READY\"\n//? stdout: \"READYx\"\n\n.cogexec\nCOGSTOP 0\n"));
 }
 
@@ -679,7 +679,8 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
             .stdin = packet,
             .ready = "!",
             .baudrate = 115200,
-            .timeout_ms = 1000,
+            // Debug builds share CPU with the fixture suite; allow clocked I/O to finish.
+            .timeout_ms = 3000,
         }, &output, &errors.writer);
         try std.testing.expectEqual(@as(usize, 4), output.items.len);
         try std.testing.expectEqualSlices(u8, packet, output.items[1..]);

@@ -5,6 +5,7 @@ const std = @import("std");
 
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
+const Vcd = @import("Vcd.zig");
 const Hub = @This();
 
 memory: [512 * 1024]u8 = @splat(0),
@@ -12,8 +13,8 @@ cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
 
-output_writer: ?*std.Io.Writer = null,
 trace_writer: ?*std.Io.Writer = null,
+vcd: ?*Vcd = null,
 trace_lines_left: u32 = 10000,
 fault: ?Cog.Fault = null,
 locks: [16]Lock = undefined,
@@ -46,6 +47,12 @@ pub fn init(hub: *Hub) void {
         .io = .{},
     };
     for (&hub.locks, 0..) |*lock, i| lock.* = .{ .id = @intCast(i) };
+}
+
+/// Attach a caller-owned trace writer and capture the initial state.
+pub fn attachVcd(hub: *Hub, vcd: *Vcd) !void {
+    try vcd.capture(hub);
+    hub.vcd = vcd;
 }
 
 /// Release ownership while retaining allocation and last owner, and signal lock-release events.
@@ -87,7 +94,7 @@ pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool)
     }
 }
 
-/// Process one shared clock edge: commit old writes, service resources, advance cogs, then UART and CT.
+/// Commit old writes, advance I/O once, execute cogs, then capture traces and advance CT.
 /// All cogs observe previous-edge writes before any cog executes on this edge.
 pub fn step(hub: *Hub) void {
     hub.clocking = true;
@@ -125,13 +132,13 @@ pub fn step(hub: *Hub) void {
     for (&hub.cogs) |*cog| cog.clock_fifo();
     for (&hub.cogs) |*cog| cog.clock_memory();
     for (&hub.cogs) |*cog| cog.clock_command();
-    hub.io.updateDirections(hub);
-    for (&hub.cogs) |*cog| {
-        cog.step();
-    }
-
     hub.io.step(hub);
+    if (hub.fault == null) for (&hub.cogs) |*cog| cog.step();
 
+    if (hub.vcd) |vcd| vcd.capture(hub) catch |err| {
+        std.log.err("VCD export failed: {t}", .{err});
+        hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
+    };
     hub.counter +%= 1;
 }
 
@@ -148,7 +155,7 @@ pub fn is_any_cog_active(hub: *Hub) bool {
 /// peripheral, FIFO, memory transfer, or writeback can advance before CT does.
 pub fn next_idle_clock(hub: *Hub) ?u64 {
     for (hub.pending_starts) |start| if (start != null) return null;
-    if (hub.io.txBusy() or hub.io.input_index != hub.io.input.len or hub.io.rx_count != 0) return null;
+    if (hub.io.pending()) return null;
     for (hub.pending_events) |edge| for (edge) |events| if (events != 0) return null;
     var next_delta: ?u64 = null;
     for (&hub.cogs) |*cog| {
@@ -198,20 +205,25 @@ pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u32 = 0, p
     cog.registers.set(.PTRB, options.hub_address);
 }
 
-test "UART DIR follows register writes, cog reset and simultaneous handoff" {
+test "UART DIR changes once per edge across register writes, reset and simultaneous handoff" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
     hub.init();
-    hub.io.pins[62].mode = 0x7c;
-    hub.io.pins[62].x = (100 << 16) | 7;
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (100 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
     hub.cogs[0].write_reg(.DIRB, 1 << 30);
-    try std.testing.expect(hub.io.transmit('x'));
+    try std.testing.expect(!hub.io.pins[62].smart.registers.enabled);
     hub.step();
-    try std.testing.expect(hub.io.txBusy());
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'x', .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    try std.testing.expect(hub.io.pins[62].outputs.scheduled);
+    hub.cogs[0].write_reg(.DIRB, 0);
     hub.cogs[1].write_reg(.DIRB, 1 << 30);
     hub.cogs[0].reset();
-    try std.testing.expect(hub.io.pins[62].enabled);
-    try std.testing.expect(hub.io.txBusy());
+    try std.testing.expect(hub.io.pins[62].smart.registers.enabled);
+    try std.testing.expect(hub.io.pins[62].outputs.scheduled);
 
     hub.cogs[0].write_reg(.DIRB, 1 << 30);
     hub.cogs[1].reset();
@@ -222,22 +234,68 @@ test "UART DIR follows register writes, cog reset and simultaneous handoff" {
     hub.cogs[0].writeback.count = 1;
     hub.cogs[0].writeback.writes[0] = .{ .reg = .DIRB, .value = 0 };
     hub.step();
-    try std.testing.expect(hub.io.txBusy());
+    try std.testing.expect(hub.io.pins[62].outputs.scheduled);
     hub.cogs[1].write_reg(.DIRB, 0);
-    try std.testing.expect(!hub.io.pins[62].enabled);
-    try std.testing.expect(!hub.io.txBusy());
-    try std.testing.expect(!hub.io.pins[62].ready);
-    try std.testing.expect(!hub.io.transmit('y'));
-
-    hub.io.pins[63].mode = 0x3e;
-    hub.io.pins[63].x = (100 << 16) | 7;
-    hub.cogs[0].write_reg(.DIRB, 1 << 31);
-    try hub.io.supplyInput("z", hub.counter);
-    hub.cogs[0].write_reg(.DIRB, 0);
-    hub.counter = hub.io.rx_end;
+    try std.testing.expect(hub.io.pins[62].smart.registers.enabled);
+    try std.testing.expect(hub.io.pins[62].outputs.scheduled);
     hub.step();
-    try std.testing.expect(!hub.io.pins[63].ready);
-    try std.testing.expectEqual(@as(u32, 0), hub.io.pins[63].result);
+    try std.testing.expect(!hub.io.pins[62].smart.registers.enabled);
+    try std.testing.expect(!hub.io.pins[62].outputs.scheduled);
+    try std.testing.expect(!hub.io.pins[62].smart.registers.ready);
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'y', .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    try std.testing.expect(hub.io.pins[62].smart.logic.uart_tx.buffer == null);
+
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 63, .kind = .configure, .value = 0x3e, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 63, .kind = .write_x, .value = (100 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    hub.cogs[0].write_reg(.DIRB, 1 << 31);
+    hub.step();
+    var reader = std.Io.Reader.fixed("z");
+    var source: IO.DataSource = .{ .reader = &reader };
+    hub.io.pins[63].smart.registers.source = &source;
+    hub.step();
+    try std.testing.expectEqual(@as(usize, 0), reader.bufferedLen());
+    hub.cogs[0].write_reg(.DIRB, 0);
+    hub.counter +%= 1000;
+    hub.step();
+    try std.testing.expect(!hub.io.pins[63].smart.registers.ready);
+    try std.testing.expectEqual(@as(u32, 0), hub.io.pins[63].smart.registers.result);
+}
+
+test "COGSTOP aborts a UART frame before its completion edge" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+    var sink: IO.DataSink = .{ .writer = &output.writer };
+    const pin = &hub.io.pins[62];
+    pin.smart.registers.sink = &sink;
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (100 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    hub.cogs[0].write_reg(.DIRB, 1 << 30);
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'x', .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    const completion = pin.smart.logic.uart_tx.end;
+    try std.testing.expect(pin.smart.logic.uart_tx.shifter != null);
+
+    // Execute a real self-stop while the frame is underway, then service its completion edge.
+    hub.cogs[0].write_reg(@enumFromInt(0), 0xFD64_0003); // COGSTOP #0.
+    hub.cogs[0].exec_mode = .cog;
+    while (hub.is_any_cog_active() and hub.counter < completion) hub.step();
+    try std.testing.expect(!hub.is_any_cog_active());
+    try std.testing.expect(hub.counter < completion);
+    hub.counter = completion;
+    hub.step();
+    try std.testing.expect(!pin.smart.registers.enabled);
+    try std.testing.expect(pin.smart.logic.uart_tx.shifter == null);
+    try std.testing.expect(pin.smart.logic.uart_tx.buffer == null);
+    try std.testing.expect(!pin.outputs.scheduled);
+    try std.testing.expectEqualStrings("", output.written());
 }
 
 test "pending events keep their two-clock delay across counter rollover" {
@@ -318,15 +376,20 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
     hub.init();
-    hub.counter = std.math.maxInt(u64) - 4;
+    hub.counter = std.math.maxInt(u64) - 10;
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
-    hub.output_writer = &output.writer;
-    hub.io.pins[62].mode = 0x7c;
-    hub.io.pins[62].x = (1 << 16) | 7;
+    var terminal_sink: IO.DataSink = .{ .writer = &output.writer };
+    hub.io.pins[62].smart.registers.sink = &terminal_sink;
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (1 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 1) |_| hub.step();
     hub.cogs[0].write_reg(.DIRB, 1 << 30);
-    try std.testing.expect(hub.io.transmit('x'));
-    for (0..10) |_| {
+    try std.testing.expect(!hub.io.pins[62].smart.registers.enabled);
+    hub.step();
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'x', .cog = 0, .pc = 0, .instruction = 0 });
+    for (0..IO.command_delay + 10) |_| {
         hub.step();
         try std.testing.expectEqual(@as(usize, 0), output.written().len);
     }

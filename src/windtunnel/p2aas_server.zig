@@ -2,6 +2,7 @@
 //! The HTTP/WebSocket contract follows p2aas.cs; loader text and serial recovery are internal to hardware.
 const std = @import("std");
 const Hub = @import("sim/Hub.zig");
+const smart_pin = @import("sim/smart_pin.zig");
 const WebSocket = std.http.Server.WebSocket;
 const max_payload = 512 * 1024;
 const max_request_head = 768 * 1024;
@@ -279,7 +280,13 @@ fn receive(connection: *Connection, input: *std.Io.Queue(u8), events: *std.Io.Qu
 fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void {
     var output_buffer: [4096]u8 = undefined;
     var output = std.Io.Writer.fixed(&output_buffer);
-    hub.output_writer = &output;
+    var terminal_sink: smart_pin.DataSink = .{ .writer = &output };
+    hub.io.pins[62].smart.registers.sink = &terminal_sink;
+    var input_buffer: [4096]u8 = undefined;
+    var reader = std.Io.Reader.fixed(&input_buffer);
+    reader.end = 0;
+    var terminal_source: smart_pin.DataSource = .{ .reader = &reader };
+    hub.io.pins[63].smart.registers.source = &terminal_source;
     var trace_buffer: [4096]u8 = undefined;
     var trace = std.Io.File.stderr().writer(connection.io, &trace_buffer);
     if (connection.trace) hub.trace_writer = &trace.interface;
@@ -288,12 +295,13 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
     var virtual_fixed: u128 = 0;
     while (true) {
         try connection.io.checkCancel();
-        var incoming: [4096]u8 = undefined;
-        const count = input.get(connection.io, incoming[0 .. hub.io.rx_queue.len - hub.io.rx_count], 0) catch |err| switch (err) {
+        // Refill buffered input outside the simulation; smart pins never block on the host.
+        if (reader.seek != 0) std.Io.Reader.defaultRebase(&reader, reader.buffer.len) catch unreachable;
+        const count = input.get(connection.io, reader.buffer[reader.end..], 0) catch |err| switch (err) {
             error.Closed => 0,
             else => return err,
         };
-        std.debug.assert(hub.io.queueInput(incoming[0..count], hub.counter));
+        reader.end += count;
         // A millisecond ceiling bounds responsiveness even when WAITX can skip many clocks.
         const ceiling = hub.counter + @max(1, hub.io.clock_frequency / 1000);
         for (0..4096) |_| {
@@ -312,7 +320,7 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
             };
             // Stopping all cogs does not close the physical serial adapter. Idle clocks can skip,
             // but a queued COGINIT still has to run on its scheduled edge.
-            if (!hub.is_any_cog_active() and !pending_start and !hub.io.txBusy() and hub.io.rx_count == 0) hub.counter = ceiling;
+            if (!hub.is_any_cog_active() and !pending_start and !hub.io.pending()) hub.counter = ceiling;
             virtual_fixed += @as(u128, hub.counter -% before) * (@as(u128, std.time.ns_per_s) << 32) / frequency;
             if (hub.counter >= ceiling or output.end != 0) break;
         }
@@ -431,7 +439,6 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
     var words = std.mem.window(u8, payload, 4, 4);
     while (words.next()) |word| checksum -%= std.mem.readInt(u32, word[0..4], .little);
     hub.write_memory(@intCast(payload.len), checksum, 4, false);
-    hub.io.host_baudrate = options.baudrate;
     try hub.start_cog(0, .{});
     connection.running = true;
     var input_buffer: [65536]u8 = undefined;
