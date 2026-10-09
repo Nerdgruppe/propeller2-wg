@@ -1,0 +1,39 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[empty] == 2
+//? post: cog[0].reg[nop] == 4
+//? post: cog[0].reg[jump] == 6
+//? post: cog[0].reg[read] == 5
+//? post: cog[0].reg[poisoned] == 0
+
+    SETQ2 16
+    RDLONG register(0), aug(hubaddr(lut_entry))
+    CALL lut_entry
+    JMP nrel(_end)
+var start: LONG 0
+var empty: LONG 0
+var nop: LONG 0
+var jump: LONG 0
+var read: LONG 0
+var scratch: LONG 0
+var poisoned: LONG 0
+
+.lutexec 0x3000, 0x200
+lut_entry:
+    GETCT start
+    GETCT empty
+    SUB empty, start
+    GETCT start
+    NOP
+    GETCT nop
+    SUB nop, start
+    GETCT start
+    JMP branch_target
+    ADD poisoned, 1
+branch_target:
+    GETCT jump
+    SUB jump, start
+    GETCT start
+    RDLUT scratch, 0
+    GETCT read
+    SUB read, start
+    RET

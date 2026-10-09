@@ -118,11 +118,15 @@ const Socket = struct {
                     .ping => try socket.send(data, .pong),
                     .pong => {},
                     .connection_close => {
-                        if (data.len < 2 or !std.unicode.utf8ValidateSlice(data[2..])) return error.InvalidWebSocketClose;
-                        const code = std.mem.readInt(u16, data[0..2], .big);
-                        try diagnostics.print("P2AAS close {d}: {s}\n", .{ code, data[2..] });
-                        if (!closing) try socket.send("\x03\xe8", .connection_close);
-                        if (code != 1000 and !(code == 1008 and std.mem.eql(u8, data[2..], "No time quota left for user code."))) return error.HardwareClosed;
+                        if (data.len == 1 or (data.len >= 2 and !std.unicode.utf8ValidateSlice(data[2..]))) return error.InvalidWebSocketClose;
+                        const code: ?u16 = if (data.len == 0) null else std.mem.readInt(u16, data[0..2], .big);
+                        if (code) |status| {
+                            try diagnostics.print("P2AAS close {d}: {s}\n", .{ status, data[2..] });
+                        } else try diagnostics.writeAll("P2AAS close without status\n");
+                        if (!closing) try socket.send(if (code == null) "" else "\x03\xe8", .connection_close);
+                        if (code) |status| {
+                            if (status != 1000 and !(status == 1008 and std.mem.eql(u8, data[2..], "No time quota left for user code."))) return error.HardwareClosed;
+                        }
                         if (!sent_input) return error.ProgramNeverReady;
                         if (fragmented) return error.TruncatedWebSocketMessage;
                         return;
@@ -314,6 +318,26 @@ test "fragmented binary output, ping and readiness-gated stdin" {
     try std.testing.expectEqual(@as(u8, 0x88), (try reader.takeArray(2))[0]);
 }
 
+test "empty closes complete the handshake without losing output" {
+    var output: std.ArrayList(u8) = .empty;
+    defer output.deinit(std.testing.allocator);
+    var replies: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer replies.deinit();
+    try receiveTest("\x82\x01x\x88\x00", test_request, &output, &replies.writer);
+    try std.testing.expectEqualStrings("x", output.items);
+    try std.testing.expectEqualSlices(u8, "\x88\x80", replies.written()[0..2]);
+    // Two header bytes and the client mask, with no status or reason payload.
+    try std.testing.expectEqual(@as(usize, 6), replies.written().len);
+
+    output.clearRetainingCapacity();
+    try std.testing.expectError(error.TruncatedWebSocketMessage, receiveTest("\x02\x01x\x88\x00", test_request, &output, &replies.writer));
+    var request = test_request;
+    request.stdin = "u";
+    request.ready = "READY";
+    output.clearRetainingCapacity();
+    try std.testing.expectError(error.ProgramNeverReady, receiveTest("\x88\x00", request, &output, &replies.writer));
+}
+
 test "malformed frames and closes fail without a P2AAS test server" {
     const cases = .{
         .{ "\x81\x01x", error.UnexpectedWebSocketOpcode },
@@ -370,6 +394,11 @@ test "oracle frame length, count and CRC reject corrupt and trailing bytes" {
     try std.testing.expectEqualSlices(u8, frame[0..24], output.items);
     try std.testing.expectEqual(@as(u8, 0x88), replies.written()[0]);
     wire.writer.undo(4);
+    try wire.writer.writeAll("\x88\x00");
+    output.clearRetainingCapacity();
+    try receiveTest(wire.written(), request, &output, &replies.writer);
+    try std.testing.expectEqualSlices(u8, frame[0..24], output.items);
+    wire.writer.undo(2);
     try wire.writer.writeAll("\x82\x01x");
     output.clearRetainingCapacity();
     try std.testing.expectError(error.TrailingOracleOutput, receiveTest(wire.written(), request, &output, &replies.writer));

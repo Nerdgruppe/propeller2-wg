@@ -17,6 +17,7 @@ pub const std_options: std.Options = .{
 const CliArgs = struct {
     help: bool = false,
     verbose: bool = false,
+    @"trace-pipeline": bool = false,
     image: []const u8 = "",
 
     pub const shorthands = .{
@@ -26,7 +27,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v]",
+        .usage_summary = "[-h] [-v] [--trace-pipeline] [-i IMAGE]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -35,6 +36,7 @@ const CliArgs = struct {
         .option_docs = .{
             .help = "Prints this help text",
             .verbose = "Enables debug logging",
+            .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
             .image = "The image file which contains the hub data.",
         },
     };
@@ -56,16 +58,18 @@ pub fn main(init: std.process.Init) !u8 {
             cli.executable_name orelse "windtunnel",
             &stdout.interface,
         );
+        try stdout.interface.flush();
         return 0;
     }
     if (cli.positionals.len != 0) {
         var buffer: [256]u8 = undefined;
-        var stderr = std.Io.File.stdout().writer(init.io, &buffer);
+        var stderr = std.Io.File.stderr().writer(init.io, &buffer);
         try args_parser.printHelp(
             CliArgs,
             cli.executable_name orelse "windtunnel",
             &stderr.interface,
         );
+        try stderr.interface.flush();
         return 1;
     }
 
@@ -76,6 +80,10 @@ pub fn main(init: std.process.Init) !u8 {
     var hub: Hub = undefined;
     hub.init();
     hub.output_writer = &stdout.interface;
+    var trace_buffer: [4096]u8 = undefined;
+    var trace = std.Io.File.stderr().writer(init.io, &trace_buffer);
+    defer trace.interface.flush() catch {};
+    if (cli.options.@"trace-pipeline") hub.trace_writer = &trace.interface;
 
     if (cli.options.image.len != 0) {
         var file = try std.Io.Dir.cwd().openFile(init.io, cli.options.image, .{});
@@ -102,7 +110,18 @@ pub fn main(init: std.process.Init) !u8 {
 
     while (hub.is_any_cog_active()) {
         hub.step();
+        if (hub.fault) |fault| {
+            std.log.err("cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{
+                fault.cog, fault.pc, fault.instruction, fault.reason(),
+            });
+            return 1;
+        }
     }
+
+    stdout.interface.flush() catch |err| {
+        std.log.err("writing stdout failed: {t}", .{err});
+        return 1;
+    };
 
     std.log.warn("all cogs stopped after {} clocks. halting...", .{
         hub.counter,

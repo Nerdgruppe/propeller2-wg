@@ -1,0 +1,34 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[observed] == 1
+//? post: hub[buffer] == u32 [99 0 0 0]
+//? run: "cog=0"
+//? cog: 0
+//? run: "cog=1"
+//? cog: 1
+//? run: "cog=2"
+//? cog: 2
+//? run: "cog=3"
+//? cog: 3
+//? run: "cog=4"
+//? cog: 4
+//? run: "cog=5"
+//? cog: 5
+//? run: "cog=6"
+//? cog: 6
+//? run: "cog=7"
+//? cog: 7
+
+    WRLUT 99, aug(508)
+    WRLUT 0, aug(509)
+    WRLUT 0, aug(510)
+    WRLUT 0, aug(511)
+    SETSE1 0
+    SETQ2 3
+    WRLONG register(508), aug(hubaddr(buffer))
+    POLLSE1 :wc
+if(C) MOV observed, 1
+    SETQ 0
+    JMP nrel(_end)
+var observed: LONG 0
+.data
+buffer: LONG [0] * 4

@@ -4,7 +4,10 @@ pub const Address = union(enum) { number: u32, symbol: []const u8 };
 pub const Target = union(enum) { sym: []const u8, reg: Address, hub: Address, c, z, q };
 pub const Assignment = struct { line: u32, cog: ?u3 = null, target: Target, bytes: []const u8 };
 pub const Profile = enum { cog, program };
+pub const Constant = struct { name: []const u8, value: i64 };
 pub const Run = struct {
+    cog: ?u3 = null,
+    constants: []const Constant = &.{},
     name: ?[]const u8 = null,
     pre: []const Assignment = &.{},
     post: []const Assignment = &.{},
@@ -24,10 +27,22 @@ pub const List = struct {
     pre: []const Assignment = &.{},
     post: []const Assignment = &.{},
     runs: []const Run = &.{},
+    constants: []const Constant = &.{},
 
     /// Common patches apply first; run-local flag/Q seeds replace common seeds.
     pub fn forRun(list: List, allocator: std.mem.Allocator, run: Run) !List {
         var result = list;
+        result.cog = run.cog orelse list.cog;
+        var constants: std.ArrayList(Constant) = .empty;
+        for (list.constants) |common| {
+            var replaced = false;
+            for (run.constants) |local| if (std.mem.eql(u8, common.name, local.name)) {
+                replaced = true;
+            };
+            if (!replaced) try constants.append(allocator, common);
+        }
+        try constants.appendSlice(allocator, run.constants);
+        result.constants = constants.items;
         var pre: std.ArrayList(Assignment) = .empty;
         for (list.pre) |common| {
             var replaced = false;
@@ -122,9 +137,12 @@ const Parser = struct {
             return .{ .hub = a };
         }
         if (!std.mem.eql(u8, kind, "cog")) return p.fail("unknown state target");
-        const cog = try p.integer(try p.take());
-        if (cog < 0 or cog > 7) return p.fail("cog must be 0..7");
-        p.target_cog = @intCast(cog);
+        const selected = try p.take();
+        if (!std.mem.eql(u8, selected, "*")) {
+            const cog = try p.integer(selected);
+            if (cog < 0 or cog > 7) return p.fail("cog must be 0..7");
+            p.target_cog = @intCast(cog);
+        }
         try p.expect("]");
         const field = try p.take();
         if (std.mem.eql(u8, field, ".c")) return .c;
@@ -258,6 +276,7 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     var pre: std.ArrayList(Assignment) = .empty;
     var post: std.ArrayList(Assignment) = .empty;
     var runs: std.ArrayList(Run) = .empty;
+    var constants: std.ArrayList(Constant) = .empty;
     var seen: std.StringHashMap(void) = .init(allocator);
     while (true) {
         p.newlines();
@@ -276,13 +295,29 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
             if (runs.items.len == 0) {
                 list.pre = pre.items;
                 list.post = post.items;
+                list.constants = constants.items;
             } else {
                 runs.items[runs.items.len - 1].pre = pre.items;
                 runs.items[runs.items.len - 1].post = post.items;
+                runs.items[runs.items.len - 1].constants = constants.items;
             }
+            constants = .empty;
             pre = .empty;
             post = .empty;
             try runs.append(allocator, .{ .name = run_name });
+        } else if (std.mem.eql(u8, name, "const")) {
+            const symbol = try p.take();
+            if (symbol.len == 0 or !(std.ascii.isAlphabetic(symbol[0]) or symbol[0] == '_') or std.mem.startsWith(u8, symbol, "_wt_")) return p.fail("invalid constant name");
+            for (symbol) |c| if (!(std.ascii.isAlphanumeric(c) or c == '_')) return p.fail("invalid constant name");
+            for (constants.items) |old| if (std.mem.eql(u8, old.name, symbol)) return p.fail("duplicate constant");
+            try p.expect("=");
+            try constants.append(allocator, .{ .name = symbol, .value = try p.integer(try p.take()) });
+        } else if (std.mem.eql(u8, name, "cog") and runs.items.len != 0) {
+            const run = &runs.items[runs.items.len - 1];
+            if (run.cog != null) return p.fail("duplicate run cog");
+            const n = try p.integer(try p.take());
+            if (n < 0 or n > 7) return p.fail("cog must be 0..7");
+            run.cog = @intCast(n);
         } else if (std.mem.eql(u8, name, "pre") or std.mem.eql(u8, name, "post")) {
             const target = try p.target();
             const is_pre = std.mem.eql(u8, name, "pre");
@@ -330,21 +365,21 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     if (runs.items.len == 0) {
         list.pre = pre.items;
         list.post = post.items;
+        list.constants = constants.items;
         try runs.append(allocator, .{});
     } else {
         runs.items[runs.items.len - 1].pre = pre.items;
         runs.items[runs.items.len - 1].post = post.items;
+        runs.items[runs.items.len - 1].constants = constants.items;
     }
-    for ([_][]const Assignment{ list.pre, list.post }) |assignments| for (assignments) |a| {
-        if (a.cog) |cog| if (cog != list.cog) return p.fail("state target must match selected cog");
-    };
     list.runs = runs.items;
     for (list.runs) |run| {
-        for ([_][]const Assignment{ run.pre, run.post }) |assignments| for (assignments) |a| {
-            if (a.cog) |cog| if (cog != list.cog) return p.fail("state target must match selected cog");
+        const selected_cog = run.cog orelse list.cog;
+        for ([_][]const Assignment{ list.pre, list.post, run.pre, run.post }) |assignments| for (assignments) |a| {
+            if (a.cog) |cog| if (cog != selected_cog) return p.fail("state target must match selected cog");
         };
         if (list.profile == .program) {
-            if (list.cog != 0 or list.entry != null or list.post.len != 0 or run.post.len != 0) return p.fail("program profile does not support entry or state assignments");
+            if (selected_cog != 0 or list.entry != null or list.post.len != 0 or run.post.len != 0) return p.fail("program profile does not support entry or state assignments");
             for ([_][]const Assignment{ list.pre, run.pre }) |assignments| for (assignments) |a| {
                 if (a.target != .sym) return p.fail("program profile supports only symbol patches as preconditions");
             };
@@ -424,6 +459,43 @@ test "run sections inherit common conditions and preserve local seeds" {
         "//? post: sym[value] == u32 [1]\n",
         "//? pre: sym[42] = u32 [1]\n",
         "//? profile: program\n//? run:\n//? pre: cog[0].c = true\n",
+    }) |body| {
+        const source = try std.fmt.allocPrint(allocator, "//? WINDTUNNEL CHECK LIST\n{s}", .{body});
+        try std.testing.expectError(error.InvalidChecklist, parse(allocator, "fixture", source, &errors.writer));
+    }
+}
+
+test "run constants and cog selection inherit without leaking across runs" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+    const allocator = arena.allocator();
+    const list = try parse(
+        allocator,
+        "fixture",
+        "//? WINDTUNNEL CHECK LIST\n" ++
+            "//? const: width = 4\n" ++
+            "//? post: cog[*].reg[result] == 0\n" ++
+            "//? run: \"override\"\n" ++
+            "//? cog: 7\n" ++
+            "//? const: width = 1\n" ++
+            "//? run: \"restored\"\n",
+        &errors.writer,
+    );
+    const first = try list.forRun(allocator, list.runs[0]);
+    const second = try list.forRun(allocator, list.runs[1]);
+    try std.testing.expectEqual(@as(u3, 7), first.cog);
+    try std.testing.expectEqual(@as(i64, 1), first.constants[0].value);
+    try std.testing.expectEqual(@as(u3, 0), second.cog);
+    try std.testing.expectEqual(@as(i64, 4), second.constants[0].value);
+    for ([_][]const u8{
+        "//? const: x = 1\n//? const: x = 2\n",
+        "//? const: _wt_target_cog = 2\n",
+        "//? const: x-y = 2\n",
+        "//? run:\n//? cog: 8\n",
+        "//? run:\n//? cog: 2\n//? cog: 3\n",
+        "//? run:\n//? cog: 7\n//? post: cog[0].c == true\n",
     }) |body| {
         const source = try std.fmt.allocPrint(allocator, "//? WINDTUNNEL CHECK LIST\n{s}", .{body});
         try std.testing.expectError(error.InvalidChecklist, parse(allocator, "fixture", source, &errors.writer));

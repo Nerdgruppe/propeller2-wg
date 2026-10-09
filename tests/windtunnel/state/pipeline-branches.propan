@@ -1,0 +1,239 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[failures] == 0
+
+    MOV count, aug(1)
+    GETCT start
+    DJZ count, djz_6
+djz_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(2)
+    GETCT start
+    DJZ count, djz_4
+djz_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(2)
+    GETCT start
+    DJNZ count, djnz_6
+djnz_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(1)
+    GETCT start
+    DJNZ count, djnz_4
+djnz_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    DJF count, djf_6
+djf_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(1)
+    GETCT start
+    DJF count, djf_4
+djf_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(1)
+    GETCT start
+    DJNF count, djnf_6
+djnf_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    DJNF count, djnf_4
+djnf_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(-1)
+    GETCT start
+    IJZ count, ijz_6
+ijz_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    IJZ count, ijz_4
+ijz_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    IJNZ count, ijnz_6
+ijnz_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(-1)
+    GETCT start
+    IJNZ count, ijnz_4
+ijnz_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    TJZ count, tjz_6
+tjz_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(1)
+    GETCT start
+    TJZ count, tjz_4
+tjz_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(1)
+    GETCT start
+    TJNZ count, tjnz_6
+tjnz_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    TJNZ count, tjnz_4
+tjnz_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(-1)
+    GETCT start
+    TJF count, tjf_6
+tjf_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    TJF count, tjf_4
+tjf_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    TJNF count, tjnf_6
+tjnf_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(-1)
+    GETCT start
+    TJNF count, tjnf_4
+tjnf_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(2147483648)
+    GETCT start
+    TJS count, tjs_6
+tjs_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    TJS count, tjs_4
+tjs_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    TJNS count, tjns_6
+tjns_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(2147483648)
+    GETCT start
+    TJNS count, tjns_4
+tjns_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(2147483648)
+    GETCT start
+    TJV count, tjv_6
+tjv_6:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    MOV count, aug(0)
+    GETCT start
+    TJV count, tjv_4
+tjv_4:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    GETCT start
+    CALL subroutine
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    GETCT start
+    CALL returning_move
+    GETCT finish
+    SUB finish, start
+    CMP finish, 10 :wz
+if(!Z) ADD failures, 1
+    CMP count, 99 :wz
+if(!Z) ADD failures, 1
+    JMP nrel(_end)
+returning_move:
+return MOV count, 99
+subroutine:
+    GETCT finish
+    SUB finish, start
+    CMP finish, 6 :wz
+if(!Z) ADD failures, 1
+    GETCT start
+    RET
+var count: LONG 0
+var start: LONG 0
+var finish: LONG 0
+var failures: LONG 0

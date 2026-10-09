@@ -13,6 +13,9 @@
 //? post: cog[0].reg[cancelled] == 123
 //? post: cog[0].reg[index] == 1
 //? post: cog[0].reg[source_pointer] == 0x12345679
+//? post: cog[0].reg[call_redirected] == 234
+//? post: cog[0].reg[captured_pa] == 77
+//? post: cog[0].reg[captured_pb] == 88
 
     ALTS source_pointer, 0
     MOV from_source, register(0)
@@ -44,7 +47,21 @@
     ALTD zero, &source_pointer
     MOV register(0), 0x78
     ADD source_pointer, 1
+    MOV PA, 77
+    MOV PB, 88
+    ALTR call_pointer, 0
+    CALLPA 123, capture_pa
+    ALTR call_pointer, 0
+    CALLPB 234, capture_pb
+    ALTI zero, 0b001_000_000
+    CALLPA 345, capture_pa
+    ALTI zero, 0b001_000_000
+    CALLPB 456, capture_pb
     JMP nrel(_end)
+capture_pa:
+    return MOV captured_pa, PA
+capture_pb:
+    return MOV captured_pb, PB
 var source: LONG 0x12345678
 var source_pointer: LONG cogaddr(source)
 var destination_pointer: LONG target
@@ -72,3 +89,7 @@ var index: LONG 0
 var increment: LONG 512
 var zero: LONG 0
 var word_data: LONG 0xbbcc
+var call_pointer: LONG cogaddr(call_redirected)
+var call_redirected: LONG 0
+var captured_pa: LONG 0
+var captured_pb: LONG 0

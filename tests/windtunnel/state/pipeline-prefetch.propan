@@ -1,0 +1,21 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[adjacent] == 1
+//? post: cog[0].reg[spaced] == 2
+//? post: cog[0].reg[flushed] == 2
+
+    SETS register(cogaddr(adjacent_instruction)), 2
+adjacent_instruction:
+    MOV adjacent, 1
+    SETS register(cogaddr(spaced_instruction)), 2
+    NOP
+    NOP
+spaced_instruction:
+    MOV spaced, 1
+    SETS register(cogaddr(flushed_instruction)), 2
+    JMP flushed_instruction
+flushed_instruction:
+    MOV flushed, 1
+    JMP nrel(_end)
+var adjacent: LONG 0
+var spaced: LONG 0
+var flushed: LONG 0

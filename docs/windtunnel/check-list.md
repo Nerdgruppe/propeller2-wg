@@ -8,7 +8,8 @@ A `.propan` fixture starts with `//? WINDTUNNEL CHECK LIST`, followed by contigu
 ## Runs and initial values
 
 Conditions before the first `run:` apply to every run. Each `run:` starts a new
-section containing additional `pre:` and `post:` conditions. Names are optional
+section containing additional `pre:` and `post:` conditions. Runs may also
+select a `cog:` and supply `const:` assembler parameters. Names are optional
 quoted strings; explicit names must be nonempty and unique within the fixture.
 A fixture without `run:` has one implicit run. The common section does not create
 an extra run when explicit sections exist.
@@ -32,6 +33,32 @@ an extra run when explicit sections exist.
 var input: LONG 0
 var result: LONG 0
 ```
+
+A matrix can share its source and assertions while varying assembly-time values:
+
+```cpp
+//? WINDTUNNEL CHECK LIST
+//? const: size = 4
+//? post: cog[*].reg[failures] == 0
+//? run: "cog 0, long"
+//? cog: 0
+//? run: "cog 7, byte"
+//? cog: 7
+//? const: size = 1
+```
+
+`cog[*]` means the selected cog for that run. Explicit `cog[N]` targets must
+still match the selected cog. Run-local cog selection defaults to the shared
+`cog:` value; it does not carry into the next run.
+
+`const: name = INTEGER` supplies a Propan constant before assembling the fixture
+for either backend. Integers accept the same bases and separators as other
+checklist numbers. Common constants apply to all runs, with run-local values
+overriding matching names. A name may appear only once in each section; names
+reserved for the oracle (`_wt_...`) are rejected. Constants cannot duplicate
+symbols declared in the fixture. Use constants for layout or instruction choices
+and `pre: sym[...]` for initial memory values. Each named matrix case is a normal
+run with its own fresh assembly, oracle upload, result, and failure evidence.
 
 `pre: sym[name] = BLOCK` patches the assembled image at the symbol's hub byte
 offset before startup. Cog variables are initialized by loading this patched
@@ -76,13 +103,14 @@ pairs of hexadecimal digits, for example `hex [ 00 80 ff ]`.
 ```
 
 Register addresses may be symbols or numeric register indices. Hub addresses may
-be symbols or numeric byte offsets. State targets must select the configured cog.
+be symbols or numeric byte offsets. State targets select the configured cog; `cog[*]` follows run-local selection.
 Register 0 and registers 506..511 belong to the scaffold or special registers;
 hub observations must refer to emitted fixture memory.
 
 ## Shared configuration
 
-Configuration directives precede all run sections and apply to every run:
+Configuration directives precede all run sections and apply to every run.
+`cog:` and `const:` may also occur inside a run to override their shared values:
 
 | Directive | Default and meaning |
 | --- | --- |

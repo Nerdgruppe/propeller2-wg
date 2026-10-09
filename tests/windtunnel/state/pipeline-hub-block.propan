@@ -1,0 +1,169 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "0-0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_lut = 0
+//? run: "0-1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_lut = 1
+//? run: "1-0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_lut = 0
+//? run: "1-1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_lut = 1
+//? run: "2-0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_lut = 0
+//? run: "2-1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_lut = 1
+//? run: "3-0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_lut = 0
+//? run: "3-1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_lut = 1
+//? run: "4-0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_lut = 0
+//? run: "4-1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_lut = 1
+//? run: "5-0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_lut = 0
+//? run: "5-1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_lut = 1
+//? run: "6-0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_lut = 0
+//? run: "6-1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_lut = 1
+//? run: "7-0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_lut = 0
+//? run: "7-1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_lut = 1
+
+    MOV address, aug(hubaddr(buffer))
+    MOV PTRA, aug(hubaddr(lengths))
+    MOV length_index, 0
+length_loop:
+    RDLONG length, PTRA++
+    SUB length, 1
+    MOV bank, 0
+bank_loop:
+    MOV alignment, 0
+alignment_loop:
+    MOV crossing, 0
+    CMP alignment, 0 :wz
+if(!Z) MOV crossing, 1
+    MOV offset, 0
+phase_loop:
+    GETCT timer
+    ADD timer, 128
+    ANDN timer, 7
+    ADD timer, offset
+    ADDCT1 timer, 0
+    WAITCT1
+    GETCT start
+.if probe_lut == 1
+    SETQ2 length
+.else
+    SETQ length
+.endif
+    RDLONG register(200), address
+    GETCT finish
+    SUB finish, start
+    AND start, 7
+    MOV expected, bank
+    ADD expected, 2
+    SUB expected, start
+    SUB expected, probe_cog
+    AND expected, 7
+    ADD expected, 13
+    ADD expected, length
+    ADD expected, crossing
+    CMP finish, expected :wz
+if(!Z) ADD failures, 1
+    GETCT timer
+    ADD timer, 128
+    ANDN timer, 7
+    ADD timer, offset
+    ADDCT1 timer, 0
+    WAITCT1
+    GETCT start
+.if probe_lut == 1
+    SETQ2 length
+.else
+    SETQ length
+.endif
+    WRLONG register(200), address
+    GETCT finish
+    SUB finish, start
+    AND start, 7
+    MOV expected, bank
+    ADD expected, 2
+    SUB expected, start
+    SUB expected, probe_cog
+    AND expected, 7
+.if probe_lut == 1
+    CMP expected, 0 :wz
+if(Z) MOV expected, 8
+.endif
+    ADD expected, 7
+    ADD expected, length
+    ADD expected, crossing
+    CMP finish, expected :wz
+if(!Z) ADD failures, 1
+    ADD offset, 1
+    CMP offset, 8 :wz
+if(!Z) JMP phase_loop
+    ADD address, 1
+    ADD alignment, 1
+    CMP alignment, 4 :wz
+if(!Z) JMP alignment_loop
+    ADD bank, 1
+    CMP bank, 8 :wz
+if(!Z) JMP bank_loop
+    MOV address, aug(hubaddr(buffer))
+    ADD length_index, 1
+    CMP length_index, 5 :wz
+if(!Z) JMP length_loop
+    JMP nrel(_end)
+var length_index: LONG 0
+var length: LONG 0
+var bank: LONG 0
+var alignment: LONG 0
+var crossing: LONG 0
+var offset: LONG 0
+var address: LONG 0
+var start: LONG 0
+var finish: LONG 0
+var expected: LONG 0
+var failures: LONG 0
+var timer: LONG 0
+.data
+lengths: LONG 1, 2, 8, 9, 64
+.align 32
+buffer: LONG [0x12345678] * 73

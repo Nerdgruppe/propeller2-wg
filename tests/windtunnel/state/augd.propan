@@ -1,6 +1,6 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
-//? max-cycles: 1100
+//? max-cycles: 2500
 //? pre: cog[0].c = false
 //? post: cog[0].reg[result] == 7
 //? post: cog[0].c == false
