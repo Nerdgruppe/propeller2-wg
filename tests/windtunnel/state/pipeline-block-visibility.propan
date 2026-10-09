@@ -1,0 +1,240 @@
+//? WINDTUNNEL CHECK LIST
+//? max-cycles: 2000000
+//? post: cog[*].reg[failures] == 0
+//? run: "0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_write = 0
+//? const: probe_worker = 1
+//? run: "1"
+//? cog: 1
+//? const: probe_observer = 1
+//? const: probe_write = 0
+//? const: probe_worker = 0
+//? run: "2"
+//? cog: 2
+//? const: probe_observer = 2
+//? const: probe_write = 0
+//? const: probe_worker = 3
+//? run: "3"
+//? cog: 3
+//? const: probe_observer = 3
+//? const: probe_write = 0
+//? const: probe_worker = 2
+//? run: "4"
+//? cog: 4
+//? const: probe_observer = 4
+//? const: probe_write = 0
+//? const: probe_worker = 5
+//? run: "5"
+//? cog: 5
+//? const: probe_observer = 5
+//? const: probe_write = 0
+//? const: probe_worker = 4
+//? run: "6"
+//? cog: 6
+//? const: probe_observer = 6
+//? const: probe_write = 0
+//? const: probe_worker = 7
+//? run: "7"
+//? cog: 7
+//? const: probe_observer = 7
+//? const: probe_write = 0
+//? const: probe_worker = 6
+//? run: "pipeline-block-write-visibility-0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_write = 1
+//? const: probe_worker = 1
+//? run: "pipeline-block-write-visibility-1"
+//? cog: 1
+//? const: probe_observer = 1
+//? const: probe_write = 1
+//? const: probe_worker = 0
+//? run: "pipeline-block-write-visibility-2"
+//? cog: 2
+//? const: probe_observer = 2
+//? const: probe_write = 1
+//? const: probe_worker = 3
+//? run: "pipeline-block-write-visibility-3"
+//? cog: 3
+//? const: probe_observer = 3
+//? const: probe_write = 1
+//? const: probe_worker = 2
+//? run: "pipeline-block-write-visibility-4"
+//? cog: 4
+//? const: probe_observer = 4
+//? const: probe_write = 1
+//? const: probe_worker = 5
+//? run: "pipeline-block-write-visibility-5"
+//? cog: 5
+//? const: probe_observer = 5
+//? const: probe_write = 1
+//? const: probe_worker = 4
+//? run: "pipeline-block-write-visibility-6"
+//? cog: 6
+//? const: probe_observer = 6
+//? const: probe_write = 1
+//? const: probe_worker = 7
+//? run: "pipeline-block-write-visibility-7"
+//? cog: 7
+//? const: probe_observer = 7
+//? const: probe_write = 1
+//? const: probe_worker = 6
+
+    SETLUTS 1
+    MOV PTRA, aug(hubaddr(mailbox))
+    MOV image, aug(hubaddr(worker))
+    MOV length_pointer, aug(hubaddr(lengths))
+    MOV length_index, 0
+length_loop:
+    RDLONG count, length_pointer
+    ADD length_pointer, 4
+    SUB count, 1
+    MOV bank, 0
+bank_loop:
+    MOV source, aug(hubaddr(payload))
+    MOV temporary, bank
+    SHL temporary, 2
+    ADD source, temporary
+    MOV sample_kind, 0
+sample_loop:
+    MOV position, 0
+    CMP sample_kind, 1 :wz
+if(Z) MOV position, count
+if(Z) SHR position, 1
+    CMP sample_kind, 2 :wz
+if(Z) MOV position, count
+    MOV sample_index, position
+    ADD sample_index, 100
+    MOV delta, aug(-2)
+delta_loop:
+.if probe_write == 1
+    MOV sample_address, source
+    MOV temporary, position
+    SHL temporary, 2
+    ADD sample_address, temporary
+    WRLONG 0, sample_address
+.else
+    WRLUT 0, sample_index
+.endif
+    WRLONG 0, PTRA
+    MOV temporary, PTRA
+    ADD temporary, 4
+    WRLONG source, temporary
+    ADD temporary, 4
+    WRLONG count, temporary
+    SETQ PTRA
+    COGINIT probe_worker, image
+    GETCT timer
+    ADD timer, aug(2048)
+    ANDN timer, 7
+    WRLONG timer, PTRA
+    MOV threshold, bank
+    SUB threshold, probe_worker
+    SUB threshold, 2
+    AND threshold, 7
+.if probe_write == 1
+    ADD threshold, 3
+    SUB threshold, (probe_observer - probe_worker) & 7
+.else
+    ADD threshold, 9
+.endif
+    ADD threshold, position
+    MOV local_timer, timer
+    ADD local_timer, threshold
+    ADD local_timer, delta
+    ADDCT1 local_timer, 0
+    WAITCT1
+    GETCT sample_clock
+.if probe_write == 1
+    RDLONG loaded, sample_address
+.else
+    RDLUT loaded, sample_index
+.endif
+    SUB sample_clock, timer
+    MOV expected, threshold
+    ADD expected, delta
+    ADD expected, 4
+    CMP sample_clock, expected :wz
+if(!Z) ADD failures, 1
+    MOV expected, 0
+    CMPS delta, 0 :wcz
+.if probe_write == 1
+if(>=) MOV expected, 0
+.else
+if(>=) MOV expected, bank
+.endif
+if(>=) ADD expected, position
+if(>=) ADD expected, 1
+    CMP loaded, expected :wz
+if(!Z) ADD failures, 1
+    WAITX 128
+    ADD delta, 1
+    CMP delta, 3 :wz
+if(!Z) JMP delta_loop
+    ADD sample_kind, 1
+    CMP sample_kind, 3 :wz
+if(!Z) JMP sample_loop
+    ADD bank, 1
+    CMP bank, 8 :wz
+if(!Z) JMP bank_loop
+    ADD length_index, 1
+    CMP length_index, 5 :wz
+if(!Z) JMP length_loop
+    SETQ 0
+    JMP nrel(_end)
+var image: LONG 0
+var length_pointer: LONG 0
+var length_index: LONG 0
+var count: LONG 0
+var bank: LONG 0
+var source: LONG 0
+var temporary: LONG 0
+var sample_kind: LONG 0
+var position: LONG 0
+var sample_index: LONG 0
+var delta: LONG 0
+var timer: LONG 0
+var threshold: LONG 0
+var local_timer: LONG 0
+var sample_clock: LONG 0
+var expected: LONG 0
+var loaded: LONG 0
+var failures: LONG 0
+var sample_address: LONG 0
+.data
+mailbox: LONG [0] * 3
+lengths: LONG 1, 2, 8, 9, 64
+.align 32
+.if probe_write == 1
+payload: LONG [0] * 72
+.else
+payload: LONG 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72
+.endif
+.cogexec 0x4000, 0
+worker:
+    MOV register(301), PTRA
+    ADD register(301), 4
+    RDLONG register(302), register(301)
+    ADD register(301), 4
+    RDLONG register(303), register(301)
+worker_wait:
+    RDLONG register(300), PTRA
+    CMP register(300), 0 :wz
+if(Z) JMP worker_wait
+    ADDCT1 register(300), 0
+    WAITCT1
+    GETCT register(304)
+.if probe_write == 1
+    SETQ register(303)
+    WRLONG register(100), register(302)
+.else
+    SETQ2 register(303)
+    RDLONG register(100), register(302)
+.endif
+    COGSTOP probe_worker
+    .org 100
+    LONG 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+    LONG [0] * 340
+.data

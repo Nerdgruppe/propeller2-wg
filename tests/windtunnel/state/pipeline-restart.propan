@@ -1,0 +1,132 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "cog=0 wc=0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=0 wc=1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+//? run: "cog=1 wc=0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=1 wc=1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+//? run: "cog=2 wc=0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=2 wc=1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+//? run: "cog=3 wc=0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=3 wc=1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+//? run: "cog=4 wc=0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=4 wc=1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+//? run: "cog=5 wc=0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=5 wc=1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+//? run: "cog=6 wc=0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=6 wc=1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+//? run: "cog=7 wc=0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_wc = 0
+//? post: cog[*].reg[fallthrough] == 8
+//? run: "cog=7 wc=1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_wc = 1
+//? post: cog[*].reg[fallthrough] == 0
+
+    MOV restart_address, aug(0xa5b00000 | pcaddr(restarted))
+    MOV offset, 0
+phase_loop:
+    GETCT timer
+    ADD timer, 128
+    ANDN timer, 7
+    ADD timer, offset
+    ADDCT1 timer, 0
+    WAITCT1
+    MODCZ _SET, _SET :wcz
+    GETCT start
+    SETQ 77
+.if probe_wc == 1
+    COGINIT 0x20 + probe_cog, restart_address :wc
+.else
+    COGINIT 0x20 + probe_cog, restart_address
+.endif
+    ADD fallthrough, 1
+    JMP nrel(_end)
+restarted:
+    GETCT finish
+if(C) ADD failures, 1
+if(Z) ADD failures, 1
+    CMP PTRA, 77 :wz
+if(!Z) ADD failures, 1
+    CMP PTRB, restart_address :wz
+if(!Z) ADD failures, 1
+    SUB finish, start
+    AND start, 7
+    MOV expected, probe_cog
+    SUB expected, start
+    SUB expected, 4
+    AND expected, 7
+    ADD expected, 25
+    CMP finish, expected :wz
+if(!Z) ADD failures, 1
+    ADD offset, 1
+    CMP offset, 8 :wz
+if(!Z) JMP phase_loop
+    SETQ 0
+    JMP nrel(_end)
+var offset: LONG 0
+var restart_address: LONG 0
+var timer: LONG 0
+var start: LONG 0
+var finish: LONG 0
+var expected: LONG 0
+var failures: LONG 0
+var fallthrough: LONG 0

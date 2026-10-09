@@ -1,0 +1,28 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? stdout: "x"
+//? max-cycles: 30_000_000
+//? timeout-ms: 1000
+//? run: "MOV DIRB"
+//? const: enable_method = 0
+//? run: "OR DIRB"
+//? const: enable_method = 1
+
+const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART_CFG = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+
+.cogexec
+    HUBSET aug(CLOCK_MODE)
+    WRPIN P_TT_01 | P_ASYNC_TX, 62
+    WXPIN aug(UART_CFG), 62
+.if enable_method == 0
+    MOV DIRB, aug(1 << 30)
+.else
+    OR DIRB, aug(1 << 30)
+.endif
+    WAITX aug(20_000_000)
+    WYPIN 'x', 62
+    WAITX aug(25_000)
+_end:
+    JMP _end

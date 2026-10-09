@@ -6,7 +6,7 @@ const p2aas = @import("p2aas.zig");
 pub const Kind = enum { reg, hub, c, z, q };
 pub const Observation = struct { kind: Kind, offset: u32 = 0, len: u32, line: u32 };
 pub const Resolved = struct { observation: Observation, bytes: []const u8 };
-pub const Status = enum { off, skipped, prepared, passed };
+pub const Status = enum { off, skipped, prepared, captured, passed };
 pub const Context = struct {
     allocator: std.mem.Allocator,
     io: std.Io,
@@ -14,6 +14,7 @@ pub const Context = struct {
     endpoint: []const u8 = "",
     artifacts: []const u8 = ".zig-cache/windtunnel-artifacts",
     prepare_only: bool = false,
+    characterize: bool = false,
 };
 pub const Case = struct {
     path: []const u8,
@@ -29,6 +30,7 @@ pub const Case = struct {
     original_image: []const u8,
     cycles: u64,
     stop_reason: []const u8,
+    trace: []const u8 = "",
 };
 
 fn evidencePath(ctx: Context, path: []const u8, run_name: []const u8) ![]const u8 {
@@ -36,12 +38,13 @@ fn evidencePath(ctx: Context, path: []const u8, run_name: []const u8) ![]const u
     return std.fmt.allocPrint(ctx.allocator, "{s}/{s}-{x}-{x}-{d}", .{ ctx.artifacts, std.fs.path.basename(path), std.hash.Wyhash.hash(0, path), std.hash.Wyhash.hash(0, run_name), stamp });
 }
 
-pub fn retainLocalFailure(ctx: Context, path: []const u8, run_name: []const u8, source: []const u8, image: []const u8, seeds: []const Resolved, observations: []const Observation, simulated: []const u8, stdout: []const u8, cycles: u64, reason: anyerror) !void {
+pub fn retainLocalFailure(ctx: Context, path: []const u8, run_name: []const u8, source: []const u8, image: []const u8, seeds: []const Resolved, observations: []const Observation, simulated: []const u8, stdout: []const u8, cycles: u64, trace: []const u8, reason: anyerror) !void {
     const directory = try evidencePath(ctx, path, run_name);
     const dir = try std.Io.Dir.cwd().createDirPathOpen(ctx.io, directory, .{});
     defer dir.close(ctx.io);
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = source });
     try dir.writeFile(ctx.io, .{ .sub_path = "original.bin", .data = image });
+    if (trace.len != 0) try dir.writeFile(ctx.io, .{ .sub_path = "pipeline.txt", .data = trace });
     var metadata: std.Io.Writer.Allocating = .init(ctx.allocator);
     defer metadata.deinit();
     try std.json.Stringify.value(.{ .run = run_name, .seeds = seeds, .observations = observations, .simulated = simulated, .stdout = stdout, .cycles = cycles, .stop_reason = reason }, .{}, &metadata.writer);
@@ -139,6 +142,7 @@ pub fn assemble(ctx: Context, path: []const u8, list: checklist.List, seeds: []c
         .reg, .hub => return error.InvalidPrecondition,
     };
     for (observations) |o| if (o.kind == .hub) try memory.writer.print("    LONG {d}, {d}\n", .{ o.offset, o.len });
+    for (list.constants) |constant| try source.writer.print("const {s} = {d}\n", .{ constant.name, constant.value });
     try source.writer.print("const _wt_baudrate = {d}\nconst _wt_target_cog = {d}\nconst _wt_is_oracle = {d}\nconst _wt_test_entry = {d}\n", .{ list.baudrate, list.cog, @intFromBool(hardware), entry });
     try source.writer.print("const _wt_observation_count = {d}\nconst _wt_payload_length = {d}\nconst _wt_extra_length = {d}\nconst _wt_memory_count = {d}\n", .{ observationCount(observations), payload_length, payload_length - snapshot_length, observationCount(observations) - snapshot_count });
     try source.writer.print("const _wt_initial_c = #{s}\nconst _wt_initial_z = #{s}\nconst _wt_initial_q = 0x{x}\n", .{ if (initial_c) "SET" else "CLR", if (initial_z) "SET" else "CLR", initial_q });
@@ -175,11 +179,12 @@ pub fn run(ctx: Context, case: Case) !Status {
     defer dir.close(ctx.io);
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = case.source });
     try dir.writeFile(ctx.io, .{ .sub_path = "original.bin", .data = case.original_image });
+    if (case.trace.len != 0) try dir.writeFile(ctx.io, .{ .sub_path = "pipeline.txt", .data = case.trace });
     try dir.writeFile(ctx.io, .{ .sub_path = "uploaded.bin", .data = image });
     if (prepared) |p| if (p.module.sources.len > 0) try dir.writeFile(ctx.io, .{ .sub_path = "oracle.propan", .data = p.module.sources[0].text });
     var metadata: std.Io.Writer.Allocating = .init(allocator);
     defer metadata.deinit();
-    try std.json.Stringify.value(.{ .run = case.run_name, .patches = case.list.pre, .seeds = case.seeds, .observations = case.observations, .simulated = case.simulated, .stdout = case.stdout, .cycles = case.cycles, .stop_reason = case.stop_reason }, .{}, &metadata.writer);
+    try std.json.Stringify.value(.{ .run = case.run_name, .cog = case.list.cog, .constants = case.list.constants, .patches = case.list.pre, .seeds = case.seeds, .observations = case.observations, .simulated = case.simulated, .stdout = case.stdout, .cycles = case.cycles, .stop_reason = case.stop_reason }, .{}, &metadata.writer);
     try dir.writeFile(ctx.io, .{ .sub_path = "simulation.json", .data = metadata.written() });
     const request: p2aas.Request = .{
         .image = image,
@@ -222,6 +227,30 @@ pub fn run(ctx: Context, case: Case) !Status {
         return err;
     };
     const actual_stdout = output.items;
+    if (ctx.characterize) {
+        // Validate the complete device frame before retaining measured state.
+        var measured: std.Io.Writer.Allocating = .init(allocator);
+        defer measured.deinit();
+        if (case.list.profile == .cog) {
+            const actual = try p2aas.observations(actual_stdout, request);
+            var registers: [506]u32 = undefined;
+            for (&registers, 0..) |*value, i| value.* = std.mem.readInt(u32, actual[i * 4 ..][0..4], .little);
+            try std.json.Stringify.value(.{
+                .run = case.run_name,
+                .cog = case.list.cog,
+                .registers = registers,
+                .q = std.mem.readInt(u32, actual[506 * 4 ..][0..4], .little),
+                .c = actual[506 * 4 + 4] != 0,
+                .z = actual[506 * 4 + 6] != 0,
+                .extra = actual[snapshot_length..],
+            }, .{}, &measured.writer);
+        } else try std.json.Stringify.value(.{ .run = case.run_name, .stdout = actual_stdout }, .{}, &measured.writer);
+        try dir.writeFile(ctx.io, .{ .sub_path = "hardware.json", .data = measured.written() });
+        try dir.writeFile(ctx.io, .{ .sub_path = "hardware-output.bin", .data = output.items });
+        try dir.writeFile(ctx.io, .{ .sub_path = "transport.txt", .data = transport.written() });
+        try ctx.errors.print("{s} [{s}]: hardware measurements captured in {s}\n", .{ case.path, case.run_name, directory });
+        return .captured;
+    }
     if (case.list.profile == .program) {
         if (!std.mem.eql(u8, actual_stdout, case.list.stdout) or !std.mem.eql(u8, actual_stdout, case.stdout)) {
             try ctx.errors.print("{s}: hardware stdout mismatch: expected {x}, simulator {x}, hardware {x}\n", .{ case.path, case.list.stdout, case.stdout, actual_stdout });

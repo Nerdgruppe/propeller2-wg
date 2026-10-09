@@ -1,0 +1,134 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "0"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: attention_mask = 1
+//? run: "1"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: attention_mask = 2
+//? run: "2"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: attention_mask = 4
+//? run: "3"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: attention_mask = 8
+//? run: "4"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: attention_mask = 16
+//? run: "5"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: attention_mask = 32
+//? run: "6"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: attention_mask = 64
+//? run: "7"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: attention_mask = 128
+
+    SETLUTS 1
+    MOV PTRA, aug(hubaddr(mailbox))
+    MOV image, aug(hubaddr(writer))
+    MOV mode, 0
+mode_loop:
+    MOV offset, aug(-8)
+offset_loop:
+    WRLUT 0, aug(508)
+    SETSE1 12
+    POLLATN
+    WRLONG 0, PTRA
+    SETQ PTRA
+    COGINIT probe_writer, image
+    GETCT timer
+    ADD timer, aug(2048)
+    ANDN timer, 7
+    WRLONG timer, PTRA
+    MOV local_timer, timer
+    ADD local_timer, offset
+    MOV selected, read_target
+    CMP mode, 1 :wz
+if(Z) MOV selected, se_target
+    CMP mode, 2 :wz
+if(Z) MOV selected, atn_target
+    JMP selected
+sample_return:
+    SUB stamp, timer
+    MOV expected, offset
+    ADD expected, 4
+    CMP stamp, expected :wz
+if(!Z) ADD failures, 1
+    MOV boundary, aug(-4)
+    CMP mode, 1 :wz
+if(Z) MOV boundary, 1
+    CMP mode, 2 :wz
+if(Z) MOV boundary, 2
+    MOV expected, 0
+    CMPS offset, boundary :wcz
+if(>=) MOV expected, 1
+    CMP value, expected :wz
+if(!Z) ADD failures, 1
+    WAITX 128
+    ADD offset, 1
+    CMP offset, 9 :wz
+if(!Z) JMP offset_loop
+    ADD mode, 1
+    CMP mode, 3 :wz
+if(!Z) JMP mode_loop
+    SETQ 0
+    JMP nrel(_end)
+read_case:
+    ADDCT1 local_timer, 0
+    WAITCT1
+    GETCT stamp
+    RDLUT value, aug(508)
+    JMP sample_return
+se_case:
+    ADDCT1 local_timer, 0
+    WAITCT1
+    GETCT stamp
+    POLLSE1 :wc
+    WRC value
+    JMP sample_return
+atn_case:
+    ADDCT1 local_timer, 0
+    WAITCT1
+    GETCT stamp
+    POLLATN :wc
+    WRC value
+    JMP sample_return
+var mode: LONG 0
+var offset: LONG 0
+var timer: LONG 0
+var local_timer: LONG 0
+var stamp: LONG 0
+var value: LONG 0
+var image: LONG 0
+var selected: LONG 0
+var expected: LONG 0
+var boundary: LONG 0
+var failures: LONG 0
+var read_target: LONG pcaddr(read_case)
+var se_target: LONG pcaddr(se_case)
+var atn_target: LONG pcaddr(atn_case)
+.data
+mailbox: LONG 0
+.cogexec 0x4000, 0
+writer:
+    MOV register(22), aug(508)
+writer_wait:
+    RDLONG register(20), PTRA
+    CMP register(20), 0 :wz
+if(Z) JMP writer_wait
+    ADDCT1 register(20), 0
+    WAITCT1
+    WRLUT 1, register(22)
+    COGATN attention_mask
+    COGSTOP probe_writer
+    LONG [0] * 494

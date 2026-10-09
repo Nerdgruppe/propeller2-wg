@@ -9,6 +9,7 @@ const windtunnel_fixtures = [_][]const u8{
     "tests/windtunnel/behaviour/stack.propan",
     "tests/windtunnel/program/echo.propan",
     "tests/windtunnel/program/hello-world.propan",
+    "tests/windtunnel/program/dir-register-uart.propan",
     "tests/windtunnel/state/core-branches.propan",
     "tests/windtunnel/state/core-calls.propan",
     "tests/windtunnel/state/core-memory.propan",
@@ -16,6 +17,39 @@ const windtunnel_fixtures = [_][]const u8{
     "tests/windtunnel/state/core-indirection.propan",
     "tests/windtunnel/state/core-pixels.propan",
     "tests/windtunnel/state/core-events.propan",
+    "tests/windtunnel/state/pipeline-cog.propan",
+    "tests/windtunnel/state/pipeline-lut-source-events.propan",
+    "tests/windtunnel/state/pipeline-hub-wrap.propan",
+    "tests/windtunnel/state/pipeline-pair-startup.propan",
+    "tests/windtunnel/state/pipeline-restart.propan",
+    "tests/windtunnel/state/pipeline-lut.propan",
+    "tests/windtunnel/state/pipeline-block-visibility.propan",
+    "tests/windtunnel/state/pipeline-fifo-transition.propan",
+    "tests/windtunnel/state/pipeline-software-prefetch.propan",
+    "tests/windtunnel/state/pipeline-lut-dual-write.propan",
+
+    "tests/windtunnel/state/pipeline-software-fifo.propan",
+
+    "tests/windtunnel/state/pipeline-lut-prefetch.propan",
+    "tests/windtunnel/state/pipeline-local-wrap.propan",
+    "tests/windtunnel/state/pipeline-shared-events.propan",
+
+    "tests/windtunnel/state/pipeline-branches.propan",
+    "tests/windtunnel/state/pipeline-cancellation.propan",
+    "tests/windtunnel/state/pipeline-fifo-contention.propan",
+    "tests/windtunnel/state/pipeline-hub-block.propan",
+    "tests/windtunnel/state/pipeline-hub-entry.propan",
+
+    "tests/windtunnel/state/pipeline-startup.propan",
+
+    "tests/windtunnel/state/pipeline-hub-commands.propan",
+
+    "tests/windtunnel/state/pipeline-hub-fifo.propan",
+
+    "tests/windtunnel/state/pipeline-hub-stack.propan",
+
+    "tests/windtunnel/state/pipeline-prefetch.propan",
+    "tests/windtunnel/state/pipeline-hub-matrix.propan",
     "tests/windtunnel/state/augd.propan",
     "tests/windtunnel/state/alu-arithmetic.propan",
     "tests/windtunnel/state/alu-lanes.propan",

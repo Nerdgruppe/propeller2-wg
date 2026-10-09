@@ -1,0 +1,86 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "0"
+//? cog: 0
+//? const: probe_cog = 0
+//? run: "1"
+//? cog: 1
+//? const: probe_cog = 1
+//? run: "2"
+//? cog: 2
+//? const: probe_cog = 2
+//? run: "3"
+//? cog: 3
+//? const: probe_cog = 3
+//? run: "4"
+//? cog: 4
+//? const: probe_cog = 4
+//? run: "5"
+//? cog: 5
+//? const: probe_cog = 5
+//? run: "6"
+//? cog: 6
+//? const: probe_cog = 6
+//? run: "7"
+//? cog: 7
+//? const: probe_cog = 7
+
+    MOV address, aug(hubaddr(buffer))
+    MOV bank, 0
+bank_loop:
+    MOV alignment, 0
+alignment_loop:
+    MOV offset, 0
+phase_loop:
+    GETCT timer
+    ADD timer, 128
+    ANDN timer, 7
+    ADD timer, offset
+    ADDCT1 timer, 0
+    WAITCT1
+    GETCT start
+    RDFAST 0, address
+    GETCT finish
+    SUB finish, start
+    AND start, 7
+    MOV expected, bank
+    SUB expected, start
+    SUB expected, probe_cog
+    SUB expected, 5
+    AND expected, 7
+    ADD expected, 12
+    CMP finish, expected :wz
+if(!Z) ADD failures, 1
+    GETCT start
+    RFBYTE loaded
+    GETCT finish
+    SUB finish, start
+    AND start, 7
+    CMP finish, 4 :wz
+if(!Z) ADD failures, 1
+    CMP loaded, 0x12 :wz
+if(!Z) ADD failures, 1
+    ADD offset, 1
+    CMP offset, 8 :wz
+if(!Z) JMP phase_loop
+    ADD address, 1
+    ADD alignment, 1
+    CMP alignment, 4 :wz
+if(!Z) JMP alignment_loop
+    ADD bank, 1
+    CMP bank, 8 :wz
+if(!Z) JMP bank_loop
+    JMP nrel(_end)
+var address: LONG 0
+var bank: LONG 0
+var alignment: LONG 0
+var offset: LONG 0
+var timer: LONG 0
+var start: LONG 0
+var finish: LONG 0
+var loaded: LONG 0
+var expected: LONG 0
+var failures: LONG 0
+.data
+.align 32
+buffer: LONG [0x12121212] * 32

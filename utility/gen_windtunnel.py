@@ -450,14 +450,14 @@ def render_executor_stub(
             // codegen: begin:runtimehelpers
             // codegen: end:runtimehelpers
 
-            pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
+            fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
                 if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return .skip;
+                var raw = state.instr;
+                if (state.alt_d) |reg| raw = (raw & ~@as(u32, 0x3fe00)) | (@as(u32, @intFromEnum(reg)) << 9);
+                if (state.alt_s) |reg| raw = (raw & ~@as(u32, 0x1ff)) | @intFromEnum(reg);
                 const opcode = decode.decode(state.instr);
-                defer if (opcode != .setq and opcode != .augs and opcode != .augd) {
-                    cog.setq_pending = false;
-                };
 
-                const enc: encoding.Instruction = .{ .raw = state.instr };
+                const enc: encoding.Instruction = .{ .raw = raw };
 
                 switch (opcode) {
                     .invalid => return .trap,
@@ -469,7 +469,7 @@ def render_executor_stub(
         opcode = snakecase(instr.id)
         if opcode.upper() not in alu_functions:
             if opcode == "bitrnd" or "simple_exec" in instr.tags:
-                stream.write(f".{zig_id(opcode)} => return .unsupported,\n")
+                stream.write(f".{zig_id(opcode)} => return .not_implemented,\n")
             continue
         assert instr.register_access in (None, "D"), instr.id
         grp_key = str(instr.encoding).replace("1", "_").replace("0", "_")
@@ -544,7 +544,7 @@ def render_executor_stub(
         stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
         stream.write("    _ = cog;\n")
         stream.write("    _ = args;\n")
-        stream.write('    return .unsupported;\n')
+        stream.write('    return .not_implemented;\n')
         stream.write("    // return .next;\n")
         stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
         stream.write("}\n")
