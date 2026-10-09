@@ -10,10 +10,10 @@ const Hub = @import("Hub.zig");
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const execute = @import("execute.zig");
-const enums = @import("enums.zig");
-const EventId = @import("p2").types.EventId;
+const types = @import("p2").types;
+const EventId = types.EventId;
 
-pub const Register = enums.Register;
+pub const Register = types.Register;
 
 pub const ExecMode = enum {
     stopped,
@@ -647,7 +647,7 @@ pub fn read_lut(cog: *Cog, addr: u9) u32 {
 }
 
 /// Checks if `cond` would currently apply to this cog or not.
-pub fn is_condition_met(cog: *Cog, cond: enums.Condition) bool {
+pub fn is_condition_met(cog: *Cog, cond: types.Condition) bool {
     return switch (cond) {
         ._RET_ => true,
         .IF_NC_AND_NZ => !cog.c and !cog.z,
