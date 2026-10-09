@@ -10,9 +10,13 @@
 //? post: cog[3].c == true
 //? post: cog[3].z == false
 
-    MUXQ initial, aug(0xffff_ffff)
-    SETQ aug(0x8000_00ff)
-    MUXQ result, aug(0xffff_ffff)
-    JMP nrel(_end)
-var initial: LONG 0
-var result: LONG 0
+// Check initial Q seeding and SETQ replacement through MUXQ.
+// An all-ones mask copies every Q bit, including the sign bit, into an observable register.
+
+                MUXQ    initial,    aug(0xffff_ffff)
+                SETQ    aug(0x8000_00ff)
+                MUXQ    result,     aug(0xffff_ffff)
+                JMP     nrel(_end)
+var initial:    LONG    0
+var result:     LONG    0
+

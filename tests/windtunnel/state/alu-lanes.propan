@@ -11,25 +11,33 @@
 //? post: cog[0].reg[reversed] == 0x78563412
 //? post: cog[0].reg[source] == 0x89abcdef
 
-    SETNIB nibble, 15, 7
-    GETNIB nibble_read, source, 7
-    ROLNIB nibble_rotate, source, 3
-    SETBYTE byte, source, 2
-    GETBYTE byte_read, source, 1
-    ROLBYTE byte_rotate, source, 3
-    SETWORD word, source, 1
-    GETWORD word_read, source, 1
-    ROLWORD word_rotate, source, 1
-    MOVBYTS reversed, 0x1b
-    JMP nrel(_end)
-var source: LONG 0x89abcdef
-var nibble: LONG 0x12345678
-var nibble_read: LONG 0
-var nibble_rotate: LONG 0x12345678
-var byte: LONG 0x12345678
-var byte_read: LONG 0
-var byte_rotate: LONG 0x12345678
-var word: LONG 0x12345678
-var word_read: LONG 0
-var word_rotate: LONG 0x12345678
-var reversed: LONG 0x12345678
+// Check nibble, byte and word selection, insertion, rotation and byte rearrangement.
+// Distinct hexadecimal lanes expose wrong lane indices while the original source must remain unchanged.
+
+                SETNIB  nibble,         15,     7
+                GETNIB  nibble_read,    source, 7
+                ROLNIB  nibble_rotate,  source, 3
+                SETBYTE byte,           source, 2
+                GETBYTE byte_read,      source, 1
+                ROLBYTE byte_rotate,    source, 3
+                SETWORD word,           source, 1
+                GETWORD word_read,      source, 1
+                ROLWORD word_rotate,    source, 1
+                MOVBYTS reversed,       0x1b
+                JMP     nrel(_end)
+var source:     LONG    0x89abcdef
+var nibble:     LONG    0x12345678
+var nibble_read:
+                LONG    0
+var nibble_rotate:
+                LONG    0x12345678
+var byte:       LONG    0x12345678
+var byte_read:  LONG    0
+var byte_rotate:
+                LONG    0x12345678
+var word:       LONG    0x12345678
+var word_read:  LONG    0
+var word_rotate:
+                LONG    0x12345678
+var reversed:   LONG    0x12345678
+

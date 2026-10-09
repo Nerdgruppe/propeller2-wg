@@ -15,49 +15,57 @@
 //? post: cog[0].reg[carry_byte] == 1
 //? post: cog[0].reg[carry_word] == 1
 
-    MOV PTRA, address
-    WRBYTE 0x80, PTRA
-    RDBYTE byte_value, PTRA :wcz
-    WRC carry_byte
-    WRWORD aug(0xabcd), PTRA[1]
-    RDWORD word_value, PTRA[1] :wc
-    WRC carry_word
-    WRLONG aug(0x89abcdef), PTRA[1]
-    RDLONG long_value, PTRA[1]
-    WMLONG overlay, PTRA[1]
-    RDLONG masked_value, PTRA[1]
-    MOV PTRB, 511
-    WRLUT aug(0x80000001), PTRB++
-    RDLUT lut_value, PTRB[-1] :wcz
-    MOV PTRA, source_address
-    SETQ 2
-    RDLONG block0, PTRA++ :wcz
-    MOV pointer_delta, PTRA
-    SUB pointer_delta, source_address
-    SETQ2 2
-    RDLONG register(510), source_address
-    RDLUT roundtrip, aug(511)
-    MOV PTRA, fill_address
-    SETQ 2
-    WRLONG 0xa5, PTRA++
-    JMP nrel(_end)
-var address: LONG hubaddr(buffer)
-var overlay: LONG 0x00bbcc00
-var source_address: LONG hubaddr(source)
-var fill_address: LONG hubaddr(fill)
-var byte_value: LONG 0
-var word_value: LONG 0
-var long_value: LONG 0
-var masked_value: LONG 0
-var lut_value: LONG 0
-var block0: LONG 0
-var block1: LONG 0
-var block2: LONG -1
-var roundtrip: LONG 0
-var pointer_delta: LONG 0
-var carry_byte: LONG 0
-var carry_word: LONG 0
+// Check hub and LUT memory operations, pointer expressions, masked writes and blocks.
+// Zero overlay bytes preserve WMLONG destinations; starting LUT blocks at 510 tests nine-bit address wrap.
+
+                MOV     PTRA,               address
+                WRBYTE  0x80,               PTRA
+                RDBYTE  byte_value,         PTRA            :wcz
+                WRC     carry_byte
+                WRWORD  aug(0xabcd),        PTRA[1]
+                RDWORD  word_value,         PTRA[1]         :wc
+                WRC     carry_word
+                WRLONG  aug(0x89abcdef),    PTRA[1]
+                RDLONG  long_value,         PTRA[1]
+                WMLONG  overlay,            PTRA[1]
+                RDLONG  masked_value,       PTRA[1]
+                MOV     PTRB,               511
+                WRLUT   aug(0x80000001),    PTRB++
+                RDLUT   lut_value,          PTRB[-1]        :wcz
+                MOV     PTRA,               source_address
+                SETQ    2
+                RDLONG  block0,             PTRA++          :wcz
+                MOV     pointer_delta,      PTRA
+                SUB     pointer_delta,      source_address
+                SETQ2   2
+                RDLONG  register(510),      source_address
+                RDLUT   roundtrip,          aug(511)
+                MOV     PTRA,               fill_address
+                SETQ    2
+                WRLONG  0xa5,               PTRA++
+                JMP     nrel(_end)
+var address:    LONG    hubaddr(buffer)
+var overlay:    LONG    0x00bbcc00
+var source_address:
+                LONG    hubaddr(source)
+var fill_address:
+                LONG    hubaddr(fill)
+var byte_value: LONG    0
+var word_value: LONG    0
+var long_value: LONG    0
+var masked_value:
+                LONG    0
+var lut_value:  LONG    0
+var block0:     LONG    0
+var block1:     LONG    0
+var block2:     LONG    -1
+var roundtrip:  LONG    0
+var pointer_delta:
+                LONG    0
+var carry_byte: LONG    0
+var carry_word: LONG    0
 .data
-buffer: LONG 0, 0, 0
-source: LONG 0x12345678, 0x90abcdef, 0
-fill: LONG 0, 0, 0
+buffer:         LONG    0,  0,  0
+source:         LONG    0x12345678, 0x90abcdef, 0
+fill:           LONG    0,  0,  0
+

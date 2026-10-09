@@ -6,8 +6,12 @@
 //? post: cog[0].c == false
 //? post: cog[0].z == true
 
-    SETQ aug(0x80000001)
-    CRCNIB crc, polynomial
-    JMP nrel(_end)
-var crc: LONG 0
-var polynomial: LONG 0xedb88320
+// Check CRCNIB result, Q shifting and preservation of C/Z.
+// Use the reflected CRC-32 polynomial and nontrivial Q bits to expose shift direction and bit consumption.
+
+                SETQ    aug(0x80000001)
+                CRCNIB  crc,    polynomial
+                JMP     nrel(_end)
+var crc:        LONG    0
+var polynomial: LONG    0xedb88320
+

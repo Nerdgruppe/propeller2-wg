@@ -1,3 +1,6 @@
+//! Shared hub memory, clocks, locks and cross-cog edge ordering.
+//! A step commits simultaneous writes before any cog samples the new edge.
+
 const std = @import("std");
 
 const Cog = @import("Cog.zig");
@@ -14,6 +17,7 @@ trace_writer: ?*std.Io.Writer = null,
 trace_lines_left: u32 = 10000,
 fault: ?Cog.Fault = null,
 locks: [16]Lock = undefined,
+/// True only while step() processes a clock edge; direct semantic calls apply shared effects immediately.
 clocking: bool = false,
 pending_starts: [8]?struct { at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
 pending_events: [4][8]u16 = @splat(@splat(0)),
@@ -26,6 +30,7 @@ pub fn clock_reached(clock: u64, deadline: u64) bool {
     return clock -% deadline < (@as(u64, 1) << 63);
 }
 
+/// Initialize all shared resources and stopped cogs, binding each cog back to this hub.
 pub fn init(hub: *Hub) void {
     hub.* = .{
         .cogs = .{
@@ -43,11 +48,13 @@ pub fn init(hub: *Hub) void {
     for (&hub.locks, 0..) |*lock, i| lock.* = .{ .id = @intCast(i) };
 }
 
+/// Release ownership while retaining allocation and last owner, and signal lock-release events.
 pub fn release_lock(hub: *Hub, lock: *Lock) void {
     lock.taken = false;
     hub.signal_lock(lock.id, false);
 }
 
+/// Notify selectable lock sensors of a taken/released edge and the corresponding change.
 pub fn signal_lock(hub: *Hub, id: u4, taken: bool) void {
     for (&hub.cogs) |*cog| {
         cog.signal_selectable((if (taken) @as(u6, 0x10) else 0x20) | id);
@@ -60,6 +67,7 @@ pub fn signal_event(hub: *Hub, id: u3, mask: u16) void {
     if (hub.clocking) hub.pending_events[(hub.counter +% 2) % hub.pending_events.len][id] |= mask else hub.cogs[id].events |= mask;
 }
 
+/// Read little-endian bytes through the 20-bit RAM/hole/mirror map, wrapping each byte address.
 pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
     var value: u32 = 0;
     for (0..size) |i| {
@@ -70,6 +78,7 @@ pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
     return value;
 }
 
+/// Write through the 20-bit hub map; ignore holes and optionally preserve bytes where the source is zero.
 pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool) void {
     for (0..size) |i| {
         const byte: u8 = @truncate(value >> @intCast(i * 8));
@@ -78,6 +87,8 @@ pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool)
     }
 }
 
+/// Process one shared clock edge: commit old writes, service resources, advance cogs, then UART and CT.
+/// All cogs observe previous-edge writes before any cog executes on this edge.
 pub fn step(hub: *Hub) void {
     hub.clocking = true;
     defer hub.clocking = false;
@@ -124,6 +135,7 @@ pub fn step(hub: *Hub) void {
     hub.counter +%= 1;
 }
 
+/// Return whether any cog is executing or waiting for startup to complete.
 pub fn is_any_cog_active(hub: *Hub) bool {
     for (hub.cogs) |cog| {
         if (cog.exec_mode != .stopped)

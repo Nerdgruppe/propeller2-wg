@@ -1,3 +1,6 @@
+//! Functional terminal peripherals: eight-bit UART TX on pin 62 and RX on pin 63.
+//! This models frame completion and buffer readiness, not general smart-pin or electrical behavior.
+
 const Hub = @import("Hub.zig");
 const IO = @This();
 
@@ -42,15 +45,18 @@ pub fn updateDirections(io: *IO, hub: *const Hub) void {
     }
 }
 
+/// Convert the UART fixed-point bit period into a rounded-up ten-bit 8N1 frame duration.
 pub fn frameClocks(pin: Pin) u64 {
     const fixed: u64 = if (pin.x >> 26 == 0) pin.x & 0xffff_fc00 else pin.x & 0xffff_0000;
     return (fixed * 10 + 0xffff) >> 16;
 }
 
+/// Check direction enable, eight-bit framing and a nonzero bit period for the limited UART model.
 pub fn uartConfigured(pin: Pin) bool {
     return pin.enabled and pin.x & 31 == 7 and frameClocks(pin) > 0;
 }
 
+/// Schedule an external RX byte stream starting one frame after the given counter value.
 pub fn supplyInput(io: *IO, bytes: []const u8, counter: u64) !void {
     if (io.pins[63].mode != 0x3e or !uartConfigured(io.pins[63])) return error.UartRxNotReady;
     io.input = bytes;
@@ -58,6 +64,7 @@ pub fn supplyInput(io: *IO, bytes: []const u8, counter: u64) !void {
     io.rx_end = counter +% frameClocks(io.pins[63]);
 }
 
+/// Replace the UART TX holding byte and clear buffer-ready; return false for unsupported configuration.
 pub fn transmit(io: *IO, value: u32) bool {
     if (io.pins[62].mode != 0x7c or !uartConfigured(io.pins[62])) return false;
     io.tx_buffer = @truncate(value);
@@ -65,10 +72,12 @@ pub fn transmit(io: *IO, value: u32) bool {
     return true;
 }
 
+/// Report whether either the UART holding register or shifting frame still contains data.
 pub fn txBusy(io: *const IO) bool {
     return io.tx_shift != null or io.tx_buffer != null;
 }
 
+/// Complete UART frames at their scheduled clocks, refill TX, and deliver or discard external RX bytes.
 pub fn step(io: *IO, hub: *Hub) void {
     if (io.tx_shift != null and Hub.clock_reached(hub.counter, io.tx_end)) {
         if (hub.output_writer) |writer| writer.writeByte(io.tx_shift.?) catch {
@@ -92,10 +101,12 @@ pub fn step(io: *IO, hub: *Hub) void {
     }
 }
 
+/// Expose smart-pin ready bits on INA/INB; TX ready denotes buffer space rather than wire completion.
 pub fn get_in(io: *IO) u64 {
     return (@as(u64, @intFromBool(io.pins[62].ready)) << 62) | (@as(u64, @intFromBool(io.pins[63].ready)) << 63);
 }
 
+/// Placeholder for ordinary pin-output effects; the current terminal model uses smart-pin UART state.
 pub fn update_out(io: *IO) void {
     _ = io;
 }

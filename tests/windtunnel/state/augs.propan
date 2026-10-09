@@ -3,9 +3,13 @@
 //? post: cog[0].reg[first] == 0x12345678
 //? post: cog[0].reg[second] == 0x101
 
+// Check automatic AUGS insertion for a large MOV immediate.
+// The second small immediate must be independent of the preceding augmented MOV.
+
 _start:
-    MOV first, aug(0x12345678)
-    MOV second, 0x101
-    JMP nrel(_end)
-var first: LONG 0
-var second: LONG 0
+                MOV     first,  aug(0x12345678)
+                MOV     second, 0x101
+                JMP     nrel(_end)
+var first:      LONG    0
+var second:     LONG    0
+

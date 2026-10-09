@@ -1,3 +1,6 @@
+//! Instruction semantics and resumable execution helpers for the cog pipeline.
+//! Generated dispatch/signatures wrap preserved runtime, ALU and instruction bodies.
+
 const std = @import("std");
 const logger = std.log.scoped(.execute);
 
@@ -10,16 +13,19 @@ const alu = @import("p2").alu;
 const EventId = @import("p2").types.EventId;
 const clock_reached = @import("Hub.zig").clock_reached;
 
+/// Read captured D or combine its immediate field with the one-shot AUGD extension.
 fn operandD(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
     return if (immediate) @intFromEnum(reg) | cog.fetch_augd() else cog.read_operand(reg);
 }
 
+/// Resolve captured/alternate S, consume AUGS for an immediate, then apply forwarded source substitution.
 fn operandS(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
     const selected = if (cog.pipeline[3]) |state| state.alt_s orelse reg else reg;
     const source = if (immediate) @intFromEnum(selected) | cog.fetch_augs() else cog.read_operand(selected);
     return if (cog.pipeline[3]) |state| state.s_value orelse source else source;
 }
 
+/// Resolve an absolute or signed relative long branch, converting byte displacements for local execution.
 fn branchA(cog: *Cog, args: encoding.AbsPointer) u20 {
     // Long relative branches encode a signed byte displacement even in cog RAM.
     const in_hub = cog.exec_mode == .hub;
@@ -27,11 +33,13 @@ fn branchA(cog: *Cog, args: encoding.AbsPointer) u20 {
     return if (args.relative) cog.dispatch_pc +% @as(u20, if (in_hub) 4 else 1) +% @as(u20, @bitCast(if (in_hub) displacement else displacement >> 2)) else args.address;
 }
 
+/// Resolve a register or immediate branch target, retaining whether the immediate was augmented.
 fn branchS(cog: *Cog, reg: Cog.Register, immediate: bool) u20 {
     const augmented = cog.augs_pending;
     return branchValue(cog, operandS(cog, reg, immediate), immediate, augmented);
 }
 
+/// Convert immediate branch displacements to the current PC units; register targets are absolute.
 fn branchValue(cog: *Cog, value: u32, immediate: bool, augmented: bool) u20 {
     const substituted = if (cog.pipeline[3]) |state| state.s_value != null else false;
     const raw: u20 = @truncate(value);
@@ -41,17 +49,20 @@ fn branchValue(cog: *Cog, value: u32, immediate: bool, augmented: bool) u20 {
     return cog.dispatch_pc +% scale +% displacement *% scale;
 }
 
+/// Update only requested C/Z flags using the result sign bit for this access width.
 fn setFlags(cog: *Cog, args: anytype, value: u32, sign_bit: u5) void {
     if (args.c_mod == .write) cog.c = value & (@as(u32, 1) << sign_bit) != 0;
     if (args.z_mod == .write) cog.z = value == 0;
 }
 
+/// Restore requested C/Z bits from a packed address, then branch using its low 20 bits.
 fn jumpFlags(cog: *Cog, args: anytype, value: u32) void {
     if (args.c_mod == .write) cog.c = value >> 31 != 0;
     if (args.z_mod == .write) cog.z = value & 0x4000_0000 != 0;
     cog.jump(@truncate(value));
 }
 
+/// Map a pointer instruction encoding to PA, PB, PTRA or PTRB.
 fn pointerReg(pointer: encoding.PointerReg) Cog.Register {
     return switch (pointer) {
         .PA => .PA,
@@ -61,6 +72,8 @@ fn pointerReg(pointer: encoding.PointerReg) Cog.Register {
     };
 }
 
+/// Decode direct or PTRx addressing, including scaled/augmented indices and pre/post updates.
+/// Apply block-sized pointer deltas only while the SETQ/SETQ2 erratum state permits them.
 fn memoryAddress(cog: *Cog, reg: Cog.Register, immediate: bool, scale: u3, block: bool) u32 {
     const augmented = cog.augs_pending;
     const value = operandS(cog, reg, immediate);
@@ -90,6 +103,8 @@ fn memoryAddress(cog: *Cog, reg: Cog.Register, immediate: bool, scale: u3, block
     return if (post) base else adjusted;
 }
 
+/// Start a single/block read once and consume returned beats while execution is stalled.
+/// Honor redirected/canceled results, underlying tail RAM, LUT destinations and final-beat flags.
 fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecResult {
     if (cog.memory_transfer == null) {
         const block = size == 4 and cog.setq_pending;
@@ -125,6 +140,7 @@ fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecRes
     return .next;
 }
 
+/// Capture addressing and single/block write state once, then advance it through timed grants.
 fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult {
     if (cog.memory_transfer == null) {
         const immediate = if (@hasField(@TypeOf(args), "d_imm")) args.d_imm else false;
@@ -150,6 +166,8 @@ fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult 
     return progressWrite(cog, size, masked);
 }
 
+/// Wait for the next write beat, defer to an eligible FIFO grant, and queue its visible bytes.
+/// Retain the captured source during stalls and advance the block only after that beat is scheduled.
 fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
     const transfer = &cog.memory_transfer.?;
     if (transfer.timed and !clock_reached(cog.hub.counter, transfer.write_ready_at)) return .wait;
@@ -180,6 +198,7 @@ fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
     return .next;
 }
 
+/// Push a packed return address to the selected hub stack before redirecting fetch.
 fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
     if (cog.memory_transfer == null) {
         const address = cog.read_operand(pointer);
@@ -203,6 +222,7 @@ fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
     return .next;
 }
 
+/// Predecrement the selected hub stack, wait for its read, then restore the return address and requested flags.
 fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog.ExecResult {
     if (cog.memory_transfer == null) {
         const address = cog.read_operand(pointer) -% 4;
@@ -226,6 +246,7 @@ fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog
     return .next;
 }
 
+/// Sample and clear an event latch, writing requested status flags without waiting.
 fn pollEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult {
     const mask = event.mask();
     const occurred = cog.events & mask != 0;
@@ -235,6 +256,8 @@ fn pollEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult
     return .next;
 }
 
+/// Consume a matching event or SETQ timeout while retaining the request across stalled clocks.
+/// An event arriving after a stall incurs the measured two-clock pipeline-resume delay.
 fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult {
     const mask = event.mask();
     var occurred = cog.events & mask != 0;
@@ -265,6 +288,7 @@ fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult
     return .next;
 }
 
+/// Consume an event latch and branch when its presence matches the requested polarity.
 fn branchEvent(cog: *Cog, args: encoding.Only_Simm, event: EventId, positive: bool) Cog.ExecResult {
     const target = branchS(cog, args.s, args.s_imm);
     const mask = event.mask();
@@ -274,6 +298,7 @@ fn branchEvent(cog: *Cog, args: encoding.Only_Simm, event: EventId, positive: bo
     return .next;
 }
 
+/// Compute the next CT target from D plus S and update the corresponding counter sensor.
 fn addCounter(cog: *Cog, args: encoding.Both_D_Simm, event: EventId) Cog.ExecResult {
     const index = @intFromEnum(event) - @intFromEnum(EventId.CT1);
     const value = cog.read_operand(args.d) +% operandS(cog, args.s, args.s_imm);
@@ -283,6 +308,7 @@ fn addCounter(cog: *Cog, args: encoding.Both_D_Simm, event: EventId) Cog.ExecRes
     return .next;
 }
 
+/// Configure a selectable sensor and clear its pending event; unsupported sensor sources report missing support.
 fn setSelectable(cog: *Cog, args: encoding.Only_Dimm, event: EventId) Cog.ExecResult {
     const index = @intFromEnum(event) - @intFromEnum(EventId.SE1);
     const value = operandD(cog, args.d, args.d_imm) & 0x1ff;
@@ -293,6 +319,8 @@ fn setSelectable(cog: *Cog, args: encoding.Only_Dimm, event: EventId) Cog.ExecRe
     return .next;
 }
 
+/// Modify the next instruction's register/lane selection and update the selector register.
+/// ALTx observes AUGS without consuming it, matching the documented silicon erratum.
 fn alter(cog: *Cog, args: encoding.Both_D_Simm, comptime field: []const u8, comptime lane_bits: u3) Cog.ExecResult {
     const d = cog.read_operand(args.d);
     // Silicon erratum: ALTx uses AUGS without consuming it.
@@ -314,6 +342,7 @@ fn alter(cog: *Cog, args: encoding.Both_D_Simm, comptime field: []const u8, comp
     return .next;
 }
 
+/// Select a pixel mix coefficient from constants, pivot, source or destination channel values.
 fn pixelTerm(mode: u3, d: u32, s: u32, pivot: u8) u32 {
     return switch (mode) {
         0 => 0,
@@ -327,6 +356,7 @@ fn pixelTerm(mode: u3, d: u32, s: u32, pivot: u8) u32 {
     };
 }
 
+/// Apply packed-channel pixel arithmetic and schedule its register result; pipeline latency is handled by Cog.step.
 fn pixel(cog: *Cog, args: encoding.Both_D_Simm, comptime mode: enum { add, multiply, blend, mix }) Cog.ExecResult {
     const d = cog.read_operand(args.d);
     const s = operandS(cog, args.s, args.s_imm);
@@ -352,6 +382,7 @@ fn pixel(cog: *Cog, args: encoding.Both_D_Simm, comptime mode: enum { add, multi
     cog.write_result(args.d, result);
     return .next;
 }
+/// Dispatch one execution attempt and consume SETQ/SETQ2 prefix state only after a completed instruction.
 pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
     const result = dispatch(cog, state);
     switch (result) {
@@ -373,6 +404,7 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
 
 // codegen: end:runtimehelpers
 
+/// Apply conditional cancellation and ALTx fields before selecting the semantic handler.
 fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
     if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return .skip;
     var raw = state.instr;
@@ -511,6 +543,8 @@ fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
 }
 
 // codegen: begin:globalcode
+/// Delegate deterministic ALU semantics to libp2 using captured operands and current C/Z/Q.
+/// Apply result/flag controls and forward any next-source value before the successor latches operands.
 fn execute_alu(
     cog: *Cog,
     state: Cog.PipelineState,
@@ -4881,6 +4915,7 @@ test "block transfers bypass special registers and wrap register addresses" {
     try std.testing.expectEqual(@as(u32, 0x2000), cog.read_reg(.PTRA));
 }
 
+/// Compare decoded ALU execution with libp2 across conditions, operands, prefixes and requested flag effects.
 fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime function: anytype, comptime writes_result: bool) !void {
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);

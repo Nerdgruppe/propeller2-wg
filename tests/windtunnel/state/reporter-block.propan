@@ -68,6 +68,10 @@
 //? ]
 //? post: cog[0].c == false
 
-    JMP nrel(_end)
+// Check reporting of a 2048-byte hub observation.
+// A repeated high-bit byte catches truncation and accidental signed/text interpretation of binary output.
+
+                JMP     nrel(_end)
 .data
-buffer: BYTE [0xa5] * 2048
+buffer:         BYTE    [0xa5] * 2048
+

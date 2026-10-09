@@ -25,84 +25,90 @@
 //? cog: 7
 //? const: probe_writer = 6
 
-    SETLUTS 1
-    MOV PTRB, aug(hubaddr(results))
-    MOV PTRA, aug(hubaddr(mailbox))
-    MOV image, aug(hubaddr(writer))
-    MOV different, 0
+// Exercise simultaneous paired-cog LUT writes to equal and distinct addresses.
+// Equal-address outcomes vary by physical RAM instance; assert distinct-address results and retain collision tracing.
+
+                SETLUTS 1
+                MOV     PTRB,       aug(hubaddr(results))
+                MOV     PTRA,       aug(hubaddr(mailbox))
+                MOV     image,      aug(hubaddr(writer))
+                MOV     different,  0
 case_loop:
-    WRLUT 0, 100
-    WRLUT 0, 101
-    WRLONG 0, PTRA
-    MOV temporary, PTRA
-    ADD temporary, 4
-    WRLONG different, temporary
-    SETQ PTRA
-    COGINIT probe_writer, image
-    GETCT timer
-    ADD timer, aug(2048)
-    ANDN timer, 7
-    WRLONG timer, PTRA
-    ADDCT1 timer, 0
-    WAITCT1
-    WRLUT 1, 100
-    WAITX 128
-    RDLUT local_a, 100
-    RDLUT local_b, 101
-    MOV temporary, PTRA
-    ADD temporary, 8
-    RDLONG remote_a, temporary
-    ADD temporary, 4
-    RDLONG remote_b, temporary
-    // Same-address dual-port collisions vary by physical RAM instance.
-    // Exercise them for tracing; assert only distinct-address outcomes.
-    TESTB different, 0 :wc
-if(!C) JMP record_done
-    WRLONG local_a, PTRB++
-    WRLONG local_b, PTRB++
-    WRLONG remote_a, PTRB++
-    WRLONG remote_b, PTRB++
+                WRLUT   0,              100
+                WRLUT   0,              101
+                WRLONG  0,              PTRA
+                MOV     temporary,      PTRA
+                ADD     temporary,      4
+                WRLONG  different,      temporary
+                SETQ    PTRA
+                COGINIT probe_writer,   image
+                GETCT   timer
+                ADD     timer,          aug(2048)
+                ANDN    timer,          7
+                WRLONG  timer,          PTRA
+                ADDCT1  timer,          0
+                WAITCT1
+                WRLUT   1,              100
+                WAITX   128
+                RDLUT   local_a,        100
+                RDLUT   local_b,        101
+                MOV     temporary,      PTRA
+                ADD     temporary,      8
+                RDLONG  remote_a,       temporary
+                ADD     temporary,      4
+                RDLONG  remote_b,       temporary
+                // Same-address dual-port collisions vary by physical RAM instance.
+                // Exercise them for tracing; assert only distinct-address outcomes.
+                TESTB   different,      0           :wc
+    if(!C)      JMP     record_done
+                WRLONG  local_a,        PTRB++
+                WRLONG  local_b,        PTRB++
+                WRLONG  remote_a,       PTRB++
+                WRLONG  remote_b,       PTRB++
 record_done:
-    ADD different, 1
-    CMP different, 4 :wz
-if(!Z) JMP case_loop
-    SETQ 0
-    JMP nrel(_end)
-var different: LONG 0
-var temporary: LONG 0
-var image: LONG 0
-var timer: LONG 0
-var local_a: LONG 0
-var local_b: LONG 0
-var remote_a: LONG 0
-var remote_b: LONG 0
+                ADD     different,  1
+                CMP     different,  4   :wz
+    if(!Z)      JMP     case_loop
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var different:  LONG    0
+var temporary:  LONG    0
+var image:      LONG    0
+var timer:      LONG    0
+var local_a:    LONG    0
+var local_b:    LONG    0
+var remote_a:   LONG    0
+var remote_b:   LONG    0
 .data
-mailbox: LONG [0] * 4
-results: LONG [0] * 8
-.cogexec 0x4000, 0
+mailbox:        LONG    [0] * 4
+results:        LONG    [0] * 8
+.cogexec    0x4000, 0
 writer:
-    SETLUTS 1
-    WRLUT 0, 100
-    WRLUT 0, 101
-    MOV register(301), PTRA
-    ADD register(301), 4
-    RDLONG register(302), register(301)
-    AND register(302), 1
-    ADD register(302), 100
+                SETLUTS 1
+                WRLUT   0,              100
+                WRLUT   0,              101
+                MOV     register(301),  PTRA
+                ADD     register(301),  4
+                RDLONG  register(302),  register(301)
+                AND     register(302),  1
+                ADD     register(302),  100
 writer_wait:
-    RDLONG register(300), PTRA
-    CMP register(300), 0 :wz
-if(Z) JMP writer_wait
-    ADDCT1 register(300), 0
-    WAITCT1
-    WRLUT 2, register(302)
-    WAITX 32
-    RDLUT register(303), 100
-    ADD register(301), 4
-    WRLONG register(303), register(301)
-    RDLUT register(303), 101
-    ADD register(301), 4
-    WRLONG register(303), register(301)
-    COGSTOP probe_writer
-    LONG [0] * 480
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0               :wz
+    if(Z)       JMP     writer_wait
+                ADDCT1  register(300),  0
+                WAITCT1
+                WRLUT   2,              register(302)
+                WAITX   32
+                RDLUT   register(303),  100
+                ADD     register(301),  4
+                WRLONG  register(303),  register(301)
+                RDLUT   register(303),  101
+                ADD     register(301),  4
+                WRLONG  register(303),  register(301)
+                COGSTOP probe_writer
+                // Pad the startup image to the complete 504-long cog load.
+                LONG    [0] * 480
 .data
+

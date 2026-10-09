@@ -1,3 +1,5 @@
+//! Architectural register addresses, condition codes and instruction-field enums used by the simulator.
+
 pub const Register = enum(u9) {
     /// INT3 call address
     IJMP3 = 0x1F0,

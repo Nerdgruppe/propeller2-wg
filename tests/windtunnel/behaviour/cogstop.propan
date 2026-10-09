@@ -2,13 +2,15 @@
 //? profile: program
 //? oracle: off "cog termination is not observable over UART"
 
-
+// Stop the executing cog and verify that younger code never executes.
+// COGID avoids assuming a cog number; the trailing raw instruction is deliberate poison after COGSTOP.
 
 _start:
-    COGID id
-    COGSTOP id
-    // end of code
+                COGID   id
+                COGSTOP id
+                // end of code
 
-    LONG 0b0000_1011110_111_000000000_000000000 // <empty> 1	
+                LONG    0b0000_1011110_111_000000000_000000000      // Must never execute after self-stop.
 
-var id: LONG 0
+var id:         LONG    0
+

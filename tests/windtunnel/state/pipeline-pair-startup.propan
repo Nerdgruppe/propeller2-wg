@@ -1,278 +1,291 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[0].reg[failures] == 0
-    MOV mailbox, aug(hubaddr(stamps))
-    MOV source_pointer, aug(hubaddr(sources))
-    MOV mode, 0
+
+// Measure simultaneous loaded and no-load hub startup of an allocated cog pair.
+// With only the observer active, the first free pair is 2/3; each target writes its timestamp to its own mailbox slot.
+// Both targets share a command grant but their first memory windows depend on their own cog IDs.
+
+                MOV     mailbox,        aug(hubaddr(stamps))
+                MOV     source_pointer, aug(hubaddr(sources))
+                MOV     mode,           0
 mode_loop:
-    MOV bank, 0
+                MOV     bank,   0
 bank_loop:
-    RDLONG source, source_pointer
-    ADD source_pointer, 4
-    MOV offset, 0
+                RDLONG  source,         source_pointer
+                ADD     source_pointer, 4
+                MOV     offset,         0
 phase_loop:
-    WRLONG 0, mailbox
-    MOV temporary, mailbox
-    ADD temporary, 4
-    WRLONG 0, temporary
-    MOV control, 0x11
-    CMP mode, 1 :wz
-if(Z) OR control, 0x20
-    GETCT timer
-    ADD timer, 128
-    ANDN timer, 7
-    ADD timer, offset
-    ADDCT1 timer, 0
-    WAITCT1
-    GETCT start
-    SETQ mailbox
-    COGINIT control, source :wc
-    GETCT finish
-if(C) ADD failures, 1
-    CMP control, 2 :wz
-if(!Z) ADD failures, 1
-    SUB finish, start
-    MOV command_delay, start
-    NEG command_delay
-    SUB command_delay, 4
-    AND command_delay, 7
-    MOV expected, command_delay
-    ADD expected, 8
-    CMP finish, expected :wz
-if(!Z) ADD failures, 1
-    WAITX aug(1024)
-    MOV target, 2
+                WRLONG  0,              mailbox
+                MOV     temporary,      mailbox
+                ADD     temporary,      4
+                WRLONG  0,              temporary
+                // Request a free even/odd pair; bit 5 later selects no-load hub execution.
+                MOV     control,        0x11
+                CMP     mode,           1               :wz
+    if(Z)       OR      control,        0x20
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,          128
+                ANDN    timer,          7
+                ADD     timer,          offset
+                ADDCT1  timer,          0
+                WAITCT1
+                GETCT   start
+                SETQ    mailbox
+                COGINIT control,        source          :wc
+                GETCT   finish
+    if(C)       ADD     failures,       1
+                CMP     control,        2               :wz
+    if(!Z)      ADD     failures,       1
+                SUB     finish,         start
+                MOV     command_delay,  start
+                NEG     command_delay
+                SUB     command_delay,  4
+                AND     command_delay,  7
+                MOV     expected,       command_delay
+                ADD     expected,       8
+                CMP     finish,         expected        :wz
+    if(!Z)      ADD     failures,       1
+                WAITX   aug(1024)
+                MOV     target,         2
 target_loop:
-    RDLONG target_time, mailbox
-    ADD mailbox, 4
-    SUB target_time, start
-    SUB target_time, command_delay
-    SUB target_time, 4
-    MOV expected, bank
-    SUB expected, target
-    CMP mode, 0 :wz
-if(Z) SUB expected, 17
-if(!Z) SUB expected, 22
-    AND expected, 7
-    CMP mode, 0 :wz
-if(Z) ADD expected, aug(531)
-if(!Z) ADD expected, 30
-    CMP target_time, expected :wz
-if(!Z) ADD failures, 1
-    ADD target, 1
-    CMP target, 4 :wz
-if(!Z) JMP target_loop
-    SUB mailbox, 8
-    ADD offset, 1
-    CMP offset, 8 :wz
-if(!Z) JMP phase_loop
-    ADD bank, 1
-    CMP bank, 8 :wz
-if(!Z) JMP bank_loop
-    ADD mode, 1
-    CMP mode, 2 :wz
-if(!Z) JMP mode_loop
-    SETQ 0
-    JMP nrel(_end)
-var mailbox: LONG 0
-var source_pointer: LONG 0
-var source: LONG 0
-var mode: LONG 0
-var bank: LONG 0
-var offset: LONG 0
-var control: LONG 0
-var temporary: LONG 0
-var timer: LONG 0
-var start: LONG 0
-var finish: LONG 0
-var target: LONG 0
-var target_time: LONG 0
-var command_delay: LONG 0
-var expected: LONG 0
-var failures: LONG 0
+                RDLONG  target_time,    mailbox
+                ADD     mailbox,        4
+                SUB     target_time,    start
+                SUB     target_time,    command_delay
+                SUB     target_time,    4
+                MOV     expected,       bank
+                SUB     expected,       target
+                CMP     mode,           0               :wz
+    if(Z)       SUB     expected,       17
+    if(!Z)      SUB     expected,       22
+                AND     expected,       7
+                CMP     mode,           0               :wz
+    if(Z)       ADD     expected,       aug(531)
+    if(!Z)      ADD     expected,       30
+                CMP     target_time,    expected        :wz
+    if(!Z)      ADD     failures,       1
+                ADD     target,         1
+                CMP     target,         4               :wz
+    if(!Z)      JMP     target_loop
+                SUB     mailbox,        8
+                ADD     offset,         1
+                CMP     offset,         8               :wz
+    if(!Z)      JMP     phase_loop
+                ADD     bank,           1
+                CMP     bank,           8               :wz
+    if(!Z)      JMP     bank_loop
+                ADD     mode,           1
+                CMP     mode,           2               :wz
+    if(!Z)      JMP     mode_loop
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var mailbox:    LONG    0
+var source_pointer:
+                LONG    0
+var source:     LONG    0
+var mode:       LONG    0
+var bank:       LONG    0
+var offset:     LONG    0
+var control:    LONG    0
+var temporary:  LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var target:     LONG    0
+var target_time:
+                LONG    0
+var command_delay:
+                LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
 .data
-stamps: LONG 0, 0
-sources: LONG hubaddr(image0),hubaddr(image1),hubaddr(image2),hubaddr(image3),hubaddr(image4),hubaddr(image5),hubaddr(image6),hubaddr(image7),hubaddr(hub0),hubaddr(hub1),hubaddr(hub2),hubaddr(hub3),hubaddr(hub4),hubaddr(hub5),hubaddr(hub6),hubaddr(hub7)
+stamps:         LONG    0,  0
+sources:        LONG    hubaddr(image0),    hubaddr(image1),    hubaddr(image2),    hubaddr(image3),    hubaddr(image4),    hubaddr(image5),    hubaddr(image6),    hubaddr(image7),    hubaddr(hub0),  hubaddr(hub1),  hubaddr(hub2),  hubaddr(hub3),  hubaddr(hub4),  hubaddr(hub5),  hubaddr(hub6),  hubaddr(hub7)
 
-.cogexec 16384, 0
+.cogexec    16384, 0
 image0:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                // Pad the startup image to the complete 504-long cog load.
+                LONG    [0] * 496
 
-.cogexec 20484, 0
+.cogexec    20484, 0
 image1:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                LONG    [0] * 496
 
-.cogexec 24584, 0
+.cogexec    24584, 0
 image2:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                LONG    [0] * 496
 
-.cogexec 28684, 0
+.cogexec    28684, 0
 image3:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                LONG    [0] * 496
 
-.cogexec 32784, 0
+.cogexec    32784, 0
 image4:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                LONG    [0] * 496
 
-.cogexec 36884, 0
+.cogexec    36884, 0
 image5:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                LONG    [0] * 496
 
-.cogexec 40984, 0
+.cogexec    40984, 0
 image6:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                LONG    [0] * 496
 
-.cogexec 45084, 0
+.cogexec    45084, 0
 image7:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
-    LONG [0] * 496
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+                LONG    [0] * 496
 
-.hubexec 49152
+.hubexec    49152
 hub0:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
 
-.hubexec 49412
+.hubexec    49412
 hub1:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
 
-.hubexec 49672
+.hubexec    49672
 hub2:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
 
-.hubexec 49932
+.hubexec    49932
 hub3:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
 
-.hubexec 50192
+.hubexec    50192
 hub4:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
 
-.hubexec 50452
+.hubexec    50452
 hub5:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
 
-.hubexec 50712
+.hubexec    50712
 hub6:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
 
-.hubexec 50972
+.hubexec    50972
 hub7:
-    GETCT register(300)
-    COGID register(301)
-    MOV register(302), register(301)
-    SUB register(302), 2
-    SHL register(302), 2
-    ADD PTRA, register(302)
-    WRLONG register(300), PTRA
-    COGSTOP register(301)
+                GETCT   register(300)
+                COGID   register(301)
+                MOV     register(302),  register(301)
+                SUB     register(302),  2
+                SHL     register(302),  2
+                ADD     PTRA,           register(302)
+                WRLONG  register(300),  PTRA
+                COGSTOP register(301)
+

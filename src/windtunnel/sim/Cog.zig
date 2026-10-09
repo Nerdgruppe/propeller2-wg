@@ -1,3 +1,6 @@
+//! Cog/LUT RAM and the five-stage execution pipeline.
+//! Hub services clock shared requests; the cog captures operands, stalls and redirects fetch.
+
 const std = @import("std");
 const logger = std.log.scoped(.cog);
 
@@ -109,6 +112,7 @@ pub const HubFifo = struct {
     ready_at: ?u64,
     responses: [8]?u32 = @splat(null),
 
+    /// Consume the next instruction slice; read/decode joins the adjacent slice for an unaligned word.
     fn read(fifo: *HubFifo) ?u32 {
         if (fifo.count == 0) return null;
         const low = fifo.words[fifo.head];
@@ -118,6 +122,7 @@ pub const HubFifo = struct {
         return value;
     }
 
+    /// Consume one software-FIFO byte, releasing its buffered long after the fourth byte.
     pub fn read_byte(fifo: *HubFifo) ?u8 {
         if (fifo.count == 0) return null;
         const value: u8 = @truncate(fifo.words[fifo.head] >> (@as(u5, fifo.byte_offset) * 8));
@@ -138,6 +143,7 @@ const Writeback = struct {
     lut: ?struct { address: u9, value: u32 } = null,
 };
 
+/// Create a stopped cog with cleared execution state and a link to its shared hub.
 pub fn init(hub: *Hub, id: u3) Cog {
     return .{
         .id = id,
@@ -145,6 +151,8 @@ pub fn init(hub: *Hub, id: u3) Cog {
     };
 }
 
+/// Stop and clear the execution engine, release owned locks and cancel pending startup.
+/// Retain cog/LUT RAM while clearing the special pointer, direction and output registers.
 pub fn reset(cog: *Cog) void {
     const id = cog.id;
     const hub = cog.hub;
@@ -164,6 +172,8 @@ pub fn reset(cog: *Cog) void {
     if (!hub.clocking) hub.io.updateDirections(hub);
 }
 
+/// Advance instruction stages for one clock after the hub has serviced shared resources.
+/// An execute-stage wait freezes younger stages; completed results are committed on the next edge.
 pub fn step(cog: *Cog) void {
     if (cog.exec_mode == .stopped or cog.startup != null) {
         return;
@@ -256,6 +266,7 @@ pub fn step(cog: *Cog) void {
     cog.issue_phase = !cog.issue_phase or !fetched;
 }
 
+/// Receive timed image-load beats and release startup after the final load-to-fetch handoff.
 pub fn clock_startup(cog: *Cog) void {
     const startup = if (cog.startup) |*value| value else return;
     if (startup.release_at) |clock| {
@@ -315,6 +326,7 @@ pub fn clock_command(cog: *Cog) void {
     state.command_result = result;
 }
 
+/// Deliver five-clock RAM responses, then issue an eligible prefetch unless the FIFO is sufficiently full.
 pub fn clock_fifo(cog: *Cog) void {
     const fifo = if (cog.fifo) |*value| value else return;
     if (fifo.ready_at) |deadline| if (Hub.clock_reached(cog.hub.counter, deadline)) {
@@ -333,6 +345,7 @@ pub fn clock_fifo(cog: *Cog) void {
     fifo.address +%= 4;
 }
 
+/// Test FIFO eligibility on the current or next clock, including a response returning on the lookahead edge.
 pub fn fifo_grants(cog: *const Cog, clock: u64) bool {
     const fifo = cog.fifo orelse return false;
     const returning: usize = @intFromBool(clock != cog.hub.counter and fifo.responses[clock % fifo.responses.len] != null);
@@ -340,6 +353,8 @@ pub fn fifo_grants(cog: *const Cog, clock: u64) bool {
         ((fifo.address >> 2) & 7) == ((clock +% cog.id) & 7);
 }
 
+/// Commit the preceding execution result or block beat before new operands are captured.
+/// Record possible cog fetch/write collisions and retire the completed store-stage instruction.
 pub fn commit_results(cog: *Cog) void {
     cog.retired = null;
     // This edge completes the previous ALU result, including streaming beats
@@ -413,6 +428,7 @@ pub fn clock_memory(cog: *Cog) void {
     transfer.grant_at +%= 1;
 }
 
+/// Capture a block-write source once per beat, bypassing architectural LUT-read event generation.
 pub fn transfer_source(cog: *Cog, transfer: *MemoryTransfer) u32 {
     if (transfer.source_value) |value| return value;
     const value = transfer.immediate orelse if (transfer.lut) cog.read_lut(transfer.reg) else if (transfer.block and transfer.reg >= 504) cog.ram_tail[transfer.reg - 504] else cog.registers.values[transfer.reg];
@@ -426,6 +442,7 @@ pub fn memory_grant(cog: *Cog, address: u32) u64 {
     return cog.memory_grant_after(address, 2);
 }
 
+/// Find the first rotating RAM-slice window after the requested number of setup clocks.
 pub fn memory_grant_after(cog: *Cog, address: u32, setup: u64) u64 {
     const earliest = cog.hub.counter +% setup;
     const bank = (address >> 2) & 7;
@@ -433,6 +450,8 @@ pub fn memory_grant_after(cog: *Cog, address: u32, setup: u64) u64 {
     return earliest +% delay;
 }
 
+/// Redirect fetch and discard younger stages; entering hub execution restarts its instruction FIFO.
+/// Leaving hub execution keeps the existing FIFO filling, so it may still contend with data transfers.
 pub fn jump(cog: *Cog, target: u20) void {
     if (cog.pipeline[3]) |state| cog.trace(.flush, state);
     const was_hub = cog.exec_mode == .hub;
@@ -456,6 +475,7 @@ pub fn jump(cog: *Cog, target: u20) void {
     cog.branched = true;
 }
 
+/// Write a bounded instruction-stage event when pipeline tracing is enabled.
 fn trace(cog: *Cog, stage: enum { fetch, read, latch, execute, store, stall, flush }, state: PipelineState) void {
     const writer = cog.hub.trace_writer orelse return;
     if (cog.hub.trace_lines_left == 0) return;
@@ -464,6 +484,7 @@ fn trace(cog: *Cog, stage: enum { fetch, read, latch, execute, store, stall, flu
     if (cog.hub.trace_lines_left == 0) writer.writeAll("pipeline trace truncated after 10000 events\n") catch {};
 }
 
+/// Write a bounded collision diagnostic without turning ambiguous RAM data into an execution fault.
 pub fn trace_collision(cog: *Cog, address: u9, kind: enum { cog_ram, lut_write }) void {
     const writer = cog.hub.trace_writer orelse return;
     if (cog.hub.trace_lines_left == 0) return;
@@ -471,11 +492,13 @@ pub fn trace_collision(cog: *Cog, address: u9, kind: enum { cog_ram, lut_write }
     writer.print("CT={d} cog={d} stage=collision kind={t} address=0x{x}\n", .{ cog.hub.counter, cog.id, kind, address }) catch {};
 }
 
+/// Push a hardware-stack value, discarding the oldest of the eight entries.
 pub fn push(cog: *Cog, value: u32) void {
     std.mem.copyBackwards(u32, cog.stack[1..], cog.stack[0..7]);
     cog.stack[0] = value;
 }
 
+/// Pop the hardware stack; its bottom entry remains sticky after repeated pops.
 pub fn pop(cog: *Cog) u32 {
     const value = cog.stack[0];
     // Entry 7 stays unchanged, so repeated pops eventually repeat that value.
@@ -483,16 +506,19 @@ pub fn pop(cog: *Cog) u32 {
     return value;
 }
 
+/// Push the current return address and flags, then redirect instruction fetch.
 pub fn call(cog: *Cog, target: u20) void {
     cog.push(cog.return_address());
     cog.jump(target);
 }
 
+/// Pack C/Z and the next execution address; local PCs advance by longs and hub PCs by bytes.
 pub fn return_address(cog: *Cog) u32 {
     const pc = cog.dispatch_pc +% @as(u20, if (cog.exec_mode == .hub) 4 else 1);
     return (@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | pc;
 }
 
+/// Apply ALTR/ALTI result redirection or cancellation before scheduling a register write.
 pub fn write_result(cog: *Cog, reg: Register, value: u32) void {
     if (cog.pipeline[3]) |state| {
         if (state.no_result) return;
@@ -500,20 +526,24 @@ pub fn write_result(cog: *Cog, reg: Register, value: u32) void {
     } else cog.write_reg(reg, value);
 }
 
+/// Raise each selectable event whose configured LUT/lock sensor matches this notification.
 pub fn signal_selectable(cog: *Cog, config: u6) void {
     for (cog.selectable_events, [4]EventId{ .SE1, .SE2, .SE3, .SE4 }) |selection, event| {
         if (selection != null and selection.? == config) cog.hub.signal_event(cog.id, event.mask());
     }
 }
 
+/// Return the adjacent even/odd companion cog used by LUT sharing and LUT event sensors.
 pub fn other(cog: *Cog) *Cog {
     return &cog.hub.cogs[cog.id ^ 1];
 }
 
+/// Return the RAM slice currently available to this cog in the rotating eight-clock hub schedule.
 pub fn ram_slice(cog: *Cog) u3 {
     return (cog.hub.counter +% cog.id) % 8;
 }
 
+/// Queue an instruction write during execution, or update the live register and its peripheral effects.
 pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
@@ -530,6 +560,7 @@ pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
     }
 }
 
+/// Write underlying cog RAM, including the tail hidden by ordinary special-register access.
 pub fn write_ram(cog: *Cog, address: u9, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
@@ -538,6 +569,7 @@ pub fn write_ram(cog: *Cog, address: u9, value: u32) void {
     } else if (address >= 504) cog.ram_tail[address - 504] = value else cog.registers.values[address] = value;
 }
 
+/// Read live architectural state; INA/INB are supplied by the pin model rather than stored RAM.
 pub fn read_reg(cog: *Cog, reg: Register) u32 {
     return switch (reg) {
         .INA => @truncate(cog.hub.io.get_in() >> 0),
@@ -564,6 +596,7 @@ pub fn read_operand(cog: *Cog, reg: Register) u32 {
     return cog.read_reg(reg);
 }
 
+/// Latch D/S and pointer/parameter operands after earlier result writes, honoring alternate D/S addresses.
 fn capture_operands(cog: *Cog, state: *PipelineState) void {
     state.operands = .{
         .d = cog.read_reg(state.alt_d orelse @enumFromInt(@as(u9, @truncate(state.instr >> 9)))),
@@ -575,6 +608,7 @@ fn capture_operands(cog: *Cog, state: *PipelineState) void {
     };
 }
 
+/// Find the next instruction behind execution for ALTx modification and next-source forwarding.
 pub fn following_instruction(cog: *Cog) ?*PipelineState {
     var i: usize = 3;
     while (i > 0) {
@@ -584,6 +618,7 @@ pub fn following_instruction(cog: *Cog) ?*PipelineState {
     return null;
 }
 
+/// Queue a local LUT write and its sensor event, or apply an untimed write with receiver-controlled sharing.
 pub fn write_lut(cog: *Cog, addr: u9, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.lut == null);
@@ -602,6 +637,7 @@ pub fn write_lut(cog: *Cog, addr: u9, value: u32) void {
     }
 }
 
+/// Read local LUT RAM and notify local/companion selectable sensors for the four monitored addresses.
 pub fn read_lut(cog: *Cog, addr: u9) u32 {
     if (addr >= 0x1fc) {
         cog.signal_selectable(@as(u6, @truncate(addr)) & 3);
@@ -632,6 +668,7 @@ pub fn is_condition_met(cog: *Cog, cond: enums.Condition) bool {
     };
 }
 
+/// Resolve a nine-bit immediate or live register for direct semantic callers.
 pub fn resolve_operand(cog: *Cog, reg: Register, imm: bool) u32 {
     return if (imm)
         @intFromEnum(reg)
@@ -678,6 +715,8 @@ pub fn fetch_augd(cog: *Cog) u32 {
     return augd;
 }
 
+/// Fetch local cog/LUT code or consume a hub FIFO slice without changing mode on sequential PC wrap.
+/// Mark execute-only debug-ROM fetches so only instructions that reach execution report missing support.
 fn fetch_instruction(cog: *Cog) ?PipelineState {
     switch (cog.exec_mode) {
         .stopped => unreachable,
@@ -726,6 +765,7 @@ pub const Fault = struct {
     result: ExecResult,
     debug_rom: bool = false,
 
+    /// Return the diagnostic text for a trap, missing implementation or reason-bearing illegal execution.
     pub fn reason(fault: Fault) []const u8 {
         return switch (fault.result) {
             .trap => "execution trap",

@@ -1,122 +1,131 @@
+// Shared cog-fixture bootstrap and binary UART reporter for both simulation and P2AAS.
+// Keep DUT capture ahead of reporter work: reporting itself changes registers, flags and Q.
 // One imported DUT image. Register 0 is the trampoline and snapshot scratch.
 const _wt_scratch = register(0)
-const _wt_count = register(1)
+const _wt_count   = register(1)
 const _wt_address = register(2)
-const _wt_length = register(3)
-const _wt_value = register(4)
-const _wt_crc = register(5)
-const _wt_bits = register(6)
-const _wt_clock = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
-const _wt_uart = SmartPin.UartTx.config(baud=_wt_baudrate, bits=8, clk=200_000_000)
+const _wt_length  = register(3)
+const _wt_value   = register(4)
+const _wt_crc     = register(5)
+const _wt_bits    = register(6)
+const _wt_clock   = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const _wt_uart    = SmartPin.UartTx.config(baud=_wt_baudrate, bits=8, clk=200_000_000)
 
-.cogexec 0
+.cogexec    0
 _wt_entry:
 .if _wt_is_oracle
-    HUBSET aug(_wt_clock)
-    WRPIN P_TT_01 | P_ASYNC_TX, 62
-    WXPIN aug(_wt_uart), 62
-    DIRH 62
-    WAITX aug(20_000_000)
+                HUBSET  aug(_wt_clock)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                WXPIN   aug(_wt_uart),          62
+                DIRH    62
+                WAITX   aug(20_000_000)
 .endif
-    COGINIT _wt_target_cog, aug(hubaddr(_wt_start))
-    COGSTOP 0
+                COGINIT _wt_target_cog,         aug(hubaddr(_wt_start))
+                COGSTOP 0
 
 // Leave room for the clock/UART bootstrap; everything else follows the fixture.
-.cogexec 0x40
+.cogexec    0x40
 _wt_start:
-    JMP nrel(_wt_setup)
+                JMP     nrel(_wt_setup)
 _wt_testcode:
-    .import "{{ TEST_FILE }}"
+.import "{{ TEST_FILE }}"
 
 // Data precedes hub code so every hub branch target is above cog/LUT PCs.
-.pack off
-.align 4
+.pack   off
+.align  4
 .data
 _wt_data_block_start:
-_wt_frame: LONG 0x524f5457, 1, _wt_payload_length, _wt_observation_count
-_wt_reg_snapshot: LONG [0] * 506
-_wt_q_snapshot: LONG 0
-_wt_c_snapshot: WORD 0
-_wt_z_snapshot: WORD 0
-_wt_extra_snapshot: BYTE [0] * _wt_extra_length
-_wt_checksum_value: LONG 0
-    .align 4
+_wt_frame:      LONG    0x524f5457, 1,  _wt_payload_length, _wt_observation_count
+_wt_reg_snapshot:
+                LONG    [0] * 506
+_wt_q_snapshot: LONG    0
+_wt_c_snapshot: WORD    0
+_wt_z_snapshot: WORD    0
+_wt_extra_snapshot:
+                BYTE    [0] * _wt_extra_length
+_wt_checksum_value:
+                LONG    0
+.align  4
 _wt_memory_descriptors:
-    // {{MEMORY}}
+// {{MEMORY}}
 _wt_data_block_end:
 
-.align 4
+.align  4
 .hubexec
 // Fixtures explicitly jump here; no instruction is patched after assembly.
 _end:
 _wt_stop:
 .if _wt_is_oracle
-    // Clear pending augmentation without changing C/Z or Q.
-    AUGS 0
-    AUGD 0
-if(C) WRWORD 1, aug(hubaddr(_wt_c_snapshot))
-if(!C) WRWORD 0, aug(hubaddr(_wt_c_snapshot))
-if(Z) WRWORD 1, aug(hubaddr(_wt_z_snapshot))
-if(!Z) WRWORD 0, aug(hubaddr(_wt_z_snapshot))
-    MOV _wt_scratch, 0
-    MUXQ _wt_scratch, aug(0xffff_ffff)
-    WRLONG _wt_scratch, aug(hubaddr(_wt_q_snapshot))
-    SETQ 505
-    WRLONG register(0), aug(hubaddr(_wt_reg_snapshot))
+                // Clear pending augmentation without changing C/Z or Q.
+                AUGS    0
+                AUGD    0
+    if(C)       WRWORD  1,              aug(hubaddr(_wt_c_snapshot))
+    if(!C)      WRWORD  0,              aug(hubaddr(_wt_c_snapshot))
+    if(Z)       WRWORD  1,              aug(hubaddr(_wt_z_snapshot))
+    if(!Z)      WRWORD  0,              aug(hubaddr(_wt_z_snapshot))
+                MOV     _wt_scratch,    0
+                MUXQ    _wt_scratch,    aug(0xffff_ffff)
+                WRLONG  _wt_scratch,    aug(hubaddr(_wt_q_snapshot))
+                // Capture 506 registers through PTRB; OUT/DIR/IN registers are outside this snapshot.
+                SETQ    505
+                WRLONG  register(0),    aug(hubaddr(_wt_reg_snapshot))
 
-    // All DUT state is now saved. Reporter work can reuse any cog register.
-    MOV PTRA, aug(hubaddr(_wt_memory_descriptors))
-    MOV PTRB, aug(hubaddr(_wt_extra_snapshot))
-    MOV _wt_count, aug(_wt_memory_count)
-    TJZ _wt_count, _wt_checksum
+                // All DUT state is now saved. Reporter work can reuse any cog register.
+                MOV     PTRA,           aug(hubaddr(_wt_memory_descriptors))
+                MOV     PTRB,           aug(hubaddr(_wt_extra_snapshot))
+                MOV     _wt_count,      aug(_wt_memory_count)
+                TJZ     _wt_count,      _wt_checksum
 _wt_memory:
-    RDLONG _wt_address, PTRA++
-    RDLONG _wt_length, PTRA++
+                RDLONG  _wt_address,    PTRA++
+                RDLONG  _wt_length,     PTRA++
 _wt_memory_byte:
-    RDBYTE _wt_value, _wt_address
-    WRBYTE _wt_value, PTRB++
-    ADD _wt_address, 1
-    DJNZ _wt_length, _wt_memory_byte
-    DJNZ _wt_count, _wt_memory
+                RDBYTE  _wt_value,      _wt_address
+                WRBYTE  _wt_value,      PTRB++
+                ADD     _wt_address,    1
+                DJNZ    _wt_length,     _wt_memory_byte
+                DJNZ    _wt_count,      _wt_memory
 _wt_checksum:
-    MOV PTRA, aug(hubaddr(_wt_frame))
-    MOV _wt_count, aug(16 + _wt_payload_length)
-    MOV _wt_crc, aug(0xffff_ffff)
+                MOV     PTRA,       aug(hubaddr(_wt_frame))
+                MOV     _wt_count,  aug(16 + _wt_payload_length)
+                MOV     _wt_crc,    aug(0xffff_ffff)
 _wt_crc_byte:
-    RDBYTE _wt_value, PTRA++
-    XOR _wt_crc, _wt_value
-    MOV _wt_bits, 8
+                RDBYTE  _wt_value,  PTRA++
+                XOR     _wt_crc,    _wt_value
+                MOV     _wt_bits,   8
 _wt_crc_bit:
-    SHR _wt_crc, 1 :wc
-if(C) XOR _wt_crc, aug(0xedb8_8320)
-    DJNZ _wt_bits, _wt_crc_bit
-    DJNZ _wt_count, _wt_crc_byte
-    NOT _wt_crc, _wt_crc
-    WRLONG _wt_crc, aug(hubaddr(_wt_checksum_value))
+                SHR     _wt_crc,    1                                   :wc
+    if(C)       XOR     _wt_crc,    aug(0xedb8_8320)
+                DJNZ    _wt_bits,   _wt_crc_bit
+                DJNZ    _wt_count,  _wt_crc_byte
+                // Reflected CRC-32 covers the frame header and payload, followed by its final complement.
+                NOT     _wt_crc,    _wt_crc
+                WRLONG  _wt_crc,    aug(hubaddr(_wt_checksum_value))
 
-    DIRH 62
-    MOV PTRA, aug(hubaddr(_wt_frame))
-    MOV _wt_count, aug(20 + _wt_payload_length)
+                DIRH    62
+                MOV     PTRA,       aug(hubaddr(_wt_frame))
+                MOV     _wt_count,  aug(20 + _wt_payload_length)
 _wt_send:
-    RDBYTE PA, PTRA++
-    CALL _wt_write_byte
-    DJNZ _wt_count, _wt_send
-    WAITX aug(200_000_000 * 10 / _wt_baudrate + 100)
-    JMP nrel(_wt_shutdown)
+                RDBYTE  PA,         PTRA++
+                CALL    _wt_write_byte
+                DJNZ    _wt_count,  _wt_send
+                // TX-ready means buffer space, so wait a complete final 8N1 frame before shutting down.
+                WAITX   aug(200_000_000 * 10 / _wt_baudrate + 100)
+                JMP     nrel(_wt_shutdown)
 _wt_write_byte:
-    WYPIN PA, 62
-    WAITX 1
+                WYPIN   PA, 62
+                WAITX   1
 _wt_wait_tx:
-    TESTP 62 :wc
-if(!C) JMP _wt_wait_tx
-    RET
+                TESTP   62          :wc
+    if(!C)      JMP     _wt_wait_tx
+                RET
 .endif
 _wt_shutdown:
-    COGID _wt_scratch
-    COGSTOP _wt_scratch
+                COGID   _wt_scratch
+                COGSTOP _wt_scratch
 
 // Preconditions execute in the restarted DUT, outside its register RAM.
 _wt_setup:
-    MODCZ _wt_initial_c, _wt_initial_z :wcz
-    SETQ aug(_wt_initial_q)
-    JMP nrel(_wt_test_entry)
+                MODCZ   _wt_initial_c,  _wt_initial_z   :wcz
+                SETQ    aug(_wt_initial_q)
+                JMP     nrel(_wt_test_entry)
+

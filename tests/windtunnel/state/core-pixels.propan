@@ -25,22 +25,26 @@
 //? run: "base restored"
 //? post: cog[0].reg[mixed] == 0xffffffff
 
-    MODCZ _SET, _CLR :wcz
-    ADDPIX added, white
-    MULPIX multiplied, factor
-    SETPIV 128
-    BLNPIX blended, full_white
-    SETPIV 0
-    BLNPIX identity, white
-    SETPIX 0b001001
-    MIXPIX mixed, mix_source
-    JMP nrel(_end)
-var added: LONG 0x01808000
-var white: LONG 0xff807e00
-var multiplied: LONG 0xffff8000
-var factor: LONG 0x80ff4000
-var blended: LONG 0
-var identity: LONG 0x12345678
-var mixed: LONG 0xffffffff
-var full_white: LONG 0xffffffff
-var mix_source: LONG 0xffffffff
+// Check packed-pixel arithmetic, blending and configurable mixing.
+// Use different channel values and pivot extremes to distinguish saturation, scaling and blend identity.
+
+                MODCZ   _SET,       _CLR        :wcz
+                ADDPIX  added,      white
+                MULPIX  multiplied, factor
+                SETPIV  128
+                BLNPIX  blended,    full_white
+                SETPIV  0
+                BLNPIX  identity,   white
+                SETPIX  0b001001
+                MIXPIX  mixed,      mix_source
+                JMP     nrel(_end)
+var added:      LONG    0x01808000
+var white:      LONG    0xff807e00
+var multiplied: LONG    0xffff8000
+var factor:     LONG    0x80ff4000
+var blended:    LONG    0
+var identity:   LONG    0x12345678
+var mixed:      LONG    0xffffffff
+var full_white: LONG    0xffffffff
+var mix_source: LONG    0xffffffff
+

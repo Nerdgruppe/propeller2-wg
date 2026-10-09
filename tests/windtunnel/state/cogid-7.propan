@@ -10,9 +10,13 @@
 //? post: cog[7].c == false
 //? post: cog[7].z == true
 
-    MOV register(0x40), aug(0x8000_0001)
-    MOV register(0x180), aug(0x1234_5678)
-    MOV register(0x1ef), aug(-1)
-    COGID result
-    JMP nrel(_end)
-var result: LONG 0xffff_ffff
+// Check nonzero-cog execution and snapshots at widely separated register addresses.
+// Cog 7 exposes hard-coded cog-zero assumptions; distant sentinels catch incomplete register reporting.
+
+                MOV     register(0x40),     aug(0x8000_0001)
+                MOV     register(0x180),    aug(0x1234_5678)
+                MOV     register(0x1ef),    aug(-1)
+                COGID   result
+                JMP     nrel(_end)
+var result:     LONG    0xffff_ffff
+

@@ -2,7 +2,11 @@
 //? timeout-ms: 1000
 //? post: cog[0].reg[result] == 0
 
+// Check that COGID writes the executing cog number to its destination.
+// Initialize the destination to all ones to catch implementations that leave upper bits uncleared.
+
 _start:
-    COGID result
-    JMP nrel(_end)
-var result: LONG 0xffff_ffff
+                COGID   result
+                JMP     nrel(_end)
+var result:     LONG    0xffff_ffff
+
