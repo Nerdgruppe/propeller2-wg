@@ -1,0 +1,493 @@
+test-results:
+- test: Smart pin WXPIN -> RQPIN, gap 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 0
+- test: Smart pin WXPIN -> RQPIN, gap 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 6
+    results: 341
+- test: Smart pin WXPIN -> RQPIN, gap 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 7
+    results: 341
+- test: Smart pin WXPIN -> RQPIN, gap 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 8
+    results: 341
+- test: Smart pin WXPIN -> RDPIN, gap 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 0
+- test: Smart pin WXPIN -> RDPIN, gap 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 6
+    results: 341
+- test: Smart pin WXPIN -> RDPIN, gap 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 7
+    results: 341
+- test: Smart pin WXPIN -> RDPIN, gap 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 8
+    results: 341
+- test: Smart pin WXPIN -> TESTP, gap 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 6
+    results: 1
+- test: Smart pin WXPIN -> TESTP, gap 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 8
+    results: 0
+- test: Smart pin WXPIN -> TESTP, gap 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 9
+    results: 1
+- test: Smart pin WXPIN -> TESTP, gap 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 10
+    results: 1
+- test: Smart pin acknowledge -> TESTP, gap 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 6
+    results: 1
+- test: Smart pin acknowledge -> TESTP, gap 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 8
+    results: 0
+- test: Smart pin acknowledge -> TESTP, gap 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 9
+    results: 0
+- test: Smart pin acknowledge -> TESTP, gap 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 10
+    results: 0
+- test: Smart pin repository ignores WXPIN during reset
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 38
+    results: 341
+- test: Smart pin collision cog 1, offset -2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2184, 2183, 2182, 2181, 2180, 2179, 2178, 2177]
+    results: 170
+- test: Smart pin collision cog 1, offset -1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2185, 2184, 2183, 2182, 2181, 2180, 2179, 2178]
+    results: 170
+- test: Smart pin collision cog 1, offset 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 511
+- test: Smart pin collision cog 1, offset 1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2187, 2186, 2185, 2184, 2183, 2182, 2181, 2180]
+    results: 341
+- test: Smart pin collision cog 1, offset 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2188, 2187, 2186, 2185, 2184, 2183, 2182, 2181]
+    results: 341
+- test: Smart pin collision cog 2, offset -2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2184, 2183, 2182, 2181, 2180, 2179, 2178, 2177]
+    results: 170
+- test: Smart pin collision cog 2, offset -1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2185, 2184, 2183, 2182, 2181, 2180, 2179, 2178]
+    results: 170
+- test: Smart pin collision cog 2, offset 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 511
+- test: Smart pin collision cog 2, offset 1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2187, 2186, 2185, 2184, 2183, 2182, 2181, 2180]
+    results: 341
+- test: Smart pin collision cog 2, offset 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2188, 2187, 2186, 2185, 2184, 2183, 2182, 2181]
+    results: 341
+- test: Smart pin collision cog 7, offset -2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2184, 2183, 2182, 2181, 2180, 2179, 2178, 2177]
+    results: 170
+- test: Smart pin collision cog 7, offset -1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2185, 2184, 2183, 2182, 2181, 2180, 2179, 2178]
+    results: 170
+- test: Smart pin collision cog 7, offset 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 511
+- test: Smart pin collision cog 7, offset 1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2187, 2186, 2185, 2184, 2183, 2182, 2181, 2180]
+    results: 341
+- test: Smart pin collision cog 7, offset 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2188, 2187, 2186, 2185, 2184, 2183, 2182, 2181]
+    results: 341
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2184, 2183, 2182, 2181, 2180, 2179, 2178, 2177]
+    results: 0
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2185, 2184, 2183, 2182, 2181, 2180, 2179, 2178]
+    results: 0
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 0
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2187, 2186, 2185, 2184, 2183, 2182, 2181, 2180]
+    results: 0
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2188, 2187, 2186, 2185, 2184, 2183, 2182, 2181]
+    results: 170
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 5
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2189, 2188, 2187, 2186, 2185, 2184, 2183, 2182]
+    results: 170
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 6
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2190, 2189, 2188, 2187, 2186, 2185, 2184, 2183]
+    results: 170
+- test: Smart pin cross-cog WXPIN -> RQPIN, offset 7
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2191, 2190, 2189, 2188, 2187, 2186, 2185, 2184]
+    results: 170
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 1
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 1
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2187, 2186, 2185, 2184, 2183, 2182, 2181, 2180]
+    results: 1
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2188, 2187, 2186, 2185, 2184, 2183, 2182, 2181]
+    results: 1
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2189, 2188, 2187, 2186, 2185, 2184, 2183, 2182]
+    results: 1
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2190, 2189, 2188, 2187, 2186, 2185, 2184, 2183]
+    results: 0
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 5
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2191, 2190, 2189, 2188, 2187, 2186, 2185, 2184]
+    results: 1
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 6
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2192, 2191, 2190, 2189, 2188, 2187, 2186, 2185]
+    results: 1
+- test: Smart pin cross-cog WXPIN -> TESTP, offset 7
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2193, 2192, 2191, 2190, 2189, 2188, 2187, 2186]
+    results: 1
+- test: Smart pin mixed WXPIN / WXPIN (0x0aa,)
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 426
+- test: Smart pin mixed WXPIN / WYPIN (2,)
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 0
+- test: Smart pin mixed WXPIN / WRPIN (1,)
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 0
+- test: Smart pin mixed WXPIN / RDPIN (register(301),)
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 0
+- test: Smart pin mixed WXPIN / WRPIN (2,)
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 0
+- test: Smart pin identical simultaneous WXPIN values
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: [2186, 2185, 2184, 2183, 2182, 2181, 2180, 2179]
+    results: 341
+- test: GPIO OUTL -> TESTP, gap 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 6
+    results: 1
+- test: GPIO OUTL -> TESTP, gap 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 8
+    results: 1
+- test: GPIO OUTL -> TESTP, gap 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 9
+    results: 1
+- test: GPIO OUTL -> TESTP, gap 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 10
+    results: 1
+- test: GPIO OUTL -> TESTP, gap 5
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 11
+    results: 1
+- test: GPIO OUTL -> TESTP, gap 6
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 12
+    results: 1
+- test: GPIO OUTL -> TESTP, gap 7
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 13
+    results: 0
+- test: GPIO OUTL -> TESTP, gap 8
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 14
+    results: 0
+- test: GPIO OUTL -> TESTP, gap 9
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 15
+    results: 0
+- test: GPIO OUTL -> TESTP, gap 10
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 16
+    results: 0
+- test: GPIO OUTL -> MOV, gap 0
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 8
+    results: 1
+- test: GPIO OUTL -> MOV, gap 2
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 10
+    results: 1
+- test: GPIO OUTL -> MOV, gap 3
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 11
+    results: 1
+- test: GPIO OUTL -> MOV, gap 4
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 12
+    results: 1
+- test: GPIO OUTL -> MOV, gap 5
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 13
+    results: 1
+- test: GPIO OUTL -> MOV, gap 6
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 14
+    results: 1
+- test: GPIO OUTL -> MOV, gap 7
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 15
+    results: 1
+- test: GPIO OUTL -> MOV, gap 8
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 16
+    results: 0
+- test: GPIO OUTL -> MOV, gap 9
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 17
+    results: 0
+- test: GPIO OUTL -> MOV, gap 10
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 18
+    results: 0
+- test: OUT selector disabled
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 0
+- test: OUT selector enabled
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 1
+- test: neighbor selector
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 1
+- test: inverted neighbor selector
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 0
+- test: OR 0, worker DIRL
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 0
+- test: OR 0, worker DIRH
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 1
+- test: OR P_OUTBIT_A, worker DIRL
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 0
+- test: OR P_OUTBIT_A, worker DIRH
+  pass: true
+  results:
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7]
+    durations: 4
+    results: 1

@@ -7,6 +7,7 @@ const std = @import("std");
 const args_parser = @import("args");
 
 const Hub = @import("sim/Hub.zig");
+const smart_pin = @import("sim/smart_pin.zig");
 
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{},
@@ -21,6 +22,7 @@ const CliArgs = struct {
     url: []const u8 = "ws://127.0.0.1:21591/",
     @"trace-pipeline": bool = false,
     image: []const u8 = "",
+    vcd: []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
@@ -29,7 +31,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--trace-pipeline] [-i IMAGE | --serve [--url URL]]",
+        .usage_summary = "[-h] [-v] [--trace-pipeline] [--vcd PATH] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -42,6 +44,7 @@ const CliArgs = struct {
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
             .image = "The image file which contains the hub data.",
+            .vcd = "Export digital signals for an image run (one VCD time unit = one system clock)",
         },
     };
 };
@@ -77,6 +80,11 @@ pub fn main(init: std.process.Init) !u8 {
         return 1;
     }
 
+    if (cli.options.vcd.len != 0 and (cli.options.serve or cli.options.image.len == 0)) {
+        std.log.err("--vcd requires --image and cannot be combined with --serve", .{});
+        return 1;
+    }
+
     if (cli.options.serve) {
         if (cli.options.image.len != 0) {
             std.log.err("--serve cannot be combined with --image", .{});
@@ -95,7 +103,8 @@ pub fn main(init: std.process.Init) !u8 {
 
     var hub: Hub = undefined;
     hub.init();
-    hub.output_writer = &stdout.interface;
+    var terminal_sink: smart_pin.DataSink = .{ .writer = &stdout.interface };
+    hub.io.pins[62].smart.registers.sink = &terminal_sink;
     var trace_buffer: [4096]u8 = undefined;
     var trace = std.Io.File.stderr().writer(init.io, &trace_buffer);
     defer trace.interface.flush() catch {};
@@ -122,17 +131,35 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
+    const vcd_file: ?std.Io.File = if (cli.options.vcd.len != 0)
+        try std.Io.Dir.cwd().createFile(init.io, cli.options.vcd, .{})
+    else
+        null;
+    defer if (vcd_file) |file| file.close(init.io);
+    var vcd_buffer: [4096]u8 = undefined;
+    var vcd_writer = if (vcd_file) |file| file.writer(init.io, &vcd_buffer) else undefined;
+    var vcd: @import("sim/Vcd.zig") = .{ .writer = &vcd_writer.interface };
+    defer if (vcd_file != null) vcd.finish() catch {};
+    if (vcd_file != null) try hub.attachVcd(&vcd);
+
     try hub.start_cog(0, .{});
 
-    while (hub.is_any_cog_active()) {
+    // One final edge aggregates stopped cogs' DIR/OUT and aborts their smart transfers.
+    var final_edge = false;
+    while (hub.is_any_cog_active() or !final_edge) {
+        const inactive = !hub.is_any_cog_active();
         hub.step();
+        final_edge = inactive;
         if (hub.fault) |fault| {
             std.log.err("cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{
                 fault.cog, fault.pc, fault.instruction, fault.reason(),
             });
             return 1;
         }
+        if (hub.next_idle_clock()) |next| hub.counter = next;
     }
+
+    if (vcd_file != null) try vcd.finish();
 
     stdout.interface.flush() catch |err| {
         std.log.err("writing stdout failed: {t}", .{err});

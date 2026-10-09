@@ -40,6 +40,9 @@ main:
                 CALL    write_byte
                 MOV     PA,     third
                 CALL    write_byte
+// Finish the final frame before the observable checkpoint.
+.flush:         RQPIN   PA,     62      :wc
+    if(C)       JMP     .flush
 _end:
                 JMP     main
 read_byte:

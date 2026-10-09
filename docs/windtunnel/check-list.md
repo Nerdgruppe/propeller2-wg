@@ -1,7 +1,9 @@
 # Windtunnel fixtures
 
 A `.propan` fixture starts with `//? WINDTUNNEL CHECK LIST`, followed by contiguous
-`//?` lines. The first ordinary source line ends the checklist. Run the suite with
+`//?` lines. Leading spaces or tabs are accepted, including the indentation
+produced by `propan --pretty-print`. The first ordinary source line ends the
+checklist. Run the suite with
 `zig-0.16.0 build install test-windtunnel`, or select files with
 `zig-out/bin/windtunnel-tests FILE.propan ...`.
 

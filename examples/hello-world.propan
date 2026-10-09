@@ -10,6 +10,9 @@
                 WAITX   aug(20_000_000)
 
                 CALLPA  aug(hubaddr(message)),  write_str
+// Wait for the last frame to leave the pin before halting.
+.flush:         RQPIN   PA,                     TX_PIN      :wc
+    if(C)       JMP     .flush
 .halt:          JMP     .halt
 
 // Loads string at hub address "PA" and writes

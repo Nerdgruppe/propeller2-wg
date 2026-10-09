@@ -13,7 +13,11 @@ Windtunnel implements the deterministic ALU and these core operations:
 
 SETQ/SETQ2 survive augmentation and ALTx prefixes. The block-pointer-delta and AUGS/ALTx errata described in the repository's [silicon documentation](../p2/original/Silicon_Documentation.docx) are modeled. Block transfers access underlying cog RAM at $1F8..$1FF rather than the special registers, wrap register addresses, and set read flags from the last value transferred.
 
-General software FIFO, streamer (including its colorspace converter), CORDIC, interrupts, debugging, pins, skipping, and REP remain outside this coverage. Existing terminal support is a limited functional UART model. GETRND, BITRND, randomized WAITX, and general HUBSET configuration are also unfinished.
+The [I/O subsystem](io.md) implements pin instructions, digital pads and routing,
+long repository, UART and functional USART modes, plus VCD export. General
+software FIFO, streamer (including its colorspace converter), CORDIC, interrupts,
+debugging, skipping, and REP remain outside this coverage. GETRND, BITRND,
+randomized WAITX, and general HUBSET configuration are also unfinished.
 
 Execution uses a five-stage pipeline with two-clock issue, operand capture, delayed writeback, stalls, and branch refill. Hub accesses use rotating RAM grants, five-clock read responses, boundary-crossing transfers, and streaming blocks. Hub instruction fetch uses a buffered FIFO; cog/lock commands have separate round-robin slots. Cog startup streams the 504-long image before fetching instructions. The existing
 blocking RDFAST 0/RFBYTE path shares the same clocked FIFO. Execution reports
@@ -25,9 +29,11 @@ Hardware probes validate local timing and prefetch, hub reads/writes and stacks
 across banks/phases/alignments/cogs, block-beat visibility, FIFO entry and
 contention, commands, loaded/no-load startup, pairs, and self-restart. Matrix
 fixtures use named checklist runs with per-run cog selection and constants.
-Acceptance passes 367 local runs and 365 native runs, with two intentional
-oracle exclusions. Evidence is recorded in the pipeline plan; collision data, debug ROM,
-and exact pin/serial timing are outside the deterministic claim.
+The original core acceptance covers 367 local runs and 365 native runs, with two
+intentional oracle exclusions. Evidence is recorded in the pipeline plan.
+Pin acceptance adds hardware repository/collision/GPIO measurements and pin
+instruction fixtures, described in the I/O documentation. Debug ROM and physical
+serial waveforms remain outside the deterministic claim.
 
 The [instruction pipeline plan](pipeline.md) describes the required execution changes, live hardware measurements, and validation gates.
 

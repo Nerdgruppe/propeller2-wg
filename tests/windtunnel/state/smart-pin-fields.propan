@@ -1,0 +1,59 @@
+                //? WINDTUNNEL CHECK LIST
+                //? post: cog[*].reg[failures] == 0
+
+                // Broadcast wraps inside port A, and SETQ overrides the encoded count in B.
+                WRPIN   2,                  aug(31 | (1 << 6))
+                DIRH    aug(31 | (1 << 6))
+                WRPIN   2,                  aug(40 | (2 << 6))
+                DIRH    aug(40 | (2 << 6))
+                WAITX   32
+                WXPIN   aug(0x80000155),    aug(31 | (1 << 6))
+                SETQ    1
+                WXPIN   aug(0x80000155),    aug(40 | (2 << 6))
+                WAITX   32
+                RQPIN   sample,             31                  :wc
+                WRC     flag
+                CMP     sample,             aug(0x80000155)     :wz
+    if(!Z)      ADD     failures,           1
+                CMP     flag,               1                   :wz
+    if(!Z)      ADD     failures,           1
+                RQPIN   sample,             0
+                CMP     sample,             aug(0x80000155)     :wz
+    if(!Z)      ADD     failures,           1
+                RQPIN   sample,             40
+                CMP     sample,             aug(0x80000155)     :wz
+    if(!Z)      ADD     failures,           1
+                RQPIN   sample,             41
+                CMP     sample,             aug(0x80000155)     :wz
+    if(!Z)      ADD     failures,           1
+                RQPIN   sample,             42
+                CMP     sample,             0                   :wz
+    if(!Z)      ADD     failures,           1
+                // Quiet reads retain IN; acknowledging reads clear it and preserve Z.
+                TESTP   40                                      :wc
+    if(!C)      ADD     failures,           1
+                RDPIN   sample,             40                  :wc
+    if(!C)      ADD     failures,           1
+                WAITX   32
+                TESTP   40                                      :wc
+    if(C)       ADD     failures,           1
+                RQPIN   sample,             40
+                CMP     sample,             aug(0x80000155)     :wz
+    if(!Z)      ADD     failures,           1
+                // AKPIN uses the same field decoder without changing the configured mode.
+                AKPIN   aug(31 | (1 << 6))
+                WAITX   32
+                TESTP   31                                      :wc
+    if(C)       ADD     failures,           1
+                TESTP   0                                       :wc
+    if(C)       ADD     failures,           1
+                WXPIN   17,                 0
+                WAITX   32
+                RQPIN   sample,             0
+                CMP     sample,             17                  :wz
+    if(!Z)      ADD     failures,           1
+                JMP     nrel(_end)
+var failures:   LONG    0
+var sample:     LONG    0
+var flag:       LONG    0
+

@@ -77,6 +77,126 @@ test "clock mode frequencies follow HUBSET encodings" {
     }
 }
 
+/// WRPIN D[5:1] smart-engine selection (%SSSSS).
+/// Encodings 1..3 are long repositories unless pin configuration enables DAC_MODE.
+pub const SmartPinMode = enum(u5) {
+    /// Normal I/O; the smart engine is bypassed.
+    gpio = 0b00000,
+    /// Long repository, or DAC noise when DAC_MODE is enabled.
+    repository = 0b00001,
+    /// 16-bit DAC with random dither; long repository without DAC_MODE.
+    dac_dither_rnd = 0b00010,
+    /// 16-bit DAC with PWM dither; long repository without DAC_MODE.
+    dac_dither_pwm = 0b00011,
+    /// Pulse/cycle output.
+    pulse = 0b00100,
+    /// Transition output.
+    transition = 0b00101,
+    /// NCO frequency output.
+    nco_frequency = 0b00110,
+    /// NCO duty output.
+    nco_duty = 0b00111,
+    /// Triangle PWM output.
+    pwm_triangle = 0b01000,
+    /// Sawtooth PWM output.
+    pwm_sawtooth = 0b01001,
+    /// SMPS PWM with voltage and current feedback.
+    pwm_smps = 0b01010,
+    /// A/B quadrature encoder.
+    quadrature = 0b01011,
+    /// Count A rises when B is high.
+    reg_up = 0b01100,
+    /// Count A rises with B selecting increment or decrement.
+    reg_up_down = 0b01101,
+    /// Count A rises; Y[0] optionally selects A-rise minus B-rise counting.
+    count_rises = 0b01110,
+    /// Count A highs; Y[0] optionally selects A-high minus B-high counting.
+    count_highs = 0b01111,
+    /// Measure the duration of each A state.
+    state_ticks = 0b10000,
+    /// Measure the duration of each A high state.
+    high_ticks = 0b10001,
+    /// Time X A highs/rises/edges, or timeout on missing events (Y[2]).
+    events_ticks = 0b10010,
+    /// Count clock cycles across X A-to-B periods.
+    periods_ticks = 0b10011,
+    /// Count A high states across X A-to-B periods.
+    periods_highs = 0b10100,
+    /// Count clock cycles across complete periods spanning at least X clocks.
+    counter_ticks = 0b10101,
+    /// Count A high states across complete periods spanning at least X clocks.
+    counter_highs = 0b10110,
+    /// Count complete A-to-B periods spanning at least X clocks.
+    counter_periods = 0b10111,
+    /// ADC sample/filter/capture with internal clocking.
+    adc = 0b11000,
+    /// ADC sample/filter/capture with external clocking.
+    adc_ext = 0b11001,
+    /// ADC scope with trigger.
+    adc_scope = 0b11010,
+    /// USB host/device on an odd/even pin pair.
+    usb_pair = 0b11011,
+    /// Synchronous serial transmit.
+    sync_tx = 0b11100,
+    /// Synchronous serial receive.
+    sync_rx = 0b11101,
+    /// Asynchronous serial transmit.
+    uart_tx = 0b11110,
+    /// Asynchronous serial receive.
+    uart_rx = 0b11111,
+
+    pub const dac_noise: SmartPinMode = .repository;
+};
+
+/// Index of a smart engine and its associated cog register bit.
+pub const PinIndex = enum(u6) { _ };
+/// Index of a physical pad in the I/O ring.
+pub const PadIndex = enum(u6) { _ };
+
+/// WRPIN configuration, in hardware bit order: %AAAA_BBBB_FFF_MMMMMMMMMMMMM_TT_SSSSS_0.
+/// The low bit selects acknowledgement instead of configuration on the command bus.
+pub const PinConfiguration = packed struct(u32) {
+    acknowledge: bool = false,
+    mode: SmartPinMode = .gpio,
+    output_enable: bool = false,
+    output_source: enum(u1) { out, other } = .out,
+    low_drive: Drive = .fast,
+    high_drive: Drive = .fast,
+    invert_output: bool = false,
+    invert_input: bool = false,
+    synchronous: bool = false,
+    pad_mode: PadMode = .logic,
+    input_logic: InputLogic = .a,
+    b: Selector = .{},
+    a: Selector = .{},
+
+    pub const Drive = enum(u3) { fast, resistor_1k5, resistor_15k, resistor_150k, current_1ma, current_100ua, current_10ua, float };
+    /// The upper four bits of the physical configuration. ADC/DAC modes reinterpret lower bits.
+    pub const PadMode = enum(u4) {
+        logic,
+        logic_feedback,
+        logic_adjacent_feedback,
+        schmitt,
+        schmitt_feedback,
+        schmitt_adjacent_feedback,
+        compare,
+        compare_feedback,
+        adc_gio_vio_float_1x,
+        adc_3x_10x_30x_100x,
+        dac_990r_600r,
+        dac_124r_75r,
+        level,
+        level_negative_feedback,
+        level_adjacent_positive_feedback,
+        level_adjacent_negative_feedback,
+    };
+    pub const InputLogic = enum(u3) { a, a_and_b, a_or_b, a_xor_b, filter0, filter1, filter2, filter3 };
+    pub const Selector = packed struct(u4) {
+        source: enum(u3) { local, plus1, plus2, plus3, out, minus3, minus2, minus1 } = .local,
+        invert: bool = false,
+    };
+};
+
 /// Hardware event IDs used by polling, waiting, branching, and interrupt selection.
 pub const EventId = enum(u4) {
     /// Interrupt 1, 2, or 3 occurred; debug interrupts are excluded.

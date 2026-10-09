@@ -7,11 +7,15 @@ const logger = std.log.scoped(.execute);
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const Cog = @import("Cog.zig");
-const alu = @import("p2").alu;
+const p2 = @import("p2");
+const types = p2.types;
+const alu = p2.alu;
+const IO = @import("IO.zig");
+const hub_module = @import("Hub.zig");
 
 // codegen: begin:runtimehelpers
-const EventId = @import("p2").types.EventId;
-const clock_reached = @import("Hub.zig").clock_reached;
+const EventId = types.EventId;
+const clock_reached = hub_module.clock_reached;
 
 /// Read captured D or combine its immediate field with the one-shot AUGD extension.
 fn operandD(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
@@ -400,6 +404,78 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
         },
     }
     return result;
+}
+
+/// Shared port-local field decoder for every pin mutation; reads use just D/S[5:0].
+fn pinMask(cog: *Cog, value: u32) u64 {
+    const field: types.PinIndexAndCount = @bitCast(value);
+    const count: u5 = if (cog.setq_pending and !cog.q2) @truncate(cog.q) else field.count;
+    const low = @as(u32, std.math.maxInt(u32)) >> (31 - count);
+    const bits = std.math.rotl(u32, low, @as(u5, @truncate(field.index)));
+    return @as(u64, bits) << @as(u6, if (field.index < 32) 0 else 32);
+}
+
+/// Queue a semantic pin operation with its issuing cog and instruction.
+fn pinCommand(cog: *Cog, mask: u64, kind: IO.CommandKind, value: u32) void {
+    cog.hub.io.enqueue(cog.hub, .{
+        .mask = mask,
+        .kind = kind,
+        .value = value,
+        .cog = cog.id,
+        .pc = cog.dispatch_pc,
+        .instruction = if (cog.pipeline[3]) |state| state.instr else 0,
+    });
+}
+
+/// Sample a pin and combine its value with the requested C/Z flags.
+fn testPin(cog: *Cog, args: encoding.Only_Dimm_Flags, inverse: bool, operation: enum { write, and_flags, or_flags, xor_flags }) Cog.ExecResult {
+    const index: u6 = @truncate(operandD(cog, args.d, args.d_imm));
+    const value = ((cog.hub.io.get_in() >> index) & 1 != 0) != inverse;
+    if (args.c_mod == .write) cog.c = switch (operation) {
+        .write => value,
+        .and_flags => cog.c and value,
+        .or_flags => cog.c or value,
+        .xor_flags => cog.c != value,
+    };
+    if (args.z_mod == .write) cog.z = switch (operation) {
+        .write => value,
+        .and_flags => cog.z and value,
+        .or_flags => cog.z or value,
+        .xor_flags => cog.z != value,
+    };
+    return .next;
+}
+
+const PinOperation = enum { low, high, carry, not_carry, zero, not_zero, random, invert };
+
+/// Apply a named operation to a port-local pin field and return its prior base bit.
+fn modifyPins(cog: *Cog, args: encoding.Only_Dimm_Flags, family: enum { dir, out, flt, drv }, operation: PinOperation) Cog.ExecResult {
+    const value = operandD(cog, args.d, args.d_imm);
+    const index: u6 = @truncate(value);
+    const reg: Cog.Register = if (family == .dir) (if (index < 32) .DIRA else .DIRB) else (if (index < 32) .OUTA else .OUTB);
+    const mask: u32 = @truncate(pinMask(cog, value) >> @as(u6, if (index < 32) 0 else 32));
+    const old = cog.read_operand(reg);
+    const selected: u32 = switch (operation) {
+        .low => 0,
+        .high => std.math.maxInt(u32),
+        .carry => if (cog.c) std.math.maxInt(u32) else 0,
+        .not_carry => if (!cog.c) std.math.maxInt(u32) else 0,
+        .zero => if (cog.z) std.math.maxInt(u32) else 0,
+        .not_zero => if (!cog.z) std.math.maxInt(u32) else 0,
+        .random => cog.hub.io.randomWord(cog.id, cog.hub.counter),
+        .invert => ~old,
+    };
+    const result = (old & ~mask) | (selected & mask);
+    cog.write_reg(reg, result);
+    if (family == .flt or family == .drv) {
+        const dir: Cog.Register = if (index < 32) .DIRA else .DIRB;
+        const prior = cog.read_operand(dir);
+        cog.write_reg(dir, if (family == .flt) prior & ~mask else prior | mask);
+    }
+    const flag = old & (@as(u32, 1) << @as(u5, @truncate(index))) != 0;
+    if (args.c_mod == .write) cog.c = flag;
+    if (args.z_mod == .write) cog.z = flag;
+    return .next;
 }
 
 // codegen: end:runtimehelpers
@@ -3476,12 +3552,7 @@ pub fn augd(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp
-    const pin = operandD(cog, args.d, args.d_imm) & 63;
-    if (pin != 62 and pin != 63) return .not_implemented;
-    const value = cog.hub.io.pins[pin].ready;
-    if (args.c_mod == .write) cog.c = value;
-    if (args.z_mod == .write) cog.z = value;
-    return .next;
+    return testPin(cog, args, false, .write);
     // codegen: end:testp
 }
 
@@ -3494,10 +3565,7 @@ pub fn testp(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return testPin(cog, args, true, .write);
     // codegen: end:testpn
 }
 
@@ -3510,10 +3578,7 @@ pub fn testpn(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp_and
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return testPin(cog, args, false, .and_flags);
     // codegen: end:testp_and
 }
 
@@ -3526,10 +3591,7 @@ pub fn testp_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn_and
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return testPin(cog, args, true, .and_flags);
     // codegen: end:testpn_and
 }
 
@@ -3542,10 +3604,7 @@ pub fn testpn_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp_or
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return testPin(cog, args, false, .or_flags);
     // codegen: end:testp_or
 }
 
@@ -3558,10 +3617,7 @@ pub fn testp_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn_or
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return testPin(cog, args, true, .or_flags);
     // codegen: end:testpn_or
 }
 
@@ -3574,10 +3630,7 @@ pub fn testpn_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp_xor
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return testPin(cog, args, false, .xor_flags);
     // codegen: end:testp_xor
 }
 
@@ -3590,10 +3643,7 @@ pub fn testp_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn_xor
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return testPin(cog, args, true, .xor_flags);
     // codegen: end:testpn_xor
 }
 
@@ -3606,10 +3656,7 @@ pub fn testpn_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirl
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .dir, .low);
     // codegen: end:dirl
 }
 
@@ -3622,13 +3669,7 @@ pub fn dirl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirh
-    const pin = operandD(cog, args.d, args.d_imm);
-    if (pin != 62 and pin != 63) return .not_implemented;
-    const reg: Cog.Register = .DIRB;
-    cog.write_reg(reg, cog.read_operand(reg) | (@as(u32, 1) << @as(u5, @intCast(pin - 32))));
-    if (args.c_mod == .write) cog.c = true;
-    if (args.z_mod == .write) cog.z = true;
-    return .next;
+    return modifyPins(cog, args, .dir, .high);
     // codegen: end:dirh
 }
 
@@ -3641,10 +3682,7 @@ pub fn dirh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .dir, .carry);
     // codegen: end:dirc
 }
 
@@ -3657,10 +3695,7 @@ pub fn dirc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirnc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .dir, .not_carry);
     // codegen: end:dirnc
 }
 
@@ -3673,10 +3708,7 @@ pub fn dirnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .dir, .zero);
     // codegen: end:dirz
 }
 
@@ -3689,10 +3721,7 @@ pub fn dirz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirnz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .dir, .not_zero);
     // codegen: end:dirnz
 }
 
@@ -3705,10 +3734,7 @@ pub fn dirnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirrnd
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .dir, .random);
     // codegen: end:dirrnd
 }
 
@@ -3721,10 +3747,7 @@ pub fn dirrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirnot
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .dir, .invert);
     // codegen: end:dirnot
 }
 
@@ -3737,10 +3760,7 @@ pub fn dirnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outl
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .low);
     // codegen: end:outl
 }
 
@@ -3753,10 +3773,7 @@ pub fn outl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outh
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .high);
     // codegen: end:outh
 }
 
@@ -3769,10 +3786,7 @@ pub fn outh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .carry);
     // codegen: end:outc
 }
 
@@ -3785,10 +3799,7 @@ pub fn outc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outnc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .not_carry);
     // codegen: end:outnc
 }
 
@@ -3801,10 +3812,7 @@ pub fn outnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .zero);
     // codegen: end:outz
 }
 
@@ -3817,10 +3825,7 @@ pub fn outz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outnz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .not_zero);
     // codegen: end:outnz
 }
 
@@ -3833,10 +3838,7 @@ pub fn outnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outrnd
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .random);
     // codegen: end:outrnd
 }
 
@@ -3849,10 +3851,7 @@ pub fn outrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outnot
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .out, .invert);
     // codegen: end:outnot
 }
 
@@ -3865,10 +3864,7 @@ pub fn outnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltl
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .low);
     // codegen: end:fltl
 }
 
@@ -3881,10 +3877,7 @@ pub fn fltl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn flth(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:flth
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .high);
     // codegen: end:flth
 }
 
@@ -3897,10 +3890,7 @@ pub fn flth(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .carry);
     // codegen: end:fltc
 }
 
@@ -3913,10 +3903,7 @@ pub fn fltc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltnc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .not_carry);
     // codegen: end:fltnc
 }
 
@@ -3929,10 +3916,7 @@ pub fn fltnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .zero);
     // codegen: end:fltz
 }
 
@@ -3945,10 +3929,7 @@ pub fn fltz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltnz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .not_zero);
     // codegen: end:fltnz
 }
 
@@ -3961,10 +3942,7 @@ pub fn fltnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltrnd
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .random);
     // codegen: end:fltrnd
 }
 
@@ -3977,10 +3955,7 @@ pub fn fltrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltnot
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .flt, .invert);
     // codegen: end:fltnot
 }
 
@@ -3993,10 +3968,7 @@ pub fn fltnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvl
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .low);
     // codegen: end:drvl
 }
 
@@ -4009,10 +3981,7 @@ pub fn drvl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvh
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .high);
     // codegen: end:drvh
 }
 
@@ -4025,10 +3994,7 @@ pub fn drvh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .carry);
     // codegen: end:drvc
 }
 
@@ -4041,10 +4007,7 @@ pub fn drvc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvnc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .not_carry);
     // codegen: end:drvnc
 }
 
@@ -4057,10 +4020,7 @@ pub fn drvnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .zero);
     // codegen: end:drvz
 }
 
@@ -4073,10 +4033,7 @@ pub fn drvz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvnz
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .not_zero);
     // codegen: end:drvnz
 }
 
@@ -4089,10 +4046,7 @@ pub fn drvnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvrnd
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .random);
     // codegen: end:drvrnd
 }
 
@@ -4105,10 +4059,7 @@ pub fn drvrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvnot
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return modifyPins(cog, args, .drv, .invert);
     // codegen: end:drvnot
 }
 
@@ -4387,10 +4338,11 @@ pub fn alti(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn rqpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
     // codegen: begin:rqpin
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const index: u6 = @truncate(operandS(cog, args.s, args.s_imm));
+    const result = cog.hub.io.readResult(@enumFromInt(index), cog.hub.counter);
+    cog.write_result(args.d, result.value);
+    if (args.c_mod == .write) cog.c = result.flag;
+    return .next;
     // codegen: end:rqpin
 }
 
@@ -4403,11 +4355,11 @@ pub fn rqpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn rdpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
     // codegen: begin:rdpin
-    const pin = operandS(cog, args.s, args.s_imm) & 63;
-    if (pin != 62 and pin != 63) return .not_implemented;
-    cog.write_result(args.d, cog.hub.io.pins[pin].result);
-    if (args.c_mod == .write) cog.c = pin == 62 and cog.hub.io.txBusy();
-    cog.hub.io.pins[pin].ready = false;
+    const index: u6 = @truncate(operandS(cog, args.s, args.s_imm));
+    const result = cog.hub.io.readResult(@enumFromInt(index), cog.hub.counter);
+    cog.write_result(args.d, result.value);
+    if (args.c_mod == .write) cog.c = result.flag;
+    pinCommand(cog, @as(u64, 1) << index, .acknowledge, 1);
     return .next;
     // codegen: end:rdpin
 }
@@ -4421,11 +4373,10 @@ pub fn rdpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrpin
-    const mode = operandD(cog, args.d, args.d_imm);
-    const pin = operandS(cog, args.s, args.s_imm);
-    if (!((pin == 62 and mode == 0x7c) or (pin == 63 and mode == 0x3e))) return .not_implemented;
-    cog.hub.io.pins[pin].mode = mode;
-    cog.hub.io.pins[pin].ready = false;
+    const value = operandD(cog, args.d, args.d_imm);
+    const field = operandS(cog, args.s, args.s_imm);
+    if (!IO.supported(value)) return .not_implemented;
+    pinCommand(cog, pinMask(cog, field), if (value & 1 != 0) .acknowledge else .configure, value);
     return .next;
     // codegen: end:wrpin
 }
@@ -4439,11 +4390,9 @@ pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wxpin
-    const x = operandD(cog, args.d, args.d_imm);
-    const pin = operandS(cog, args.s, args.s_imm);
-    if ((pin != 62 and pin != 63) or x & 31 != 7 or x >> 16 == 0) return .not_implemented;
-    cog.hub.io.pins[pin].x = x;
-    cog.hub.io.pins[pin].ready = false;
+    const value = operandD(cog, args.d, args.d_imm);
+    const field = operandS(cog, args.s, args.s_imm);
+    pinCommand(cog, pinMask(cog, field), .write_x, value);
     return .next;
     // codegen: end:wxpin
 }
@@ -4457,9 +4406,9 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wypin
-    const data = operandD(cog, args.d, args.d_imm);
-    const pin = operandS(cog, args.s, args.s_imm);
-    if (pin != 62 or !cog.hub.io.transmit(data)) return .not_implemented;
+    const value = operandD(cog, args.d, args.d_imm);
+    const field = operandS(cog, args.s, args.s_imm);
+    pinCommand(cog, pinMask(cog, field), .write_y, value);
     return .next;
     // codegen: end:wypin
 }

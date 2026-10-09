@@ -2,6 +2,10 @@ const std = @import("std");
 const cases = @import("tests/propan/cases.zig");
 
 const windtunnel_fixtures = [_][]const u8{
+    "tests/windtunnel/state/smart-pin-hardware.propan",
+    "tests/windtunnel/state/smart-pin-fields.propan",
+    "tests/windtunnel/state/pin-families.propan",
+    "tests/windtunnel/state/test-pin-flags.propan",
     "tests/windtunnel/behaviour/augs.propan",
     "tests/windtunnel/behaviour/cogstop.propan",
     "tests/windtunnel/behaviour/core-execution.propan",
@@ -12,6 +16,7 @@ const windtunnel_fixtures = [_][]const u8{
     "tests/windtunnel/program/server-loader.propan",
     "tests/windtunnel/program/hello-world.propan",
     "tests/windtunnel/program/dir-register-uart.propan",
+    "tests/windtunnel/program/uart-checkpoint.propan",
     "tests/windtunnel/state/core-branches.propan",
     "tests/windtunnel/state/core-calls.propan",
     "tests/windtunnel/state/core-memory.propan",
