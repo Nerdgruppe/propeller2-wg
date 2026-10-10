@@ -11,57 +11,39 @@ const internal_reason = "The server experienced an unexpected error.";
 const Options = struct {
     baudrate: u32 = 115200,
     timeout_ms: u32 = 2500,
-    code: [max_payload]u8 = undefined,
-    code_len: ?usize = null,
+    code: ?[]u8 = null,
 
-    /// Match HTTP query decoding, defaults for blank numbers, and URL-code upload precedence.
-    fn parse(target: []const u8) !Options {
+    /// Parse query options, borrowing caller memory for any decoded URL image.
+    fn parse(target: []const u8, memory: []u8) !Options {
         var result: Options = .{};
         const start = std.mem.findScalar(u8, target, '?') orelse return result;
         if (target.len > max_request_head) return error.InvalidQuery;
         var name_buffer: [128]u8 = undefined;
-        // Base64 is larger than its decoded image; allow the HTTP head bound plus padding.
-        var value_buffer: [max_request_head + 3]u8 = undefined;
         var items = std.mem.splitScalar(u8, target[start + 1 ..], '&');
         var saw_baud = false;
         var saw_timeout = false;
         while (items.next()) |item| {
             const equal = std.mem.findScalar(u8, item, '=') orelse item.len;
             const name = try decodeQuery(&name_buffer, item[0..equal]);
-            const value = try decodeQuery(value_buffer[0..max_request_head], if (equal < item.len) item[equal + 1 ..] else "");
+            const raw_value = if (equal < item.len) item[equal + 1 ..] else "";
             if (std.ascii.eqlIgnoreCase(name, "code")) {
-                if (result.code_len != null) return error.DuplicateCode;
-                // .NET removes whitespace, accepts URL alphabet and pads omitted '='.
-                // Normalization writes forwards into the same buffer, behind the unread bytes.
-                var normalized = std.Io.Writer.fixed(&value_buffer);
-                for (value) |byte| switch (byte) {
-                    ' ', '\t', '\r', '\n' => {},
-                    '-' => try normalized.writeByte('+'),
-                    '_' => try normalized.writeByte('/'),
-                    else => try normalized.writeByte(byte),
-                };
-                if (normalized.buffered().len > (max_payload / 3 + 1) * 4) return error.PayloadTooLarge;
-                while (normalized.buffered().len % 4 != 0) try normalized.writeByte('=');
-                const decoder = std.base64.standard.Decoder;
-                const len = decoder.calcSizeForSlice(normalized.buffered()) catch return error.InvalidCode;
-                if (len > max_payload) return error.PayloadTooLarge;
-                decoder.decode(result.code[0..len], normalized.buffered()) catch return error.InvalidCode;
-                if (len % 4 != 0) return error.UnalignedPayload;
-                result.code_len = len;
+                if (result.code != null) return error.DuplicateCode;
+                result.code = try decodeCode(memory[0..@min(memory.len, max_payload)], raw_value);
             } else if (std.ascii.eqlIgnoreCase(name, "baudrate") or std.ascii.eqlIgnoreCase(name, "timeout_ms")) {
                 const baud = std.ascii.eqlIgnoreCase(name, "baudrate");
                 const seen = if (baud) &saw_baud else &saw_timeout;
                 if (seen.*) return error.InvalidNumber;
                 seen.* = true;
-                const number = std.mem.trim(u8, value, " \t\r\n");
-                if (number.len == 0) continue;
-                // Zig also accepts digit separators; .NET's decimal query parser rejects them.
-                const digits = if (number[0] == '+' or number[0] == '-') number[1..] else number;
-                if (digits.len == 0) return error.InvalidNumber;
-                for (digits) |digit| if (!std.ascii.isDigit(digit)) return error.InvalidNumber;
-                const parsed = std.fmt.parseInt(i32, number, 10) catch return error.InvalidNumber;
-                if (parsed <= 0) return error.InvalidNumber;
-                if (baud) result.baudrate = @intCast(parsed) else result.timeout_ms = @intCast(parsed);
+                const parsed = try decodeNumber(raw_value) orelse continue;
+                if (baud) {
+                    result.baudrate = parsed;
+                } else {
+                    result.timeout_ms = parsed;
+                }
+            } else {
+                // Even ignored query values must have valid URI escapes.
+                var value: QueryValue = .{ .raw = raw_value };
+                while (try value.next()) |_| {}
             }
         }
         if (result.timeout_ms < 100 or result.timeout_ms > 10000) return error.InvalidTimeout;
@@ -69,21 +51,100 @@ const Options = struct {
     }
 };
 
-/// Form queries map literal '+' to space before URI decoding; escaped '+' remains literal.
-fn decodeQuery(buffer: []u8, raw: []const u8) ![]u8 {
-    if (raw.len > buffer.len) return error.InvalidQuery;
-    const encoded = buffer[0..raw.len];
-    @memcpy(encoded, raw);
-    var index: usize = 0;
-    while (index < raw.len) : (index += 1) {
-        if (encoded[index] == '+') encoded[index] = ' ';
-        // std.Uri preserves malformed escapes; this protocol rejects them instead.
-        if (encoded[index] == '%') {
-            if (raw.len - index < 3 or !std.ascii.isHex(encoded[index + 1]) or !std.ascii.isHex(encoded[index + 2])) return error.InvalidQuery;
-            index += 2;
+const QueryValue = struct {
+    raw: []const u8,
+
+    /// Decode one form-query byte; escaped '+' stays literal and malformed escapes fail.
+    fn next(value: *QueryValue) !?u8 {
+        if (value.raw.len == 0) return null;
+        const byte = value.raw[0];
+        if (byte == '%') {
+            if (value.raw.len < 3 or !std.ascii.isHex(value.raw[1]) or !std.ascii.isHex(value.raw[2])) return error.InvalidQuery;
+            const decoded = std.fmt.parseInt(u8, value.raw[1..3], 16) catch return error.InvalidQuery;
+            value.raw = value.raw[3..];
+            return decoded;
         }
+        value.raw = value.raw[1..];
+        return if (byte == '+') ' ' else byte;
     }
-    return std.Uri.percentDecodeInPlace(encoded);
+};
+
+/// Decode a bounded query name without storing an entire query value.
+fn decodeQuery(buffer: []u8, raw: []const u8) ![]u8 {
+    var value: QueryValue = .{ .raw = raw };
+    var len: usize = 0;
+    while (try value.next()) |byte| {
+        if (len == buffer.len) return error.InvalidQuery;
+        buffer[len] = byte;
+        len += 1;
+    }
+    return buffer[0..len];
+}
+
+/// Parse a positive .NET-style decimal query number, allowing blank values and outer whitespace.
+fn decodeNumber(raw: []const u8) !?u32 {
+    var value: QueryValue = .{ .raw = raw };
+    var started = false;
+    var trailing = false;
+    var digits = false;
+    var number: u32 = 0;
+    while (try value.next()) |byte| {
+        if (std.mem.findScalar(u8, " \t\r\n", byte) != null) {
+            if (started) trailing = true;
+            continue;
+        }
+        if (trailing) return error.InvalidNumber;
+        if (!started and byte == '+') {
+            started = true;
+            continue;
+        }
+        started = true;
+        if (!std.ascii.isDigit(byte)) return error.InvalidNumber;
+        digits = true;
+        if (number > (std.math.maxInt(i32) - @as(u32, byte - '0')) / 10) return error.InvalidNumber;
+        number = number * 10 + byte - '0';
+    }
+    if (!started) return null;
+    if (!digits or number == 0) return error.InvalidNumber;
+    return number;
+}
+
+/// Normalize form-encoded Base64 in small chunks and decode directly into caller memory.
+fn decodeCode(memory: []u8, raw: []const u8) ![]u8 {
+    var value: QueryValue = .{ .raw = raw };
+    var chunk: [4096]u8 = undefined;
+    var len: usize = 0;
+    var written: usize = 0;
+    var padded = false;
+    while (try value.next()) |byte| {
+        if (std.mem.findScalar(u8, " \t\r\n", byte) != null) continue;
+        if (len == chunk.len) {
+            if (padded) return error.InvalidCode;
+            written += try decodeCodeChunk(memory[written..], &chunk);
+            len = 0;
+        }
+        chunk[len] = switch (byte) {
+            '-' => '+',
+            '_' => '/',
+            else => byte,
+        };
+        padded = padded or byte == '=';
+        len += 1;
+    }
+    // .NET accepts omitted padding after removing whitespace and mapping the URL alphabet.
+    while (len % 4 != 0) : (len += 1) chunk[len] = '=';
+    written += try decodeCodeChunk(memory[written..], chunk[0..len]);
+    if (written % 4 != 0) return error.UnalignedPayload;
+    return memory[0..written];
+}
+
+/// Validate and decode one complete Base64 chunk within the remaining destination capacity.
+fn decodeCodeChunk(memory: []u8, chunk: []const u8) !usize {
+    const decoder = std.base64.standard.Decoder;
+    const len = decoder.calcSizeForSlice(chunk) catch return error.InvalidCode;
+    if (len > memory.len) return error.PayloadTooLarge;
+    decoder.decode(memory[0..len], chunk) catch return error.InvalidCode;
+    return len;
 }
 
 const Close = struct { bytes: [125]u8 = undefined, len: usize = 0 };
@@ -384,6 +445,7 @@ fn closeBounded(connection: *Connection, code: u16, reason: []const u8, events: 
 fn process(connection: *Connection, http: *std.http.Server) !void {
     var arena: std.heap.ArenaAllocator = .init(connection.allocator);
     defer arena.deinit();
+
     var request = http.receiveHead() catch {
         if (connection.network_reader) |reader| if (reader.err) |read_error| if (read_error == error.Canceled) return error.Canceled;
         try http.out.writeAll("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
@@ -394,14 +456,16 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
         try request.respond("Expected a WebSocket upgrade.", .{ .status = .bad_request, .keep_alive = false });
         return;
     };
-    const options = Options.parse(request.head.target) catch |err| {
+    const hub = try arena.allocator().create(Hub);
+    hub.init();
+    const options = Options.parse(request.head.target, &hub.memory) catch |err| {
         try request.respond(queryReason(err), .{ .status = .bad_request, .keep_alive = false, .extra_headers = &.{.{ .name = "Content-Type", .value = "text/plain; charset=utf-8" }} });
         return;
     };
     connection.socket = try request.respondWebSocket(.{ .key = key });
     try http.out.flush();
     connection.upgraded = true;
-    const payload = if (options.code_len) |len| options.code[0..len] else blk: {
+    const payload = options.code orelse blk: {
         var prefix: [4]u8 = undefined;
         connection.uploadRead(&prefix) catch |err| {
             if (err == error.Canceled) return err;
@@ -415,7 +479,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
             try closeBounded(connection, 1002, if (length == 0) "Expected a non-empty payload." else "Payload exceeds 524288 bytes.", null);
             return;
         }
-        const image = try arena.allocator().alloc(u8, length);
+        const image = hub.memory[0..length];
         connection.uploadRead(image) catch |err| {
             if (err == error.Canceled) return err;
             connection.closing.store(true, .release);
@@ -430,9 +494,6 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
         }
         break :blk image;
     };
-    const hub = try arena.allocator().create(Hub);
-    hub.init();
-    @memcpy(hub.memory[0..payload.len], payload);
     // The loader stores its checksum complement as another long after the image.
     // At the 512 KiB boundary the next address is a hub hole, so it is not mirrored to address zero.
     var checksum: u32 = 0x706f7250;
@@ -591,18 +652,23 @@ pub fn serve(allocator: std.mem.Allocator, io: std.Io, address: []const u8, trac
 
 // Query and frame tests run without networking; the harness also exercises real TCP sessions.
 test "P2AAS query matrix: defaults, URL uploads and validation before upgrade" {
-    const defaults = try Options.parse("/");
+    var memory: [16]u8 = undefined;
+    const defaults = try Options.parse("/", &memory);
     try std.testing.expectEqual(@as(u32, 115200), defaults.baudrate);
     try std.testing.expectEqual(@as(u32, 2500), defaults.timeout_ms);
-    try std.testing.expect(defaults.code_len == null);
-    try std.testing.expectEqual(@as(usize, 0), (try Options.parse("/?code=")).code_len.?);
+    try std.testing.expect(defaults.code == null);
+    try std.testing.expectEqual(@as(usize, 0), (try Options.parse("/?code=", &memory)).code.?.len);
     for ([_][]const u8{ "/?code=AAAAAA==", "/?code=AAAAAA", "/?code=__8AAA", "/?code=%2F%2F8AAA%3D%3D", "/?c%6fde=AA+AA%09AA%3D%3D" }) |target| {
-        try std.testing.expectEqual(@as(usize, 4), (try Options.parse(target)).code_len.?);
+        try std.testing.expectEqual(@as(usize, 4), (try Options.parse(target, &memory)).code.?.len);
     }
-    const selected = try Options.parse("/?baudrate=%2B230400&timeout_ms=100&unused=ok");
+    const selected = try Options.parse("/?baudrate=%2B230400&timeout_ms=100&unused=ok", &memory);
     try std.testing.expectEqual(@as(u32, 230400), selected.baudrate);
     try std.testing.expectEqual(@as(u32, 100), selected.timeout_ms);
-    try std.testing.expectEqual(@as(u32, 115200), (try Options.parse("/?baudrate=+&timeout_ms=")).baudrate);
+    try std.testing.expectEqual(@as(u32, 115200), (try Options.parse("/?baudrate=+&timeout_ms=", &memory)).baudrate);
+    try std.testing.expectEqual(@as(u32, 2147483647), (try Options.parse("/?baudrate=+%2B0002147483647%09", &memory)).baudrate);
+    const borrowed = (try Options.parse("/?code=AAAAAA", &memory)).code.?;
+    try std.testing.expectEqual(memory[0..].ptr, borrowed.ptr);
+    try std.testing.expectError(error.PayloadTooLarge, Options.parse("/?code=AAAAAA", memory[0..3]));
     inline for (.{
         .{ "/?code=&code=", error.DuplicateCode },
         .{ "/?code=!", error.InvalidCode },
@@ -617,11 +683,19 @@ test "P2AAS query matrix: defaults, URL uploads and validation before upgrade" {
         .{ "/?code=%xx", error.InvalidQuery },
         .{ "/?code=%", error.InvalidQuery },
         .{ "/?code=%0", error.InvalidQuery },
-    }) |case| try std.testing.expectError(case[1], Options.parse(case[0]));
+        .{ "/?unused=%+1", error.InvalidQuery },
+        .{ "/?code=%-0", error.InvalidQuery },
+        .{ "/?baudrate=-1", error.InvalidNumber },
+        .{ "/?baudrate=%2B", error.InvalidNumber },
+        .{ "/?baudrate=%2B+1", error.InvalidNumber },
+        .{ "/?baudrate=1+2", error.InvalidNumber },
+    }) |case| try std.testing.expectError(case[1], Options.parse(case[0], &memory));
 }
 
-test "P2AAS URL code fits its fixed buffer at 512 KiB and rejects larger images" {
+test "P2AAS URL code fits caller memory at 512 KiB and rejects larger images" {
     const allocator = std.testing.allocator;
+    const memory = try allocator.alloc(u8, max_payload);
+    defer allocator.free(memory);
     const image = try allocator.alloc(u8, max_payload + 4);
     defer allocator.free(image);
     @memset(image, 0xff);
@@ -631,11 +705,28 @@ test "P2AAS URL code fits its fixed buffer at 512 KiB and rejects larger images"
     defer allocator.free(query);
     @memcpy(query[0..prefix.len], prefix);
     const encoded = encoder.encode(query[prefix.len..], image[0..max_payload]);
-    const options = try Options.parse(query[0 .. prefix.len + encoded.len]);
-    try std.testing.expectEqual(max_payload, options.code_len.?);
-    try std.testing.expectEqualSlices(u8, image[0..max_payload], options.code[0..options.code_len.?]);
+    const options = try Options.parse(query[0 .. prefix.len + encoded.len], memory);
+    try std.testing.expectEqual(max_payload, options.code.?.len);
+    try std.testing.expectEqualSlices(u8, image[0..max_payload], options.code.?);
     _ = encoder.encode(query[prefix.len..], image);
-    try std.testing.expectError(error.PayloadTooLarge, Options.parse(query));
+    try std.testing.expectError(error.PayloadTooLarge, Options.parse(query, memory));
+}
+
+test "P2AAS Base64 chunk boundaries preserve whitespace, escaping and final padding" {
+    var memory: [3080]u8 = undefined;
+    // 4096 normalized characters decode to 3072 bytes, an aligned image.
+    const full = "A" ** 4096;
+    const exact = try Options.parse("/?code=" ++ full ++ "%09+", &memory);
+    try std.testing.expectEqual(@as(usize, 3072), exact.code.?.len);
+    const continued = try Options.parse("/?code=" ++ full ++ "+%09%2F%2F8AAA%3D%3D", &memory);
+    try std.testing.expectEqual(@as(usize, 3076), continued.code.?.len);
+    try std.testing.expectEqualSlices(u8, &.{ 0xff, 0xff, 0, 0 }, continued.code.?[3072..]);
+    // Padding may finish a full chunk, but cannot terminate an earlier chunk.
+    const padded = "A" ** 4094 ++ "==";
+    try std.testing.expectError(error.UnalignedPayload, Options.parse("/?code=" ++ padded ++ "%09", &memory));
+    try std.testing.expectError(error.InvalidCode, Options.parse("/?code=" ++ padded ++ "+AAAA", &memory));
+    try std.testing.expectError(error.InvalidCode, Options.parse("/?code=" ++ full ++ "%3DAAA", &memory));
+    try std.testing.expectError(error.InvalidQuery, Options.parse("/?code=" ++ full ++ "%2", &memory));
 }
 
 /// Build masked test frames with stdlib's encoder; a fixed mask makes boundary errors reproducible.

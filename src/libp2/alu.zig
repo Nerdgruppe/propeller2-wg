@@ -655,21 +655,17 @@ pub fn MOVBYTS(input: Input) Output {
     return input.unchanged_flags_output(result.raw);
 }
 
-// MUL     D,{#}S          {WZ}               | D = unsigned (D[15:0] * S[15:0]). Z = (S == 0) | (D == 0).
+/// Multiply unsigned low halves, preserving C and setting Z from the product.
 pub fn MUL(input: Input) Output {
     const result = (input.d & 0xFFFF) * (input.s & 0xFFFF);
-    var out = input.unchanged_flags_output(result);
-    out.z = .from_bool(input.d == 0 or input.s == 0);
-    return out;
+    return input.zero_output(result, input.c);
 }
 
-// MULS    D,{#}S          {WZ}               | D = signed (D[15:0] * S[15:0]).   Z = (S == 0) | (D == 0).
+/// Multiply signed low halves, preserving C and setting Z from the product.
 pub fn MULS(input: Input) Output {
     const d: i16 = @bitCast(@as(u16, @truncate(input.d)));
     const s: i16 = @bitCast(@as(u16, @truncate(input.s)));
-    var out = input.unchanged_flags_output(@bitCast(@as(i32, d) * s));
-    out.z = .from_bool(input.d == 0 or input.s == 0);
-    return out;
+    return input.zero_output(@bitCast(@as(i32, d) * s), input.c);
 }
 
 // SCA     D,{#}S          {WZ}               | Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16. *
@@ -1063,8 +1059,8 @@ test "multiplication and source substitution" {
     try std.testing.expectEqual(@as(u32, 1), MULS(input).result);
     input.d = 0x1_0000;
     try std.testing.expectEqual(@as(u32, 0), MUL(input).result);
-    try std.testing.expectEqual(Flag.unset, MUL(input).z);
-    try std.testing.expectEqual(Flag.unset, MULS(input).z);
+    try std.testing.expectEqual(Flag.set, MUL(input).z);
+    try std.testing.expectEqual(Flag.set, MULS(input).z);
     input.d = 1;
     input.s = 1;
     try std.testing.expectEqualDeep(Output{ .result = 1, .c = .set, .z = .unset, .q = 7, .next_s = 0 }, SCA(input));

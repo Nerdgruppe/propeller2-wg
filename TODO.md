@@ -9,7 +9,40 @@
 ### Random Task Collection
 
 - Collection of all known CPU hazards
-- 
+- SETQ2 clarifications: document which instructions recognize SETQ versus SETQ2,
+  how long their prefix state lasts, and which operations preserve or replace Q.
+  Cover cancellation consuming prefixes, decode-time Q clearing, SETQ2 making
+  immediate WRLONG copy LUT words, and the adjacent-instruction effects on
+  COGINIT. See the [hardware regression](tests/windtunnel/state/setq2-coginit.propan)
+  and [bug report](BUGREPORT.md).
+  Include hardware-verified examples such as this bit-span difference:
+
+  ```propan
+                  // SETQ overrides the bit span with Q[4:0].
+                  SETQ    3
+                  BITH    via_setq,   0   // via_setq = 0x0f
+
+                  // SETQ2 does not override the bit span.
+                  SETQ2   3
+                  BITH    via_setq2,  0   // via_setq2 = 0x01
+  var via_setq:   LONG    0
+  var via_setq2:  LONG    0
+  ```
+
+  Also explain this hardware-verified COGINIT distinction (run each sequence
+  with a worker image at `worker`):
+
+  ```propan
+                  // With a register source, SETQ2 wins the adjacent Q clear.
+                  MOV     entry, aug(hubaddr(worker))
+                  SETQ2   3
+                  COGINIT 7, entry                  // Worker's PTRA = 3
+
+                  // The intervening AUGS permits COGINIT's decode to clear Q.
+                  SETQ2   3
+                  COGINIT 7, aug(hubaddr(worker))   // Worker's PTRA = 0
+  var entry:      LONG    0
+  ```
 
 ## Propan
 

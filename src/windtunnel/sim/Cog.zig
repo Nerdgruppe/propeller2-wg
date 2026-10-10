@@ -195,6 +195,10 @@ pub fn step(cog: *Cog) void {
         state.fifo_tail = false;
     };
 
+    // Q clearing is decoded before branch cancellation, but follows the older
+    // instruction's Q reads. Keep the decoded word even if that branch flushes it.
+    const decoded_word: ?u32 = if (cog.pipeline[1]) |state| state.instr else null;
+    var late_q_write = false;
     if (cog.pipeline[3]) |*state| {
         const enabled = state.instr == 0 or cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))));
         if (enabled and !state.execution_ready and state.ready_at == null) {
@@ -211,6 +215,10 @@ pub fn step(cog: *Cog) void {
         }
         state.execution_ready = true;
         const instr = state.*;
+        late_q_write = enabled and switch (decode.decode(instr.instr)) {
+            .setq, .setq2, .crcnib => true,
+            else => false,
+        };
         cog.trace(.execute, instr);
         cog.dispatch_pc = instr.pc;
         cog.branched = false;
@@ -246,6 +254,15 @@ pub fn step(cog: *Cog) void {
             },
         }
     }
+
+    // ALTx may have changed the next word; a taken branch has discarded it.
+    const next_word = if (cog.branched) decoded_word else if (cog.pipeline[1]) |state| state.instr else null;
+    if (next_word) |word| switch (decode.decode(word)) {
+        .coginit, .qdiv, .qfrac, .qrotate => {
+            if (!late_q_write and !(cog.setq_pending and !cog.q2)) cog.q = 0;
+        },
+        else => {},
+    };
 
     if (cog.pipeline[2]) |*state| {
         cog.capture_operands(state);

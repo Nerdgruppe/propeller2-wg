@@ -325,7 +325,8 @@
 // Separate packed targets cover every bank and byte alignment without assembler alignment hiding unaligned entry.
 
 .if probe_lut == 1
-                SETQ2   3
+                // Initialize the word fetched past the LUT return jump as well.
+                SETQ2   4
                 RDLONG  register(0),    aug(hubaddr(lut_measure))
                 MOV     return_pc,      aug(pcaddr(lut_return))
 .else
@@ -393,6 +394,7 @@ lut_measure:
 lut_return:
                 GETCT   return_time
                 JMP     nrel(cog_return)
+                NOP
 .data
 targets:        LONG    hubaddr(target0),   hubaddr(target1),   hubaddr(target2),   hubaddr(target3),   hubaddr(target4),   hubaddr(target5),   hubaddr(target6),   hubaddr(target7)
 .pack   byte
