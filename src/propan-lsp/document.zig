@@ -297,7 +297,7 @@ pub fn directiveDocs(name: []const u8) ?[]const u8 {
     return null;
 }
 
-pub const intrinsic_names = [_][]const u8{ "aug", "nrel", "hubaddr", "cogaddr", "lutaddr", "localaddr", "byteoffset", "wordoffset" };
+pub const intrinsic_names = [_][]const u8{ "aug", "nrel", "hubaddr", "cogaddr", "lutaddr", "localaddr", "pcaddr", "byteoffset", "wordoffset" };
 
 pub fn function(name: []const u8) ?Function {
     if (propan.stdlib.p2.functions.get(name)) |f| return .{ .docs = f.docs, .params = f.params };

@@ -10,6 +10,7 @@ const absolute = nrel(3)
 const hub = hubaddr(entry)
 const cog = cogaddr(slot)
 const local = localaddr(slot)
+const pc = pcaddr(slot)
 const byte = byteoffset(slot)
 const word = wordoffset(slot)
 .lutexec

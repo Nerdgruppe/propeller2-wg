@@ -20,6 +20,20 @@
         "title": "Restart LSP",
         "category": "Propan",
         "enablement": "!isWeb"
+      },
+      {
+        "command": "propan.check",
+        "title": "Check",
+        "category": "Propan",
+        "icon": "$(check)",
+        "enablement": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan"
+      },
+      {
+        "command": "propan.run",
+        "title": "Run",
+        "category": "Propan",
+        "icon": "$(play)",
+        "enablement": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan"
       }
     ],
     "menus": {
@@ -27,6 +41,50 @@
         {
           "command": "propan.restartLsp",
           "when": "!isWeb"
+        },
+        {
+          "command": "propan.check",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan"
+        },
+        {
+          "command": "propan.run",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "propan.check",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan",
+          "group": "navigation"
+        },
+        {
+          "command": "propan.run",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "propan.check",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan",
+          "group": "propan"
+        },
+        {
+          "command": "propan.run",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan",
+          "group": "propan"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "propan.check",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan",
+          "group": "propan"
+        },
+        {
+          "command": "propan.run",
+          "when": "!isWeb && isWorkspaceTrusted && resourceScheme == file && resourceLangId == propan",
+          "group": "propan"
         }
       ]
     },
@@ -87,7 +145,52 @@
           ]
         }
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Propeller 2",
+      "properties": {
+        "propeller2.propanLsp.path": {
+          "type": "string",
+          "default": "propan-lsp",
+          "scope": "machine-overridable",
+          "restricted": true,
+          "description": "Propan language server executable: an absolute path, workspace-relative path, or command on PATH. Changes restart the server."
+        },
+        "propeller2.propanLsp.arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine-overridable",
+          "restricted": true,
+          "description": "Arguments passed to propan-lsp. Changes restart the server."
+        },
+        "propeller2.propan.path": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "restricted": true,
+          "description": "Propan assembler executable. When empty, uses propan beside the configured LSP executable, or propan on PATH."
+        },
+        "propeller2.propan.arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "resource",
+          "restricted": true,
+          "description": "Additional assembler arguments, such as -I include paths."
+        },
+        "propeller2.p2aas.endpoint": {
+          "type": "string",
+          "default": "ws://127.0.0.1:12880/",
+          "scope": "resource",
+          "description": "P2AAS WebSocket endpoint for Run. Optional baudrate and timeout_ms query parameters default to 115200 and 5000."
+        }
+      }
+    }
   },
   "scripts": {
     "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/extensionTests.js",
@@ -102,7 +205,8 @@
     "lint": "eslint src",
     "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. .",
     "compile": "npm run compile-web",
-    "package": "npm run package-web"
+    "package": "npm run package-web",
+    "test-desktop": "node --test tests/desktop.cjs"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
@@ -123,10 +227,21 @@
   },
   "dependencies": {
     "@vscode/vsce": "^3.3.2",
+    "undici": "^6.29.0",
     "vscode-languageclient": "^9.0.1"
   },
   "main": "./dist/desktop/extension.js",
   "extensionKind": [
     "workspace"
-  ]
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Propan starts native executables from workspace settings."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "The native Propan tools require local files."
+    }
+  }
 }

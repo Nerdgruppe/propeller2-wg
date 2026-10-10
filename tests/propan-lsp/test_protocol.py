@@ -191,7 +191,7 @@ def run():
         intrinsics = (ROOT / 'tests/propan/sema/lsp-intrinsics.propan').read_text()
         c.change(intrinsics)
         names = ('aug', 'nrel', 'hubaddr', 'cogaddr', 'lutaddr',
-                 'localaddr', 'byteoffset', 'wordoffset')
+                 'localaddr', 'pcaddr', 'byteoffset', 'wordoffset')
         for _ in range(3):
             lenses = c.document('codeLens')
             assert any('Hub: 0x4' in lens['command']['title'] for lens in lenses)
