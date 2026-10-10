@@ -5,7 +5,10 @@
     .minimum_zig_version = "0.16.0",
 
     .dependencies = .{
-        .lsp_kit = .{ .path = "vendor/lsp-kit" },
+        .lsp_kit = .{
+            .url = "git+https://github.com/zigtools/lsp-kit.git#0.16.x",
+            .hash = "lsp_kit-0.1.0-bi_PL84xDAB33s_-DZPmYwprEqgi-dEjp1qAs36F96TA",
+        },
         .ptk = .{
             .url = "git+https://github.com/ikskuh/parser-toolkit.git#62e0a3dca3632bb361df59407b2d7805280ab1b9",
             .hash = "parser_toolkit-0.1.0-baYGPUVCEwBaVmu09ORh0lLlVjRaJ489TdSIdTa_8VWg",
