@@ -9,6 +9,9 @@
 ### Random Task Collection
 
 - Collection of all known CPU hazards
+- Determine explicit behavior of the "hidden" registers behind INA/INB/...
+- Determine how the XBYTE mode is actually implemented
+- What happens with `AUGD; MODCZ`, `ALTD; MODCZ`, `ALTR; MODCZ`
 - SETQ2 clarifications: document which instructions recognize SETQ versus SETQ2,
   how long their prefix state lasts, and which operations preserve or replace Q.
   Cover cancellation consuming prefixes, decode-time Q clearing, SETQ2 making
@@ -117,6 +120,7 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 
 ### Random Task Collection
 
+- Model "previous SETQ" as pipeline state
 - Debug interface
   - Additional Breakpoints
     - Hazards

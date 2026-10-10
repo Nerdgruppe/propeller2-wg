@@ -439,10 +439,13 @@ pub fn main(init: std.process.Init) !u8 {
             failed += 1;
             continue;
         };
+        fixture_progress.setEstimatedTotalItems(list.runs.len);
         var fixture_failed = false;
         for (list.runs, 1..) |run, index| {
             total_runs += 1;
             const name = run.name orelse try std.fmt.allocPrint(arena.allocator(), "run {d}", .{index});
+            const run_progress = fixture_progress.start(name, 0);
+            defer run_progress.end();
             const status = runOne(.{ .allocator = init.gpa, .io = init.io, .errors = &stderr.interface, .options = cli.options, .endpoint = endpoint }, path, source, try list.forRun(arena.allocator(), run), name) catch |err| {
                 try stderr.interface.print("FAIL {s} [{s}]: {t}\n", .{ path, name, err });
                 fixture_failed = true;
