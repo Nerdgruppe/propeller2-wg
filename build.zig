@@ -116,6 +116,22 @@ const FastBuild = struct {
     }
 };
 
+/// Runs a Windtunnel artifact with optional kcov collection in the named report directory.
+fn addRunArtifactWithCoverage(b: *std.Build, kcov_path: ?[]const u8, artifact: *std.Build.Step.Compile, name: []const u8) *std.Build.Step.Run {
+    const run = if (kcov_path) |kcov| blk: {
+        const run = b.addSystemCommand(&.{
+            kcov,
+            "--clean",
+            b.fmt("--include-path={s},{s}", .{ b.pathFromRoot("src/windtunnel/sim"), b.pathFromRoot("src/libp2/alu.zig") }),
+            b.fmt(".coverage/{s}", .{name}),
+        });
+        run.addArtifactArg(artifact);
+        break :blk run;
+    } else b.addRunArtifact(artifact);
+    run.has_side_effects = kcov_path != null;
+    return run;
+}
+
 pub fn build(b: *std.Build) !void {
     // Steps:
     const run_step = b.step("run", "Runs propan");
@@ -126,11 +142,13 @@ pub fn build(b: *std.Build) !void {
     // Options:
     const with_flexspin = b.option(bool, "with-flexspin", "Includes FlexSpin for Spin2 round-trip and assembler equivalence tests.") orelse false;
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
-    const coverage = b.option(bool, "coverage", "Collect Propan coverage with kcov when available") orelse true;
+    const coverage = b.option(bool, "coverage", "Collect Propan and Windtunnel coverage with kcov when available") orelse true;
     const with_p2aas = b.option(bool, "with-p2aas", "Run Windtunnel hardware oracle tests through P2AAS_ENDPOINT") orelse false;
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const kcov_path = if (coverage) b.findProgram(&.{"kcov"}, &.{}) catch null else null;
+    if (coverage and kcov_path == null) std.log.warn("could not find kcov, not generating coverage", .{});
 
     // Dependencies:
     const serial_dep = b.dependency("serial", .{});
@@ -230,13 +248,31 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "oracle-template", .module = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/oracle.propan.in") }) },
         },
     });
-    const windtunnel_tests = b.addExecutable(.{ .name = "windtunnel-tests", .root_module = windtunnel_suite });
+    const windtunnel_tests = b.addExecutable(.{
+        .name = "windtunnel-tests",
+        .root_module = windtunnel_suite,
+        .use_llvm = if (kcov_path != null) true else null,
+    });
     fb.installArtifact(windtunnel_tests);
-    const harness_tests = b.addTest(.{ .name = "windtunnel-harness-tests", .root_module = windtunnel_suite });
+    const harness_tests = b.addTest(.{
+        .name = "windtunnel-harness-tests",
+        .root_module = windtunnel_suite,
+        .use_llvm = if (kcov_path != null) true else null,
+    });
+    if (kcov_path) |kcov| {
+        harness_tests.setExecCmd(&.{
+            kcov,
+            "--clean",
+            b.fmt("--include-path={s},{s}", .{ b.pathFromRoot("src/windtunnel/sim"), b.pathFromRoot("src/libp2/alu.zig") }),
+            ".coverage/windtunnel-unit",
+            null,
+        });
+    }
     const harness_run = b.addRunArtifact(harness_tests);
     harness_run.setCwd(b.path("."));
+    harness_run.has_side_effects = kcov_path != null;
     windtunnel_test_step.dependOn(&harness_run.step);
-    const fixture_run = b.addRunArtifact(windtunnel_tests);
+    const fixture_run = addRunArtifactWithCoverage(b, kcov_path, windtunnel_tests, "windtunnel-fixtures");
     fixture_run.setCwd(b.path("."));
     fixture_run.expectExitCode(0); // Capture stdio so Zig forwards progress updates.
     if (with_p2aas) {
@@ -248,6 +284,13 @@ pub fn build(b: *std.Build) !void {
     fixture_run.addArgs(&windtunnel_fixtures);
     for (windtunnel_fixtures) |path| fixture_run.addFileInput(b.path(path));
     windtunnel_test_step.dependOn(&fixture_run.step);
+    if (kcov_path) |kcov| {
+        const merge = b.addSystemCommand(&.{ kcov, "--merge", ".coverage/windtunnel", ".coverage/windtunnel-fixtures", ".coverage/windtunnel-unit" });
+        merge.setCwd(b.path("."));
+        merge.step.dependOn(&fixture_run.step);
+        merge.step.dependOn(&harness_run.step);
+        windtunnel_test_step.dependOn(&merge.step);
+    }
     test_step.dependOn(windtunnel_test_step);
 
     // "zig build run"
@@ -329,7 +372,6 @@ pub fn build(b: *std.Build) !void {
         });
         const install = b.addInstallArtifact(tests, .{});
         test_step.dependOn(&install.step);
-        const kcov_path = if (coverage) b.findProgram(&.{"kcov"}, &.{}) catch null else null;
         if (kcov_path) |kcov| {
             tests.setExecCmd(&.{
                 kcov,
@@ -338,8 +380,6 @@ pub fn build(b: *std.Build) !void {
                 ".coverage",
                 null, // addRunArtifact inserts the test executable here.
             });
-        } else if (coverage) {
-            std.log.warn("could not find kcov, not generating coverage", .{});
         }
         // The native runner reports fuzz-test discovery through Zig's server protocol.
         const run = b.addRunArtifact(tests);

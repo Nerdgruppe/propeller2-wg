@@ -1,0 +1,198 @@
+//? WINDTUNNEL CHECK LIST
+//? const: immediate = 0
+//? run: "ALTD -> ALTD"
+//? const: outer = 0
+//? const: inner = 0
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 302
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 77
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 0
+//? run: "ALTD -> ALTS"
+//? const: outer = 0
+//? const: inner = 1
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 302
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 22
+//? run: "ALTD -> ALTR"
+//? const: outer = 0
+//? const: inner = 2
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 302
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 77
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 0
+//? run: "ALTS -> ALTD"
+//? const: outer = 1
+//? const: inner = 0
+//? post: cog[0].reg[nominal] == 299
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 77
+//? post: cog[0].reg[observed] == 0
+//? run: "ALTS -> ALTS"
+//? const: outer = 1
+//? const: inner = 1
+//? post: cog[0].reg[nominal] == 299
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 33
+//? run: "ALTS -> ALTR"
+//? const: outer = 1
+//? const: inner = 2
+//? post: cog[0].reg[nominal] == 299
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 77
+//? post: cog[0].reg[observed] == 0
+//? run: "ALTR -> ALTD"
+//? const: outer = 2
+//? const: inner = 0
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 301
+//? post: cog[0].reg[300] == 77
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 0
+//? run: "ALTR -> ALTS"
+//? const: outer = 2
+//? const: inner = 1
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 301
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 11
+//? run: "ALTR -> ALTR"
+//? const: outer = 2
+//? const: inner = 2
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 301
+//? post: cog[0].reg[300] == 77
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 0
+//? run: "ALTS -> ALTD immediate"
+//? const: outer = 1
+//? const: inner = 0
+//? const: immediate = 1
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 77
+//? post: cog[0].reg[observed] == 0
+//? run: "ALTS -> ALTS immediate"
+//? const: outer = 1
+//? const: inner = 1
+//? const: immediate = 1
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 33
+//? post: cog[0].reg[observed] == 33
+//? run: "ALTS -> ALTR immediate"
+//? const: outer = 1
+//? const: inner = 2
+//? const: immediate = 1
+//? post: cog[0].reg[nominal] == 300
+//? post: cog[0].reg[selected] == 301
+//? post: cog[0].reg[redirect] == 999
+//? post: cog[0].reg[300] == 11
+//? post: cog[0].reg[301] == 22
+//? post: cog[0].reg[302] == 77
+//? post: cog[0].reg[observed] == 0
+
+                // Hardware characterization of all nine ALT(D/S/R) prefix pairs and immediate S substitution.
+                // Run: zig-out/bin/windtunnel-tests --characterize data/validations/alt-chain.propan
+                // Initialize distinct data at each possible target and leave a recognizable redirected result.
+                MOV     register(300),      11
+                MOV     register(301),      22
+                MOV     register(302),      33
+// The first prefix changes the second prefix D, S, or result register.
+.if outer == 0
+                ALTD    selected_pointer,   0
+.endif
+.if outer == 1
+                ALTS    source_pointer,     0
+.endif
+.if outer == 2
+                ALTR    result_pointer,     0
+.endif
+// Each second prefix selects a register using its old D plus S[8:0], then increments D.
+.if inner == 0
+.if immediate == 0
+                ALTD    nominal,            nominal_s
+.endif
+.if immediate == 1
+                ALTD    nominal,            0
+.endif
+.endif
+.if inner == 1
+.if immediate == 0
+                ALTS    nominal,            nominal_s
+.endif
+.if immediate == 1
+                ALTS    nominal,            0
+.endif
+.endif
+.if inner == 2
+.if immediate == 0
+                ALTR    nominal,            nominal_s
+.endif
+.if immediate == 1
+                ALTR    nominal,            0
+.endif
+.endif
+// Observe the resulting substitution without another instruction between the prefixes and MOV.
+.if inner == 0
+                MOV     observed,           77
+.endif
+.if inner == 1
+                MOV     observed,           register(0)
+.endif
+.if inner == 2
+                MOV     observed,           77
+.endif
+                JMP     nrel(_end)
+var nominal:    LONG    300
+var selected:   LONG    301
+var redirect:   LONG    999
+var observed:   LONG    0
+var nominal_s:  LONG    512
+// Substitute S with a different register whose delta is -1 and base is +2.
+var selected_s: LONG    (511 << 9) | 2
+var selected_pointer:
+                LONG    cogaddr(selected)
+.if immediate == 0
+var source_pointer:
+                LONG    cogaddr(selected_s)
+.endif
+.if immediate == 1
+var source_pointer:
+                LONG    2
+.endif
+var result_pointer:
+                LONG    cogaddr(redirect)
+

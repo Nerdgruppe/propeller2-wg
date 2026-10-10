@@ -1,0 +1,72 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? post: cog[*].reg[checked] == 1024
+//? post: cog[*].reg[literal_control] == 2
+//? run: "cog 0"
+//? cog: 0
+//? run: "cog 1"
+//? cog: 1
+//? run: "cog 2"
+//? cog: 2
+//? run: "cog 3"
+//? cog: 3
+//? run: "cog 4"
+//? cog: 4
+//? run: "cog 5"
+//? cog: 5
+//? run: "cog 6"
+//? cog: 6
+//? run: "cog 7"
+//? cog: 7
+
+// Hardware characterization: ALTD replaces MODCZ's literal truth tables.
+// Run: zig-out/bin/windtunnel-tests --characterize data/validations/altd-modcz.propan
+// Check all 256 table pairs against all four initial C/Z states.
+state_loop:
+                MOV     selector,   0
+table_loop:
+                TESTB   initial_flags,      1               :wc
+                TESTB   initial_flags,      0               :wz
+                ALTD    selector,           0
+                MODCZ   _CLR,               _CLR            :wcz
+                MOV     observed,           0
+                MUXC    observed,           2
+                MUXZ    observed,           1
+
+                // Compute the expected pair using shifts, independent of the tested MODCZ.
+                MOV     expected,           selector
+                SHR     expected,           initial_flags
+                MOV     temporary,          expected
+                SHR     temporary,          3
+                AND     temporary,          2
+                AND     expected,           1
+                OR      expected,           temporary
+                CMP     observed,           expected        :wz
+    if(!Z)      ADD     failures,           1
+                ADD     checked,            1
+                ADD     selector,           1
+                CMP     selector,           aug(256)        :wz
+    if(!Z)      JMP     table_loop
+                ADD     initial_flags,      1
+                CMP     initial_flags,      4               :wz
+    if(!Z)      JMP     state_loop
+
+                // D=0xf0 must produce C=1,Z=0 even though register 240 contains the opposite tables.
+                MOV     register(240),      0x0f
+                MOV     selector,           0xf0
+                ALTD    selector,           0
+                MODCZ   _CLR,               _CLR            :wcz
+                MUXC    literal_control,    2
+                MUXZ    literal_control,    1
+                JMP     nrel(_end)
+var initial_flags:
+                LONG    0
+var selector:   LONG    0
+var observed:   LONG    0
+var expected:   LONG    0
+var temporary:  LONG    0
+var failures:   LONG    0
+var checked:    LONG    0
+var literal_control:
+                LONG    0
+
