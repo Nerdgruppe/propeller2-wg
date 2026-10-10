@@ -156,7 +156,7 @@ fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult 
             .reg = @intFromEnum(args.d),
             .lut = block and cog.q2,
             .block = block,
-            .immediate = if (!block or immediate) value else null,
+            .immediate = if (!block or (immediate and !cog.q2)) value else null,
             .timed = cog.collecting_writes,
             .size = size,
             .write = true,
@@ -391,6 +391,12 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
     const result = dispatch(cog, state);
     switch (result) {
         .next => {},
+        .skip => {
+            cog.setq_pending = false;
+            cog.q2 = false;
+            cog.block_pointer_delta = false;
+            return result;
+        },
         else => return result,
     }
     const opcode = decode.decode(state.instr);
@@ -638,7 +644,7 @@ fn execute_alu(
         .c = .from_bool(cog.c),
         .z = .from_bool(cog.z),
         .q = cog.q,
-        .setq_prefix = cog.setq_pending,
+        .setq_prefix = cog.setq_pending and !cog.q2,
     };
     const output = if (@hasField(Operands, "n")) function(input, operands.n) else function(input);
     if (writes_result and !state.no_result) cog.write_result(state.alt_r orelse d_reg.?, output.result);
@@ -2550,7 +2556,9 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
     // codegen: begin:coginit
     const d = operandD(cog, args.d, args.d_imm);
     const source = operandS(cog, args.s, args.s_imm);
-    const ptra = if (cog.setq_pending and !cog.q2) cog.q else 0;
+    // The decoder has already cleared unprefixed Q. An adjacent SETQ2 or
+    // CRCNIB can win that clear, and silicon also passes that value to PTRA.
+    const ptra = cog.q;
     var selected: ?u3 = null;
     const pair = d & 0x10 != 0 and d & 1 != 0;
     if (d & 0x10 == 0) selected = @truncate(d) else {
@@ -2566,7 +2574,6 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
         cog.c = selected == null;
         if (!args.d_imm) cog.write_result(args.d, if (selected) |id| @as(u32, id) else 15);
     }
-    if (!(cog.setq_pending and !cog.q2)) cog.q = 0;
     if (selected) |id| {
         const hub = cog.hub;
         if (id == cog.id and cog.collecting_writes) {
@@ -4712,6 +4719,8 @@ test "COGINIT allocates free cogs and pairs, reports failure, and retains RAM on
     try std.testing.expectEqual(@as(u32, 0x1234), hub.cogs[1].read_reg(@enumFromInt(100)));
     try std.testing.expectEqual(@as(u32, 0x5678), hub.cogs[1].lut[16]);
     cog.write_reg(@enumFromInt(20), 0x31); // First available even/odd pair is 2,3.
+    // This direct semantic call bypasses the pipeline's unprefixed Q clear.
+    cog.q = 0;
     try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = start }));
     try std.testing.expectEqual(@as(u32, 2), cog.read_reg(@enumFromInt(20)));
     try std.testing.expectEqual(Cog.ExecMode.cog, hub.cogs[3].exec_mode);

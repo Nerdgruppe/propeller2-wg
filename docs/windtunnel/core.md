@@ -11,7 +11,19 @@ Windtunnel implements the deterministic ALU and these core operations:
 - Lock allocation, ownership, release, queries, and automatic release on owner stop/restart.
 - GETCT, counter events, attention events, and selectable LUT/lock events, with polls, waits, branches, and SETQ wait timeouts.
 
-SETQ/SETQ2 survive augmentation and ALTx prefixes. The block-pointer-delta and AUGS/ALTx errata described in the repository's [silicon documentation](../p2/original/Silicon_Documentation.docx) are modeled. Block transfers access underlying cog RAM at $1F8..$1FF rather than the special registers, wrap register addresses, and set read flags from the last value transferred.
+SETQ/SETQ2 block-transfer prefixes survive executed augmentation and ALTx prefixes. The block-pointer-delta and AUGS/ALTx errata described in the repository's [silicon documentation](../p2/original/Silicon_Documentation.docx) are modeled. Block transfers access underlying cog RAM at $1F8..$1FF rather than the special registers, wrap register addresses, and set read flags from the last value transferred.
+
+Conditional cancellation consumes SETQ/SETQ2 prefix state, including a canceled
+augmentation. SETQ2 selects LUT words for WRLONG even when D is immediate;
+the encoded D field selects the first LUT address. SETQ retains immediate filling.
+
+COGINIT, QDIV, QFRAC and QROTATE clear Q during decode, including when their
+condition is false or a taken branch discards them. An executed SETQ, SETQ2 or
+CRCNIB in the preceding slot can win that clear. SETQ protection survives
+executed augmentation; SETQ2 followed by augmentation does not protect Q.
+COGINIT passes the resulting Q to PTRA. These measured side effects do not add
+CORDIC execution support. Code that needs Q preserved should initialize the
+word fetched past a local return jump, for example with a NOP guard.
 
 The [I/O subsystem](io.md) implements pin instructions, digital pads and routing,
 long repository, UART and functional USART modes, plus VCD export. General

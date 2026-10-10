@@ -28,8 +28,8 @@ fn endpoint(arena: std.mem.Allocator, address: []const u8, request: Request) !st
             if (item.len == 0) continue;
             const name = item[0 .. std.mem.findScalar(u8, item, '=') orelse item.len];
             const key = try (std.Uri.Component{ .percent_encoded = name }).toRawMaybeAlloc(arena);
-            if (std.mem.eql(u8, key, "code")) return error.IncompatibleUploadMode;
-            if (std.mem.eql(u8, key, "baudrate") or std.mem.eql(u8, key, "timeout_ms")) continue;
+            if (std.ascii.eqlIgnoreCase(key, "code")) return error.IncompatibleUploadMode;
+            if (std.ascii.eqlIgnoreCase(key, "baudrate") or std.ascii.eqlIgnoreCase(key, "timeout_ms")) continue;
             try query.writer.print("{s}&", .{item});
         }
     }
@@ -263,6 +263,9 @@ test "upload padding and endpoint parameters" {
     try std.testing.expectEqualStrings("token=a%26b&baudrate=115200&timeout_ms=1000", uri.query.?.percent_encoded);
     try std.testing.expectEqualStrings("/bridge", uri.path.percent_encoded);
     try std.testing.expectError(error.IncompatibleUploadMode, endpoint(arena.allocator(), "ws://localhost/?%63ode=abc", test_request));
+    try std.testing.expectError(error.IncompatibleUploadMode, endpoint(arena.allocator(), "ws://localhost/?C%6FDe=AAAAAA==", test_request));
+    const mixed = try endpoint(arena.allocator(), "ws://localhost/?BAUDRATE=1&TimeOut_ms=2", test_request);
+    try std.testing.expectEqualStrings("baudrate=115200&timeout_ms=1000", mixed.query.?.percent_encoded);
     try std.testing.expectError(error.InvalidEndpoint, endpoint(arena.allocator(), "http://localhost/", test_request));
 }
 
