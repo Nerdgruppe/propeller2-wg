@@ -58,6 +58,17 @@ const testBundlePlugin = {
 };
 
 async function main() {
+	const desktop = await esbuild.context({
+		entryPoints: ['src/desktop/extension.ts'],
+		bundle: true,
+		format: 'cjs',
+		platform: 'node',
+		outfile: 'dist/desktop/extension.js',
+		external: ['vscode'],
+		minify: production,
+		sourcemap: !production,
+		plugins: [esbuildProblemMatcherPlugin],
+	});
 	const ctx = await esbuild.context({
 		entryPoints: [
 			'src/web/extension.ts',
@@ -87,10 +98,10 @@ async function main() {
 		],
 	});
 	if (watch) {
-		await ctx.watch();
+		await Promise.all([ctx.watch(), desktop.watch()]);
 	} else {
-		await ctx.rebuild();
-		await ctx.dispose();
+		await Promise.all([ctx.rebuild(), desktop.rebuild()]);
+		await Promise.all([ctx.dispose(), desktop.dispose()]);
 	}
 }
 
