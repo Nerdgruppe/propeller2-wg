@@ -1,0 +1,22 @@
+//? WINDTUNNEL CHECK LIST
+//? cog: 3
+//? timeout-ms: 1000
+//? pre: cog[3].q = 0x1234_5678
+//? pre: cog[3].c = true
+//? pre: cog[3].z = false
+//? post: cog[3].reg[initial] == 0x1234_5678
+//? post: cog[3].reg[result] == 0x8000_00ff
+//? post: cog[3].q == 0x8000_00ff
+//? post: cog[3].c == true
+//? post: cog[3].z == false
+
+// Check initial Q seeding and SETQ replacement through MUXQ.
+// An all-ones mask copies every Q bit, including the sign bit, into an observable register.
+
+                MUXQ    initial,    aug(0xffff_ffff)
+                SETQ    aug(0x8000_00ff)
+                MUXQ    result,     aug(0xffff_ffff)
+                JMP     nrel(_end)
+var initial:    LONG    0
+var result:     LONG    0
+

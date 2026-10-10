@@ -1,114 +1,616 @@
+//! Instruction semantics and resumable execution helpers for the cog pipeline.
+//! Generated dispatch/signatures wrap preserved runtime, ALU and instruction bodies.
+
 const std = @import("std");
 const logger = std.log.scoped(.execute);
 
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const Cog = @import("Cog.zig");
+const p2 = @import("p2");
+const types = p2.types;
+const alu = p2.alu;
+const IO = @import("IO.zig");
+const hub_module = @import("Hub.zig");
 
+// codegen: begin:runtimehelpers
+const EventId = types.EventId;
+const clock_reached = hub_module.clock_reached;
+
+/// Read captured D or combine its immediate field with the one-shot AUGD extension.
+fn operandD(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
+    return if (immediate) @intFromEnum(reg) | cog.fetch_augd() else cog.read_operand(reg);
+}
+
+/// Resolve captured/alternate S, consume AUGS for an immediate, then apply forwarded source substitution.
+fn operandS(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
+    const selected = if (cog.pipeline[3]) |state| state.alt_s orelse reg else reg;
+    const source = if (immediate) @intFromEnum(selected) | cog.fetch_augs() else cog.read_operand(selected);
+    return if (cog.pipeline[3]) |state| state.s_value orelse source else source;
+}
+
+/// Resolve an absolute or signed relative long branch, converting byte displacements for local execution.
+fn branchA(cog: *Cog, args: encoding.AbsPointer) u20 {
+    // Long relative branches encode a signed byte displacement even in cog RAM.
+    const in_hub = cog.exec_mode == .hub;
+    const displacement: i20 = @bitCast(args.address);
+    return if (args.relative) cog.dispatch_pc +% @as(u20, if (in_hub) 4 else 1) +% @as(u20, @bitCast(if (in_hub) displacement else displacement >> 2)) else args.address;
+}
+
+/// Resolve a register or immediate branch target, retaining whether the immediate was augmented.
+fn branchS(cog: *Cog, reg: Cog.Register, immediate: bool) u20 {
+    const augmented = cog.augs_pending;
+    return branchValue(cog, operandS(cog, reg, immediate), immediate, augmented);
+}
+
+/// Convert immediate branch displacements to the current PC units; register targets are absolute.
+fn branchValue(cog: *Cog, value: u32, immediate: bool, augmented: bool) u20 {
+    const substituted = if (cog.pipeline[3]) |state| state.s_value != null else false;
+    const raw: u20 = @truncate(value);
+    if (!immediate) return raw;
+    const displacement: u20 = if (augmented or substituted) raw else @bitCast(@as(i20, @as(i9, @bitCast(@as(u9, @truncate(raw))))));
+    const scale: u20 = if (cog.exec_mode == .hub) 4 else 1;
+    return cog.dispatch_pc +% scale +% displacement *% scale;
+}
+
+/// Update only requested C/Z flags using the result sign bit for this access width.
+fn setFlags(cog: *Cog, args: anytype, value: u32, sign_bit: u5) void {
+    if (args.c_mod == .write) cog.c = value & (@as(u32, 1) << sign_bit) != 0;
+    if (args.z_mod == .write) cog.z = value == 0;
+}
+
+/// Restore requested C/Z bits from a packed address, then branch using its low 20 bits.
+fn jumpFlags(cog: *Cog, args: anytype, value: u32) void {
+    if (args.c_mod == .write) cog.c = value >> 31 != 0;
+    if (args.z_mod == .write) cog.z = value & 0x4000_0000 != 0;
+    cog.jump(@truncate(value));
+}
+
+/// Map a pointer instruction encoding to PA, PB, PTRA or PTRB.
+fn pointerReg(pointer: encoding.PointerReg) Cog.Register {
+    return switch (pointer) {
+        .PA => .PA,
+        .PB => .PB,
+        .PTRA => .PTRA,
+        .PTRB => .PTRB,
+    };
+}
+
+/// Decode direct or PTRx addressing, including scaled/augmented indices and pre/post updates.
+/// Apply block-sized pointer deltas only while the SETQ/SETQ2 erratum state permits them.
+fn memoryAddress(cog: *Cog, reg: Cog.Register, immediate: bool, scale: u3, block: bool) u32 {
+    const augmented = cog.augs_pending;
+    const value = operandS(cog, reg, immediate);
+    if (!immediate) return value;
+    const shift: u5 = if (augmented) 15 else 0;
+    if (value & (@as(u32, 0x100) << shift) == 0) return value;
+    const pointer: Cog.Register = if (value & (@as(u32, 0x80) << shift) == 0) .PTRA else .PTRB;
+    const update = value & (@as(u32, 0x40) << shift) != 0;
+    const post = update and value & (@as(u32, 0x20) << shift) != 0;
+    var delta: i32 = if (augmented)
+        @as(i20, @bitCast(@as(u20, @truncate(value))))
+    else if (update)
+        @as(i5, @bitCast(@as(u5, @truncate(value))))
+    else
+        @as(i6, @bitCast(@as(u6, @truncate(value))));
+    if (!augmented) {
+        if (update and delta == 0) delta = 16;
+        delta *= scale;
+    }
+    if (block and cog.block_pointer_delta) {
+        delta = if (!update) 0 else @bitCast((cog.q +% 1) *% 4);
+        if (update and value & (@as(u32, 0x10) << shift) != 0) delta = -%delta;
+    }
+    const base = cog.read_operand(pointer);
+    const adjusted = base +% @as(u32, @bitCast(delta));
+    if (update) cog.write_reg(pointer, adjusted);
+    return if (post) base else adjusted;
+}
+
+/// Start a single/block read once and consume returned beats while execution is stalled.
+/// Honor redirected/canceled results, underlying tail RAM, LUT destinations and final-beat flags.
+fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecResult {
+    if (cog.memory_transfer == null) {
+        const block = size == 4 and cog.setq_pending;
+        const state = cog.pipeline[3];
+        cog.memory_transfer = .{
+            .address = memoryAddress(cog, args.s, args.s_imm, size, block),
+            .remaining = if (block) @as(u64, cog.q) + 1 else 1,
+            .reg = @intFromEnum(if (state) |instruction| instruction.alt_r orelse args.d else args.d),
+            .lut = block and cog.q2,
+            .block = block,
+            .no_result = if (state) |instruction| instruction.no_result else false,
+            .timed = cog.collecting_writes,
+            .size = size,
+        };
+        const transfer = &cog.memory_transfer.?;
+        transfer.grant_address = transfer.address;
+        transfer.grant_at = cog.memory_grant(transfer.address);
+        transfer.grants_left = if (transfer.timed) transfer.remaining else 0;
+    }
+    const transfer = &cog.memory_transfer.?;
+    const value = if (transfer.timed) transfer.value orelse return .wait else cog.hub.read_memory(transfer.address, size);
+    if (!transfer.no_result) {
+        if (transfer.lut) cog.write_lut(transfer.reg, value) else if (transfer.block and transfer.reg >= 504) {
+            cog.write_ram(transfer.reg, value);
+        } else cog.write_reg(@enumFromInt(transfer.reg), value);
+    }
+    transfer.address +%= size;
+    transfer.reg +%= 1;
+    transfer.remaining -= 1;
+    if (transfer.remaining != 0) return .wait;
+    cog.memory_transfer = null;
+    setFlags(cog, args, value, @intCast(@as(u6, size) * 8 - 1));
+    return .next;
+}
+
+/// Capture addressing and single/block write state once, then advance it through timed grants.
+fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult {
+    if (cog.memory_transfer == null) {
+        const immediate = if (@hasField(@TypeOf(args), "d_imm")) args.d_imm else false;
+        const value = operandD(cog, args.d, immediate);
+        const block = size == 4 and cog.setq_pending;
+        cog.memory_transfer = .{
+            .address = memoryAddress(cog, args.s, args.s_imm, size, block),
+            .remaining = if (block) @as(u64, cog.q) + 1 else 1,
+            .reg = @intFromEnum(args.d),
+            .lut = block and cog.q2,
+            .block = block,
+            .immediate = if (!block or (immediate and !cog.q2)) value else null,
+            .timed = cog.collecting_writes,
+            .size = size,
+            .write = true,
+            .masked = masked,
+        };
+        const transfer = &cog.memory_transfer.?;
+        // LUT source capture adds one setup clock before the first grant.
+        transfer.grant_at = cog.memory_grant_after(transfer.address, if (transfer.lut) 3 else 2);
+        transfer.write_ready_at = transfer.grant_at -% 1 +% @intFromBool((transfer.address & 3) + size > 4);
+    }
+    return progressWrite(cog, size, masked);
+}
+
+/// Wait for the next write beat, defer to an eligible FIFO grant, and queue its visible bytes.
+/// Retain the captured source during stalls and advance the block only after that beat is scheduled.
+fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
+    const transfer = &cog.memory_transfer.?;
+    if (transfer.timed and !clock_reached(cog.hub.counter, transfer.write_ready_at)) return .wait;
+    if (transfer.timed and cog.fifo_grants(cog.hub.counter +% 1)) {
+        transfer.grant_at +%= 8;
+        transfer.write_ready_at +%= 8;
+        return .wait;
+    }
+    const value = cog.transfer_source(transfer);
+    if (transfer.timed) {
+        const low_size: u3 = @intCast(@min(size, 4 - (transfer.address & 3)));
+        const crossing = low_size < size;
+        cog.hub_writeback = .{
+            .address = transfer.address +% (if (crossing) @as(u32, low_size) else 0),
+            .value = if (crossing) value >> @intCast(@as(u6, low_size) * 8) else value,
+            .size = if (crossing) size - low_size else size,
+            .masked = masked,
+        };
+    } else cog.hub.write_memory(transfer.address, value, size, masked);
+    transfer.address +%= size;
+    transfer.reg +%= 1;
+    transfer.remaining -= 1;
+    transfer.source_value = null;
+    transfer.write_ready_at +%= 1;
+    transfer.grant_at +%= 1;
+    if (transfer.remaining != 0) return .wait;
+    cog.memory_transfer = null;
+    return .next;
+}
+
+/// Push a packed return address to the selected hub stack before redirecting fetch.
+fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
+    if (cog.memory_transfer == null) {
+        const address = cog.read_operand(pointer);
+        const grant = cog.memory_grant(address);
+        cog.memory_transfer = .{
+            .address = address,
+            .remaining = 1,
+            .reg = 0,
+            .lut = false,
+            .immediate = cog.return_address(),
+            .timed = cog.collecting_writes,
+            .size = 4,
+            .write = true,
+            .grant_at = grant,
+            .write_ready_at = grant -% 1 +% @intFromBool(address & 3 != 0),
+        };
+        cog.write_reg(pointer, address +% 4);
+    }
+    if (progressWrite(cog, 4, false) == .wait) return .wait;
+    cog.jump(target);
+    return .next;
+}
+
+/// Predecrement the selected hub stack, wait for its read, then restore the return address and requested flags.
+fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog.ExecResult {
+    if (cog.memory_transfer == null) {
+        const address = cog.read_operand(pointer) -% 4;
+        cog.memory_transfer = .{
+            .address = address,
+            .remaining = 1,
+            .reg = 0,
+            .lut = false,
+            .timed = cog.collecting_writes,
+            .size = 4,
+            .grant_address = address,
+            .grant_at = cog.memory_grant(address),
+            .grants_left = if (cog.collecting_writes) 1 else 0,
+        };
+        cog.write_reg(pointer, address);
+    }
+    const transfer = &cog.memory_transfer.?;
+    const value = if (transfer.timed) transfer.value orelse return .wait else cog.hub.read_memory(transfer.address, 4);
+    cog.memory_transfer = null;
+    jumpFlags(cog, args, value);
+    return .next;
+}
+
+/// Sample and clear an event latch, writing requested status flags without waiting.
+fn pollEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult {
+    const mask = event.mask();
+    const occurred = cog.events & mask != 0;
+    cog.events &= ~mask;
+    if (args.c_mod == .write) cog.c = occurred;
+    if (args.z_mod == .write) cog.z = occurred;
+    return .next;
+}
+
+/// Consume a matching event or SETQ timeout while retaining the request across stalled clocks.
+/// An event arriving after a stall incurs the measured two-clock pipeline-resume delay.
+fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult {
+    const mask = event.mask();
+    var occurred = cog.events & mask != 0;
+    if (cog.wait_until == null and cog.setq_pending and !cog.q2) {
+        const delta = cog.q -% @as(u32, @truncate(cog.hub.counter));
+        cog.wait_until = cog.hub.counter +% delta;
+    }
+    const timeout = if (cog.wait_until) |deadline| clock_reached(cog.hub.counter, deadline) else false;
+    if (cog.collecting_writes) {
+        const state = &cog.pipeline[3].?;
+        if (state.event_resume_at == null) {
+            if (!occurred and !timeout) {
+                state.waited_for_event = true;
+                return .wait;
+            }
+            // A waiting pipeline takes two clocks to resume after its sensor
+            // fires. An already-set event incurs no additional stall.
+            state.event_resume_at = cog.hub.counter +% @as(u64, if (state.waited_for_event) 2 else 0);
+            state.event_result = occurred;
+        }
+        if (!clock_reached(cog.hub.counter, state.event_resume_at.?)) return .wait;
+        occurred = state.event_result;
+    } else if (!occurred and !timeout) return .wait;
+    cog.wait_until = null;
+    cog.events &= ~mask;
+    if (args.c_mod == .write) cog.c = !occurred;
+    if (args.z_mod == .write) cog.z = !occurred;
+    return .next;
+}
+
+/// Consume an event latch and branch when its presence matches the requested polarity.
+fn branchEvent(cog: *Cog, args: encoding.Only_Simm, event: EventId, positive: bool) Cog.ExecResult {
+    const target = branchS(cog, args.s, args.s_imm);
+    const mask = event.mask();
+    const occurred = cog.events & mask != 0;
+    cog.events &= ~mask;
+    if (occurred == positive) cog.jump(target);
+    return .next;
+}
+
+/// Compute the next CT target from D plus S and update the corresponding counter sensor.
+fn addCounter(cog: *Cog, args: encoding.Both_D_Simm, event: EventId) Cog.ExecResult {
+    const index = @intFromEnum(event) - @intFromEnum(EventId.CT1);
+    const value = cog.read_operand(args.d) +% operandS(cog, args.s, args.s_imm);
+    cog.write_result(args.d, value);
+    cog.ct_targets[index] = value;
+    cog.events &= ~event.mask();
+    return .next;
+}
+
+/// Configure a selectable sensor and clear its pending event; unsupported sensor sources report missing support.
+fn setSelectable(cog: *Cog, args: encoding.Only_Dimm, event: EventId) Cog.ExecResult {
+    const index = @intFromEnum(event) - @intFromEnum(EventId.SE1);
+    const value = operandD(cog, args.d, args.d_imm) & 0x1ff;
+    // Pin events are outside the isolated-core model.
+    if (value >= 0x40) return .not_implemented;
+    cog.selectable_events[index] = @intCast(value);
+    cog.events &= ~event.mask();
+    return .next;
+}
+
+/// Modify the next instruction's register/lane selection and update the selector register.
+/// ALTx observes AUGS without consuming it, matching the documented silicon erratum.
+fn alter(cog: *Cog, args: encoding.Both_D_Simm, comptime field: []const u8, comptime lane_bits: u3) Cog.ExecResult {
+    const d = cog.read_operand(args.d);
+    // Silicon erratum: ALTx uses AUGS without consuming it.
+    const saved = cog.augs;
+    const pending = cog.augs_pending;
+    const source = operandS(cog, args.s, args.s_imm);
+    cog.augs = saved;
+    cog.augs_pending = pending;
+    if (cog.following_instruction()) |next| {
+        const reg: Cog.Register = @enumFromInt(@as(u9, @truncate((d >> lane_bits) +% source)));
+        @field(next, field) = reg;
+        if (lane_bits > 0 and lane_bits < 5) {
+            const lane_mask: u32 = (@as(u32, 1) << lane_bits) - 1;
+            next.instr = (next.instr & ~(lane_mask << 19)) | ((d & lane_mask) << 19);
+        }
+    }
+    const increment: i32 = @as(i9, @bitCast(@as(u9, @truncate(source >> 9))));
+    cog.write_result(args.d, d +% @as(u32, @bitCast(increment)));
+    return .next;
+}
+
+/// Select a pixel mix coefficient from constants, pivot, source or destination channel values.
+fn pixelTerm(mode: u3, d: u32, s: u32, pivot: u8) u32 {
+    return switch (mode) {
+        0 => 0,
+        1 => 255,
+        2 => pivot,
+        3 => 255 - @as(u32, pivot),
+        4 => s,
+        5 => 255 - s,
+        6 => d,
+        7 => 255 - d,
+    };
+}
+
+/// Apply packed-channel pixel arithmetic and schedule its register result; pipeline latency is handled by Cog.step.
+fn pixel(cog: *Cog, args: encoding.Both_D_Simm, comptime mode: enum { add, multiply, blend, mix }) Cog.ExecResult {
+    const d = cog.read_operand(args.d);
+    const s = operandS(cog, args.s, args.s_imm);
+    var result: u32 = 0;
+    for (0..4) |lane| {
+        const shift: u5 = @intCast(lane * 8);
+        const db = (d >> shift) & 255;
+        const sb = (s >> shift) & 255;
+        const dmix: u32 = switch (mode) {
+            .add => 255,
+            .multiply => sb,
+            .blend => 255 - @as(u32, cog.pixel_pivot),
+            .mix => pixelTerm(@truncate(cog.pixel_mode >> 3), db, sb, cog.pixel_pivot),
+        };
+        const smix: u32 = switch (mode) {
+            .add => 255,
+            .multiply => 0,
+            .blend => cog.pixel_pivot,
+            .mix => pixelTerm(@truncate(cog.pixel_mode), db, sb, cog.pixel_pivot),
+        };
+        result |= @as(u32, @min((db * dmix + sb * smix + 255) >> 8, 255)) << shift;
+    }
+    cog.write_result(args.d, result);
+    return .next;
+}
+/// Dispatch one execution attempt and consume SETQ/SETQ2 prefix state only after a completed instruction.
 pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
+    const result = dispatch(cog, state);
+    switch (result) {
+        .next => {},
+        .skip => {
+            cog.setq_pending = false;
+            cog.q2 = false;
+            cog.block_pointer_delta = false;
+            return result;
+        },
+        else => return result,
+    }
+    const opcode = decode.decode(state.instr);
+    switch (opcode) {
+        .setq, .setq2 => {},
+        .augs, .augd, .altsn, .altgn, .altsb, .altgb, .altsw, .altgw, .altr, .altd, .alts, .altb, .alti => cog.block_pointer_delta = false,
+        else => {
+            cog.setq_pending = false;
+            cog.q2 = false;
+            cog.block_pointer_delta = false;
+        },
+    }
+    return result;
+}
+
+/// Shared port-local field decoder for every pin mutation; reads use just D/S[5:0].
+fn pinMask(cog: *Cog, value: u32) u64 {
+    const field: types.PinIndexAndCount = @bitCast(value);
+    const count: u5 = if (cog.setq_pending and !cog.q2) @truncate(cog.q) else field.count;
+    const low = @as(u32, std.math.maxInt(u32)) >> (31 - count);
+    const bits = std.math.rotl(u32, low, @as(u5, @truncate(field.index)));
+    return @as(u64, bits) << @as(u6, if (field.index < 32) 0 else 32);
+}
+
+/// Queue a semantic pin operation with its issuing cog and instruction.
+fn pinCommand(cog: *Cog, mask: u64, kind: IO.CommandKind, value: u32) void {
+    cog.hub.io.enqueue(cog.hub, .{
+        .mask = mask,
+        .kind = kind,
+        .value = value,
+        .cog = cog.id,
+        .pc = cog.dispatch_pc,
+        .instruction = if (cog.pipeline[3]) |state| state.instr else 0,
+    });
+}
+
+/// Sample a pin and combine its value with the requested C/Z flags.
+fn testPin(cog: *Cog, args: encoding.Only_Dimm_Flags, inverse: bool, operation: enum { write, and_flags, or_flags, xor_flags }) Cog.ExecResult {
+    const index: u6 = @truncate(operandD(cog, args.d, args.d_imm));
+    const value = ((cog.hub.io.get_in() >> index) & 1 != 0) != inverse;
+    if (args.c_mod == .write) cog.c = switch (operation) {
+        .write => value,
+        .and_flags => cog.c and value,
+        .or_flags => cog.c or value,
+        .xor_flags => cog.c != value,
+    };
+    if (args.z_mod == .write) cog.z = switch (operation) {
+        .write => value,
+        .and_flags => cog.z and value,
+        .or_flags => cog.z or value,
+        .xor_flags => cog.z != value,
+    };
+    return .next;
+}
+
+const PinOperation = enum { low, high, carry, not_carry, zero, not_zero, random, invert };
+
+/// Apply a named operation to a port-local pin field and return its prior base bit.
+fn modifyPins(cog: *Cog, args: encoding.Only_Dimm_Flags, family: enum { dir, out, flt, drv }, operation: PinOperation) Cog.ExecResult {
+    const value = operandD(cog, args.d, args.d_imm);
+    const index: u6 = @truncate(value);
+    const reg: Cog.Register = if (family == .dir) (if (index < 32) .DIRA else .DIRB) else (if (index < 32) .OUTA else .OUTB);
+    const mask: u32 = @truncate(pinMask(cog, value) >> @as(u6, if (index < 32) 0 else 32));
+    const old = cog.read_operand(reg);
+    const selected: u32 = switch (operation) {
+        .low => 0,
+        .high => std.math.maxInt(u32),
+        .carry => if (cog.c) std.math.maxInt(u32) else 0,
+        .not_carry => if (!cog.c) std.math.maxInt(u32) else 0,
+        .zero => if (cog.z) std.math.maxInt(u32) else 0,
+        .not_zero => if (!cog.z) std.math.maxInt(u32) else 0,
+        .random => cog.hub.io.randomWord(cog.id, cog.hub.counter),
+        .invert => ~old,
+    };
+    const result = (old & ~mask) | (selected & mask);
+    cog.write_reg(reg, result);
+    if (family == .flt or family == .drv) {
+        const dir: Cog.Register = if (index < 32) .DIRA else .DIRB;
+        const prior = cog.read_operand(dir);
+        cog.write_reg(dir, if (family == .flt) prior & ~mask else prior | mask);
+    }
+    const flag = old & (@as(u32, 1) << @as(u5, @truncate(index))) != 0;
+    if (args.c_mod == .write) cog.c = flag;
+    if (args.z_mod == .write) cog.z = flag;
+    return .next;
+}
+
+// codegen: end:runtimehelpers
+
+/// Apply conditional cancellation and ALTx fields before selecting the semantic handler.
+fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
+    if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return .skip;
+    var raw = state.instr;
+    if (state.alt_d) |reg| raw = (raw & ~@as(u32, 0x3fe00)) | (@as(u32, @intFromEnum(reg)) << 9);
+    if (state.alt_s) |reg| raw = (raw & ~@as(u32, 0x1ff)) | @intFromEnum(reg);
     const opcode = decode.decode(state.instr);
 
-    const enc: encoding.Instruction = .{ .raw = state.instr };
+    const enc: encoding.Instruction = .{ .raw = raw };
 
     switch (opcode) {
         .invalid => return .trap,
-        inline .ror => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rol => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .shr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .shl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rcr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .rcl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sar => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sal => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .add => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .addx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .adds => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .addsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sub => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmp => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmps => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpsx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpm => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .subr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .cmpsub => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fge => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fle => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fges => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .fles => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .sumnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_and => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_and => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_or => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_or => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testb_xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testbn_xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitl => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bith => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitrnd => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .bitnot => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"and" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .andn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"or" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .xor => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .muxnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .mov => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .not => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .abs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .neg => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negnc => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .negnz => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .incmod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .decmod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .zerox => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .signx => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .encod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .ones => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .@"test" => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .testn => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_Flags, enc.both_d_simm_flags, @tagName(opc)),
-        inline .setr => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .setd => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .sets => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .decod => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .bmask => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .muxnits => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .muxnibs => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .movbyts => |opc| return execute_simple(cog, state, encoding.Both_D_Simm, enc.both_d_simm, @tagName(opc)),
-        inline .mul => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_ZFlag, enc.both_d_simm_zflag, @tagName(opc)),
-        inline .muls => |opc| return execute_simple(cog, state, encoding.Both_D_Simm_ZFlag, enc.both_d_simm_zflag, @tagName(opc)),
-        inline .splitb => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .mergeb => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .splitw => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .mergew => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .seussf => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .seussr => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rgbsqz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rgbexp => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rev => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .rczr => |opc| return execute_simple(cog, state, encoding.Only_D_Flags, enc.only_d_flags, @tagName(opc)),
-        inline .rczl => |opc| return execute_simple(cog, state, encoding.Only_D_Flags, enc.only_d_flags, @tagName(opc)),
-        inline .wrc => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrnc => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
-        inline .wrnz => |opc| return execute_simple(cog, state, encoding.Only_D, enc.only_d, @tagName(opc)),
+        .ror => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ROR, true),
+        .rol => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ROL, true),
+        .shr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SHR, true),
+        .shl => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SHL, true),
+        .rcr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.RCR, true),
+        .rcl => return execute_alu(cog, state, enc.both_d_simm_flags, alu.RCL, true),
+        .sar => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SAR, true),
+        .sal => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SAL, true),
+        .add => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADD, true),
+        .addx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADDX, true),
+        .adds => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADDS, true),
+        .addsx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ADDSX, true),
+        .sub => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUB, true),
+        .subx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBX, true),
+        .subs => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBS, true),
+        .subsx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBSX, true),
+        .cmp => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMP, false),
+        .cmpx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPX, false),
+        .cmps => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPS, false),
+        .cmpsx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPSX, false),
+        .cmpr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPR, false),
+        .cmpm => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPM, false),
+        .subr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUBR, true),
+        .cmpsub => return execute_alu(cog, state, enc.both_d_simm_flags, alu.CMPSUB, true),
+        .fge => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FGE, true),
+        .fle => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FLE, true),
+        .fges => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FGES, true),
+        .fles => return execute_alu(cog, state, enc.both_d_simm_flags, alu.FLES, true),
+        .sumc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMC, true),
+        .sumnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMNC, true),
+        .sumz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMZ, true),
+        .sumnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SUMNZ, true),
+        .testb => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB, false),
+        .testbn => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN, false),
+        .testb_and => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB_AND, false),
+        .testbn_and => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN_AND, false),
+        .testb_or => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB_OR, false),
+        .testbn_or => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN_OR, false),
+        .testb_xor => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTB_XOR, false),
+        .testbn_xor => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTBN_XOR, false),
+        .bitl => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITL, true),
+        .bith => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITH, true),
+        .bitc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITC, true),
+        .bitnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITNC, true),
+        .bitz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITZ, true),
+        .bitnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITNZ, true),
+        .bitrnd => return .not_implemented,
+        .bitnot => return execute_alu(cog, state, enc.both_d_simm_flags, alu.BITNOT, true),
+        .@"and" => return execute_alu(cog, state, enc.both_d_simm_flags, alu.AND, true),
+        .andn => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ANDN, true),
+        .@"or" => return execute_alu(cog, state, enc.both_d_simm_flags, alu.OR, true),
+        .xor => return execute_alu(cog, state, enc.both_d_simm_flags, alu.XOR, true),
+        .muxc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXC, true),
+        .muxnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXNC, true),
+        .muxz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXZ, true),
+        .muxnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MUXNZ, true),
+        .mov => return execute_alu(cog, state, enc.both_d_simm_flags, alu.MOV, true),
+        .not => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NOT, true),
+        .abs => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ABS, true),
+        .neg => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEG, true),
+        .negc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGC, true),
+        .negnc => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGNC, true),
+        .negz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGZ, true),
+        .negnz => return execute_alu(cog, state, enc.both_d_simm_flags, alu.NEGNZ, true),
+        .incmod => return execute_alu(cog, state, enc.both_d_simm_flags, alu.INCMOD, true),
+        .decmod => return execute_alu(cog, state, enc.both_d_simm_flags, alu.DECMOD, true),
+        .zerox => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ZEROX, true),
+        .signx => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SIGNX, true),
+        .encod => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ENCOD, true),
+        .ones => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ONES, true),
+        .@"test" => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TEST, false),
+        .testn => return execute_alu(cog, state, enc.both_d_simm_flags, alu.TESTN, false),
+        .setnib => return execute_alu(cog, state, enc.both_d_simm_n3, alu.SETNIB, true),
+        .getnib => return execute_alu(cog, state, enc.both_d_simm_n3, alu.GETNIB, true),
+        .rolnib => return execute_alu(cog, state, enc.both_d_simm_n3, alu.ROLNIB, true),
+        .setbyte => return execute_alu(cog, state, enc.both_d_simm_n2, alu.SETBYTE, true),
+        .getbyte => return execute_alu(cog, state, enc.both_d_simm_n2, alu.GETBYTE, true),
+        .rolbyte => return execute_alu(cog, state, enc.both_d_simm_n2, alu.ROLBYTE, true),
+        .setword => return execute_alu(cog, state, enc.both_d_simm_n1, alu.SETWORD, true),
+        .getword => return execute_alu(cog, state, enc.both_d_simm_n1, alu.GETWORD, true),
+        .rolword => return execute_alu(cog, state, enc.both_d_simm_n1, alu.ROLWORD, true),
+        .setr => return execute_alu(cog, state, enc.both_d_simm, alu.SETR, true),
+        .setd => return execute_alu(cog, state, enc.both_d_simm, alu.SETD, true),
+        .sets => return execute_alu(cog, state, enc.both_d_simm, alu.SETS, true),
+        .decod => return execute_alu(cog, state, enc.both_d_simm, alu.DECOD, true),
+        .bmask => return execute_alu(cog, state, enc.both_d_simm, alu.BMASK, true),
+        .crcbit => return execute_alu(cog, state, enc.both_d_simm, alu.CRCBIT, true),
+        .crcnib => return execute_alu(cog, state, enc.both_d_simm, alu.CRCNIB, true),
+        .muxnits => return execute_alu(cog, state, enc.both_d_simm, alu.MUXNITS, true),
+        .muxnibs => return execute_alu(cog, state, enc.both_d_simm, alu.MUXNIBS, true),
+        .muxq => return execute_alu(cog, state, enc.both_d_simm, alu.MUXQ, true),
+        .movbyts => return execute_alu(cog, state, enc.both_d_simm, alu.MOVBYTS, true),
+        .mul => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.MUL, true),
+        .muls => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.MULS, true),
+        .sca => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.SCA, false),
+        .scas => return execute_alu(cog, state, enc.both_d_simm_zflag, alu.SCAS, false),
+        .splitb => return execute_alu(cog, state, enc.only_d, alu.SPLITB, true),
+        .mergeb => return execute_alu(cog, state, enc.only_d, alu.MERGEB, true),
+        .splitw => return execute_alu(cog, state, enc.only_d, alu.SPLITW, true),
+        .mergew => return execute_alu(cog, state, enc.only_d, alu.MERGEW, true),
+        .seussf => return execute_alu(cog, state, enc.only_d, alu.SEUSSF, true),
+        .seussr => return execute_alu(cog, state, enc.only_d, alu.SEUSSR, true),
+        .rgbsqz => return execute_alu(cog, state, enc.only_d, alu.RGBSQZ, true),
+        .rgbexp => return execute_alu(cog, state, enc.only_d, alu.RGBEXP, true),
+        .xoro32 => return execute_alu(cog, state, enc.only_d, alu.XORO32, true),
+        .rev => return execute_alu(cog, state, enc.only_d, alu.REV, true),
+        .rczr => return execute_alu(cog, state, enc.only_d_flags, alu.RCZR, true),
+        .rczl => return execute_alu(cog, state, enc.only_d_flags, alu.RCZL, true),
+        .wrc => return execute_alu(cog, state, enc.only_d, alu.WRC, true),
+        .wrnc => return execute_alu(cog, state, enc.only_d, alu.WRNC, true),
+        .wrz => return execute_alu(cog, state, enc.only_d, alu.WRZ, true),
+        .wrnz => return execute_alu(cog, state, enc.only_d, alu.WRNZ, true),
+        .modcz => return execute_alu(cog, state, enc.update_flags, alu.MODCZ, false),
 
         inline else => |opc| {
             @setEvalBranchQuota(10_000);
@@ -122,92 +624,37 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
     }
 }
 
-const SimpleResult = struct {
-    result: u32,
-    c: bool,
-    z: bool,
-
-    pub fn simple(result: u32, c: bool, z: bool) SimpleResult {
-        return .{ .result = result, .c = c, .z = z };
-    }
-
-    pub fn autoz(result: u32, c: bool) SimpleResult {
-        return .{ .result = result, .c = c, .z = (result == 0) };
-    }
-
-    pub fn autoc(result: u32, z: bool) SimpleResult {
-        return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = z };
-    }
-
-    pub fn autocz(result: u32) SimpleResult {
-        return .{ .result = result, .c = (result & 0x8000_0000) != 0, .z = (result == 0) };
-    }
-};
-
 // codegen: begin:globalcode
-fn execute_simple(
+/// Delegate deterministic ALU semantics to libp2 using captured operands and current C/Z/Q.
+/// Apply result/flag controls and forward any next-source value before the successor latches operands.
+fn execute_alu(
     cog: *Cog,
     state: Cog.PipelineState,
-    comptime Operands: type,
-    operands: Operands,
-    comptime opcode: []const u8,
+    operands: anytype,
+    comptime function: anytype,
+    comptime writes_result: bool,
 ) Cog.ExecResult {
-    switch (Operands) {
-        encoding.Both_D_Simm_Flags => {},
-        encoding.Both_D_Simm => {},
-        encoding.Both_D_Simm_ZFlag => {},
-        encoding.Only_D => {},
-        encoding.Only_D_Flags => {},
-        else => @compileError("Unsupported simple type: " ++ @typeName(Operands)),
+    const Operands = @TypeOf(operands);
+    const is_modcz = Operands == encoding.UpdateFlags;
+    const d_reg: ?Cog.Register = if (is_modcz) null else state.alt_d orelse operands.d;
+    const source = if (@hasField(Operands, "s")) operandS(cog, state.alt_s orelse operands.s, operands.s_imm) else 0;
+    const input: alu.Input = .{
+        .d = if (is_modcz) (state.instr >> 9) & 0x1FF else cog.read_operand(d_reg.?),
+        .s = if (@hasField(Operands, "s")) state.s_value orelse source else 0,
+        .c = .from_bool(cog.c),
+        .z = .from_bool(cog.z),
+        .q = cog.q,
+        .setq_prefix = cog.setq_pending and !cog.q2,
+    };
+    const output = if (@hasField(Operands, "n")) function(input, operands.n) else function(input);
+    if (writes_result and !state.no_result) cog.write_result(state.alt_r orelse d_reg.?, output.result);
+    if (@hasField(Operands, "c_mod") and operands.c_mod == .write) cog.c = output.c == .set;
+    if (@hasField(Operands, "z_mod") and operands.z_mod == .write) cog.z = output.z == .set;
+    cog.q = output.q;
+    if (output.next_s) |forwarded| {
+        // Forward into the following instruction before its operand latch.
+        if (cog.following_instruction()) |next| next.s_value = forwarded;
     }
-
-    const has_s = @hasField(Operands, "s");
-    const has_s_imm = @hasField(Operands, "s_imm");
-    const has_c_mod = @hasField(Operands, "c_mod");
-    const has_z_mod = @hasField(Operands, "z_mod");
-
-    if (!@hasField(Operands, "d"))
-        @compileError("Simple opcodes always a D operand!");
-
-    if (@hasField(Operands, "d_imm"))
-        @compileError("This code cannot handle immediate D yet!");
-
-    // Experimentation proves that AUGx is evalutated *after* the condition check
-    if (!cog.is_condition_met(operands.cond))
-        return .skip;
-
-    const d_reg: Cog.Register = state.alt_d orelse operands.d;
-    const r_reg: Cog.Register = state.alt_r orelse d_reg;
-
-    const d: u32 = cog.read_reg(d_reg);
-
-    const s: ?u32 = if (has_s) blk: {
-        const s_reg = state.alt_s orelse operands.s;
-
-        if (has_s_imm and operands.s_imm) {
-            break :blk @intFromEnum(s_reg) | cog.fetch_augs();
-        } else {
-            break :blk cog.read_reg(s_reg);
-        }
-    } else null;
-
-    logger.info("0x{X:0>5}: 0x{X:0>8} {s}: {f}", .{ state.pc, state.instr, opcode, operands });
-
-    const function = @field(@This(), opcode);
-    const result: SimpleResult = if (has_s)
-        function(cog, d, s.?)
-    else
-        function(cog, d);
-
-    cog.write_reg(r_reg, result.result);
-
-    if (has_c_mod and operands.c_mod == .write) {
-        cog.c = result.c;
-    }
-    if (has_z_mod and operands.z_mod == .write) {
-        cog.z = result.z;
-    }
-
     return .next;
 }
 // codegen: end:globalcode
@@ -225,11 +672,9 @@ fn execute_simple(
 /// access:      mem=None, reg=None, stack=Push
 pub fn call_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
     // codegen: begin:call_a
-    _ = cog;
-    _ = args;
-    @panic("CALL #{\\}A is not implemented yet!");
-    // return .next;p
-
+    if (cog.exec_mode == .cog and args.relative and args.address & 3 != 0) return .not_implemented;
+    cog.call(branchA(cog, args));
+    return .next;
     // codegen: end:call_a
 }
 
@@ -242,10 +687,7 @@ pub fn call_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn calla_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
     // codegen: begin:calla_a
-    _ = cog;
-    _ = args;
-    @panic("CALLA #{\\}A is not implemented yet!");
-    // return .next;
+    return callPointer(cog, .PTRA, branchA(cog, args));
     // codegen: end:calla_a
 }
 
@@ -258,10 +700,7 @@ pub fn calla_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn callb_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
     // codegen: begin:callb_a
-    _ = cog;
-    _ = args;
-    @panic("CALLB #{\\}A is not implemented yet!");
-    // return .next;
+    return callPointer(cog, .PTRB, branchA(cog, args));
     // codegen: end:callb_a
 }
 
@@ -274,10 +713,11 @@ pub fn callb_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// access:      mem=None, reg=Per W, stack=None
 pub fn calld_a(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
     // codegen: begin:calld_a
-    _ = cog;
-    _ = args;
-    @panic("CALLD PA/PB/PTRA/PTRB, #{\\}A is not implemented yet!");
-    // return .next;
+    const target = branchA(cog, .{ .cond = args.cond, .relative = args.relative, .address = args.address, ._mask1 = 0 });
+    const value = cog.return_address();
+    cog.write_result(pointerReg(args.pointer), value);
+    cog.jump(target);
+    return .next;
     // codegen: end:calld_a
 }
 
@@ -294,10 +734,9 @@ pub fn calld_a(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jmp_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
     // codegen: begin:jmp_a
-    _ = cog;
-    _ = args;
-    @panic("JMP #{\\}A is not implemented yet!");
-    // return .next;
+    if (cog.exec_mode == .cog and args.relative and args.address & 3 != 0) return .not_implemented;
+    cog.jump(branchA(cog, args));
+    return .next;
     // codegen: end:jmp_a
 }
 
@@ -314,10 +753,10 @@ pub fn jmp_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=Push
 pub fn call_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:call_d
-    _ = cog;
-    _ = args;
-    @panic("CALL D {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    cog.call(@truncate(value));
+    jumpFlags(cog, args, value);
+    return .next;
     // codegen: end:call_d
 }
 
@@ -330,10 +769,10 @@ pub fn call_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn calla_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:calla_d
-    _ = cog;
-    _ = args;
-    @panic("CALLA D {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    if (callPointer(cog, .PTRA, @truncate(value)) == .wait) return .wait;
+    jumpFlags(cog, args, value);
+    return .next;
     // codegen: end:calla_d
 }
 
@@ -346,10 +785,10 @@ pub fn calla_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn callb_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:callb_d
-    _ = cog;
-    _ = args;
-    @panic("CALLB D {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    if (callPointer(cog, .PTRB, @truncate(value)) == .wait) return .wait;
+    jumpFlags(cog, args, value);
+    return .next;
     // codegen: end:callb_d
 }
 
@@ -368,7 +807,7 @@ pub fn execf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:execf
     _ = cog;
     _ = args;
-    @panic("EXECF {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:execf
 }
@@ -386,10 +825,10 @@ pub fn execf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jmp_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:jmp_d
-    _ = cog;
-    _ = args;
-    @panic("JMP D {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+
+    jumpFlags(cog, args, value);
+    return .next;
     // codegen: end:jmp_d
 }
 
@@ -402,10 +841,10 @@ pub fn jmp_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jmprel(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:jmprel
-    _ = cog;
-    _ = args;
-    @panic("JMPREL {#}D is not implemented yet!");
-    // return .next;
+    const offset: u20 = @truncate(operandD(cog, args.d, args.d_imm));
+    const scale: u20 = if (cog.exec_mode == .hub) 4 else 1;
+    cog.jump(cog.dispatch_pc +% scale +% offset *% scale);
+    return .next;
     // codegen: end:jmprel
 }
 
@@ -424,7 +863,7 @@ pub fn skipf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:skipf
     _ = cog;
     _ = args;
-    @panic("SKIPF {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:skipf
 }
@@ -444,7 +883,7 @@ pub fn skip(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:skip
     _ = cog;
     _ = args;
-    @panic("SKIP {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:skip
 }
@@ -464,7 +903,7 @@ pub fn rep(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:rep
     _ = cog;
     _ = args;
-    @panic("REP {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:rep
 }
@@ -482,10 +921,11 @@ pub fn rep(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=Pop
 pub fn ret(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:ret
-    _ = cog;
-    _ = args;
-    @panic("RET {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const value = cog.pop();
+    if (args.c_mod == .write) cog.c = value >> 31 != 0;
+    if (args.z_mod == .write) cog.z = value & 0x4000_0000 != 0;
+    cog.jump(@truncate(value));
+    return .next;
     // codegen: end:ret
 }
 
@@ -498,10 +938,7 @@ pub fn ret(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=Read, reg=None, stack=None
 pub fn reta(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:reta
-    _ = cog;
-    _ = args;
-    @panic("RETA {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return returnPointer(cog, .PTRA, args);
     // codegen: end:reta
 }
 
@@ -514,10 +951,7 @@ pub fn reta(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=Read, reg=None, stack=None
 pub fn retb(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:retb
-    _ = cog;
-    _ = args;
-    @panic("RETB {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return returnPointer(cog, .PTRB, args);
     // codegen: end:retb
 }
 
@@ -534,10 +968,15 @@ pub fn retb(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn calld_s(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     // codegen: begin:calld_s
-    _ = cog;
-    _ = args;
-    @panic("CALLD D, {#}S** {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const augmented = cog.augs_pending;
+    const source = operandS(cog, args.s, args.s_imm);
+    const target = branchValue(cog, source, args.s_imm, augmented);
+    const value = cog.return_address();
+    cog.write_result(args.d, value);
+    if (args.c_mod == .write) cog.c = source >> 31 != 0;
+    if (args.z_mod == .write) cog.z = source & 0x4000_0000 != 0;
+    cog.jump(target);
+    return .next;
     // codegen: end:calld_s
 }
 
@@ -550,10 +989,11 @@ pub fn calld_s(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=PA, stack=Push
 pub fn callpa(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:callpa
-    _ = cog;
-    _ = args;
-    @panic("CALLPA {#}D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = operandD(cog, args.d, args.d_imm);
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(.PA, value);
+    cog.call(target);
+    return .next;
     // codegen: end:callpa
 }
 
@@ -566,9 +1006,11 @@ pub fn callpa(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=PB, stack=Push
 pub fn callpb(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:callpb
-    _ = cog;
-    _ = args;
-    @panic("CALLPB {#}D, {#}S** is not implemented yet!");
+    const value = operandD(cog, args.d, args.d_imm);
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(.PB, value);
+    cog.call(target);
+    return .next;
     // return .next;
     // codegen: end:callpb
 }
@@ -586,10 +1028,11 @@ pub fn callpb(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn djz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:djz
-    _ = cog;
-    _ = args;
-    @panic("DJZ D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d) -% 1;
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(args.d, value);
+    if (value == 0) cog.jump(target);
+    return .next;
     // codegen: end:djz
 }
 
@@ -602,10 +1045,11 @@ pub fn djz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn djnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:djnz
-    _ = cog;
-    _ = args;
-    @panic("DJNZ D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d) -% 1;
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(args.d, value);
+    if (value != 0) cog.jump(target);
+    return .next;
     // codegen: end:djnz
 }
 
@@ -618,10 +1062,11 @@ pub fn djnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn djf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:djf
-    _ = cog;
-    _ = args;
-    @panic("DJF D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d) -% 1;
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(args.d, value);
+    if (value == 0xffffffff) cog.jump(target);
+    return .next;
     // codegen: end:djf
 }
 
@@ -634,10 +1079,11 @@ pub fn djf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn djnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:djnf
-    _ = cog;
-    _ = args;
-    @panic("DJNF D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d) -% 1;
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(args.d, value);
+    if (value != 0xffffffff) cog.jump(target);
+    return .next;
     // codegen: end:djnf
 }
 
@@ -650,10 +1096,11 @@ pub fn djnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn ijz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:ijz
-    _ = cog;
-    _ = args;
-    @panic("IJZ D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d) +% 1;
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(args.d, value);
+    if (value == 0) cog.jump(target);
+    return .next;
     // codegen: end:ijz
 }
 
@@ -666,10 +1113,11 @@ pub fn ijz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn ijnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:ijnz
-    _ = cog;
-    _ = args;
-    @panic("IJNZ D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d) +% 1;
+    const target = branchS(cog, args.s, args.s_imm);
+    cog.write_result(args.d, value);
+    if (value != 0) cog.jump(target);
+    return .next;
     // codegen: end:ijnz
 }
 
@@ -686,10 +1134,10 @@ pub fn ijnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn tjz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjz
-    _ = cog;
-    _ = args;
-    @panic("TJZ D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    const target = branchS(cog, args.s, args.s_imm);
+    if (value == 0) cog.jump(target);
+    return .next;
     // codegen: end:tjz
 }
 
@@ -702,10 +1150,10 @@ pub fn tjz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn tjnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjnz
-    _ = cog;
-    _ = args;
-    @panic("TJNZ D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    const target = branchS(cog, args.s, args.s_imm);
+    if (value != 0) cog.jump(target);
+    return .next;
     // codegen: end:tjnz
 }
 
@@ -718,10 +1166,10 @@ pub fn tjnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn tjf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjf
-    _ = cog;
-    _ = args;
-    @panic("TJF D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    const target = branchS(cog, args.s, args.s_imm);
+    if (value == 0xffffffff) cog.jump(target);
+    return .next;
     // codegen: end:tjf
 }
 
@@ -734,10 +1182,10 @@ pub fn tjf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn tjnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjnf
-    _ = cog;
-    _ = args;
-    @panic("TJNF D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    const target = branchS(cog, args.s, args.s_imm);
+    if (value != 0xffffffff) cog.jump(target);
+    return .next;
     // codegen: end:tjnf
 }
 
@@ -750,10 +1198,10 @@ pub fn tjnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn tjs(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjs
-    _ = cog;
-    _ = args;
-    @panic("TJS D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    const target = branchS(cog, args.s, args.s_imm);
+    if (value >> 31 != 0) cog.jump(target);
+    return .next;
     // codegen: end:tjs
 }
 
@@ -766,10 +1214,10 @@ pub fn tjs(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn tjns(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjns
-    _ = cog;
-    _ = args;
-    @panic("TJNS D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    const target = branchS(cog, args.s, args.s_imm);
+    if (value >> 31 == 0) cog.jump(target);
+    return .next;
     // codegen: end:tjns
 }
 
@@ -782,10 +1230,10 @@ pub fn tjns(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn tjv(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjv
-    _ = cog;
-    _ = args;
-    @panic("TJV D, {#}S** is not implemented yet!");
-    // return .next;
+    const value = cog.read_operand(args.d);
+    const target = branchS(cog, args.s, args.s_imm);
+    if ((value >> 31 != 0) != cog.c) cog.jump(target);
+    return .next;
     // codegen: end:tjv
 }
 
@@ -804,7 +1252,7 @@ pub fn qmul(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qmul
     _ = cog;
     _ = args;
-    @panic("QMUL {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qmul
 }
@@ -820,7 +1268,7 @@ pub fn qdiv(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qdiv
     _ = cog;
     _ = args;
-    @panic("QDIV {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qdiv
 }
@@ -836,7 +1284,7 @@ pub fn qfrac(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qfrac
     _ = cog;
     _ = args;
-    @panic("QFRAC {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qfrac
 }
@@ -852,7 +1300,7 @@ pub fn qsqrt(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qsqrt
     _ = cog;
     _ = args;
-    @panic("QSQRT {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qsqrt
 }
@@ -868,7 +1316,7 @@ pub fn qrotate(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qrotate
     _ = cog;
     _ = args;
-    @panic("QROTATE {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qrotate
 }
@@ -884,7 +1332,7 @@ pub fn qvector(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qvector
     _ = cog;
     _ = args;
-    @panic("QVECTOR {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qvector
 }
@@ -900,7 +1348,7 @@ pub fn qlog(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:qlog
     _ = cog;
     _ = args;
-    @panic("QLOG {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qlog
 }
@@ -916,7 +1364,7 @@ pub fn qexp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:qexp
     _ = cog;
     _ = args;
-    @panic("QEXP {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:qexp
 }
@@ -932,7 +1380,7 @@ pub fn getqx(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getqx
     _ = cog;
     _ = args;
-    @panic("GETQX D {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:getqx
 }
@@ -948,7 +1396,7 @@ pub fn getqy(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getqy
     _ = cog;
     _ = args;
-    @panic("GETQY D {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:getqy
 }
@@ -968,7 +1416,7 @@ pub fn setcy(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcy
     _ = cog;
     _ = args;
-    @panic("SETCY {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setcy
 }
@@ -984,7 +1432,7 @@ pub fn setci(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setci
     _ = cog;
     _ = args;
-    @panic("SETCI {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setci
 }
@@ -1000,7 +1448,7 @@ pub fn setcq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcq
     _ = cog;
     _ = args;
-    @panic("SETCQ {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setcq
 }
@@ -1016,7 +1464,7 @@ pub fn setcfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcfrq
     _ = cog;
     _ = args;
-    @panic("SETCFRQ {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setcfrq
 }
@@ -1032,7 +1480,7 @@ pub fn setcmod(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcmod
     _ = cog;
     _ = args;
-    @panic("SETCMOD {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setcmod
 }
@@ -1050,10 +1498,11 @@ pub fn setcmod(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn cogatn(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:cogatn
-    _ = cog;
-    _ = args;
-    @panic("COGATN {#}D is not implemented yet!");
-    // return .next;
+    const mask = operandD(cog, args.d, args.d_imm);
+    for (&cog.hub.cogs, 0..) |*target, id| if (mask & (@as(u32, 1) << @intCast(id)) != 0) {
+        cog.hub.signal_event(target.id, EventId.ATN.mask());
+    };
+    return .next;
     // codegen: end:cogatn
 }
 
@@ -1072,7 +1521,7 @@ pub fn jint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jint
     _ = cog;
     _ = args;
-    @panic("JINT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jint
 }
@@ -1086,10 +1535,7 @@ pub fn jint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jct1
-    _ = cog;
-    _ = args;
-    @panic("JCT1 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .CT1, true);
     // codegen: end:jct1
 }
 
@@ -1102,10 +1548,7 @@ pub fn jct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jct2
-    _ = cog;
-    _ = args;
-    @panic("JCT2 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .CT2, true);
     // codegen: end:jct2
 }
 
@@ -1118,10 +1561,7 @@ pub fn jct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jct3
-    _ = cog;
-    _ = args;
-    @panic("JCT3 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .CT3, true);
     // codegen: end:jct3
 }
 
@@ -1134,10 +1574,7 @@ pub fn jct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jse1
-    _ = cog;
-    _ = args;
-    @panic("JSE1 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE1, true);
     // codegen: end:jse1
 }
 
@@ -1150,10 +1587,7 @@ pub fn jse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jse2
-    _ = cog;
-    _ = args;
-    @panic("JSE2 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE2, true);
     // codegen: end:jse2
 }
 
@@ -1166,10 +1600,7 @@ pub fn jse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jse3
-    _ = cog;
-    _ = args;
-    @panic("JSE3 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE3, true);
     // codegen: end:jse3
 }
 
@@ -1182,10 +1613,7 @@ pub fn jse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jse4(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jse4
-    _ = cog;
-    _ = args;
-    @panic("JSE4 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE4, true);
     // codegen: end:jse4
 }
 
@@ -1200,7 +1628,7 @@ pub fn jpat(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jpat
     _ = cog;
     _ = args;
-    @panic("JPAT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jpat
 }
@@ -1216,7 +1644,7 @@ pub fn jfbw(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jfbw
     _ = cog;
     _ = args;
-    @panic("JFBW {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jfbw
 }
@@ -1232,7 +1660,7 @@ pub fn jxmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jxmt
     _ = cog;
     _ = args;
-    @panic("JXMT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jxmt
 }
@@ -1248,7 +1676,7 @@ pub fn jxfi(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jxfi
     _ = cog;
     _ = args;
-    @panic("JXFI {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jxfi
 }
@@ -1264,7 +1692,7 @@ pub fn jxro(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jxro
     _ = cog;
     _ = args;
-    @panic("JXRO {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jxro
 }
@@ -1280,7 +1708,7 @@ pub fn jxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jxrl
     _ = cog;
     _ = args;
-    @panic("JXRL {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jxrl
 }
@@ -1294,10 +1722,7 @@ pub fn jxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jatn
-    _ = cog;
-    _ = args;
-    @panic("JATN {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .ATN, true);
     // codegen: end:jatn
 }
 
@@ -1312,7 +1737,7 @@ pub fn jqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jqmt
     _ = cog;
     _ = args;
-    @panic("JQMT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jqmt
 }
@@ -1328,7 +1753,7 @@ pub fn jnint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnint
     _ = cog;
     _ = args;
-    @panic("JNINT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnint
 }
@@ -1342,10 +1767,7 @@ pub fn jnint(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnct1
-    _ = cog;
-    _ = args;
-    @panic("JNCT1 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .CT1, false);
     // codegen: end:jnct1
 }
 
@@ -1358,10 +1780,7 @@ pub fn jnct1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnct2
-    _ = cog;
-    _ = args;
-    @panic("JNCT2 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .CT2, false);
     // codegen: end:jnct2
 }
 
@@ -1374,10 +1793,7 @@ pub fn jnct2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnct3
-    _ = cog;
-    _ = args;
-    @panic("JNCT3 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .CT3, false);
     // codegen: end:jnct3
 }
 
@@ -1390,10 +1806,7 @@ pub fn jnct3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnse1
-    _ = cog;
-    _ = args;
-    @panic("JNSE1 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE1, false);
     // codegen: end:jnse1
 }
 
@@ -1406,10 +1819,7 @@ pub fn jnse1(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnse2
-    _ = cog;
-    _ = args;
-    @panic("JNSE2 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE2, false);
     // codegen: end:jnse2
 }
 
@@ -1422,10 +1832,7 @@ pub fn jnse2(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnse3
-    _ = cog;
-    _ = args;
-    @panic("JNSE3 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE3, false);
     // codegen: end:jnse3
 }
 
@@ -1438,10 +1845,7 @@ pub fn jnse3(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnse4(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnse4
-    _ = cog;
-    _ = args;
-    @panic("JNSE4 {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .SE4, false);
     // codegen: end:jnse4
 }
 
@@ -1456,7 +1860,7 @@ pub fn jnpat(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnpat
     _ = cog;
     _ = args;
-    @panic("JNPAT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnpat
 }
@@ -1472,7 +1876,7 @@ pub fn jnfbw(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnfbw
     _ = cog;
     _ = args;
-    @panic("JNFBW {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnfbw
 }
@@ -1488,7 +1892,7 @@ pub fn jnxmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnxmt
     _ = cog;
     _ = args;
-    @panic("JNXMT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnxmt
 }
@@ -1504,7 +1908,7 @@ pub fn jnxfi(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnxfi
     _ = cog;
     _ = args;
-    @panic("JNXFI {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnxfi
 }
@@ -1520,7 +1924,7 @@ pub fn jnxro(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnxro
     _ = cog;
     _ = args;
-    @panic("JNXRO {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnxro
 }
@@ -1536,7 +1940,7 @@ pub fn jnxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnxrl
     _ = cog;
     _ = args;
-    @panic("JNXRL {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnxrl
 }
@@ -1550,10 +1954,7 @@ pub fn jnxrl(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnatn
-    _ = cog;
-    _ = args;
-    @panic("JNATN {#}S** is not implemented yet!");
-    // return .next;
+    return branchEvent(cog, args, .ATN, false);
     // codegen: end:jnatn
 }
 
@@ -1568,7 +1969,7 @@ pub fn jnqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnqmt
     _ = cog;
     _ = args;
-    @panic("JNQMT {#}S** is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:jnqmt
 }
@@ -1586,10 +1987,7 @@ pub fn jnqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn addct1(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:addct1
-    _ = cog;
-    _ = args;
-    @panic("ADDCT1 D, {#}S is not implemented yet!");
-    // return .next;
+    return addCounter(cog, args, .CT1);
     // codegen: end:addct1
 }
 
@@ -1602,10 +2000,7 @@ pub fn addct1(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn addct2(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:addct2
-    _ = cog;
-    _ = args;
-    @panic("ADDCT2 D, {#}S is not implemented yet!");
-    // return .next;
+    return addCounter(cog, args, .CT2);
     // codegen: end:addct2
 }
 
@@ -1618,10 +2013,7 @@ pub fn addct2(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn addct3(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:addct3
-    _ = cog;
-    _ = args;
-    @panic("ADDCT3 D, {#}S is not implemented yet!");
-    // return .next;
+    return addCounter(cog, args, .CT3);
     // codegen: end:addct3
 }
 
@@ -1636,7 +2028,7 @@ pub fn setpat(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:setpat
     _ = cog;
     _ = args;
-    @panic("SETPAT {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setpat
 }
@@ -1650,10 +2042,7 @@ pub fn setpat(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setse1(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setse1
-    _ = cog;
-    _ = args;
-    @panic("SETSE1 {#}D is not implemented yet!");
-    // return .next;
+    return setSelectable(cog, args, .SE1);
     // codegen: end:setse1
 }
 
@@ -1666,10 +2055,7 @@ pub fn setse1(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setse2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setse2
-    _ = cog;
-    _ = args;
-    @panic("SETSE2 {#}D is not implemented yet!");
-    // return .next;
+    return setSelectable(cog, args, .SE2);
     // codegen: end:setse2
 }
 
@@ -1682,10 +2068,7 @@ pub fn setse2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setse3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setse3
-    _ = cog;
-    _ = args;
-    @panic("SETSE3 {#}D is not implemented yet!");
-    // return .next;
+    return setSelectable(cog, args, .SE3);
     // codegen: end:setse3
 }
 
@@ -1698,10 +2081,7 @@ pub fn setse3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setse4(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setse4
-    _ = cog;
-    _ = args;
-    @panic("SETSE4 {#}D is not implemented yet!");
-    // return .next;
+    return setSelectable(cog, args, .SE4);
     // codegen: end:setse4
 }
 
@@ -1720,7 +2100,7 @@ pub fn pollint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollint
     _ = cog;
     _ = args;
-    @panic("POLLINT {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollint
 }
@@ -1734,10 +2114,7 @@ pub fn pollint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollct1
-    _ = cog;
-    _ = args;
-    @panic("POLLCT1 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .CT1);
     // codegen: end:pollct1
 }
 
@@ -1750,10 +2127,7 @@ pub fn pollct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollct2
-    _ = cog;
-    _ = args;
-    @panic("POLLCT2 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .CT2);
     // codegen: end:pollct2
 }
 
@@ -1766,10 +2140,7 @@ pub fn pollct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollct3
-    _ = cog;
-    _ = args;
-    @panic("POLLCT3 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .CT3);
     // codegen: end:pollct3
 }
 
@@ -1782,10 +2153,7 @@ pub fn pollct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollse1
-    _ = cog;
-    _ = args;
-    @panic("POLLSE1 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .SE1);
     // codegen: end:pollse1
 }
 
@@ -1798,10 +2166,7 @@ pub fn pollse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollse2
-    _ = cog;
-    _ = args;
-    @panic("POLLSE2 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .SE2);
     // codegen: end:pollse2
 }
 
@@ -1814,10 +2179,7 @@ pub fn pollse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollse3
-    _ = cog;
-    _ = args;
-    @panic("POLLSE3 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .SE3);
     // codegen: end:pollse3
 }
 
@@ -1830,10 +2192,7 @@ pub fn pollse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollse4(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollse4
-    _ = cog;
-    _ = args;
-    @panic("POLLSE4 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .SE4);
     // codegen: end:pollse4
 }
 
@@ -1848,7 +2207,7 @@ pub fn pollpat(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollpat
     _ = cog;
     _ = args;
-    @panic("POLLPAT {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollpat
 }
@@ -1864,7 +2223,7 @@ pub fn pollfbw(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollfbw
     _ = cog;
     _ = args;
-    @panic("POLLFBW {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollfbw
 }
@@ -1880,7 +2239,7 @@ pub fn pollxmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollxmt
     _ = cog;
     _ = args;
-    @panic("POLLXMT {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollxmt
 }
@@ -1896,7 +2255,7 @@ pub fn pollxfi(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollxfi
     _ = cog;
     _ = args;
-    @panic("POLLXFI {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollxfi
 }
@@ -1912,7 +2271,7 @@ pub fn pollxro(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollxro
     _ = cog;
     _ = args;
-    @panic("POLLXRO {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollxro
 }
@@ -1928,7 +2287,7 @@ pub fn pollxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollxrl
     _ = cog;
     _ = args;
-    @panic("POLLXRL {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollxrl
 }
@@ -1942,10 +2301,7 @@ pub fn pollxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollatn
-    _ = cog;
-    _ = args;
-    @panic("POLLATN {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return pollEvent(cog, args, .ATN);
     // codegen: end:pollatn
 }
 
@@ -1960,7 +2316,7 @@ pub fn pollqmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollqmt
     _ = cog;
     _ = args;
-    @panic("POLLQMT {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:pollqmt
 }
@@ -1980,7 +2336,7 @@ pub fn waitint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitint
     _ = cog;
     _ = args;
-    @panic("WAITINT {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:waitint
 }
@@ -1994,10 +2350,7 @@ pub fn waitint(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitct1
-    _ = cog;
-    _ = args;
-    @panic("WAITCT1 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .CT1);
     // codegen: end:waitct1
 }
 
@@ -2010,10 +2363,7 @@ pub fn waitct1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitct2
-    _ = cog;
-    _ = args;
-    @panic("WAITCT2 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .CT2);
     // codegen: end:waitct2
 }
 
@@ -2026,10 +2376,7 @@ pub fn waitct2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitct3
-    _ = cog;
-    _ = args;
-    @panic("WAITCT3 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .CT3);
     // codegen: end:waitct3
 }
 
@@ -2042,10 +2389,7 @@ pub fn waitct3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitse1
-    _ = cog;
-    _ = args;
-    @panic("WAITSE1 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .SE1);
     // codegen: end:waitse1
 }
 
@@ -2058,10 +2402,7 @@ pub fn waitse1(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitse2
-    _ = cog;
-    _ = args;
-    @panic("WAITSE2 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .SE2);
     // codegen: end:waitse2
 }
 
@@ -2074,10 +2415,7 @@ pub fn waitse2(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitse3
-    _ = cog;
-    _ = args;
-    @panic("WAITSE3 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .SE3);
     // codegen: end:waitse3
 }
 
@@ -2090,10 +2428,7 @@ pub fn waitse3(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitse4(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitse4
-    _ = cog;
-    _ = args;
-    @panic("WAITSE4 {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .SE4);
     // codegen: end:waitse4
 }
 
@@ -2108,7 +2443,7 @@ pub fn waitpat(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitpat
     _ = cog;
     _ = args;
-    @panic("WAITPAT {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:waitpat
 }
@@ -2124,7 +2459,7 @@ pub fn waitfbw(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitfbw
     _ = cog;
     _ = args;
-    @panic("WAITFBW {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:waitfbw
 }
@@ -2140,7 +2475,7 @@ pub fn waitxmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitxmt
     _ = cog;
     _ = args;
-    @panic("WAITXMT {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:waitxmt
 }
@@ -2156,7 +2491,7 @@ pub fn waitxfi(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitxfi
     _ = cog;
     _ = args;
-    @panic("WAITXFI {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:waitxfi
 }
@@ -2172,7 +2507,7 @@ pub fn waitxro(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitxro
     _ = cog;
     _ = args;
-    @panic("WAITXRO {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:waitxro
 }
@@ -2188,7 +2523,7 @@ pub fn waitxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitxrl
     _ = cog;
     _ = args;
-    @panic("WAITXRL {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:waitxrl
 }
@@ -2202,10 +2537,7 @@ pub fn waitxrl(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:waitatn
-    _ = cog;
-    _ = args;
-    @panic("WAITATN {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return waitEvent(cog, args, .ATN);
     // codegen: end:waitatn
 }
 
@@ -2222,10 +2554,41 @@ pub fn waitatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=D if reg and WC, stack=None
 pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
     // codegen: begin:coginit
-    _ = cog;
-    _ = args;
-    @panic("COGINIT {#}D, {#}S {WC} is not implemented yet!");
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    const source = operandS(cog, args.s, args.s_imm);
+    // The decoder has already cleared unprefixed Q. An adjacent SETQ2 or
+    // CRCNIB can win that clear, and silicon also passes that value to PTRA.
+    const ptra = cog.q;
+    var selected: ?u3 = null;
+    const pair = d & 0x10 != 0 and d & 1 != 0;
+    if (d & 0x10 == 0) selected = @truncate(d) else {
+        for (0..8) |index| {
+            if (pair and index & 1 != 0) continue;
+            if (cog.hub.cogs[index].exec_mode == .stopped and (!pair or cog.hub.cogs[index + 1].exec_mode == .stopped)) {
+                selected = @intCast(index);
+                break;
+            }
+        }
+    }
+    if (args.c_mod == .write) {
+        cog.c = selected == null;
+        if (!args.d_imm) cog.write_result(args.d, if (selected) |id| @as(u32, id) else 15);
+    }
+    if (selected) |id| {
+        const hub = cog.hub;
+        if (id == cog.id and cog.collecting_writes) {
+            // Self restart takes effect after the next ordinary instruction's
+            // writeback. The new startup remains timed from the command grant.
+            hub.pending_starts[id] = .{ .at = hub.counter +% 3, .address = source, .ptra = ptra, .load = d & 0x20 == 0, .command_clock = hub.counter };
+        } else {
+            hub.start_cog(id, .{ .hub_address = source, .ptra = ptra, .load_image = d & 0x20 == 0, .clocked = cog.collecting_writes }) catch return .trap;
+        }
+        if (pair) {
+            hub.start_cog(id + 1, .{ .hub_address = source, .ptra = ptra, .load_image = d & 0x20 == 0, .clocked = cog.collecting_writes }) catch return .trap;
+        }
+        if (id == cog.id) cog.branched = true;
+    }
+    return .next;
     // codegen: end:coginit
 }
 
@@ -2246,7 +2609,7 @@ pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
         // cog D/# into C, where C=0 indicates the cog is free (stopped or never started)
         // and C=1 indicates the cog is busy (started).
 
-        const id: u3 = @truncate(cog.resolve_operand(args.d, args.d_imm));
+        const id: u3 = @truncate(operandD(cog, args.d, args.d_imm));
 
         // COGID ThatCog WC ' C=1 if ThatCog is busy
         cog.c = (cog.hub.cogs[id].exec_mode != .stopped);
@@ -2258,7 +2621,7 @@ pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 
         if (args.d_imm)
             return .trap; // TODO: Figure this out
-        cog.write_reg(args.d, cog.id);
+        cog.write_result(args.d, cog.id);
         return .next;
     }
     // codegen: end:cogid
@@ -2276,7 +2639,7 @@ pub fn cogstop(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     if (!cog.is_condition_met(args.cond))
         return .skip;
 
-    const id: u3 = @truncate(cog.resolve_operand(args.d, args.d_imm));
+    const id: u3 = @truncate(operandD(cog, args.d, args.d_imm));
 
     logger.info("stop cog {}", .{id});
     cog.hub.cogs[id].reset();
@@ -2298,10 +2661,17 @@ pub fn cogstop(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn locknew(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
     // codegen: begin:locknew
-    _ = cog;
-    _ = args;
-    @panic("LOCKNEW D {WC} is not implemented yet!");
-    // return .next;
+    for (&cog.hub.locks) |*lock| {
+        if (!lock.allocated) {
+            lock.allocated = true;
+            cog.write_result(args.d, lock.id);
+            if (args.c_mod == .write) cog.c = false;
+            return .next;
+        }
+    }
+    cog.write_result(args.d, 15);
+    if (args.c_mod == .write) cog.c = true;
+    return .next;
     // codegen: end:locknew
 }
 
@@ -2314,10 +2684,10 @@ pub fn locknew(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn lockret(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:lockret
-    _ = cog;
-    _ = args;
-    @panic("LOCKRET {#}D is not implemented yet!");
-    // return .next;
+    const id: u4 = @truncate(operandD(cog, args.d, args.d_imm));
+    cog.hub.locks[id].allocated = false;
+    if (cog.hub.locks[id].taken) cog.hub.release_lock(&cog.hub.locks[id]);
+    return .next;
     // codegen: end:lockret
 }
 
@@ -2330,10 +2700,16 @@ pub fn lockret(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn locktry(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
     // codegen: begin:locktry
-    _ = cog;
-    _ = args;
-    @panic("LOCKTRY {#}D {WC} is not implemented yet!");
-    // return .next;
+    const id: u4 = @truncate(operandD(cog, args.d, args.d_imm));
+    const lock = &cog.hub.locks[id];
+    const success = lock.allocated and (!lock.taken or lock.owner == cog.id);
+    if (success and !lock.taken) {
+        lock.taken = true;
+        lock.owner = cog.id;
+        cog.hub.signal_lock(id, true);
+    }
+    if (args.c_mod == .write) cog.c = success;
+    return .next;
     // codegen: end:locktry
 }
 
@@ -2346,10 +2722,14 @@ pub fn locktry(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn lockrel(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
     // codegen: begin:lockrel
-    _ = cog;
-    _ = args;
-    @panic("LOCKREL {#}D {WC} is not implemented yet!");
-    // return .next;
+    const id: u4 = @truncate(operandD(cog, args.d, args.d_imm));
+    const lock = &cog.hub.locks[id];
+    if (args.c_mod == .write) {
+        cog.c = lock.taken;
+        if (!args.d_imm) cog.write_result(args.d, lock.owner);
+    }
+    if (lock.taken and lock.owner == cog.id) cog.hub.release_lock(lock);
+    return .next;
     // codegen: end:lockrel
 }
 
@@ -2366,10 +2746,9 @@ pub fn lockrel(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn hubset(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:hubset
-    _ = cog;
-    _ = args;
-    @panic("HUBSET {#}D is not implemented yet!");
-    // return .next;
+    const mode = operandD(cog, args.d, args.d_imm);
+    if (!cog.hub.io.setClock(mode)) return .not_implemented;
+    return .next;
     // codegen: end:hubset
 }
 
@@ -2388,7 +2767,7 @@ pub fn getptr(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // codegen: begin:getptr
     _ = cog;
     _ = args;
-    @panic("GETPTR D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:getptr
 }
@@ -2408,7 +2787,7 @@ pub fn fblock(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:fblock
     _ = cog;
     _ = args;
-    @panic("FBLOCK {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:fblock
 }
@@ -2426,10 +2805,21 @@ pub fn fblock(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn rdfast(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:rdfast
-    _ = cog;
-    _ = args;
-    @panic("RDFAST {#}D, {#}S is not implemented yet!");
-    // return .next;
+    if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+    const state = if (cog.collecting_writes) &cog.pipeline[3].? else null;
+    if (state == null or !state.?.fifo_started) {
+        const config = operandD(cog, args.d, args.d_imm);
+        const address = operandS(cog, args.s, args.s_imm);
+        // Only the previously supported unbounded, blocking read mode.
+        if (config != 0) return .not_implemented;
+        cog.fifo_address = @truncate(address);
+        if (state) |instruction| {
+            cog.fifo = .{ .byte_offset = @truncate(address), .address = @truncate(address & 0xffffc), .ready_at = cog.hub.counter +% 3 };
+            instruction.fifo_started = true;
+        }
+    }
+    if (state != null and cog.fifo.?.count == 0) return .wait;
+    return .next;
     // codegen: end:rdfast
 }
 
@@ -2448,7 +2838,7 @@ pub fn wrfast(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrfast
     _ = cog;
     _ = args;
-    @panic("WRFAST {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:wrfast
 }
@@ -2466,10 +2856,14 @@ pub fn wrfast(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=Read, reg=D, stack=None
 pub fn rfbyte(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:rfbyte
-    _ = cog;
-    _ = args;
-    @panic("RFBYTE D {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+    const address = cog.fifo_address orelse return .{ .illegal = "RFBYTE requires RDFAST to configure the FIFO" };
+    const value = if (cog.collecting_writes) cog.fifo.?.read_byte() orelse return .wait else cog.hub.read_memory(address, 1);
+    cog.fifo_address = address +% 1;
+    cog.write_result(args.d, value);
+    if (args.c_mod == .write) cog.c = value & 0x80 != 0;
+    if (args.z_mod == .write) cog.z = value == 0;
+    return .next;
     // codegen: end:rfbyte
 }
 
@@ -2484,7 +2878,7 @@ pub fn rfword(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:rfword
     _ = cog;
     _ = args;
-    @panic("RFWORD D {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:rfword
 }
@@ -2500,7 +2894,7 @@ pub fn rflong(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:rflong
     _ = cog;
     _ = args;
-    @panic("RFLONG D {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:rflong
 }
@@ -2516,7 +2910,7 @@ pub fn rfvar(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:rfvar
     _ = cog;
     _ = args;
-    @panic("RFVAR D {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:rfvar
 }
@@ -2532,7 +2926,7 @@ pub fn rfvars(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:rfvars
     _ = cog;
     _ = args;
-    @panic("RFVARS D {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:rfvars
 }
@@ -2552,7 +2946,7 @@ pub fn wfbyte(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:wfbyte
     _ = cog;
     _ = args;
-    @panic("WFBYTE {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:wfbyte
 }
@@ -2568,7 +2962,7 @@ pub fn wfword(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:wfword
     _ = cog;
     _ = args;
-    @panic("WFWORD {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:wfword
 }
@@ -2584,7 +2978,7 @@ pub fn wflong(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:wflong
     _ = cog;
     _ = args;
-    @panic("WFLONG {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:wflong
 }
@@ -2602,10 +2996,7 @@ pub fn wflong(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=Read, reg=D, stack=None
 pub fn rdbyte(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     // codegen: begin:rdbyte
-    _ = cog;
-    _ = args;
-    @panic("RDBYTE D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return readMemory(cog, args, 1);
     // codegen: end:rdbyte
 }
 
@@ -2618,10 +3009,7 @@ pub fn rdbyte(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// access:      mem=Read, reg=D, stack=None
 pub fn rdword(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     // codegen: begin:rdword
-    _ = cog;
-    _ = args;
-    @panic("RDWORD D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return readMemory(cog, args, 2);
     // codegen: end:rdword
 }
 
@@ -2634,10 +3022,7 @@ pub fn rdword(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// access:      mem=Read, reg=D, stack=None
 pub fn rdlong(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     // codegen: begin:rdlong
-    _ = cog;
-    _ = args;
-    @panic("RDLONG D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    return readMemory(cog, args, 4);
     // codegen: end:rdlong
 }
 
@@ -2654,10 +3039,7 @@ pub fn rdlong(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn wmlong(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:wmlong
-    _ = cog;
-    _ = args;
-    @panic("WMLONG D, {#}S/P is not implemented yet!");
-    // return .next;
+    return writeMemory(cog, args, 4, true);
     // codegen: end:wmlong
 }
 
@@ -2670,10 +3052,7 @@ pub fn wmlong(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn wrbyte(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrbyte
-    _ = cog;
-    _ = args;
-    @panic("WRBYTE {#}D, {#}S/P is not implemented yet!");
-    // return .next;
+    return writeMemory(cog, args, 1, false);
     // codegen: end:wrbyte
 }
 
@@ -2686,10 +3065,7 @@ pub fn wrbyte(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn wrword(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrword
-    _ = cog;
-    _ = args;
-    @panic("WRWORD {#}D, {#}S/P is not implemented yet!");
-    // return .next;
+    return writeMemory(cog, args, 2, false);
     // codegen: end:wrword
 }
 
@@ -2702,10 +3078,7 @@ pub fn wrword(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=Write, reg=None, stack=None
 pub fn wrlong(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrlong
-    _ = cog;
-    _ = args;
-    @panic("WRLONG {#}D, {#}S/P is not implemented yet!");
-    // return .next;
+    return writeMemory(cog, args, 4, false);
     // codegen: end:wrlong
 }
 
@@ -2724,7 +3097,7 @@ pub fn allowi(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:allowi
     _ = cog;
     _ = args;
-    @panic("ALLOWI is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:allowi
 }
@@ -2740,7 +3113,7 @@ pub fn stalli(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:stalli
     _ = cog;
     _ = args;
-    @panic("STALLI is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:stalli
 }
@@ -2756,7 +3129,7 @@ pub fn trgint1(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:trgint1
     _ = cog;
     _ = args;
-    @panic("TRGINT1 is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:trgint1
 }
@@ -2772,7 +3145,7 @@ pub fn trgint2(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:trgint2
     _ = cog;
     _ = args;
-    @panic("TRGINT2 is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:trgint2
 }
@@ -2788,7 +3161,7 @@ pub fn trgint3(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:trgint3
     _ = cog;
     _ = args;
-    @panic("TRGINT3 is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:trgint3
 }
@@ -2804,7 +3177,7 @@ pub fn nixint1(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:nixint1
     _ = cog;
     _ = args;
-    @panic("NIXINT1 is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:nixint1
 }
@@ -2820,7 +3193,7 @@ pub fn nixint2(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:nixint2
     _ = cog;
     _ = args;
-    @panic("NIXINT2 is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:nixint2
 }
@@ -2836,7 +3209,7 @@ pub fn nixint3(cog: *Cog, args: encoding.NoOperands) Cog.ExecResult {
     // codegen: begin:nixint3
     _ = cog;
     _ = args;
-    @panic("NIXINT3 is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:nixint3
 }
@@ -2852,7 +3225,7 @@ pub fn setint1(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setint1
     _ = cog;
     _ = args;
-    @panic("SETINT1 {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setint1
 }
@@ -2868,7 +3241,7 @@ pub fn setint2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setint2
     _ = cog;
     _ = args;
-    @panic("SETINT2 {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setint2
 }
@@ -2884,7 +3257,7 @@ pub fn setint3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setint3
     _ = cog;
     _ = args;
-    @panic("SETINT3 {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setint3
 }
@@ -2900,7 +3273,7 @@ pub fn getbrk(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getbrk
     _ = cog;
     _ = args;
-    @panic("GETBRK D WC/WZ/WCZ is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:getbrk
 }
@@ -2916,7 +3289,7 @@ pub fn cogbrk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:cogbrk
     _ = cog;
     _ = args;
-    @panic("COGBRK {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:cogbrk
 }
@@ -2932,7 +3305,7 @@ pub fn brk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:brk
     _ = cog;
     _ = args;
-    @panic("BRK {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:brk
 }
@@ -2950,10 +3323,12 @@ pub fn brk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn rdlut(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     // codegen: begin:rdlut
-    _ = cog;
-    _ = args;
-    @panic("RDLUT D, {#}S/P {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const address: u9 = @truncate(memoryAddress(cog, args.s, args.s_imm, 1, false));
+    const value = cog.read_lut(address);
+    cog.q = value;
+    cog.write_result(args.d, value);
+    setFlags(cog, args, value, 31);
+    return .next;
     // codegen: end:rdlut
 }
 
@@ -2966,10 +3341,10 @@ pub fn rdlut(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn wrlut(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrlut
-    _ = cog;
-    _ = args;
-    @panic("WRLUT {#}D, {#}S/P is not implemented yet!");
-    // return .next;
+    const value = operandD(cog, args.d, args.d_imm);
+    const address: u9 = @truncate(memoryAddress(cog, args.s, args.s_imm, 1, false));
+    cog.write_lut(address, value);
+    return .next;
     // codegen: end:wrlut
 }
 
@@ -2982,1904 +3357,14 @@ pub fn wrlut(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setluts(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setluts
-    _ = cog;
-    _ = args;
-    @panic("SETLUTS {#}D is not implemented yet!");
-    // return .next;
+    cog.lut_sharing = operandD(cog, args.d, args.d_imm) & 1 != 0;
+    return .next;
     // codegen: end:setluts
 }
 
 //
 // GROUP: Math and Logic
 //
-
-/// ROR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate right.           D = [31:0]  of ({D[31:0], D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn ror(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:ror
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ROR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:ror
-}
-
-/// ROL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate left.            D = [63:32] of ({D[31:0], D[31:0]}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rol(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rol
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ROL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:rol
-}
-
-/// SHR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift right.            D = [31:0]  of ({32'b0, D[31:0]}       >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn shr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:shr
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SHR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:shr
-}
-
-/// SHL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift left.             D = [63:32] of ({D[31:0], 32'b0}       << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn shl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:shl
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SHL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:shl
-}
-
-/// RCR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate carry right.     D = [31:0]  of ({{32{C}}, D[31:0]}     >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rcr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rcr
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("RCR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:rcr
-}
-
-/// RCL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate carry left.      D = [63:32] of ({D[31:0], {32{C}}}     << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rcl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:rcl
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("RCL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:rcl
-}
-
-/// SAR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift arithmetic right. D = [31:0]  of ({{32{D[31]}}, D[31:0]} >> S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[0].  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sar(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sar
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SAR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sar
-}
-
-/// SAL D, {#}S {WC/WZ/WCZ}
-/// EEEE 0000111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Shift arithmetic left.  D = [63:32] of ({D[31:0], {32{D[0]}}}  << S[4:0]). C = last bit shifted out if S[4:0] > 0, else D[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sal(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sal
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SAL D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sal
-}
-
-/// ADD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add S into D.                                  D = D + S.        C = carry of (D + S).               *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn add(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:add
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ADD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:add
-}
-
-/// ADDX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add (S + C) into D, extended.                  D = D + S + C.    C = carry of (D + S + C).           Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn addx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:addx
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ADDX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:addx
-}
-
-/// ADDS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add S into D, signed.                          D = D + S.        C = correct sign of (D + S).        *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn adds(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:adds
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ADDS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:adds
-}
-
-/// ADDSX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Add (S + C) into D, signed and extended.       D = D + S + C.    C = correct sign of (D + S + C).    Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn addsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:addsx
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ADDSX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:addsx
-}
-
-/// SUB D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract S from D.                             D = D - S.        C = borrow of (D - S).              *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sub(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sub
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUB D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sub
-}
-
-/// SUBX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract (S + C) from D, extended.             D = D - (S + C).  C = borrow of (D - (S + C)).        Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subx
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUBX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:subx
-}
-
-/// SUBS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract S from D, signed.                     D = D - S.        C = correct sign of (D - S).        *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subs
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUBS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:subs
-}
-
-/// SUBSX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0001111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract (S + C) from D, signed and extended.  D = D - (S + C).  C = correct sign of (D - (S + C)).  Z = Z AND (result == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subsx
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUBSX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:subsx
-}
-
-/// CMP D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to S.                                                  C = borrow of (D - S).              Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmp(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmp
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("CMP D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmp
-}
-
-/// CMPX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to (S + C), extended.                                  C = borrow of (D - (S + C)).        Z = Z AND (D == S + C).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpx
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("CMPX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmpx
-}
-
-/// CMPS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to S, signed.                                          C = correct sign of (D - S).        Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmps(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmps
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("CMPS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmps
-}
-
-/// CMPSX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to (S + C), signed and extended.                       C = correct sign of (D - (S + C)).  Z = Z AND (D == S + C).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpsx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpsx
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("CMPSX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmpsx
-}
-
-/// CMPR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare S to D (reverse).                                        C = borrow of (S - D).              Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpr
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("CMPR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:cmpr
-}
-
-/// CMPM D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare D to S, get MSB of difference into C.                    C = MSB of (D - S).                 Z = (D == S).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn cmpm(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpm
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("CMPM D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoc(result, z);
-    // codegen: end:cmpm
-}
-
-/// SUBR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Subtract D from S (reverse).                   D = S - D.        C = borrow of (S - D).              *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn subr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:subr
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUBR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:subr
-}
-
-/// CMPSUB D, {#}S {WC/WZ/WCZ}
-/// EEEE 0010111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Compare and subtract S from D if D >= S. If D => S then D = D - S and C = 1, else D same and C = 0.  *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn cmpsub(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:cmpsub
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("CMPSUB D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:cmpsub
-}
-
-/// FGE D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D >= S. If D < S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fge(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fge
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("FGE D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fge
-}
-
-/// FLE D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D <= S. If D > S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fle(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fle
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("FLE D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fle
-}
-
-/// FGES D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D >= S, signed. If D < S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fges(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fges
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("FGES D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fges
-}
-
-/// FLES D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Force D <= S, signed. If D > S then D = S and C = 1, else D same and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn fles(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:fles
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("FLES D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:fles
-}
-
-/// SUMC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by  C. If C = 1 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUMC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumc
-}
-
-/// SUMNC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by !C. If C = 0 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUMNC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumnc
-}
-
-/// SUMZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by  Z. If Z = 1 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUMZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumz
-}
-
-/// SUMNZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0011111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sum +/-S into D by !Z. If Z = 0 then D = D - S, else D = D + S. C = correct sign of (D +/- S). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sumnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sumnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SUMNZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:sumnz
-}
-
-/// TESTB D, {#}S WC/WZ
-/// EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, write to C/Z. C/Z =          D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTB D, {#}S WC/WZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb
-}
-
-/// TESTBN D, {#}S WC/WZ
-/// EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, write to C/Z. C/Z =         !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTBN D, {#}S WC/WZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn
-}
-
-/// TESTB D, {#}S ANDC/ANDZ
-/// EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, AND into C/Z. C/Z = C/Z AND  D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb_and(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_and
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTB D, {#}S ANDC/ANDZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb_and
-}
-
-/// TESTBN D, {#}S ANDC/ANDZ
-/// EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, AND into C/Z. C/Z = C/Z AND !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn_and(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_and
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTBN D, {#}S ANDC/ANDZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn_and
-}
-
-/// TESTB D, {#}S ORC/ORZ
-/// EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, OR  into C/Z. C/Z = C/Z OR   D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb_or(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_or
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTB D, {#}S ORC/ORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb_or
-}
-
-/// TESTBN D, {#}S ORC/ORZ
-/// EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, OR  into C/Z. C/Z = C/Z OR  !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn_or(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_or
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTBN D, {#}S ORC/ORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn_or
-}
-
-/// TESTB D, {#}S XORC/XORZ
-/// EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of  D, XOR into C/Z. C/Z = C/Z XOR  D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testb_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testb_xor
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTB D, {#}S XORC/XORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testb_xor
-}
-
-/// TESTBN D, {#}S XORC/XORZ
-/// EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test bit S[4:0] of !D, XOR into C/Z. C/Z = C/Z XOR !D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testbn_xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testbn_xor
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTBN D, {#}S XORC/XORZ is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testbn_xor
-}
-
-/// BITL D, {#}S {WCZ}
-/// EEEE 0100000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = 0.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitl(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitl
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITL D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitl
-}
-
-/// BITH D, {#}S {WCZ}
-/// EEEE 0100001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = 1.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bith(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bith
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITH D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bith
-}
-
-/// BITC D, {#}S {WCZ}
-/// EEEE 0100010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = C.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITC D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitc
-}
-
-/// BITNC D, {#}S {WCZ}
-/// EEEE 0100011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = !C.   Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITNC D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitnc
-}
-
-/// BITZ D, {#}S {WCZ}
-/// EEEE 0100100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = Z.    Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITZ D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitz
-}
-
-/// BITNZ D, {#}S {WCZ}
-/// EEEE 0100101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = !Z.   Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITNZ D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitnz
-}
-
-/// BITRND D, {#}S {WCZ}
-/// EEEE 0100110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Bits D[S[9:5]+S[4:0]:S[4:0]] = RNDs. Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitrnd(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitrnd
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITRND D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitrnd
-}
-
-/// BITNOT D, {#}S {WCZ}
-/// EEEE 0100111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Toggle bits D[S[9:5]+S[4:0]:S[4:0]]. Other bits unaffected. Prior SETQ overrides S[9:5]. C,Z = original D[S[4:0]].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bitnot(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bitnot
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BITNOT D, {#}S {WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bitnot
-}
-
-/// AND D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: AND S into D.    D = D & S.    C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn @"and"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"and"
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("AND D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:@"and"
-}
-
-/// ANDN D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: AND !S into D.   D = D & !S.   C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn andn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:andn
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ANDN D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:andn
-}
-
-/// OR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: OR S into D.     D = D | S.    C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn @"or"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"or"
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("OR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:@"or"
-}
-
-/// XOR D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: XOR S into D.    D = D ^ S.    C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn xor(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:xor
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("XOR D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:xor
-}
-
-/// MUXC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux  C into each D bit that is '1' in S. D = (!S & D ) | (S & {32{ C}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MUXC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxc
-}
-
-/// MUXNC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux !C into each D bit that is '1' in S. D = (!S & D ) | (S & {32{!C}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MUXNC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxnc
-}
-
-/// MUXZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux  Z into each D bit that is '1' in S. D = (!S & D ) | (S & {32{ Z}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MUXZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxz
-}
-
-/// MUXNZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0101111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Mux !Z into each D bit that is '1' in S. D = (!S & D ) | (S & {32{!Z}}). C = parity of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MUXNZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:muxnz
-}
-
-/// MOV D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Move S into D. D = S. C = S[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mov(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:mov
-    _ = cog;
-    _ = d;
-    return .autocz(s);
-    // codegen: end:mov
-}
-
-/// NOT D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get !S into D. D = !S. C = !S[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn not(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:not
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("NOT D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:not
-}
-
-/// ABS D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get absolute value of S into D. D = ABS(S). C = S[31]. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn abs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:abs
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ABS D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:abs
-}
-
-/// NEG D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S into D. D = -S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn neg(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:neg
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("NEG D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:neg
-}
-
-/// NEGC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by  C into D. If C = 1 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("NEGC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negc
-}
-
-/// NEGNC D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by !C into D. If C = 0 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negnc(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negnc
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("NEGNC D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negnc
-}
-
-/// NEGZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by  Z into D. If Z = 1 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("NEGZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negz
-}
-
-/// NEGNZ D, {#}S {WC/WZ/WCZ}
-/// EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Negate S by !Z into D. If Z = 0 then D = -S, else D = S. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn negnz(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:negnz
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("NEGNZ D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:negnz
-}
-
-/// INCMOD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111000 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Increment with modulus. If D = S then D = 0 and C = 1, else D = D + 1 and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn incmod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:incmod
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("INCMOD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:incmod
-}
-
-/// DECMOD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111001 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Decrement with modulus. If D = 0 then D = S and C = 1, else D = D - 1 and C = 0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn decmod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:decmod
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("DECMOD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:decmod
-}
-
-/// ZEROX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111010 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Zero-extend D above bit S[4:0]. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn zerox(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:zerox
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ZEROX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:zerox
-}
-
-/// SIGNX D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111011 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Sign-extend D from bit S[4:0]. C = MSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn signx(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:signx
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SIGNX D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autocz(result);
-    // codegen: end:signx
-}
-
-/// ENCOD D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111100 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get bit position of top-most '1' in S into D. D = position of top '1' in S (0..31). C = (S != 0). *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn encod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:encod
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ENCOD D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:encod
-}
-
-/// ONES D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111101 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get number of '1's in S into D. D = number of '1's in S (0..32). C = LSB of result. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn ones(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:ones
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("ONES D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .autoz(result, c);
-    // codegen: end:ones
-}
-
-/// TEST D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test D with S. C = parity of (D & S). Z = ((D & S) == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn @"test"(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:@"test"
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TEST D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:@"test"
-}
-
-/// TESTN D, {#}S {WC/WZ/WCZ}
-/// EEEE 0111111 CZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Test D with !S. C = parity of (D & !S). Z = ((D & !S) == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn testn(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:testn
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("TESTN D, {#}S {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:testn
-}
-
-/// SETNIB D, {#}S, #N
-/// EEEE 100000N NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S[3:0] into nibble N in D, keeping rest of D same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:setnib
-    _ = cog;
-    _ = args;
-    @panic("SETNIB D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:setnib
-}
-
-/// GETNIB D, {#}S, #N
-/// EEEE 100001N NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get nibble N of S into D. D = {28'b0, S.NIBBLE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn getnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:getnib
-    _ = cog;
-    _ = args;
-    @panic("GETNIB D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:getnib
-}
-
-/// ROLNIB D, {#}S, #N
-/// EEEE 100010N NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate-left nibble N of S into D. D = {D[27:0], S.NIBBLE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rolnib(cog: *Cog, args: encoding.Both_D_Simm_N3) Cog.ExecResult {
-    // codegen: begin:rolnib
-    _ = cog;
-    _ = args;
-    @panic("ROLNIB D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:rolnib
-}
-
-/// SETBYTE D, {#}S, #N
-/// EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S[7:0] into byte N in D, keeping rest of D same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:setbyte
-    _ = cog;
-    _ = args;
-    @panic("SETBYTE D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:setbyte
-}
-
-/// GETBYTE D, {#}S, #N
-/// EEEE 1000111 NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get byte N of S into D. D = {24'b0, S.BYTE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn getbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:getbyte
-    _ = cog;
-    _ = args;
-    @panic("GETBYTE D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:getbyte
-}
-
-/// ROLBYTE D, {#}S, #N
-/// EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate-left byte N of S into D. D = {D[23:0], S.BYTE[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rolbyte(cog: *Cog, args: encoding.Both_D_Simm_N2) Cog.ExecResult {
-    // codegen: begin:rolbyte
-    _ = cog;
-    _ = args;
-    @panic("ROLBYTE D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:rolbyte
-}
-
-/// SETWORD D, {#}S, #N
-/// EEEE 1001001 0NI DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S[15:0] into word N in D, keeping rest of D same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:setword
-    _ = cog;
-    _ = args;
-    @panic("SETWORD D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:setword
-}
-
-/// GETWORD D, {#}S, #N
-/// EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS
-///
-/// description: Get word N of S into D. D = {16'b0, S.WORD[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn getword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:getword
-    _ = cog;
-    _ = args;
-    @panic("GETWORD D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:getword
-}
-
-/// ROLWORD D, {#}S, #N
-/// EEEE 1001010 0NI DDDDDDDDD SSSSSSSSS
-///
-/// description: Rotate-left word N of S into D. D = {D[15:0], S.WORD[N]).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rolword(cog: *Cog, args: encoding.Both_D_Simm_N1) Cog.ExecResult {
-    // codegen: begin:rolword
-    _ = cog;
-    _ = args;
-    @panic("ROLWORD D, {#}S, #N is not implemented yet!");
-    // return .next;
-    // codegen: end:rolword
-}
-
-/// SETR D, {#}S
-/// EEEE 1001101 01I DDDDDDDDD SSSSSSSSS
-///
-/// description: Set R field of D to S[8:0]. D = {D[31:28], S[8:0], D[18:0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setr(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:setr
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SETR D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:setr
-}
-
-/// SETD D, {#}S
-/// EEEE 1001101 10I DDDDDDDDD SSSSSSSSS
-///
-/// description: Set D field of D to S[8:0]. D = {D[31:18], S[8:0], D[8:0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn setd(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:setd
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SETD D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:setd
-}
-
-/// SETS D, {#}S
-/// EEEE 1001101 11I DDDDDDDDD SSSSSSSSS
-///
-/// description: Set S field of D to S[8:0]. D = {D[31:9], S[8:0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn sets(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:sets
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("SETS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:sets
-}
-
-/// DECOD D, {#}S
-/// EEEE 1001110 00I DDDDDDDDD SSSSSSSSS
-///
-/// description: Decode S[4:0] into D. D = 1 << S[4:0].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn decod(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:decod
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("DECOD D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:decod
-}
-
-/// BMASK D, {#}S
-/// EEEE 1001110 01I DDDDDDDDD SSSSSSSSS
-///
-/// description: Get LSB-justified bit mask of size (S[4:0] + 1) into D. D = ($0_0000_0002 << S[4:0]) - 1.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn bmask(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:bmask
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("BMASK D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:bmask
-}
-
-/// CRCBIT D, {#}S
-/// EEEE 1001110 10I DDDDDDDDD SSSSSSSSS
-///
-/// description: Iterate CRC value in D using C and polynomial in S. If (C XOR D[0]) then D = (D >> 1) XOR S, else D = (D >> 1).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn crcbit(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:crcbit
-    _ = cog;
-    _ = args;
-    @panic("CRCBIT D, {#}S is not implemented yet!");
-    // return .next;
-    // codegen: end:crcbit
-}
-
-/// CRCNIB D, {#}S
-/// EEEE 1001110 11I DDDDDDDDD SSSSSSSSS
-///
-/// description: Iterate CRC value in D using Q[31:28] and polynomial in S. Like CRCBIT x 4. Q = Q << 4. For long, use SETQ+'REP #1,#8'+CRCNIB.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn crcnib(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:crcnib
-    _ = cog;
-    _ = args;
-    @panic("CRCNIB D, {#}S is not implemented yet!");
-    // return .next;
-    // codegen: end:crcnib
-}
-
-/// MUXNITS D, {#}S
-/// EEEE 1001111 00I DDDDDDDDD SSSSSSSSS
-///
-/// description: For each non-zero bit pair in S, copy that bit pair into the corresponding D bits, else leave that D bit pair the same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnits(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnits
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MUXNITS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:muxnits
-}
-
-/// MUXNIBS D, {#}S
-/// EEEE 1001111 01I DDDDDDDDD SSSSSSSSS
-///
-/// description: For each non-zero nibble in S, copy that nibble into the corresponding D nibble, else leave that D nibble the same.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxnibs(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muxnibs
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MUXNIBS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:muxnibs
-}
-
-/// MUXQ D, {#}S
-/// EEEE 1001111 10I DDDDDDDDD SSSSSSSSS
-///
-/// description: Used after SETQ. For each '1' bit in Q, copy the corresponding bit in S into D. D = (D & !Q) | (S & Q).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muxq(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
-    // codegen: begin:muxq
-    _ = cog;
-    _ = args;
-    @panic("MUXQ D, {#}S is not implemented yet!");
-    // return .next;
-    // codegen: end:muxq
-}
-
-/// MOVBYTS D, {#}S
-/// EEEE 1001111 11I DDDDDDDDD SSSSSSSSS
-///
-/// description: Move bytes within D, per S. D = {D.BYTE[S[7:6]], D.BYTE[S[5:4]], D.BYTE[S[3:2]], D.BYTE[S[1:0]]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn movbyts(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:movbyts
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MOVBYTS D, {#}S is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:movbyts
-}
-
-/// MUL D, {#}S {WZ}
-/// EEEE 1010000 0ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: D = unsigned (D[15:0] * S[15:0]). Z = (S == 0) | (D == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mul(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:mul
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MUL D, {#}S {WZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:mul
-}
-
-/// MULS D, {#}S {WZ}
-/// EEEE 1010000 1ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: D = signed (D[15:0] * S[15:0]).   Z = (S == 0) | (D == 0).
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn muls(cog: *Cog, d: u32, s: u32) SimpleResult {
-    // codegen: begin:muls
-    _ = cog;
-    _ = d;
-    _ = s;
-    @panic("MULS D, {#}S {WZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:muls
-}
-
-/// SCA D, {#}S {WZ}
-/// EEEE 1010001 0ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Next instruction's S value = unsigned (D[15:0] * S[15:0]) >> 16. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn sca(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
-    // codegen: begin:sca
-    _ = cog;
-    _ = args;
-    @panic("SCA D, {#}S {WZ} is not implemented yet!");
-    // return .next;
-    // codegen: end:sca
-}
-
-/// SCAS D, {#}S {WZ}
-/// EEEE 1010001 1ZI DDDDDDDDD SSSSSSSSS
-///
-/// description: Next instruction's S value = signed (D[15:0] * S[15:0]) >> 14. In this scheme, $4000 = 1.0 and $C000 = -1.0. *
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn scas(cog: *Cog, args: encoding.Both_D_Simm_ZFlag) Cog.ExecResult {
-    // codegen: begin:scas
-    _ = cog;
-    _ = args;
-    @panic("SCAS D, {#}S {WZ} is not implemented yet!");
-    // return .next;
-    // codegen: end:scas
-}
-
-/// SPLITB D
-/// EEEE 1101011 000 DDDDDDDDD 001100000
-///
-/// description: Split every 4th bit of D into bytes. D = {D[31], D[27], D[23], D[19], ...D[12], D[8], D[4], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn splitb(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:splitb
-    _ = cog;
-    _ = d;
-    @panic("SPLITB D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:splitb
-}
-
-/// MERGEB D
-/// EEEE 1101011 000 DDDDDDDDD 001100001
-///
-/// description: Merge bits of bytes in D. D = {D[31], D[23], D[15], D[7], ...D[24], D[16], D[8], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mergeb(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:mergeb
-    _ = cog;
-    _ = d;
-    @panic("MERGEB D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:mergeb
-}
-
-/// SPLITW D
-/// EEEE 1101011 000 DDDDDDDDD 001100010
-///
-/// description: Split odd/even bits of D into words. D = {D[31], D[29], D[27], D[25], ...D[6], D[4], D[2], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn splitw(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:splitw
-    _ = cog;
-    _ = d;
-    @panic("SPLITW D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:splitw
-}
-
-/// MERGEW D
-/// EEEE 1101011 000 DDDDDDDDD 001100011
-///
-/// description: Merge bits of words in D. D = {D[31], D[15], D[30], D[14], ...D[17], D[1], D[16], D[0]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn mergew(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:mergew
-    _ = cog;
-    _ = d;
-    @panic("MERGEW D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:mergew
-}
-
-/// SEUSSF D
-/// EEEE 1101011 000 DDDDDDDDD 001100100
-///
-/// description: Relocate and periodically invert bits within D. Returns to original value on 32nd iteration. Forward pattern.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn seussf(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:seussf
-    _ = cog;
-    _ = d;
-    @panic("SEUSSF D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:seussf
-}
-
-/// SEUSSR D
-/// EEEE 1101011 000 DDDDDDDDD 001100101
-///
-/// description: Relocate and periodically invert bits within D. Returns to original value on 32nd iteration. Reverse pattern.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn seussr(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:seussr
-    _ = cog;
-    _ = d;
-    @panic("SEUSSR D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:seussr
-}
-
-/// RGBSQZ D
-/// EEEE 1101011 000 DDDDDDDDD 001100110
-///
-/// description: Squeeze 8:8:8 RGB value in D[31:8] into 5:6:5 value in D[15:0]. D = {15'b0, D[31:27], D[23:18], D[15:11]}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rgbsqz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rgbsqz
-    _ = cog;
-    _ = d;
-    @panic("RGBSQZ D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rgbsqz
-}
-
-/// RGBEXP D
-/// EEEE 1101011 000 DDDDDDDDD 001100111
-///
-/// description: Expand 5:6:5 RGB value in D[15:0] into 8:8:8 value in D[31:8]. D = {D[15:11,15:13], D[10:5,10:9], D[4:0,4:2], 8'b0}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rgbexp(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rgbexp
-    _ = cog;
-    _ = d;
-    @panic("RGBEXP D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rgbexp
-}
-
-/// XORO32 D
-/// EEEE 1101011 000 DDDDDDDDD 001101000
-///
-/// description: Iterate D with xoroshiro32+ PRNG algorithm and put PRNG result into next instruction's S. D must be non-zero to iterate.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn xoro32(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
-    // codegen: begin:xoro32
-    _ = cog;
-    _ = args;
-    @panic("XORO32 D is not implemented yet!");
-    // return .next;
-    // codegen: end:xoro32
-}
-
-/// REV D
-/// EEEE 1101011 000 DDDDDDDDD 001101001
-///
-/// description: Reverse D bits. D = D[0:31].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rev(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rev
-    _ = cog;
-    _ = d;
-    @panic("REV D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rev
-}
-
-/// RCZR D {WC/WZ/WCZ}
-/// EEEE 1101011 CZ0 DDDDDDDDD 001101010
-///
-/// description: Rotate C,Z right through D. D = {C, Z, D[31:2]}. C = D[1],  Z = D[0].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rczr(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rczr
-    _ = cog;
-    _ = d;
-    @panic("RCZR D {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rczr
-}
-
-/// RCZL D {WC/WZ/WCZ}
-/// EEEE 1101011 CZ0 DDDDDDDDD 001101011
-///
-/// description: Rotate C,Z left through D.  D = {D[29:0], C, Z}. C = D[31], Z = D[30].
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn rczl(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:rczl
-    _ = cog;
-    _ = d;
-    @panic("RCZL D {WC/WZ/WCZ} is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:rczl
-}
-
-/// WRC D
-/// EEEE 1101011 000 DDDDDDDDD 001101100
-///
-/// description: Write 0 or 1 to D, according to  C. D = {31'b0,  C}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrc(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrc
-    _ = cog;
-    _ = d;
-    @panic("WRC D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrc
-}
-
-/// WRNC D
-/// EEEE 1101011 000 DDDDDDDDD 001101101
-///
-/// description: Write 0 or 1 to D, according to !C. D = {31'b0, !C}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrnc(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrnc
-    _ = cog;
-    _ = d;
-    @panic("WRNC D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrnc
-}
-
-/// WRZ D
-/// EEEE 1101011 000 DDDDDDDDD 001101110
-///
-/// description: Write 0 or 1 to D, according to  Z. D = {31'b0,  Z}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrz
-    _ = cog;
-    _ = d;
-    @panic("WRZ D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrz
-}
-
-/// WRNZ D
-/// EEEE 1101011 000 DDDDDDDDD 001101111
-///
-/// description: Write 0 or 1 to D, according to !Z. D = {31'b0, !Z}.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=D, stack=None
-pub fn wrnz(cog: *Cog, d: u32) SimpleResult {
-    // codegen: begin:wrnz
-    _ = cog;
-    _ = d;
-    @panic("WRNZ D is not implemented yet!");
-    // return .simple(result, c, z);
-    // codegen: end:wrnz
-}
-
-/// MODCZ c, z {WC/WZ/WCZ}
-/// EEEE 1101011 CZ1 0cccczzzz 001101111
-///
-/// description: Modify C and Z according to cccc and zzzz. C = cccc[{C,Z}], Z = zzzz[{C,Z}]. See "MODCZ Operand" list.
-/// cog timing:  2
-/// hub timing:  same
-/// access:      mem=None, reg=None, stack=None
-pub fn modcz(cog: *Cog, args: encoding.UpdateFlags) Cog.ExecResult {
-    // codegen: begin:modcz
-    _ = cog;
-    _ = args;
-    @panic("MODCZ c, z {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
-    // codegen: end:modcz
-}
 
 /// LOC PA/PB/PTRA/PTRB, #{\}A
 /// EEEE 11101WW RAA AAAAAAAAA AAAAAAAAA
@@ -4890,10 +3375,9 @@ pub fn modcz(cog: *Cog, args: encoding.UpdateFlags) Cog.ExecResult {
 /// access:      mem=None, reg=Per W, stack=None
 pub fn loc(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
     // codegen: begin:loc
-    _ = cog;
-    _ = args;
-    @panic("LOC PA/PB/PTRA/PTRB, #{\\}A is not implemented yet!");
-    // return .next;
+    const value = branchA(cog, .{ .cond = args.cond, .relative = args.relative, .address = args.address, ._mask1 = 0 });
+    cog.write_result(pointerReg(args.pointer), value);
+    return .next;
     // codegen: end:loc
 }
 
@@ -4912,8 +3396,7 @@ pub fn nop(cog: *Cog, args: encoding.Nop) Cog.ExecResult {
     // codegen: begin:nop
     _ = cog;
     _ = args;
-    @panic("NOP is not implemented yet!");
-    // return .next;
+    return .next;
     // codegen: end:nop
 }
 
@@ -4926,10 +3409,9 @@ pub fn nop(cog: *Cog, args: encoding.Nop) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn getct(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
     // codegen: begin:getct
-    _ = cog;
-    _ = args;
-    @panic("GETCT D {WC} is not implemented yet!");
-    // return .next;
+    const value: u32 = if (args.c_mod == .write) @truncate(cog.hub.counter >> 32) else @truncate(cog.hub.counter);
+    cog.write_result(args.d, value);
+    return .next;
     // codegen: end:getct
 }
 
@@ -4944,7 +3426,7 @@ pub fn getrnd(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getrnd
     _ = cog;
     _ = args;
-    @panic("GETRND D {WC/WZ/WCZ} is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:getrnd
 }
@@ -4958,10 +3440,11 @@ pub fn getrnd(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn waitx(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:waitx
-    _ = cog;
-    _ = args;
-    @panic("WAITX {#}D {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    if (args.c_mod == .write or args.z_mod == .write) return .not_implemented;
+    if (cog.wait_until == null) cog.wait_until = cog.hub.counter +% @as(u64, operandD(cog, args.d, args.d_imm));
+    if (!clock_reached(cog.hub.counter, cog.wait_until.?)) return .wait;
+    cog.wait_until = null;
+    return .next;
     // codegen: end:waitx
 }
 
@@ -4974,10 +3457,11 @@ pub fn waitx(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setq
-    _ = cog;
-    _ = args;
-    @panic("SETQ {#}D is not implemented yet!");
-    // return .next;
+    cog.q = operandD(cog, args.d, args.d_imm);
+    cog.setq_pending = true;
+    cog.q2 = false;
+    cog.block_pointer_delta = true;
+    return .next;
     // codegen: end:setq
 }
 
@@ -4990,10 +3474,11 @@ pub fn setq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setq2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setq2
-    _ = cog;
-    _ = args;
-    @panic("SETQ2 {#}D is not implemented yet!");
-    // return .next;
+    cog.q = operandD(cog, args.d, args.d_imm);
+    cog.setq_pending = true;
+    cog.q2 = true;
+    cog.block_pointer_delta = true;
+    return .next;
     // codegen: end:setq2
 }
 
@@ -5006,10 +3491,8 @@ pub fn setq2(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=Push
 pub fn push(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:push
-    _ = cog;
-    _ = args;
-    @panic("PUSH {#}D is not implemented yet!");
-    // return .next;
+    cog.push(operandD(cog, args.d, args.d_imm));
+    return .next;
     // codegen: end:push
 }
 
@@ -5022,19 +3505,13 @@ pub fn push(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=Pop
 pub fn pop(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:pop
-    _ = cog;
-    _ = args;
-    @panic("POP D {WC/WZ/WCZ} is not implemented yet!");
-    // return .next;
+    const value = cog.pop();
+    cog.write_result(args.d, value);
+    if (args.c_mod == .write) cog.c = value >> 31 != 0;
+    if (args.z_mod == .write) cog.z = value == 0;
+    return .next;
     // codegen: end:pop
 }
-
-// codegen: begin:augdata
-const Augment = packed struct(u32) {
-    low: u9 = 0,
-    aug: u23,
-};
-// codegen: end:augdata
 
 /// AUGS #n
 /// EEEE 11110nn nnn nnnnnnnnn nnnnnnnnn
@@ -5047,7 +3524,8 @@ pub fn augs(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
     // codegen: begin:augs
     if (!cog.is_condition_met(args.cond))
         return .skip;
-    cog.augs = @bitCast(Augment{ .aug = args.augment });
+    cog.augs = @as(u32, args.augment) << 9;
+    cog.augs_pending = true;
     return .next;
     // codegen: end:augs
 }
@@ -5063,7 +3541,7 @@ pub fn augd(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
     // codegen: begin:augd
     if (!cog.is_condition_met(args.cond))
         return .skip;
-    cog.augd = @bitCast(Augment{ .aug = args.augment });
+    cog.augd = @as(u32, args.augment) << 9;
     return .next;
     // codegen: end:augd
 }
@@ -5081,10 +3559,7 @@ pub fn augd(cog: *Cog, args: encoding.Augment) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp
-    _ = cog;
-    _ = args;
-    @panic("TESTP {#}D WC/WZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, false, .write);
     // codegen: end:testp
 }
 
@@ -5097,10 +3572,7 @@ pub fn testp(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn
-    _ = cog;
-    _ = args;
-    @panic("TESTPN {#}D WC/WZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, true, .write);
     // codegen: end:testpn
 }
 
@@ -5113,10 +3585,7 @@ pub fn testpn(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp_and
-    _ = cog;
-    _ = args;
-    @panic("TESTP {#}D ANDC/ANDZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, false, .and_flags);
     // codegen: end:testp_and
 }
 
@@ -5129,10 +3598,7 @@ pub fn testp_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn_and
-    _ = cog;
-    _ = args;
-    @panic("TESTPN {#}D ANDC/ANDZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, true, .and_flags);
     // codegen: end:testpn_and
 }
 
@@ -5145,10 +3611,7 @@ pub fn testpn_and(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp_or
-    _ = cog;
-    _ = args;
-    @panic("TESTP {#}D ORC/ORZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, false, .or_flags);
     // codegen: end:testp_or
 }
 
@@ -5161,10 +3624,7 @@ pub fn testp_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn_or
-    _ = cog;
-    _ = args;
-    @panic("TESTPN {#}D ORC/ORZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, true, .or_flags);
     // codegen: end:testpn_or
 }
 
@@ -5177,10 +3637,7 @@ pub fn testpn_or(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testp_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testp_xor
-    _ = cog;
-    _ = args;
-    @panic("TESTP {#}D XORC/XORZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, false, .xor_flags);
     // codegen: end:testp_xor
 }
 
@@ -5193,10 +3650,7 @@ pub fn testp_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn testpn_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:testpn_xor
-    _ = cog;
-    _ = args;
-    @panic("TESTPN {#}D XORC/XORZ is not implemented yet!");
-    // return .next;
+    return testPin(cog, args, true, .xor_flags);
     // codegen: end:testpn_xor
 }
 
@@ -5209,10 +3663,7 @@ pub fn testpn_xor(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirl
-    _ = cog;
-    _ = args;
-    @panic("DIRL {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .low);
     // codegen: end:dirl
 }
 
@@ -5225,10 +3676,7 @@ pub fn dirl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirh
-    _ = cog;
-    _ = args;
-    @panic("DIRH {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .high);
     // codegen: end:dirh
 }
 
@@ -5241,10 +3689,7 @@ pub fn dirh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirc
-    _ = cog;
-    _ = args;
-    @panic("DIRC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .carry);
     // codegen: end:dirc
 }
 
@@ -5257,10 +3702,7 @@ pub fn dirc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirnc
-    _ = cog;
-    _ = args;
-    @panic("DIRNC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .not_carry);
     // codegen: end:dirnc
 }
 
@@ -5273,10 +3715,7 @@ pub fn dirnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirz
-    _ = cog;
-    _ = args;
-    @panic("DIRZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .zero);
     // codegen: end:dirz
 }
 
@@ -5289,10 +3728,7 @@ pub fn dirz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirnz
-    _ = cog;
-    _ = args;
-    @panic("DIRNZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .not_zero);
     // codegen: end:dirnz
 }
 
@@ -5305,10 +3741,7 @@ pub fn dirnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirrnd
-    _ = cog;
-    _ = args;
-    @panic("DIRRND {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .random);
     // codegen: end:dirrnd
 }
 
@@ -5321,10 +3754,7 @@ pub fn dirrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx, stack=None
 pub fn dirnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:dirnot
-    _ = cog;
-    _ = args;
-    @panic("DIRNOT {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .dir, .invert);
     // codegen: end:dirnot
 }
 
@@ -5337,10 +3767,7 @@ pub fn dirnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outl
-    _ = cog;
-    _ = args;
-    @panic("OUTL {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .low);
     // codegen: end:outl
 }
 
@@ -5353,10 +3780,7 @@ pub fn outl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outh
-    _ = cog;
-    _ = args;
-    @panic("OUTH {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .high);
     // codegen: end:outh
 }
 
@@ -5369,10 +3793,7 @@ pub fn outh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outc
-    _ = cog;
-    _ = args;
-    @panic("OUTC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .carry);
     // codegen: end:outc
 }
 
@@ -5385,10 +3806,7 @@ pub fn outc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outnc
-    _ = cog;
-    _ = args;
-    @panic("OUTNC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .not_carry);
     // codegen: end:outnc
 }
 
@@ -5401,10 +3819,7 @@ pub fn outnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outz
-    _ = cog;
-    _ = args;
-    @panic("OUTZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .zero);
     // codegen: end:outz
 }
 
@@ -5417,10 +3832,7 @@ pub fn outz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outnz
-    _ = cog;
-    _ = args;
-    @panic("OUTNZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .not_zero);
     // codegen: end:outnz
 }
 
@@ -5433,10 +3845,7 @@ pub fn outnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outrnd
-    _ = cog;
-    _ = args;
-    @panic("OUTRND {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .random);
     // codegen: end:outrnd
 }
 
@@ -5449,10 +3858,7 @@ pub fn outrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=OUTx, stack=None
 pub fn outnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:outnot
-    _ = cog;
-    _ = args;
-    @panic("OUTNOT {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .out, .invert);
     // codegen: end:outnot
 }
 
@@ -5465,10 +3871,7 @@ pub fn outnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltl
-    _ = cog;
-    _ = args;
-    @panic("FLTL {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .low);
     // codegen: end:fltl
 }
 
@@ -5481,10 +3884,7 @@ pub fn fltl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn flth(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:flth
-    _ = cog;
-    _ = args;
-    @panic("FLTH {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .high);
     // codegen: end:flth
 }
 
@@ -5497,10 +3897,7 @@ pub fn flth(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltc
-    _ = cog;
-    _ = args;
-    @panic("FLTC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .carry);
     // codegen: end:fltc
 }
 
@@ -5513,10 +3910,7 @@ pub fn fltc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltnc
-    _ = cog;
-    _ = args;
-    @panic("FLTNC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .not_carry);
     // codegen: end:fltnc
 }
 
@@ -5529,10 +3923,7 @@ pub fn fltnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltz
-    _ = cog;
-    _ = args;
-    @panic("FLTZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .zero);
     // codegen: end:fltz
 }
 
@@ -5545,10 +3936,7 @@ pub fn fltz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltnz
-    _ = cog;
-    _ = args;
-    @panic("FLTNZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .not_zero);
     // codegen: end:fltnz
 }
 
@@ -5561,10 +3949,7 @@ pub fn fltnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltrnd
-    _ = cog;
-    _ = args;
-    @panic("FLTRND {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .random);
     // codegen: end:fltrnd
 }
 
@@ -5577,10 +3962,7 @@ pub fn fltrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn fltnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:fltnot
-    _ = cog;
-    _ = args;
-    @panic("FLTNOT {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .flt, .invert);
     // codegen: end:fltnot
 }
 
@@ -5593,10 +3975,7 @@ pub fn fltnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvl
-    _ = cog;
-    _ = args;
-    @panic("DRVL {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .low);
     // codegen: end:drvl
 }
 
@@ -5609,10 +3988,7 @@ pub fn drvl(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvh
-    _ = cog;
-    _ = args;
-    @panic("DRVH {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .high);
     // codegen: end:drvh
 }
 
@@ -5625,10 +4001,7 @@ pub fn drvh(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvc
-    _ = cog;
-    _ = args;
-    @panic("DRVC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .carry);
     // codegen: end:drvc
 }
 
@@ -5641,10 +4014,7 @@ pub fn drvc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvnc
-    _ = cog;
-    _ = args;
-    @panic("DRVNC {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .not_carry);
     // codegen: end:drvnc
 }
 
@@ -5657,10 +4027,7 @@ pub fn drvnc(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvz
-    _ = cog;
-    _ = args;
-    @panic("DRVZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .zero);
     // codegen: end:drvz
 }
 
@@ -5673,10 +4040,7 @@ pub fn drvz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvnz
-    _ = cog;
-    _ = args;
-    @panic("DRVNZ {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .not_zero);
     // codegen: end:drvnz
 }
 
@@ -5689,10 +4053,7 @@ pub fn drvnz(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvrnd
-    _ = cog;
-    _ = args;
-    @panic("DRVRND {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .random);
     // codegen: end:drvrnd
 }
 
@@ -5705,10 +4066,7 @@ pub fn drvrnd(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=DIRx* + OUTx, stack=None
 pub fn drvnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:drvnot
-    _ = cog;
-    _ = args;
-    @panic("DRVNOT {#}D {WCZ} is not implemented yet!");
-    // return .next;
+    return modifyPins(cog, args, .drv, .invert);
     // codegen: end:drvnot
 }
 
@@ -5725,10 +4083,7 @@ pub fn drvnot(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn addpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:addpix
-    _ = cog;
-    _ = args;
-    @panic("ADDPIX D, {#}S is not implemented yet!");
-    // return .next;
+    return pixel(cog, args, .add);
     // codegen: end:addpix
 }
 
@@ -5741,10 +4096,7 @@ pub fn addpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn mulpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:mulpix
-    _ = cog;
-    _ = args;
-    @panic("MULPIX D, {#}S is not implemented yet!");
-    // return .next;
+    return pixel(cog, args, .multiply);
     // codegen: end:mulpix
 }
 
@@ -5757,10 +4109,7 @@ pub fn mulpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn blnpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:blnpix
-    _ = cog;
-    _ = args;
-    @panic("BLNPIX D, {#}S is not implemented yet!");
-    // return .next;
+    return pixel(cog, args, .blend);
     // codegen: end:blnpix
 }
 
@@ -5773,10 +4122,7 @@ pub fn blnpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn mixpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:mixpix
-    _ = cog;
-    _ = args;
-    @panic("MIXPIX D, {#}S is not implemented yet!");
-    // return .next;
+    return pixel(cog, args, .mix);
     // codegen: end:mixpix
 }
 
@@ -5789,10 +4135,8 @@ pub fn mixpix(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setpiv(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setpiv
-    _ = cog;
-    _ = args;
-    @panic("SETPIV {#}D is not implemented yet!");
-    // return .next;
+    cog.pixel_pivot = @truncate(operandD(cog, args.d, args.d_imm));
+    return .next;
     // codegen: end:setpiv
 }
 
@@ -5805,10 +4149,8 @@ pub fn setpiv(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setpix(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setpix
-    _ = cog;
-    _ = args;
-    @panic("SETPIX {#}D is not implemented yet!");
-    // return .next;
+    cog.pixel_mode = @truncate(operandD(cog, args.d, args.d_imm));
+    return .next;
     // codegen: end:setpix
 }
 
@@ -5825,10 +4167,7 @@ pub fn setpix(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altsn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altsn
-    _ = cog;
-    _ = args;
-    @panic("ALTSN D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_d", 3);
     // codegen: end:altsn
 }
 
@@ -5841,10 +4180,7 @@ pub fn altsn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altgn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altgn
-    _ = cog;
-    _ = args;
-    @panic("ALTGN D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_s", 3);
     // codegen: end:altgn
 }
 
@@ -5857,10 +4193,7 @@ pub fn altgn(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altsb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altsb
-    _ = cog;
-    _ = args;
-    @panic("ALTSB D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_d", 2);
     // codegen: end:altsb
 }
 
@@ -5873,10 +4206,7 @@ pub fn altsb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altgb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altgb
-    _ = cog;
-    _ = args;
-    @panic("ALTGB D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_s", 2);
     // codegen: end:altgb
 }
 
@@ -5889,10 +4219,7 @@ pub fn altgb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altsw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altsw
-    _ = cog;
-    _ = args;
-    @panic("ALTSW D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_d", 1);
     // codegen: end:altsw
 }
 
@@ -5905,10 +4232,7 @@ pub fn altsw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altgw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altgw
-    _ = cog;
-    _ = args;
-    @panic("ALTGW D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_s", 1);
     // codegen: end:altgw
 }
 
@@ -5921,10 +4245,7 @@ pub fn altgw(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altr(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altr
-    _ = cog;
-    _ = args;
-    @panic("ALTR D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_r", 0);
     // codegen: end:altr
 }
 
@@ -5937,10 +4258,7 @@ pub fn altr(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altd(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altd
-    _ = cog;
-    _ = args;
-    @panic("ALTD D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_d", 0);
     // codegen: end:altd
 }
 
@@ -5953,10 +4271,7 @@ pub fn altd(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn alts(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:alts
-    _ = cog;
-    _ = args;
-    @panic("ALTS D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_s", 0);
     // codegen: end:alts
 }
 
@@ -5969,10 +4284,7 @@ pub fn alts(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn altb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:altb
-    _ = cog;
-    _ = args;
-    @panic("ALTB D, {#}S is not implemented yet!");
-    // return .next;
+    return alter(cog, args, "alt_d", 5);
     // codegen: end:altb
 }
 
@@ -5985,10 +4297,38 @@ pub fn altb(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn alti(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:alti
-    _ = cog;
-    _ = args;
-    @panic("ALTI D, {#}S is not implemented yet!");
-    // return .next;
+    const d = cog.read_operand(args.d);
+    const saved = cog.augs;
+    const pending = cog.augs_pending;
+    const mode = operandS(cog, args.s, args.s_imm);
+    cog.augs = saved;
+    cog.augs_pending = pending;
+    const rmode = (mode >> 6) & 7;
+    if (cog.following_instruction()) |next| {
+        if (rmode == 1) next.no_result = true;
+        if (rmode == 5) {
+            next.instr = (next.instr & 0x3ffff) | (d & 0xfffc0000);
+            if (mode & 0x20 != 0) next.instr = (next.instr & ~@as(u32, 0x3fe00)) | (d & 0x3fe00);
+            if (mode & 4 != 0) next.instr = (next.instr & ~@as(u32, 0x1ff)) | (d & 0x1ff);
+        } else {
+            if (rmode & 4 != 0) next.alt_r = @enumFromInt(@as(u9, @truncate(d >> 19)));
+            if (mode & 0x20 != 0) next.alt_d = @enumFromInt(@as(u9, @truncate(d >> 9)));
+            if (mode & 4 != 0) next.alt_s = @enumFromInt(@as(u9, @truncate(d)));
+        }
+    }
+    var value = d;
+    inline for (.{ .{ 0, 0 }, .{ 9, 3 }, .{ 19, 6 } }) |field| {
+        const control = (mode >> field[1]) & 7;
+        if (control & 2 != 0) {
+            const width: u5 = @intCast(9 - ((mode >> (field[1] + 9)) & 7));
+            const mask = ((@as(u32, 1) << width) - 1) << field[0];
+            const delta: u32 = @as(u32, 1) << field[0];
+            const modified = if (control & 1 != 0) d +% delta else d -% delta;
+            value = (value & ~mask) | (modified & mask);
+        }
+    }
+    cog.write_result(args.d, value);
+    return .next;
     // codegen: end:alti
 }
 
@@ -6005,10 +4345,11 @@ pub fn alti(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn rqpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
     // codegen: begin:rqpin
-    _ = cog;
-    _ = args;
-    @panic("RQPIN D, {#}S {WC} is not implemented yet!");
-    // return .next;
+    const index: u6 = @truncate(operandS(cog, args.s, args.s_imm));
+    const result = cog.hub.io.readResult(@enumFromInt(index), cog.hub.counter);
+    cog.write_result(args.d, result.value);
+    if (args.c_mod == .write) cog.c = result.flag;
+    return .next;
     // codegen: end:rqpin
 }
 
@@ -6021,10 +4362,12 @@ pub fn rqpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn rdpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
     // codegen: begin:rdpin
-    _ = cog;
-    _ = args;
-    @panic("RDPIN D, {#}S {WC} is not implemented yet!");
-    // return .next;
+    const index: u6 = @truncate(operandS(cog, args.s, args.s_imm));
+    const result = cog.hub.io.readResult(@enumFromInt(index), cog.hub.counter);
+    cog.write_result(args.d, result.value);
+    if (args.c_mod == .write) cog.c = result.flag;
+    pinCommand(cog, @as(u64, 1) << index, .acknowledge, 1);
+    return .next;
     // codegen: end:rdpin
 }
 
@@ -6037,10 +4380,11 @@ pub fn rdpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrpin
-    _ = cog;
-    _ = args;
-    @panic("WRPIN {#}D, {#}S is not implemented yet!");
-    // return .next;
+    const value = operandD(cog, args.d, args.d_imm);
+    const field = operandS(cog, args.s, args.s_imm);
+    if (!IO.supported(value)) return .not_implemented;
+    pinCommand(cog, pinMask(cog, field), if (value & 1 != 0) .acknowledge else .configure, value);
+    return .next;
     // codegen: end:wrpin
 }
 
@@ -6053,23 +4397,9 @@ pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wxpin
-    // TODO: Correctly implement WXPIN!
-
-    if (!cog.is_condition_met(args.cond))
-        return .skip;
-
-    const d = cog.resolve_operand(args.d, args.d_imm); // data
-    const s = cog.resolve_operand(args.s, args.s_imm); // pin/file
-
-    const chr: u8 = @truncate(d);
-    var writer = switch (s) {
-        1 => std.Io.File.stdout().writerStreaming(cog.hub.std_io, &.{}),
-        2 => std.Io.File.stderr().writerStreaming(cog.hub.std_io, &.{}),
-        3 => std.Io.File.stderr().writerStreaming(cog.hub.std_io, &.{}),
-        else => @panic("invalid S operand to WXPIN!"),
-    };
-    writer.interface.writeByte(chr) catch @panic("i/o error");
-
+    const value = operandD(cog, args.d, args.d_imm);
+    const field = operandS(cog, args.s, args.s_imm);
+    pinCommand(cog, pinMask(cog, field), .write_x, value);
     return .next;
     // codegen: end:wxpin
 }
@@ -6083,33 +4413,9 @@ pub fn wxpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wypin
-    // TODO: Correctly implement WXPIN!
-
-    if (!cog.is_condition_met(args.cond))
-        return .skip;
-
-    const d = cog.resolve_operand(args.d, args.d_imm); // data
-    const s = cog.resolve_operand(args.s, args.s_imm); // pin/file
-
-    if (cog.hub.debug_stream) |debug_stream| {
-        if (debug_stream.full())
-            @panic("debug stream overflow!");
-        debug_stream.push(d);
-    }
-
-    const file: std.Io.File = switch (s) {
-        1 => .stdout(),
-        2 => .stderr(),
-        3 => .stderr(),
-        else => @panic("invalid S operand to WXPIN!"),
-    };
-
-    var buffer: [32]u8 = undefined;
-    var writer = file.writerStreaming(cog.hub.std_io, &buffer);
-
-    writer.interface.print("0x{X:0>8}", .{d}) catch @panic("i/o error");
-    writer.flush() catch @panic("i/o error");
-
+    const value = operandD(cog, args.d, args.d_imm);
+    const field = operandS(cog, args.s, args.s_imm);
+    pinCommand(cog, pinMask(cog, field), .write_y, value);
     return .next;
     // codegen: end:wypin
 }
@@ -6125,7 +4431,7 @@ pub fn setdacs(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setdacs
     _ = cog;
     _ = args;
-    @panic("SETDACS {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setdacs
 }
@@ -6141,7 +4447,7 @@ pub fn setscp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setscp
     _ = cog;
     _ = args;
-    @panic("SETSCP {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setscp
 }
@@ -6157,7 +4463,7 @@ pub fn getscp(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // codegen: begin:getscp
     _ = cog;
     _ = args;
-    @panic("GETSCP D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:getscp
 }
@@ -6177,7 +4483,7 @@ pub fn xinit(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:xinit
     _ = cog;
     _ = args;
-    @panic("XINIT {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:xinit
 }
@@ -6193,7 +4499,7 @@ pub fn xzero(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:xzero
     _ = cog;
     _ = args;
-    @panic("XZERO {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:xzero
 }
@@ -6209,7 +4515,7 @@ pub fn xcont(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:xcont
     _ = cog;
     _ = args;
-    @panic("XCONT {#}D, {#}S is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:xcont
 }
@@ -6225,7 +4531,7 @@ pub fn setxfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setxfrq
     _ = cog;
     _ = args;
-    @panic("SETXFRQ {#}D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:setxfrq
 }
@@ -6241,7 +4547,428 @@ pub fn getxacc(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // codegen: begin:getxacc
     _ = cog;
     _ = args;
-    @panic("GETXACC D is not implemented yet!");
+    return .not_implemented;
     // return .next;
     // codegen: end:getxacc
 }
+
+test "all deterministic ALU opcodes delegate to libp2" {
+    try test_alu_dispatch(.ror, 0x00000000, alu.ROR, true);
+    try test_alu_dispatch(.rol, 0x00200000, alu.ROL, true);
+    try test_alu_dispatch(.shr, 0x00400000, alu.SHR, true);
+    try test_alu_dispatch(.shl, 0x00600000, alu.SHL, true);
+    try test_alu_dispatch(.rcr, 0x00800000, alu.RCR, true);
+    try test_alu_dispatch(.rcl, 0x00A00000, alu.RCL, true);
+    try test_alu_dispatch(.sar, 0x00C00000, alu.SAR, true);
+    try test_alu_dispatch(.sal, 0x00E00000, alu.SAL, true);
+    try test_alu_dispatch(.add, 0x01000000, alu.ADD, true);
+    try test_alu_dispatch(.addx, 0x01200000, alu.ADDX, true);
+    try test_alu_dispatch(.adds, 0x01400000, alu.ADDS, true);
+    try test_alu_dispatch(.addsx, 0x01600000, alu.ADDSX, true);
+    try test_alu_dispatch(.sub, 0x01800000, alu.SUB, true);
+    try test_alu_dispatch(.subx, 0x01A00000, alu.SUBX, true);
+    try test_alu_dispatch(.subs, 0x01C00000, alu.SUBS, true);
+    try test_alu_dispatch(.subsx, 0x01E00000, alu.SUBSX, true);
+    try test_alu_dispatch(.cmp, 0x02000000, alu.CMP, false);
+    try test_alu_dispatch(.cmpx, 0x02200000, alu.CMPX, false);
+    try test_alu_dispatch(.cmps, 0x02400000, alu.CMPS, false);
+    try test_alu_dispatch(.cmpsx, 0x02600000, alu.CMPSX, false);
+    try test_alu_dispatch(.cmpr, 0x02800000, alu.CMPR, false);
+    try test_alu_dispatch(.cmpm, 0x02A00000, alu.CMPM, false);
+    try test_alu_dispatch(.subr, 0x02C00000, alu.SUBR, true);
+    try test_alu_dispatch(.cmpsub, 0x02E00000, alu.CMPSUB, true);
+    try test_alu_dispatch(.fge, 0x03000000, alu.FGE, true);
+    try test_alu_dispatch(.fle, 0x03200000, alu.FLE, true);
+    try test_alu_dispatch(.fges, 0x03400000, alu.FGES, true);
+    try test_alu_dispatch(.fles, 0x03600000, alu.FLES, true);
+    try test_alu_dispatch(.sumc, 0x03800000, alu.SUMC, true);
+    try test_alu_dispatch(.sumnc, 0x03A00000, alu.SUMNC, true);
+    try test_alu_dispatch(.sumz, 0x03C00000, alu.SUMZ, true);
+    try test_alu_dispatch(.sumnz, 0x03E00000, alu.SUMNZ, true);
+    try test_alu_dispatch(.testb, 0x04000000, alu.TESTB, false);
+    try test_alu_dispatch(.testbn, 0x04200000, alu.TESTBN, false);
+    try test_alu_dispatch(.testb_and, 0x04400000, alu.TESTB_AND, false);
+    try test_alu_dispatch(.testbn_and, 0x04600000, alu.TESTBN_AND, false);
+    try test_alu_dispatch(.testb_or, 0x04800000, alu.TESTB_OR, false);
+    try test_alu_dispatch(.testbn_or, 0x04A00000, alu.TESTBN_OR, false);
+    try test_alu_dispatch(.testb_xor, 0x04C00000, alu.TESTB_XOR, false);
+    try test_alu_dispatch(.testbn_xor, 0x04E00000, alu.TESTBN_XOR, false);
+    try test_alu_dispatch(.bitl, 0x04000000, alu.BITL, true);
+    try test_alu_dispatch(.bith, 0x04200000, alu.BITH, true);
+    try test_alu_dispatch(.bitc, 0x04400000, alu.BITC, true);
+    try test_alu_dispatch(.bitnc, 0x04600000, alu.BITNC, true);
+    try test_alu_dispatch(.bitz, 0x04800000, alu.BITZ, true);
+    try test_alu_dispatch(.bitnz, 0x04A00000, alu.BITNZ, true);
+    try test_alu_dispatch(.bitnot, 0x04E00000, alu.BITNOT, true);
+    try test_alu_dispatch(.@"and", 0x05000000, alu.AND, true);
+    try test_alu_dispatch(.andn, 0x05200000, alu.ANDN, true);
+    try test_alu_dispatch(.@"or", 0x05400000, alu.OR, true);
+    try test_alu_dispatch(.xor, 0x05600000, alu.XOR, true);
+    try test_alu_dispatch(.muxc, 0x05800000, alu.MUXC, true);
+    try test_alu_dispatch(.muxnc, 0x05A00000, alu.MUXNC, true);
+    try test_alu_dispatch(.muxz, 0x05C00000, alu.MUXZ, true);
+    try test_alu_dispatch(.muxnz, 0x05E00000, alu.MUXNZ, true);
+    try test_alu_dispatch(.mov, 0x06000000, alu.MOV, true);
+    try test_alu_dispatch(.not, 0x06200000, alu.NOT, true);
+    try test_alu_dispatch(.abs, 0x06400000, alu.ABS, true);
+    try test_alu_dispatch(.neg, 0x06600000, alu.NEG, true);
+    try test_alu_dispatch(.negc, 0x06800000, alu.NEGC, true);
+    try test_alu_dispatch(.negnc, 0x06A00000, alu.NEGNC, true);
+    try test_alu_dispatch(.negz, 0x06C00000, alu.NEGZ, true);
+    try test_alu_dispatch(.negnz, 0x06E00000, alu.NEGNZ, true);
+    try test_alu_dispatch(.incmod, 0x07000000, alu.INCMOD, true);
+    try test_alu_dispatch(.decmod, 0x07200000, alu.DECMOD, true);
+    try test_alu_dispatch(.zerox, 0x07400000, alu.ZEROX, true);
+    try test_alu_dispatch(.signx, 0x07600000, alu.SIGNX, true);
+    try test_alu_dispatch(.encod, 0x07800000, alu.ENCOD, true);
+    try test_alu_dispatch(.ones, 0x07A00000, alu.ONES, true);
+    try test_alu_dispatch(.@"test", 0x07C00000, alu.TEST, false);
+    try test_alu_dispatch(.testn, 0x07E00000, alu.TESTN, false);
+    try test_alu_dispatch(.setnib, 0x08000000, alu.SETNIB, true);
+    try test_alu_dispatch(.getnib, 0x08400000, alu.GETNIB, true);
+    try test_alu_dispatch(.rolnib, 0x08800000, alu.ROLNIB, true);
+    try test_alu_dispatch(.setbyte, 0x08C00000, alu.SETBYTE, true);
+    try test_alu_dispatch(.getbyte, 0x08E00000, alu.GETBYTE, true);
+    try test_alu_dispatch(.rolbyte, 0x09000000, alu.ROLBYTE, true);
+    try test_alu_dispatch(.setword, 0x09200000, alu.SETWORD, true);
+    try test_alu_dispatch(.getword, 0x09300000, alu.GETWORD, true);
+    try test_alu_dispatch(.rolword, 0x09400000, alu.ROLWORD, true);
+    try test_alu_dispatch(.setr, 0x09A80000, alu.SETR, true);
+    try test_alu_dispatch(.setd, 0x09B00000, alu.SETD, true);
+    try test_alu_dispatch(.sets, 0x09B80000, alu.SETS, true);
+    try test_alu_dispatch(.decod, 0x09C00000, alu.DECOD, true);
+    try test_alu_dispatch(.bmask, 0x09C80000, alu.BMASK, true);
+    try test_alu_dispatch(.crcbit, 0x09D00000, alu.CRCBIT, true);
+    try test_alu_dispatch(.crcnib, 0x09D80000, alu.CRCNIB, true);
+    try test_alu_dispatch(.muxnits, 0x09E00000, alu.MUXNITS, true);
+    try test_alu_dispatch(.muxnibs, 0x09E80000, alu.MUXNIBS, true);
+    try test_alu_dispatch(.muxq, 0x09F00000, alu.MUXQ, true);
+    try test_alu_dispatch(.movbyts, 0x09F80000, alu.MOVBYTS, true);
+    try test_alu_dispatch(.mul, 0x0A000000, alu.MUL, true);
+    try test_alu_dispatch(.muls, 0x0A100000, alu.MULS, true);
+    try test_alu_dispatch(.sca, 0x0A200000, alu.SCA, false);
+    try test_alu_dispatch(.scas, 0x0A300000, alu.SCAS, false);
+    try test_alu_dispatch(.splitb, 0x0D600060, alu.SPLITB, true);
+    try test_alu_dispatch(.mergeb, 0x0D600061, alu.MERGEB, true);
+    try test_alu_dispatch(.splitw, 0x0D600062, alu.SPLITW, true);
+    try test_alu_dispatch(.mergew, 0x0D600063, alu.MERGEW, true);
+    try test_alu_dispatch(.seussf, 0x0D600064, alu.SEUSSF, true);
+    try test_alu_dispatch(.seussr, 0x0D600065, alu.SEUSSR, true);
+    try test_alu_dispatch(.rgbsqz, 0x0D600066, alu.RGBSQZ, true);
+    try test_alu_dispatch(.rgbexp, 0x0D600067, alu.RGBEXP, true);
+    try test_alu_dispatch(.xoro32, 0x0D600068, alu.XORO32, true);
+    try test_alu_dispatch(.rev, 0x0D600069, alu.REV, true);
+    try test_alu_dispatch(.rczr, 0x0D60006A, alu.RCZR, true);
+    try test_alu_dispatch(.rczl, 0x0D60006B, alu.RCZL, true);
+    try test_alu_dispatch(.wrc, 0x0D60006C, alu.WRC, true);
+    try test_alu_dispatch(.wrnc, 0x0D60006D, alu.WRNC, true);
+    try test_alu_dispatch(.wrz, 0x0D60006E, alu.WRZ, true);
+    try test_alu_dispatch(.wrnz, 0x0D60006F, alu.WRNZ, true);
+    try test_alu_dispatch(.modcz, 0x0D64006F, alu.MODCZ, false);
+}
+
+// codegen: begin:executortests
+test "forwarded source stays with a waiting instruction" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    cog.write_reg(@enumFromInt(24), 0x8000);
+    // SCA r24, #2; WAITX #2; MOV r25, #7.
+    cog.write_reg(@enumFromInt(0), 0xFA24_3002);
+    cog.write_reg(@enumFromInt(1), 0xFD64_041F);
+    cog.write_reg(@enumFromInt(2), 0xF604_3207);
+    cog.write_reg(@enumFromInt(3), 0xFD64_0003); // COGSTOP #0.
+    var saw_wait = false;
+    while (hub.is_any_cog_active() and hub.counter < 32) {
+        hub.step();
+        if (cog.wait_until != null) {
+            saw_wait = true;
+            try std.testing.expectEqual(@as(?u32, 1), cog.pipeline[3].?.s_value);
+            try std.testing.expectEqual(@as(u20, 1), cog.pipeline[3].?.pc);
+        }
+    }
+    try std.testing.expect(saw_wait);
+    try std.testing.expect(!hub.is_any_cog_active());
+    try std.testing.expectEqual(@as(u32, 7), cog.read_reg(@enumFromInt(25)));
+}
+
+test "COGINIT allocates free cogs and pairs, reports failure, and retains RAM on restart" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    cog.write_reg(@enumFromInt(20), 0x30); // Start a free cog without loading RAM.
+    cog.write_reg(@enumFromInt(21), 0x4000_0210);
+    hub.cogs[1].write_reg(@enumFromInt(100), 0x1234);
+    hub.cogs[1].lut[16] = 0x5678;
+    cog.q = 0x8765_4321;
+    cog.setq_pending = true;
+    const start = 0xFCE0_0000 | (1 << 20) | (20 << 9) | 21; // COGINIT r20, r21 WC
+    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = start }));
+    try std.testing.expectEqual(@as(u32, 1), cog.read_reg(@enumFromInt(20)));
+    try std.testing.expect(!cog.c);
+    try std.testing.expectEqual(Cog.ExecMode.cog, hub.cogs[1].exec_mode);
+    try std.testing.expectEqual(@as(u20, 0x210), hub.cogs[1].pc);
+    try std.testing.expectEqual(@as(u32, 0x4000_0210), hub.cogs[1].read_reg(.PTRB));
+    try std.testing.expectEqual(@as(u32, 0x8765_4321), hub.cogs[1].read_reg(.PTRA));
+    try std.testing.expectEqual(@as(u32, 0x1234), hub.cogs[1].read_reg(@enumFromInt(100)));
+    try std.testing.expectEqual(@as(u32, 0x5678), hub.cogs[1].lut[16]);
+    cog.write_reg(@enumFromInt(20), 0x31); // First available even/odd pair is 2,3.
+    // This direct semantic call bypasses the pipeline's unprefixed Q clear.
+    cog.q = 0;
+    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = start }));
+    try std.testing.expectEqual(@as(u32, 2), cog.read_reg(@enumFromInt(20)));
+    try std.testing.expectEqual(Cog.ExecMode.cog, hub.cogs[3].exec_mode);
+    try std.testing.expectEqual(@as(u32, 0), cog.q);
+    for (&hub.cogs) |*active| active.exec_mode = .cog;
+    cog.write_reg(@enumFromInt(20), 0x30);
+    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = start }));
+    try std.testing.expect(cog.c);
+    try std.testing.expectEqual(@as(u32, 15), cog.read_reg(@enumFromInt(20)));
+
+    hub.locks[4] = .{ .id = 4, .allocated = true, .taken = true, .owner = 1 };
+    cog.selectable_events[0] = 0x24;
+    hub.cogs[1].reset();
+    try std.testing.expect(!hub.locks[4].taken);
+    try std.testing.expect(hub.locks[4].allocated);
+    try std.testing.expectEqual(@as(u3, 1), hub.locks[4].owner);
+    try std.testing.expect(cog.events & EventId.SE1.mask() != 0);
+    try std.testing.expectEqual(@as(u32, 0x1234), hub.cogs[1].read_reg(@enumFromInt(100)));
+    try std.testing.expectEqual(@as(u32, 0x5678), hub.cogs[1].lut[16]);
+
+    // Loading an image at the end of hub RAM wraps through the physical RAM.
+    hub.write_memory(0xffffc, 0x1122_3344, 4, false);
+    hub.write_memory(0, 0x5566_7788, 4, false);
+    try hub.start_cog(1, .{ .hub_address = 0xffffc, .clocked = false });
+    try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[1].read_reg(@enumFromInt(0)));
+    try std.testing.expectEqual(@as(u32, 0x5566_7788), hub.cogs[1].read_reg(@enumFromInt(1)));
+}
+
+test "LUT sharing receives companion writes and selectable events track both cogs" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const even = &hub.cogs[2];
+    const odd = even.other();
+    even.lut_sharing = true;
+    even.selectable_events = .{ 12, 8, 7, null };
+    odd.selectable_events[0] = 4;
+    odd.write_lut(508, 0x8000_0000);
+    try std.testing.expectEqual(@as(u32, 0x8000_0000), even.lut[508]);
+    try std.testing.expect(even.events & EventId.SE1.mask() != 0);
+    try std.testing.expect(odd.events & EventId.SE1.mask() != 0);
+    _ = odd.read_lut(508);
+    try std.testing.expect(even.events & EventId.SE2.mask() != 0);
+    even.write_lut(511, 99);
+    try std.testing.expect(even.events & EventId.SE3.mask() != 0);
+    try std.testing.expectEqual(@as(u32, 0), odd.lut[511]);
+    even.lut_sharing = false;
+    odd.write_lut(508, 1);
+    try std.testing.expectEqual(@as(u32, 0x8000_0000), even.lut[508]);
+}
+
+test "GETCT reads both halves and counter waits cross the 32-bit wrap" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    hub.counter = 0x1234_5678_ffff_ffff;
+    cog.c = false;
+    const high = 0xFD70_001A | (20 << 9); // GETCT r20 WC
+    const low = 0xFD60_001A | (21 << 9); // GETCT r21
+    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = high }));
+    hub.counter += 1;
+    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 1, .instr = low }));
+    try std.testing.expectEqual(@as(u32, 0x1234_5678), cog.read_reg(@enumFromInt(20)));
+    try std.testing.expectEqual(@as(u32, 0), cog.read_reg(@enumFromInt(21)));
+    try std.testing.expect(!cog.c);
+    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 2, .instr = low }));
+    try std.testing.expectEqual(@as(u32, 0), cog.read_reg(@enumFromInt(21)));
+
+    hub.counter = 0xffff_fffe;
+    cog.exec_mode = .cog;
+    cog.ct_targets[2] = 0;
+    hub.step();
+    hub.step();
+    try std.testing.expect(cog.events & EventId.CT3.mask() == 0);
+    hub.step();
+    try std.testing.expect(cog.events & EventId.CT3.mask() != 0);
+    cog.q = 4;
+    cog.setq_pending = true;
+    const wait = 0xFD70_3C24; // WAITATN WC
+    try std.testing.expectEqual(Cog.ExecResult.wait, execute_instruction(cog, .{ .pc = 3, .instr = wait }));
+    try std.testing.expect(cog.setq_pending);
+    hub.counter = 0x1_0000_0004;
+    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 3, .instr = wait }));
+    try std.testing.expect(cog.c);
+    try std.testing.expect(!cog.setq_pending);
+}
+
+test "unaligned hub memory wraps, extended pointer indices are unscaled, and zero AUGS is honored" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    hub.write_memory(0xffff_ffff, 0x1122_3344, 4, false);
+    try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.read_memory(0xfffff, 4));
+    try std.testing.expectEqual(@as(u8, 0x33), hub.memory[0]);
+    hub.write_memory(0xfffff, 0x0055_0066, 4, true);
+    try std.testing.expectEqual(@as(u32, 0x1155_3366), hub.read_memory(0xfffff, 4));
+    const cog = &hub.cogs[0];
+    cog.write_reg(.PTRA, 100);
+    cog.augs_pending = true;
+    cog.augs = 0x800000;
+    // Augmented PTR expression: no update, offset +3 bytes, even for RDLONG.
+    try std.testing.expectEqual(@as(u32, 103), memoryAddress(cog, @enumFromInt(3), true, 4, false));
+    cog.augs_pending = true;
+    cog.augs = 0;
+    // AUGS #0 turns #256 into a literal address rather than plain PTRA.
+    try std.testing.expectEqual(@as(u32, 256), memoryAddress(cog, @enumFromInt(256), true, 4, false));
+    try std.testing.expect(!cog.augs_pending);
+    // Unaugmented negative pointer offset is scaled; post-update -16 is valid.
+    try std.testing.expectEqual(@as(u32, 96), memoryAddress(cog, @enumFromInt(0x13f), true, 4, false));
+    try std.testing.expectEqual(@as(u32, 100), memoryAddress(cog, @enumFromInt(0x170), true, 4, false));
+    try std.testing.expectEqual(@as(u32, 36), cog.read_reg(.PTRA));
+}
+
+test "block transfers bypass special registers and wrap register addresses" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.write_reg(.PTRA, 0x1000);
+    cog.q = 9;
+    cog.setq_pending = true;
+    cog.block_pointer_delta = true;
+    for (0..10) |i| hub.write_memory(0x1000 + @as(u32, @intCast(i * 4)), @intCast(i + 1), 4, false);
+    const read = 0xFB04_0000 | (503 << 9) | 0x100; // RDLONG r503, PTRA
+    for (0..10) |i| {
+        try std.testing.expectEqual(@as(Cog.ExecResult, if (i == 9) .next else .wait), execute_instruction(cog, .{ .pc = 0, .instr = read }));
+    }
+    try std.testing.expectEqual(@as(u32, 1), cog.read_reg(.PB));
+    try std.testing.expectEqual(@as(u32, 10), cog.read_reg(@enumFromInt(0)));
+    try std.testing.expectEqual(@as(u32, 0x1000), cog.read_reg(.PTRA));
+    try std.testing.expectEqual(@as(u32, 2), cog.ram_tail[0]);
+    try std.testing.expectEqual(@as(u32, 9), cog.ram_tail[7]);
+    cog.write_reg(.PTRA, 0x2000);
+    cog.q = 9;
+    cog.setq_pending = true;
+    const write = 0xFC64_0000 | (503 << 9) | 0x100; // WRLONG r503, PTRA
+    for (0..10) |i| {
+        try std.testing.expectEqual(@as(Cog.ExecResult, if (i == 9) .next else .wait), execute_instruction(cog, .{ .pc = 1, .instr = write }));
+    }
+    for (0..10) |i| try std.testing.expectEqual(@as(u32, @intCast(i + 1)), hub.read_memory(0x2000 + @as(u32, @intCast(i * 4)), 4));
+    try std.testing.expect(cog.memory_transfer == null);
+    try std.testing.expect(!cog.setq_pending);
+    try std.testing.expectEqual(@as(u32, 0x2000), cog.read_reg(.PTRA));
+}
+
+/// Compare decoded ALU execution with libp2 across conditions, operands, prefixes and requested flag effects.
+fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime function: anytype, comptime writes_result: bool) !void {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    const field = comptime decode.instruction_type.get(opcode);
+    const Operands = @FieldType(encoding.Instruction, field);
+    var exercised: usize = 0;
+    for (0..4) |flags| {
+        for (0..4) |effects| {
+            for ([_]bool{ false, true }) |immediate| {
+                for ([_]bool{ false, true }) |altered| {
+                    hub.init();
+                    const cog = &hub.cogs[0];
+                    cog.c = flags & 2 != 0;
+                    cog.z = flags & 1 != 0;
+                    cog.q = 0x1234_5678;
+                    cog.setq_pending = true;
+                    cog.augs = 0x1234_5600;
+                    cog.augd = 0x8765_4200;
+                    var operands: Operands = @bitCast(template | 0xF000_0000);
+                    if (@hasField(Operands, "d")) operands.d = @enumFromInt(24);
+                    if (@hasField(Operands, "s")) operands.s = @enumFromInt(25);
+                    if (@hasField(Operands, "s_imm")) operands.s_imm = immediate;
+                    if (@hasField(Operands, "n")) operands.n = std.math.maxInt(@TypeOf(operands.n));
+                    if (@hasField(Operands, "c_mod")) operands.c_mod = @enumFromInt(@as(u1, @truncate(effects >> 1)));
+                    if (@hasField(Operands, "z_mod")) operands.z_mod = @enumFromInt(@as(u1, @truncate(effects)));
+                    if (Operands == encoding.UpdateFlags) {
+                        operands.c_value = @enumFromInt(10);
+                        operands.z_value = @enumFromInt(12);
+                    }
+                    const state: Cog.PipelineState = .{
+                        .pc = 1,
+                        .instr = @bitCast(operands),
+                        .alt_d = if (altered) .PTRA else null,
+                        .alt_s = if (altered) .PB else null,
+                        .alt_r = .PA,
+                    };
+                    // Some flag combinations select another opcode (BITx/TESTBx).
+                    if (decode.decode(state.instr) != opcode) continue;
+                    exercised += 1;
+                    const d_reg: Cog.Register = if (altered) .PTRA else @enumFromInt(24);
+                    const s_reg: Cog.Register = if (altered) .PB else @enumFromInt(25);
+                    cog.write_reg(d_reg, 0x8000_0001);
+                    cog.write_reg(s_reg, 0xDEAD_BEEF);
+                    cog.write_reg(.PA, 0xFEED_FACE);
+                    cog.pipeline[3] = state;
+                    cog.pipeline[1] = .{ .pc = 2, .instr = 0 };
+                    const has_s = @hasField(Operands, "s");
+                    const input: alu.Input = .{
+                        .d = if (Operands == encoding.UpdateFlags) 0xAC else 0x8000_0001,
+                        .s = if (!has_s) 0 else if (immediate) 0x1234_5600 | @as(u32, @intFromEnum(s_reg)) else 0xDEAD_BEEF,
+                        .c = .from_bool(cog.c),
+                        .z = .from_bool(cog.z),
+                        .q = cog.q,
+                        .setq_prefix = true,
+                    };
+                    const expected = if (@hasField(Operands, "n")) function(input, operands.n) else function(input);
+                    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, state));
+                    try std.testing.expectEqual(if (writes_result) expected.result else @as(u32, 0xFEED_FACE), cog.read_reg(.PA));
+                    try std.testing.expectEqual(@as(u32, 0x8000_0001), cog.read_reg(d_reg));
+                    try std.testing.expectEqual(if (@hasField(Operands, "c_mod") and operands.c_mod == .write) expected.c == .set else flags & 2 != 0, cog.c);
+                    try std.testing.expectEqual(if (@hasField(Operands, "z_mod") and operands.z_mod == .write) expected.z == .set else flags & 1 != 0, cog.z);
+                    try std.testing.expectEqual(expected.q, cog.q);
+                    try std.testing.expectEqual(expected.next_s, cog.pipeline[1].?.s_value);
+                    try std.testing.expectEqual(if (has_s and immediate) @as(u32, 0) else @as(u32, 0x1234_5600), cog.augs);
+                    try std.testing.expectEqual(@as(u32, 0x8765_4200), cog.augd);
+                    try std.testing.expect(!cog.setq_pending);
+                }
+            }
+        }
+    }
+    try std.testing.expect(exercised > 0);
+}
+test "software FIFO address obeys the 20-bit map in direct execution" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    hub.memory[0] = 0xaa;
+    hub.memory[0x7ffff] = 0xbb;
+    hub.memory[0x7c000] = 0xcc;
+    const cases = [_]struct { address: u32, bytes: [2]u32 }{
+        .{ .address = 0x80000, .bytes = .{ 0, 0 } },
+        .{ .address = 0x7ffff, .bytes = .{ 0xbb, 0 } },
+        .{ .address = 0xfc000, .bytes = .{ 0xcc, 0 } },
+        .{ .address = 0xfffff, .bytes = .{ 0xbb, 0xaa } },
+    };
+    for (cases) |case| {
+        cog.write_reg(@enumFromInt(21), case.address);
+        // RDFAST #0,r21; RFBYTE r20.
+        try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = 0xFC78_0015 }));
+        for (case.bytes) |expected| {
+            try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 1, .instr = 0xFD60_2810 }));
+            try std.testing.expectEqual(expected, cog.read_reg(@enumFromInt(20)));
+        }
+    }
+}
+// codegen: end:executortests

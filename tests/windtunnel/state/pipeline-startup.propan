@@ -1,0 +1,365 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "target=0 alignment=0"
+//? cog: 7
+//? const: probe_observer = 7
+//? const: probe_target = 0
+//? const: probe_alignment = 0
+//? run: "target=0 alignment=1"
+//? cog: 7
+//? const: probe_observer = 7
+//? const: probe_target = 0
+//? const: probe_alignment = 1
+//? run: "target=0 alignment=2"
+//? cog: 7
+//? const: probe_observer = 7
+//? const: probe_target = 0
+//? const: probe_alignment = 2
+//? run: "target=0 alignment=3"
+//? cog: 7
+//? const: probe_observer = 7
+//? const: probe_target = 0
+//? const: probe_alignment = 3
+//? run: "target=1 alignment=0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 1
+//? const: probe_alignment = 0
+//? run: "target=1 alignment=1"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 1
+//? const: probe_alignment = 1
+//? run: "target=1 alignment=2"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 1
+//? const: probe_alignment = 2
+//? run: "target=1 alignment=3"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 1
+//? const: probe_alignment = 3
+//? run: "target=2 alignment=0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 2
+//? const: probe_alignment = 0
+//? run: "target=2 alignment=1"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 2
+//? const: probe_alignment = 1
+//? run: "target=2 alignment=2"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 2
+//? const: probe_alignment = 2
+//? run: "target=2 alignment=3"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 2
+//? const: probe_alignment = 3
+//? run: "target=3 alignment=0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 3
+//? const: probe_alignment = 0
+//? run: "target=3 alignment=1"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 3
+//? const: probe_alignment = 1
+//? run: "target=3 alignment=2"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 3
+//? const: probe_alignment = 2
+//? run: "target=3 alignment=3"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 3
+//? const: probe_alignment = 3
+//? run: "target=4 alignment=0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 4
+//? const: probe_alignment = 0
+//? run: "target=4 alignment=1"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 4
+//? const: probe_alignment = 1
+//? run: "target=4 alignment=2"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 4
+//? const: probe_alignment = 2
+//? run: "target=4 alignment=3"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 4
+//? const: probe_alignment = 3
+//? run: "target=5 alignment=0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 5
+//? const: probe_alignment = 0
+//? run: "target=5 alignment=1"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 5
+//? const: probe_alignment = 1
+//? run: "target=5 alignment=2"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 5
+//? const: probe_alignment = 2
+//? run: "target=5 alignment=3"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 5
+//? const: probe_alignment = 3
+//? run: "target=6 alignment=0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 6
+//? const: probe_alignment = 0
+//? run: "target=6 alignment=1"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 6
+//? const: probe_alignment = 1
+//? run: "target=6 alignment=2"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 6
+//? const: probe_alignment = 2
+//? run: "target=6 alignment=3"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 6
+//? const: probe_alignment = 3
+//? run: "target=7 alignment=0"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 7
+//? const: probe_alignment = 0
+//? run: "target=7 alignment=1"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 7
+//? const: probe_alignment = 1
+//? run: "target=7 alignment=2"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 7
+//? const: probe_alignment = 2
+//? run: "target=7 alignment=3"
+//? cog: 0
+//? const: probe_observer = 0
+//? const: probe_target = 7
+//? const: probe_alignment = 3
+
+// Measure loaded, no-load cog and no-load hub startup at every bank and command phase.
+// The target timestamps its first instruction; subtract the observer's command delay to isolate startup and fetch latency.
+// After command grant g, the first GETCT occurs at g+21 for no-load cog startup.
+// Loaded/no-load hub starts use bases 531/30 plus (bank - g - 17/22 - target) & 7.
+
+                MOV     PTRA,       aug(hubaddr(sources))
+                MOV     mailbox,    aug(hubaddr(stamp))
+                MOV     mode,       0
+mode_loop:
+                MOV     control,    probe_target
+                CMP     mode,       0               :wz
+    if(!Z)      OR      control,    0x20
+                MOV     bank,       0
+bank_loop:
+                RDLONG  source, PTRA++
+                MOV     offset, 0
+phase_loop:
+                MOV     control,        probe_target
+                CMP     mode,           0               :wz
+    if(!Z)      OR      control,        0x20
+                WRLONG  0,              mailbox
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,          128
+                ANDN    timer,          7
+                ADD     timer,          offset
+                ADDCT1  timer,          0
+                WAITCT1
+                GETCT   start
+                SETQ    mailbox
+                COGINIT control,        source          :wc
+                GETCT   finish
+                SUB     finish,         start
+                WAITX   aug(1024)
+                RDLONG  target_time,    mailbox
+                SUB     target_time,    start
+                AND     start,          7
+                MOV     command_delay,  probe_observer
+                SUB     command_delay,  start
+                SUB     command_delay,  4
+                AND     command_delay,  7
+                MOV     expected,       command_delay
+                ADD     expected,       8
+                CMP     finish,         expected        :wz
+    if(!Z)      ADD     failures,       1
+                SUB     target_time,    command_delay
+                SUB     target_time,    4
+                // No-load cog startup is phase-independent after the COGINIT command grant.
+                MOV     expected,       21
+                CMP     mode,           1               :wz
+    if(Z)       JMP     compare_startup
+                MOV     expected,       bank
+                SUB     expected,       probe_observer
+                SUB     expected,       probe_target
+                CMP     mode,           0               :wz
+    if(Z)       SUB     expected,       17
+    if(!Z)      SUB     expected,       22
+                AND     expected,       7
+                CMP     mode,           0               :wz
+                // Loaded startup includes 504 streamed longs; no-load hub startup instead fills the fetch FIFO.
+    if(Z)       ADD     expected,       aug(531)
+    if(!Z)      ADD     expected,       30
+compare_startup:
+                CMP     target_time,    expected    :wz
+    if(!Z)      ADD     failures,       1
+                ADD     offset,         1
+                CMP     offset,         8           :wz
+    if(!Z)      JMP     phase_loop
+                ADD     bank,           1
+                CMP     bank,           8           :wz
+    if(!Z)      JMP     bank_loop
+                ADD     mode,           1
+                CMP     mode,           3           :wz
+    if(!Z)      JMP     mode_loop
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var mode:       LONG    0
+var control:    LONG    0
+var bank:       LONG    0
+var offset:     LONG    0
+var source:     LONG    0
+var mailbox:    LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var target_time:
+                LONG    0
+var expected:   LONG    0
+var command_delay:
+                LONG    0
+var failures:   LONG    0
+.data
+stamp:          LONG    0
+sources:        LONG    hubaddr(image0),    hubaddr(image1),    hubaddr(image2),    hubaddr(image3),    hubaddr(image4),    hubaddr(image5),    hubaddr(image6),    hubaddr(image7),    0,  0,  0,  0,  0,  0,  0,  0,  hubaddr(hub0),  hubaddr(hub1),  hubaddr(hub2),  hubaddr(hub3),  hubaddr(hub4),  hubaddr(hub5),  hubaddr(hub6),  hubaddr(hub7)
+.cogexec    16384, 0
+image0:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                // Pad the startup image to the complete 504-long cog load.
+                LONG    [0] * 500
+.cogexec    20484, 0
+image1:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 500
+.cogexec    24584, 0
+image2:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 500
+.cogexec    28684, 0
+image3:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 500
+.cogexec    32784, 0
+image4:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 500
+.cogexec    36884, 0
+image5:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 500
+.cogexec    40984, 0
+image6:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 500
+.cogexec    45084, 0
+image7:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 500
+.pack   byte
+.hubexec    49152 + probe_alignment
+hub0:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+.hubexec    49412 + probe_alignment
+hub1:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+.hubexec    49672 + probe_alignment
+hub2:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+.hubexec    49932 + probe_alignment
+hub3:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+.hubexec    50192 + probe_alignment
+hub4:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+.hubexec    50452 + probe_alignment
+hub5:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+.hubexec    50712 + probe_alignment
+hub6:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+.hubexec    50972 + probe_alignment
+hub7:
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                COGID   register(21)
+                COGSTOP register(21)
+

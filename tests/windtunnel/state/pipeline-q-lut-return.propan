@@ -1,0 +1,70 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[q_loaded] == 3
+//? post: cog[*].reg[q_armed] == 3
+//? post: cog[*].reg[q_waited] == 3
+//? post: cog[*].reg[q_lut] == 3
+//? post: cog[*].reg[q_return] == 0
+//? post: cog[*].reg[q_hub] == 3
+//? run: "cog 0"
+//? cog: 0
+//? run: "cog 1"
+//? cog: 1
+//? run: "cog 2"
+//? cog: 2
+//? run: "cog 3"
+//? cog: 3
+//? run: "cog 4"
+//? cog: 4
+//? run: "cog 5"
+//? cog: 5
+//? run: "cog 6"
+//? cog: 6
+//? run: "cog 7"
+//? cog: 7
+
+                // Snapshot Q around synchronization and transitions between cog, LUT and hub.
+                // Seed a discarded QDIV immediately after the LUT return jump.
+                WRLUT   aug(0xfd1c0001),    4
+                SETQ2   3
+                RDLONG  register(0),        aug(hubaddr(lut_measure))
+                MOV     q_loaded,           0
+                MUXQ    q_loaded,           all_bits
+                MOV     return_pc,          aug(pcaddr(lut_return))
+                MOV     target,             aug(hubaddr(hub_measure))
+                GETCT   timer
+                ADD     timer,              128
+                ADDCT1  timer,              0
+                MOV     q_armed,            0
+                MUXQ    q_armed,            all_bits
+                WAITCT1
+                MOV     q_waited,           0
+                MUXQ    q_waited,           all_bits
+                JMP     lut_measure
+cog_return:
+                MOV     q_return,   0
+                MUXQ    q_return,   all_bits
+                JMP     nrel(_end)
+var q_loaded:   LONG    0
+var q_armed:    LONG    0
+var q_waited:   LONG    0
+var q_lut:      LONG    0
+var q_return:   LONG    0
+var q_hub:      LONG    0
+var all_bits:   LONG    0xffffffff
+var target:     LONG    0
+var return_pc:  LONG    0
+var timer:      LONG    0
+.lutexec    0x3800, 0x200
+lut_measure:
+                MOV     q_lut,  0
+                MUXQ    q_lut,  all_bits
+                JMP     target
+lut_return:
+                JMP     nrel(cog_return)
+.hubexec    0x4000
+hub_measure:
+                MOV     q_hub,  0
+                MUXQ    q_hub,  all_bits
+                JMP     return_pc
+

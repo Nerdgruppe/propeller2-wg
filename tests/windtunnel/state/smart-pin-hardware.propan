@@ -1,0 +1,2621 @@
+//? WINDTUNNEL CHECK LIST
+//? max-cycles: 100_000
+//? run: "Smart pin WXPIN -> RQPIN, gap 0"
+//? const: probe_case = 0
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin WXPIN -> RQPIN, gap 2"
+//? const: probe_case = 1
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin WXPIN -> RQPIN, gap 3"
+//? const: probe_case = 2
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin WXPIN -> RQPIN, gap 4"
+//? const: probe_case = 3
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin WXPIN -> RDPIN, gap 0"
+//? const: probe_case = 4
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin WXPIN -> RDPIN, gap 2"
+//? const: probe_case = 5
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin WXPIN -> RDPIN, gap 3"
+//? const: probe_case = 6
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin WXPIN -> RDPIN, gap 4"
+//? const: probe_case = 7
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin WXPIN -> TESTP, gap 0"
+//? const: probe_case = 8
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin WXPIN -> TESTP, gap 2"
+//? const: probe_case = 9
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin WXPIN -> TESTP, gap 3"
+//? const: probe_case = 10
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin WXPIN -> TESTP, gap 4"
+//? const: probe_case = 11
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin acknowledge -> TESTP, gap 0"
+//? const: probe_case = 12
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin acknowledge -> TESTP, gap 2"
+//? const: probe_case = 13
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin acknowledge -> TESTP, gap 3"
+//? const: probe_case = 14
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin acknowledge -> TESTP, gap 4"
+//? const: probe_case = 15
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin repository ignores WXPIN during reset"
+//? const: probe_case = 16
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin collision cog 1, offset -2"
+//? const: probe_case = 17
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin collision cog 1, offset -1"
+//? const: probe_case = 18
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin collision cog 1, offset 0"
+//? const: probe_case = 19
+//? post: cog[*].reg[probe_result] == 511
+//? run: "Smart pin collision cog 1, offset 1"
+//? const: probe_case = 20
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin collision cog 1, offset 2"
+//? const: probe_case = 21
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin collision cog 2, offset -2"
+//? const: probe_case = 22
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin collision cog 2, offset -1"
+//? const: probe_case = 23
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin collision cog 2, offset 0"
+//? const: probe_case = 24
+//? post: cog[*].reg[probe_result] == 511
+//? run: "Smart pin collision cog 2, offset 1"
+//? const: probe_case = 25
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin collision cog 2, offset 2"
+//? const: probe_case = 26
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin collision cog 7, offset -2"
+//? const: probe_case = 27
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin collision cog 7, offset -1"
+//? const: probe_case = 28
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin collision cog 7, offset 0"
+//? const: probe_case = 29
+//? post: cog[*].reg[probe_result] == 511
+//? run: "Smart pin collision cog 7, offset 1"
+//? const: probe_case = 30
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin collision cog 7, offset 2"
+//? const: probe_case = 31
+//? post: cog[*].reg[probe_result] == 341
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 0"
+//? const: probe_case = 32
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 1"
+//? const: probe_case = 33
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 2"
+//? const: probe_case = 34
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 3"
+//? const: probe_case = 35
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 4"
+//? const: probe_case = 36
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 5"
+//? const: probe_case = 37
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 6"
+//? const: probe_case = 38
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin cross-cog WXPIN -> RQPIN, offset 7"
+//? const: probe_case = 39
+//? post: cog[*].reg[probe_result] == 170
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 0"
+//? const: probe_case = 40
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 1"
+//? const: probe_case = 41
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 2"
+//? const: probe_case = 42
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 3"
+//? const: probe_case = 43
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 4"
+//? const: probe_case = 44
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 5"
+//? const: probe_case = 45
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 6"
+//? const: probe_case = 46
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin cross-cog WXPIN -> TESTP, offset 7"
+//? const: probe_case = 47
+//? post: cog[*].reg[probe_result] == 1
+//? run: "Smart pin mixed WXPIN / WXPIN (0x0aa,)"
+//? const: probe_case = 48
+//? post: cog[*].reg[probe_result] == 426
+//? run: "Smart pin mixed WXPIN / WYPIN (2,)"
+//? const: probe_case = 49
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin mixed WXPIN / WRPIN (1,)"
+//? const: probe_case = 50
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin mixed WXPIN / RDPIN (register(301),)"
+//? const: probe_case = 51
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin mixed WXPIN / WRPIN (2,)"
+//? const: probe_case = 52
+//? post: cog[*].reg[probe_result] == 0
+//? run: "Smart pin identical simultaneous WXPIN values"
+//? const: probe_case = 53
+//? post: cog[*].reg[probe_result] == 341
+//? run: "GPIO OUTL -> TESTP, gap 0"
+//? const: probe_case = 54
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> TESTP, gap 2"
+//? const: probe_case = 55
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> TESTP, gap 3"
+//? const: probe_case = 56
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> TESTP, gap 4"
+//? const: probe_case = 57
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> TESTP, gap 5"
+//? const: probe_case = 58
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> TESTP, gap 6"
+//? const: probe_case = 59
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> TESTP, gap 7"
+//? const: probe_case = 60
+//? post: cog[*].reg[probe_result] == 0
+//? run: "GPIO OUTL -> TESTP, gap 8"
+//? const: probe_case = 61
+//? post: cog[*].reg[probe_result] == 0
+//? run: "GPIO OUTL -> TESTP, gap 9"
+//? const: probe_case = 62
+//? post: cog[*].reg[probe_result] == 0
+//? run: "GPIO OUTL -> TESTP, gap 10"
+//? const: probe_case = 63
+//? post: cog[*].reg[probe_result] == 0
+//? run: "GPIO OUTL -> MOV, gap 0"
+//? const: probe_case = 64
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> MOV, gap 2"
+//? const: probe_case = 65
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> MOV, gap 3"
+//? const: probe_case = 66
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> MOV, gap 4"
+//? const: probe_case = 67
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> MOV, gap 5"
+//? const: probe_case = 68
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> MOV, gap 6"
+//? const: probe_case = 69
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> MOV, gap 7"
+//? const: probe_case = 70
+//? post: cog[*].reg[probe_result] == 1
+//? run: "GPIO OUTL -> MOV, gap 8"
+//? const: probe_case = 71
+//? post: cog[*].reg[probe_result] == 0
+//? run: "GPIO OUTL -> MOV, gap 9"
+//? const: probe_case = 72
+//? post: cog[*].reg[probe_result] == 0
+//? run: "GPIO OUTL -> MOV, gap 10"
+//? const: probe_case = 73
+//? post: cog[*].reg[probe_result] == 0
+//? run: "OUT selector disabled"
+//? const: probe_case = 74
+//? post: cog[*].reg[probe_result] == 0
+//? run: "OUT selector enabled"
+//? const: probe_case = 75
+//? post: cog[*].reg[probe_result] == 1
+//? run: "neighbor selector"
+//? const: probe_case = 76
+//? post: cog[*].reg[probe_result] == 1
+//? run: "inverted neighbor selector"
+//? const: probe_case = 77
+//? post: cog[*].reg[probe_result] == 0
+//? run: "OR 0, worker DIRL"
+//? const: probe_case = 78
+//? post: cog[*].reg[probe_result] == 0
+//? run: "OR 0, worker DIRH"
+//? const: probe_case = 79
+//? post: cog[*].reg[probe_result] == 1
+//? run: "OR P_OUTBIT_A, worker DIRL"
+//? const: probe_case = 80
+//? post: cog[*].reg[probe_result] == 0
+//? run: "OR P_OUTBIT_A, worker DIRH"
+//? const: probe_case = 81
+//? post: cog[*].reg[probe_result] == 1
+
+// Programs and expectations from the eight-phase real-board characterization.
+.if probe_case == 0
+                // Measure Smart pin WXPIN -> RQPIN, gap 0.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 1
+                // Measure Smart pin WXPIN -> RQPIN, gap 2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                NOP
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 2
+                // Measure Smart pin WXPIN -> RQPIN, gap 3.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                WAITX   1
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 3
+                // Measure Smart pin WXPIN -> RQPIN, gap 4.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                WAITX   2
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 4
+                // Measure Smart pin WXPIN -> RDPIN, gap 0.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                RDPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 5
+                // Measure Smart pin WXPIN -> RDPIN, gap 2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                NOP
+                RDPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 6
+                // Measure Smart pin WXPIN -> RDPIN, gap 3.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                WAITX   1
+                RDPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 7
+                // Measure Smart pin WXPIN -> RDPIN, gap 4.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+
+                WXPIN   0x155,          40
+                WAITX   2
+                RDPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 8
+                // Measure Smart pin WXPIN -> TESTP, gap 0.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+
+                WXPIN   0x155,  40
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 9
+                // Measure Smart pin WXPIN -> TESTP, gap 2.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+
+                WXPIN   0x155,  40
+                NOP
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 10
+                // Measure Smart pin WXPIN -> TESTP, gap 3.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+
+                WXPIN   0x155,  40
+                WAITX   1
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 11
+                // Measure Smart pin WXPIN -> TESTP, gap 4.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+
+                WXPIN   0x155,  40
+                WAITX   2
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 12
+                // Measure Smart pin acknowledge -> TESTP, gap 0.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                WXPIN   0x155,          40
+                WAITX   32
+
+                RDPIN   probe_result,   40
+                TESTP   40                  :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 13
+                // Measure Smart pin acknowledge -> TESTP, gap 2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                WXPIN   0x155,          40
+                WAITX   32
+
+                RDPIN   probe_result,   40
+                NOP
+                TESTP   40                  :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 14
+                // Measure Smart pin acknowledge -> TESTP, gap 3.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                WXPIN   0x155,          40
+                WAITX   32
+
+                RDPIN   probe_result,   40
+                WAITX   1
+                TESTP   40                  :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 15
+                // Measure Smart pin acknowledge -> TESTP, gap 4.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                WXPIN   0x155,          40
+                WAITX   32
+
+                RDPIN   probe_result,   40
+                WAITX   2
+                TESTP   40                  :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 16
+                // Measure Smart pin repository ignores WXPIN during reset.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                WXPIN   0x155,          40
+                WAITX   32
+                DIRL    40
+                WAITX   32
+
+                WXPIN   0x0aa,          40
+                WAITX   32
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 17
+                // Measure Smart pin collision cog 1, offset -2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(-2)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 18
+                // Measure Smart pin collision cog 1, offset -1.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(-1)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 19
+                // Measure Smart pin collision cog 1, offset 0.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 20
+                // Measure Smart pin collision cog 1, offset 1.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(1)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 21
+                // Measure Smart pin collision cog 1, offset 2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(2)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 22
+                // Measure Smart pin collision cog 2, offset -2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 2,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(-2)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 2
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 23
+                // Measure Smart pin collision cog 2, offset -1.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 2,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(-1)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 2
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 24
+                // Measure Smart pin collision cog 2, offset 0.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 2,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 2
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 25
+                // Measure Smart pin collision cog 2, offset 1.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 2,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(1)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 2
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 26
+                // Measure Smart pin collision cog 2, offset 2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 2,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(2)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 2
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 27
+                // Measure Smart pin collision cog 7, offset -2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 7,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(-2)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 7
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 28
+                // Measure Smart pin collision cog 7, offset -1.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 7,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(-1)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 7
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 29
+                // Measure Smart pin collision cog 7, offset 0.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 7,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 7
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 30
+                // Measure Smart pin collision cog 7, offset 1.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 7,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(1)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 7
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 31
+                // Measure Smart pin collision cog 7, offset 2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 7,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(2)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 7
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 32
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 0.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 33
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 1.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(1)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 34
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 2.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(2)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 35
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 3.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(3)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 36
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 4.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(4)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 37
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 5.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(5)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 38
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 6.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(6)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 39
+                // Measure Smart pin cross-cog WXPIN -> RQPIN, offset 7.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(7)
+                WAITCT1
+                RQPIN   probe_result,   40
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 40
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 0.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(0)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 41
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 1.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(1)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 42
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 2.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(2)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 43
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 3.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(3)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 44
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 4.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(4)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 45
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 5.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(5)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 46
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 6.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(6)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 47
+                // Measure Smart pin cross-cog WXPIN -> TESTP, offset 7.
+                DIRL    40
+                WRPIN   2,      40
+                DIRH    40
+                WXPIN   0,      40
+                WAITX   32
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                WRLONG  0,      PTRA
+                SETQ    PTRA
+                COGINIT 1,      aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target, aug(2048)
+                ANDN    target, 7
+                WRLONG  target, PTRA
+                ADDCT1  target, aug(7)
+                WAITCT1
+                TESTP   40                              :wc
+                WRC     probe_result
+                WAITX   128
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 48
+                // Measure Smart pin mixed WXPIN / WXPIN (0x0aa,).
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x100,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x0aa,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 49
+                // Measure Smart pin mixed WXPIN / WYPIN (2,).
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x100,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WYPIN   2,              40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 50
+                // Measure Smart pin mixed WXPIN / WRPIN (1,).
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x100,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WRPIN   1,              40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 51
+                // Measure Smart pin mixed WXPIN / RDPIN (register(301),).
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x100,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                RDPIN   register(301),  40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 52
+                // Measure Smart pin mixed WXPIN / WRPIN (2,).
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x100,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WRPIN   2,              40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 53
+                // Measure Smart pin identical simultaneous WXPIN values.
+                DIRL    40
+                WRPIN   2,              40
+                DIRH    40
+                WXPIN   0,              40
+                WAITX   32
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                WRLONG  0,              PTRA
+                SETQ    PTRA
+                COGINIT 1,              aug(hubaddr(worker))
+
+                GETCT   target
+                ADD     target,         aug(2048)
+                ANDN    target,         7
+                WRLONG  target,         PTRA
+                ADDCT1  target,         aug(0)
+                WAITCT1
+                WXPIN   0x155,          40
+                WAITX   128
+                RQPIN   probe_result,   40
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+var target:     LONG    0
+.data
+mailbox:        LONG    0
+.cogexec    0x4000, 0
+worker:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker
+                ADDCT1  register(300),  0
+                WAITCT1
+                WXPIN   0x155,          40
+                COGSTOP 1
+                LONG    [0] * 490
+.data
+
+.endif
+.if probe_case == 54
+                // Measure GPIO OUTL -> TESTP, gap 0.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 55
+                // Measure GPIO OUTL -> TESTP, gap 2.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                NOP
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 56
+                // Measure GPIO OUTL -> TESTP, gap 3.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   1
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 57
+                // Measure GPIO OUTL -> TESTP, gap 4.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   2
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 58
+                // Measure GPIO OUTL -> TESTP, gap 5.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   3
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 59
+                // Measure GPIO OUTL -> TESTP, gap 6.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   4
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 60
+                // Measure GPIO OUTL -> TESTP, gap 7.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   5
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 61
+                // Measure GPIO OUTL -> TESTP, gap 8.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   6
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 62
+                // Measure GPIO OUTL -> TESTP, gap 9.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   7
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 63
+                // Measure GPIO OUTL -> TESTP, gap 10.
+                DIRL    40
+                WRPIN   0,  40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   8
+                TESTP   40              :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 64
+                // Measure GPIO OUTL -> MOV, gap 0.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 65
+                // Measure GPIO OUTL -> MOV, gap 2.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                NOP
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 66
+                // Measure GPIO OUTL -> MOV, gap 3.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   1
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 67
+                // Measure GPIO OUTL -> MOV, gap 4.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   2
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 68
+                // Measure GPIO OUTL -> MOV, gap 5.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   3
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 69
+                // Measure GPIO OUTL -> MOV, gap 6.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   4
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 70
+                // Measure GPIO OUTL -> MOV, gap 7.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   5
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 71
+                // Measure GPIO OUTL -> MOV, gap 8.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   6
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 72
+                // Measure GPIO OUTL -> MOV, gap 9.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   7
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 73
+                // Measure GPIO OUTL -> MOV, gap 10.
+                DIRL    40
+                WRPIN   0,              40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+
+                OUTL    40
+                WAITX   8
+                MOV     probe_result,   INB
+                SHR     probe_result,   8
+                AND     probe_result,   1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 74
+                // Measure OUT selector disabled.
+                DIRL    40
+                DIRL    41
+                WRPIN   aug(P_OUTBIT_A),    40
+                WRPIN   0,                  41
+                OUTH    40
+                OUTH    41
+                DIRH    41
+                DIRL    40
+                WAITX   32
+
+                TESTP   40                      :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 75
+                // Measure OUT selector enabled.
+                DIRL    40
+                DIRL    41
+                WRPIN   aug(P_OUTBIT_A),    40
+                WRPIN   0,                  41
+                OUTH    40
+                OUTH    41
+                DIRH    41
+                DIRH    40
+                WAITX   32
+
+                TESTP   40                      :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 76
+                // Measure neighbor selector.
+                DIRL    40
+                DIRL    41
+                WRPIN   aug(P_PLUS1_A), 40
+                WRPIN   0,              41
+                OUTH    40
+                OUTH    41
+                DIRH    41
+                DIRL    40
+                WAITX   32
+
+                TESTP   40                  :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 77
+                // Measure inverted neighbor selector.
+                DIRL    40
+                DIRL    41
+                WRPIN   aug(P_PLUS1_A | P_INVERT_A),    40
+                WRPIN   0,                              41
+                OUTH    40
+                OUTH    41
+                DIRH    41
+                DIRL    40
+                WAITX   32
+
+                TESTP   40                                  :wc
+                WRC     probe_result
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+
+.endif
+.if probe_case == 78
+                // Measure OR 0, worker DIRL.
+                DIRL    40
+                WRPIN   aug(0), 40
+                OUTL    40
+                DIRH    40
+                COGINIT 1,      aug(hubaddr(worker))
+                WAITX   aug(2048)
+
+                TESTP   40                              :wc
+                WRC     probe_result
+                // Stop the helper after capturing the measured value.
+                COGSTOP 1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+.cogexec    0x4000, 0
+worker:
+                OUTH    40
+                DIRL    40
+halt_worker:
+                JMP     halt_worker
+                LONG    [0] * 495
+.data
+
+.endif
+.if probe_case == 79
+                // Measure OR 0, worker DIRH.
+                DIRL    40
+                WRPIN   aug(0), 40
+                OUTL    40
+                DIRH    40
+                COGINIT 1,      aug(hubaddr(worker))
+                WAITX   aug(2048)
+
+                TESTP   40                              :wc
+                WRC     probe_result
+                // Stop the helper after capturing the measured value.
+                COGSTOP 1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+.cogexec    0x4000, 0
+worker:
+                OUTH    40
+                DIRH    40
+halt_worker:
+                JMP     halt_worker
+                LONG    [0] * 495
+.data
+
+.endif
+.if probe_case == 80
+                // Measure OR P_OUTBIT_A, worker DIRL.
+                DIRL    40
+                WRPIN   aug(P_OUTBIT_A),    40
+                OUTL    40
+                DIRH    40
+                COGINIT 1,                  aug(hubaddr(worker))
+                WAITX   aug(2048)
+
+                TESTP   40                                          :wc
+                WRC     probe_result
+                // Stop the helper after capturing the measured value.
+                COGSTOP 1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+.cogexec    0x4000, 0
+worker:
+                OUTH    40
+                DIRL    40
+halt_worker:
+                JMP     halt_worker
+                LONG    [0] * 495
+.data
+
+.endif
+.if probe_case == 81
+                // Measure OR P_OUTBIT_A, worker DIRH.
+                DIRL    40
+                WRPIN   aug(P_OUTBIT_A),    40
+                OUTL    40
+                DIRH    40
+                COGINIT 1,                  aug(hubaddr(worker))
+                WAITX   aug(2048)
+
+                TESTP   40                                          :wc
+                WRC     probe_result
+                // Stop the helper after capturing the measured value.
+                COGSTOP 1
+
+                JMP     nrel(_end)
+var probe_result:
+                LONG    0
+.cogexec    0x4000, 0
+worker:
+                OUTH    40
+                DIRH    40
+halt_worker:
+                JMP     halt_worker
+                LONG    [0] * 495
+.data
+
+.endif
+

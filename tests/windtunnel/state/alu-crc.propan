@@ -1,0 +1,17 @@
+//? WINDTUNNEL CHECK LIST
+//? pre: cog[0].c = false
+//? pre: cog[0].z = true
+//? post: cog[0].reg[crc] == 0x1db71064
+//? post: cog[0].q == 0x10
+//? post: cog[0].c == false
+//? post: cog[0].z == true
+
+// Check CRCNIB result, Q shifting and preservation of C/Z.
+// Use the reflected CRC-32 polynomial and nontrivial Q bits to expose shift direction and bit consumption.
+
+                SETQ    aug(0x80000001)
+                CRCNIB  crc,    polynomial
+                JMP     nrel(_end)
+var crc:        LONG    0
+var polynomial: LONG    0xedb88320
+

@@ -31,7 +31,9 @@ rt_start:
 
         DIRH   RT_TXD_PIN
 
-        WAITX  aug(1_000_000)
+        // Allow the clock and P2AAS loader's runtime baud switch to settle before the first marker.
+        // This wait precedes the measured region and leaves the eight hub phases unchanged.
+        WAITX  aug(20_000_000)
 
 fixture_loop:
         CALLPA RT_START_MARKER, rt_write_byte

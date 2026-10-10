@@ -3,10 +3,16 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 import sys
+import asyncio
+import io
+import os
+import struct
+import urllib.parse
+import argparse
 from tempfile import NamedTemporaryFile
 from subprocess import CalledProcessError, run, Popen, PIPE
 from contextlib import contextmanager
-from typing import Generic, Iterable, TypeVar
+from typing import BinaryIO, Generic, Iterable, TypeVar
 
 import yaml
 from yaml import safe_load
@@ -86,80 +92,101 @@ class Result:
     "The result written to rt_result, may be useful for additional validation"
 
 
+def read_results(stdout: BinaryIO) -> list[Result]:
+    """Parse the eight phase observations independently of the upload transport."""
+    results: list[Result] = list()
+    for _ in range(8):
+        while True:
+            buffer = stdout.read(1)
+            if buffer == b"\x03":
+                break  # ETX terminates test output
+            if len(buffer) == 0:
+                raise RuntimeError("Unexpected end of file")
+            # print(len(buffer), buffer)
+
+        def read_value() -> int:
+            line = stdout.readline()
+            try:
+                return int(line.removesuffix(b"\n"), 16)
+            except:
+                sys.stderr.write(f"failed to process {line!r}\r\n")
+                raise
+
+        rt_offset = read_value()
+        rt_start_ct = read_value()
+        rt_stop_ct = read_value()
+        rt_result = read_value()
+
+        duration = rt_stop_ct - rt_start_ct
+
+        assert duration >= 2, "GETCT..GETCT must at least take two cycles"
+        assert (rt_start_ct + 2) & 0x1FF == rt_offset, (
+            "rt_start_ct must be aligned to 0x200!"
+        )
+
+        assert rt_offset == (rt_start_ct + 2) & 7, (
+            f"{rt_offset=} ~= {(rt_start_ct+2)&7=}"
+        )
+
+        results.append(
+            Result(
+                launch_ct=rt_start_ct + 2,
+                offset=rt_offset,
+                duration=duration - 2,
+                result=rt_result,
+            )
+        )
+    return results
+
+
+async def run_p2aas(fixture: bytes, endpoint: str) -> list[Result]:
+    # The optional transport needs websockets; direct serial use keeps its existing dependencies.
+    import websockets
+
+    url = urllib.parse.urlsplit(endpoint)
+    query = dict(urllib.parse.parse_qsl(url.query, keep_blank_values=True))
+    if "code" in query:
+        raise ValueError("P2AAS_ENDPOINT must not select URL-code upload")
+    query.setdefault("baudrate", "115200")
+    query.setdefault("timeout_ms", "5000")
+    address = urllib.parse.urlunsplit(url._replace(query=urllib.parse.urlencode(query)))
+    output = bytearray()
+    async with websockets.connect(address, max_size=None) as socket:
+        await socket.send(struct.pack("<I", len(fixture)) + fixture)
+        try:
+            while True:
+                chunk = await asyncio.wait_for(socket.recv(), 15)
+                if not isinstance(chunk, bytes):
+                    raise RuntimeError("Expected binary UART output")
+                output.extend(chunk)
+                if len(output) > 65536:
+                    raise RuntimeError("Timing fixture exceeded its output limit")
+                # COGSTOP disables TX and can discard the final NUL while it is still shifting.
+                # The eighth record's fourth newline is the same completion point used by serial parsing.
+                if output.count(b"\x03") == 8 and output.rsplit(b"\x03", 1)[1].count(b"\n") >= 4:
+                    break
+        except websockets.ConnectionClosed as close:
+            raise RuntimeError(f"P2AAS closed before the fixture finished: {close}") from close
+    return read_results(io.BytesIO(output))
+
+
 def run_fixture(fixture: bytes) -> list[Result]:
+    endpoint = os.environ.get("P2AAS_ENDPOINT", "ws://localhost:12880/")
+    if endpoint:
+        return asyncio.run(run_p2aas(fixture, endpoint))
 
     args = [
-        "turboprop",
-        f"--port={PORT}",
-        "--baudrate=115200",
-        "--reset=dtr",
-        "--monitor",
-        "--monitor-format=raw",
-        "-",
+        "turboprop", f"--port={PORT}", "--baudrate=115200", "--reset=dtr",
+        "--monitor", "--monitor-format=raw", "-",
     ]
-
-    with Popen(
-        args=args,
-        stdin=PIPE,
-        stdout=PIPE,
-    ) as proc:
-        stdin = proc.stdin
-        stdout = proc.stdout
-
-        assert stdin is not None
-        assert stdout is not None
-
-        stdin.write(fixture)
-        stdin.close()
-
-        results: list[Result] = list()
+    with Popen(args=args, stdin=PIPE, stdout=PIPE) as proc:
+        assert proc.stdin is not None and proc.stdout is not None
+        proc.stdin.write(fixture)
+        proc.stdin.close()
         try:
-            for _ in range(8):
-                while True:
-                    buffer = stdout.read(1)
-                    if buffer == b"\x03":
-                        break  # ETX terminates test output
-                    if len(buffer) == 0:
-                        raise RuntimeError("Unexpected end of file")
-                    # print(len(buffer), buffer)
-
-                def read_value() -> int:
-                    line = stdout.readline()
-                    try:
-                        return int(line.removesuffix(b"\n"), 16)
-                    except:
-                        sys.stderr.write(f"failed to process {line!r}\r\n")
-                        raise
-
-                rt_offset = read_value()
-                rt_start_ct = read_value()
-                rt_stop_ct = read_value()
-                rt_result = read_value()
-
-                duration = rt_stop_ct - rt_start_ct
-
-                assert duration >= 2, "GETCT..GETCT must at least take two cycles"
-                assert (rt_start_ct + 2) & 0x1FF == rt_offset, (
-                    "rt_start_ct must be aligned to 0x200!"
-                )
-
-                assert rt_offset == (rt_start_ct + 2) & 7, (
-                    f"{rt_offset=} ~= {(rt_start_ct+2)&7=}"
-                )
-
-                results.append(
-                    Result(
-                        launch_ct=rt_start_ct + 2,
-                        offset=rt_offset,
-                        duration=duration - 2,
-                        result=rt_result,
-                    )
-                )
+            return read_results(proc.stdout)
         finally:
             proc.kill()
-
-        assert len(results) == 8
-        return results
 
 
 def execute_fixture(*, measure: str, prepare: str = "", data: str = "") -> list[Result]:
@@ -209,8 +236,13 @@ def compact_list(seq: Iterable[T]) -> TerseList[T] | T:
 
 def main():
 
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cases", type=Path, default=TESTCASE_FILE)
+    parser.add_argument("--results", type=Path, default=TESTRESULT_FILE)
+    options = parser.parse_args()
+
     testcases: list[TestCase]
-    with TESTCASE_FILE.open("rb") as fp:
+    with options.cases.open("rb") as fp:
         yaml_data = safe_load(fp)
         assert isinstance(yaml_data, dict)
         testcases = [TestCase(**item) for item in yaml_data["test-cases"]]
@@ -290,7 +322,7 @@ def main():
         if not test_output["pass"]:
             all_ok = False
 
-    with TESTRESULT_FILE.open("w", encoding="utf-8") as fp:
+    with options.results.open("w", encoding="utf-8") as fp:
         yaml.dump(
             data={"test-results": test_results},
             stream=fp,

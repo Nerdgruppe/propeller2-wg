@@ -1,0 +1,31 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[wrapped] == 1
+//? post: cog[0].reg[lut_wrap] == 0
+
+// Check sequential execution from LUT address 0x3ff into cog address zero.
+// Different cog-zero and LUT-zero fallback branches reveal which memory supplies the wrapped instruction.
+
+                WRLUT   lut_fallback,   0
+                WRLUT   last_word,      aug(511)
+                // Give cog address zero an explicit exit instead of rerunning setup.
+                MOV     register(0),    cog_fallback
+                JMP     nrel(lut_last)
+done:
+                JMP     nrel(_end)
+unexpected_lut_wrap:
+                MOV     lut_wrap,   1
+                JMP     done
+var wrapped:    LONG    0
+var lut_wrap:   LONG    0
+var last_word:  LONG    0xf6040001 | (cogaddr(wrapped) << 9)
+var cog_fallback:
+                LONG    0xfd800000 | pcaddr(done)
+var lut_fallback:
+                LONG    0xfd800000 | pcaddr(unexpected_lut_wrap)
+.lutexec    0x4000, 0x3ff
+lut_last:
+                MOV     wrapped,    1
+.lutexec    0x4100, 0x200
+                JMP     nrel(unexpected_lut_wrap)
+.data
+

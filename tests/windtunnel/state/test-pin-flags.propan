@@ -1,0 +1,142 @@
+                //? WINDTUNNEL CHECK LIST
+                //? run: "TESTP wc"
+                //? const: inverted = 0
+                //? const: effect = 0
+                //? post: cog[*].reg[got_c] == 1
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTP wz"
+                //? const: inverted = 0
+                //? const: effect = 1
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTP andc"
+                //? const: inverted = 0
+                //? const: effect = 2
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTP andz"
+                //? const: inverted = 0
+                //? const: effect = 3
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTP orc"
+                //? const: inverted = 0
+                //? const: effect = 4
+                //? post: cog[*].reg[got_c] == 1
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTP orz"
+                //? const: inverted = 0
+                //? const: effect = 5
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTP xorc"
+                //? const: inverted = 0
+                //? const: effect = 6
+                //? post: cog[*].reg[got_c] == 1
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTP xorz"
+                //? const: inverted = 0
+                //? const: effect = 7
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 0
+                //? run: "TESTPN wc"
+                //? const: inverted = 1
+                //? const: effect = 0
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTPN wz"
+                //? const: inverted = 1
+                //? const: effect = 1
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 0
+                //? run: "TESTPN andc"
+                //? const: inverted = 1
+                //? const: effect = 2
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTPN andz"
+                //? const: inverted = 1
+                //? const: effect = 3
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 0
+                //? run: "TESTPN orc"
+                //? const: inverted = 1
+                //? const: effect = 4
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTPN orz"
+                //? const: inverted = 1
+                //? const: effect = 5
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTPN xorc"
+                //? const: inverted = 1
+                //? const: effect = 6
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+                //? run: "TESTPN xorz"
+                //? const: inverted = 1
+                //? const: effect = 7
+                //? post: cog[*].reg[got_c] == 0
+                //? post: cog[*].reg[got_z] == 1
+
+                // Use the OUT-bit selector to test logical input independently of pad electrical levels.
+                WRPIN   aug(P_OUTBIT_A),    40
+                OUTH    40
+                DIRH    40
+                WAITX   32
+                MODCZ   _CLR,               _SET    :wcz
+.if inverted == 0 and effect == 0
+                TESTP   40                          :wc
+.endif
+.if inverted == 0 and effect == 1
+                TESTP   40                          :wz
+.endif
+.if inverted == 0 and effect == 2
+                TESTP   40                          :and_c
+.endif
+.if inverted == 0 and effect == 3
+                TESTP   40                          :and_z
+.endif
+.if inverted == 0 and effect == 4
+                TESTP   40                          :or_c
+.endif
+.if inverted == 0 and effect == 5
+                TESTP   40                          :or_z
+.endif
+.if inverted == 0 and effect == 6
+                TESTP   40                          :xor_c
+.endif
+.if inverted == 0 and effect == 7
+                TESTP   40                          :xor_z
+.endif
+.if inverted == 1 and effect == 0
+                TESTPN  40                          :wc
+.endif
+.if inverted == 1 and effect == 1
+                TESTPN  40                          :wz
+.endif
+.if inverted == 1 and effect == 2
+                TESTPN  40                          :and_c
+.endif
+.if inverted == 1 and effect == 3
+                TESTPN  40                          :and_z
+.endif
+.if inverted == 1 and effect == 4
+                TESTPN  40                          :or_c
+.endif
+.if inverted == 1 and effect == 5
+                TESTPN  40                          :or_z
+.endif
+.if inverted == 1 and effect == 6
+                TESTPN  40                          :xor_c
+.endif
+.if inverted == 1 and effect == 7
+                TESTPN  40                          :xor_z
+.endif
+                WRC     got_c
+                WRZ     got_z
+                JMP     nrel(_end)
+var got_c:      LONG    0
+var got_z:      LONG    0
+

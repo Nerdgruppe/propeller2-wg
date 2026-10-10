@@ -1,0 +1,15 @@
+//? WINDTUNNEL CHECK LIST
+//? cog: 5
+//? timeout-ms: 1000
+//? post: cog[5].reg[result] == 5
+
+// Check execution and register reporting near the end of the available DUT cog image.
+// Padding moves the final instructions and result toward the tail, exposing truncated image loads or snapshots.
+
+                JMP     tail
+                LONG    [0] * 490
+tail:
+                COGID   result
+                JMP     nrel(_end)
+var result:     LONG    0
+

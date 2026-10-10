@@ -1,0 +1,108 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[source] == 0x12345679
+//? post: cog[*].reg[control] == 77
+//? post: cog[*].reg[failures] == 0
+//? post: cog[*].reg[target_wc] == 0xa5a5a5a4
+//? post: cog[*].reg[target_wz] == 0xa5a5a5a4
+//? post: cog[*].reg[target_andc] == 0xa5a5a5a4
+//? post: cog[*].reg[target_andz] == 0xa5a5a5a4
+//? post: cog[*].reg[target_orc] == 0xa5a5a5a4
+//? post: cog[*].reg[target_orz] == 0xa5a5a5a4
+//? post: cog[*].reg[target_xorc] == 0xa5a5a5a4
+//? post: cog[*].reg[target_xorz] == 0xa5a5a5a4
+//? run: "cog 0"
+//? cog: 0
+//? run: "cog 1"
+//? cog: 1
+//? run: "cog 2"
+//? cog: 2
+//? run: "cog 3"
+//? cog: 3
+//? run: "cog 4"
+//? cog: 4
+//? run: "cog 5"
+//? cog: 5
+//? run: "cog 6"
+//? cog: 6
+//? run: "cog 7"
+//? cog: 7
+
+                // ALTR redirects MOV writeback, but TESTB has no register writeback to redirect.
+                // Distinct D and R values expose even an otherwise invisible write of D back to R.
+                ALTR    control_pointer,    0
+                MOV     source,             77
+
+                // WC/WZ still test D, with both immediate and register bit selectors.
+                MODCZ   _CLR,               _SET    :wcz
+                ALTR    pointer_wc,         0
+                TESTB   source,             0       :wc
+    if(!C)      ADD     failures,           1
+                ALTR    pointer_wz,         0
+                TESTB   source,             bit_one :wz
+    if(Z)       ADD     failures,           1
+
+                // ANDC/ANDZ clear initially set flags when testing a zero bit of D.
+                MODCZ   _SET,               _SET    :wcz
+                ALTR    pointer_andc,       0
+                TESTB   source,             1       :and_c
+    if(C)       ADD     failures,           1
+                ALTR    pointer_andz,       0
+                TESTB   source,             1       :and_z
+    if(Z)       ADD     failures,           1
+
+                // ORC/ORZ set initially clear flags when testing a one bit of D.
+                MODCZ   _CLR,               _CLR    :wcz
+                ALTR    pointer_orc,        0
+                TESTB   source,             0       :or_c
+    if(!C)      ADD     failures,           1
+                ALTR    pointer_orz,        0
+                TESTB   source,             0       :or_z
+    if(!Z)      ADD     failures,           1
+
+                // XORC/XORZ toggle initially set flags when testing a one bit of D.
+                MODCZ   _SET,               _SET    :wcz
+                ALTR    pointer_xorc,       0
+                TESTB   source,             0       :xor_c
+    if(C)       ADD     failures,           1
+                ALTR    pointer_xorz,       0
+                TESTB   source,             0       :xor_z
+    if(Z)       ADD     failures,           1
+
+                // ALTD changes the register TESTB reads: target bit 0 is zero, source bit 0 is one.
+                ALTD    pointer_wc,         0
+                TESTB   source,             0       :wc
+    if(C)       ADD     failures,           1
+                JMP     nrel(_end)
+var source:     LONG    0x12345679
+var control:    LONG    0
+var failures:   LONG    0
+var bit_one:    LONG    1
+var control_pointer:
+                LONG    cogaddr(control)
+var pointer_wc: LONG    cogaddr(target_wc)
+var pointer_wz: LONG    cogaddr(target_wz)
+var pointer_andc:
+                LONG    cogaddr(target_andc)
+var pointer_andz:
+                LONG    cogaddr(target_andz)
+var pointer_orc:
+                LONG    cogaddr(target_orc)
+var pointer_orz:
+                LONG    cogaddr(target_orz)
+var pointer_xorc:
+                LONG    cogaddr(target_xorc)
+var pointer_xorz:
+                LONG    cogaddr(target_xorz)
+var target_wc:  LONG    0xa5a5a5a4
+var target_wz:  LONG    0xa5a5a5a4
+var target_andc:
+                LONG    0xa5a5a5a4
+var target_andz:
+                LONG    0xa5a5a5a4
+var target_orc: LONG    0xa5a5a5a4
+var target_orz: LONG    0xa5a5a5a4
+var target_xorc:
+                LONG    0xa5a5a5a4
+var target_xorz:
+                LONG    0xa5a5a5a4
+

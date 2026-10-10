@@ -1,0 +1,18 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[value] == 0x8000_0000
+//? pre: cog[0].c = true
+//? pre: cog[0].z = true
+//? post: cog[0].reg[result] == 0x8000_0000
+//? post: cog[0].c == true
+//? post: cog[0].z == true
+
+// Check MOV with initial C=1, Z=1: preserve both flags.
+// Use 0x80000000 so MOV's sign-derived carry and nonzero result expose flag writes and preservation.
+
+_start:
+                MOV     result, value
+                JMP     nrel(_end)
+var value:      LONG    0x8000_0000
+var result:     LONG    0
+

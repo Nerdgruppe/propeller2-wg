@@ -1,9 +1,58 @@
 # TODO-List
 
-## Random Task Collection
+## Overall TODOs
+
+- Cleanup stray `@import("..").field` imports in the codebase
+
+## Propeller 2 Documentation / P2DB
+
+### Random Task Collection
+
+- Collection of all known CPU hazards
+- Determine explicit behavior of the "hidden" registers behind INA/INB/...
+- Determine how the XBYTE mode is actually implemented
+- What happens with `AUGD; MODCZ`, `ALTD; MODCZ`, `ALTR; MODCZ`
+- SETQ2 clarifications: document which instructions recognize SETQ versus SETQ2,
+  how long their prefix state lasts, and which operations preserve or replace Q.
+  Cover cancellation consuming prefixes, decode-time Q clearing, SETQ2 making
+  immediate WRLONG copy LUT words, and the adjacent-instruction effects on
+  COGINIT. See the [hardware regression](tests/windtunnel/state/setq2-coginit.propan)
+  and [bug report](BUGREPORT.md).
+  Include hardware-verified examples such as this bit-span difference:
+
+  ```propan
+                  // SETQ overrides the bit span with Q[4:0].
+                  SETQ    3
+                  BITH    via_setq,   0   // via_setq = 0x0f
+
+                  // SETQ2 does not override the bit span.
+                  SETQ2   3
+                  BITH    via_setq2,  0   // via_setq2 = 0x01
+  var via_setq:   LONG    0
+  var via_setq2:  LONG    0
+  ```
+
+  Also explain this hardware-verified COGINIT distinction (run each sequence
+  with a worker image at `worker`):
+
+  ```propan
+                  // With a register source, SETQ2 wins the adjacent Q clear.
+                  MOV     entry, aug(hubaddr(worker))
+                  SETQ2   3
+                  COGINIT 7, entry                  // Worker's PTRA = 3
+
+                  // The intervening AUGS permits COGINIT's decode to clear Q.
+                  SETQ2   3
+                  COGINIT 7, aug(hubaddr(worker))   // Worker's PTRA = 0
+  var entry:      LONG    0
+  ```
+
+## Propan
+
+### Random Task Collection
 
 - Configuration File for analyzer options
-- `COGBRK #S` seems to be unsupported in flexspin
+- `COGBRK ##S` seems to be unsupported in flexspin
 - <https://github.com/totalspectrum/spin2cpp/issues/485>
 - `.address => @panic("TODO: Implement binary operators on offsets."),`
 - `.string => @panic("TODO: Implement binary operators on strings."),`
@@ -11,13 +60,13 @@
 - Enable "-Dx=y" on the CLI
 - Fully define the compatibility matrix for implicit jumping/referencing between segments.
 
-## Priority Fixes / Tasks
+### Priority Fixes / Tasks
 
 - *empty*
 
-## New Features
+### New Features
 
-### Groups
+#### Groups
 
 Groups are similar to ELF sections with garbage collection.
 
@@ -29,7 +78,7 @@ The default code is not in a group.
 - `.group`: Starts a new group.
 - `.endgroup`: Ends the current group and swaps back to "always emitted" context.
 
-### Relocations
+#### Relocations
 
 Required for the Ashet Home Computer:
 
@@ -38,12 +87,12 @@ can later be applied to dynamically link the resulting binary to another locatio
 
 ```propan
 
-.relocation #base     pin
-.relocation #offset   hub
+.relocation ##base     pin
+.relocation ##offset   hub
 
-RDPIN dst, reloc(#base, 10)     // emits the info that this field must be patched by the "base"
+RDPIN dst, reloc(##base, 10)     // emits the info that this field must be patched by the "base"
 
-RDLONG dst, reloc(#offset, 256) // reads from #offset+256
+RDLONG dst, reloc(##offset, 256) // reads from ##offset+256
 ```
 
 - `.relocation <tag> <type>`: Declares a new relocation key named `<tag>` of the given `<type>` hint.
@@ -61,8 +110,30 @@ RDLONG dst, reloc(#offset, 256) // reads from #offset+256
   - `2 * reloc(…)` is considered a shift.
 - There can be multiple relocations applied to a single location
 
-## Under Consideration
+### Under Consideration
 
-### SPIN DEBUG
+#### SPIN DEBUG
 
 Currently, Propan does not support the "debug()" syntax from SPIN2
+
+## Windtunnel
+
+### Random Task Collection
+
+- Model "previous SETQ" as pipeline state
+- Debug interface
+  - Additional Breakpoints
+    - Hazards
+    - Memory Breakpoints
+    - Live Inspection
+- IO Interface Improvement
+  - Configuration file support for I/O setup
+    - Defaults to "stdio routed to pins 62/63"
+  - Remaining smart modes, analog pads and global input filters
+  - Physical U(S)ART encoding/decoding and exact serial waveform timing
+  - Validate physical pad timing with a logic analyzer
+  - Optional instruction-level pin logging (VCD and collision diagnostics exist)
+- P2AAS server
+  - Feature Parity with hw oracle
+- Validate/implement cog startup behavior
+  - perfect timing clone so hub writes to the coginit'd segment is both detected/logged and 

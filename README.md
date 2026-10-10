@@ -32,11 +32,32 @@ To format a Propan source file, run `./zig-out/bin/propan --pretty-print source.
 Formatted source is written to stdout; use `--pretty-print -` to read from stdin.
 
 Run `zig-0.16.0 build test` from the repository root to execute the Propan unit tests
-and fixture suites in a single process. Add `-Dwith-flexspin` to include Spin2
+and fixture suites, plus the Windtunnel checklist suite. Add `-Dwith-flexspin` to include Spin2
 round-trip and assembler equivalence tests; those two categories are skipped otherwise.
 If `kcov` is installed, the build captures coverage in `.coverage/propan-tests/`.
 The installed `zig-out/bin/propan-tests` executable can also be run directly from
 the repository root without coverage collection.
+
+Run `zig-0.16.0 build install test-windtunnel` for Windtunnel alone. Its
+[`//? WINDTUNNEL CHECK LIST`](docs/windtunnel/check-list.md) annotations support
+multiple isolated runs per file, shared and per-run conditions, symbol-based image
+preseeding, and exact UART stdin/stdout. Hardware
+oracle runs use the native Zig WebSocket client and require a P2AAS endpoint:
+
+```sh
+P2AAS_ENDPOINT='ws://localhost:12880/' \
+  zig-0.16.0 build install test-windtunnel -Dwith-p2aas
+```
+
+Local runs report hardware skips. Add `-Dcoverage=false` to disable Propan's
+optional kcov collection.
+
+See [Windtunnel core coverage](docs/windtunnel/core.md) for implemented operations
+and the remaining functional and timing limitations.
+
+`zig-out/bin/windtunnel --serve` exposes a compatible P2AAS endpoint at
+`ws://127.0.0.1:21591/`. See [the server documentation](docs/windtunnel/p2aas.md)
+for protocol behavior, client interchangeability, and hardware comparisons.
 
 Run `zig-0.16.0 build test --fuzz` to start Zig's native fuzzer, or use
 `--fuzz=10K` for a bounded run. Fuzz-test discovery uses Zig's test-server protocol.

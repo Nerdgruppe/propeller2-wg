@@ -1,0 +1,20 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 2500
+//? pre: cog[0].c = false
+//? post: cog[0].reg[result] == 7
+//? post: cog[0].c == false
+//? post: cog[0].z == false
+
+// Check AUGD consumption by WAITX, including a conditionally canceled wait.
+// The false condition must preserve AUGD; the later ordinary wait must not reuse the consumed extension.
+
+_start:
+                AUGD    0x400
+    if(C)       WAITX   0
+                WAITX   1
+                WAITX   1
+                MOV     result, 7
+                JMP     nrel(_end)
+var result:     LONG    0
+

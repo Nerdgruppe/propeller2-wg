@@ -1,6 +1,108 @@
 const std = @import("std");
 const cases = @import("tests/propan/cases.zig");
 
+const windtunnel_fixtures = [_][]const u8{
+    "tests/windtunnel/state/smart-pin-hardware.propan",
+    "tests/windtunnel/state/smart-pin-fields.propan",
+    "tests/windtunnel/state/pin-families.propan",
+    "tests/windtunnel/state/test-pin-flags.propan",
+    "tests/windtunnel/behaviour/augs.propan",
+    "tests/windtunnel/behaviour/cogstop.propan",
+    "tests/windtunnel/behaviour/core-execution.propan",
+    "tests/windtunnel/behaviour/stack-flags.propan",
+    "tests/windtunnel/behaviour/stack.propan",
+    "tests/windtunnel/program/echo.propan",
+    "tests/windtunnel/program/server-terminal.propan",
+    "tests/windtunnel/program/server-loader.propan",
+    "tests/windtunnel/program/hello-world.propan",
+    "tests/windtunnel/program/dir-register-uart.propan",
+    "tests/windtunnel/program/uart-checkpoint.propan",
+    "tests/windtunnel/state/core-branches.propan",
+    "tests/windtunnel/state/core-calls.propan",
+    "tests/windtunnel/state/core-memory.propan",
+    "tests/windtunnel/state/core-memory-prefixes.propan",
+    "tests/windtunnel/state/core-indirection.propan",
+    "tests/windtunnel/state/core-pixels.propan",
+    "tests/windtunnel/state/core-events.propan",
+    "tests/windtunnel/state/setq2-bit-span.propan",
+    "tests/windtunnel/state/setq2-write-source.propan",
+    "tests/windtunnel/state/setq-canceled-prefix.propan",
+    "tests/windtunnel/state/setq2-coginit.propan",
+    "tests/windtunnel/state/mul-zero.propan",
+    "tests/windtunnel/state/pipeline-cog.propan",
+    "tests/windtunnel/state/pipeline-lut-source-events.propan",
+    "tests/windtunnel/state/pipeline-hub-wrap.propan",
+    "tests/windtunnel/state/pipeline-pair-startup.propan",
+    "tests/windtunnel/state/pipeline-restart.propan",
+    "tests/windtunnel/state/pipeline-lut.propan",
+    "tests/windtunnel/state/pipeline-block-visibility.propan",
+    "tests/windtunnel/state/pipeline-fifo-transition.propan",
+    "tests/windtunnel/state/pipeline-software-prefetch.propan",
+    "tests/windtunnel/state/pipeline-lut-dual-write.propan",
+
+    "tests/windtunnel/state/pipeline-software-fifo.propan",
+
+    "tests/windtunnel/state/pipeline-lut-prefetch.propan",
+    "tests/windtunnel/state/pipeline-local-wrap.propan",
+    "tests/windtunnel/state/pipeline-shared-events.propan",
+
+    "tests/windtunnel/state/pipeline-branches.propan",
+    "tests/windtunnel/state/pipeline-cancellation.propan",
+    "tests/windtunnel/state/pipeline-q-clear.propan",
+    "tests/windtunnel/state/pipeline-q-lut-return.propan",
+    "tests/windtunnel/state/pipeline-fifo-contention.propan",
+    "tests/windtunnel/state/pipeline-hub-block.propan",
+    "tests/windtunnel/state/pipeline-hub-entry.propan",
+
+    "tests/windtunnel/state/pipeline-startup.propan",
+
+    "tests/windtunnel/state/pipeline-hub-commands.propan",
+
+    "tests/windtunnel/state/pipeline-hub-fifo.propan",
+
+    "tests/windtunnel/state/pipeline-hub-stack.propan",
+
+    "tests/windtunnel/state/pipeline-prefetch.propan",
+    "tests/windtunnel/state/pipeline-hub-matrix.propan",
+    "tests/windtunnel/state/augd.propan",
+    "tests/windtunnel/state/alu-arithmetic.propan",
+    "tests/windtunnel/state/alu-lanes.propan",
+    "tests/windtunnel/state/alu-crc.propan",
+    "tests/windtunnel/state/alu-source.propan",
+    "tests/windtunnel/state/augmentation.propan",
+    "tests/windtunnel/state/augs.propan",
+    "tests/windtunnel/state/cogid-7.propan",
+    "tests/windtunnel/state/cogid.propan",
+    "tests/windtunnel/state/conditions-00.propan",
+    "tests/windtunnel/state/conditions-01.propan",
+    "tests/windtunnel/state/conditions-10.propan",
+    "tests/windtunnel/state/conditions-11.propan",
+    "tests/windtunnel/state/full-cog.propan",
+    "tests/windtunnel/state/mov-00-keep.propan",
+    "tests/windtunnel/state/mov-00-wc.propan",
+    "tests/windtunnel/state/mov-00-wcz.propan",
+    "tests/windtunnel/state/mov-00-wz.propan",
+    "tests/windtunnel/state/mov-01-keep.propan",
+    "tests/windtunnel/state/mov-01-wc.propan",
+    "tests/windtunnel/state/mov-01-wcz.propan",
+    "tests/windtunnel/state/mov-01-wz.propan",
+    "tests/windtunnel/state/mov-10-keep.propan",
+    "tests/windtunnel/state/mov-10-wc.propan",
+    "tests/windtunnel/state/mov-10-wcz.propan",
+    "tests/windtunnel/state/mov-10-wz.propan",
+    "tests/windtunnel/state/mov-11-keep.propan",
+    "tests/windtunnel/state/mov-11-wc.propan",
+    "tests/windtunnel/state/mov-11-wcz.propan",
+    "tests/windtunnel/state/mov-11-wz.propan",
+    "tests/windtunnel/state/mov-zero.propan",
+    "tests/windtunnel/state/q.propan",
+    "tests/windtunnel/state/reporter-block.propan",
+    "tests/windtunnel/state/reporter-byte.propan",
+    "tests/windtunnel/state/reporter.propan",
+    "tests/windtunnel/state/return.propan",
+    "tests/windtunnel/state/snapshot-registers.propan",
+};
+
 const FastBuild = struct {
     b: *std.Build,
     no_emit_bin: bool,
@@ -14,17 +116,39 @@ const FastBuild = struct {
     }
 };
 
+/// Runs a Windtunnel artifact with optional kcov collection in the named report directory.
+fn addRunArtifactWithCoverage(b: *std.Build, kcov_path: ?[]const u8, artifact: *std.Build.Step.Compile, name: []const u8) *std.Build.Step.Run {
+    const run = if (kcov_path) |kcov| blk: {
+        const run = b.addSystemCommand(&.{
+            kcov,
+            "--clean",
+            b.fmt("--include-path={s},{s}", .{ b.pathFromRoot("src/windtunnel/sim"), b.pathFromRoot("src/libp2/alu.zig") }),
+            b.fmt(".coverage/{s}", .{name}),
+        });
+        run.addArtifactArg(artifact);
+        break :blk run;
+    } else b.addRunArtifact(artifact);
+    run.has_side_effects = kcov_path != null;
+    return run;
+}
+
 pub fn build(b: *std.Build) !void {
     // Steps:
     const run_step = b.step("run", "Runs propan");
     const test_step = b.step("test", "Runs the test suite");
+    const windtunnel_test_step = b.step("test-windtunnel", "Runs Windtunnel checklist fixtures and harness tests");
+    const libp2_test_step = b.step("test-libp2", "Runs the libp2 test suite.");
 
     // Options:
     const with_flexspin = b.option(bool, "with-flexspin", "Includes FlexSpin for Spin2 round-trip and assembler equivalence tests.") orelse false;
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
+    const coverage = b.option(bool, "coverage", "Collect Propan and Windtunnel coverage with kcov when available") orelse true;
+    const with_p2aas = b.option(bool, "with-p2aas", "Run Windtunnel hardware oracle tests through P2AAS_ENDPOINT") orelse false;
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const kcov_path = if (coverage) b.findProgram(&.{"kcov"}, &.{}) catch null else null;
+    if (coverage and kcov_path == null) std.log.warn("could not find kcov, not generating coverage", .{});
 
     // Dependencies:
     const serial_dep = b.dependency("serial", .{});
@@ -43,6 +167,12 @@ pub fn build(b: *std.Build) !void {
 
     // Build:
 
+    const mod_p2 = b.createModule(.{
+        .root_source_file = b.path("src/libp2/propeller2.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
     const turboprop_mod = b.addModule("turboprop", .{
         .root_source_file = b.path("src/turboprop/turboprop.zig"),
         .target = target,
@@ -58,6 +188,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
             .{ .name = "ptk", .module = ptk_mod },
             .{ .name = "args", .module = args_mod },
         },
@@ -68,6 +199,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
             .{ .name = "args", .module = args_mod },
         },
     });
@@ -105,6 +237,62 @@ pub fn build(b: *std.Build) !void {
 
     _ = windtunnel_exe;
 
+    const windtunnel_suite = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel/test_suite.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
+            .{ .name = "args", .module = args_mod },
+            .{ .name = "propan", .module = propan_mod },
+            .{ .name = "oracle-template", .module = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/oracle.propan.in") }) },
+        },
+    });
+    const windtunnel_tests = b.addExecutable(.{
+        .name = "windtunnel-tests",
+        .root_module = windtunnel_suite,
+        .use_llvm = if (kcov_path != null) true else null,
+    });
+    fb.installArtifact(windtunnel_tests);
+    const harness_tests = b.addTest(.{
+        .name = "windtunnel-harness-tests",
+        .root_module = windtunnel_suite,
+        .use_llvm = if (kcov_path != null) true else null,
+    });
+    if (kcov_path) |kcov| {
+        harness_tests.setExecCmd(&.{
+            kcov,
+            "--clean",
+            b.fmt("--include-path={s},{s}", .{ b.pathFromRoot("src/windtunnel/sim"), b.pathFromRoot("src/libp2/alu.zig") }),
+            ".coverage/windtunnel-unit",
+            null,
+        });
+    }
+    const harness_run = b.addRunArtifact(harness_tests);
+    harness_run.setCwd(b.path("."));
+    harness_run.has_side_effects = kcov_path != null;
+    windtunnel_test_step.dependOn(&harness_run.step);
+    const fixture_run = addRunArtifactWithCoverage(b, kcov_path, windtunnel_tests, "windtunnel-fixtures");
+    fixture_run.setCwd(b.path("."));
+    fixture_run.expectExitCode(0); // Capture stdio so Zig forwards progress updates.
+    if (with_p2aas) {
+        fixture_run.addArg("--oracle");
+        fixture_run.has_side_effects = true;
+    }
+    fixture_run.addFileInput(b.path("examples/hello-world.propan"));
+    fixture_run.addFileInput(b.path("tests/windtunnel/oracle.propan.in"));
+    fixture_run.addArgs(&windtunnel_fixtures);
+    for (windtunnel_fixtures) |path| fixture_run.addFileInput(b.path(path));
+    windtunnel_test_step.dependOn(&fixture_run.step);
+    if (kcov_path) |kcov| {
+        const merge = b.addSystemCommand(&.{ kcov, "--merge", ".coverage/windtunnel", ".coverage/windtunnel-fixtures", ".coverage/windtunnel-unit" });
+        merge.setCwd(b.path("."));
+        merge.step.dependOn(&fixture_run.step);
+        merge.step.dependOn(&harness_run.step);
+        windtunnel_test_step.dependOn(&merge.step);
+    }
+    test_step.dependOn(windtunnel_test_step);
+
     // "zig build run"
     {
         const run_cmd = b.addRunArtifact(propan_exe);
@@ -116,6 +304,17 @@ pub fn build(b: *std.Build) !void {
         }
 
         run_step.dependOn(&run_cmd.step);
+    }
+
+    {
+        const libp2_tests = b.addTest(.{
+            .root_module = mod_p2,
+        });
+
+        const run_cmd = b.addRunArtifact(libp2_tests);
+
+        libp2_test_step.dependOn(&run_cmd.step);
+        run_step.dependOn(libp2_test_step);
     }
 
     // One process runs unit tests and all fixture categories.
@@ -173,7 +372,6 @@ pub fn build(b: *std.Build) !void {
         });
         const install = b.addInstallArtifact(tests, .{});
         test_step.dependOn(&install.step);
-        const kcov_path = b.findProgram(&.{"kcov"}, &.{}) catch null;
         if (kcov_path) |kcov| {
             tests.setExecCmd(&.{
                 kcov,
@@ -182,8 +380,6 @@ pub fn build(b: *std.Build) !void {
                 ".coverage",
                 null, // addRunArtifact inserts the test executable here.
             });
-        } else {
-            std.log.warn("could not find kcov, not generating coverage", .{});
         }
         // The native runner reports fuzz-test discovery through Zig's server protocol.
         const run = b.addRunArtifact(tests);
@@ -191,23 +387,15 @@ pub fn build(b: *std.Build) !void {
         // Coverage writes a report outside Zig's cache.
         run.has_side_effects = kcov_path != null;
         // Include imported sources, FILE payloads, and Spin2 references read at runtime.
-        var fixture_paths: std.ArrayList([]const u8) = .empty;
-        for ([_][]const u8{ "tests/propan", "examples" }) |path| {
-            var dir = try b.build_root.handle.openDir(b.graph.io, path, .{ .iterate = true });
-            defer dir.close(b.graph.io);
-            var walker = try dir.walk(b.allocator);
-            defer walker.deinit();
-            while (try walker.next(b.graph.io)) |entry| {
-                if (entry.kind == .file)
-                    try fixture_paths.append(b.allocator, b.fmt("{s}/{s}", .{ path, entry.path }));
-            }
-        }
-        std.mem.sort([]const u8, fixture_paths.items, {}, struct {
-            fn lessThan(_: void, lhs: []const u8, rhs: []const u8) bool {
-                return std.mem.lessThan(u8, lhs, rhs);
-            }
-        }.lessThan);
-        for (fixture_paths.items) |path| run.addFileInput(b.path(path));
+        for ([_][]const []const u8{
+            cases.parser_accept_tests,
+            cases.sema_accept_tests,
+            cases.parser_diagnostic_tests,
+            cases.sema_diagnostic_tests,
+            cases.compare_diagnostic_tests,
+            cases.support_files,
+        }) |paths| for (paths) |path| run.addFileInput(b.path(path));
+        for (cases.formatter_tests) |fixture| run.addFileInput(b.path(fixture.input));
         run.setCwd(b.path("."));
         test_step.dependOn(&run.step);
     }

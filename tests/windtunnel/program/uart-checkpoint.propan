@@ -1,0 +1,15 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? stdout: ""
+//? oracle: off "the checkpoint deliberately interrupts an unfinished UART frame"
+
+// The runner must observe the checkpoint without completing pending UART output.
+.cogexec
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                WXPIN   aug((100 << 16) | 7),   62
+                DIRH    62
+                WYPIN   'x',                    62
+                WAITX   10
+_end:
+                JMP     _end

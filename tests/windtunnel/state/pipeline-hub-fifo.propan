@@ -1,0 +1,115 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[throughput] == 130
+//? post: cog[*].reg[prefetched] == 1
+//? post: cog[*].reg[result] == 2
+//? post: cog[*].reg[visits] == 2
+//? run: "0"
+//? cog: 0
+//? const: probe_alignment = 0
+//? run: "1"
+//? cog: 0
+//? const: probe_alignment = 1
+//? run: "2"
+//? cog: 0
+//? const: probe_alignment = 2
+//? run: "3"
+//? cog: 0
+//? const: probe_alignment = 3
+
+// Check sustained hub instruction throughput and prefetched self-modifying code.
+// A long NOP stream spans FIFO refills; rewriting the upcoming instruction stays stale until a branch refetches it.
+
+                CALL    hub_entry
+cog_return:
+                JMP     nrel(_end)
+var start:      LONG    0
+var throughput: LONG    0
+var prefetched: LONG    0
+var result:     LONG    0
+var visits:     LONG    0
+// Encode MOV result,#2: overwrite the immediate while keeping the same result register.
+var replacement:
+                LONG    0xf6040002 | (pcaddr(result) << 9)
+.pack   byte
+.hubexec    0x5000 + probe_alignment
+hub_entry:
+                GETCT   start
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                // Sixty-four NOPs plus GETCT spacing give 130 clocks at two-clock issue.
+                GETCT   throughput
+                SUB     throughput,     start
+                MOV     PTRA,           aug(hubaddr(target))
+                WRLONG  replacement,    PTRA
+                NOP
+                NOP
+target:
+                MOV     result,     1
+                ADD     visits,     1
+                CMP     visits,     2       :wz
+    if(Z)       JMP     nrel(cog_return)
+                MOV     prefetched, result
+                JMP     target
+

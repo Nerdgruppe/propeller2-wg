@@ -1,0 +1,12 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: hub[buffer] == hex [ff]
+//? post: cog[0].c == false
+
+// Check reporting of a one-byte hub observation.
+// A payload byte of 0xff exercises unsigned binary transport at the smallest observation size.
+
+                JMP     nrel(_end)
+.data
+buffer:         BYTE    0xff
+

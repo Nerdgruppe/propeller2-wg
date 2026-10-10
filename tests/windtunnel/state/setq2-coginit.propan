@@ -1,0 +1,59 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "SETQ direct"
+//? const: prefix = 0
+//? const: augmented = 0
+//? post: cog[0].reg[measured] == 3
+//? post: hub[parameter] == u32 [3]
+//? run: "SETQ2 direct"
+//? const: prefix = 1
+//? const: augmented = 0
+//? post: cog[0].reg[measured] == 3
+//? post: hub[parameter] == u32 [3]
+//? run: "SETQ augmented"
+//? const: prefix = 0
+//? const: augmented = 1
+//? post: cog[0].reg[measured] == 3
+//? post: hub[parameter] == u32 [3]
+//? run: "SETQ2 augmented"
+//? const: prefix = 1
+//? const: augmented = 1
+//? post: cog[0].reg[measured] == 0
+//? post: hub[parameter] == u32 [0]
+//? run: "CRCNIB direct"
+//? const: prefix = 2
+//? const: augmented = 0
+//? post: cog[0].reg[measured] == 48
+//? post: hub[parameter] == u32 [48]
+
+                // COGINIT passes Q as it stands after the earlier decode clear.
+                MOV     address,    aug(hubaddr(worker))
+.if prefix == 0
+                SETQ    3
+.endif
+.if prefix == 1
+                SETQ2   3
+.endif
+.if prefix == 2
+                SETQ    3
+                CRCNIB  measured,   measured
+.endif
+.if augmented == 0
+                COGINIT 7,          address
+.else
+                COGINIT 7,          aug(hubaddr(worker))
+.endif
+                MOV     measured,   0
+                MUXQ    measured,   aug(0xffffffff)
+                // Allow image loading and the worker's parameter write to finish.
+                WAITX   aug(1000)
+                JMP     nrel(_end)
+var measured:   LONG    0
+var address:    LONG    0
+.data
+parameter:      LONG    0xffffffff
+.cogexec    0x4000
+worker:
+                // Publish the startup parameter before stopping the worker.
+                WRLONG  PTRA,   aug(hubaddr(parameter))
+                COGSTOP 7
+
