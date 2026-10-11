@@ -5,6 +5,7 @@ const std = @import("std");
 
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
+const Cordic = @import("Cordic.zig");
 const Vcd = @import("Vcd.zig");
 const Hub = @This();
 
@@ -12,6 +13,7 @@ memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
+cordic: Cordic = .{},
 
 trace_writer: ?*std.Io.Writer = null,
 vcd: ?*Vcd = null,
@@ -131,6 +133,7 @@ pub fn step(hub: *Hub) void {
     for (&hub.cogs) |*cog| cog.clock_startup();
     for (&hub.cogs) |*cog| cog.clock_fifo();
     for (&hub.cogs) |*cog| cog.clock_memory();
+    if (hub.cordic.step()) |delivery| hub.cogs[@intFromEnum(delivery.cog)].cordic_result.accept(delivery);
     for (&hub.cogs) |*cog| cog.clock_command();
     hub.io.step(hub);
     if (hub.fault == null) for (&hub.cogs) |*cog| cog.step();
@@ -154,6 +157,7 @@ pub fn is_any_cog_active(hub: *Hub) bool {
 /// Safe only when all active pipelines are frozen on timed waits and no
 /// peripheral, FIFO, memory transfer, or writeback can advance before CT does.
 pub fn next_idle_clock(hub: *Hub) ?u64 {
+    if (hub.cordic.in_flight()) return null;
     for (hub.pending_starts) |start| if (start != null) return null;
     if (hub.io.pending()) return null;
     for (hub.pending_events) |edge| for (edge) |events| if (events != 0) return null;

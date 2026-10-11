@@ -1,3 +1,9 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[PTRA] == 1
+
+    // standalone block at the start rounds its first column up to four
+    // including columns that are not multiples of four
+
 // formatter fixture
 .cogexec    // first segment
 first:
@@ -5,6 +11,19 @@ first:
 .local:
     if(!C & !Z) MOV     PTRA,   3   :wz // local label stays in block
                 NOP                     // no operands
+    // standalone block after an instruction keeps its location
+    // even without a blank line before it
+    // all three lines share the first comment's column
+
+// attached to the local label
+// this line also attaches to the label
+.attached:
+            // before the instruction at its own column
+            // this line shares the block indentation
+                NOP
+        // unattached to the dot directive
+        // this line shares the first comment's column
+.align  4
 
 second:         LONG    ticks(1000, ms=3)       // one-line call
 const SUM = (1 +    // expression comment
@@ -26,4 +45,6 @@ math:
 const PLUS  = + +1
 const MINUS = - -1
                 BYTE    PLUS,   MINUS
+    // standalone block at EOF rounds its first column up to four
+    // without a following statement
 

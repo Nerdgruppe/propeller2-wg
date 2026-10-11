@@ -91,17 +91,22 @@ parentheses, with `)` on the following line.
 
 ## Comments and blank lines
 
-Consecutive standalone line comments form a comment block. With blank lines on
-both sides, the block keeps the first comment's original indentation, rounded up
-to a multiple of four. All comments in the block share that indentation.
+Consecutive standalone line comments form a comment block and share one
+indentation. Directly before a label or constant declaration, with no separating
+blank line, the block starts at indentation 0.
 
-Other comment blocks follow the next semantic element:
+Directly before a mnemonic, a block aligns with that mnemonic at indentation 16,
+except when the block also directly follows a label. A block immediately after
+a label keeps its own indentation rather than adopting the following mnemonic's
+column.
 
-- Before a label, directive, or constant declaration, the block starts at
-  indentation 0.
-- Before a mnemonic, the block starts at indentation 16.
-- Without a following semantic element, the block likewise keeps its original
-  indentation rounded up to a multiple of four.
+Blocks that keep their own indentation use their first comment's original column
+rounded up to a multiple of four. This includes blocks before dot directives
+such as `.align`, blocks separated from the next element by a blank line, and
+blocks at the start and end of a file. These comments can occupy any
+multiple-of-four column.
+Keep a blank line after a `//?` checklist block to preserve its location
+independently of a label or constant declaration below.
 
 Comments inside expressions remain inside those expressions. Comment text and
 source order are preserved.

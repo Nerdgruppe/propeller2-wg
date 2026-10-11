@@ -6,6 +6,7 @@ const logger = std.log.scoped(.cog);
 
 const Cog = @This();
 const Hub = @import("Hub.zig");
+const Cordic = @import("Cordic.zig");
 
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
@@ -32,6 +33,7 @@ lut: [512]u32 = @splat(0),
 
 pc: u20 = 0,
 q: u32 = 0,
+cordic_result: Cordic.Port = .{},
 setq_pending: bool = false,
 block_pointer_delta: bool = false,
 z: bool = false,
@@ -161,6 +163,9 @@ pub fn reset(cog: *Cog) void {
     const registers = cog.registers;
     const ram_tail = cog.ram_tail;
     const lut = cog.lut;
+    hub.cordic.forget(@enumFromInt(id));
+    cog.cordic_result.reset();
+    const cordic_result = cog.cordic_result;
     for (&hub.locks) |*lock| {
         if (lock.taken and lock.owner == id) hub.release_lock(lock);
     }
@@ -169,6 +174,7 @@ pub fn reset(cog: *Cog) void {
     cog.registers = registers;
     cog.ram_tail = ram_tail;
     cog.lut = lut;
+    cog.cordic_result = cordic_result;
     for ([_]Register{ .PTRA, .PTRB, .DIRA, .DIRB, .OUTA, .OUTB }) |reg| cog.registers.set(reg, 0);
 }
 
@@ -319,7 +325,7 @@ pub fn clock_command(cog: *Cog) void {
     const extra: u64 = switch (opcode) {
         .cogid, .locknew => 2,
         .coginit, .locktry, .lockrel => if (state.instr & (1 << 20) != 0) 2 else 0,
-        .cogstop, .lockret, .hubset => 0,
+        .cogstop, .lockret, .hubset, .qmul, .qdiv, .qfrac, .qsqrt, .qrotate, .qvector, .qlog, .qexp => 0,
         else => return,
     };
     if (state.command_at == null) {

@@ -116,7 +116,8 @@ against both endpoints without changes.
 `data/timing-data/run_tests.py` and `utility/p2aas-run.py` also honor `P2AAS_ENDPOINT`. Leaving it unset
 preserves their existing hardware transport. The timing-data runner's WebSocket transport needs the
 optional Python `websockets` package; its result parser is shared with the serial transport. Existing
-CORDIC timing cases still require QMUL/GETQX, which are currently unimplemented in Windtunnel.
+CORDIC commands and result reads are implemented; their measured arithmetic, pipeline timing,
+and empty-read behavior are described in [Accumulated Propeller 2 Knowledge](../accumulated.md#cordic-computer).
 All eight other timing cases matched the hardware service across eight hub phases, including cog
 startup. The timing fixture waits 100 ms before its first UART marker to allow the hardware loader's
 runtime baud switch to finish; this wait is outside the measured region.

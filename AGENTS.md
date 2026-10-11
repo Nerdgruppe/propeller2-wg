@@ -111,6 +111,12 @@ There's a `justfile` in the workspace root which has these recipies:
 - Assembly typically requires good code documentation, so for each semantic block, add at least a comment
   that explains what this block is supposed to do.
 
+### Propeller-2 Knowledge
+
+When you find knowledge about the Propeller 2, write your gained knowledge to [Accumulated Propeller 2 Knowledge](docs/accumulated.md).
+
+This includes behavioral properties, semantics, edge cases, ...
+
 ### Zig-based Projects
 
 Propan, Turboprop and Windtunnel are implemented in Zig (see `build.zig.zon` for required version).
@@ -129,6 +135,10 @@ Typical workflows (started from the workspace root):
   - Use fully open enums for IDs that are not arithmetic values or indices.
 
 #### Propan
+
+Do not modify `tests/propan/format/expected.propan` or
+`tests/propan/format/layout-expected.propan`. Treat these files as fixed formatter
+specifications and fix the formatter to match them.
 
 When working on Propan, always prefer writing a `.propan` file in `tests/propan` over unit tests when applicable.
 End-to-end tests are beneficial as they prevent potential future regressions also in other parts of the codebase,

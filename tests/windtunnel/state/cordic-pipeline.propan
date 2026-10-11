@@ -1,0 +1,99 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[x1] == 4294967295
+//? post: cog[*].reg[y1] == 0
+//? post: cog[*].reg[x2] == 4294967294
+//? post: cog[*].reg[y2] == 1
+//? post: cog[*].reg[x3] == 4294967293
+//? post: cog[*].reg[y3] == 2
+//? post: cog[*].reg[x4] == 4294967292
+//? post: cog[*].reg[y4] == 3
+//? post: cog[*].reg[x5] == 4294967291
+//? post: cog[*].reg[y5] == 4
+//? post: cog[*].reg[x6] == 4294967290
+//? post: cog[*].reg[y6] == 5
+//? post: cog[*].reg[x7] == 4294967289
+//? post: cog[*].reg[y7] == 6
+//? post: cog[*].reg[x8] == 4294967288
+//? post: cog[*].reg[y8] == 7
+//? post: cog[*].reg[last_x] == 4294967288
+//? post: cog[*].reg[last_y] == 7
+//? post: cog[*].reg[qmt] == 1
+//? run: "cog 0"
+//? cog: 0
+//? run: "cog 1"
+//? cog: 1
+//? run: "cog 2"
+//? cog: 2
+//? run: "cog 3"
+//? cog: 3
+//? run: "cog 4"
+//? cog: 4
+//? run: "cog 5"
+//? cog: 5
+//? run: "cog 6"
+//? cog: 6
+//? run: "cog 7"
+//? cog: 7
+
+                // Fill all eight in-flight slots. Read each pair as it arrives, eight clocks apart.
+                QMUL    aug(0xffffffff),    1
+                QMUL    aug(0xffffffff),    2
+                QMUL    aug(0xffffffff),    3
+                QMUL    aug(0xffffffff),    4
+                QMUL    aug(0xffffffff),    5
+                QMUL    aug(0xffffffff),    6
+                QMUL    aug(0xffffffff),    7
+                QMUL    aug(0xffffffff),    8
+                GETQX   x1
+                GETQY   y1
+                GETQX   x2
+                GETQY   y2
+                GETQX   x3
+                GETQY   y3
+                GETQX   x4
+                GETQY   y4
+                GETQX   x5
+                GETQY   y5
+                GETQX   x6
+                GETQY   y6
+                GETQX   x7
+                GETQY   y7
+                GETQX   x8
+                GETQY   y8
+                // Let a second batch overwrite unread results: only the final pair survives.
+                QMUL    aug(0xffffffff),    1
+                QMUL    aug(0xffffffff),    2
+                QMUL    aug(0xffffffff),    3
+                QMUL    aug(0xffffffff),    4
+                QMUL    aug(0xffffffff),    5
+                QMUL    aug(0xffffffff),    6
+                QMUL    aug(0xffffffff),    7
+                QMUL    aug(0xffffffff),    8
+                WAITX   100
+                GETQX   last_x
+                GETQY   last_y
+                GETQX   last_x
+                POLLQMT                         :wc
+                WRC     qmt
+                SETQ    0
+                JMP     nrel(_end)
+var x1:         LONG    0
+var y1:         LONG    0
+var x2:         LONG    0
+var y2:         LONG    0
+var x3:         LONG    0
+var y3:         LONG    0
+var x4:         LONG    0
+var y4:         LONG    0
+var x5:         LONG    0
+var y5:         LONG    0
+var x6:         LONG    0
+var y6:         LONG    0
+var x7:         LONG    0
+var y7:         LONG    0
+var x8:         LONG    0
+var y8:         LONG    0
+var last_x:     LONG    0
+var last_y:     LONG    0
+var qmt:        LONG    0
+

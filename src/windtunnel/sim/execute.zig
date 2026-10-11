@@ -7,6 +7,7 @@ const logger = std.log.scoped(.execute);
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const Cog = @import("Cog.zig");
+const Cordic = @import("Cordic.zig");
 const p2 = @import("p2");
 const types = p2.types;
 const alu = p2.alu;
@@ -1241,6 +1242,13 @@ pub fn tjv(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 // GROUP: CORDIC Solver
 //
 
+/// Submit one hub CORDIC command and invalidate/track only the issuing cog's result interface.
+fn submitCordic(cog: *Cog, operation: Cordic.Operation, d: u32, s: u32, q: u32) Cog.ExecResult {
+    cog.hub.cordic.submit(@enumFromInt(cog.id), operation, d, s, q);
+    cog.cordic_result.begin();
+    return .next;
+}
+
 /// QMUL {#}D, {#}S
 /// EEEE 1101000 0LI DDDDDDDDD SSSSSSSSS
 ///
@@ -1250,10 +1258,9 @@ pub fn tjv(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qmul(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qmul
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    const s = operandS(cog, args.s, args.s_imm);
+    return submitCordic(cog, .mul, d, s, 0);
     // codegen: end:qmul
 }
 
@@ -1266,10 +1273,9 @@ pub fn qmul(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qdiv(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qdiv
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    const s = operandS(cog, args.s, args.s_imm);
+    return submitCordic(cog, .div, d, s, cog.q);
     // codegen: end:qdiv
 }
 
@@ -1282,10 +1288,9 @@ pub fn qdiv(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qfrac(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qfrac
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    const s = operandS(cog, args.s, args.s_imm);
+    return submitCordic(cog, .frac, d, s, cog.q);
     // codegen: end:qfrac
 }
 
@@ -1298,10 +1303,9 @@ pub fn qfrac(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qsqrt(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qsqrt
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    const s = operandS(cog, args.s, args.s_imm);
+    return submitCordic(cog, .sqrt, d, s, 0);
     // codegen: end:qsqrt
 }
 
@@ -1314,10 +1318,9 @@ pub fn qsqrt(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qrotate(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qrotate
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    const s = operandS(cog, args.s, args.s_imm);
+    return submitCordic(cog, .rotate, d, s, cog.q);
     // codegen: end:qrotate
 }
 
@@ -1330,10 +1333,9 @@ pub fn qrotate(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qvector(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:qvector
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    const s = operandS(cog, args.s, args.s_imm);
+    return submitCordic(cog, .vector, d, s, 0);
     // codegen: end:qvector
 }
 
@@ -1346,10 +1348,8 @@ pub fn qvector(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qlog(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:qlog
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    return submitCordic(cog, .log, d, 0, 0);
     // codegen: end:qlog
 }
 
@@ -1362,10 +1362,8 @@ pub fn qlog(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn qexp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:qexp
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const d = operandD(cog, args.d, args.d_imm);
+    return submitCordic(cog, .exp, d, 0, 0);
     // codegen: end:qexp
 }
 
@@ -1378,10 +1376,15 @@ pub fn qexp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn getqx(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getqx
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    if (!cog.cordic_result.ready.get(.x)) {
+        if (cog.cordic_result.busy()) return .wait;
+        cog.events |= EventId.QMT.mask();
+    }
+    cog.cordic_result.ready.set(.x, false);
+    const value = cog.cordic_result.result.x;
+    cog.write_result(args.d, value);
+    setFlags(cog, args, value, 31);
+    return .next;
     // codegen: end:getqx
 }
 
@@ -1394,10 +1397,15 @@ pub fn getqx(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn getqy(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getqy
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    if (!cog.cordic_result.ready.get(.y)) {
+        if (cog.cordic_result.busy()) return .wait;
+        cog.events |= EventId.QMT.mask();
+    }
+    cog.cordic_result.ready.set(.y, false);
+    const value = cog.cordic_result.result.y;
+    cog.write_result(args.d, value);
+    setFlags(cog, args, value, 31);
+    return .next;
     // codegen: end:getqy
 }
 
@@ -1735,10 +1743,7 @@ pub fn jatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jqmt
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return branchEvent(cog, args, .QMT, true);
     // codegen: end:jqmt
 }
 
@@ -1967,10 +1972,7 @@ pub fn jnatn(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jnqmt(cog: *Cog, args: encoding.Only_Simm) Cog.ExecResult {
     // codegen: begin:jnqmt
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return branchEvent(cog, args, .QMT, false);
     // codegen: end:jnqmt
 }
 
@@ -2314,10 +2316,7 @@ pub fn pollatn(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn pollqmt(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:pollqmt
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return pollEvent(cog, args, .QMT);
     // codegen: end:pollqmt
 }
 

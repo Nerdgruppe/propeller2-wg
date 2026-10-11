@@ -1,0 +1,130 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[out_empty_x] == 0
+//? post: cog[0].reg[out_empty_y] == 0
+//? post: cog[0].reg[out_empty_qmt] == 1
+//? post: cog[0].reg[out_x] == 4294967294
+//? post: cog[0].reg[out_qmt1] == 0
+//? post: cog[0].reg[out_x_repeat] == 4294967294
+//? post: cog[0].reg[out_qmt2] == 1
+//? post: cog[0].reg[out_y] == 1
+//? post: cog[0].reg[out_qmt3] == 0
+//? post: cog[0].reg[out_y_repeat] == 1
+//? post: cog[0].reg[out_qmt4] == 1
+//? post: cog[0].reg[out_new_y] == 0
+//? post: cog[0].reg[out_new_y_repeat] == 0
+//? post: cog[0].reg[out_qmt5] == 1
+//? post: cog[0].reg[out_new_x] == 21
+//? post: cog[0].reg[out_qmt6] == 0
+//? post: cog[0].reg[out_old_or_new] == 90
+//? post: cog[0].reg[out_following] == 90
+//? post: cog[0].reg[out_qmt7] == 1
+//? post: cog[0].reg[out_final_y] == 0
+//? post: cog[0].reg[out_sticky_c] == 1
+//? post: cog[0].reg[out_sticky_z] == 1
+//? post: cog[0].reg[out_after_jqmt] == 0
+//? post: cog[0].reg[out_after_jnqmt] == 0
+//? post: cog[0].reg[branch_failures] == 0
+
+                // Hardware-measured empty reads, independent X/Y consumption, retained words and invalidation.
+                // A new command invalidates an older unread result, so the next read waits for the new pair.
+                GETQX   out_empty_x
+                GETQY   out_empty_y
+                POLLQMT                         :wc
+                WRC     out_empty_qmt
+                QMUL    aug(0xffffffff),    2
+                GETQX   out_x
+                POLLQMT                         :wc
+                WRC     out_qmt1
+                GETQX   out_x_repeat
+                POLLQMT                         :wc
+                WRC     out_qmt2
+                GETQY   out_y
+                POLLQMT                         :wc
+                WRC     out_qmt3
+                GETQY   out_y_repeat
+                POLLQMT                         :wc
+                WRC     out_qmt4
+                QMUL    3,                  7
+                GETQY   out_new_y
+                GETQY   out_new_y_repeat
+                POLLQMT                         :wc
+                WRC     out_qmt5
+                GETQX   out_new_x
+                POLLQMT                         :wc
+                WRC     out_qmt6
+                QMUL    5,                  8
+                WAITX   100
+                QMUL    9,                  10
+                GETQX   out_old_or_new
+                GETQX   out_following
+                POLLQMT                         :wc
+                WRC     out_qmt7
+                GETQY   out_final_y
+                // Successful work leaves QMT sticky, and POLLQMT reports it in both flags.
+                GETQX   scratch
+                QMUL    6,                  7
+                GETQX   scratch
+                POLLQMT                         :wcz
+                WRC     out_sticky_c
+                WRZ     out_sticky_z
+                // Both branch polarities consume QMT, including branches that are not taken.
+                GETQX   scratch
+                JQMT    check_clear
+                ADD     branch_failures,    1
+check_clear:
+                POLLQMT                         :wc
+                WRC     out_after_jqmt
+                JNQMT   check_set
+                ADD     branch_failures,    1
+check_set:
+                GETQY   scratch
+                GETQY   scratch
+                JNQMT   wrong_branch
+                POLLQMT                 :wc
+                WRC     out_after_jnqmt
+                JQMT    wrong_branch
+                JMP     nrel(_end)
+wrong_branch:
+                ADD     branch_failures,    1
+                JMP     nrel(_end)
+var out_empty_x:
+                LONG    0
+var out_empty_y:
+                LONG    0
+var out_empty_qmt:
+                LONG    0
+var out_x:      LONG    0
+var out_qmt1:   LONG    0
+var out_x_repeat:
+                LONG    0
+var out_qmt2:   LONG    0
+var out_y:      LONG    0
+var out_qmt3:   LONG    0
+var out_y_repeat:
+                LONG    0
+var out_qmt4:   LONG    0
+var out_new_y:  LONG    0
+var out_new_y_repeat:
+                LONG    0
+var out_qmt5:   LONG    0
+var out_new_x:  LONG    0
+var out_qmt6:   LONG    0
+var out_old_or_new:
+                LONG    0
+var out_following:
+                LONG    0
+var out_qmt7:   LONG    0
+var out_final_y:
+                LONG    0
+var scratch:    LONG    0
+var out_sticky_c:
+                LONG    0
+var out_sticky_z:
+                LONG    0
+var out_after_jqmt:
+                LONG    0
+var out_after_jnqmt:
+                LONG    0
+var branch_failures:
+                LONG    0
+

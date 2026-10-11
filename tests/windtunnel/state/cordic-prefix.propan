@@ -1,0 +1,92 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[out_div_x] == 613566757
+//? post: cog[0].reg[out_div_y] == 3
+//? post: cog[0].reg[out_rot_x] == 3
+//? post: cog[0].reg[out_rot_y] == 10
+//? post: cog[0].reg[out_cancelled] == 42
+//? post: cog[0].reg[out_cancelled_prefix_x] == 0
+//? post: cog[0].reg[out_cancelled_prefix_y] == 6
+//? post: cog[0].reg[out_aug_rot_x] == 0
+//? post: cog[0].reg[out_aug_rot_y] == 3
+//? post: cog[0].reg[out_aug_div_x] == 8388607
+//? post: cog[0].reg[out_aug_div_y] == 511
+//? post: cog[0].reg[out_crc_rx] == 3
+//? post: cog[0].reg[out_crc_ry] == 160
+//? post: cog[0].reg[out_crc_dx] == 4294967286
+//? post: cog[0].reg[out_crc_dy] == 76
+//? post: cog[0].reg[out_crc_fx] == 1840700272
+//? post: cog[0].reg[out_crc_fy] == 0
+
+                // An immediately adjacent SETQ2 writes Q late enough to survive CORDIC decode clearing.
+                SETQ2   1
+                QDIV    6,                  7
+                GETQX   out_div_x
+                GETQY   out_div_y
+                SETQ2   10
+                QROTATE 3,                  0
+                GETQX   out_rot_x
+                GETQY   out_rot_y
+                // AUGS/AUGD separate SETQ2 from the command, so decode clears Q back to zero.
+                SETQ2   10
+                QROTATE 3,                  aug(0x40000000)
+                GETQX   out_aug_rot_x
+                GETQY   out_aug_rot_y
+                SETQ2   1
+                QDIV    aug(0xffffffff),    aug(0x200)
+                GETQX   out_aug_div_x
+                GETQY   out_aug_div_y
+                // A late CRCNIB write also wins decode clearing without a surviving SETQ prefix.
+                SETQ    10
+                CRCNIB  scratch,            0
+                QROTATE 3,                  0
+                GETQX   out_crc_rx
+                GETQY   out_crc_ry
+                SETQ    1
+                CRCNIB  scratch,            0
+                QDIV    6,                  7
+                GETQX   out_crc_dx
+                GETQY   out_crc_dy
+                SETQ    1
+                CRCNIB  scratch,            0
+                QFRAC   3,                  7
+                GETQX   out_crc_fx
+                GETQY   out_crc_fy
+                // Cancelled commands issue nothing, but still consume a SETQ prefix.
+                QMUL    6,                  7
+                MODCZ   _CLR,               _CLR            :wcz
+    if(Z)       QMUL    2,                  3
+                GETQX   out_cancelled
+                SETQ    1
+    if(Z)       QDIV    6,                  7
+                QDIV    6,                  7
+                GETQX   out_cancelled_prefix_x
+                GETQY   out_cancelled_prefix_y
+                JMP     nrel(_end)
+var out_div_x:  LONG    0
+var out_div_y:  LONG    0
+var out_rot_x:  LONG    0
+var out_rot_y:  LONG    0
+var out_cancelled:
+                LONG    0
+var out_cancelled_prefix_x:
+                LONG    0
+var out_cancelled_prefix_y:
+                LONG    0
+var out_aug_rot_x:
+                LONG    0
+var out_aug_rot_y:
+                LONG    0
+var out_aug_div_x:
+                LONG    0
+var out_aug_div_y:
+                LONG    0
+
+
+var scratch:    LONG    0
+var out_crc_rx: LONG    0
+var out_crc_ry: LONG    0
+var out_crc_dx: LONG    0
+var out_crc_dy: LONG    0
+var out_crc_fx: LONG    0
+var out_crc_fy: LONG    0
+
