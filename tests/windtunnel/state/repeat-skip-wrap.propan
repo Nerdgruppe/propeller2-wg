@@ -18,6 +18,7 @@
 
 // Check repeat bodies ending at the local boundary, fast stepping and hub wrap.
 // A hidden hub repeat branch to zero selects cog execution.
+// ADD #1 selects cog register 1 when local execution overflows; install an explicit exit there.
 .if kind == 0
                 MOV     PTRA,           aug(hubaddr(local_rep))
                 RDLONG  word,           PTRA++
@@ -29,9 +30,11 @@
                 MOV     PTRA,           aug(hubaddr(cog_template))
                 RDLONG  word,           PTRA++
                 MOV     register(0),    word
+                MOV     register(1),    word
                 JMP     nrel(local_rep)
 .elif   kind == 1
                 MOV     register(0),    exit_word
+                MOV     register(1),    exit_word
                 MOV     PTRA,           aug(hubaddr(local_skip))
                 RDLONG  word,           PTRA++
                 WRLUT   word,           aug(507)

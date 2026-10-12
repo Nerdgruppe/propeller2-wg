@@ -1,0 +1,14 @@
+# Reproducible raw oracle output and exploratory work, at any depth.
+artifacts/
+captures/
+results/
+scratch/
+tmp/
+probes/
+
+# Ad hoc probes and reporter frames outside the scratch directories.
+*-probe.propan
+*-frame.bin
+
+# Keep registered regression sources, README files and reviewed measurement
+# summaries (including measurements.json) visible to Git.

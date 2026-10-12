@@ -6,6 +6,10 @@ zig-out/
 .codex
 zig-pkg/
 .tmp/
+# Local scratch work and transient tool output.
+.scratch/
+*.tmp
+*.log
 .coverage/
 bin/
 obj/

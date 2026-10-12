@@ -2370,11 +2370,16 @@ const Analyzer = struct {
 
                                     .relative => {
 
-                                        // The encoded relative A field is a signed BYTE displacement.
+                                        // LOC adds A directly to the execution PC. Branch A fields
+                                        // instead encode bytes, even during local execution.
                                         // Instruction-relative S fields (e.g. JINT) use compute_rel() below.
                                         // The source operand is a destination address, whose units depend
                                         // on the execution domain; it is not an already computed offset.
-                                        const byte_delta_i33: i33 = switch (value.value) {
+                                        const is_loc = std.ascii.eqlIgnoreCase(encoded.mnemonic, "LOC");
+                                        const next_pc = if (current_segment.exec_mode == .hub) hub_pc else cog_pc;
+                                        const delta_i33: i33 = if (is_loc)
+                                            @as(i33, int) - @as(i33, next_pc)
+                                        else switch (value.value) {
                                             .address => |addr| delta: {
                                                 // Labels in the same segment share its hub-to-local mapping,
                                                 // so subtracting their hub byte addresses gives the displacement.
@@ -2400,21 +2405,23 @@ const Analyzer = struct {
                                             },
                                         };
 
-                                        const byte_delta_i20: i20 = std.math.cast(i20, byte_delta_i33) orelse delta: {
+                                        const delta_i20: i20 = std.math.cast(i20, delta_i33) orelse delta: {
                                             try ana.emit_diag(location, .{
                                                 .err_branch_too_far = .{
-                                                    .distance = byte_delta_i33,
-                                                    .unit = .bytes,
+                                                    .distance = delta_i33,
+                                                    .unit = if (is_loc and current_segment.exec_mode != .hub)
+                                                        .instructions
+                                                    else
+                                                        .bytes,
                                                 },
                                             });
                                             break :delta 0;
                                         };
 
-                                        const byte_delta_u20: u20 = @bitCast(byte_delta_i20);
+                                        const delta_u20: u20 = @bitCast(delta_i20);
 
                                         fill_extra_slot = meta.rel;
-                                        fill_extra_slot = meta.rel;
-                                        break :selector byte_delta_u20;
+                                        break :selector delta_u20;
                                     },
                                 },
 

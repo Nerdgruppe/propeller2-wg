@@ -1,0 +1,212 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? run: "no-interrupt-cog0"
+//? cog: 0
+//? const: level = 0
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 21
+//? post: cog[*].reg[saved] == 0
+//? post: cog[*].reg[return_state] == 0
+//? post: cog[*].reg[landed] == 0
+//? post: cog[*].reg[hub_pc] == 0
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "no-interrupt-cog7"
+//? cog: 7
+//? const: level = 0
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 21
+//? post: cog[*].reg[saved] == 0
+//? post: cog[*].reg[return_state] == 0
+//? post: cog[*].reg[landed] == 0
+//? post: cog[*].reg[hub_pc] == 0
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "int1-cog0"
+//? cog: 0
+//? const: level = 1
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 10
+//? post: cog[*].reg[saved] == 0xc0000404
+//? post: cog[*].reg[return_state] == 0xc0000404
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[hub_pc] == 0x40c
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "int1-cog7"
+//? cog: 7
+//? const: level = 1
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 10
+//? post: cog[*].reg[saved] == 0xc0000404
+//? post: cog[*].reg[return_state] == 0xc0000404
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[hub_pc] == 0x40c
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "int2-cog0"
+//? cog: 0
+//? const: level = 2
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 10
+//? post: cog[*].reg[saved] == 0xc0000404
+//? post: cog[*].reg[return_state] == 0xc0000404
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[hub_pc] == 0x40c
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "int2-cog7"
+//? cog: 7
+//? const: level = 2
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 10
+//? post: cog[*].reg[saved] == 0xc0000404
+//? post: cog[*].reg[return_state] == 0xc0000404
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[hub_pc] == 0x40c
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "int3-cog0"
+//? cog: 0
+//? const: level = 3
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 10
+//? post: cog[*].reg[saved] == 0xc0000404
+//? post: cog[*].reg[return_state] == 0xc0000404
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[hub_pc] == 0x40c
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "int3-cog7"
+//? cog: 7
+//? const: level = 3
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 10
+//? post: cog[*].reg[saved] == 0xc0000404
+//? post: cog[*].reg[return_state] == 0xc0000404
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[hub_pc] == 0x40c
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+
+                // Run a finite S-port chain beyond local PC $3FF. With no interrupt it finishes
+                // locally; an unmodified RETIx to saved PC $404 instead runs hub RAM at $404.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+    // Install seven cog instructions and the two final LUT instructions.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(511)
+
+                // Deliver CT1 while logical PC is $404; keep setup and launch timing identical.
+                STALLI
+.if level <= 1
+                MOV     IJMP1,          vector
+                SETINT1 0
+.elif   level == 2
+                MOV     IJMP2,          vector
+                SETINT2 0
+.else
+                MOV     IJMP3,          vector
+                SETINT3 0
+.endif
+                GETCT   timer
+                ADD     timer,          128
+                ADDCT2  timer,          0
+                ADD     timer,          20
+                ADDCT1  timer,          0
+.if level == 0
+                SETINT1 0
+                NIXINT1
+.elif   level == 1
+                SETINT1 EVENT_CT1
+                NIXINT1
+.elif   level == 2
+                SETINT2 EVENT_CT1
+                NIXINT2
+.else
+                SETINT3 EVENT_CT1
+                NIXINT3
+.endif
+                WAITCT2
+                ALLOWI
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+    // Check the actual return register as well as the ISR's saved copy.
+.if level == 1
+                MOV     return_state,   IRET1
+.elif   level == 2
+                MOV     return_state,   IRET2
+.elif   level == 3
+                MOV     return_state,   IRET3
+.endif
+                JMP     nrel(_end)
+isr:
+    // Disable the event source, copy IRETx, and return without modifying it.
+.if level == 1
+                SETINT1 0
+                MOV     saved,  IRET1
+                RETI1
+.elif   level == 2
+                SETINT2 0
+                MOV     saved,  IRET2
+                RETI2
+.else
+                SETINT3 0
+                MOV     saved,  IRET3
+                RETI3
+.endif
+var vector:     LONG    pcaddr(isr)
+var word:       LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var hits:       LONG    0
+var saved:      LONG    0
+var return_state:
+                LONG    0
+var landed:     LONG    0
+var hub_pc:     LONG    0
+
+.cogexec    0x3000, 0
+cog_template:
+    // Each immediate S selects the next physical cog register after overflow.
+                ADD     hits,   1
+                ADD     hits,   2
+                ADD     hits,   3
+                ADD     hits,   4
+                ADD     hits,   5
+                ADD     hits,   6
+                JMP     nrel(done)
+.lutexec    0x3100, 0x3fe
+tail_template:
+    // Sequential execution crosses $3FF without changing the execution mode.
+                NOP
+                NOP
+.hubexec    0x404
+                // These instructions are reachable only when RETIx selects hub execution.
+                MOV     landed, 1
+                LOC     PB,     hub_after
+hub_after:
+                MOV     hub_pc, PB
+                JMP     nrel(done)
+

@@ -1,0 +1,366 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? run: "cog0-lut1-kind4"
+//? cog: 0
+//? const: in_lut = 1
+//? const: kind = 4
+//? post: cog[*].reg[count] == 0
+//? post: cog[*].reg[elapsed] == 16
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 0
+//? post: cog[*].reg[next_stack] == 0
+//? post: cog[*].reg[last_pa] == 0
+//? post: cog[*].reg[last_pb] == 16385
+//? run: "cog0-lut1-kind5"
+//? cog: 0
+//? const: in_lut = 1
+//? const: kind = 5
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[elapsed] == 35
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16389
+//? run: "cog0-lut1-kind2"
+//? cog: 0
+//? const: in_lut = 1
+//? const: kind = 2
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut1-kind4"
+//? cog: 7
+//? const: in_lut = 1
+//? const: kind = 4
+//? post: cog[*].reg[count] == 0
+//? post: cog[*].reg[elapsed] == 16
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 0
+//? post: cog[*].reg[next_stack] == 0
+//? post: cog[*].reg[last_pa] == 0
+//? post: cog[*].reg[last_pb] == 16385
+//? run: "cog7-lut0-kind5"
+//? cog: 7
+//? const: in_lut = 0
+//? const: kind = 5
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[elapsed] == 35
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16389
+//? run: "cog0-lut0-kind1"
+//? cog: 0
+//? const: in_lut = 0
+//? const: kind = 1
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut1-kind1"
+//? cog: 7
+//? const: in_lut = 1
+//? const: kind = 1
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut1-kind2"
+//? cog: 7
+//? const: in_lut = 1
+//? const: kind = 2
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog0-lut0-kind5"
+//? cog: 0
+//? const: in_lut = 0
+//? const: kind = 5
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[elapsed] == 35
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16389
+//? run: "cog0-lut1-kind0"
+//? cog: 0
+//? const: in_lut = 1
+//? const: kind = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 34
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut1-kind0"
+//? cog: 7
+//? const: in_lut = 1
+//? const: kind = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 34
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog0-lut0-kind2"
+//? cog: 0
+//? const: in_lut = 0
+//? const: kind = 2
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog0-lut1-kind3"
+//? cog: 0
+//? const: in_lut = 1
+//? const: kind = 3
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 76
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 268435456
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog0-lut0-kind0"
+//? cog: 0
+//? const: in_lut = 0
+//? const: kind = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 34
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut0-kind2"
+//? cog: 7
+//? const: in_lut = 0
+//? const: kind = 2
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut1-kind3"
+//? cog: 7
+//? const: in_lut = 1
+//? const: kind = 3
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 76
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 268435456
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut0-kind1"
+//? cog: 7
+//? const: in_lut = 0
+//? const: kind = 1
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut0-kind4"
+//? cog: 7
+//? const: in_lut = 0
+//? const: kind = 4
+//? post: cog[*].reg[count] == 0
+//? post: cog[*].reg[elapsed] == 16
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 0
+//? post: cog[*].reg[next_stack] == 0
+//? post: cog[*].reg[last_pa] == 0
+//? post: cog[*].reg[last_pb] == 16385
+//? run: "cog0-lut0-kind4"
+//? cog: 0
+//? const: in_lut = 0
+//? const: kind = 4
+//? post: cog[*].reg[count] == 0
+//? post: cog[*].reg[elapsed] == 16
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 0
+//? post: cog[*].reg[next_stack] == 0
+//? post: cog[*].reg[last_pa] == 0
+//? post: cog[*].reg[last_pb] == 16385
+//? run: "cog7-lut0-kind0"
+//? cog: 7
+//? const: in_lut = 0
+//? const: kind = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 34
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog0-lut0-kind3"
+//? cog: 0
+//? const: in_lut = 0
+//? const: kind = 3
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 76
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 268435456
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut0-kind3"
+//? cog: 7
+//? const: in_lut = 0
+//? const: kind = 3
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 76
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 268435456
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 9
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+//? run: "cog7-lut1-kind5"
+//? cog: 7
+//? const: in_lut = 1
+//? const: kind = 5
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[elapsed] == 35
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16389
+//? run: "cog0-lut1-kind1"
+//? cog: 0
+//? const: in_lut = 1
+//? const: kind = 1
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[elapsed] == 40
+//? post: cog[*].reg[bad] == 0
+//? post: cog[*].reg[depth] == 0
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[next_stack] == 12
+//? post: cog[*].reg[last_pa] == 1
+//? post: cog[*].reg[last_pb] == 16388
+
+                // Load LUT handlers above the 256-entry bytecode table when requested.
+.if in_lut
+                SETQ2   31
+                RDLONG  register(0x180),    aug(hubaddr(handler))
+.endif
+                WRLUT   entry,              0
+                WRLUT   nrel(finish),       1
+                RDFAST  0,                  aug(hubaddr(bytecodes))
+                PUSH    nrel(finish)
+                PUSH    0x1ff
+                GETCT   start
+    return      SETQ    0
+finish:
+                GETCT   elapsed
+                MOV     last_pa,    PA
+                MOV     last_pb,    PB
+.if kind != 4
+                POP     stack_out
+                POP     next_stack
+.endif
+                SUB     elapsed,    start
+                JMP     nrel(_end)
+var count:      LONG    0
+var elapsed:    LONG    0
+var start:      LONG    0
+var bad:        LONG    0
+var depth:      LONG    0
+var stack_out:  LONG    0
+var next_stack: LONG    0
+var last_pa:    LONG    0
+var last_pb:    LONG    0
+var marker:     LONG    0
+var new_stream: LONG    hubaddr(terminator)
+var discarded:  LONG    0
+.if kind == 2
+var entry:      LONG    pcaddr(handler) | (0x1a << 10)
+.elif   kind == 3
+var entry:      LONG    pcaddr(handler) | (0x80 << 10)
+.else
+var entry:      LONG    pcaddr(handler)
+.endif
+.if in_lut
+.lutexec    0x3800, 0x380
+.endif
+handler:
+                // Exercise retained sentinel returns, trailing skip cancellation, calls, and explicit POP escape.
+.if kind == 0
+    return      ADD     count,  1
+.elif   kind == 1
+                ADD     count,  1
+                RET
+.elif   kind == 2
+                ADD     count,  1
+                ADD     bad,    1
+    return      MOV     marker, PA
+.elif   kind == 3
+                CALL    nrel(sub)
+    return      ADD     count,  1
+.elif   kind == 4
+                POP     discarded
+                RET
+.else
+                ADD     count,  1
+    return      RDFAST  0,      new_stream
+.endif
+                ADD     bad,    2
+                ADD     bad,    4
+sub:
+                GETBRK  depth                   :wc
+                AND     depth,  aug(0xfe000000)
+                RET
+.hubexec    0x4000
+bytecodes:      BYTE    0,  0,  0,  1
+terminator:     BYTE    1,  0,  0,  0
+

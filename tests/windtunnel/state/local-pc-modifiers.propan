@@ -1,0 +1,212 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 3000
+                //? run: "kind0-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: kind = 0
+                //? run: "kind0-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: kind = 0
+                //? run: "kind1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 0
+                //? const: kind = 1
+                //? run: "kind1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 7
+                //? const: kind = 1
+                //? run: "kind2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x202
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 0
+                //? const: kind = 2
+                //? run: "kind2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x202
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 7
+                //? const: kind = 2
+                //? run: "kind3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0xfb207234
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 0
+                //? const: kind = 3
+                //? run: "kind3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0xfb207234
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 7
+                //? const: kind = 3
+                //? run: "kind4-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 0
+                //? const: kind = 4
+                //? run: "kind4-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 7
+                //? const: kind = 4
+                //? run: "kind5-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 0
+                //? const: kind = 5
+                //? run: "kind5-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 7
+                //? const: kind = 5
+                // Separate effective S addressing from D alteration, immediate values, augmentation and cancellation.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(511)
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+hit1:
+                MOV     landed, 1
+                JMP     nrel(done)
+hit2:
+                MOV     landed, 2
+                JMP     nrel(done)
+hit3:
+                MOV     landed, 3
+                JMP     nrel(done)
+hit4:
+                MOV     landed, 4
+                JMP     nrel(done)
+hit5:
+                MOV     landed, 5
+                JMP     nrel(done)
+hit6:
+                MOV     landed, 6
+                JMP     nrel(done)
+var alternate:  LONG    3
+var landed:     LONG    0
+var target1:    LONG    pcaddr(hit1)
+var target2:    LONG    pcaddr(hit2)
+var target3:    LONG    pcaddr(hit3)
+var target4:    LONG    pcaddr(hit4)
+var target5:    LONG    pcaddr(hit5)
+var target6:    LONG    pcaddr(hit6)
+var link:       LONG    0
+var target:     LONG    pcaddr(done)
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:
+                // These words are loaded into the physical cog instruction slots above.
+                ADD     hits,   1
+                CALLD   link,   target1
+                CALLD   link,   target2
+                CALLD   link,   target3
+                CALLD   link,   target4
+                CALLD   link,   target5
+                CALLD   link,   target6
+.lutexec    0x3100, 0x3fe
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+.if kind == 0
+                ALTS    alternate,  0
+.elif   kind == 1
+                ALTD    alternate,  0
+.elif   kind == 2
+                AUGS    512
+.else
+                NOP
+.endif
+.if kind == 3
+                ADD     hits,       register(2)
+.elif   kind == 4
+    if(Z)       ADD     hits,       2
+.else
+                ADD     hits,       2
+.endif
+

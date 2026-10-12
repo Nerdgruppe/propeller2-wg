@@ -938,7 +938,7 @@ fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
             const field = comptime decode.instruction_type.get(opc);
             const params = @field(enc, field);
 
-            logger.info("0x{X:0>5}: 0x{X:0>8} {t}: {f}", .{ state.pc, state.instr, opc, params });
+            // logger.debug("0x{X:0>5}: 0x{X:0>8} {t}: {f}", .{ state.pc, state.instr, opc, params });
 
             return @field(@This(), @tagName(opc))(cog, params);
         },
@@ -1278,16 +1278,14 @@ pub fn rep(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=Pop
 pub fn ret(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:ret
-    const value = cog.pop();
-    cog.return_skip();
+    const value = cog.stack[0];
     if (args.c_mod == .write) {
         cog.c = value >> 31 != 0;
     }
     if (args.z_mod == .write) {
         cog.z = value & 0x4000_0000 != 0;
     }
-    cog.jump(@truncate(value));
-    return .next;
+    return cog.return_stack();
     // codegen: end:ret
 }
 
@@ -3651,7 +3649,8 @@ pub fn setluts(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=Per W, stack=None
 pub fn loc(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
     // codegen: begin:loc
-    const value = branchA(cog, .{ .cond = args.cond, .relative = args.relative, .address = args.address, ._mask1 = 0 });
+    // LOC adds its A field in PC units, including in cog/LUT execution.
+    const value = if (args.relative) cog.next_pc() +% args.address else args.address;
     cog.write_result(pointerReg(args.pointer), value);
     return .next;
     // codegen: end:loc

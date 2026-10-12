@@ -31,6 +31,7 @@ pub const regression_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/sema/direct-augmentation.propan",
     "tests/propan/sema/spin2-dotted-local-labels.propan",
     "tests/propan/sema/nop-encoding.propan",
+    "tests/propan/sema/loc-addresses.propan",
     "tests/propan/sema/spin2-register-origins.propan",
     "tests/propan/sema/spin2-dotted-constants.propan",
     "tests/propan/sema/backslash-escapes.propan",

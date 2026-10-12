@@ -10,7 +10,6 @@
 
 - Collection of all known CPU hazards
 - Determine explicit behavior of the "hidden" registers behind INA/INB/...
-- Determine how the XBYTE mode is actually implemented
 - What happens with `AUGD; MODCZ`, `ALTD; MODCZ`, `ALTR; MODCZ`
 - SETQ2 clarifications: document which instructions recognize SETQ versus SETQ2,
   how long their prefix state lasts, and which operations preserve or replace Q.
@@ -59,10 +58,6 @@
 - Plan to allow access to local labels somehow?
 - Enable "-Dx=y" on the CLI
 - Fully define the compatibility matrix for implicit jumping/referencing between segments.
-
-### Priority Fixes / Tasks
-
-- *empty*
 
 ### New Features
 
@@ -118,16 +113,19 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 
 ## Windtunnel
 
+### Local PC Overflow
+
+- **Status: implemented and hardware validated.**
+- Local execution preserves the full twenty-bit PC. Bit 9 selects LUT; an
+  overflowing cog fetch uses the preceding instruction's effective S read port.
+- Eleven `local-pc-*` fixtures cover 207 cases with three independent matching
+  hardware runs, including LOC, CALLD/returns, REP/SKIP/EXECF, higher carries,
+  complete rollover, interrupts, special registers and simultaneous RAM writes.
+- The retained crossing REP mismatch now matches silicon's one addition.
+  LOC relative offsets were also corrected to use unscaled PC units.
+- [Measured rules and replay](data/timing-data/local-pc-overflow/README.md).
+
 ### Known Bugs
-
-#### Cog/LUT Execution Pipeline
-
-- **Status: partial; local-PC overflow is a known, accepted bug.**
-- Sequential execution past `$3FF` currently wraps the whole PC; hardware retains
-  upper bits. Logical PC, physical fetch and operand addressing remain unresolved.
-- Investigation aid: saved-PC stamps and distinguishable instruction/operand
-  signatures using the retained [overflow probes](data/timing-data/local-pc-overflow/README.md).
-  Shares the boundary issue described under REP below.
 
 #### Shared Random Generator
 
@@ -139,28 +137,6 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Investigation aid if revisited: a reproducible seed/reset anchor or stronger
   state-recovery constraints. Existing seed-hammer experiments did not resolve
   the mapping; captures and analysis are retained in [data/random](data/random/).
-
-#### REP Hardware Repeat
-
-- **Status: partial; local-PC overflow is a known, accepted bug.**
-- Ordinary REP works. The unresolved case is a body crossing the last LUT
-  address, `$3FF`. The minimal four-instruction layout is:
-
-  ```text
-  LUT $3FE: REP 2, 3
-  LUT $3FF: ADD value, 1
-  COG $000: ADD value, 1
-  COG $001: JMP absolute_exit
-  ```
-
-  With `value` initially zero, Windtunnel produces 6 and hardware repeatedly
-  produces 1; this is a final register value, not an instruction-count trace.
-  A separate NOP-at-$3FF/CALLD-at-cog-zero probe saves return PC `$401` on
-  hardware, proving that the current whole-PC wrap to `$000` loses upper bits.
-  Determine logical PC retention, physical local fetch/operand addressing and
-  REP end/rewind behavior before changing the model. A REP ending at `$3FF`
-  already passes; hub wrap is separately implemented and validated. Retained
-  probes and captures: [local-PC overflow](data/timing-data/local-pc-overflow/README.md).
 
 ### Random Task Collection
 
@@ -214,15 +190,6 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
   hysteresis, comparators and analog routing remain unmodeled.
 - Investigation aid if revisited: known loads, voltage sweeps and oscilloscope
   measurements. I/O propagation-delay corrections remain outside current scope.
-
-### XBYTE Bytecode Executor
-
-- **Status: missing.**
-- Implement phantom return-to-$1FF handling, retained stack entry, bytecode LUT
-  dispatch and the six-clock execution sequence; complete related `GETBRK` fields.
-- Investigation aid: minimal bytecode programs with register signatures and CT
-  timestamps, sweeping dispatch configuration, returns, skipping and interrupts.
-  No external stimuli required.
 
 ### Streamer
 

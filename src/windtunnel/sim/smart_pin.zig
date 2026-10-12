@@ -30,12 +30,17 @@ pub const DataSource = union(enum) {
 
 pub const DataSink = union(enum) {
     writer: *std.Io.Writer,
+    live_writer: *std.Io.Writer,
     callback: struct { context: *anyopaque, write: *const fn (*anyopaque, u32) anyerror!void },
 
     /// Deliver a word to the endpoint, truncating writer-backed words to a byte.
     pub fn write(sink: *DataSink, value: u32) anyerror!void {
         switch (sink.*) {
             .writer => |writer| try writer.writeByte(@truncate(value)),
+            .live_writer => |writer| {
+                try writer.writeByte(@truncate(value));
+                try writer.flush();
+            },
             .callback => |cb| try cb.write(cb.context, value),
         }
     }

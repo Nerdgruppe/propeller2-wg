@@ -1,0 +1,165 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 10000
+                //? max-cycles: 3000000
+                //? run: "source0"
+                //? post: cog[*].reg[link] == 0x2
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[stamp_c] == 0x3108
+                //? post: cog[*].reg[elapsed] == 0x1ff816
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 0
+                //? run: "source1"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[stamp_c] == 0x3108
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 1
+                //? run: "source2"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[stamp_c] == 0x3108
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x2
+                //? cog: 0
+                //? const: source = 2
+                //? run: "source3"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[stamp_c] == 0x3108
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: source = 3
+                //? run: "source4"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x4
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[stamp_c] == 0x3108
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: source = 4
+                //? run: "source5"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x5
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[stamp_c] == 0x3108
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x5
+                //? cog: 0
+                //? const: source = 5
+                //? run: "source6"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x6
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x0
+                //? post: cog[*].reg[stamp_c] == 0x3108
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x6
+                //? cog: 0
+                //? const: source = 6
+                // Give each S-selected register a distinct CALLD destination; source zero runs through full rollover.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                SETQ2   511
+                RDLONG  register(0),    aug(hubaddr(local_lut_image))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(511)
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+hit1:
+                MOV     landed, 1
+                JMP     nrel(done)
+hit2:
+                MOV     landed, 2
+                JMP     nrel(done)
+hit3:
+                MOV     landed, 3
+                JMP     nrel(done)
+hit4:
+                MOV     landed, 4
+                JMP     nrel(done)
+hit5:
+                MOV     landed, 5
+                JMP     nrel(done)
+hit6:
+                MOV     landed, 6
+                JMP     nrel(done)
+var landed:     LONG    0
+var target1:    LONG    pcaddr(hit1)
+var target2:    LONG    pcaddr(hit2)
+var target3:    LONG    pcaddr(hit3)
+var target4:    LONG    pcaddr(hit4)
+var target5:    LONG    pcaddr(hit5)
+var target6:    LONG    pcaddr(hit6)
+var link:       LONG    0
+var target:     LONG    pcaddr(done)
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:
+                // These words are loaded into the physical cog instruction slots above.
+                ADD     hits,   source
+                CALLD   link,   target1
+                CALLD   link,   target2
+                CALLD   link,   target3
+                CALLD   link,   target4
+                CALLD   link,   target5
+                CALLD   link,   target6
+.lutexec    0x3100, 0x3fe
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+                NOP
+                NOP
+
+
+.import "../local-pc-lut.propan"
+

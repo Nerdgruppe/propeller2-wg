@@ -201,29 +201,49 @@ fn validateLayout(module: propan.Module, image: []const u8, stop: u20) !void {
 fn validateDispatch(module: propan.Module, origin: u32, instruction: Cog.PipelineState) !void {
     if (instruction.interrupt != null)
         return; // Internal CALLD entries do not belong to the assembled image.
-    if (instruction.pc == 0)
+    const fetch_pc = instruction.local_address orelse instruction.pc;
+    if (fetch_pc == 0)
         return; // The one-word trampoline belongs to the scaffold.
-    if (instruction.pc >= 0x200 and instruction.pc < 0x400) {
+    if (instruction.debug_rom)
+        return error.ReservedExecution;
+    if (fetch_pc < 504 and isCode(module, origin + @as(u32, fetch_pc) * 4, 4))
+        return;
+    // Loaded cog/LUT images can supply code at an operand-selected physical address.
+    for (module.line_data) |line| {
+        const pc = line.pc orelse continue;
+        if (line.kind != .code or pc > fetch_pc or fetch_pc >= pc + line.length / 4)
+            continue;
+        for (module.segments) |segment| {
+            const matching_mode = if (fetch_pc >= 0x200)
+                segment.exec_mode == .lut
+            else
+                segment.exec_mode == .cog;
+            if (matching_mode and
+                line.offset >= segment.hub_offset and
+                line.offset < segment.hub_offset + segment.data.len)
+                return;
+        }
+    }
+    // Special-register operands can lie outside the assembler's executable cog range. Require their fetched
+    // value to be an instruction emitted as code elsewhere in the fixture.
+    if (instruction.pc >= 0x400 and fetch_pc >= 504 and fetch_pc < 512) {
         for (module.line_data) |line| {
-            const pc = line.pc orelse continue;
-            if (line.kind != .code or
-                pc < 0x200 or
-                pc > instruction.pc or
-                instruction.pc >= pc + line.length / 4)
+            if (line.kind != .code)
                 continue;
             for (module.segments) |segment| {
-                if (segment.exec_mode == .lut and
-                    line.offset >= segment.hub_offset and
-                    line.offset < segment.hub_offset + segment.data.len)
-                    return;
+                if (line.offset < segment.hub_offset or
+                    line.offset + line.length > segment.hub_offset + segment.data.len)
+                    continue;
+                var offset = line.offset - segment.hub_offset;
+                const end = offset + line.length;
+                while (offset + 4 <= end) : (offset += 4) {
+                    if (std.mem.readInt(u32, segment.data[offset..][0..4], .little) == instruction.instr)
+                        return;
+                }
             }
         }
-        return error.ExecutingData;
     }
-    if (instruction.pc >= 504)
-        return error.ReservedExecution;
-    if (!isCode(module, origin + @as(u32, instruction.pc) * 4, 4))
-        return error.ExecutingData;
+    return error.ExecutingData;
 }
 
 /// Check that every byte of an observation was emitted by a segment.
@@ -468,7 +488,9 @@ fn runOne(
             return error.SimulatorTimeout;
         if (stop) |pc| {
             if (hub.cogs[list.cog].pipeline[3]) |instruction| {
-                if (!reached and instruction.interrupt == null and instruction.pc == pc) {
+                if (!reached and instruction.interrupt == null and instruction.pc == pc and
+                    (pc < 0x400 or instruction.local_address == null))
+                {
                     reached = true;
                     for (observations.items) |o| {
                         try read(hub, list.cog, o, &captured.writer);

@@ -737,10 +737,185 @@ paths took 24 clocks from the common GETCT start to GETCT at the destination
 handler, and all 56 Windtunnel oracle comparisons passed. The probe also checks
 cog 0 and cog 7 for representative signed offsets.
 
-The separate [local-PC overflow probes](../data/timing-data/local-pc-overflow/README.md)
-remain explicitly open. A CALLD after sequential local fetch crosses $3FF saves
-$401, proving that silicon retains upper PC bits which Windtunnel currently
-masks away. A REP body spanning that boundary also differs from the simulator.
-The passing matrix covers bodies ending at $3FF, not bodies spanning this
-unresolved overflow. No general overflow fetch/timing rule is claimed from the
-retained characterization captures.
+The original local-PC overflow mismatch was subsequently recovered and fixed;
+see [the overflow measurements](#local-pc-overflow-and-loc-2026-10-12).
+
+## XBYTE bytecode execution (2026-10-12)
+
+Measured with the local P2AAS board. The six `xbyte-*.propan` fixtures in
+`tests/windtunnel/state/` cover 104 runs. The lookup matrix checks every one of
+512 nine-bit mode values against every bytecode, for 131,072 dispatches, spread
+across all eight cogs. Its independently calculated digests include the selected
+LUT address and C/Z. Each dispatch also checks PA, PB and the GETBRK mode field.
+[Measurement summaries and replay instructions](../data/timing-data/xbyte/README.md)
+are retained with the fixtures.
+
+A hardware-stack RET or completed `_RET_` operation with the `$001FF` sentinel
+starts XBYTE and retains that stack entry. POP consumes the sentinel normally;
+an ordinary nested CALL/RET uses its own return entry. XBYTE replaces the prior
+skip pattern and its call depth with a fresh fast-skip context. The LUT long
+supplies a ten-bit cog/LUT branch target and a 22-bit SKIPF pattern. Trailing
+pattern bits are canceled on the next bytecode dispatch. Cog and LUT handlers
+produce the same observed results and timing.
+
+Mode lookup rules, with `m` the nine-bit mode and `b` the bytecode:
+
+| `m[3:2]` | Index width | Selection and base |
+| --- | --- | --- |
+| `00` | 8, with optional compression | Bank is `m[8]`. Let `t=m[7:4]` and `g=b[7:4]`. For `t=0` or `g<t`, use `b`; otherwise use `(t<<4) + g - t`. Bit 1 is ignored. |
+| `01` | 7 if bit 4 is clear, otherwise 6 | Bit 1 selects the highest or lowest bits of `b`; the remaining upper address bits come from `m`. |
+| `10` | 5 | Bit 1 selects the highest or lowest five bits; upper address bits come from `m`. |
+| `11` | 4 | Bit 1 selects the highest or lowest four bits; upper address bits come from `m`. |
+
+Bit 1 selects the highest bits when set. Bit 0 enables writing LUT-address bit 1
+to C and bit 0 to Z; otherwise both flags retain their prior values. PA always
+receives the complete zero-extended bytecode, including bits not used for lookup.
+The duplicated five-bit lower/upper selector in the shipped mode table is a
+text error: modes with low nibble `$8/$9` select the low five bits, and `$A/$B`
+select the high five bits. Six-bit selection uses low five mode bits `$14..$17`.
+
+`_RET_ SETQ` establishes the persistent mode. `_RET_ SETQ2` selects a mode for
+one dispatch, then a subsequent RET/_RET_ restores the persistent mode. GETBRK
+WC reports the effective mode in bits 24:16, including the temporary mode while
+its handler runs; bit 25 reports the stack sentinel. Mode operands are masked
+to nine bits. An ordinary SETQ followed by a separate RET changes Q without
+changing the persistent mode. The phantom lookup does not replace Q with the
+LUT long, unlike an ordinary RDLUT.
+
+The measured overhead is six clocks. A single `_RET_ ADD` handler repeats every
+eight clocks; ADD followed by an explicit RET repeats every ten. PA and PB are
+available to the first handler instruction; PB is the FIFO pointer after the
+byte read. An empty FIFO dispatches byte zero without advancing PB or waiting
+for a refill. The nonblocking-RDFAST probe checks both sides of the first-response
+boundary for cogs 0 and 7. Blocking `_RET_ RDFAST` redirects the byte stream and
+starts the next dispatch only after setup completes.
+
+A CT1 phase sweep checks ordinary interrupt entry around dispatch and within
+multi-instruction handlers, including saved return PCs and ISR snapshots of PA,
+PB and GETBRK. The phantom sequence prevents interrupt injection until its branch
+completes. Local PC overflow has separate coverage below; interactions with the
+absent streamer remain outside this evidence. Reset cancellation during each phantom
+phase and direct debug-ROM fetches are covered by simulator unit tests.
+
+## Local PC overflow and LOC (2026-10-12)
+
+Measured through the local P2AAS board, using LOC for non-branching observations,
+CALLD for saved return addresses, and timed CT1 interrupts for long instruction
+streams. Eleven registered `local-pc-*` fixtures provide 207 cases. Each case has
+two independent retained reporter captures and a third independent oracle
+comparison of its register signatures and CT differences. The captures and replay
+instructions are in [local-pc-overflow](../data/timing-data/local-pc-overflow/README.md).
+
+### Logical PC and instruction source
+
+Sequential cog/LUT execution increments the full **20-bit PC by one**. Neither
+crossing `$3FF` nor a higher carry changes execution mode. Twenty-bit rollover
+returns the PC to zero. The instruction source is a separate selection:
+
+| PC condition | Instruction source |
+| --- | --- |
+| Bit 9 set, including above `$3FF` | LUT at `PC[8:0]` |
+| PC below `$200` | Cog instruction address `PC[8:0]`, with the normal execute-only debug-ROM overlay at `$1F8..$1FF` |
+| PC at least `$400`, bit 9 clear | Architectural cog S read port of the preceding instruction |
+
+The last selection follows the preceding instruction's nine-bit S **address**,
+including immediate operands and conditionally canceled instructions. ALTS changes
+that address; ALTD changes only D. AUGS changes the immediate value without changing
+the fetch address. Thus NOP at `$3FF` selects cog register zero at logical PC `$400`;
+`ADD value,#3` there selects cog register 3 for the next instruction. A CALLD fetched
+at logical PC `$401` saves `$402`, regardless of its physical source register.
+
+The S-port path reads architectural special registers. Controlled branches in
+PA/PB/PTRA/PTRB/OUTA/OUTB select the architectural value rather than a different
+instruction installed in the underlying tail RAM. Selecting PA/PB through this
+port does not execute debug ROM. INA/INB are live pin inputs; uncontrolled pin
+levels are not asserted as fixed instruction words in these fixtures.
+
+A same-clock cog RAM result write and overflow S-port fetch returns the **old RAM
+word**. A probe copies an ADD into cog register 1, then fetches register 1 on the
+write clock; the original NOP executes before the new ADD becomes visible. Timed
+interrupts check the resulting instruction counts on cogs 0 and 7. This evidence
+is specific to the overflow read-port path; it does not establish a universal
+ordinary instruction-fetch collision value for every physical chip.
+
+Higher carries retain the same selection. With an ADD/NOP S-port loop and an
+explicitly initialized all-NOP LUT, CT1 captures at PC `$800`, `$C00`, `$8400`,
+`$80400` and `$FFFFE` expose the intervening LUT fetch windows. A separate probe
+runs through the entire twenty-bit rollover, then CALLD from cog register 1 saves
+`$002`; its measured GETCT difference is **2,095,126 clocks**.
+
+### REP, skip, branches and interrupts
+
+REP retains its existing countdown and local rewind behavior. Its prepared
+fallthrough can differ from the executing instruction's PC. Sixty LOC cases
+cover lengths 0..4, counts 1..3, and paths through either a direct S-selected
+CALLD or a non-branching LOC at cog register zero, on cogs 0 and 7.
+
+The original retained `REP 2,3` at `$3FE`, `ADD value,#1` at `$3FF` mismatch now
+produces **one**, matching silicon. That ADD selects cog register 1, which holds
+the exit branch. It does not first execute the ADD at cog register zero. The
+exit branch cancels repetition. Changing REP's countdown alone would give the
+wrong explanation and would not fix ordinary overflow dispatch.
+
+SKIPF increments the full logical PC while fast stepping across the boundary;
+SKIP cancellation and EXECF use the same physical source selection. Thirty-six
+cases cover patterns 0, 1, 2, 3, 6 and 14. Absolute and relative CALLD, explicit
+RET and implicit return preserve the full saved/fallthrough PC. A branch or return
+then selects its normal target domain: targets below `$400` select local execution,
+and larger targets select hub execution. RETI1 and RESI1 returning to a saved
+`$404` therefore execute the controlled hub instruction at `$404`, rather than
+continuing the overflow local stream.
+
+Interrupt entry records the full PC. CT1 phase probes check saved PC, LOC results,
+counts and clock differences; interrupt exit and FIFO refill follow the existing
+branch paths. The fixture harness validates physical local code ownership while
+keeping logical PCs in traces and exit checks. A local PC numerically equal to
+the reporter's hub address is not a fixture exit.
+
+### LOC displacement
+
+LOC adds the encoded twenty-bit A field **directly in PC units**, modulo twenty
+bits, in both local and hub execution. It does not apply JMP/CALLD's local
+arithmetic right shift by two. Eighteen raw-encoding cases check A values `$004`,
+`$204` and `$FFE04` (−508), in ordinary cog execution, at LUT `$3FF`, and at logical
+PC `$400`, on cogs 0 and 7. For example, `LOC PA` with relative A=`4` at `$3FF`
+produces `$404`, and at `$400` produces `$405`. Windtunnel's previous reuse of the
+branch displacement helper for LOC was corrected with this evidence.
+
+Propan now encodes relative LOC in execution-PC units separately from branch A
+displacements. A local `LOC PA,target` at PC zero, with target at PC two, emits
+`$FE900001`; the old `$FE900004` located PC five on hardware. The assembler fixture
+`tests/propan/sema/loc-addresses.propan` checks labels, numeric addresses, relocated
+cog/LUT segments, hub byte offsets and PIC selection. The original simulator
+measurement fixtures retain their raw LOC words to preserve the captured probes.
+
+### Interrupt return can change the execution domain
+
+The retained `local-pc-resume` measurements already show an unmodified RETI1 or
+RESI1 returning to hub `$404` after interrupting the overflow local stream on cogs
+0 and 7: two ADDs, saved PC `$404`, hub landing marker one, and 55 elapsed clocks.
+The original source never patches IRET1. The return branch chooses its execution
+domain from the saved numeric PC; the register does not preserve the old mode.
+
+`tests/windtunnel/state/local-pc-iret.propan` adds a finite reproduction with a
+no-interrupt control and INT1/INT2/INT3 on cogs 0 and 7. Two NOPs at LUT `$3FE..$3FF`
+enter a cog S-port chain at logical `$400`. Without interruption, six ADDs produce
+21 and exit locally. CT1 interrupts before local `$404`, after four ADDs produce
+10. The ISR copies the full IRETx (`$C0000404`, including C/Z), disables its event
+source, and executes RETIx without changing the return register. Hub `$404` sets
+a distinct marker and LOC observes hub PC `$40C`; both flags are restored and the
+original IRETx remains intact. All eight cases pass in simulation. Live hardware
+validation of this expanded fixture was unavailable in this session: the existing
+oracle probes failed with a transport error at `ws://localhost:12880/`. These new
+assertions are not additional silicon measurements.
+
+For future assembler hardening, local fallthrough across `$3FF` is hazardous even
+when the core stays in local execution: an interrupt or call can save a PC that a
+later return interprets as a hub byte address. Detecting only explicit local-to-hub
+branches would miss this path. The simulator preserves the behavior so a future
+diagnostic can be tested against a reproducible failure.
+
+These measurements cover the observable overflow paths above on the connected
+board. They do not claim every combination of ALTI substitution, missing streamer
+activity, or uncontrolled pin-driven instruction words, nor a board/revision-wide
+rule for unrelated RAM collision paths.

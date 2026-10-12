@@ -1,0 +1,4086 @@
+{
+  "date": "2026-10-12",
+  "endpoint": "ws://localhost:12880/",
+  "description": "Two independent retained reporter captures per run; a third independent --oracle run checks every listed observation and simulator result. Hardware frame digests cover the complete reporter snapshot, which includes unasserted absolute counter/setup state.",
+  "runs": [
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind0-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "c0f947f82c960dbbff38f02a4251cd7a2c884a3321c3f72e8f2f335c2760f068",
+        "e8cc1e209bda41488e7b4c036396baa1e7fb04330e073fff848af0add3b4e090"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind0-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "faaf105cf0f1d266b566bf6ef21c1ab7141b8b259b808e7c482bede64289d559",
+        "48f973798aca010386aeb5e8aadaadc49db38a2a7f276ea7e4849fe3b31ab732"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 1025,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "b07b221cafaf3e0e76867f2364f5d87eb952f0792d20bc84fc0449f39c3fb9be",
+        "399771e2a9e230c762be26db85f85d51520b297a0fb9d64f3b40a22bc38b7407"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 1025,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "fa3e4550f3c799c466dd981f2acbea6955567c36a5f4e7edaa4e5d21a738dfaf",
+        "1ec0b80727818e944278ff9c4757f232d7bca77380824d9032ac056d3532cd58"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 1025,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "8937994869e76d8a9c84f3e25de0b254afa13b79d5c7369b78a68ae1f35c069f",
+        "e16de0a8c2609f8a43ba3f96cc65ba32598ba731e1a6f1447c47f9af6d6bb1fa"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 1025,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "f886bd5b579d067a95993c0b25e938bb1ffb320cf67ab1bc1f7a3fbaa441c8e6",
+        "4364e6c1c9aaa7c0080acf1434f2e3bedc5493f8b42625890a4c35bbb1e76e42"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "5cb7a61d77dc314cbf7973d77b8ab9f4282ee96150295e778dab98e5f3aea0f2",
+        "6ddacdf2b6bad69981df3a51a9a13bffffb4410cd2d05dd8565ad551b22d36f7"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "6851e5c95a19c73ef44479bb85c7f67484b45e99f5fa3c964bdf59403f86d79d",
+        "ce98c0ec1e044f5a73bce1c4c6bff163a1444aa78118d3c8925bd8f8a6c696e7"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind4-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "34c0e22e76bbc9733965b7da00ae197a81fc18fb0d86793c844e6836e80629e3",
+        "bfd21ab01b5232707193659bba57b38f644c08c609f0971c2fd3dbc6d15fda2b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind4-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "af37ee7ea25b8426bd2ac408c9a310efa3b7369080a14dc93d556d70cbb8bf40",
+        "e545c36b517b1b7ddbbbcbe3a435ae203bc143ea45ea65da80535af9eb63757b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind5-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1025,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "b7ea346a7f963e82dfea3de284aea126df59796254e10cce8c123d984007cec7",
+        "731896897a49f9755a2cdbdff70a7f14e60438a2a199aa64cbcc29815374fecb"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-branches.propan",
+      "run": "kind5-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1025,
+        "elapsed": 14,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "f9785a182c51a5937d597d76832f31352b647f3057548b29ca4de253e3fea86c",
+        "6cf4353f7481826b4278d8a013797cf2367bf956ad31d880df53c0e20e621685"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase1048588-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 131072,
+        "stamp_a": 0,
+        "stamp_b": 524800,
+        "elapsed": 1048604,
+        "saved": 525312
+      },
+      "frame_sha256": [
+        "1f4c594224d257962f6cf68d2259f5930ebf36442b55511c3556f0ff999e9ead",
+        "617044a309b4ec113c4c7327296891300ec761294ef3cef4ea00c4117cf58f67"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase1048588-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 131072,
+        "stamp_a": 0,
+        "stamp_b": 524800,
+        "elapsed": 1048604,
+        "saved": 525312
+      },
+      "frame_sha256": [
+        "34fa0a18a23dfb33ddb1356878ddbc673bcd0fe07f18fd9a9dcb214883a3bee2",
+        "4c76c127153ab699e73364229c32a32ce27d2a9b02ee6a3fd7a86752e715e8a1"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase16-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 1026,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "8e587da4eeb05d7d5e759dcc7886381502e7b6b0dae8ead4f9162b8e3705be69",
+        "22cc22894a99b73ed4af5145ad767ef510cf565550b85beef30100566cb0b1fd"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase16-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 1026,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "7eb5fb55ec187e64f1aaefa132ae48c35e6f5e7d9367606ea22aac52e2d50891",
+        "5c26fa9385ea08427be56eb49cadd64bdb691eb504981a45c4c43bbc715418c3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase2060-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 256,
+        "stamp_a": 0,
+        "stamp_b": 1536,
+        "elapsed": 2076,
+        "saved": 2048
+      },
+      "frame_sha256": [
+        "02dd227f9489dc580b35ce743963420bb2207c39920370016d5517e64277ec6e",
+        "e79b8ceecd0b5073bec681731c2fadece31a2b1b32c4724708dff3240d6e8706"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase2060-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 256,
+        "stamp_a": 0,
+        "stamp_b": 1536,
+        "elapsed": 2076,
+        "saved": 2048
+      },
+      "frame_sha256": [
+        "0c2acd72ffae77312cb8eabdcc8abc6977999a22b2c178a85e2684748e0a73f7",
+        "7d5e91f27cd1f74c18d5573608f4ca94fd576abfdcb62f26d4d8a16d6e4f4c4d"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase2095112-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 261888,
+        "stamp_a": 0,
+        "stamp_b": 1048064,
+        "elapsed": 2095128,
+        "saved": 1048574
+      },
+      "frame_sha256": [
+        "731615a8b300536810a98e820f436a851fece273a3de4715a8c1c515e47a80e2",
+        "22a277a15a9a1d2299a675633df4461ebc139903396dd7151f09019c194b85b3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase2095112-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 261888,
+        "stamp_a": 0,
+        "stamp_b": 1048064,
+        "elapsed": 2095128,
+        "saved": 1048574
+      },
+      "frame_sha256": [
+        "49f74b8b189bcc1c5fa9b5e597a6aa72b1b564a654619fef3291d12cd1fe813a",
+        "d0a07840eaeb8a82633a83afc796c3da88da5f4d4865e3da70aa1b9a3ef98e7c"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase4108-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 512,
+        "stamp_a": 0,
+        "stamp_b": 2560,
+        "elapsed": 4124,
+        "saved": 3072
+      },
+      "frame_sha256": [
+        "9b678f47a7e7e1e4a17fbdcb08c15aca97b6da8b44cf68b8647814968eee39fa",
+        "95ea6f63e86493e20f68ac06062f8da9127c75dacffa6904d6e2032db47384fb"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase4108-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 512,
+        "stamp_a": 0,
+        "stamp_b": 2560,
+        "elapsed": 4124,
+        "saved": 3072
+      },
+      "frame_sha256": [
+        "7a816b4ec5d59f90db068ab27c4b22f767d2cdaa9c36523fe2693d46d92a420c",
+        "d3a6078e9e78c6d18856bf984446c2e8fb37088a0756e504d25e8af9d0593c73"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase65548-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 8192,
+        "stamp_a": 0,
+        "stamp_b": 33280,
+        "elapsed": 65564,
+        "saved": 33792
+      },
+      "frame_sha256": [
+        "96460ff2daba901d7d878278957e954659db2277c9aacd40646d5cb5d3e5e8bd",
+        "9af306ccb8ab0fd3d85d79c3dc22c8f74c8dc30ff4d5eeeb9a80f67902553de5"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-carries.propan",
+      "run": "phase65548-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "hits": 8192,
+        "stamp_a": 0,
+        "stamp_b": 33280,
+        "elapsed": 65564,
+        "saved": 33792
+      },
+      "frame_sha256": [
+        "9ff81269dafc01abcc76c7f02948d7a9610d4f76da531cb9dfaac9d082251a8c",
+        "71b3a473f32f9f9c7ecb9c7b18806994930274b57f1870aa208d7a3bf3c51653"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-fetch.propan",
+      "run": "source0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "link": 2,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 2095126,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "267b25337447a829d65c801a993b74194f15240a7b3d463dd41c71e376d4c1f2",
+        "5f9806da9e1e9fde5ae8c74fce5493413f49781e8e939872f47c704c46939dab"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-fetch.propan",
+      "run": "source1",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "link": 1026,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 22,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "7fceda9437d6d4ab36f44107e0b0ab53815f524b9b34a4a59c4ab39ad73fb990",
+        "59e278a04942c042ce8807a1096c165909f43ac2fcc43f4d2b789a34d0b8535e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-fetch.propan",
+      "run": "source2",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "link": 1026,
+        "hits": 2,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 22,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "f69ad813f147bd0bbd87fd453c4fbeccc69e5ea35fccbd490d8458cd50da7800",
+        "e8e8da5d1481ad49ed3c78c23f9d87cce1e2d6c38d234de7649add7234280cfd"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-fetch.propan",
+      "run": "source3",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "link": 1026,
+        "hits": 3,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 22,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "bd2395f866831dda3a9d41b5e0dd67e67d7f9bda17364cd9c99109afd7f386c4",
+        "94bdf5fa6bedf1d00495046b7acf50daec23119d4710bed75908e1a632631795"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-fetch.propan",
+      "run": "source4",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "link": 1026,
+        "hits": 4,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "6260c17baa862e382a2c6a17a9532e58af75859205fc3b8a8a8bf395790c8b0b",
+        "b12b2cd2f2b282fadb5930339ea47a54a636bf7c672ffd007ab49be642bbbf98"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-fetch.propan",
+      "run": "source5",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "link": 1026,
+        "hits": 5,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 22,
+        "landed": 5
+      },
+      "frame_sha256": [
+        "b99a6a74f1faacc7dcb8ed7bad9bb9d4f801316bf791f7a516ea4d6989f158d7",
+        "160007bcfae760548481e1ae8d1c5379740bef4d0538ab6e2085a76ce42f4a23"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-fetch.propan",
+      "run": "source6",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 511,
+        "link": 1026,
+        "hits": 6,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 22,
+        "landed": 6
+      },
+      "frame_sha256": [
+        "4abb8e2610a1318b225dbcb49898001b31271ce17a7016b770605047b56c8157",
+        "f3832c235df987a1a807b321590aa53a0c4eca25b8fea8b3748f529f7b66afaf"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind0-phase16",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "a98b398f52577affb66994849d3b43e5cf802bc6bbee12eb4c91fd38d294ffa6",
+        "adaaecd18f07ebb6b4ac18a569e24d6d1b3bb5d40504e22292e43667b48f4426"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind0-phase24",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 3,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 40,
+        "saved": 1030
+      },
+      "frame_sha256": [
+        "5eb7dbc6de08fb5d844072515324a4fbef724207b2d0122b9920a0e5eb88a8eb",
+        "5afd70ca32c25669afb44b96e1469545d557ff72357b4a4c3345dc34a32b14df"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind0-phase32",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 5,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 48,
+        "saved": 1034
+      },
+      "frame_sha256": [
+        "45c92518cd57e26f2952c9ae87505a4cd8a69648604a3f5510ca857f29d6c647",
+        "ee188fa2ff08057c4028bba4a01b33208c189559304ecafd959265c83c4adf73"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind0-phase48",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 9,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 64,
+        "saved": 1042
+      },
+      "frame_sha256": [
+        "711066afba855e688ffc94f5f1660fd1e7a5172bc1b5b12561ca716eb66c6b08",
+        "aff86ade72d5ae2ac649efd801efdf9ba0b6e92e4c297e4a4e04f83387825675"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind1-phase16",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "223823496a9496a2fd314ec3f588e00b96abd44a25e1ffa97e0e2fc1882d1b8a",
+        "48d749bb5cb50581803a70f80f67460ec4fc28e54b2f9852fb7df5272009197a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind1-phase24",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 3,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 40,
+        "saved": 1030
+      },
+      "frame_sha256": [
+        "57114e9a974cac74bac503d5dbd94a123ac36ceb0f3827dfd0cf0f4c21940ba9",
+        "873f31c697da408b9e43ba3457e60cadd71cc592f10696f128f07fc5a0090562"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind1-phase32",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 5,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 48,
+        "saved": 1034
+      },
+      "frame_sha256": [
+        "d60a917d248b0d4476635552836e6f031ca9ccea00f249016ab727a6b191fc80",
+        "fd98b5452816bc1a15cd4a698c6424e6c1d66a2472002c295668fab996bd38c2"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind1-phase48",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 9,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 64,
+        "saved": 1042
+      },
+      "frame_sha256": [
+        "fd10947c6603b57b130b2472b28a00dfceddc9465320b7f5c86a7552240af421",
+        "070db9332c285d0cd127c2cbb5a39250a25cee1f2f8ae3de22c179c3faed223e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind2-phase16",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 1026,
+        "stamp_c": 12552,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "9219c9dd1f46fcb223c40d968511cff9b91227ad39be2a6dc4f8904bc49154d3",
+        "d88cd8d6db07410ec2ae9d2e860fc3194002438a4ca0ceacc4dd954509e088e4"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind2-phase24",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 3,
+        "stamp_a": 0,
+        "stamp_b": 1030,
+        "stamp_c": 12552,
+        "elapsed": 40,
+        "saved": 1030
+      },
+      "frame_sha256": [
+        "1269ded010fa7d6fedb05c4702cbcb09be35f521866c7a6db327faed44c03c46",
+        "b8cd9c30ff27eaf9e0a3ec1f2c047ea66e8ac7efbd43a3c28f1d8cf5f2e7f0fc"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind2-phase32",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 5,
+        "stamp_a": 0,
+        "stamp_b": 1034,
+        "stamp_c": 12552,
+        "elapsed": 48,
+        "saved": 1034
+      },
+      "frame_sha256": [
+        "93438b655f7b6d283e0ee53d518cb32fe9ada456e868e74567b400ba73165500",
+        "5c0099ac527a329ed5747c8bfd2b56a4e672490911cc061700fdd21c8a7f26c4"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind2-phase48",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 9,
+        "stamp_a": 0,
+        "stamp_b": 1042,
+        "stamp_c": 12552,
+        "elapsed": 64,
+        "saved": 1042
+      },
+      "frame_sha256": [
+        "9ac32a9b27e4e4e4d15158f89262959628330c0462cfa644b43c3ed9bc4250d5",
+        "16ae124f8b20dea6c00d6811417c3a3916bb072571f4915af9633430f72bc629"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind3-phase16",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 1,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 1026,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "14e765879140a321a6f8578d129fe668dee01155e4e21ffb08dca0fc535da6db",
+        "8a76032d0d3f38c126287fd775db96f753f1b79bbaae18f20875da233c91c68c"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind3-phase24",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 3,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 1030,
+        "elapsed": 40,
+        "saved": 1030
+      },
+      "frame_sha256": [
+        "c7c026bcc1f3d47f6dc0d62028b40c7e475f65ccee3e1180a24f5f124e70caae",
+        "a595b824bdd67db45fe4934554fa6171f1cbd5d796115783bbf2486d1baa6411"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind3-phase32",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 5,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 1034,
+        "elapsed": 48,
+        "saved": 1034
+      },
+      "frame_sha256": [
+        "92d82e57461eb2a22fdb4064bb1aae406308160bb7b61979aadf66651ecf5485",
+        "cb6fd1039cc88dd5a54895a0727f77bd4aedc054e79d31b4f2d718441f894810"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind3-phase48",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 9,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 1042,
+        "elapsed": 64,
+        "saved": 1042
+      },
+      "frame_sha256": [
+        "d334133592ae4d8ddc5a76c8401610efc476f7f303710dc57ed4c1cf2045c597",
+        "4a5afc4ee8d49300e84dfeb86a9e594c9ab1eba57503796f0ed8028c1813575e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind4-phase16",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 17,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "becf0d9a156253a78e345f73a04db3deb6ee7836ac185db58e08a6f9627badce",
+        "722199d029a4ec15940566a2c2f085f28bea3a1b6a84d905a7a5ebce965981e4"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind4-phase24",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 34,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 40,
+        "saved": 1030
+      },
+      "frame_sha256": [
+        "75f7ff17913a7d7d9c0f17b1566a7afa931be4aa437addfc80e946ca3bbb394f",
+        "394d7aa65831298d6453cdafa379fcf7454656a357e9b62d6a003285436abbbc"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind4-phase32",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 52,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 48,
+        "saved": 1034
+      },
+      "frame_sha256": [
+        "2eb3cb7793085ba4d173178a24c1bd8b7b8aba032dba3a61da50b1d6e1dabfe8",
+        "8de57b89fbcf96d1ec2f33773bb79d0d51b74a192eb11a587e5660d43205ff39"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-interrupts.propan",
+      "run": "kind4-phase48",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 102,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "stamp_c": 12552,
+        "elapsed": 64,
+        "saved": 1042
+      },
+      "frame_sha256": [
+        "ac1f145330d68064da0e0450cb9cae47a6c141edf7ae173129c35ac10d47fdcf",
+        "79d88eb9258522698b5da28a181a3a563000be16b05cacd2d8449038119efff9"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain0-delta1048068-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 2,
+        "stamp_a": 1048069,
+        "elapsed": 18,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "1b061ab527c94ef4ba4ec3a02fc4a432027b1b8e59b4d50ce8cd40bf09049e6e",
+        "636d796a5f439f3b2e22b81a53c8b5abe1fc28a93773cf9b7d5a738817a79223"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain0-delta1048068-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 2,
+        "stamp_a": 1048069,
+        "elapsed": 18,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "a25aaa34e65517320258a057ef6183da37f7366b937578e1b0d1140f02186d7d",
+        "6a92080a730578ea62fc88df87dd984e1fa24fdecd0ecdeae6b962d94fcff10e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain0-delta4-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 2,
+        "stamp_a": 5,
+        "elapsed": 18,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "8ea429a184f5a79e64587a8a88b286735324e745a5903afa476e6b3640b36281",
+        "069c99186e99731ceac87dc49214c59356c0181a59f44de1bec23da9bd16ff4e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain0-delta4-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 2,
+        "stamp_a": 5,
+        "elapsed": 18,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "e189fca0056e9b62ef3909f917a265577d69a88eff55cb947b77034c2b14bb08",
+        "68bcb5e0f3e854692df1247cae07778de757376ca9bbfb0de49e22670a3b2362"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain0-delta516-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 2,
+        "stamp_a": 517,
+        "elapsed": 18,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "532e564ed7a28b4ade83af02f3d2fdb7987000254c73d91287713728a51c7ade",
+        "07fe39031e8e164267787aecb86928bfaee19f3f7ade50a52d14cc6bcbbbb4a8"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain0-delta516-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 2,
+        "stamp_a": 517,
+        "elapsed": 18,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "6864a782732264a6c4d614ee1378edd1c57be3de0c026e62a3edd2692ca32e4f",
+        "eabb94653cff6c04e3b9a022b4aefc51230dc0ff1aa21ffc2b84a18cd4c0addf"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain1-delta1048068-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "stamp_a": 516,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "37f5db89e706ad991c8511c3bb8a3bc7b2c76a352720a543cf88f7a2c01b091a",
+        "f67a6e15be8bb632320038eba8cd3afa94f27dd56f4008767c75284bc48d7d77"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain1-delta1048068-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "stamp_a": 516,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "017f66f0f9b67c405fcdb94782fb9c20b7b0108a5efafae5fc732b636bd2e2e9",
+        "3020e8b5ec55c1985f0085405ad2701a8fee1b045227016ffc532dfe876c7210"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain1-delta4-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "stamp_a": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "23c375cdba8d2dd923408a3b59992289934c759dc8e0d821e805f043c0cfdd7b",
+        "1247e528464091d8c9f720cdb17dbe8b8273c5135040771a49aa5ae4da8618e7"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain1-delta4-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "stamp_a": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "81c3fb323b2ab4fdf3f4da8b18f002d61c9897ad0356ac725d6856999cdfaa3a",
+        "076f2aee5196cb79723ea028af6aeb85c9919555a858c1599e4a9bfee9edf697"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain1-delta516-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "stamp_a": 1540,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "38bd12415c32b00ea3b49f33079d21aecc15f64743a446186102e629844e6559",
+        "f5b1e7c5e14e494b281476f5bff8a204d2b0b4d03ea9ab46e9ae61fce602db4e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain1-delta516-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "stamp_a": 1540,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "26fe4e385393f3b5cef4a251edba065fb1cf1e00da5e030866956eebed0f48d7",
+        "ef0b9bc2f68342f64bed5b28c3bb5a9744c6269dc665556acf106c9b20212063"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain2-delta1048068-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "stamp_a": 517,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "997348b53c3c7823bca842b308bf52b5142e92e411c807fa0eb8fb8ba506bb01",
+        "d7946dcbb657b28116e9bce0d9f87dd017a9a6e6800bda4433571b7ff585e775"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain2-delta1048068-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "stamp_a": 517,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "6390ced686cd5ad4ec5b67f5fae2d2d463f623a7ce7b72d420e54ed61ae80d11",
+        "e0e1f814231b13a89ccc46b3f175bca1f554b2168b7dfe582cbd20ea1c55e4f2"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain2-delta4-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "stamp_a": 1029,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "bf10e5029d452aba8b060a5f924df5447530d677ca7759389f29d25e0085d819",
+        "bd5b2c8879258289f2d385ebab511cf9a06796795b9d507e0b46808e828b61dc"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain2-delta4-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "stamp_a": 1029,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "dd4b04cbabf59137f52c28da4e1a95ab2fecd8887c01f220b866d3b97e6c34eb",
+        "e75322985e16095829aecffb3802cd796c947a7f03cf39180eb551186b27b964"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain2-delta516-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "stamp_a": 1541,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "308c413802962d84ccebcf89caaa3d51c124c8883b6ec6dfc620fe7fd1d2f9ef",
+        "cd61a69748a28b663a3e9d6ccb54f5a84d14eac433214f2609540bb6f9f4aeaf"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-loc.propan",
+      "run": "domain2-delta516-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "stamp_a": 1541,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "9477917933cd067bbe178c0f5ea86d8cb8a4f94ce5977fffff6aff913ab0caaa",
+        "0b249a053762ef7a1a75f4a9519e39b32b3cd42c61827fc397851546c1c0aafb"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind0-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "45c08aa983be599856812f906a0109ca05a9a8e2d62a07670e8bf7b599a91dca",
+        "a426681c6d72e5aa538551c771420e397ac2b3b50d8969db81b3664ce06356a9"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind0-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "3224cadf1dc42a3c2e938a73acef1aac9b135cb23e63c91237cdcf363749c968",
+        "c9da0edf2f5714ff75a28017281d09ad827372a6acbd96be4281ecc9bf522739"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "d4f5468d433cc97e3e31c8ba976f3e5d8b0a87a7bd828689973f8eaf97960830",
+        "2c106dcda56c935b7294d7e582f4b20a0fa196b206486f71d1e1094bfa44e53e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "c8d711936843d196905b4ca3d3c0f2ab6355d4541e2b1d490b63cb6e8d6c8221",
+        "05afe2b316111b74c0fb51d59716f1c9f30e0596ab52068c9060610d3ee62261"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 514,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "4ace11a4cba1b143413570cc6231a399e043aab1ec8323795e8bd32f052a7982",
+        "cbb251a9ac02831becc423e1195eba980141b57a6443cc32d0e8f5f1a4d5d839"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 514,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "437dbdfd54fffe968b4fa41198984e45736ab731ae3b34ba658e28307cc25719",
+        "aa16348172a787520089099f12d452fbae7baa5ff447f2abfb56c4facbb519ca"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4213207604,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "f0535ae74e3da1b3f2beac81cc2c665e9b4cd0e49ef1474277e6968e07db6a91",
+        "825b0de4cc6d1de1f8b72a91cef4813ba7dae714928f0368a169214e70955f58"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4213207604,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "0a3090d99bea8784b8e9ca05bd6bb67142d1db7136c51609549a0cd3a52f8493",
+        "9bead98da8bc5c5e4e582ccb37f790158d7d8c16704082abaee02bcb00afc4f2"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind4-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "07c0859fa6dcc37abf1af93978ae77f7bbd0b469d16e716cd450f19ada3da881",
+        "e91c1ea874f63c9e9607c8a1916403d13f079f86c546f6008a78756c6c70998b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind4-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "0658b33a772d9d108406d58e6ba6cd8e5a53b89c70a256a566b300ac717cf781",
+        "f8b62bf7434016955bc81d03748b67c2e666f024ef31e9169d0c946ec916438e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind5-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 2,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "40eb8e28aca3762b908f684366a22c11098a8950e8684415c6b2e4ef15e935c8",
+        "5a007b23e3a6140674f95962501e601833d679e9874a554e86642d0b4f7fdbc3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-modifiers.propan",
+      "run": "kind5-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 2,
+        "stamp_a": 0,
+        "stamp_b": 0,
+        "elapsed": 20,
+        "landed": 2
+      },
+      "frame_sha256": [
+        "7be3040e4e024db0f73c1e2e8ce4166134f48834b58d6df4c33f0862345de03e",
+        "2c6e54165d8eb4408c908c90eb1caa12cc63484c98b5a0944d2b6a0f984ab02a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length0-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "b76f5b9ec9e87d37e07d3381584765740e3d0d150691c8f0fa61f511fe47733e",
+        "8a330ef6836ada1285c4456564163c27c612df03c7eee12e25dc93c555afefd5"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length0-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "d176ea196c0c834b79bf0e2389312d44c6489e5cbd351b526ce57298c178cb75",
+        "494d9fb389e070299517a630e1ec7722718d7a83aa3f53e11cf4e50cf667279b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length0-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "afb4961d422a96d071f091b041eb7158ce116a17bdd3387c1bd9e8380a1c5a78",
+        "3175506e2c75a973238a8950403b10c6949d72045c209fe2a907921c84225696"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length0-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "1dcae5ec55051f56ef4e8ed230ce29ee4fb18ddde5d8876ae34a2ad75df4938f",
+        "399f6a8a47e2a6010f2afa387687648f303cee1bf0d5db919a5598a36e0245b8"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length0-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "03cc4643dafd92929a913b68d02bb878f76b56fb4e45deb0d1bee4f9246a88e6",
+        "7567f483d9a4363280936e9574b8a06903d2b67281b51aa43a72f1f45e14d61e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length0-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "9879adf829e6f9873460c114b1aa23db1fcade80f9ccb5c7aede5afff6d11098",
+        "605df5ec4b45191e3375bdd45084fc7060f73459a66448cd9cdc875bccbe0d7a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length1-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "08640ea0d6414bc90b8068dc9595743fd4064231be983c3b3a16ff64da4af534",
+        "3b04d28341ca86c7d74551d266af787ca5f5801b5e62e18af1541f8effc6db85"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length1-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "d433ffb5fe0a41f64a1830999a18ce5db12f02bfb70e60538ee595424e24c9cb",
+        "d5c2d179f9faba14465bda885c659bf53b5f69168176f11c3990be46a41b92b0"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length1-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "08474435c694590a0df163182c9afd13fe18b1e1abea5c3d14bc349c60ea631a",
+        "9fb357af9c1c46a719f427d4192a83ca325211df80fb1f4eede2285868f5163d"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length1-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "bdaf4ffb8beda2905610abe052b930df6a3d2f037bdebca393298e9f66e3dea9",
+        "31a5e38067d261784db1b6a579cd6ed709daaa7e989d7ad7a5f8484b19c20035"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length1-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 24,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "e6757a330d3301331027acf6895b67f00a0b47060cf1e16b32c15393d050ccaa",
+        "d01ead0d52b0ee42efc3fb6c71b74726d32003e7d4d18e7751f6b599f843a15c"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length1-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 24,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "c5549087e3122f68f0e567f2c5b08b6c1010eab307068662431cbc5f075e9209",
+        "76323b90bfe72c22c22a829d6c9e36162460d844bd7c9ba2c4342da0e966e3d4"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length2-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "86b1590f4b10558eeec07d3f9c23ef153f371acdb53066ee45c240683a32e122",
+        "ff82234f582a0c26f39bede2e0ce494b8721dd482e33453d73e5ae0b48182cef"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length2-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "98610f1dd0fb06f3f7cca3bb11b0c926760956e051f81f264d5e5d1ac1660330",
+        "043c2c4a967075ec701b9061d62c678f51fa11b7c35704ab00c05e369f82c404"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length2-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "c8bad487da9f5510b0287175829f73ab60cab9a6b58beb9430dadb93a9c01a1b",
+        "e2615a5eece8b6c37d1bb4b9b216d3a90c2ab92ddde717d045a2463ebe86a4bd"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length2-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "3558f6b871af23c57d18ca08e1b67bb01df2c0895968fc14cdd93fc3402a40e6",
+        "72c9dc8dc07f7201cd4ead0c6dbfb1a4dd6b592d43cc3a5954d374e9cf28ab95"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length2-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "a3f7e0175edca91d18d4b30a87b07be18f10246a49663101c09fc1a7631adb1c",
+        "bd24744d6a67158071572cfa6d8fcf638efd6e1afd86e930146b7e12aed3bae9"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length2-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "cadbaae129dfcb77b4cf474fb930c161292cc4dc8307a410b70208b564eda551",
+        "b851e374d14ea1153a4441a73b4828e58ca35f2f1e337399886b4818f34ae59a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length3-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "bb26aeb8cc9727f9c02a7e227d6409419c4362688001f73f4d856e3b48cab958",
+        "08640ea0d6414bc90b8068dc9595743fd4064231be983c3b3a16ff64da4af534"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length3-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "b99f51c20d649226c24f9f4fa7d9f29fbff65d30f145e8835e8f96e38dfbb5c6",
+        "399be41f46e6ade3d5d4af4fd8f961b88b56cb6a9bc4fe78df2cbe33f3ef2704"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length3-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "ea8600125c9d2fd70ec6d5fd1afb55502bf6f3cf14204e8d4ce7b581e7596142",
+        "1e87aa0ea92614c467d4e91fd761ed9971594ffa3c01cf98cff1aa21e4be0734"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length3-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "630617161e34b4bfa1b77bc521787b620aa785f532455c1003f5bfdd0ec0c4d7",
+        "f789ec32b24fabc8c320613167b425a291dc3b4c5bbbc2f9266a6d4f3c9608ec"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length3-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "95566a1b7e5704043a48595cad8cb8d3cec9efebaa4e64bc0bc811b34f774357",
+        "3179b884ff45e982092f2d57e44e6b868b29bbaa1e621fe7b3700134a49491ea"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length3-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "b844eb9cc0e3e9f276c21ff3d4a9d3c56b483ee56ef419f9db43851f7907e187",
+        "13fd8841f4fd49d8e5451f997e1f06b566d75af079a4bb1b392b50a495f76fa3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length4-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "84b1bc4ff4e0bcc2a5328e6cf9ddc4b8f6a858149df882eb4758352fcf276442",
+        "86d94b844586c6da1c2995d30c4f4be7d4d4eec687451884a7d3ebf95c1ffe3c"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length4-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "e3b424eebdd03c372de6ebf3d33eddebbae300cc3c18f6e670578951b4d6b391",
+        "185c771d09a8694b88649249664e4b2c06696759871bf3252c98366f2ec99a53"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length4-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "e9402f39ddecad6afb1a9d536afef3f299bf23efbf16d7fb2dd629d901a91e6d",
+        "1574ec097a1e2104c2d16018f577ed37fbbbf4663aa8d75baf9b95947563df2f"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length4-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "a8b665bfc5250bb67260bf4bbf25ad9f51c128cc758451dba136ced166b3d2cd",
+        "01b8f6b08e9346edd3a67bb64f262de8b650ebc56037d61c5a1f4ee033c4a5b9"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length4-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "a761067beff8d2df1594f57ba00559e00aab1474e8f1d304c7218748d271141e",
+        "b91f0365f80a491c7d1ced30673b1748ca0fe60a48a80b24b66859aada6419c5"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "length4-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 0,
+        "stamp_a": 0,
+        "stamp_b": 1028,
+        "elapsed": 20,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "f7b4db48cefdbcb13bbed615fc9adb63d51823b0650e2c510f44b56c591d6ae1",
+        "e9e08bb341169c69f5967252924011bcc5212d269ebf5f336c7d8387fb1b8113"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length0-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "7c184936a024f25b753268c110a9e4d8d3c43069e004a37008f7f002e9ba3bdc",
+        "a6a46dbacbe9db4266942b3f9929de26203df09e45539c29f0eec3a07cc97ac7"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length0-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "512badc67519c799867e3e949d608b73217588e67e7237fa51eb46a6e842c984",
+        "83c876884741fff4cdccd500341c1b43af01073828d7e5a17e4d69c06af7ece9"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length0-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "28b5b79339778bbabbf7f64ebc5c07bd4444d75be9f0436cd5c5af36ace787fb",
+        "74c234d802c25739ffc57ac7ff477210a925530ba362beab83397514462e268e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length0-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "b9580284edac9b1289cabdc0f7054ede7303257c09b8ad1413245e3974ef26f7",
+        "34e21a794067d4ab679511517e8c4483180c956fc5615a249c150aaeffdfc68b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length0-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "26bf1143fb8122b76cb27ee00c82376ca323855fdc4989fa9ff1507991e3922f",
+        "be95b2ac98863f0499351da653fe1fbd7104d169316462081d0d0852e12ad138"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length0-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "fb402898b061954e037ed48cdfb332b92291d42b92d08d0eaae80e289e7fb384",
+        "3581defbb5839628fdc8d03c84e559c7c4b8d20b23311b7d902897d22e739686"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length1-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "804497f7931eaf4a0ec04eb647afe9e293d31db38d85601f5f0de0313d11363f",
+        "c87981dec6e86eceed90f625fa43e26735d58391eb63a5ad5d933a2c801680fc"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length1-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "b0d0f0044daedfbeef77d77082a64d82c4ef5d70f0f9d80ee2d5036463737f9e",
+        "a53a39428dc06eec8f205cf4cae2d44582b18ba106aa71d7d0baf95678283677"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length1-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 24,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "fbf0dba5e5fbe888f4a99c76ca7e05ab9fa8e7dee873ecaeb807bb1b6a6a1513",
+        "4366856ea9de4019a7bd0847634258307c392858fcb923a37845463eaef6ee7e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length1-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 24,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "4b7b8b89b65db8fcac17abd44d4e5942bbc5e597c420a2be1ba217cfcbadb450",
+        "0188ef7b7eda1cf043a4f241edb858b65f317d0f1da2e58e07527268d47cdf81"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length1-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 26,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "19f0ef2faa45e972c0eb86d99aa6e2820ced1cffd84d2827b7556971a0229692",
+        "f38c6699373260ec3fea8c573d3e555465a6416030d3eddfc37b243443884d42"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length1-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 26,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "b300bc12bf450d3b15075f4ab51e8cec9e5c826b6c6543de13f1a6627a39a426",
+        "6c773fedf65c536c0166dab79b484c580ac25a564cb8f2b25cde6ef78e6636f0"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length2-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "ce7b4625d3fed22c0237aa45699ef2a0cf71da2c19720ee6df6fd808a7365dc3",
+        "3155d6bcca94e0005e5a14d3527d24b37dff0145e56edefec4961fd677c13cff"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length2-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "8ba16e47006a68c153e9b1c9a613002d70103ff4de19462489fd95be87c19062",
+        "a2883da8ce7d5d626029dba8ea66d973fb0523af4c0479b883b6c72925549111"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length2-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 26,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "81e7c8cb09df1b69c2bffb49761909fa43e015ef5c18dad6ea42ccfcb1cb702c",
+        "aa02f3121738a233703560e2ccd2b3ea2966e4e42ef942443f0195fe2e19c7e3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length2-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 26,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "4c3c52262dcb535563c61b53fda0060d911aca8f4b0303c1fcb25049d4f9d772",
+        "2f0c14b96ae73669b2fa6bb6e4a1a3036a993e1f45f979adda922e12637f0362"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length2-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 30,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "29556bcf0128b580a2a15d76390f92d774238be9f0a186a4439212e3aa93a655",
+        "2127f437337697d01ffe7f906d63495f770564ba03dbc782671d73c0df8d3f0a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length2-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 30,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "29707ff89c74f9bc10d1e4737f4522d888b6e65a72b9845c849e00a56e55c988",
+        "2ee30eaa0b7019383b0b835615c61fbc44c42432b58d5e6941fe9802fe116cd9"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length3-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "87a7b0bc27bd04cdce34dbc1b227b1674beaf6bb35ad144add5edd00a1a729f9",
+        "39bf4330d2ce2f66c78b322025963df8ff40f9d4b08a6b7eceedbc00af05cfb7"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length3-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "1c57a2ef94b737caa422624905a04561048d8cfab732351238e3cab043104542",
+        "b94cb8abbdd4f9e18820115820b17a2c6af9a99d79a2805a503f5d7bc8ef9067"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length3-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "b6bb2186961def1f46eefa801ad33692435e042d2c2b3c08526ca99908f7c80c",
+        "7a656ab0009e1d185911e92fca9631433d792f6c967f8fe5fcbc0fff905d5067"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length3-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "0f7b45bab20fd0ce58b130256c03256f5c27eb3fe3e8cd137a556c677c996561",
+        "cbac7cb3d7ded7d0fdb8a05bd622f290bdea9b9dee863ad2165af891bae48730"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length3-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "cd1d80e2403522c85848e89f061d0f5f3e496903a09a41db813496c7086e5697",
+        "1e90bddebd2564adb6bdd18687082d95b97ba541d5cd86e857751d775b2cf764"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length3-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1023,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "a71cbc2e589e24180e16cf5ee649a77e30532b4189dce53e9b553005b1ed3bc5",
+        "c77bf42e236080c4f94d528887ce4508ce920cf34d042ef44e00a5a51783f7e2"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length4-count1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "515d43cb3ea92d2e4a68b1515eea86a507523cd0f41aee22b5d2dc773eec3515",
+        "c92ada8b32c6c44b53fdb366b731d48c71ff934e93b632998cb8503ea5b9538a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length4-count1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "e2b2ac7506cead0b2551f871dfca338d3d40df9136dc3c6f6336921ea1181911",
+        "4979a30287b4be6d61836586184fb99f1b6b7cd31d039b12ca6303453d954715"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length4-count2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "eaf34bd7356afa991f3baae81bb1210f01dc153c39e7f4695d59ce47afd60099",
+        "d49809f013d28f2af6a9e9cbc245025e2e6f439b9a852c02c762b859a4be5892"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length4-count2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "bcfe4e77b14ecf85818a51201e343b62c511e337ba74d6191aed9cdf9096035c",
+        "b8802863c3970d70d03d95826a351fa5f1397ee6a823ffbc7f90f01bf5b27765"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length4-count3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "515d43cb3ea92d2e4a68b1515eea86a507523cd0f41aee22b5d2dc773eec3515",
+        "549b94b064554f94aa91d605bca9aa98103132130be6e28f64fae40985dfa0a3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-repeat.propan",
+      "run": "via-zero-length4-count3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 0,
+        "stamp_a": 1029,
+        "stamp_b": 1024,
+        "elapsed": 22,
+        "landed": 4
+      },
+      "frame_sha256": [
+        "ad675e2b91162876d6a5b7e38e99cf6d527230981a8549ababb372dc1acb31a5",
+        "caef468ee8bb318c0ed1222d2687e23ee792a6cfb30227cd1734c660e9ab4a40"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-resume.propan",
+      "run": "kind0-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 2,
+        "saved": 1028,
+        "landed": 1,
+        "elapsed": 55
+      },
+      "frame_sha256": [
+        "51126af342bf0f9cb6896fe2b6f7c0c56c529a0f2e39d4ac31998f6d9b5dddc5",
+        "7dc7d44b67ffdf3e242dabc6f001a35e2af8883330e98265a1899b3addb9bc36"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-resume.propan",
+      "run": "kind0-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 2,
+        "saved": 1028,
+        "landed": 1,
+        "elapsed": 55
+      },
+      "frame_sha256": [
+        "58aaf25ead59cb2423ce296269d2d6fdffbe5fd03111a9a4ee58ec79c95e6e66",
+        "4b73f909860bfe24323417dd32a1f217cfde7b7b748232f48bdf746b4bf2e615"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-resume.propan",
+      "run": "kind1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 2,
+        "saved": 1028,
+        "landed": 1,
+        "elapsed": 55
+      },
+      "frame_sha256": [
+        "65da87733c00cee12d36e24c27099b5731dc6919c810e670ccd4d2887f1c5833",
+        "a4753944b310ad1ffb258206683ca95cd0a4f09a9836fccae1f720c0dc84bdeb"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-resume.propan",
+      "run": "kind1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 2,
+        "saved": 1028,
+        "landed": 1,
+        "elapsed": 55
+      },
+      "frame_sha256": [
+        "963e57265c38650cf65c8903e214a93919e23a59423a32ce25f7aacde9119bf6",
+        "f56d1fc01340e4e48a57b3eee84d5bffe7a78bfe781518dab43a539ac8788b28"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern0-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 6,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "75dceb4ca72b255ee704a35286db502fca3390798eb08c388756fcfcc6cb6be1",
+        "dff8ba00a2fcded3c7155a6fa0eee5dc82b0269529ee48be0a1bc9a56594407a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern0-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 6,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "b8ce309959e4028980e88b47615fde1911938ad00a6a2159aeb447f80ee57a78",
+        "77bc8852b335957d29a2661199e75617b3630ae18c713f232a74aa69bca47b63"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 5,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "4cd7c00127fbed749d17d2cf9dd5925ce6ccc33ff5d148f0d07689c614858075",
+        "668ac37e86f8164a243b2d206f6386de59130ded9bbbdb0d6e6b37d2c281c83c"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 5,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "d9ec0451c8bdb91ffc4d63fdcced731b1314fe49745c4ac309d1df8a0b5c9ec1",
+        "66a001db894ce74907e2991c1100ce0d345b98b78354f12c48aa9e81a280ef48"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern14-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 1,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "85aaed1fdcc184c8538c778ab5445701b093577392e35a676fa52fca7f103cac",
+        "115938895c1dfa6675d497ffa9a2676a3f1928f2bf42b7bdbccd247c5908ea9f"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern14-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 1,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "462e1aed203a28e05da8beafe03f0c4381203e8e6a70bb848c0a293f58b76a55",
+        "d2dda89721fed26efcc79ac16d9cebf34ef26c1a0cf0795c9aff6cc9585ea186"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4,
+        "elapsed": 22,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "b80a3f6d54169ef57dca5ee5e9d5611ac44c9865017360825e60c4b3e28f8cde",
+        "fc832ae0319bf426029648fe64e1bbf30a32c07488fb054b3d226f0ab373d50d"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4,
+        "elapsed": 22,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "d3a625944b933fd00cf5a7cc1b87096f7e562286e97dca8a7a2f505fe7a28ae4",
+        "513d517dcdf390222b1a636a0e9340d12daab84e40dfac65a06a810669bafe6b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "elapsed": 22,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "5de5159941795a69a15fe922bac1e95ed814899d0af81b9d5f5eb0751e4fb8ff",
+        "c35fe0a9a09ab7b796388181e92e730e487fa958f6c95b7b100b0ca41f0e95c3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "elapsed": 22,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "f76a9cb656893617797f76f63271587df729924173e380cae14a47910bc6a5b6",
+        "65338ec100d81a520f9f05df726ebceb32e523d7b6f59261f6d26c49a04ec150"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern6-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 1,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "2919fac6d887242aef3edfaae857defee921df643abe75e2233ad856a30baf25",
+        "830122ec5735201fa93ef8747341add2dc5ad7c004c0219cb3555e6ff1c3da11"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode0-pattern6-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 1,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "a44a03093c876aaf8f7241f04fe1feaaf0632da52fcfdf24d55638d767163458",
+        "c696134b5b37e544e1500c77be137d445c1dafdabe15ee3b4de46cb533de92c2"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern0-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 6,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "42f07330556d089d67cb77faef663bf2c349d0fe624bf109a30e0173aeee262a",
+        "637571ca7b4ac8656a52bfc6f262c4f820057c32d51828f11efdf6cda441a237"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern0-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 6,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "bcf6424c9b9a517a376b4679ab1bdcab56f4f5bdd4a95bc7fd2ca24bdf61d6b0",
+        "6a8209d74747156f77e2857e0683c81111b6acd96dab3b2b60b7c822eb6e6f82"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 5,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "bc390ce3219ba689f633b6f3e50bb9879b134d3e1a60da6a01b5cb8daf8193fe",
+        "13a07dc14ac699bb7676cd3fdad84ff2e7f9cf1a97bf6938dc9a7292e23e5b19"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 5,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "a41f4ca56bd29ec87d6e933d64a0b63850485f56ef8b0caddc3b8dfb7398d450",
+        "a5f05cbad716a746825d96edc06c65a8e52b8df52227a0baee22318080a9ab54"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern14-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 1,
+        "elapsed": 20,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "9cac4ea7d2599e9e9b475c94e0336967fe6431d7fd4edbcc813caf4d957bdd22",
+        "1adf458db9af22875ac5bf8010ea45227920719c3e0d8e4dff7b4573b3f7cdea"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern14-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 0,
+        "hits": 1,
+        "elapsed": 20,
+        "landed": 0
+      },
+      "frame_sha256": [
+        "ba8fc35296c5d9443f907a4958d606b247ee36907e466518571b28eac90d58a3",
+        "535c88b9b1fa9cf1a521727afc18ac95423cb8b839772a5a83596d9fbfd307a9"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "189415898ff3667cef93ee55c7f893ac16accbe353a584bf80373b8b241643ed",
+        "0a2027493ece18ea501629733411d2dcae0ee720bb61fd8827efa775d2cc4f2b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "63c688196aa1d99759525d3c7231fd888933897e6712b94d290ece702761db00",
+        "f10583fe743edbad42b6f0497a07f7cb539a7059c68de936dc7e6a22fd969773"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "5fafd17eae55f1d9a738016dc20f918a7fe1e49ddd9b1911ad7ddc727d110d28",
+        "b2879456d2fe6cf3ef0487331225640ce867a8fc975d6200217cb60bd7d0a9d4"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "566a7e58cc8cabcc3538c387f578d0ea47e2044a2f71dd3e957a19b67275d812",
+        "6e7c118b341e2eb9afd6744e2064b276cf71658eb66019d2349977a2fa96e0f3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern6-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 1,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "bd2e1dddb3089fe5cf0211585466eeecbef2dd039294817e30626dd01d3b0478",
+        "e78fa842ac9a0704ff828114dae7472b44fc15fae40ded63b20970e6064c20f1"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode1-pattern6-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 1,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "f607eca4290466b01af25fcf5b92311531b35159c404f0a13268c6ecd479fb32",
+        "9b921a94a316659fe2a4f23696d05edefde3fdd3cf580adae39a1fc30180f1d0"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern0-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 6,
+        "elapsed": 26,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "5c46f6fe2aa0bee9b93e8ab6e633cdffb7e632b0d9fa11f861f4f818d4d6f5d5",
+        "602c5689d67098084bccf095671274ed8bb52fdc2b997c01a6962e34c56d1e75"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern0-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 6,
+        "elapsed": 26,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "13f016bddc385c0b90ea7c5dbe1d1d4719e57bf208d7851c878f95a45056b9b3",
+        "a137f91943edb615755c42fc08d930cf399896d87b0892a1532e4f03dd6eecdc"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern1-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 5,
+        "elapsed": 26,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "fac38484ffbc144dd221959ab5b0893d16b12a985335b160ebe7e79a0b8dca37",
+        "fc060204679c16daa56cf70ea5727dce55e207403009034231aa7bd3c31ac55a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern1-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 5,
+        "elapsed": 26,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "eee7b5075edbf66915a7b8f4b820bb97b8cf66bc5f3c9cd0e90286607adafa56",
+        "49eea9ae8a4e0a7ba34c99042923ac114268861076499c77ad18fceeaa2822d0"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern14-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 1,
+        "elapsed": 22,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "1ed9ec28392db0d7a8339b452067579d3c2a9b9d65372e17ffd7535f4d81ad88",
+        "d57a7d3a8d2743c16020261217f0bedfe80d3ee82ce57a94a8408f74f1a34005"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern14-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1026,
+        "hits": 1,
+        "elapsed": 22,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "6735d0cfdd0d2923aae0f7f7f7a70dfe96577514d662e4aef9babcdb2bf2fd61",
+        "475b8f396d9f6b80907570fbf67919348f8e1e7bd69989d9a4ae30d77029890b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern2-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "000a55550ec0a908a5740af322bcd5db62bbe5b9fac8695feb4475ddd69e9e80",
+        "a5d26a45b0d194b0d515ba70a88336bbfcd1cd5fa271974bdece4044933bc6af"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern2-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 4,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "3fcf7e36651583419d7a14536450e8ed38504d10595d2912df7dbe7241f2a934",
+        "eaba6e5f24271c022ed8a8809e7284df823be6420699a9635413f207fe35a436"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern3-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "536b1f7636e6bf24d59d69fd8f45865dab3f750209479fcc28e46df5f0f68c73",
+        "d711c0bf5f7901ece3bdd68593c44bb1a5a6de260360a2b78d6cb3e172e6aa90"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern3-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 3,
+        "elapsed": 24,
+        "landed": 3
+      },
+      "frame_sha256": [
+        "6489b17a499e4ffbb73e2ee8095839a0a1674e01fad5eda705edff06aeaa89ff",
+        "a80aeef697ada00bb97ba5a9cc4c18be86248a75160ff3c90380e9de4093939e"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern6-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 1,
+        "elapsed": 22,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "7c5eae5a4a8d059ccf89c430c1271ed7b5c5b1b0401ab2ab7aa280374d328d78",
+        "2fc828195cd0a88421639182f0c5193cd3d602a4797e66f0ce752d5a8bc432b4"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-skip.propan",
+      "run": "mode2-pattern6-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "link": 1025,
+        "hits": 1,
+        "elapsed": 22,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "ea5ea29fee812e9044b3c5c2a0486685c9bb1ef92d58abfb0f71e5d9c80e4beb",
+        "37ab492973bb7f0a471420688bc3cfcd2306bbf961b5690d1557e9b33badede1"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source495-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 495,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "db885be53f71eeb069f08ed87d29457f4b834556d94321e8b181fda0b7cb2575",
+        "7cd3cd2e99914ae4fa811b1df875c24448a5776a079a4d37d1bff15a7ea9b08a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source495-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 495,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "c38d27af1d9cd5472ae2324f4310c76138d4c4d7ffa00bd5650beb6f1dafc5e2",
+        "2aeda858837dfc054b22e797615425d14c681526a69aa6a5cb0c93f325caf50b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source496-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 496,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "c8983131631ca8f2cdf2f7d0533978217bd937e8a56e17d99437b193e61f4faa",
+        "5f50e75e59b7a7f77dc9f9f0d1b74c3a2f51041a3e529dabcef8a1e7adcb39f0"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source496-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 496,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "1d1fe03b4288da70dd19148c0c9b719822f075d2da4b80da2d35d2f49dedcdd2",
+        "ac3cf66a1b88aafeda091d91693be863823d82ffbd30f3fdb8c59b85def480ee"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source503-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 503,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "b26ca81412098e57c64df82fd281a659d0e4f37399baf69bdaf041819f2aba38",
+        "f2db7d70cdd0854c856e5dbb855c634bdacf17335d71be6f56aec81a61cccf75"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source503-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 503,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "72e1c75b3816cec344a7315b48ee5fd4788b936b58d70f6adaf90afd76f31e0e",
+        "9e7084b526cb7e21fef3c49c29e5ea715d996f99d4e7de1e48b8deb83437b356"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source504-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 504,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "9eaa36656523f6931c96cfca40362c563ee4a3b6dda8df5a3b49f61820f49e96",
+        "721eececb875360eca69a0f87a0cc29b9fd038bd9dd6f1b78a262c63ddea8189"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source504-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 504,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "a811484b869862b66a23e86a4e7185b80a51023a97b8f2af90a0e79e343a3199",
+        "47a25a47af375e41412be7e8d554c630264742c0c89c915b89bd8ea7d2a4fb9b"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source505-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 505,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "d6780f1896e970b3b3e7afa93a85d2d10821c03ed09e537b3d8285e4735d56db",
+        "0121d0421b08a173f7e0cee178763e71e02a1cf095af2c17693145530af886b0"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source505-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 505,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "4c068f0f17fb27e8f4f47a85bfb778cd171beabc376203040acb2c61c30b9b0f",
+        "b56e446ac8636bf2ff7c1ec2c060de7505f4fea1b19f438196add12a4ca83922"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source506-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 506,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "f0cd0570a263fd05a31caf3331b321ef4e35def6859796198463bdf132d3978d",
+        "b2edcfb957c4afad8e50748361417a984cff892898184875201f97eecdcc2f81"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source506-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 506,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "190dc6ef465bcf2e3c97cafcb3a9871d24577d312f35813cea3fd33c2e8e568b",
+        "487685f585db1e1566e6b94d031ae7dc51de130abec5e5fb2a9b9c0f409ae0e4"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source507-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 507,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "7de7c491a4a37ac94b2fbd986b3688111970039fa4f229f92a70d86b7e1c4983",
+        "653903c98621f4b3541a2468703d352b29f145c20209a93fbf9bf6aaf0aabc6a"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source507-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 507,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "f360193061577c700e252e24c4dfcdc84d454b57d1901f9433f7f78f6c7e4eda",
+        "35ef6aa894d9e76833df3859011b77361d2505d9614c9f644c7839e3bbb22c59"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source508-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 508,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "d8bd788875d2681b9fc69125b1917e2f852f90158d400ca33eb3d2c5e8f94e3d",
+        "750ac6bced20ffa9a24c2091d1e0597a564a14cff529cc6ad5c15773564fd9c3"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source508-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 508,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "245e8e3ff953b27781aedd7cbd043c70338698473dfaac111dd5f2cae17f2e66",
+        "f60bf548fb147d351bfed5d8f072061830050b0c534675e167188448a312a840"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source509-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 509,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "b3eddce1dc4d16871a7930ff57db3eccc20a56b4c515c90014d3c457452013fc",
+        "ae306b587728d6c059e6b284ad1f5eeb90e29ce2de62fe1e37ffe9302a2f02cc"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-special.propan",
+      "run": "source509-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 7,
+        "link": 1025,
+        "hits": 509,
+        "elapsed": 20,
+        "landed": 1
+      },
+      "frame_sha256": [
+        "c713252df707bbf52bf9dfb0092ca469600c2e4c57585b9a5d6b90e7569879ef",
+        "2ea8225ec4de74801dcc0a6c82c1c627823b520be3591b1c2307534333999a60"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase16-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 1,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "fc52dfe56a4fee3839af7e946df6f48b35c449123bbb4cb5ee2e7532e132e2ab",
+        "870a81a5d317782830332c9927e68ac0864b9f66f291a045b64e4cc8c4beb292"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase16-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 1,
+        "elapsed": 32,
+        "saved": 1026
+      },
+      "frame_sha256": [
+        "6b7591ed0795e580b85480cf68fea0ea1b8ed730acef73d24ca3e76b1edf04f4",
+        "4d15383de91b7751e154ad2ee37591ca570cc6bc790fc25efd8fe9f773362f08"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase24-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 3,
+        "elapsed": 40,
+        "saved": 1030
+      },
+      "frame_sha256": [
+        "09f089b789ab577f32f39b73f7a13437dafae32dcebc8e4b526a32d02d0e2e13",
+        "47414bf0c03b7d3c1738f40f4344503221ee530a69839e61022b73ca565c7cf2"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase24-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 3,
+        "elapsed": 40,
+        "saved": 1030
+      },
+      "frame_sha256": [
+        "b5909005146c51873c70266cc1d2d2dce7bdc0e4ef903849e1237f3709432c0a",
+        "518d1d6078ca7ea8ac98060db735204ab24c7ebe56c78f0e3cb98963f7397c65"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase32-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 7,
+        "elapsed": 48,
+        "saved": 1034
+      },
+      "frame_sha256": [
+        "f1c237243eaeb55f8d976d01a36c3219ed479d0f22a05d44b192049127151bd9",
+        "539f7d024c483a16a3b718e2a682be3e77e60aca0519613a11461c3ad7eedfa7"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase32-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 7,
+        "elapsed": 48,
+        "saved": 1034
+      },
+      "frame_sha256": [
+        "fa4f5822aa0ea7c4cabbf4874d4584ef794479fb562a7c2149fb1769b80cb94d",
+        "712306708c58b328e073f65cbae1b31f8a6a0750b273fbeec8adcf7af56c48cf"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase48-cog0",
+      "cog": 0,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 15,
+        "elapsed": 64,
+        "saved": 1042
+      },
+      "frame_sha256": [
+        "4bc0d200300d73f0a0be3a2be6740120ab06698fbb5d988aa87b09c80fa62697",
+        "f1880eeb2199433e2513d7b4b393e007e9cb96e2ced17317ee81be52e529f724"
+      ]
+    },
+    {
+      "fixture": "tests/windtunnel/state/local-pc-writes.propan",
+      "run": "phase48-cog7",
+      "cog": 7,
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 6,
+        "hits": 15,
+        "elapsed": 64,
+        "saved": 1042
+      },
+      "frame_sha256": [
+        "524079c512a54be2fc20163f1ede57048c0667aa21dc6478e1f5c3b725e2cfc0",
+        "502e5084e0f2e5c97e484c2a9ef158e0fafef32ae29e9f254189b8a55cd4f8b5"
+      ]
+    }
+  ],
+  "third_run": {
+    "command": "P2AAS_ENDPOINT=ws://localhost:12880/ zig-out/bin/windtunnel-tests --oracle tests/windtunnel/state/local-pc-*.propan tests/windtunnel/state/repeat-skip-wrap.propan tests/windtunnel/state/pipeline-local-wrap.propan data/timing-data/local-pc-overflow/rep-cross-wrap.propan",
+    "result": "14 fixtures passed; 214 runs passed; every observation matched assertions, simulation, and the third hardware reporter frame",
+    "log_sha256": "44f2f3421fa10650719639b0dfde817d54e41b992453be9bbe8f2093167d6d34"
+  },
+  "existing_boundary_runs": [
+    {
+      "fixture": "pipeline-local-wrap.propan",
+      "run": "run 1",
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 0,
+        "wrapped": 1,
+        "lut_wrap": 0
+      },
+      "frame_sha256": [
+        "18a12d2138a8098ba6f1d263a44a60fbf6af233fcf26a5c06bf33eecd6d12928",
+        "8751d943b8ba3dcd762e9ac49f4d5e115c26ed1d5a9a62774cba3f40ed232e74"
+      ]
+    },
+    {
+      "fixture": "rep-cross-wrap.propan",
+      "run": "cross-local-wrap",
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 0,
+        "value": 1
+      },
+      "frame_sha256": [
+        "1c5c5d383efe48264ec4fcb565efc07fbb313f428bb8eec1dd96a80378e7b284",
+        "625843ffc311153605bda0965755268de36c78d270d80a76633d9433d14a6117"
+      ]
+    },
+    {
+      "fixture": "repeat-skip-wrap.propan",
+      "run": "hub-body-wrap",
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 0,
+        "value": 6
+      },
+      "frame_sha256": [
+        "6540418cf6552aa8a3c8367253bba46e763f129c669856f44ce1f91ecb4f66ad",
+        "dc4b0088e93b6893c3ee1d36bdaacce7624f91f238bd8dcfbb50460b3331a77c"
+      ]
+    },
+    {
+      "fixture": "repeat-skip-wrap.propan",
+      "run": "hub-repeat-start-zero",
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 0,
+        "value": 2
+      },
+      "frame_sha256": [
+        "4057e36a0864022c2d43903fdf55d0268362187ae2d549021a7116cdaecf3a1a",
+        "34a7316227c6169b33b7968c77de235f688d03dd19b3835f86e02d33c12c0604"
+      ]
+    },
+    {
+      "fixture": "repeat-skip-wrap.propan",
+      "run": "local-repeat",
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 0,
+        "value": 6
+      },
+      "frame_sha256": [
+        "60ead653f76ecf116144c6ada428949a9b3e034e53ef44e7334d03213275b9f9",
+        "df948b3a833f8a24b7da66146a89e1f6aa921b291e80d01e8743e033279d3977"
+      ]
+    },
+    {
+      "fixture": "repeat-skip-wrap.propan",
+      "run": "local-skipf",
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 0,
+        "value": 1
+      },
+      "frame_sha256": [
+        "05c19d645487cf8e8e48a99e6fcf7515d710e8e396c29fa17719ae6633d31cc3",
+        "2635b3cb0ebcdccb096e3fe4c60ae72c42abc38777a5957b73c954a0d9c31662"
+      ]
+    },
+    {
+      "fixture": "repeat-skip-wrap.propan",
+      "run": "maximum-length",
+      "observed": {
+        "c": false,
+        "z": false,
+        "q": 0,
+        "value": 4
+      },
+      "frame_sha256": [
+        "146749b0629858935cb60bdc16c3791a04b8249830ca09a0ca2bcf1a8b48e9c5",
+        "146749b0629858935cb60bdc16c3791a04b8249830ca09a0ca2bcf1a8b48e9c5"
+      ]
+    }
+  ],
+  "existing_regressions": {
+    "result": "9 fixtures; 157 hardware oracle comparisons passed",
+    "log_sha256": "082ac1a46631b10a4aa7f56fe08f7c0e0ce5c65722d058897d2e3d93c2ecafe4"
+  },
+  "full_suite": {
+    "command": "zig-0.16.0 build install test -Dcoverage=false -Doptimize=ReleaseFast --summary all",
+    "build_steps": 23,
+    "windtunnel_harness_tests": 95,
+    "fixtures": 162,
+    "fixture_runs": 2423,
+    "propan_pass": 102,
+    "propan_skip": 2,
+    "log_sha256": "65f2e29aef74c4025c06110c06ee62a8e1010b48ef9563ea87f47fd7b96b0df7"
+  }
+}

@@ -105,8 +105,10 @@ pub fn main(init: std.process.Init) !u8 {
 
     var hub: Hub = undefined;
     hub.init();
-    var terminal_sink: smart_pin.DataSink = .{ .writer = &stdout.interface };
+
+    var terminal_sink: smart_pin.DataSink = .{ .live_writer = &stdout.interface };
     hub.io.pins[62].smart.registers.sink = &terminal_sink;
+
     var trace_buffer: [4096]u8 = undefined;
     var trace = std.Io.File.stderr().writer(init.io, &trace_buffer);
     defer trace.interface.flush() catch {};

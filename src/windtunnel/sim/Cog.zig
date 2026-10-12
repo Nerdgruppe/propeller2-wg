@@ -64,6 +64,9 @@ interrupts: Interrupts = .{},
 debug: Debug = .{},
 repeat: ?Repeat = null,
 skip: Skip = .{},
+xbyte_mode: XbyteMode = @enumFromInt(0),
+xbyte_default_mode: XbyteMode = @enumFromInt(0),
+xbyte: ?Xbyte = null,
 started_no_load: bool = false,
 
 exec_mode: ExecMode = .stopped,
@@ -74,7 +77,7 @@ issue_phase: bool = true,
 collecting_writes: bool = false,
 writeback: Writeback = .{},
 retired: ?PipelineState = null,
-ram_collision: ?struct { clock: u64, address: u9 } = null,
+ram_collision: ?struct { clock: u64, address: u9, value: u32 } = null,
 lut_collision: ?struct { clock: u64, address: u9 } = null,
 dispatch_pc: u20 = 0,
 branched: bool = false,
@@ -150,6 +153,37 @@ pub const Skip = struct {
     pattern: u32 = 0,
     depth: u4 = 0,
 };
+
+/// All nine-bit hardware configurations are valid, including aliases and compressed-table modes.
+const XbyteMode = enum(u9) { _ };
+
+/// Latches used only while the phantom bytecode dispatch owns the pipeline.
+const Xbyte = struct {
+    phase: enum { lookup, latch, execute, branch } = .lookup,
+    address: u9 = 0,
+    entry: u32 = 0,
+};
+
+/// Select a bytecode's LUT entry, including compressed sixteen-byte groups and upper-bit modes.
+fn xbyte_address(configuration: XbyteMode, byte: u8) u9 {
+    const mode = @intFromEnum(configuration);
+    const width: u4 = switch (@as(u2, @truncate(mode >> 2))) {
+        0 => {
+            const threshold: u4 = @truncate(mode >> 4);
+            const group: u4 = @truncate(byte >> 4);
+            return (mode & 0x100) | if (threshold != 0 and group >= threshold)
+                (@as(u9, threshold) << 4) | (group - threshold)
+            else
+                byte;
+        },
+        1 => if (mode & 0x10 == 0) 7 else 6,
+        2 => 5,
+        3 => 4,
+    };
+    const mask: u9 = (@as(u9, 1) << width) - 1;
+    const shift: u3 = if (mode & 2 != 0) @intCast(8 - width) else 0;
+    return (mode & ~mask) | ((@as(u9, byte) >> shift) & mask);
+}
 
 pub const InterruptState = enum(u2) { idle = 0, pending = 2, active = 3 };
 pub const Interrupts = struct {
@@ -383,6 +417,11 @@ pub fn step(cog: *Cog) void {
         pattern.matched = matched;
     }
 
+    if (cog.xbyte != null) {
+        cog.clock_xbyte();
+        return;
+    }
+
     // Unaligned fetch begins with the low word. The adjacent slice returns
     // on the next clock, completing the instruction at its read/decode stage.
     // Complete it before an older ALTx can alter this younger instruction.
@@ -448,7 +487,7 @@ pub fn step(cog: *Cog) void {
                 }
             }
         }
-        const result = if (instr.cancelled)
+        var result = if (instr.cancelled)
             cog.cancel_instruction()
         else if (instr.command_result) |result| blk: {
             cog.writeback = instr.command_writeback;
@@ -467,8 +506,7 @@ pub fn step(cog: *Cog) void {
         cog.c = old_c;
         cog.z = old_z;
         if (std.meta.activeTag(result) == .next and instr.instr != 0 and instr.instr >> 28 == 0 and !cog.branched) {
-            cog.return_skip();
-            cog.jump(@truncate(cog.pop()));
+            result = cog.return_stack();
         }
         switch (result) {
             .wait => {
@@ -530,7 +568,7 @@ pub fn step(cog: *Cog) void {
         cog.pipeline[0] = state;
         cog.trace(.fetch, state);
         fetched = true;
-    } else if (cog.issue_phase and !cog.debug_queued()) {
+    } else if (cog.issue_phase and cog.xbyte == null and !cog.debug_queued()) {
         cog.pipeline[0] = cog.fetch_instruction();
         if (cog.pipeline[0]) |state| {
             cog.trace(.fetch, state);
@@ -727,8 +765,14 @@ pub fn commit_results(cog: *Cog) void {
     // This edge completes the previous ALU result, including streaming beats
     // while an instruction holds the execute stage.
     for (cog.writeback.writes[0..cog.writeback.count]) |write| {
-        if (cog.issue_phase and cog.exec_mode == .cog and cog.pc < 504 and cog.pc == @intFromEnum(write.reg)) {
-            cog.ram_collision = .{ .clock = cog.hub.counter, .address = @intFromEnum(write.reg) };
+        if (cog.issue_phase and cog.exec_mode == .cog and
+            cog.local_fetch_address() < 504 and cog.local_fetch_address() == @intFromEnum(write.reg))
+        {
+            cog.ram_collision = .{
+                .clock = cog.hub.counter,
+                .address = @intFromEnum(write.reg),
+                .value = cog.read_reg(write.reg),
+            };
             cog.trace_collision(@intFromEnum(write.reg), .cog_ram);
         }
         if (write.raw) {
@@ -928,7 +972,7 @@ fn prepare_flow(cog: *Cog, state: *PipelineState) void {
     if (skipping and cog.skip.mode == .fast and cog.exec_mode == .cog) {
         var count: u4 = 0;
         while (count < 7 and cog.skip.pattern & 1 != 0) : (count += 1) {
-            cog.pc = (cog.pc + 1) & 0x3ff;
+            cog.pc +%= 1;
             cog.skip.pattern >>= 1;
         }
     }
@@ -992,6 +1036,71 @@ fn jump_repeat(cog: *Cog, target: u20) void {
 pub fn return_skip(cog: *Cog) void {
     if (cog.skip.depth != 0) {
         cog.skip.depth -%= 1;
+    }
+}
+
+/// Return normally, or retain the exact $001FF stack sentinel and start a phantom bytecode dispatch.
+pub fn return_stack(cog: *Cog) ExecResult {
+    if (cog.stack[0] != 0x1ff) {
+        cog.return_skip();
+        cog.jump(@truncate(cog.pop()));
+        return .next;
+    }
+    if (cog.fifo_state.address == null or cog.fifo_state.engine == null or
+        cog.fifo_state.engine.?.mode != .read)
+        return .{ .illegal = "XBYTE requires a read FIFO initialized by RDFAST" };
+
+    cog.xbyte_mode = cog.xbyte_default_mode;
+    if (cog.pipeline[3]) |state| {
+        if (state.instr >> 28 == 0) {
+            switch (decode.decode(state.instr)) {
+                .setq => {
+                    cog.xbyte_mode = @enumFromInt(@as(u9, @truncate(cog.q)));
+                    cog.xbyte_default_mode = cog.xbyte_mode;
+                },
+                .setq2 => cog.xbyte_mode = @enumFromInt(@as(u9, @truncate(cog.q))),
+                else => {},
+            }
+        }
+    }
+    cog.xbyte = .{};
+    cog.begin_skip(.fast, 0);
+    cog.repeat = null;
+    cog.setq_pending = false;
+    cog.q2 = false;
+    cog.block_pointer_delta = false;
+    @memset(cog.pipeline[0..3], null);
+    cog.branched = true;
+    return .next;
+}
+
+/// Clock the hidden lookup and EXECF while hub services and event sensors continue independently.
+fn clock_xbyte(cog: *Cog) void {
+    const state = &cog.xbyte.?;
+    switch (state.phase) {
+        .lookup => {
+            const byte: u8 = @truncate(cog.read_fifo(1).?);
+            cog.write_reg(.PA, byte);
+            state.address = xbyte_address(cog.xbyte_mode, byte);
+            state.entry = cog.read_lut(state.address);
+            state.phase = .latch;
+        },
+        .latch => state.phase = .execute,
+        .execute => state.phase = .branch,
+        .branch => {
+            const entry = state.entry;
+            const address = state.address;
+            cog.write_reg(.PB, cog.fifo_state.address.?);
+            if (@intFromEnum(cog.xbyte_mode) & 1 != 0) {
+                cog.c = address & 2 != 0;
+                cog.z = address & 1 != 0;
+            }
+            cog.begin_skip(.fast, entry >> 10);
+            cog.jump(@as(u10, @truncate(entry)));
+            cog.xbyte = null;
+            // The ordinary branch fetch starts on the following edge.
+            cog.issue_phase = true;
+        },
     }
 }
 
@@ -1066,6 +1175,9 @@ fn trace(cog: *Cog, stage: enum { fetch, read, latch, execute, store, stall, flu
         return;
     cog.hub.trace_lines_left -= 1;
     writer.print("CT={d} cog={d} stage={t} pc=0x{x} instruction=0x{x}", .{ cog.hub.counter, cog.id, stage, state.pc, state.instr }) catch {};
+    if (state.local_address) |address| {
+        writer.print(" local=0x{x}", .{address}) catch {};
+    }
     if (state.interrupt) |level| {
         writer.print(" injected={t}", .{level}) catch {};
     }
@@ -1216,7 +1328,7 @@ pub fn interrupt_status(cog: *const Cog) u32 {
 
 /// Read event traps, skip mode/depth and LUT/stack status without consuming latches.
 pub fn event_status(cog: *const Cog) u32 {
-    var value: u32 = @as(u32, cog.skip.depth) << 28;
+    var value: u32 = (@as(u32, cog.skip.depth) << 28) | (@as(u32, @intFromEnum(cog.xbyte_mode)) << 16);
     if (cog.skip.mode == .cancel) {
         value |= 1 << 27;
     }
@@ -1307,7 +1419,7 @@ fn augmentation_consumers(cog: *Cog) PrefixConsumers {
 
 /// Insert an ordinary CALLD in an available pipeline slot while holding fetch PC and hub FIFO bytes.
 fn inject_interrupt(cog: *Cog) ?PipelineState {
-    if (!cog.issue_phase or cog.repeat != null or cog.debug.state == .active)
+    if (!cog.issue_phase or cog.repeat != null or cog.xbyte != null or cog.debug.state == .active)
         return null;
     const is_debug = cog.debug.state == .pending;
     if (!is_debug and cog.interrupts.stalled)
@@ -1859,6 +1971,8 @@ pub fn resolve_operand(cog: *Cog, reg: Register, imm: bool) u32 {
 pub const PipelineState = struct {
     pc: u20,
     instr: u32,
+    /// Physical local instruction source; null for hub fetches and injected instructions.
+    local_address: ?u10 = null,
     /// Fallthrough after repeat wrap and fast skip stepping, captured at read/decode.
     next_pc: ?u20 = null,
     cancelled: bool = false,
@@ -1903,28 +2017,51 @@ pub fn fetch_augd(cog: *Cog) u32 {
     return augd;
 }
 
+/// Select the local RAM read port: overflow leaves it on the preceding instruction's S address.
+fn local_fetch_address(cog: *const Cog) u10 {
+    if (cog.pc & 0x200 != 0)
+        return @as(u10, @truncate(cog.pc));
+    if (cog.pc < 0x200)
+        return @intCast(cog.pc);
+    if (cog.pipeline[2]) |state| {
+        if (state.alt_s) |reg|
+            return @intFromEnum(reg);
+        return @as(u9, @truncate(state.instr));
+    }
+    return 0;
+}
+
+/// Overflow reuses the S read port, which returns old RAM data on a same-edge result write.
+fn overflow_instruction(cog: *Cog, address: u9) u32 {
+    if (cog.ram_collision) |collision| {
+        if (collision.clock == cog.hub.counter and collision.address == address)
+            return collision.value;
+    }
+    return cog.read_reg(@enumFromInt(address));
+}
+
 /// Fetch local cog/LUT code or consume a hub FIFO slice without changing mode on sequential PC wrap.
 /// Mark execute-only debug-ROM fetches so only instructions that reach execution report missing support.
 fn fetch_instruction(cog: *Cog) ?PipelineState {
     switch (cog.exec_mode) {
         .stopped => unreachable,
         .cog => {
+            const address = cog.local_fetch_address();
+            const rom = cog.pc >= 504 and cog.pc < 512;
             const instr: PipelineState = .{
                 .pc = cog.pc,
-                .debug_rom = cog.pc >= 504 and cog.pc < 512,
-                .instr = if (cog.pc < 0x200)
-                    if (cog.pc >= 504)
-                        debug_rom[cog.pc - 504]
-                    else
-                        cog.registers.values[cog.pc]
+                .local_address = address,
+                .debug_rom = rom,
+                .instr = if (address >= 0x200)
+                    cog.lut[address - 0x200]
+                else if (rom)
+                    debug_rom[address - 504]
+                else if (cog.pc >= 0x400)
+                    cog.overflow_instruction(@intCast(address))
                 else
-                    cog.lut[cog.pc - 0x200],
+                    cog.registers.values[address],
             };
-            cog.pc += 1;
-            if (cog.pc == 0x400) {
-                cog.pc = 0;
-            }
-            std.debug.assert(cog.pc < 0x400);
+            cog.pc +%= 1;
             return instr;
         },
         .hub => {
@@ -1981,6 +2118,56 @@ pub const Fault = struct {
         };
     }
 };
+
+test "XBYTE sentinel is exact, POP consumes it, and direct jumps still fetch debug ROM" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    for ([_]u32{ 0x8000_01ff, 0x4000_01ff, 0x0010_01ff }) |value| {
+        cog.stack[0] = value;
+        cog.stack[1] = 0x123;
+        try std.testing.expectEqual(ExecResult.next, cog.return_stack());
+        try std.testing.expect(cog.xbyte == null);
+        try std.testing.expectEqual(@as(u32, 0x123), cog.stack[0]);
+    }
+    cog.stack[0] = 0x1ff;
+    try std.testing.expectEqual(@as(u32, 0x1ff), cog.pop());
+    cog.jump(0x1ff);
+    const instruction = cog.fetch_instruction().?;
+    try std.testing.expect(instruction.debug_rom);
+    try std.testing.expectEqual(debug_rom[7], instruction.instr);
+    try std.testing.expect(cog.xbyte == null);
+}
+
+test "reset cancels every XBYTE phase and mode while retaining LUT RAM" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for (0..4) |clocks| {
+        hub.init();
+        const cog = &hub.cogs[0];
+        cog.exec_mode = .cog;
+        cog.xbyte_mode = @enumFromInt(0x101);
+        cog.xbyte_default_mode = cog.xbyte_mode;
+        cog.begin_fifo_read(0x1000);
+        cog.stack[0] = 0x1ff;
+        cog.lut[0x100] = 0x20;
+        try std.testing.expectEqual(ExecResult.next, cog.return_stack());
+        for (0..clocks) |_| {
+            hub.step();
+        }
+        try std.testing.expect(cog.xbyte != null);
+        cog.reset();
+        try std.testing.expect(cog.xbyte == null);
+        try std.testing.expectEqual(@as(u9, 0), @intFromEnum(cog.xbyte_mode));
+        try std.testing.expectEqual(@as(u9, 0), @intFromEnum(cog.xbyte_default_mode));
+        try std.testing.expectEqual(@as(u32, 0x20), cog.lut[0x100]);
+        try std.testing.expectEqual(ExecMode.stopped, cog.exec_mode);
+    }
+}
 
 test "five clock passage delays writeback and forwards to the following operand latch" {
     const hub = try std.testing.allocator.create(Hub);

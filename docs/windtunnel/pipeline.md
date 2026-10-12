@@ -185,9 +185,11 @@ and refills from the target. Preserve the branch's own result/flags/return state
 A branch to the immediately following instruction still refills. A false
 condition or untaken test-and-branch does not flush.
 
-Local fetch covers cog `$000..$1F7`, execute-only debug ROM `$1F8..$1FF`,
-and LUT `$200..$3FF`; sequential execution
-wraps `$3FF` to `$000`. Only a branch enters hub execution. Hub PCs are byte
+Local execution increments a full twenty-bit PC and retains its mode across
+`$3FF` and higher carries. PC bit 9 selects LUT at `PC[8:0]`. Below `$200`, cog
+fetch uses the PC with execute-only debug ROM at `$1F8..$1FF`; above `$3FF`,
+when bit 9 is clear, it uses the preceding instruction's effective S register
+address and architectural read port. Only a branch enters hub execution. Hub PCs are byte
 addresses, instruction longs may be unaligned, and hub execution consumes a
 prefetch FIFO. A branch to hub requires FIFO startup and phase-dependent access,
 although this device shows no extra entry cost for unaligned instructions.
@@ -544,8 +546,9 @@ reservation flushing, restart, priority, completion and augmentation state.
 Reproduce with `zig-0.16.0 build install test -Dcoverage=false` and
 `zig-out/bin/windtunnel-tests --oracle tests/windtunnel/state/interrupt-*.propan`.
 The hardware command uses `P2AAS_ENDPOINT=ws://localhost:12880/` by default.
-INT0/debug, XBYTE and absent event engines remain excluded;
-this extension does not change I/O propagation timing.
+The ordinary-interrupt matrix above excludes INT0/debug, XBYTE and absent
+event engines; separate XBYTE boundary checks are described below.
+This extension does not change I/O propagation timing.
 
 ## Software FIFO completion (2026-10-11)
 
@@ -615,9 +618,58 @@ patterns, nested calls, prefixes, canceled shared commands, local/hub timing,
 branches and return addresses. See [the measured rules](../accumulated.md#rep-and-instruction-skipping-2026-10-12).
 
 
-Local-PC overflow is a separate known limitation: current local fetch masks the
-whole PC to ten bits, while silicon retains upper bits after $3FF. REP bodies
-spanning that overflow differ from hardware. The retained
-[characterization probes](../../data/timing-data/local-pc-overflow/README.md)
-are intentionally outside the passing regression matrix until that behavior is
-recovered. Bodies ending at the local boundary and hub wrap are covered.
+## Local PC overflow completion (2026-10-12)
+
+Logical PC, physical local source and execution mode are separate. Each fetched
+pipeline entry records `local_address` alongside its full PC. Fast skipping also
+increments twenty bits. LUT windows recur whenever PC bit 9 is set; overflowing
+cog windows use the preceding instruction's S read port, including ALTS,
+immediate operands, cancellation and architectural special registers. Only a
+full PC of `$1F8..$1FF` selects debug ROM. An overflow S-port fetch colliding with
+a same-clock RAM result write sees the previous word.
+
+REP's existing read-stage rewind and branch cancellation paths are retained.
+The original `REP 2,3` crossing probe now produces the measured single addition:
+the ADD at `$3FF` selects the exit at cog register 1. Relative LOC adds A in PC
+units rather than using the local branch byte-displacement conversion. Branches
+and interrupt returns select their normal target domains from the full address.
+
+The harness validates local ownership using the physical source. Architectural
+special-register instruction values outside the assembler's executable PC range
+must match an instruction emitted as code elsewhere in the fixture. Exit detection
+also checks the instruction source domain, so a large local PC cannot be mistaken
+for the reporter's hub address. Pipeline traces include both PC and physical source.
+
+Eleven fixtures cover 207 independently repeated hardware cases: LOC, absolute
+and relative CALLD, explicit/implicit returns, REP, SKIP/SKIPF/EXECF, CT1 entry and
+RETI1/RESI1, special registers, self-modification, higher carries and full rollover.
+See [the measured rules](../accumulated.md#local-pc-overflow-and-loc-2026-10-12) and
+[retained evidence](../../data/timing-data/local-pc-overflow/README.md).
+
+## XBYTE completion (2026-10-12)
+
+`Cog.return_stack` is shared by explicit RET and completed non-branching `_RET_`
+instructions. The exact `$001FF` hardware-stack entry starts a phantom dispatch
+and remains on the stack. Ordinary returns retain the existing pop/skip-depth
+behavior. XBYTE configuration is separate from Q: persistent SETQ mode, effective
+SETQ2 override, and an optional in-flight sequence all reset with the cog.
+
+The return cancels younger pipeline slots, REP and the previous skip context.
+On the following edge, XBYTE samples the software FIFO, writes PA and reads the
+selected LUT entry through `read_lut`, preserving selectable-event notifications.
+Two internal clocks separate that lookup from the phantom EXECF branch. The
+branch writes PB and optional C/Z, installs the new fast-skip pattern and uses
+the ordinary redirect/refill path. The first handler executes eight clocks after
+the triggering return executes. Hub services, CT and event sensors keep running
+through the sequence; interrupt injection is suppressed while it owns the pipe.
+
+The FIFO retains its existing empty-read behavior: zero without pointer advance.
+The hidden lookup retains Q rather than applying ordinary RDLUT's Q update.
+GETBRK WC includes the effective nine-bit mode and existing sentinel/skip fields.
+No synthetic opcode, decoder entry, or external tool is required.
+
+Six registered fixtures cover 104 hardware comparisons, including all 131,072
+mode/byte combinations, loop timing, cog/LUT handlers, flags, stack escape,
+trailing skips, calls, blocking/nonblocking RDFAST, mode lifetime and CT1 interrupt
+boundaries. See [the measured rules](../accumulated.md#xbyte-bytecode-execution-2026-10-12).
+Local-PC overflow has separate hardware coverage in the preceding section.
