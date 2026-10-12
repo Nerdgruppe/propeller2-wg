@@ -32,6 +32,7 @@ fn operandS(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
 
 /// Configure the shared interface once while a blocking instruction retries its captured operands.
 fn configureFifo(cog: *Cog, args: encoding.Both_Dimm_Simm, mode: Cog.FifoMode) Cog.ExecResult {
+    if (cog.debug.state == .active) cog.debug.fifo_untouched = false;
     if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
     const state = if (cog.collecting_writes) &cog.pipeline[3].? else null;
     var nonblocking = false;
@@ -197,7 +198,9 @@ fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecRes
             .block = block,
             .timed = cog.collecting_writes,
             .size = size,
-            .direction = .{ .read = .{ .no_result = if (state) |instruction| instruction.no_result else false } },
+            .direction = .{ .read = .{
+                .no_result = if (state) |instruction| instruction.no_result else false,
+            } },
         };
         const transfer = &cog.memory_transfer.?;
         transfer.direction.read.grant_address = transfer.address;
@@ -238,7 +241,11 @@ fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult 
             .block = block,
             .timed = cog.collecting_writes,
             .size = size,
-            .direction = .{ .write = .{ .immediate = if (!block or (immediate and !cog.q2)) value else null, .masked = masked } },
+            .direction = .{ .write = .{
+                .immediate = if (!block or (immediate and !cog.q2)) value else null,
+                .masked = masked,
+                .origin = if (cog.debug.state == .active) .debug else .application,
+            } },
         };
         const transfer = &cog.memory_transfer.?;
         // LUT source capture adds one setup clock before the first grant.
@@ -267,8 +274,17 @@ fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
             .value = if (crossing) value >> @intCast(@as(u6, low_size) * 8) else value,
             .size = if (crossing) size - low_size else size,
             .masked = masked,
+            .origin = transfer.direction.write.origin,
         };
-    } else cog.hub.write_memory(transfer.address, value, size, masked);
+    } else {
+        cog.hub.write_memory_from(
+            transfer.address,
+            value,
+            size,
+            masked,
+            transfer.direction.write.origin,
+        );
+    }
     transfer.address +%= size;
     transfer.reg +%= 1;
     transfer.remaining -= 1;
@@ -553,7 +569,11 @@ fn modifyPins(cog: *Cog, args: encoding.Only_Dimm_Flags, family: enum { dir, out
 
 /// Apply conditional cancellation and ALTx fields before selecting the semantic handler.
 fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
-    if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return .skip;
+    if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) {
+        if (decode.decode(state.instr) == .brk and cog.debug.state != .active)
+            cog.breakpoint(0, false);
+        return .skip;
+    }
     var raw = state.instr;
     if (state.alt_d) |reg| raw = (raw & ~@as(u32, 0x3fe00)) | (@as(u32, @intFromEnum(reg)) << 9);
     if (state.alt_s) |reg| raw = (raw & ~@as(u32, 0x1ff)) | @intFromEnum(reg);
@@ -1043,7 +1063,8 @@ pub fn calld_s(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     if (args.c_mod == .write) cog.c = source >> 31 != 0;
     if (args.z_mod == .write) cog.z = source & 0x4000_0000 != 0;
     cog.complete_interrupt(args.s, args.s_imm, args.c_mod == .write and args.z_mod == .write);
-    cog.jump(target);
+    if (!cog.return_debug(args.s, args.s_imm, args.c_mod == .write and args.z_mod == .write, target))
+        cog.jump(target);
     return .next;
     // codegen: end:calld_s
 }
@@ -3169,8 +3190,8 @@ pub fn setint3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 pub fn getbrk(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getbrk
     const value: u32 = if (args.c_mod == .write and args.z_mod == .write) blk: {
-        cog.c = cog.interrupts.stalled;
-        cog.z = cog.started_hubexec;
+        cog.c = if (cog.debug.state == .active) cog.debug.coginit else cog.interrupts.stalled;
+        cog.z = cog.started_no_load;
         break :blk cog.interrupt_status();
     } else if (args.c_mod == .write) blk: {
         cog.c = cog.skip.pattern & 1 != 0;
@@ -3193,10 +3214,8 @@ pub fn getbrk(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn cogbrk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:cogbrk
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    cog.break_cog(operandD(cog, args.d, args.d_imm));
+    return .next;
     // codegen: end:cogbrk
 }
 
@@ -3209,10 +3228,8 @@ pub fn cogbrk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn brk(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:brk
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    cog.breakpoint(operandD(cog, args.d, args.d_imm), true);
+    return .next;
     // codegen: end:brk
 }
 
@@ -4995,6 +5012,7 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
     hub.memory[0] = 0xaa;
     hub.memory[0x7ffff] = 0xbb;
     hub.memory[0x7c000] = 0xcc;
+    hub.memory[0x7c001] = 0; // This test supplies its own bytes over the initialized ROM cache.
     const cases = [_]struct { address: u32, bytes: [2]u32 }{
         .{ .address = 0x80000, .bytes = .{ 0, 0 } },
         .{ .address = 0x7ffff, .bytes = .{ 0xbb, 0 } },

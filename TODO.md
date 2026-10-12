@@ -195,11 +195,9 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
   - Feature Parity with hw oracle
 - Validate/implement cog startup behavior
   - perfect timing clone so hub writes to the coginit'd segment is both detected/logged and
-- HUBSET Protection and Debug Enables
 - Hardware Chip Reset and ROM Boot
-- Hidden Debug Interrupt and Debug ROM
 - Cache `hub.random.word` to not compute it multiple times per clock
-
+- Implement Streamer FIFO bypass erratum
 
 #### Clock Configuration
 

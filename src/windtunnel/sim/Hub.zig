@@ -12,12 +12,26 @@ const Hub = @This();
 const p2 = @import("p2");
 const EventId = p2.types.EventId;
 
+pub const boot_rom = @embedFile("boot-rom");
+comptime {
+    @setEvalBranchQuota(1_000_000);
+    if (boot_rom.len != 16_384) @compileError("invalid recovered device ROM length");
+    var digest: [32]u8 = undefined;
+    std.crypto.hash.sha2.Sha256.hash(boot_rom, &digest, .{});
+    if (!std.mem.eql(u8, &std.fmt.bytesToHex(digest, .lower), "b7a33635d05ebfe62a1efba88a6599be3b62ca36c756eb459691a05cf2b27583"))
+        @compileError("recovered device ROM identity changed");
+}
+
+/// Captured at the issuing instruction, never inferred from a later cog state.
+pub const WriteOrigin = enum { application, debug };
+
 memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
 cordic: Cordic = .{},
 random: Random = .{},
+debug: struct { enables: u8 = 0, protected: bool = false, locked: bool = false } = .{},
 
 trace_writer: ?*std.Io.Writer = null,
 vcd: ?*Vcd = null,
@@ -53,6 +67,7 @@ pub fn init(hub: *Hub) void {
         },
         .io = .{},
     };
+    @memcpy(hub.memory[0x7c000..], boot_rom);
     for (&hub.locks, 0..) |*lock, i| lock.* = .{ .id = @intCast(i) };
 }
 
@@ -61,6 +76,12 @@ pub fn init(hub: *Hub) void {
 pub fn configure(hub: *Hub, mode: u32) void {
     if (mode & 0x8000_0000 != 0) {
         hub.random.seed(mode);
+    } else if (mode & 0xf000_0000 == 0x2000_0000) {
+        if (!hub.debug.locked) hub.debug = .{
+            .enables = @truncate(mode),
+            .protected = mode & (1 << 16) != 0,
+            .locked = mode & (1 << 17) != 0,
+        };
     } else if (!hub.io.setClock(mode)) {
         std.log.warn("unsupported HUBSET value 0x{x:0>8}", .{mode});
     }
@@ -103,7 +124,7 @@ pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
     var value: u32 = 0;
     for (0..size) |i| {
         const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
-        if (byte_address < 0x80000 or byte_address >= 0xfc000)
+        if (byte_address < (if (hub.debug.protected) @as(u32, 0x7c000) else 0x80000) or byte_address >= 0xfc000)
             value |= @as(u32, hub.memory[byte_address & 0x7ffff]) << @intCast(i * 8);
     }
     return value;
@@ -111,10 +132,17 @@ pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
 
 /// Write through the 20-bit hub map; ignore holes and optionally preserve bytes where the source is zero.
 pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool) void {
+    hub.write_memory_from(address, value, size, masked, .application);
+}
+
+/// Apply byte-level aliases and protection using the transfer's original authorization.
+pub fn write_memory_from(hub: *Hub, address: u32, value: u32, size: u3, masked: bool, origin: WriteOrigin) void {
     for (0..size) |i| {
         const byte: u8 = @truncate(value >> @intCast(i * 8));
         const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
-        if ((byte_address < 0x80000 or byte_address >= 0xfc000) and (!masked or byte != 0)) hub.memory[byte_address & 0x7ffff] = byte;
+        const mapped = byte_address < 0x80000 or byte_address >= 0xfc000;
+        const authorized = !hub.debug.protected or byte_address < 0x7c000 or (byte_address >= 0xfc000 and origin == .debug);
+        if (mapped and authorized and (!masked or byte != 0)) hub.memory[byte_address & 0x7ffff] = byte;
     }
 }
 
@@ -145,7 +173,7 @@ pub fn step(hub: *Hub) void {
     };
     // All previous-edge writes are visible before any cog samples this edge.
     for (&hub.cogs) |*cog| if (cog.hub_writeback) |write| {
-        hub.write_memory(write.address, write.value, write.size, write.masked);
+        hub.write_memory_from(write.address, write.value, write.size, write.masked, write.origin);
         cog.hub_writeback = null;
     };
     for (&hub.pending_starts, 0..) |*pending, id| if (pending.*) |start| {
@@ -210,8 +238,9 @@ pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u32 = 0, p
     }
     cog.registers.set(.PTRA, options.ptra);
     cog.registers.set(.PTRB, options.hub_address);
-    cog.started_hubexec = cog.exec_mode == .hub;
+    cog.started_no_load = !options.load_image;
     cog.ct_targets = .{ 0, 0, 0 };
+    cog.request_debug(true);
 }
 
 test "UART DIR changes once per edge across register writes, reset and simultaneous handoff" {
@@ -516,7 +545,7 @@ test "cog restart clears pending interrupts and controller state" {
         hub.init();
         try hub.start_cog(3, .{ .hub_address = 0x4000, .load_image = false, .clocked = false });
         const cog = &hub.cogs[3];
-        try std.testing.expect(cog.started_hubexec);
+        try std.testing.expect(cog.started_no_load);
         try std.testing.expectEqual(@as(u32, 1), cog.interrupt_status());
         cog.exec_mode = .cog;
         cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
@@ -524,7 +553,7 @@ test "cog restart clears pending interrupts and controller state" {
         cog.interrupts.stalled = true;
         cog.trigger_interrupt(level);
         try hub.start_cog(3, .{ .clocked = false });
-        try std.testing.expect(!cog.started_hubexec);
+        try std.testing.expect(!cog.started_no_load);
         try std.testing.expect(!cog.interrupts.stalled);
         try std.testing.expectEqual(Cog.InterruptState.idle, cog.interrupts.levels.get(level).state);
         try std.testing.expectEqual(@as(?u32, 0), cog.ct_targets[0]);
@@ -571,4 +600,75 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
             try std.testing.expectEqual(@as(u32, 0), hub.io.clock_mode);
         }
     };
+}
+
+
+test "ROM cache aliases, byte protection, masked wrapping and configuration lock" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    try std.testing.expectEqual(hub.read_memory(0x7c000, 4), hub.read_memory(0xfc000, 4));
+    hub.write_memory(0x7ffff, 0x1122_3344, 4, false);
+    try std.testing.expectEqual(@as(u32, 0x44), hub.read_memory(0xfffff, 1));
+    hub.configure(0x2003_00ff);
+    try std.testing.expectEqual(@as(u32, 0), hub.read_memory(0x7ffff, 4));
+    hub.write_memory_from(0x7ffff, 0xdd, 1, false, .debug);
+    hub.write_memory(0xfffff, 0xaabb_ccdd, 4, false);
+    try std.testing.expectEqual(@as(u32, 0xaabb_cc44), hub.read_memory(0xfffff, 4));
+    hub.write_memory_from(0xfffff, 0x0055_0066, 4, true, .debug);
+    try std.testing.expectEqual(@as(u32, 0xaa55_cc66), hub.read_memory(0xfffff, 4));
+    hub.configure(0x2000_0000);
+    try std.testing.expect(hub.debug.protected and hub.debug.locked);
+    try std.testing.expectEqual(@as(u8, 255), hub.debug.enables);
+    try hub.start_cog(0, .{ .clocked = false });
+    try std.testing.expect(hub.debug.locked);
+    try std.testing.expectEqual(Cog.InterruptState.pending, hub.cogs[0].debug.state);
+    hub.init();
+    try std.testing.expect(!hub.debug.locked);
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+}
+
+test "debug ROM saves and restores sixteen registers for all eight cogs" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    for (0..8) |id| {
+        hub.init();
+        hub.configure(0x2000_00ff);
+        const cog = &hub.cogs[id];
+        const base: u32 = 0xff800 + ((15 ^ @as(u32, @intCast(id))) << 7);
+        hub.write_memory(base + 0x40, 0xFD64_2036, 4, false); // BRK #16.
+        hub.write_memory(base + 0x44, 0xFD80_01fd, 4, false); // JMP #$1FD.
+        try hub.start_cog(@intCast(id), .{ .load_image = false, .clocked = false, .ptra = 0x1234 });
+        cog.registers.values[0] = 0xF604_2807; // MOV r20,#7.
+        for (1..16) |reg| cog.registers.values[reg] = 0;
+        for (0..200) |_| {
+            hub.step();
+            if (cog.registers.values[20] == 7) break;
+        }
+        try std.testing.expect(hub.fault == null);
+        try std.testing.expectEqual(Cog.InterruptState.idle, cog.debug.state);
+        try std.testing.expectEqual(@as(u32, 7), cog.registers.values[20]);
+        try std.testing.expectEqual(@as(u32, 0xF604_2807), hub.read_memory(base, 4));
+        try std.testing.expectEqual(@as(u32, 0x1234), cog.read_reg(.PTRA));
+        try std.testing.expectEqual(@as(u32, 0), cog.read_reg(.PTRB));
+        try std.testing.expect(!cog.events.contains(.INT));
+    }
+}
+
+test "deferred write authorization survives a debug state transition" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    hub.configure(0x2001_0001);
+    const before = hub.read_memory(0xfc000, 4);
+    const cog = &hub.cogs[0];
+    cog.debug.state = .active;
+    cog.hub_writeback = .{ .address = 0xfc000, .value = 0xdead_beef, .size = 4, .masked = false, .origin = .application };
+    hub.step();
+    try std.testing.expectEqual(before, hub.read_memory(0xfc000, 4));
+    cog.debug.state = .idle;
+    cog.hub_writeback = .{ .address = 0xfc000, .value = 0x1234_5678, .size = 4, .masked = false, .origin = .debug };
+    hub.step();
+    try std.testing.expectEqual(@as(u32, 0x1234_5678), hub.read_memory(0xfc000, 4));
 }

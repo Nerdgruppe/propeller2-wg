@@ -445,6 +445,32 @@ On a newly started cog, CT targets reset to zero and their flags assert until
 rearmed. Cog 0's bootloader may additionally leave a selectable event latched;
 status probes normalize these sensors before asserting individual event bits.
 
+## Debug interrupt (INT0)
+
+The silicon documentation describes INT0 as higher priority than INT1..INT3
+and unaffected by STALLI. HUBSET enables it per cog. A debug-enabled COGINIT
+starts with IJMP0 pointing at execute-only cog ROM $1F8; the ROM saves cog
+registers $000..$00F to the cog's upper-hub-RAM slot, loads a 16-long debug
+handler from the adjacent slot, and restores the original registers on exit
+through $1FD..$1FF. The slot base is `$FF800 + ((!cog & 15) << 7)`.
+
+Within INT0, INA and INB are IJMP0 and IRET0 unless BRK control bit 11 exposes
+the normal pin inputs. The injected `CALLD IRET0,IJMP0 WCZ` saves the held PC
+and flags. `RETI0` and any register-D `CALLD D,IRET0 WCZ` return from INT0;
+`RESI0` stores the next debug instruction in IJMP0 before returning. The
+debug handler must execute BRK to arm any subsequent breakpoint: control bits
+0..11 are cleared on entry. Outside INT0, BRK can request an interrupt even
+when its condition is false; the condition still controls updating its code.
+These rules are represented by the `program/debug-*.propan` simulator fixtures;
+they have not been replayed against the hardware oracle in this session.
+
+HUBSET debug configuration can also protect the last 16 KiB of hub RAM. In
+that mode the lower `$7C000..$7FFFF` alias reads as zero, writes to it are
+blocked, and `$FC000..$FFFFF` writes are allowed only from a debug ISR. The
+lock bit prevents later configuration changes until chip reset. A queued hub
+write retains the issuing instruction's privilege even if the cog enters or
+leaves INT0 before the write reaches RAM.
+
 ## Selectable pin events (SE1–SE4)
 
 Hardware probes in `tests/windtunnel/state/selectable-pin-events.propan` and

@@ -19,6 +19,18 @@ const PinIndex = types.PinIndex;
 pub const Register = types.Register;
 pub const EventSet = std.EnumSet(EventId);
 
+/// Execute-only register ROM, transcribed from the silicon instruction words.
+pub const debug_rom = [8]u32{
+    0b1111_1101011_001_000001111_000101000,
+    0b1111_1100011_000_000000000_111111000,
+    0b1111_1101011_001_000001111_000101000,
+    0b1111_1011000_000_000000000_111111001,
+    0b1111_1101100_000_000000000_000000000,
+    0b1111_1101011_001_000001111_000101000,
+    0b1111_1011000_000_000000000_111111000,
+    0b1111_1011001_110_111111111_111111111,
+};
+
 pub const ExecMode = enum {
     stopped,
     cog,
@@ -49,9 +61,10 @@ augd_pending: bool = false,
 
 lut_sharing: bool = false,
 interrupts: Interrupts = .{},
+debug: Debug = .{},
 repeat: ?Repeat = null,
 skip: Skip = .{},
-started_hubexec: bool = false,
+started_no_load: bool = false,
 
 exec_mode: ExecMode = .stopped,
 
@@ -76,7 +89,7 @@ pattern: ?Pattern = null,
 pixel_pivot: u8 = 0,
 pixel_mode: u6 = 0,
 memory_transfer: ?MemoryTransfer = null,
-hub_writeback: ?struct { address: u32, value: u32, size: u3, masked: bool } = null,
+hub_writeback: ?struct { address: u32, value: u32, size: u3, masked: bool, origin: Hub.WriteOrigin } = null,
 startup: ?Startup = null,
 
 pub const Pattern = struct {
@@ -108,6 +121,21 @@ pub const SelectableEvent = union(enum) {
 };
 
 pub const InterruptLevel = enum { int1, int2, int3 };
+pub const InjectedInterrupt = enum { int0, int1, int2, int3 };
+
+/// The hidden interrupt controller and its two overlaid registers.
+pub const Debug = struct {
+    state: InterruptState = .idle,
+    control: u32 = 0,
+    code: u8 = 0,
+    coginit: bool = false,
+    ijmp: u32 = 0x1f8,
+    iret: u32 = 0,
+    pending_since: u64 = 0,
+    return_pc: u20 = 0,
+    return_mode: ExecMode = .cog,
+    fifo_untouched: bool = true,
+};
 /// One hardware repeat context counts pipeline encounters, not elapsed clocks.
 pub const Repeat = struct {
     start: u20,
@@ -164,6 +192,7 @@ pub const MemoryTransfer = struct {
         immediate: ?u32 = null,
         ready_at: u64 = 0,
         masked: bool = false,
+        origin: Hub.WriteOrigin = .application,
         source_value: ?u32 = null,
     };
 
@@ -268,7 +297,7 @@ pub const FifoState = struct {
 };
 
 const Writeback = struct {
-    writes: [3]struct { reg: Register, value: u32, raw: bool = false } = undefined,
+    writes: [3]struct { reg: Register, value: u32, raw: bool = false, debug_overlay: bool = false } = undefined,
     count: u2 = 0,
     c: ?bool = null,
     z: ?bool = null,
@@ -377,10 +406,21 @@ pub fn step(cog: *Cog) void {
         const old_z = cog.z;
         cog.collecting_writes = true;
         if (instr.interrupt) |level| {
-            cog.interrupts.levels.getPtr(level).state = .active;
-            cog.raise_event(.INT);
+            if (level == .int0) {
+                cog.debug.state = .active;
+                cog.debug.control = 0;
+                cog.debug.return_pc = instr.pc;
+                cog.debug.return_mode = cog.exec_mode;
+                cog.debug.fifo_untouched = true;
+            } else {
+                const ordinary: InterruptLevel = @enumFromInt(@intFromEnum(level) - 1);
+                cog.interrupts.levels.getPtr(ordinary).state = .active;
+                cog.raise_event(.INT);
+                const index: u5 = @intFromEnum(ordinary);
+                if (cog.debug.control & ((@as(u32, 1) << (5 + index)) | (@as(u32, 1) << (1 + index))) != 0) cog.request_debug(false);
+            }
         }
-        const result = if (instr.cancelled) cog.cancel_instruction() else if (instr.debug_rom) ExecResult.not_implemented else if (instr.command_result) |result| blk: {
+        const result = if (instr.cancelled) cog.cancel_instruction() else if (instr.command_result) |result| blk: {
             cog.writeback = instr.command_writeback;
             break :blk result;
         } else execute.execute_instruction(cog, instr);
@@ -433,7 +473,7 @@ pub fn step(cog: *Cog) void {
         cog.pipeline[0] = state;
         cog.trace(.fetch, state);
         fetched = true;
-    } else if (cog.issue_phase) {
+    } else if (cog.issue_phase and !cog.debug_queued()) {
         cog.pipeline[0] = cog.fetch_instruction();
         if (cog.pipeline[0]) |state| {
             cog.trace(.fetch, state);
@@ -585,7 +625,18 @@ pub fn commit_results(cog: *Cog) void {
             cog.ram_collision = .{ .clock = cog.hub.counter, .address = @intFromEnum(write.reg) };
             cog.trace_collision(@intFromEnum(write.reg), .cog_ram);
         }
-        if (write.raw) cog.write_ram(@intFromEnum(write.reg), write.value) else cog.write_reg(write.reg, write.value);
+        if (write.raw) {
+            cog.write_ram(@intFromEnum(write.reg), write.value)
+        }
+        else if (write.debug_overlay) {
+            if (write.reg == .INA)
+                cog.debug.ijmp = write.value
+            else
+                cog.debug.iret = write.value;
+        } 
+        else {
+            cog.write_reg(write.reg, write.value);
+        }
     }
     if (cog.writeback.lut) |write| cog.write_lut(write.address, write.value);
     if (cog.writeback.c) |value| cog.c = value;
@@ -617,7 +668,7 @@ pub fn clock_memory(cog: *Cog) void {
         if (cog.hub.counter == transfer.grant_at and (transfer.address & 3) + transfer.size > 4) {
             const low_size: u3 = @intCast(4 - (transfer.address & 3));
             const value = cog.transfer_source(transfer);
-            cog.hub.write_memory(transfer.address, value, low_size, transfer.direction.write.masked);
+            cog.hub.write_memory_from(transfer.address, value, low_size, transfer.direction.write.masked, transfer.direction.write.origin);
         }
         return;
     }
@@ -683,6 +734,8 @@ pub fn memory_grant_after(cog: *Cog, address: u32, setup: u64) u64 {
 
 /// Test the ordinary interrupt busy latches without confusing STALLI with ISR execution.
 fn in_isr(cog: *const Cog) bool {
+    if (cog.debug.state == .active) 
+    return true;
     for (cog.interrupts.levels.values) |level| if (level.state == .active) return true;
     return false;
 }
@@ -735,6 +788,16 @@ fn prepare_flow(cog: *Cog, state: *PipelineState) void {
         }
     }
     state.next_pc = state.repeat_target orelse cog.pc;
+    if (!state.cancelled and cog.debug.state != .active) {
+        if (decode.decode(state.instr) == .brk and cog.debug.control & (1 << 4) != 0) cog.request_debug(false);
+        var step_bit: u5 = 0;
+        for (std.enums.values(InterruptLevel)) |level| if (cog.interrupts.levels.get(level).state == .active) {
+            step_bit = @intCast(@intFromEnum(level) + 1);
+            break;
+        };
+        if (cog.debug.control & (@as(u32, 1) << step_bit) != 0 or
+            (cog.debug.control & (1 << 10) != 0 and state.pc == cog.debug.control >> 12)) cog.request_debug(false);
+    }
 }
 
 /// Return the prepared nonlinear fallthrough, or sequential PC for direct semantic callers.
@@ -757,6 +820,17 @@ pub fn return_skip(cog: *Cog) void {
 /// Leaving hub execution keeps the existing FIFO filling, so it may still contend with data transfers.
 pub fn jump(cog: *Cog, target: u20) void {
     cog.repeat = null;
+    if (cog.pipeline[3]) |state| if (state.interrupt == .int0) {
+        cog.pc = target;
+        cog.exec_mode = if (target < 0x400) .cog else .hub;
+        if (cog.exec_mode == .cog) {
+            @memset(cog.pipeline[0..3], null);
+            cog.issue_phase = false;
+            cog.branched = true;
+            return;
+        }
+    };
+    if (cog.debug.state == .active and target >= 0x400) cog.debug.fifo_untouched = false;
     cog.redirect_fetch(target, if (target < 0x400) .cog else .hub);
 }
 
@@ -833,6 +907,7 @@ pub fn return_address(cog: *Cog) u32 {
 /// Latch a sampled event and notify idle interrupt levels selecting that source.
 pub fn raise_event(cog: *Cog, event: EventId) void {
     cog.events.insert(event);
+    if (cog.debug.control & (1 << 9) != 0 and @as(u4, @truncate(cog.debug.control >> 12)) == @intFromEnum(event)) cog.request_debug(false);
     for (&cog.interrupts.levels.values) |*level| {
         if (level.source == event and level.state == .idle) {
             level.state = .pending;
@@ -891,13 +966,14 @@ pub fn complete_interrupt(cog: *Cog, source: Register, immediate: bool, wcz: boo
 
 /// Report ordinary cog interrupt status; startup mode survives subsequent execution-mode changes.
 pub fn interrupt_status(cog: *const Cog) u32 {
-    var value: u32 = @intFromBool(cog.started_hubexec);
+    var value: u32 = @intFromBool(cog.started_no_load);
     value |= @as(u32, @intFromBool(cog.interrupts.stalled)) << 1;
     if (cog.fifo_state.engine) |fifo| value |= @as(u32, @intFromBool(fifo.mode == .write)) << 20;
     for (cog.interrupts.levels.values, 0..) |level, index| {
         value |= @as(u32, @intFromEnum(level.state)) << @intCast(2 + 2 * index);
         if (level.source) |source| value |= @as(u32, @intFromEnum(source)) << @intCast(8 + 4 * index);
     }
+    if (cog.debug.state == .active) value |= (@as(u32, cog.debug.code) << 24) | (@as(u32, @intFromBool(cog.debug.coginit)) << 23);
     return value;
 }
 
@@ -975,8 +1051,11 @@ fn augmentation_consumers(cog: *Cog) PrefixConsumers {
 
 /// Insert an ordinary CALLD in an available pipeline slot while holding fetch PC and hub FIFO bytes.
 fn inject_interrupt(cog: *Cog) ?PipelineState {
-    if (!cog.issue_phase or cog.interrupts.stalled or cog.repeat != null) return null;
+    if (!cog.issue_phase or cog.repeat != null or cog.debug.state == .active) return null;
+    const is_debug = cog.debug.state == .pending;
+    if (!is_debug and cog.interrupts.stalled) return null;
     const level: InterruptLevel = pending: {
+        if (is_debug) break :pending .int1;
         for (std.enums.values(InterruptLevel)) |level| {
             const slot = cog.interrupts.levels.get(level);
             if (slot.state == .active) return null;
@@ -987,22 +1066,68 @@ fn inject_interrupt(cog: *Cog) ?PipelineState {
         return null;
     };
     for (cog.pipeline) |instruction| if (instruction) |state| {
-        if (state.interrupt != null or cog.shields_interrupt(state)) return null;
+        if (state.interrupt != null or (cog.shields_interrupt(state) and !(is_debug and decode.decode(state.instr) == .stalli))) return null;
     };
     const consumed = cog.augmentation_consumers();
     if ((cog.augs_pending and !consumed.s) or (cog.augd_pending and !consumed.d) or
         (cog.setq_pending and !consumed.q)) return null;
-    const source: Register = switch (level) {
+    const source: Register = if (is_debug) .INA else switch (level) {
         .int1 => .IJMP1,
         .int2 => .IJMP2,
         .int3 => .IJMP3,
     };
-    const dest: Register = switch (level) {
+    const dest: Register = if (is_debug) .INB else switch (level) {
         .int1 => .IRET1,
         .int2 => .IRET2,
         .int3 => .IRET3,
     };
-    return .{ .pc = cog.pc, .instr = 0xFB38_0000 | (@as(u32, @intFromEnum(dest)) << 9) | @intFromEnum(source), .interrupt = level };
+    return .{ .pc = cog.pc, .instr = 0xFB38_0000 | (@as(u32, @intFromEnum(dest)) << 9) | @intFromEnum(source), .interrupt = if (is_debug) .int0 else @enumFromInt(@intFromEnum(level) + 1) };
+}
+
+/// Coalesce requests until entry; the configuration is cleared only when INT0 executes.
+pub fn request_debug(cog: *Cog, coginit: bool) void {
+    if (cog.hub.debug.enables & (@as(u8, 1) << cog.id) == 0 or cog.debug.state != .idle) return;
+    cog.debug.state = .pending;
+    cog.debug.coginit = coginit;
+    cog.debug.pending_since = cog.hub.counter;
+}
+
+/// Hold fetch while the injected debug CALLD drains behind older instructions.
+fn debug_queued(cog: *const Cog) bool {
+    for (cog.pipeline) |slot| if (slot) |state| if (state.interrupt == .int0) return true;
+    return false;
+}
+
+/// Configure the next debug entry, or update the application's break code.
+pub fn breakpoint(cog: *Cog, value: u32, condition: bool) void {
+    if (cog.debug.state == .active) {
+        if (condition) cog.debug.control = value;
+    } else {
+        if (condition) cog.debug.code = @truncate(value);
+        if (cog.debug.control & (1 << 4) != 0) cog.request_debug(false);
+    }
+}
+
+/// Send an asynchronous break only from a debug ISR to a valid enabled target.
+pub fn break_cog(cog: *Cog, value: u32) void {
+    const index: u4 = @truncate(value);
+    if (cog.debug.state != .active or index >= cog.hub.cogs.len) return;
+    const target = &cog.hub.cogs[index];
+    if (target.debug.control & (1 << 8) != 0) target.request_debug(false);
+}
+
+/// Finish a successful register-source CALLD through IRET0, preserving an untouched hub FIFO.
+pub fn return_debug(cog: *Cog, source: Register, immediate: bool, wcz: bool, target: u20) bool {
+    if (cog.debug.state != .active or cog.debug.control & (1 << 11) != 0 or source != .INB or immediate or !wcz) return false;
+    cog.debug.state = .idle;
+    if (target == cog.debug.return_pc and cog.debug.return_mode == .hub and cog.debug.fifo_untouched) {
+        cog.pc = target;
+        cog.exec_mode = .hub;
+        @memset(cog.pipeline[0..3], null);
+        cog.issue_phase = false;
+        cog.branched = true;
+    } else cog.jump(target);
+    return true;
 }
 
 /// Apply ALTR/ALTI result redirection or cancellation before scheduling a register write.
@@ -1181,11 +1306,13 @@ pub fn ram_slice(cog: *Cog) u3 {
 pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
-        cog.writeback.writes[cog.writeback.count] = .{ .reg = reg, .value = value };
+        cog.writeback.writes[cog.writeback.count] = .{ .reg = reg, .value = value, .debug_overlay = cog.debug.state == .active and cog.debug.control & (1 << 11) == 0 and (reg == .INA or reg == .INB) };
         cog.writeback.count += 1;
         return;
     }
-    cog.registers.set(reg, value);
+    if (cog.debug.state == .active and cog.debug.control & (1 << 11) == 0 and (reg == .INA or reg == .INB)) {
+        if (reg == .INA) cog.debug.ijmp = value else cog.debug.iret = value;
+    } else cog.registers.set(reg, value);
 }
 
 /// Write underlying cog RAM, including the tail hidden by ordinary special-register access.
@@ -1199,6 +1326,11 @@ pub fn write_ram(cog: *Cog, address: u9, value: u32) void {
 
 /// Read live architectural state; INA/INB are supplied by the pin model rather than stored RAM.
 pub fn read_reg(cog: *Cog, reg: Register) u32 {
+    if (cog.debug.state == .active and cog.debug.control & (1 << 11) == 0) switch (reg) {
+        .INA => return cog.debug.ijmp,
+        .INB => return cog.debug.iret,
+        else => {},
+    };
     return switch (reg) {
         .INA => @truncate(cog.hub.io.get_in() >> 0),
         .INB => @truncate(cog.hub.io.get_in() >> 32),
@@ -1234,6 +1366,21 @@ fn capture_operands(cog: *Cog, state: *PipelineState) void {
         .pa = cog.read_reg(.PA),
         .pb = cog.read_reg(.PB),
     };
+    if (state.interrupt == .int0) {
+        state.operands.?.s = cog.debug.ijmp;
+        state.operands.?.d = cog.debug.iret;
+    }
+    if (state.debug_rom) {
+        const base: u32 = 0xff800 + ((15 ^ @as(u32, cog.id)) << 7);
+        state.operands.?.ptra = base;
+        state.operands.?.ptrb = base + 0x40;
+        const d: Register = @enumFromInt(@as(u9, @truncate(state.instr >> 9)));
+        const s: Register = @enumFromInt(@as(u9, @truncate(state.instr)));
+        if (d == .PTRA) state.operands.?.d = base;
+        if (d == .PTRB) state.operands.?.d = base + 0x40;
+        if (s == .PTRA) state.operands.?.s = base;
+        if (s == .PTRB) state.operands.?.s = base + 0x40;
+    }
 }
 
 /// Find the next instruction behind execution for ALTx modification and next-source forwarding.
@@ -1311,7 +1458,7 @@ pub const PipelineState = struct {
     next_pc: ?u20 = null,
     cancelled: bool = false,
     repeat_target: ?u20 = null,
-    interrupt: ?InterruptLevel = null,
+    interrupt: ?InjectedInterrupt = null,
     fifo_tail: bool = false,
     debug_rom: bool = false,
     fifo_started: bool = false,
@@ -1361,7 +1508,7 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
                 .pc = cog.pc,
                 .debug_rom = cog.pc >= 504 and cog.pc < 512,
                 .instr = if (cog.pc < 0x200)
-                    if (cog.pc >= 504) 0 else cog.registers.values[cog.pc]
+                    if (cog.pc >= 504) debug_rom[cog.pc - 504] else cog.registers.values[cog.pc]
                 else
                     cog.lut[cog.pc - 0x200],
             };
@@ -1438,25 +1585,18 @@ test "five clock passage delays writeback and forwards to the following operand 
     try std.testing.expectEqual(@as(u32, 8), cog.registers.values[20]);
 }
 
-test "debug ROM faults at execution and discarded fetches do not fault" {
+test "execute-only ROM fetch differs from underlying tail RAM and discarded fetches are harmless" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.pc = 504;
-    cog.ram_tail[0] = 0xF604_2807; // Data RAM is not the execute-only ROM.
-    for (0..3) |_| {
-        hub.step();
-        try std.testing.expect(hub.fault == null);
-    }
-    hub.step();
-    try std.testing.expect(hub.fault.?.debug_rom);
-    try std.testing.expectEqual(@as(u20, 504), hub.fault.?.pc);
-    try std.testing.expectEqual(@as(u32, 0), cog.registers.values[20]);
-
-    hub.init();
-    cog.exec_mode = .cog;
+    cog.write_ram(504, 0xdead_beef);
+    const instruction = cog.fetch_instruction().?;
+    try std.testing.expect(instruction.debug_rom);
+    try std.testing.expectEqual(debug_rom[0], instruction.instr);
+    try std.testing.expectEqual(@as(u32, 0xdead_beef), cog.ram_tail[0]);
     cog.pc = 502;
     cog.registers.values[502] = 0xFD80_0000; // JMP #0, younger ROM fetch discarded.
     for (0..12) |_| hub.step();
@@ -2065,7 +2205,7 @@ test "interrupt injection holds the PC and FIFO and respects priority reservatio
     try std.testing.expect(cog.inject_interrupt() == null);
     cog.issue_phase = true;
     const injected = cog.inject_interrupt().?;
-    try std.testing.expectEqual(@as(?InterruptLevel, .int1), injected.interrupt);
+    try std.testing.expectEqual(@as(?InjectedInterrupt, .int1), injected.interrupt);
     try std.testing.expectEqual(@as(u32, 0xFB3B_EBF4), injected.instr);
     try std.testing.expectEqual(@as(u20, 0x4003), cog.pc);
     try std.testing.expectEqual(cog.pc, injected.pc);
@@ -2076,15 +2216,15 @@ test "interrupt injection holds the PC and FIFO and respects priority reservatio
     cog.jump(0x200); // A taken branch may flush a reservation, preserving the request.
     try std.testing.expectEqual(InterruptState.pending, cog.interrupts.levels.get(.int1).state);
     cog.issue_phase = true;
-    try std.testing.expectEqual(@as(?InterruptLevel, .int1), cog.inject_interrupt().?.interrupt);
+    try std.testing.expectEqual(@as(?InjectedInterrupt, .int1), cog.inject_interrupt().?.interrupt);
     cog.interrupts.levels.getPtr(.int1).state = .active;
     try std.testing.expect(cog.inject_interrupt() == null);
     cog.complete_interrupt(.IRET1, false, true);
-    try std.testing.expectEqual(@as(?InterruptLevel, .int2), cog.inject_interrupt().?.interrupt);
+    try std.testing.expectEqual(@as(?InjectedInterrupt, .int2), cog.inject_interrupt().?.interrupt);
     cog.interrupts.levels.getPtr(.int2).state = .active;
     cog.trigger_interrupt(.int1);
     hub.counter +%= 1;
-    try std.testing.expectEqual(@as(?InterruptLevel, .int1), cog.inject_interrupt().?.interrupt);
+    try std.testing.expectEqual(@as(?InjectedInterrupt, .int1), cog.inject_interrupt().?.interrupt);
     cog.pipeline[3] = injected;
     cog.dispatch_pc = injected.pc;
     cog.c = true;

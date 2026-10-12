@@ -1,0 +1,77 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? timeout-ms: 1000
+//? max-cycles: 3_000_000
+//? stdout: "\xf8\x01\x00\x00\x00\x00\x00\x00\xf8\x01\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x2a\x84\x01\x00\x00\x02\x00\x00\x00\x87\x01\x00\x00\x00\x00\x00\x00"
+
+// Input overlays, custom IJMP0, RESI0 and generalized CALLD returns.
+const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+.cogexec    0
+                HUBSET  aug(CLOCK)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                WXPIN   aug(UART),              62
+                DIRH    62
+                WAITX   aug(2_000_000)
+                // Copy the actual sixteen-long ISR image into cog 1's cached debugger slot.
+                SETQ    15
+                RDLONG  register(0x100),        aug(hubaddr(debug_image))
+                SETQ    15
+                WRLONG  register(0x100),        aug(0xFFF40)
+                HUBSET  aug(0x20000002)
+                COGINIT 1,                      aug(hubaddr(target))
+                WAITX   aug(10000)
+                MOV     PTRB,                   aug(0x1000)
+                MOV     register(0x90),         40
+byte:
+                RDBYTE  PA, PTRB++
+                WYPIN   PA, 62
+                WAITX   1
+ready:
+                TESTP   62                      :wc
+    if(!C)      JMP     ready
+                DJNZ    register(0x90), byte
+                WAITX   aug(20000)
+_end:
+                JMP     _end
+.pack   off
+.cogexec    0x2000, 0
+debug_image:
+                JMP     nrel(first_handler)
+                LONG    [0] * 15
+.cogexec    0x3000, 0
+target:
+                BRK     42
+                BRK     43
+                // Application status must have lost all debug-only fields on return.
+                GETBRK  register(0x89)              :wcz
+                SETQ    9
+                WRLONG  register(0x80), aug(0x1000)
+                COGSTOP 1
+.org    0x100
+first_handler:
+        // Selecting pin inputs must leave the writable debug register bank intact.
+                MOV     register(0x80), INA
+                MOV     register(0x81), INB
+                BRK     aug(0x800)
+                MOV     INA,            3
+                MOV     INB,            4
+                BRK     0
+                MOV     register(0x82), INA
+                MOV     register(0x83), INB
+                MOV     INA,            aug(cogaddr(custom_handler))
+                BRK     16
+                JMP     nrel(0x1fd)
+.org    0x180
+custom_handler:
+                MOV     register(0x84), INB
+                GETBRK  register(0x85)      :wcz
+                // RESI0 saves the next debug address in IJMP0, while resuming application PC.
+                BRK     16
+                RESI0
+                MOV     register(0x86), INA
+                MOV     register(0x87), INB
+                // Successful register-source CALLD through INB ends debug service for any D.
+                CALLD   register(0x88), INB :wcz
+

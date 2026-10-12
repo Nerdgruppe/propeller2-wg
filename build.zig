@@ -17,6 +17,11 @@ const windtunnel_fixtures = [_][]const u8{
     "tests/windtunnel/program/hello-world.propan",
     "tests/windtunnel/program/dir-register-uart.propan",
     "tests/windtunnel/program/uart-checkpoint.propan",
+    "tests/windtunnel/program/debug-basic.propan",
+    "tests/windtunnel/program/debug-context.propan",
+    "tests/windtunnel/program/debug-protection.propan",
+    "tests/windtunnel/program/debug-startup.propan",
+    "tests/windtunnel/program/debug-triggers.propan",
     "tests/windtunnel/state/core-branches.propan",
     "tests/windtunnel/state/core-calls.propan",
     "tests/windtunnel/state/branch-a-low-bits.propan",
@@ -253,6 +258,9 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const boot_rom = b.createModule(.{ .root_source_file = b.path("docs/p2/bootrom/device-rom.bin") });
+    windtunnel_mod.addImport("boot-rom", boot_rom);
+
     const propan_lsp_mod = b.createModule(.{
         .root_source_file = b.path("src/propan-lsp/main.zig"),
         .target = target,
@@ -308,6 +316,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "oracle-template", .module = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/oracle.propan.in") }) },
         },
     });
+    windtunnel_suite.addImport("boot-rom", boot_rom);
     const windtunnel_tests = b.addExecutable(.{
         .name = "windtunnel-tests",
         .root_module = windtunnel_suite,

@@ -133,6 +133,34 @@ Typical workflows (started from the workspace root):
 - Do not use bare integers for things that are non-arithmetic.
   - Example: `operation: u3` is not a case where an integer is appropriate, it sounds like `operation` is something one can add 3 to. Better: `operation: OperationKind` + `OperationKind = enum(u3) { ... }`.
   - Use fully open enums for IDs that are not arithmetic values or indices.
+- Code Style
+  - Do not use `if(...) foo();` in a single line of code
+  - Try to keep the lines under 120 characters.
+    - This is not a hard limit, but shorter lines are better than cramping everything into one line.
+  - Try to keep lines free of multiple field assignments.
+    - Multiple assignments are ok when the assignments are simple `key = value` assignments with `value` being a variable or a short literal.
+    - Bad style: `.direction = .{ .write = .{ .immediate = if (!block or (immediate and !cog.q2)) value else null, .masked = masked, .origin = if (cog.debug.state == .active) .debug else .application } },`
+  - Do not cramp multiple independent expressions (e.g. arguments) into a single line.
+    - Bad style: `if (!cog.return_debug(args.s, args.s_imm, args.c_mod == .write and args.z_mod == .write, target))`
+      - Better assign the return value to a constant, and put each argument onto its own line for clarity.
+  - Do not use a expression-style `if` when the result value is not used.
+    - Bad: `if(a) foo() else bar();`
+      - Better: `if(a) {LF> foo();LF> } else {LF> bar();<LF> }`
+    - Bad: `if(a) <LF> foo(a, b, c, d);`
+      - Better:`if(a) { <LF> foo(a, b, c, d);<LF> }`
+      - Exception: Do this for a `return`, `continue` or `break` unless the code has multiple lines.
+  - The styles for `if` also apply to other constructs like `for` or `while`.
+    - Really bad style: `if(foo) for(...) {};`
+      - Better:`if(foo) { for(...) {} }`
+  - Do not use inline structs in function signatureds.
+    - Bad style: `pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u32 = 0, ptra: u32 = 0, load_image: bool = true, clocked: bool = true, command_clock: ?u64 = null }) !void {`
+      - Better: `const StartCogOptions = struct { hub_address: u32 = 0, ptra: u32 = 0, load_image: bool = true, clocked: bool = true, command_clock: ?u64 = null, };  pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {` which will format into readable code.
+  - Do not care for "legacy compatibility".
+    - General rule: Introducing a breaking change to a function or type signature should require an update of all relevant code locations to ensure there's not a potentially missed semantic effect.
+    - Do not introduce new fields with defaults to keep the change count low. Introduce them with defaults if there's never a reason to initialize them otherwise (except testing).
+      - Bad style: `pub const Write = struct { origin: Hub.WriteOrigin = .application, ... }` which would then mask all potential code sites using the `Write` struct which are now affected by new semantics.
+    - Do not introduce redirection functions to keep old function call locations valid.
+- Always format your code with `zig fmt`
 
 #### Propan
 

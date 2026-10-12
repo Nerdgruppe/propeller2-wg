@@ -1,0 +1,146 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? timeout-ms: 1000
+//? max-cycles: 22_000_000
+//? run: "trigger=0"
+//? const: trigger = 0
+//? const: control = 1
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x02\x00\x00\x00\x80\x00\x00\x00\x00\x00\x00\x00"
+//? run: "trigger=1"
+//? const: trigger = 1
+//? const: control = 2
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x00\x01\x00\x00\x90\x00\x00\x00\x0c\x00\x00\x00"
+//? run: "trigger=2"
+//? const: trigger = 2
+//? const: control = 4
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x03\x01\x00\x00\x90\x00\x00\x00\x30\x00\x00\x00"
+//? run: "trigger=3"
+//? const: trigger = 3
+//? const: control = 8
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x06\x01\x00\x00\x90\x00\x00\x00\xc0\x00\x00\x00"
+//? run: "trigger=4"
+//? const: trigger = 4
+//? const: control = 32
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x00\x01\x00\x00\x90\x00\x00\x00\x0c\x00\x00\x00"
+//? run: "trigger=5"
+//? const: trigger = 5
+//? const: control = 64
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x03\x01\x00\x00\x90\x00\x00\x00\x30\x00\x00\x00"
+//? run: "trigger=6"
+//? const: trigger = 6
+//? const: control = 128
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x06\x01\x00\x00\x90\x00\x00\x00\xc0\x00\x00\x00"
+//? run: "trigger=7"
+//? const: trigger = 7
+//? const: control = 16
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x11\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x2a"
+//? run: "trigger=8"
+//? const: trigger = 8
+//? const: control = 57856
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x10\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x00"
+//? run: "trigger=9"
+//? const: trigger = 9
+//? const: control = 66560
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x11\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x00"
+
+// Main/ISR stepping, ISR entry, instruction, event and address triggers.
+const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+.cogexec    0
+                HUBSET  aug(CLOCK)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                WXPIN   aug(UART),              62
+                DIRH    62
+                WAITX   aug(2_000_000)
+                // Copy the actual sixteen-long ISR image into cog 1's cached debugger slot.
+                SETQ    15
+                RDLONG  register(0x100),        aug(hubaddr(debug_image))
+                SETQ    15
+                WRLONG  register(0x100),        aug(0xFFF40)
+                HUBSET  aug(0x20000002)
+                // Clear both log records before allowing asynchronous sources.
+                SETQ    5
+                WRLONG  0,                      aug(0x1000)
+                SETQ    aug(0x1000)
+                COGINIT 1,                      aug(hubaddr(target))
+                WAITX   aug(100000)
+                // Convert the second entry timestamp to a clock difference; discard the first absolute CT.
+                RDLONG  register(0x92),         aug(0x1004)
+                RDLONG  register(0x93),         aug(0x1010)
+                SUB     register(0x93),         register(0x92)
+                WRLONG  0,                      aug(0x1004)
+                WRLONG  register(0x93),         aug(0x1010)
+                MOV     PTRB,                   aug(0x1000)
+                MOV     register(0x90),         24
+byte:
+                RDBYTE  PA, PTRB++
+                WYPIN   PA, 62
+                WAITX   1
+ready:
+                TESTP   62                      :wc
+    if(!C)      JMP     ready
+                DJNZ    register(0x90), byte
+                WAITX   aug(20000)
+_end:
+                JMP     _end
+.pack   off
+.cogexec    0x2000, 0
+debug_image:
+        // Arm only at COGINIT. This gives one independently measurable break per case.
+                MOV     register(0x80), PTRA
+                MOV     register(0x81), INB
+                GETCT   register(0x82)
+                GETBRK  register(0x83)                  :wcz
+                SETQ    2
+                WRLONG  register(0x81), register(0x80)
+                ADD     PTRA,           12
+    if(C)       BRK     aug(control)
+                JMP     nrel(0x1fd)
+                LONG    [0] * 6
+.cogexec    0x3000, 0
+target:
+                MOV     IJMP1,          aug(cogaddr(isr1))
+                MOV     IJMP2,          aug(cogaddr(isr2))
+                MOV     IJMP3,          aug(cogaddr(isr3))
+.if (trigger == 1) | (trigger == 4)
+                TRGINT1
+.endif
+.if (trigger == 2) | (trigger == 5)
+                TRGINT2
+.endif
+.if (trigger == 3) | (trigger == 6)
+                TRGINT3
+.endif
+.if trigger == 8
+                COGATN  2
+.endif
+                JMP     nrel(0x10)
+.org    0x10
+.if trigger == 7
+                BRK     42
+.else
+                NOP
+.endif
+                MOV     register(0x30), 17
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                COGSTOP 1
+.org    0x100
+isr1:
+                NOP
+                NOP
+                RETI1
+isr2:
+                NOP
+                NOP
+                RETI2
+isr3:
+                NOP
+                NOP
+                RETI3
+

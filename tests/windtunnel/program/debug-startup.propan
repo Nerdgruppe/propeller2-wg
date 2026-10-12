@@ -1,0 +1,247 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? timeout-ms: 1000
+//? max-cycles: 22_000_000
+//? run: "kind=0 cog=0"
+//? const: target_cog = 0
+//? const: observer_cog = 7
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=0 cog=1"
+//? const: target_cog = 1
+//? const: observer_cog = 7
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=0 cog=2"
+//? const: target_cog = 2
+//? const: observer_cog = 7
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=0 cog=3"
+//? const: target_cog = 3
+//? const: observer_cog = 7
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=0 cog=4"
+//? const: target_cog = 4
+//? const: observer_cog = 7
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=0 cog=5"
+//? const: target_cog = 5
+//? const: observer_cog = 7
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=0 cog=6"
+//? const: target_cog = 6
+//? const: observer_cog = 7
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=0 cog=7"
+//? const: target_cog = 7
+//? const: observer_cog = 0
+//? const: start_kind = 0
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//? run: "kind=1 cog=0"
+//? const: target_cog = 0
+//? const: observer_cog = 7
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=1 cog=1"
+//? const: target_cog = 1
+//? const: observer_cog = 7
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=1 cog=2"
+//? const: target_cog = 2
+//? const: observer_cog = 7
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=1 cog=3"
+//? const: target_cog = 3
+//? const: observer_cog = 7
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=1 cog=4"
+//? const: target_cog = 4
+//? const: observer_cog = 7
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=1 cog=5"
+//? const: target_cog = 5
+//? const: observer_cog = 7
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=1 cog=6"
+//? const: target_cog = 6
+//? const: observer_cog = 7
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=1 cog=7"
+//? const: target_cog = 7
+//? const: observer_cog = 0
+//? const: start_kind = 1
+//? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//? run: "kind=2 cog=0"
+//? const: target_cog = 0
+//? const: observer_cog = 7
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=2 cog=1"
+//? const: target_cog = 1
+//? const: observer_cog = 7
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=2 cog=2"
+//? const: target_cog = 2
+//? const: observer_cog = 7
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=2 cog=3"
+//? const: target_cog = 3
+//? const: observer_cog = 7
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=2 cog=4"
+//? const: target_cog = 4
+//? const: observer_cog = 7
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=2 cog=5"
+//? const: target_cog = 5
+//? const: observer_cog = 7
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=2 cog=6"
+//? const: target_cog = 6
+//? const: observer_cog = 7
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=2 cog=7"
+//? const: target_cog = 7
+//? const: observer_cog = 0
+//? const: start_kind = 2
+//? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//? run: "kind=3 cog=0"
+//? const: target_cog = 0
+//? const: observer_cog = 7
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//? run: "kind=3 cog=1"
+//? const: target_cog = 1
+//? const: observer_cog = 7
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//? run: "kind=3 cog=2"
+//? const: target_cog = 2
+//? const: observer_cog = 7
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//? run: "kind=3 cog=3"
+//? const: target_cog = 3
+//? const: observer_cog = 7
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//? run: "kind=3 cog=4"
+//? const: target_cog = 4
+//? const: observer_cog = 7
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//? run: "kind=3 cog=5"
+//? const: target_cog = 5
+//? const: observer_cog = 7
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//? run: "kind=3 cog=6"
+//? const: target_cog = 6
+//? const: observer_cog = 7
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//? run: "kind=3 cog=7"
+//? const: target_cog = 7
+//? const: observer_cog = 0
+//? const: start_kind = 3
+//? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+
+// Debug-enabled loaded, no-load cog, LUT and hub starts on all eight cogs.
+const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+.cogexec    0
+                HUBSET  aug(CLOCK)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                WXPIN   aug(UART),              62
+                DIRH    62
+                WAITX   aug(2_000_000)
+                // Hand the controller to a separate cog, including when the target is cog zero.
+                COGINIT observer_cog,           aug(hubaddr(controller))
+                COGSTOP 0
+.pack   off
+.cogexec    0x2000, 0
+controller:
+                DIRH    62
+                // Warm-load a retained local/LUT image before the debug-enabled restart.
+                COGINIT target_cog,         aug(hubaddr(application))
+                WAITX   aug(10000)
+                SETQ    15
+                RDLONG  register(0x100),    aug(hubaddr(debug_image))
+                SETQ    15
+                WRLONG  register(0x100),    aug(0xff840 + ((15 ^ target_cog) << 7))
+                HUBSET  aug(0x20000000 | (1 << target_cog))
+                SETQ    aug(0x1000)
+.if start_kind == 0
+                COGINIT target_cog,         aug(hubaddr(application))
+.else
+.if start_kind == 1
+                COGINIT 0x20 + target_cog,  0
+.else
+.if start_kind == 2
+                COGINIT 0x20 + target_cog,  aug(0x200)
+.else
+                COGINIT 0x20 + target_cog,  aug(hubaddr(hub_application))
+.endif
+.endif
+.endif
+                WAITX   aug(10000)
+                MOV     PTRB,               aug(0x1000)
+                MOV     register(0x90),     20
+byte:
+                RDBYTE  PA, PTRB++
+                WYPIN   PA, 62
+                WAITX   1
+ready:
+                TESTP   62                      :wc
+    if(!C)      JMP     ready
+                DJNZ    register(0x90), byte
+                WAITX   aug(20000)
+_end:
+                COGSTOP observer_cog
+
+.cogexec    0x3000, 0
+debug_image:
+        // ROM pointer substitutions do not replace the application's PTRA/PTRB.
+                MOV     register(0x80), PTRA
+                MOV     register(0x81), INB
+                GETBRK  register(0x82)                  :wcz
+                MOV     register(0x83), INA
+                MOV     register(0x84), PTRA
+                MOV     register(0x85), PTRB
+                SETQ    4
+                WRLONG  register(0x81), register(0x80)
+                JMP     nrel(0x1fd)
+                LONG    [0] * 7
+
+.cogexec    0x4000, 0
+application:
+        // Seed LUT execution for the subsequent no-load startup test.
+                SETQ2   15
+                RDLONG  register(0),    aug(hubaddr(lut_application))
+                COGSTOP target_cog
+                LONG    [0] * 500
+.lutexec    0x5000
+lut_application:
+                COGSTOP target_cog
+                LONG    [0] * 15
+.hubexec    0x6000
+hub_application:
+                COGSTOP target_cog
+
