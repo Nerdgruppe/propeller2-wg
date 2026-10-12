@@ -19,6 +19,7 @@ const windtunnel_fixtures = [_][]const u8{
     "tests/windtunnel/program/uart-checkpoint.propan",
     "tests/windtunnel/state/core-branches.propan",
     "tests/windtunnel/state/core-calls.propan",
+    "tests/windtunnel/state/branch-a-low-bits.propan",
     "tests/windtunnel/state/repeat-skip-slots.propan",
     "tests/windtunnel/state/repeat-branches.propan",
     "tests/windtunnel/state/skip-branches.propan",

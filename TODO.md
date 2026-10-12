@@ -171,7 +171,6 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
   eight cog/bank phases and under contention, then correct any misleading
   comments or implementation assumptions. See the existing FIFO write-visibility
   hardware probes.
-- Implement immediate local relative `JMP`/`CALL` offsets whose low two bits are nonzero; these currently reject execution.
 - Model "previous SETQ" as pipeline state
 - Debug interface
   - Additional Breakpoints

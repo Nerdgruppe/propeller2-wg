@@ -744,7 +744,6 @@ fn submitCordic(cog: *Cog, operation: Cordic.Operation, d: u32, s: u32, q: u32) 
 /// access:      mem=None, reg=None, stack=Push
 pub fn call_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
     // codegen: begin:call_a
-    if (cog.exec_mode == .cog and args.relative and args.address & 3 != 0) return .not_implemented;
     cog.call(branchA(cog, args));
     return .next;
     // codegen: end:call_a
@@ -806,7 +805,6 @@ pub fn calld_a(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn jmp_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
     // codegen: begin:jmp_a
-    if (cog.exec_mode == .cog and args.relative and args.address & 3 != 0) return .not_implemented;
     cog.jump(branchA(cog, args));
     return .next;
     // codegen: end:jmp_a
@@ -4490,6 +4488,42 @@ test "HUBSET delegates shared configuration and completes unsupported values" {
     try std.testing.expectEqual(@as(u32, 0x0100_09fb), hub.io.clock_mode);
     try std.testing.expectEqual(@as(u64, 200_000_000), hub.io.clock_frequency);
     try std.testing.expectEqualDeep(random, hub.random);
+}
+
+test "local relative JMP and CALL use nonlinear fallthrough and cancel without side effects" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    for ([_]bool{ false, true }) |is_call| for ([_]i20{ -11, -9, 1, 3, 5, 7 }) |delta| {
+        hub.init();
+        const cog = &hub.cogs[0];
+        cog.exec_mode = .cog;
+        cog.pc = 0x130;
+        cog.c = true;
+        cog.z = false;
+        const word: u32 = (if (is_call) @as(u32, 0xFDB0_0000) else 0xFD90_0000) | @as(u20, @bitCast(delta));
+        // A prepared REP wrap or SKIPF step may differ from both the dispatch PC and current fetch PC.
+        cog.pipeline[3] = .{ .pc = 0x110, .instr = word, .next_pc = 0x120 };
+        cog.dispatch_pc = 0x110;
+        try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, cog.pipeline[3].?));
+        try std.testing.expectEqual(@as(u20, @bitCast(@as(i20, 0x120) + (delta >> 2))), cog.pc);
+        try std.testing.expect(cog.c and !cog.z);
+        if (is_call) try std.testing.expectEqual(@as(u32, 0x8000_0120), cog.stack[0]);
+
+        hub.init();
+        const canceled = &hub.cogs[0];
+        canceled.exec_mode = .cog;
+        canceled.pc = 0x130;
+        canceled.c = false;
+        canceled.z = true;
+        const conditional_word = (word & 0x0fff_ffff) | 0xC000_0000; // IF_C.
+        canceled.pipeline[3] = .{ .pc = 0x110, .instr = conditional_word, .next_pc = 0x120 };
+        canceled.dispatch_pc = 0x110;
+        try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(canceled, canceled.pipeline[3].?));
+        try std.testing.expectEqual(@as(u20, 0x130), canceled.pc);
+        try std.testing.expectEqual(@as(u32, 0), canceled.stack[0]);
+        try std.testing.expect(!canceled.c and canceled.z);
+    };
 }
 
 test "all ALU opcodes delegate to libp2" {

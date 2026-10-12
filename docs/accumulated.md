@@ -700,6 +700,16 @@ zero after twenty-bit wrap, its hidden branch selects cog execution, just like
 an ordinary branch to zero; sequential hub fetching across wrap stays in hub
 execution.
 
+The 56 hardware runs in `branch-a-low-bits.propan` exercise raw immediate-relative
+JMP and CALL A fields in cog and LUT execution, including byte offsets +1..+3,
++5..+7, -9..-11, and aligned controls. A local branch sign-extends the 20-bit
+byte displacement, then shifts it arithmetically right by two before adding it
+to the prepared next PC. Thus +1..+3 select the same long as zero and -9..-11
+select the long three positions before the prepared next PC. CALL saves the
+prepared next PC together with C/Z; neither instruction changes C/Z. All tested
+paths took 24 clocks from the common GETCT start to GETCT at the destination
+handler, and all 56 Windtunnel oracle comparisons passed. The probe also checks
+cog 0 and cog 7 for representative signed offsets.
 
 The separate [local-PC overflow probes](../data/timing-data/local-pc-overflow/README.md)
 remain explicitly open. A CALLD after sequential local fetch crosses $3FF saves
