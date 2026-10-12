@@ -114,6 +114,8 @@ const Samples = struct {
 };
 
 pins: [64]Pin = @splat(.{}),
+/// Accelerate serial endpoints while retaining cog, command and pad clock delays.
+fast_io: bool = false,
 smart_a: [64]Signal = @splat(.z),
 smart_b: [64]Signal = @splat(.z),
 pads: [64]Signal = @splat(.z),
@@ -379,6 +381,7 @@ fn pinInputs(io: *const IO, index: PinIndex) smart_pin.Inputs {
         .out = @intFromBool(io.outputs & mask != 0),
         .dir = @intFromBool(io.directions & mask != 0),
         .clock = io.last_clock,
+        .fast_io = io.fast_io,
     };
 }
 

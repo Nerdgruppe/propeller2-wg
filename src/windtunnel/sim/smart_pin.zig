@@ -95,6 +95,8 @@ pub const Inputs = struct {
     ack: bool = false,
     /// Current wrapping Hub counter, in system clocks, used for transfer deadlines.
     clock: u64 = 0,
+    /// Transfer serial endpoint words at one word per clock instead of UART baud timing.
+    fast_io: bool = false,
     /// Falling DIR edge derived by SmartPin.step from Registers.enabled.
     /// Caller-supplied values are overwritten before dispatch to the active logic.
     reset: bool = false,
@@ -217,14 +219,18 @@ pub const UartTx = struct {
                 }
                 logic.shifter = null;
             }
-            const timing = SerialTiming.init(regs.x);
-            if (logic.shifter == null and timing.frame_clocks != 0)
+            const frame_clocks = if (inputs.fast_io)
+                1
+            else
+                SerialTiming.init(regs.x).frame_clocks;
+            if (logic.shifter == null and frame_clocks != 0) {
                 if (logic.buffer) |word| {
                     logic.shifter = word;
                     logic.buffer = null;
-                    logic.end = inputs.clock +% timing.frame_clocks;
+                    logic.end = inputs.clock +% frame_clocks;
                     state.in = 1;
-                };
+                }
+            }
         }
         state.flag = logic.buffer != null or logic.shifter != null;
         state.scheduled = regs.enabled and state.flag;
@@ -271,6 +277,10 @@ pub const UartRx = struct {
 
     /// Receive buffered source words with UART frame timing, aborting a frame on DIR reset.
     fn step(logic: *UartRx, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+        if (inputs.fast_io) {
+            logic.shifter = null;
+            return receiveImmediate(regs, inputs);
+        }
         var state = serialOutputs(regs, inputs);
         if (inputs.reset) {
             logic.shifter = null;
@@ -297,17 +307,22 @@ pub const UartRx = struct {
 pub const UsartRx = struct {
     /// Receive whole words, retaining the result until an acknowledgement clears ready.
     fn step(_: *UsartRx, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
-        var state = serialOutputs(regs, inputs);
-        if (regs.enabled and !regs.ready) {
-            if (regs.source) |source| {
-                if (try source.read()) |word| {
-                    receive(&state, regs.x, word);
-                }
-            }
-        }
-        return state;
+        return receiveImmediate(regs, inputs);
     }
 };
+
+/// Receive at most one endpoint word per clock, preserving unread data until acknowledgement.
+fn receiveImmediate(regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+    var state = serialOutputs(regs, inputs);
+    if (regs.enabled and !regs.ready) {
+        if (regs.source) |source| {
+            if (try source.read()) |word| {
+                receive(&state, regs.x, word);
+            }
+        }
+    }
+    return state;
+}
 
 pub const DummyMode = struct {
     /// Reject unsupported smart logic through the simulator's ordinary fault path.
@@ -411,6 +426,64 @@ test "buffered endpoints truncate writer words and untimed RX waits for acknowle
     _ = try pin.step(.{ .dir = 1, .new_x = 31, .new_y = 0x123456ab, .clock = 4 });
     try std.testing.expectEqualSlices(u8, &.{0xab}, output.written());
     try std.testing.expect(pin.registers.ready);
+}
+
+test "fast serial TX transfers one masked word per clock without a baud period" {
+    for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
+        var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+        defer output.deinit();
+
+        var sink: DataSink = .{ .writer = &output.writer };
+        var pin: SmartPin = .{};
+        pin.configure(mode);
+        pin.registers.sink = &sink;
+        _ = try pin.step(.{
+            .dir = 1,
+            .new_x = 3,
+            .new_y = 0x1a,
+            .clock = std.math.maxInt(u64),
+            .fast_io = true,
+        });
+        if (mode == .uart_tx) {
+            try std.testing.expectEqual(@as(usize, 0), output.written().len);
+        }
+        _ = try pin.step(.{ .dir = 1, .new_y = 0x2b, .clock = 0, .fast_io = true });
+        _ = try pin.step(.{ .dir = 1, .new_y = 0x3c, .clock = 1, .fast_io = true });
+        _ = try pin.step(.{ .dir = 1, .clock = 2, .fast_io = true });
+        try std.testing.expectEqualSlices(u8, &.{ 0x0a, 0x0b, 0x0c }, output.written());
+        try std.testing.expect(pin.registers.ready);
+
+        // A falling DIR still aborts pending UART output.
+        _ = try pin.step(.{ .dir = 1, .new_y = 0x4d, .clock = 3, .fast_io = true });
+        _ = try pin.step(.{ .clock = 4, .fast_io = true });
+        if (mode == .uart_tx) {
+            try std.testing.expectEqual(@as(usize, 3), output.written().len);
+            try std.testing.expect(pin.logic.uart_tx.shifter == null);
+        }
+    }
+}
+
+test "fast serial RX delivers one word per acknowledged clock without dropping buffered input" {
+    for ([_]Mode{ .uart_rx, .sync_rx }) |mode| {
+        var reader = std.Io.Reader.fixed(&.{ 0x80, 0xff, 0 });
+        var source: DataSource = .{ .reader = &reader };
+        var pin: SmartPin = .{};
+        pin.configure(mode);
+        pin.registers.source = &source;
+        _ = try pin.step(.{ .dir = 1, .new_x = 7, .clock = 0, .fast_io = true });
+        try std.testing.expectEqual(@as(u32, 0x80000000), pin.registers.result);
+        _ = try pin.step(.{ .dir = 1, .clock = 1, .fast_io = true });
+        try std.testing.expectEqual(@as(usize, 2), reader.bufferedLen());
+        _ = try pin.step(.{ .dir = 1, .ack = true, .clock = 2, .fast_io = true });
+        try std.testing.expectEqual(@as(u32, 0xff000000), pin.registers.result);
+        _ = try pin.step(.{ .dir = 1, .ack = true, .clock = 3, .fast_io = true });
+        try std.testing.expectEqual(@as(u32, 0), pin.registers.result);
+        try std.testing.expect(pin.registers.ready);
+        _ = try pin.step(.{ .dir = 1, .ack = true, .clock = 4, .fast_io = true });
+        try std.testing.expect(!pin.registers.ready);
+        _ = try pin.step(.{ .clock = 5, .fast_io = true });
+        try std.testing.expectEqual(@as(u32, 0), pin.registers.result);
+    }
 }
 
 test "UART fractional frame timing, holding register, widths and counter rollover" {

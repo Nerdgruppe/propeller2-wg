@@ -22,6 +22,7 @@ const CliArgs = struct {
     serve: bool = false,
     url: []const u8 = "ws://127.0.0.1:21591/",
     @"trace-pipeline": bool = false,
+    @"fast-io": bool = false,
     image: []const u8 = "",
     vcd: []const u8 = "",
 
@@ -32,7 +33,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--trace-pipeline] [--vcd PATH] [-i IMAGE | --serve [--url URL]]",
+        .usage_summary = "[-h] [-v] [--fast-io] [--trace-pipeline] [--vcd PATH] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -44,6 +45,7 @@ const CliArgs = struct {
             .serve = "Serve the P2AAS upload and terminal protocol",
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
+            .@"fast-io" = "Transfer UART/USART endpoint words at single-clock throughput",
             .image = "The image file which contains the hub data.",
             .vcd = "Export digital signals for an image run (one VCD time unit = one system clock)",
         },
@@ -92,7 +94,10 @@ pub fn main(init: std.process.Init) !u8 {
             std.log.err("--serve cannot be combined with --image", .{});
             return 1;
         }
-        p2aas_server.serve(init.gpa, init.io, cli.options.url, cli.options.@"trace-pipeline") catch |err| {
+        p2aas_server.serve(init.gpa, init.io, cli.options.url, .{
+            .trace = cli.options.@"trace-pipeline",
+            .fast_io = cli.options.@"fast-io",
+        }) catch |err| {
             std.log.err("P2AAS server failed: {t}", .{err});
             return 1;
         };
@@ -105,6 +110,7 @@ pub fn main(init: std.process.Init) !u8 {
 
     var hub: Hub = undefined;
     hub.init();
+    hub.io.fast_io = cli.options.@"fast-io";
 
     var terminal_sink: smart_pin.DataSink = .{ .live_writer = &stdout.interface };
     hub.io.pins[62].smart.registers.sink = &terminal_sink;

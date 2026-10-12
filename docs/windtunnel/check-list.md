@@ -125,6 +125,7 @@ Configuration directives precede all run sections and apply to every run.
 | `baudrate: N` | `115200`; UART baud rate |
 | `oracle: required` | Default; hardware checks run when enabled |
 | `oracle: off "reason"` | Skip hardware checks for the stated nonempty reason |
+| `fast-io: off "reason"` | Retain clocked serial timing even with `--fast-io`; requires a nonempty reason |
 | `stdin: STREAM` | Empty; program UART input |
 | `stdin-after: STREAM` | Empty; output prefix that signals input readiness |
 | `stdout: STREAM` | Empty; exact expected program UART output |
@@ -138,6 +139,11 @@ Simulation also has a host-time guard: 30 seconds per cog run and 600 seconds
 per program run. The larger program budget allows board warmup waits to finish
 with every clock simulated, including Debug builds. `max-cycles` remains the
 simulated execution limit; `timeout-ms` controls hardware runs only.
+
+`zig-out/bin/windtunnel-tests --fast-io FILE.propan ...` accelerates serial endpoints
+for fixtures without a `fast-io: off` directive. The build option `-Dfast-io=true`
+passes this flag to the fixture runner. CPU execution and explicit board warmup
+waits are unchanged; hardware oracle images are unchanged as well.
 
 The runner reports each run separately and continues after a failed run. Its exit
 code is nonzero if any fixture or run fails. Failure evidence and

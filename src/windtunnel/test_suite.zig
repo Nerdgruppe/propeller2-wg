@@ -18,6 +18,7 @@ const Options = struct {
     oracle: bool = false,
     characterize: bool = false,
     @"trace-pipeline": bool = false,
+    @"fast-io": bool = false,
     @"prepare-oracle": bool = false,
     @"artifact-dir": []const u8 = ".zig-cache/windtunnel-artifacts",
     pub const shorthands = .{ .h = "help" };
@@ -26,6 +27,7 @@ const Options = struct {
         .oracle = "Run the hardware oracle through P2AAS_ENDPOINT",
         .characterize = "Capture hardware measurements without executing or checking the simulator",
         .@"trace-pipeline" = "Retain up to 10000 pipeline events with prepared images and failure evidence",
+        .@"fast-io" = "Transfer UART/USART endpoint words at single-clock throughput unless a fixture requires timing",
         .@"prepare-oracle" = "Generate oracle images and requests without uploading them",
         .@"artifact-dir" = "Directory for prepared images and failure evidence",
     } };
@@ -422,6 +424,7 @@ fn runOne(
         });
     const hub = try allocator.create(Hub);
     hub.init();
+    hub.io.fast_io = ctx.options.@"fast-io" and list.fast_io_off == null;
     @memcpy(hub.memory[0..compiled.image.len], compiled.image);
     var stdout: std.Io.Writer.Allocating = .init(allocator);
     defer stdout.deinit();
@@ -518,7 +521,7 @@ fn runOne(
             if (receiver.logic != .uart_rx or
                 !receiver.registers.enabled or
                 timing.bits != 8 or
-                timing.frame_clocks == 0)
+                (timing.frame_clocks == 0 and !hub.io.fast_io))
                 return error.UartRxNotReady;
             receiver.registers.source = &terminal_source;
             supplied_stdin = true;
@@ -972,13 +975,61 @@ test "matrix runs assemble constants and select fresh cogs" {
     );
 }
 
+test "fast I/O supports program input and output while timing fixtures retain clocked UART" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const ctx: Context = .{
+        .allocator = std.testing.allocator,
+        .io = std.testing.io,
+        .errors = &errors.writer,
+        .options = .{ .@"fast-io" = true },
+        .retain_failures = false,
+    };
+    _ = try runTemporary(ctx,
+        \\//? WINDTUNNEL CHECK LIST
+        \\//? profile: program
+        \\//? stdin: hex [0080ff]
+        \\//? stdin-after: "!"
+        \\//? stdout: "!\x00\x80\xff"
+        \\//? max-cycles: 2000
+        \\.cogexec
+        \\WRPIN P_ASYNC_RX, 63
+        \\WXPIN 7, 63
+        \\DIRH 63
+        \\WRPIN P_TT_01 | P_ASYNC_TX, 62
+        \\WXPIN 7, 62
+        \\DIRH 62
+        \\WYPIN '!', 62
+        \\MOV count, 3
+        \\read_byte:
+        \\TESTP 63 :wc
+        \\if(!C) JMP read_byte
+        \\RDPIN PA, 63
+        \\SHR PA, 24
+        \\WYPIN PA, 62
+        \\DJNZ count, read_byte
+        \\WAITX 8
+        \\COGSTOP 0
+        \\var count: LONG 0
+    );
+    const path = "tests/windtunnel/program/uart-checkpoint.propan";
+    const source = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, std.testing.allocator, .limited(1 << 20));
+    defer std.testing.allocator.free(source);
+
+    _ = try runSource(ctx, path, source);
+}
+
 /// Serve a bounded number of actual TCP connections so session cleanup is checked without a subprocess.
 fn serveTestConnections(listener: *std.Io.net.Server, count: usize) !void {
     for (0..count) |_| {
         const stream = try listener.accept(std.testing.io);
         defer stream.close(std.testing.io);
 
-        try p2aas_server.handleConnection(std.testing.allocator, std.testing.io, stream, false);
+        try p2aas_server.handleConnection(std.testing.allocator, std.testing.io, stream, .{
+            .trace = false,
+            .fast_io = false,
+        });
     }
 }
 

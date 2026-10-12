@@ -3,6 +3,7 @@
 //? stop: _end
 //? stdout: ""
 //? oracle: off "the checkpoint deliberately interrupts an unfinished UART frame"
+//? fast-io: off "the checkpoint requires an unfinished UART frame"
 
 // The runner must observe the checkpoint without completing pending UART output.
 .cogexec

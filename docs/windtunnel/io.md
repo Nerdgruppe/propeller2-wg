@@ -89,6 +89,17 @@ UART receive timing comes from the smart pin's X register for every source.
 The P2AAS baudrate query remains accepted for protocol compatibility; the
 simulator does not apply a separate host baud override.
 
+`windtunnel --fast-io` (also available with `--serve`) ignores UART baud periods:
+TX completes one clock after accepting a word and can complete one word on every
+clock. RX transfers an available word on a pin update and holds it until acknowledged,
+so queued host input is not overwritten before the cog reads it. Width masking,
+MSB justification, DIR reset, endpoints and their errors still apply, including
+when the configured baud period is zero. USART already uses this endpoint
+throughput. This mode changes serial timing, not cog execution, smart-pin command
+delivery, pad sampling delays, or explicit waits in the program. Set
+`hub.io.fast_io = true` when embedding the simulator. Clocked behavior remains
+the default.
+
 ## Digital pads and timing
 
 `io.setExternal(pad_index, signal)` supplies an external drive (`zero`, `one`, `x` or

@@ -216,6 +216,7 @@ pub fn build(b: *std.Build) !void {
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
     const coverage = b.option(bool, "coverage", "Collect Propan and Windtunnel coverage with kcov when available") orelse true;
     const with_p2aas = b.option(bool, "with-p2aas", "Run Windtunnel hardware oracle tests through P2AAS_ENDPOINT") orelse false;
+    const fast_io = b.option(bool, "fast-io", "Use single-clock serial endpoint throughput in Windtunnel fixtures") orelse false;
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -324,6 +325,46 @@ pub fn build(b: *std.Build) !void {
 
     _ = windtunnel_exe;
 
+    {
+        const zglfw = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
+        const zopengl = b.dependency("zopengl", .{ .target = target });
+        const zgui = b.dependency("zgui", .{
+            .target = target,
+            .optimize = optimize,
+            .backend = .glfw_opengl3,
+        });
+        const gui_mod = b.createModule(.{
+            .root_source_file = b.path("src/windtunnel-gui/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zglfw", .module = zglfw.module("root") },
+                .{ .name = "zopengl", .module = zopengl.module("root") },
+                .{ .name = "zgui", .module = zgui.module("root") },
+            },
+        });
+        gui_mod.linkLibrary(zglfw.artifact("glfw"));
+        gui_mod.linkLibrary(zgui.artifact("imgui"));
+
+        const exe = b.addExecutable(.{
+            .name = "windtunnel-gui",
+            .root_module = gui_mod,
+            .use_llvm = true,
+        });
+        fb.installArtifact(exe);
+
+        const gui_step = b.step("build-windtunnel-gui", "Builds Windtunnel's graphical interface");
+        if (no_emit_bin) {
+            gui_step.dependOn(&exe.step);
+        } else {
+            gui_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+        }
+
+        const run_gui = b.addRunArtifact(exe);
+        const run_gui_step = b.step("run-windtunnel-gui", "Runs Windtunnel's graphical interface");
+        run_gui_step.dependOn(&run_gui.step);
+    }
+
     const windtunnel_suite = b.createModule(.{
         .root_source_file = b.path("src/windtunnel/test_suite.zig"),
         .target = target,
@@ -365,6 +406,9 @@ pub fn build(b: *std.Build) !void {
     const fixture_run = addRunArtifactWithCoverage(b, kcov_path, windtunnel_tests, "windtunnel-fixtures");
     fixture_run.setCwd(b.path("."));
     fixture_run.expectExitCode(0); // Capture stdio so Zig forwards progress updates.
+    if (fast_io) {
+        fixture_run.addArg("--fast-io");
+    }
     if (with_p2aas) {
         fixture_run.addArg("--oracle");
         fixture_run.has_side_effects = true;

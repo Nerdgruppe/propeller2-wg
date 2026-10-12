@@ -39,6 +39,7 @@ pub const List = struct {
     entry: ?[]const u8 = null,
     stop: ?[]const u8 = null,
     oracle_off: ?[]const u8 = null,
+    fast_io_off: ?[]const u8 = null,
     max_cycles: u64 = 1_000_000,
     timeout_ms: u32 = 5000,
     baudrate: u32 = 115200,
@@ -521,6 +522,11 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
                 if (n > std.math.maxInt(i32))
                     return p.fail("baudrate too large");
                 list.baudrate = @intCast(n);
+            } else if (std.mem.eql(u8, name, "fast-io")) {
+                try p.expect("off");
+                list.fast_io_off = try p.string();
+                if (list.fast_io_off.?.len == 0)
+                    return p.fail("fast-io off requires a reason");
             } else if (std.mem.eql(u8, name, "oracle")) {
                 const value = try p.take();
                 if (std.mem.eql(u8, value, "off")) {
@@ -608,11 +614,15 @@ test "checklist values, CRLF, multiline blocks, and invalid directives" {
     const indented = try parse(arena.allocator(), "formatted", "                //? WINDTUNNEL CHECK LIST\r\n\t//? pre: cog[0].q = -1\r\n                //? post: hub[0x2000] == u16 [\r\n\t//? 0x1234, -1\r\n                //? ]\r\n\n", &errors.writer);
     try std.testing.expectEqualSlices(u8, valid.pre[0].bytes, indented.pre[0].bytes);
     try std.testing.expectEqualSlices(u8, valid.post[0].bytes, indented.post[0].bytes);
+    const clocked = try parse(arena.allocator(), "clocked", "//? WINDTUNNEL CHECK LIST\n//? fast-io: off \"frame timing\"\n", &errors.writer);
+    try std.testing.expectEqualStrings("frame timing", clocked.fast_io_off.?);
+    try std.testing.expect(valid.fast_io_off == null);
     for ([_][]const u8{
-        "//? typo: 1\n",                            "//? max-cycles: 0\n",             "//? timeout-ms: 99\n",                 "//? pre: cog[1].c = true\n",
-        "//? pre: cog[0].reg[x] = 0x1_0000_0000\n", "//? post: hub[0] == u8 [256]\n",  "//? post: hub[0] == hex [f]\n",        "//? stdout: \"\\q\"\n",
-        "//? profile: program\n//? stdin: \"x\"\n", "//? oracle: off \"\"\n",          "//? profile: cog\n//? profile: cog\n", "//? max-cycles: 1 extra\n",
-        "//? pre: cog[0].reg[value] = 1\n",         "//? pre: hub[buffer] = u8 [1]\n", "//? output: u32 [1]\n",                "//? profile: program\n//? oracle: off \"removed output hook\"\n//? output: u32 [1]\n",
+        "//? typo: 1\n",                            "//? max-cycles: 0\n",                                                                  "//? timeout-ms: 99\n",                 "//? pre: cog[1].c = true\n",
+        "//? pre: cog[0].reg[x] = 0x1_0000_0000\n", "//? post: hub[0] == u8 [256]\n",                                                       "//? post: hub[0] == hex [f]\n",        "//? stdout: \"\\q\"\n",
+        "//? profile: program\n//? stdin: \"x\"\n", "//? oracle: off \"\"\n",                                                               "//? profile: cog\n//? profile: cog\n", "//? max-cycles: 1 extra\n",
+        "//? fast-io: off \"\"\n",                  "//? fast-io: on\n",                                                                    "//? pre: cog[0].reg[value] = 1\n",     "//? pre: hub[buffer] = u8 [1]\n",
+        "//? output: u32 [1]\n",                    "//? profile: program\n//? oracle: off \"removed output hook\"\n//? output: u32 [1]\n",
     }) |body| {
         const text = try std.fmt.allocPrint(arena.allocator(), "//? WINDTUNNEL CHECK LIST\n{s}", .{body});
         try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "fixture", text, &errors.writer));

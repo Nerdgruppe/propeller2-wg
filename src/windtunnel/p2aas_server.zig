@@ -323,6 +323,12 @@ const Frames = struct {
 };
 
 const Event = union(enum) { peer: Close, receive_error: anyerror, execution_error: anyerror, timeout };
+/// Simulation behavior shared by every board session served by this listener.
+pub const SimulationOptions = struct {
+    trace: bool,
+    fast_io: bool,
+};
+
 const Connection = struct {
     allocator: std.mem.Allocator,
     io: std.Io,
@@ -334,7 +340,7 @@ const Connection = struct {
     upgraded: bool = false,
     running: bool = false,
     peer_closed: bool = false,
-    trace: bool,
+    simulation: SimulationOptions,
 
     /// Buffered Reader reports ReadFailed; preserve cancellation from its underlying network reader.
     fn readChunk(connection: *Connection, limit: usize) !Chunk {
@@ -426,7 +432,7 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
     hub.io.pins[63].smart.registers.source = &terminal_source;
     var trace_buffer: [4096]u8 = undefined;
     var trace = std.Io.File.stderr().writer(connection.io, &trace_buffer);
-    if (connection.trace) {
+    if (connection.simulation.trace) {
         hub.trace_writer = &trace.interface;
     }
     defer trace.interface.flush() catch {};
@@ -545,6 +551,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
     };
     const hub = try arena.allocator().create(Hub);
     hub.init();
+    hub.io.fast_io = connection.simulation.fast_io;
     const options = Options.parse(request.head.target, &hub.memory) catch |err| {
         try request.respond(queryReason(err), .{
             .status = .bad_request,
@@ -722,7 +729,12 @@ fn validateUpgrade(request: *std.http.Server.Request) ![]const u8 {
 }
 
 /// Handle one TCP connection with the hardware server's ten-second total request deadline.
-pub fn handleConnection(allocator: std.mem.Allocator, io: std.Io, stream: std.Io.net.Stream, trace: bool) !void {
+pub fn handleConnection(
+    allocator: std.mem.Allocator,
+    io: std.Io,
+    stream: std.Io.net.Stream,
+    simulation: SimulationOptions,
+) !void {
     const read_buffer = try allocator.alloc(u8, max_request_head); // URL code may carry a complete base64 image.
     defer allocator.free(read_buffer);
 
@@ -736,7 +748,7 @@ pub fn handleConnection(allocator: std.mem.Allocator, io: std.Io, stream: std.Io
         .network_reader = &reader,
         .frames = .{ .input = &reader.interface },
         .socket = .{ .input = &reader.interface, .output = &writer.interface, .key = "" },
-        .trace = trace,
+        .simulation = simulation,
     };
     const Select = std.Io.Select(union(enum) { request: anyerror!void, timeout: std.Io.Cancelable!void });
     var buffer: [2]Select.Union = undefined;
@@ -777,7 +789,7 @@ pub fn handleConnection(allocator: std.mem.Allocator, io: std.Io, stream: std.Io
 }
 
 /// Bind a ws:// listener. Sessions are sequential, matching the physical service's one-board ownership.
-pub fn serve(allocator: std.mem.Allocator, io: std.Io, address: []const u8, trace: bool) !void {
+pub fn serve(allocator: std.mem.Allocator, io: std.Io, address: []const u8, simulation: SimulationOptions) !void {
     var arena: std.heap.ArenaAllocator = .init(allocator);
     defer arena.deinit();
 
@@ -815,7 +827,7 @@ pub fn serve(allocator: std.mem.Allocator, io: std.Io, address: []const u8, trac
         const stream = try listener.accept(io);
         defer stream.close(io);
 
-        handleConnection(allocator, io, stream, trace) catch |err| {
+        handleConnection(allocator, io, stream, simulation) catch |err| {
             try io.checkCancel();
             std.log.warn("P2AAS connection ended: {t}", .{err});
         };
