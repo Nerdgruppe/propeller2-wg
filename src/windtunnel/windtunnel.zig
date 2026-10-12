@@ -6,8 +6,16 @@ const std = @import("std");
 
 const args_parser = @import("args");
 
-const Hub = @import("sim/Hub.zig");
-const smart_pin = @import("sim/smart_pin.zig");
+pub const types = @import("p2").types;
+
+pub const Hub = @import("sim/Hub.zig");
+pub const Cog = @import("sim/Cog.zig");
+pub const IO = @import("sim/IO.zig");
+
+pub const SmartPin = smart_pin.SmartPin;
+
+pub const smart_pin = @import("sim/smart_pin.zig");
+
 const p2aas_server = @import("p2aas_server.zig");
 
 pub const std_options: std.Options = .{

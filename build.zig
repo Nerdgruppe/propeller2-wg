@@ -341,6 +341,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "zglfw", .module = zglfw.module("root") },
                 .{ .name = "zopengl", .module = zopengl.module("root") },
                 .{ .name = "zgui", .module = zgui.module("root") },
+                .{ .name = "windtunnel", .module = windtunnel_mod },
             },
         });
         gui_mod.linkLibrary(zglfw.artifact("glfw"));

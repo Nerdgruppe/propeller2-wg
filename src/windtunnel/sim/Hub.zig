@@ -37,7 +37,11 @@ counter: u64 = 0,
 io: IO,
 cordic: Cordic = .{},
 random: Random = .{},
-debug: struct { enables: u8 = 0, protected: bool = false, locked: bool = false } = .{},
+debug: struct {
+    enables: u8 = 0,
+    protected: bool = false,
+    locked: bool = false,
+} = .{},
 
 trace_writer: ?*std.Io.Writer = null,
 vcd: ?*Vcd = null,
@@ -50,7 +54,12 @@ pending_starts: [8]?struct { at: u64, address: u32, ptra: u32, load: bool, comma
 pending_events: [4][8]Cog.EventSet = @splat(@splat(.empty)),
 event_head: usize = 0,
 
-pub const Lock = struct { allocated: bool = false, taken: bool = false, owner: u3 = 0, id: u4 };
+pub const Lock = struct {
+    allocated: bool = false,
+    taken: bool = false,
+    owner: u3 = 0,
+    id: u4,
+};
 
 /// Scheduled delays are below half the counter period. Compare modulo 2^64
 /// so a deadline after rollover remains in the future until its clock arrives.
