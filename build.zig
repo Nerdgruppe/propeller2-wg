@@ -342,6 +342,7 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "zopengl", .module = zopengl.module("root") },
                 .{ .name = "zgui", .module = zgui.module("root") },
                 .{ .name = "windtunnel", .module = windtunnel_mod },
+                .{ .name = "args", .module = args_mod },
             },
         });
         gui_mod.linkLibrary(zglfw.artifact("glfw"));
@@ -362,6 +363,9 @@ pub fn build(b: *std.Build) !void {
         }
 
         const run_gui = b.addRunArtifact(exe);
+        if (b.args) |args| {
+            run_gui.addArgs(args);
+        }
         const run_gui_step = b.step("run-windtunnel-gui", "Runs Windtunnel's graphical interface");
         run_gui_step.dependOn(&run_gui.step);
     }
