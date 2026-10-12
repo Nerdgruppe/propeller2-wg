@@ -56,10 +56,12 @@ for the measured fetch, timing and LOC rules and their coverage limits. The LOC
 fixtures retain raw encodings from the measurements; Propan's relative-LOC label
 encoding is now fixed and checked by `tests/propan/sema/loc-addresses.propan`.
 
-The separate `tests/windtunnel/state/local-pc-iret.propan` fixture adds eight
-simulation regressions: a no-interrupt control and unmodified RETI1/RETI2/RETI3
+The separate `tests/windtunnel/state/local-pc-iret.propan` fixture now has ten
+cases: a no-interrupt control and unmodified RETI1/RETI2/RETI3
 returns into hub `$404`, on cogs 0 and 7, including C/Z restoration and an intact
-IRETx. It is not included in the 207 measured cases above. Live oracle validation
-of these new cases was unavailable due to a transport error; the four original
-RETI1/RESI1 captures in `measurements.json` remain the hardware evidence for the
-domain transition.
+IRETx. Two additional INT1 cases interrupt at the first overflowed PC, `$400`,
+and distinguish HUB execution (marker 2) from continued cog S-port execution.
+These cases are not included in the 207 measured cases above. The original eight
+passed in simulation; the two new cases remain unexecuted. Live oracle validation
+was unavailable due to a transport error; the four original RETI1/RESI1 captures
+in `measurements.json` remain the hardware evidence for the domain transition.

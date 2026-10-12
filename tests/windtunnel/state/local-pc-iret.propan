@@ -1,5 +1,6 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 3000
+//? const: phase = 20
 //? run: "no-interrupt-cog0"
 //? cog: 0
 //? const: level = 0
@@ -96,6 +97,32 @@
 //? post: cog[*].reg[hub_pc] == 0x40c
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//? run: "int1-overflow-400-cog0"
+//? cog: 0
+//? const: level = 1
+//? const: phase = 12
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 0
+//? post: cog[*].reg[saved] == 0xc0000400
+//? post: cog[*].reg[return_state] == 0xc0000400
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[hub_pc] == 0
+//? post: cog[*].c == true
+//? post: cog[*].z == true
+//? run: "int1-overflow-400-cog7"
+//? cog: 7
+//? const: level = 1
+//? const: phase = 12
+//? pre: cog[*].c = true
+//? pre: cog[*].z = true
+//? post: cog[*].reg[hits] == 0
+//? post: cog[*].reg[saved] == 0xc0000400
+//? post: cog[*].reg[return_state] == 0xc0000400
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[hub_pc] == 0
+//? post: cog[*].c == true
+//? post: cog[*].z == true
 
                 // Run a finite S-port chain beyond local PC $3FF. With no interrupt it finishes
                 // locally; an unmodified RETIx to saved PC $404 instead runs hub RAM at $404.
@@ -117,7 +144,7 @@ setup:
                 RDLONG  word,           PTRA++
                 WRLUT   word,           aug(511)
 
-                // Deliver CT1 while logical PC is $404; keep setup and launch timing identical.
+                // CT1 phase 12 saves $400; phase 20 saves $404. Only its deadline varies.
                 STALLI
 .if level <= 1
                 MOV     IJMP1,          vector
@@ -132,7 +159,7 @@ setup:
                 GETCT   timer
                 ADD     timer,          128
                 ADDCT2  timer,          0
-                ADD     timer,          20
+                ADD     timer,          phase
                 ADDCT1  timer,          0
 .if level == 0
                 SETINT1 0
@@ -202,11 +229,18 @@ tail_template:
     // Sequential execution crosses $3FF without changing the execution mode.
                 NOP
                 NOP
-.hubexec    0x404
+.hubexec    0x400
+                // An interrupt return to $400 must fetch the HUB branch, not
+                // cog register zero via the overflowing local S-port path.
+                // This added instruction keeps the existing $404 path unchanged.
+                JMP     nrel(hub_from_400)
                 // These instructions are reachable only when RETIx selects hub execution.
                 MOV     landed, 1
                 LOC     PB,     hub_after
 hub_after:
                 MOV     hub_pc, PB
+                JMP     nrel(done)
+hub_from_400:
+                MOV     landed, 2
                 JMP     nrel(done)
 

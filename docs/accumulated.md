@@ -904,7 +904,13 @@ enter a cog S-port chain at logical `$400`. Without interruption, six ADDs produ
 10. The ISR copies the full IRETx (`$C0000404`, including C/Z), disables its event
 source, and executes RETIx without changing the return register. Hub `$404` sets
 a distinct marker and LOC observes hub PC `$40C`; both flags are restored and the
-original IRETx remains intact. All eight cases pass in simulation. Live hardware
+original IRETx remains intact. The original eight cases passed in simulation. Two additional INT1 cases (cogs
+0 and 7) target the first overflowed PC, `$400`, using CT1 phase 12. The HUB
+instruction at `$400` branches to a distinct landing marker (2); continued
+local execution would instead run the cog S-port chain. Both cases assert the
+untouched saved IRET1 (`$C0000400`), zero completed ADDs at interrupt entry,
+and the HUB marker. The additional cases have not been run against hardware or
+the simulator in this change. Live hardware
 validation of this expanded fixture was unavailable in this session: the existing
 oracle probes failed with a transport error at `ws://localhost:12880/`. These new
 assertions are not additional silicon measurements.
