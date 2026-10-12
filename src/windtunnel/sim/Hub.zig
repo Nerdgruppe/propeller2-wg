@@ -6,14 +6,18 @@ const std = @import("std");
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
 const Cordic = @import("Cordic.zig");
+const Random = @import("Random.zig");
 const Vcd = @import("Vcd.zig");
 const Hub = @This();
+const p2 = @import("p2");
+const EventId = p2.types.EventId;
 
 memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
 cordic: Cordic = .{},
+random: Random = .{},
 
 trace_writer: ?*std.Io.Writer = null,
 vcd: ?*Vcd = null,
@@ -23,7 +27,8 @@ locks: [16]Lock = undefined,
 /// True only while step() processes a clock edge; direct semantic calls apply shared effects immediately.
 clocking: bool = false,
 pending_starts: [8]?struct { at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
-pending_events: [4][8]u16 = @splat(@splat(0)),
+pending_events: [4][8]Cog.EventSet = @splat(@splat(.empty)),
+event_head: usize = 0,
 
 pub const Lock = struct { allocated: bool = false, taken: bool = false, owner: u3 = 0, id: u4 };
 
@@ -51,6 +56,16 @@ pub fn init(hub: *Hub) void {
     for (&hub.locks, 0..) |*lock, i| lock.* = .{ .id = @intCast(i) };
 }
 
+/// Apply a HUBSET value to the shared clock or random generator.
+/// Unsupported configurations leave the current hub state intact.
+pub fn configure(hub: *Hub, mode: u32) void {
+    if (mode & 0x8000_0000 != 0) {
+        hub.random.seed(mode);
+    } else if (!hub.io.setClock(mode)) {
+        std.log.warn("unsupported HUBSET value 0x{x:0>8}", .{mode});
+    }
+}
+
 /// Attach a caller-owned trace writer and capture the initial state.
 pub fn attachVcd(hub: *Hub, vcd: *Vcd) !void {
     try vcd.capture(hub);
@@ -72,8 +87,15 @@ pub fn signal_lock(hub: *Hub, id: u4, taken: bool) void {
 }
 
 /// Attention and selectable inputs cross two event-sampling registers.
-pub fn signal_event(hub: *Hub, id: u3, mask: u16) void {
-    if (hub.clocking) hub.pending_events[(hub.counter +% 2) % hub.pending_events.len][id] |= mask else hub.cogs[id].events |= mask;
+pub fn signal_event(hub: *Hub, id: u3, event: EventId) void {
+    if (hub.clocking) hub.pending_events[(hub.event_head + 2) % hub.pending_events.len][id].insert(event) else hub.cogs[id].raise_event(event);
+}
+
+/// Strobe attention for every cog selected by the low eight bits of the operand.
+pub fn send_attention(hub: *Hub, mask: u32) void {
+    for (&hub.cogs) |*cog| if (mask & (@as(u32, 1) << cog.id) != 0) {
+        hub.signal_event(cog.id, .ATN);
+    };
 }
 
 /// Read little-endian bytes through the 20-bit RAM/hole/mirror map, wrapping each byte address.
@@ -101,9 +123,11 @@ pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool)
 pub fn step(hub: *Hub) void {
     hub.clocking = true;
     defer hub.clocking = false;
-    const events = &hub.pending_events[hub.counter % hub.pending_events.len];
-    for (&hub.cogs, events) |*cog, pending| cog.events |= pending;
-    events.* = @splat(0);
+    const events = &hub.pending_events[hub.event_head];
+    for (&hub.cogs, events) |*cog, pending| {
+        for (std.enums.values(EventId)) |event| if (pending.contains(event)) cog.raise_event(event);
+    }
+    events.* = @splat(.empty);
     var lut_writes: [8]@TypeOf(hub.cogs[0].writeback.lut) = undefined;
     for (&hub.cogs, &lut_writes) |*cog, *write| write.* = cog.writeback.lut;
     for (&hub.cogs) |*cog| cog.commit_results();
@@ -137,11 +161,18 @@ pub fn step(hub: *Hub) void {
     for (&hub.cogs) |*cog| cog.clock_command();
     hub.io.step(hub);
     if (hub.fault == null) for (&hub.cogs) |*cog| cog.step();
+    for (&hub.cogs) |*cog| {
+        cog.advance_fifo_write_ready();
+        cog.advance_read_bus();
+    }
+    hub.io.advance_delays();
+    hub.event_head = (hub.event_head + 1) % hub.pending_events.len;
 
     if (hub.vcd) |vcd| vcd.capture(hub) catch |err| {
         std.log.err("VCD export failed: {t}", .{err});
         hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
     };
+    hub.random.step();
     hub.counter +%= 1;
 }
 
@@ -152,34 +183,6 @@ pub fn is_any_cog_active(hub: *Hub) bool {
             return true;
     }
     return false;
-}
-
-/// Safe only when all active pipelines are frozen on timed waits and no
-/// peripheral, FIFO, memory transfer, or writeback can advance before CT does.
-pub fn next_idle_clock(hub: *Hub) ?u64 {
-    if (hub.cordic.in_flight()) return null;
-    for (hub.pending_starts) |start| if (start != null) return null;
-    if (hub.io.pending()) return null;
-    for (hub.pending_events) |edge| for (edge) |events| if (events != 0) return null;
-    var next_delta: ?u64 = null;
-    for (&hub.cogs) |*cog| {
-        if (cog.exec_mode == .stopped) continue;
-        const deadline = cog.wait_until orelse return null;
-        if (cog.exec_mode != .cog or cog.pipeline[3] == null or cog.pipeline[4] != null or
-            cog.memory_transfer != null or cog.hub_writeback != null or cog.events != 0 or
-            cog.writeback.count != 0 or cog.writeback.c != null or cog.writeback.z != null or cog.writeback.lut != null or clock_reached(hub.counter, deadline)) return null;
-        if (cog.fifo) |fifo| {
-            if (fifo.count < 15) return null;
-            for (fifo.responses) |response| if (response != null) return null;
-        }
-        const delay = deadline -% hub.counter;
-        next_delta = @min(next_delta orelse delay, delay);
-        for (cog.ct_targets) |target| if (target) |value| {
-            const delta = value -% @as(u32, @truncate(hub.counter));
-            next_delta = @min(next_delta.?, delta);
-        };
-    }
-    return if (next_delta) |delay| hub.counter +% delay else null;
 }
 
 /// Only the low 20 source bits select memory/PC; PTRB receives all 32 bits.
@@ -198,7 +201,7 @@ pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u32 = 0, p
         cog.exec_mode = if (cog.pc < 0x400) .cog else .hub;
         if (options.clocked) {
             cog.startup = .{ .address = base, .grant_at = 0, .remaining = 0, .release_at = command_clock +% @as(u64, if (cog.exec_mode == .hub) 17 else 18) };
-            if (cog.exec_mode == .hub) cog.fifo = .{
+            if (cog.exec_mode == .hub) cog.fifo_state.engine = .{
                 .byte_offset = @truncate(cog.pc),
                 .address = cog.pc & 0xffffc,
                 .ready_at = command_clock +% 22,
@@ -207,6 +210,8 @@ pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u32 = 0, p
     }
     cog.registers.set(.PTRA, options.ptra);
     cog.registers.set(.PTRB, options.hub_address);
+    cog.started_hubexec = cog.exec_mode == .hub;
+    cog.ct_targets = .{ 0, 0, 0 };
 }
 
 test "UART DIR changes once per edge across register writes, reset and simultaneous handoff" {
@@ -302,20 +307,69 @@ test "COGSTOP aborts a UART frame before its completion edge" {
     try std.testing.expectEqualStrings("", output.written());
 }
 
+test "event delivery coalesces without crossing cogs and reset cancels queued latches" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const events = std.enums.values(EventId);
+    for (events) |event| hub.signal_event(0, event);
+    try std.testing.expect(hub.cogs[0].events.eql(.full));
+    hub.cogs[0].reset();
+    hub.clocking = true;
+    for (events) |event| {
+        hub.signal_event(0, event);
+        hub.signal_event(0, event);
+        hub.signal_event(1, event);
+        hub.signal_event(2, event);
+    }
+    hub.clocking = false;
+    hub.cogs[0].events = .full;
+    hub.cogs[0].reset();
+    try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
+    for (0..2) |_| {
+        hub.step();
+        for (hub.cogs) |cog| try std.testing.expectEqual(@as(usize, 0), cog.events.count());
+    }
+    hub.step();
+    try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
+    try std.testing.expect(hub.cogs[1].events.eql(.full));
+    try std.testing.expect(hub.cogs[2].events.eql(.full));
+    for (hub.cogs[3..]) |cog| try std.testing.expectEqual(@as(usize, 0), cog.events.count());
+    for (hub.pending_events) |edge| for (edge) |pending| try std.testing.expectEqual(@as(usize, 0), pending.count());
+}
+
+test "pending events arrive during a timed wait" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    for (std.enums.values(EventId)) |event| {
+        hub.init();
+        const cog = &hub.cogs[0];
+        cog.exec_mode = .cog;
+        cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_161F }; // WAITX #11.
+        hub.step();
+        hub.clocking = true;
+        hub.signal_event(cog.id, event);
+        hub.clocking = false;
+        for (0..3) |_| hub.step();
+        try std.testing.expect(cog.events.contains(event));
+        // WAITX ignores unrelated event latches after delivery has settled.
+    }
+}
+
 test "pending events keep their two-clock delay across counter rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
     hub.init();
     hub.counter = std.math.maxInt(u64) - 1;
     hub.clocking = true;
-    hub.signal_event(0, 0x8000);
+    hub.signal_event(0, .QMT);
     hub.clocking = false;
     for (0..2) |_| {
         hub.step();
-        try std.testing.expectEqual(@as(u16, 0), hub.cogs[0].events);
+        try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
     }
     hub.step();
-    try std.testing.expectEqual(@as(u16, 0x8000), hub.cogs[0].events);
+    try std.testing.expect(hub.cogs[0].events.eql(.initOne(.QMT)));
 }
 
 test "FIFO and hub reads keep five-clock responses across counter rollover" {
@@ -328,7 +382,7 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
         const read_address: u32 = @intCast(((hub.counter +% 1) & 7) * 4);
         hub.write_memory(fifo_address, 0x1122_3344, 4, false);
         hub.write_memory(read_address, 0x5566_7788, 4, false);
-        hub.cogs[0].fifo = .{ .address = @intCast(fifo_address), .byte_offset = 0, .ready_at = hub.counter };
+        hub.cogs[0].fifo_state.engine = .{ .address = @intCast(fifo_address), .byte_offset = 0, .ready_at = hub.counter };
         hub.cogs[1].memory_transfer = .{
             .address = read_address,
             .remaining = 1,
@@ -337,22 +391,21 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
             .timed = true,
             .size = 4,
             .grant_at = hub.counter,
-            .grant_address = read_address,
-            .grants_left = 1,
+            .direction = .{ .read = .{ .grant_address = read_address, .grants_left = 1 } },
         };
         for (0..5) |_| {
             hub.step();
-            try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].fifo.?.count);
-            try std.testing.expect(hub.cogs[1].memory_transfer.?.value == null);
+            try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].fifo_state.engine.?.count);
+            try std.testing.expect(hub.cogs[1].memory_transfer.?.direction.read.value == null);
         }
         hub.step();
-        try std.testing.expectEqual(@as(usize, 1), hub.cogs[0].fifo.?.count);
-        try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[0].fifo.?.words[0]);
-        try std.testing.expectEqual(@as(?u32, 0x5566_7788), hub.cogs[1].memory_transfer.?.value);
+        try std.testing.expectEqual(@as(usize, 1), hub.cogs[0].fifo_state.engine.?.count);
+        try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[0].fifo_state.engine.?.words[0]);
+        try std.testing.expectEqual(@as(?u32, 0x5566_7788), hub.cogs[1].memory_transfer.?.direction.read.value);
     }
 }
 
-test "wait deadlines and idle skipping remain future across counter rollover" {
+test "wait deadlines remain future across counter rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
     hub.init();
@@ -362,12 +415,6 @@ test "wait deadlines and idle skipping remain future across counter rollover" {
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_161F }; // WAITX #11.
     hub.step();
     try std.testing.expectEqual(@as(?u64, 6), cog.wait_until);
-    try std.testing.expectEqual(@as(?u64, 6), hub.next_idle_clock());
-    hub.cogs[1].exec_mode = .cog;
-    hub.cogs[1].pipeline[3] = .{ .pc = 0, .instr = 0xFD64_001F };
-    hub.cogs[1].wait_until = std.math.maxInt(u64) - 1;
-    try std.testing.expectEqual(@as(?u64, std.math.maxInt(u64) - 1), hub.next_idle_clock());
-    hub.cogs[1].reset();
     for (1..11) |_| {
         hub.step();
         try std.testing.expect(cog.wait_until != null);
@@ -411,4 +458,117 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     try std.testing.expectEqual(Cog.ExecMode.stopped, hub.cogs[1].exec_mode);
     try std.testing.expectEqual(@as(u32, 0xFD64_0203), hub.cogs[1].registers.values[0]);
     for (1..504) |i| try std.testing.expectEqual(@as(u32, @intCast(i)), hub.cogs[1].registers.values[i]);
+}
+
+test "pattern conditions are sampled while a cog waits" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
+    cog.z = true;
+    cog.configure_pattern(1, 1);
+    hub.step(); // Stable zero input does not match.
+    // Model a new architectural snapshot, independently of I/O propagation timing.
+    hub.io.samples.input_registers = 1;
+    cog.step();
+    try std.testing.expect(cog.events.contains(.PAT));
+    cog.events.remove(.PAT);
+    hub.io.samples.input_registers = 0;
+    cog.step();
+}
+
+test "selectable pin samples retain delayed notifications during waits" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
+    cog.configure_selectable(.SE1, 0x100); // Held low input.
+    cog.configure_interrupt(.int1, @intFromEnum(EventId.SE1));
+    cog.interrupts.stalled = true;
+    hub.step();
+    try std.testing.expect(!cog.events.contains(.SE1));
+    // Reconfiguration clears the latch, but cannot retract the sample already in flight.
+    cog.configure_selectable(.SE1, 0x40);
+    hub.step();
+    try std.testing.expect(!cog.events.contains(.SE1));
+    hub.step();
+    try std.testing.expect(cog.events.contains(.SE1));
+    try std.testing.expectEqual(Cog.InterruptState.pending, cog.interrupts.levels.get(.int1).state);
+    cog.cancel_interrupt(.int1);
+    cog.events.remove(.SE1);
+    // Only the architectural input changes here; no pad propagation timing is involved.
+    hub.io.samples.input_registers = 1;
+    cog.step();
+    try std.testing.expect(cog.events.contains(.SE1));
+    cog.reset();
+    for (hub.pending_events) |edge| try std.testing.expect(!edge[0].contains(.SE1));
+    for (cog.selectable_events) |selection| try std.testing.expect(selection == null);
+}
+
+test "cog restart clears pending interrupts and controller state" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    for (std.enums.values(Cog.InterruptLevel)) |level| {
+        hub.init();
+        try hub.start_cog(3, .{ .hub_address = 0x4000, .load_image = false, .clocked = false });
+        const cog = &hub.cogs[3];
+        try std.testing.expect(cog.started_hubexec);
+        try std.testing.expectEqual(@as(u32, 1), cog.interrupt_status());
+        cog.exec_mode = .cog;
+        cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
+        hub.step();
+        cog.interrupts.stalled = true;
+        cog.trigger_interrupt(level);
+        try hub.start_cog(3, .{ .clocked = false });
+        try std.testing.expect(!cog.started_hubexec);
+        try std.testing.expect(!cog.interrupts.stalled);
+        try std.testing.expectEqual(Cog.InterruptState.idle, cog.interrupts.levels.get(level).state);
+        try std.testing.expectEqual(@as(?u32, 0), cog.ct_targets[0]);
+    }
+}
+
+test "one shared RNG advances through stopped clocks, rollover and slotted HUBSET seeds" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    hub.init();
+    var expected = hub.random;
+    hub.counter = std.math.maxInt(u64) - 3;
+    for (0..16) |_| {
+        const before = hub.random;
+        for (0..8) |id| {
+            const word = hub.random.word(@intCast(id));
+            try std.testing.expectEqual(word, hub.random.word(@intCast(id)));
+        }
+        try std.testing.expectEqualDeep(before, hub.random);
+        try std.testing.expect(!hub.is_any_cog_active());
+        hub.step();
+        expected.step();
+        try std.testing.expectEqualDeep(expected, hub.random);
+        // Pad noise borrows the same output sampled by the cogs on this edge.
+        try std.testing.expectEqual(before.output, hub.io.random_bits);
+    }
+    try std.testing.expectEqual(@as(u64, 12), hub.counter);
+
+    for (0..8) |id| for (0..8) |phase| {
+        hub.init();
+        for (0..16) |_| hub.step();
+        hub.counter = phase;
+        const cog = &hub.cogs[id];
+        cog.exec_mode = .cog;
+        cog.write_reg(@enumFromInt(24), 0x80001234);
+        cog.pipeline[3] = .{ .pc = 0, .instr = 0xfd603000 };
+        expected = hub.random;
+        const grant = phase + ((id -% phase) & 7);
+        for (0..10) |_| {
+            if (hub.counter == grant) expected.seed(0x80001234);
+            expected.step();
+            hub.step();
+            try std.testing.expectEqualDeep(expected, hub.random);
+            try std.testing.expectEqual(@as(u32, 0), hub.io.clock_mode);
+        }
+    };
 }

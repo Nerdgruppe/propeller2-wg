@@ -1,0 +1,536 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "kind0-fast0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind0-fast0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind1-fast0-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind1-fast0-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind2-fast0-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 402653184
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind2-fast0-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 402653184
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind3-fast0-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind3-fast0-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind4-fast0-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 402653184
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind4-fast0-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 402653184
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind5-fast0-cog0"
+//? cog: 0
+//? const: kind = 5
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 268435456
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind5-fast0-cog7"
+//? cog: 7
+//? const: kind = 5
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 268435456
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind6-fast0-cog0"
+//? cog: 0
+//? const: kind = 6
+//? const: fast = 0
+//? post: cog[*].reg[before] == 134217728
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 268435456
+//? post: cog[*].reg[p1] == 8388608
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 16
+//? run: "kind6-fast0-cog7"
+//? cog: 7
+//? const: kind = 6
+//? const: fast = 0
+//? post: cog[*].reg[before] == 134217728
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 268435456
+//? post: cog[*].reg[p1] == 8388608
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 16
+//? run: "kind7-fast0-cog0"
+//? cog: 0
+//? const: kind = 7
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind7-fast0-cog7"
+//? cog: 7
+//? const: kind = 7
+//? const: fast = 0
+//? post: cog[*].reg[before] == 402653184
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind0-fast1-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind0-fast1-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind1-fast1-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind1-fast1-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind2-fast1-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 268435456
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind2-fast1-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 268435456
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 123
+//? post: cog[*].reg[count] == 0
+//? run: "kind3-fast1-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind3-fast1-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind4-fast1-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 268435456
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind4-fast1-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 268435456
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 1073741824
+//? post: cog[*].reg[link] == 4
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind5-fast1-cog0"
+//? cog: 0
+//? const: kind = 5
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 268435456
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind5-fast1-cog7"
+//? cog: 7
+//? const: kind = 5
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 268435456
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind6-fast1-cog0"
+//? cog: 0
+//? const: kind = 6
+//? const: fast = 1
+//? post: cog[*].reg[before] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 268435456
+//? post: cog[*].reg[p1] == 8388608
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 16
+//? run: "kind6-fast1-cog7"
+//? cog: 7
+//? const: kind = 6
+//? const: fast = 1
+//? post: cog[*].reg[before] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 268435456
+//? post: cog[*].reg[p1] == 8388608
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 16
+//? run: "kind7-fast1-cog0"
+//? cog: 0
+//? const: kind = 7
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+//? run: "kind7-fast1-cog7"
+//? cog: 7
+//? const: kind = 7
+//? const: fast = 1
+//? post: cog[*].reg[before] == 268435456
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[p0] == 1073741824
+//? post: cog[*].reg[p1] == 1073741824
+//? post: cog[*].reg[p2] == 0
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[count] == 0
+
+// Separate skip suspension from the hardware stack's data and push/pop movement.
+.if fast
+                SKIPF   aug(0x80000000)
+.else
+                SKIP    aug(0x80000000)
+.endif
+                CALL    nrel(sub)
+                NOP
+                NOP
+                NOP
+                SKIP    0
+                AND     before, aug(0xF8000000)
+                AND     inside, aug(0xF8000000)
+                AND     after,  aug(0xF8000000)
+                JMP     nrel(_end)
+sub:
+                GETBRK  before      :wc
+                GETBRK  p0          :wz
+.if kind == 0
+                // Pop the return address and jump through it without a RET.
+                POP     link
+                GETBRK  inside      :wc
+                GETBRK  p1          :wz
+                JMP     link
+.elif   kind == 1
+                // A balanced PUSH/POP pair must leave call suspension unchanged.
+                PUSH    123
+                POP     value
+                GETBRK  inside      :wc
+                GETBRK  p1          :wz
+                RET
+.elif   kind == 2
+                // Observe both an extra PUSH and its matching POP independently.
+                PUSH    123
+                GETBRK  inside      :wc
+                GETBRK  p1          :wz
+                POP     value
+                GETBRK  after       :wc
+                GETBRK  p2          :wz
+                RET
+.elif   kind == 3
+                // Restoring a popped return address does not restore a suspension flag.
+                POP     link
+                PUSH    link
+                GETBRK  inside      :wc
+                GETBRK  p1          :wz
+                RET
+.elif   kind == 4
+                // Inspect depth before and after restoring the return address.
+                POP     link
+                GETBRK  inside      :wc
+                GETBRK  p1          :wz
+                PUSH    link
+                GETBRK  after       :wc
+                GETBRK  p2          :wz
+                RET
+.elif   kind == 5
+                // A synthetic RET decrements depth regardless of the pushed entry.
+                PUSH    nrel(done)
+                RET
+done:
+                GETBRK  inside                  :wc
+                GETBRK  p1                      :wz
+                SKIP    0
+                AND     before, aug(0xF8000000)
+                AND     inside, aug(0xF8000000)
+                AND     after,  aug(0xF8000000)
+                JMP     nrel(_end)
+.elif   kind == 6
+                // Sixteen nested CALLs wrap the independent four-bit depth counter.
+                ADD     count,  1
+                CMP     count,  16              :wz
+    if(!Z)      CALL    nrel(sub)
+                GETBRK  inside                  :wc
+                GETBRK  p1                      :wz
+                SKIP    0
+                AND     before, aug(0xF8000000)
+                AND     inside, aug(0xF8000000)
+                AND     after,  aug(0xF8000000)
+                JMP     nrel(_end)
+.else
+                // Overwrite all eight data-stack entries while the skip counter is held.
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                PUSH    nrel(done2)
+                GETBRK  inside                  :wc
+                GETBRK  p1                      :wz
+                SKIP    0
+                AND     before, aug(0xF8000000)
+                AND     inside, aug(0xF8000000)
+                AND     after,  aug(0xF8000000)
+                JMP     nrel(_end)
+done2:
+                SKIP    0
+                AND     before, aug(0xF8000000)
+                AND     inside, aug(0xF8000000)
+                AND     after,  aug(0xF8000000)
+                JMP     nrel(_end)
+.endif
+var before:     LONG    0
+var inside:     LONG    0
+var after:      LONG    0
+var p0:         LONG    0
+var p1:         LONG    0
+var p2:         LONG    0
+var link:       LONG    0
+var value:      LONG    0
+var count:      LONG    0
+var depth_value:
+                LONG    0
+

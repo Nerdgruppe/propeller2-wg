@@ -134,6 +134,11 @@ and `\\` escapes. Nonempty stdin requires `stdin-after`, which must be a prefix 
 the expected stdout. Program fixtures support symbol patches and serial checks;
 cog fixtures support state checks and reserve serial I/O for the reporter.
 
+Simulation also has a host-time guard: 30 seconds per cog run and 600 seconds
+per program run. The larger program budget allows board warmup waits to finish
+with every clock simulated, including Debug builds. `max-cycles` remains the
+simulated execution limit; `timeout-ms` controls hardware runs only.
+
 The runner reports each run separately and continues after a failed run. Its exit
 code is nonzero if any fixture or run fails. Failure evidence and
 `--prepare-oracle` artifacts record the run name and patched image in separate

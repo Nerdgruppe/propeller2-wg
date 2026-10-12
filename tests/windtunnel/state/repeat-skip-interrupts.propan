@@ -1,0 +1,218 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "kind0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 3
+//? post: cog[*].reg[finish] == 52
+//? post: cog[*].reg[stamp] == 26
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[nested] == 0
+//? post: cog[*].reg[nested_pattern] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 3
+//? post: cog[*].reg[finish] == 52
+//? post: cog[*].reg[stamp] == 26
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[nested] == 0
+//? post: cog[*].reg[nested_pattern] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind1-cog0"
+//? cog: 0
+//? const: kind = 1
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 42
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 64
+//? post: cog[*].reg[nested] == 402653184
+//? post: cog[*].reg[nested_pattern] == 64
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind1-cog7"
+//? cog: 7
+//? const: kind = 1
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 42
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 64
+//? post: cog[*].reg[nested] == 402653184
+//? post: cog[*].reg[nested_pattern] == 64
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind2-cog0"
+//? cog: 0
+//? const: kind = 2
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 42
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 64
+//? post: cog[*].reg[nested] == 268435456
+//? post: cog[*].reg[nested_pattern] == 64
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind2-cog7"
+//? cog: 7
+//? const: kind = 2
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 42
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 64
+//? post: cog[*].reg[nested] == 268435456
+//? post: cog[*].reg[nested_pattern] == 64
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind3-cog0"
+//? cog: 0
+//? const: kind = 3
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 44
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 64
+//? post: cog[*].reg[nested] == 268435456
+//? post: cog[*].reg[nested_pattern] == 64
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind3-cog7"
+//? cog: 7
+//? const: kind = 3
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 44
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 64
+//? post: cog[*].reg[nested] == 268435456
+//? post: cog[*].reg[nested_pattern] == 64
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind4-cog0"
+//? cog: 0
+//? const: kind = 4
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 42
+//? post: cog[*].reg[stamp] == 16
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[nested] == 0
+//? post: cog[*].reg[nested_pattern] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+//? run: "kind4-cog7"
+//? cog: 7
+//? const: kind = 4
+//? post: cog[*].reg[count] == 1
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[finish] == 42
+//? post: cog[*].reg[stamp] == 16
+//? post: cog[*].reg[saved] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[nested] == 0
+//? post: cog[*].reg[nested_pattern] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[sequence] == 1
+
+                // Pending IRQs must wait for REP, and ISR code must not consume the main skip pattern.
+                MOV     IJMP1,  vector
+                GETCT   start
+.if kind == 0
+                REP     3,      3
+                TRGINT1
+                ADD     count,  1
+                NOP
+.elif   kind == 4
+                REP     3,      0
+                TRGINT1
+                ADD     count,  1
+                JMP     nrel(finished)
+.else
+.if kind == 1
+                SKIP    aug(0x100)
+.else
+                SKIPF   aug(0x100)
+.endif
+                TRGINT1
+                ADD     count,  1
+                NOP
+.endif
+finished:
+                GETCT   finish
+                MOV     sequence,   1
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                GETBRK  after_pattern               :wz
+                SKIP    0
+                SUB     finish,     start
+                SUB     stamp,      start
+                AND     inside,     aug(0xF8000000)
+                AND     nested,     aug(0xF8000000)
+                JMP     nrel(_end)
+isr:
+                GETCT   stamp
+                MOV     observed,   count
+                MOV     saved,      IRET1
+                GETBRK  inside              :wc
+                GETBRK  inside_pattern      :wz
+                CALL    nrel(sub)
+.if kind == 3
+                SKIP    0
+.endif
+                RETI1
+sub:
+                GETBRK  nested          :wc
+                GETBRK  nested_pattern  :wz
+                RET
+var vector:     LONG    pcaddr(isr)
+var count:      LONG    0
+var observed:   LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var stamp:      LONG    0
+var saved:      LONG    0
+var inside:     LONG    0
+var inside_pattern:
+                LONG    0
+var nested:     LONG    0
+var nested_pattern:
+                LONG    0
+var after_pattern:
+                LONG    0
+var sequence:   LONG    0
+

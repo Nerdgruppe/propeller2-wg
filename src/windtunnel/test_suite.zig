@@ -134,6 +134,7 @@ fn validateLayout(module: propan.Module, image: []const u8, stop: u20) !void {
 }
 
 fn validateDispatch(module: propan.Module, origin: u32, instruction: @import("sim/Cog.zig").PipelineState) !void {
+    if (instruction.interrupt != null) return; // Internal CALLD entries do not belong to the assembled image.
     if (instruction.pc == 0) return; // The one-word trampoline belongs to the scaffold.
     if (instruction.pc >= 0x200 and instruction.pc < 0x400) {
         for (module.line_data) |line| {
@@ -292,11 +293,14 @@ fn runOne(ctx: Context, path: []const u8, source: []const u8, list: checklist.Li
     var dut_started = false;
     var supplied_stdin = list.stdin.len == 0;
     const started = std.Io.Timestamp.now(ctx.io, .awake).toNanoseconds();
+    // Program fixtures include a twenty-million-clock board warmup. With every
+    // clock simulated, allow it to finish even in Debug; max_cycles still bounds execution.
+    const wall_limit_ns: i96 = (if (list.profile == .program) @as(i96, 600) else 30) * std.time.ns_per_s;
     while (hub.is_any_cog_active() and hub.counter < list.max_cycles) {
-        if (hub.counter & 1023 == 0 and std.Io.Timestamp.now(ctx.io, .awake).toNanoseconds() - started > 30 * std.time.ns_per_s) return error.SimulatorTimeout;
+        if (hub.counter & 1023 == 0 and std.Io.Timestamp.now(ctx.io, .awake).toNanoseconds() - started > wall_limit_ns) return error.SimulatorTimeout;
         if (stop) |pc| {
             if (hub.cogs[list.cog].pipeline[3]) |instruction| {
-                if (!reached and instruction.pc == pc) {
+                if (!reached and instruction.interrupt == null and instruction.pc == pc) {
                     reached = true;
                     for (observations.items) |o| try read(hub, list.cog, o, &captured.writer);
                     if (list.profile == .program) break;
@@ -308,7 +312,6 @@ fn runOne(ctx: Context, path: []const u8, source: []const u8, list: checklist.Li
             if (hub.cogs[list.cog].pipeline[3]) |instruction| try validateDispatch(compiled.module, dut_origin, instruction);
         }
         hub.step();
-        if (hub.next_idle_clock()) |next| hub.counter = @min(next, list.max_cycles);
         if (!supplied_stdin and stdout.written().len >= list.stdin_after.len) {
             if (!std.mem.startsWith(u8, stdout.written(), list.stdin_after)) return error.ReadinessMismatch;
             const receiver = &hub.io.pins[63].smart;
@@ -487,7 +490,7 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
     try std.testing.expectError(error.MissingExitJump, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nCOGSTOP 0\n"));
     try std.testing.expectError(error.MissingExitJump, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nif(C) JMP nrel(_end)\n"));
     try std.testing.expectError(error.StopNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nCOGSTOP 0\nJMP nrel(_end)\n"));
-    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nBITRND value, 1\nJMP nrel(_end)\nvar value: LONG 0\n"));
+    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nSETDACS 0\nJMP nrel(_end)\n"));
     try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nSETDACS 0\nCOGSTOP 0\n"));
     try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWRPIN P_USB_PAIR, 1\nCOGSTOP 0\n"));
     try std.testing.expectError(error.ReadinessNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: \"x\"\n//? stdin-after: \"READY\"\n//? stdout: \"READYx\"\n\n.cogexec\nCOGSTOP 0\n"));
@@ -506,8 +509,8 @@ test "illegal FIFO use reports its reason and respects conditional cancellation"
         try std.testing.expect(std.mem.indexOf(u8, errors.written(), "hub execution uses the FIFO for instruction fetching") != null);
     }
     errors.clearRetainingCapacity();
-    try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nRFBYTE value\nJMP nrel(_end)\nvar value: LONG 0\n"));
-    try std.testing.expect(std.mem.indexOf(u8, errors.written(), "RFBYTE requires RDFAST") != null);
+    try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nRFBYTE register(20)\nCOGSTOP 0\n"));
+    try std.testing.expect(std.mem.indexOf(u8, errors.written(), "FIFO read requires RDFAST") != null);
     _ = try runTemporary(ctx, header ++ "if(C) RFBYTE register(20)\nif(C) RDFAST 0, 0\nCOGSTOP 0\n");
 }
 
@@ -665,7 +668,11 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
     const path = "tests/windtunnel/program/server-terminal.propan";
     const source = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, std.testing.allocator, .limited(1 << 20));
     defer std.testing.allocator.free(source);
-    var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, source, &errors.writer);
+    // The physical-board fixture settles for 100 ms. The local protocol test only
+    // needs clocked UART startup, so do not spend 20 million simulated edges here.
+    const local_source = try std.mem.replaceOwned(u8, std.testing.allocator, source, "20_000_000", "2_000");
+    defer std.testing.allocator.free(local_source);
+    var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, local_source, &errors.writer);
     defer compiled.deinit();
     const ip = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
     var listener = try ip.listen(std.testing.io, .{});

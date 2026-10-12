@@ -51,14 +51,6 @@ pub const Pin = struct {
             else => pin.configuration.output_enable,
         };
     }
-
-    /// Identify modes that consume an attached data source, for idle-clock scheduling.
-    fn receivesData(pin: *const Pin) bool {
-        return switch (pin.configuration.mode) {
-            .sync_rx, .uart_rx => true,
-            else => false,
-        };
-    }
 };
 
 /// Hardware probes in data/timing-data/smart-pin-{cases,results}.yaml:
@@ -96,6 +88,28 @@ pub const Command = struct {
     instruction: u32,
 };
 
+/// Fixed-delay GPIO changes awaiting their physical pad edge.
+const GpioPipeline = struct {
+    const Effect = struct { directions: u64, outputs: u64 };
+    slots: [8]?Effect = @splat(null),
+    head: usize = 0,
+};
+
+/// One command slot per cog at each delayed delivery edge.
+const CommandPipeline = struct {
+    slots: [8][8]?Command = @splat(@splat(null)),
+    head: usize = 0,
+};
+
+/// Pad, input, and smart-result samples from the same four-clock window.
+const Samples = struct {
+    pads: [4][64]Signal = @splat(@splat(.z)),
+    inputs: [4]u64 = @splat(0),
+    results: [4][64]ReadResult = @splat(@splat(.{})),
+    input_registers: u64 = 0,
+    active: bool = false,
+};
+
 pins: [64]Pin = @splat(.{}),
 smart_a: [64]Signal = @splat(.z),
 smart_b: [64]Signal = @splat(.z),
@@ -107,26 +121,19 @@ sync_in: [64]Signal = @splat(.z),
 directions: u64 = 0,
 physical_directions: u64 = 0,
 physical_outputs: u64 = 0,
-gpio_effects: [8]?struct { directions: u64, outputs: u64 } = @splat(null),
-pad_history: [4][64]Signal = @splat(@splat(.z)),
-input_history: [4]u64 = @splat(0),
-result_history: [4][64]ReadResult = @splat(@splat(.{})),
-input_registers: u64 = 0,
+gpio: GpioPipeline = .{},
+samples: Samples = .{},
 routed_inputs: u64 = 0,
-dynamic_pads: bool = false,
-command_count: u8 = 0,
-gpio_effect_count: u4 = 0,
-sampling: bool = false,
-retime_until: ?u64 = null,
 outputs: u64 = 0,
 drives: u64 = 0,
 dirty: bool = true,
 clock_mode: u32 = 0,
 clock_frequency: u64 = 20_000_000,
 crystal_frequency: u64 = 20_000_000,
-random_seed: u64 = 0,
+/// Current shared output, latched by step; physical pad tap numbering is approximate.
+random_bits: u64 = 0,
 last_clock: u64 = 0,
-commands: [8][8]?Command = @splat(@splat(null)),
+commands: CommandPipeline = .{},
 owners: [64]struct { cog: u3 = 0, pc: u20 = 0, instruction: u32 = 0 } = @splat(.{}),
 collision: ?struct { clock: u64, pin: PinIndex, cogs: u8 } = null,
 failure: ?struct { pin: PinIndex, err: anyerror } = null,
@@ -148,37 +155,20 @@ pub fn supported(value: u32) bool {
     return @intFromEnum(configuration.pad_mode) <= @intFromEnum(PinConfiguration.PadMode.schmitt_adjacent_feedback) and @intFromEnum(configuration.input_logic) < @intFromEnum(PinConfiguration.InputLogic.filter0);
 }
 
-/// Apply a supported HUBSET clock or random-seed operation.
+/// Apply a supported HUBSET clock operation; the hub owns random seeding.
 pub fn setClock(io: *IO, mode: u32) bool {
-    if (mode & 0x80000000 != 0) {
-        io.random_seed = mode;
-        return true;
-    }
     const config: types.ClockMode = @bitCast(mode);
     io.clock_frequency = config.get_frequency(io.crystal_frequency) catch return false;
     io.clock_mode = mode;
     return true;
 }
 
-/// ponytail: clock-indexed deterministic noise, not the silicon's undocumented
-/// cog bit permutation; replace with the hardware PRNG mapping when that is characterized.
-/// Indexing CT keeps idle-clock skips equivalent to individual clock steps.
-pub fn randomWord(io: *const IO, cog: u3, clock: u64) u32 {
-    return io.noiseWord(cog, clock);
-}
-
-/// Produce deterministic clock-indexed noise for a cog or physical pad stream.
-fn noiseWord(io: *const IO, stream: u64, clock: u64) u32 {
-    var rng = std.Random.SplitMix64.init(io.random_seed ^ (clock *% 0x9e3779b97f4a7c15) ^ (stream *% 0xbf58476d1ce4e5b9));
-    return @truncate(rng.next());
-}
-
 /// Queue a cog command for its measured delivery edge, including calls outside Hub.step.
 pub fn enqueue(io: *IO, hub: *Hub, command: Command) void {
-    const slot = &io.commands[(hub.counter +% command_delay) % io.commands.len][command.cog];
+    _ = hub;
+    const slot = &io.commands.slots[(io.commands.head + command_delay) % io.commands.slots.len][command.cog];
     std.debug.assert(slot.* == null);
     slot.* = command;
-    io.command_count += 1;
 }
 
 /// Prepare one combined command without advancing its smart logic.
@@ -202,27 +192,26 @@ fn apply(io: *IO, index: PinIndex, command: Command, inputs: *smart_pin.Inputs) 
 /// Collect one frame, advance every smart pin once, then publish pads and sampled registers.
 pub fn step(io: *IO, hub: *Hub) void {
     io.last_clock = hub.counter;
+    io.random_bits = hub.random.output;
     io.updateDirections(hub);
-    if (!io.sampling) {
-        io.pad_history = @splat(io.pads);
-        io.input_history = @splat(io.routed_inputs);
-        for (&io.result_history) |*edge| for (edge, &io.pins) |*result, *pin| {
+    if (!io.samples.active) {
+        io.samples.pads = @splat(io.pads);
+        io.samples.inputs = @splat(io.routed_inputs);
+        for (&io.samples.results) |*edge| for (edge, &io.pins) |*result, *pin| {
             result.* = .{ .value = pin.outputs.y, .flag = pin.outputs.flag };
         };
-        io.sampling = true;
+        io.samples.active = true;
     }
-    if (io.gpio_effects[hub.counter % io.gpio_effects.len]) |effect| {
+    if (io.gpio.slots[io.gpio.head]) |effect| {
         io.applyState(effect.directions, effect.outputs);
-        io.gpio_effects[hub.counter % io.gpio_effects.len] = null;
-        io.gpio_effect_count -= 1;
+        io.gpio.slots[io.gpio.head] = null;
     }
     var inputs: [64]smart_pin.Inputs = undefined;
     for (&inputs, 0..) |*sample, i| sample.* = io.pinInputs(@enumFromInt(i));
-    const slot = &io.commands[hub.counter % io.commands.len];
+    const slot = &io.commands.slots[io.commands.head];
     var touched: u64 = 0;
-    if (io.command_count != 0) for (slot) |command| if (command) |c| {
+    for (slot) |command| if (command) |c| {
         touched |= c.mask;
-        io.command_count -= 1;
     };
     while (touched != 0) {
         const index: PinIndex = @enumFromInt(@ctz(touched));
@@ -270,40 +259,38 @@ pub fn step(io: *IO, hub: *Hub) void {
         };
     }
     io.routed_inputs = 0;
-    io.dynamic_pads = false;
+    var dynamic_pads = false;
     for (&io.pins, next, 0..) |*pin, state, i| {
         const before = pin.outputs;
         const configuration = pin.configuration;
         io.routed_inputs |= @as(u64, state.in) << @intCast(i);
-        if (state.in != before.in or state.y != before.y or state.flag != before.flag) io.retime_until = hub.counter +% 4;
         if (state.smart_out != before.smart_out) io.dirty = true;
-        if (configuration.synchronous or configuration.output_source == .other or configuration.pad_mode != .logic) io.dynamic_pads = true;
+        if (configuration.synchronous or configuration.output_source == .other or configuration.pad_mode != .logic) dynamic_pads = true;
         pin.outputs = state;
     }
-    if (io.dirty or io.dynamic_pads) io.resolvePads();
-    io.pad_history[hub.counter % io.pad_history.len] = io.pads;
-    const input = io.routed_inputs;
-    if (input != io.input_history[(hub.counter -% 1) % io.input_history.len]) io.retime_until = hub.counter +% 4;
-    io.input_history[hub.counter % io.input_history.len] = input;
-    io.input_registers = io.input_history[(hub.counter -% 2) % io.input_history.len];
-    const results = &io.result_history[hub.counter % io.result_history.len];
-    const prior = &io.result_history[(hub.counter -% 1) % io.result_history.len];
-    for (results, prior, &io.pins) |*result, previous, *pin| {
+    if (io.dirty or dynamic_pads) io.resolvePads();
+    io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
+    io.samples.inputs[hub.counter % io.samples.inputs.len] = io.routed_inputs;
+    io.samples.input_registers = io.samples.inputs[(hub.counter -% 2) % io.samples.inputs.len];
+    const results = &io.samples.results[hub.counter % io.samples.results.len];
+    for (results, &io.pins) |*result, *pin| {
         result.* = .{ .value = pin.outputs.y, .flag = pin.outputs.flag };
-        if (!std.meta.eql(result.*, previous)) io.retime_until = hub.counter +% 4;
     }
-    if (io.retime_until) |until| if (Hub.clock_reached(hub.counter, until)) {
-        io.retime_until = null;
-    };
 }
 
 /// Read the smart result through the two-stage return-bus pipeline.
 pub fn readResult(io: *const IO, index: PinIndex, clock: u64) ReadResult {
-    if (!io.sampling) {
+    if (!io.samples.active) {
         const state = io.pins[@intFromEnum(index)].outputs;
         return .{ .value = state.y, .flag = state.flag };
     }
-    return io.result_history[(clock -% 2) % io.result_history.len][@intFromEnum(index)];
+    return io.samples.results[(clock -% 2) % io.samples.results.len][@intFromEnum(index)];
+}
+
+/// Advance fixed-delay command and GPIO slots after all producers have run.
+pub fn advance_delays(io: *IO) void {
+    io.commands.head = (io.commands.head + 1) % io.commands.slots.len;
+    io.gpio.head = (io.gpio.head + 1) % io.gpio.slots.len;
 }
 
 /// Record a pin I/O failure and fault the issuing cog.
@@ -331,8 +318,7 @@ fn updateDirections(io: *IO, hub: *Hub) void {
         io.outputs = outputs;
         io.drives = drives;
         // Register writeback is execution+1. The pad drive changes at +5.
-        const effect = &io.gpio_effects[(hub.counter +% 4) % io.gpio_effects.len];
-        if (effect.* == null) io.gpio_effect_count += 1;
+        const effect = &io.gpio.slots[(io.gpio.head + 4) % io.gpio.slots.len];
         effect.* = .{ .directions = directions, .outputs = drives };
     }
 }
@@ -377,7 +363,7 @@ fn outputState(io: *const IO, index: PadIndex) Signal {
     var state: Signal = switch (pin.outputSource()) {
         .out => Signal.from(io.physical_outputs & (@as(u64, 1) << i) != 0),
         .smart => pin.outputs.smart_out,
-        .other => if (i & 1 != 0) io.smartOutput(@enumFromInt(i ^ 1)).invert() else Signal.from(io.noiseWord(i, io.last_clock) & 1 != 0),
+        .other => if (i & 1 != 0) io.smartOutput(@enumFromInt(i ^ 1)).invert() else Signal.from((io.random_bits >> @intCast(i)) & 1 != 0),
     };
     switch (configuration.pad_mode) {
         .logic_feedback, .schmitt_feedback => state = io.pads[i],
@@ -444,7 +430,6 @@ fn resolvePads(io: *IO) void {
             else => {},
         }
     };
-    if (io.sampling and !std.mem.eql(Signal, &previous, &io.pads)) io.retime_until = io.last_clock +% 4;
     for (0..64) |i| {
         const internal = io.drive(@enumFromInt(i));
         const conflict = (internal == .one and io.external[i] == .zero) or (internal == .zero and io.external[i] == .one);
@@ -455,7 +440,7 @@ fn resolvePads(io: *IO) void {
 
 /// Compute SmartA/SmartB from the previous pad samples without advancing smart logic.
 fn routeInputs(io: *IO) void {
-    const pads = if (io.sampling) io.pad_history[(io.last_clock -% 2) % io.pad_history.len] else io.pads;
+    const pads = if (io.samples.active) io.samples.pads[(io.last_clock -% 2) % io.samples.pads.len] else io.pads;
     for (&io.pad_reads, 0..) |*state, i| {
         const input = if (io.pins[i].configuration.synchronous) io.sync_in[i] else pads[i];
         state.* = if (io.pins[i].configuration.invert_input) input.invert() else input;
@@ -472,26 +457,7 @@ fn routeInputs(io: *IO) void {
 
 /// Return the cog-visible input register sample.
 pub fn get_in(io: *const IO) u64 {
-    return if (io.sampling) io.input_registers else io.routed_inputs;
-}
-
-/// Report finite effects already scheduled, excluding sources waiting for new input.
-pub fn scheduled(io: *const IO) bool {
-    if (io.retime_until != null or io.gpio_effect_count != 0 or io.command_count != 0) return true;
-    for (&io.pins) |*pin| if (pin.outputs.scheduled) return true;
-    return false;
-}
-
-/// Report scheduled effects or input sources that still need clock service.
-pub fn pending(io: *const IO) bool {
-    if (io.scheduled() or io.dynamic_pads) return true;
-    for (&io.pins) |*pin| {
-        if (!pin.receivesData() or !pin.smart.registers.enabled) continue;
-        if (pin.smart.registers.source) |source| {
-            if (source.* != .reader or source.reader.bufferedLen() != 0) return true;
-        }
-    }
-    return false;
+    return if (io.samples.active) io.samples.input_registers else io.routed_inputs;
 }
 
 /// Deliver one test command through the real bus delay and advance to its delivery frame.
@@ -521,20 +487,17 @@ test "clock fields and reader-backed UART input are independent of terminal pin 
     hub.cogs[0].write_reg(.DIRA, 1 << 9);
     hub.step();
     try std.testing.expectEqual(@as(usize, 1), reader.bufferedLen());
-    try std.testing.expect(io.pending());
     for (0..19) |_| hub.step();
     try std.testing.expect(!pin.registers.ready);
     hub.step();
     try std.testing.expectEqual(@as(u32, 'a') << 24, pin.registers.result);
     try std.testing.expectEqual(@as(usize, 0), reader.bufferedLen());
-    try std.testing.expect(io.scheduled());
     // DIR reset discards the in-flight second frame before it becomes readable.
     hub.cogs[0].write_reg(.DIRA, 0);
     hub.step();
     for (0..20) |_| hub.step();
     try std.testing.expect(!pin.registers.ready);
     try std.testing.expectEqual(@as(u32, 0), pin.registers.result);
-    try std.testing.expect(!io.pending());
     try std.testing.expect(io.pins[63].smart.registers.source == null);
 }
 
@@ -550,7 +513,6 @@ test "hardware repository command timing and OR-combined mixed command buses" {
     hub.counter = 100;
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_x, .value = 0x155, .cog = 0, .pc = 1, .instruction = 0 });
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_x, .value = 0xaa, .cog = 7, .pc = 2, .instruction = 0 });
-    try std.testing.expect(hub.next_idle_clock() == null);
     for (0..4) |_| {
         hub.step();
         try std.testing.expectEqual(@as(u32, 0), hub.io.readResult(@enumFromInt(40), hub.counter -% 1).value);
@@ -653,7 +615,7 @@ test "independent UART pins and endpoint errors identify their pin and issuing c
     try std.testing.expectEqual(@as(u20, 123), hub.fault.?.pc);
 }
 
-test "a primed USART held in reset permits idle skipping and runner shutdown" {
+test "a primed USART held in reset discards its buffered transmission" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
     hub.init();
@@ -661,8 +623,6 @@ test "a primed USART held in reset permits idle skipping and runner shutdown" {
     testCommand(hub, @enumFromInt(8), .write_y, 123);
     try std.testing.expect(hub.io.pins[8].smart.logic.sync_tx.buffer != null);
     try std.testing.expect(!hub.io.pins[8].outputs.scheduled);
-    try std.testing.expect(!hub.io.scheduled());
-    try std.testing.expect(!hub.io.pending());
     hub.cogs[0].write_reg(.DIRA, 1 << 8);
     try std.testing.expect(!hub.io.pins[8].smart.registers.enabled);
     hub.step();
@@ -794,7 +754,6 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     hub.cogs[0].write_reg(.DIRA, 3);
     for (0..9) |_| hub.step();
     try std.testing.expectEqual(@as(usize, 1), reader.bufferedLen());
-    try std.testing.expect(!hub.io.pending()); // A transmitter cannot consume its attached source.
     testCommand(hub, @enumFromInt(1), .configure, 0xfc); // SMART overrides OTHER in UART TX.
     try std.testing.expectEqual(Signal.one, hub.io.pads[1]);
     testCommand(hub, @enumFromInt(1), .configure, 0xbc); // TT disables output despite DIR high.

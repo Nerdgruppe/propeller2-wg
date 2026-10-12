@@ -1,0 +1,508 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 2000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-bank0-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog0-bank0-align1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog0-bank0-align2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog0-bank0-align3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog0-bank1-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog0-bank2-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog0-bank3-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog0-bank4-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog0-bank5-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog0-bank6-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog0-bank7-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: bank = 7
+//? const: alignment = 0
+//? run: "cog1-bank0-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog1-bank0-align1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog1-bank0-align2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog1-bank0-align3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog1-bank1-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog1-bank2-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog1-bank3-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog1-bank4-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog1-bank5-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog1-bank6-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog1-bank7-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: bank = 7
+//? const: alignment = 0
+//? run: "cog2-bank0-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog2-bank0-align1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog2-bank0-align2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog2-bank0-align3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog2-bank1-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog2-bank2-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog2-bank3-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog2-bank4-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog2-bank5-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog2-bank6-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog2-bank7-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: bank = 7
+//? const: alignment = 0
+//? run: "cog3-bank0-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog3-bank0-align1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog3-bank0-align2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog3-bank0-align3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog3-bank1-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog3-bank2-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog3-bank3-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog3-bank4-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog3-bank5-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog3-bank6-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog3-bank7-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: bank = 7
+//? const: alignment = 0
+//? run: "cog4-bank0-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog4-bank0-align1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog4-bank0-align2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog4-bank0-align3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog4-bank1-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog4-bank2-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog4-bank3-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog4-bank4-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog4-bank5-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog4-bank6-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog4-bank7-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: bank = 7
+//? const: alignment = 0
+//? run: "cog5-bank0-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog5-bank0-align1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog5-bank0-align2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog5-bank0-align3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog5-bank1-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog5-bank2-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog5-bank3-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog5-bank4-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog5-bank5-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog5-bank6-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog5-bank7-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: bank = 7
+//? const: alignment = 0
+//? run: "cog6-bank0-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog6-bank0-align1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog6-bank0-align2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog6-bank0-align3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog6-bank1-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog6-bank2-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog6-bank3-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog6-bank4-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog6-bank5-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog6-bank6-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog6-bank7-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: bank = 7
+//? const: alignment = 0
+//? run: "cog7-bank0-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 0
+//? const: alignment = 0
+//? run: "cog7-bank0-align1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 0
+//? const: alignment = 1
+//? run: "cog7-bank0-align2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 0
+//? const: alignment = 2
+//? run: "cog7-bank0-align3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 0
+//? const: alignment = 3
+//? run: "cog7-bank1-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 1
+//? const: alignment = 0
+//? run: "cog7-bank2-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 2
+//? const: alignment = 0
+//? run: "cog7-bank3-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 3
+//? const: alignment = 0
+//? run: "cog7-bank4-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 4
+//? const: alignment = 0
+//? run: "cog7-bank5-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 5
+//? const: alignment = 0
+//? run: "cog7-bank6-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 6
+//? const: alignment = 0
+//? run: "cog7-bank7-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: bank = 7
+//? const: alignment = 0
+
+// Each phase changes the final instruction's clock relative to hub arbitration.
+// Three timestamped iterations expose both hidden jumps independently.
+phase_loop:
+                MOV     index,  &stamp0
+                JMP     target
+checked:
+                MOV     expected,   start
+                ADD     expected,   8
+                ADD     expected,   phase
+                CMP     stamp0,     expected                    :wz
+    if(!Z)      ADD     failures,   1
+                MOV     expected,   ((hubaddr(body) >> 2) & 7)
+                SUB     expected,   stamp0
+                SUB     expected,   probe_cog
+                SUB     expected,   7
+                AND     expected,   7
+                ADD     expected,   stamp0
+                ADD     expected,   19
+                ADD     expected,   phase
+                CMP     stamp1,     expected                    :wz
+    if(!Z)      ADD     failures,   1
+                MOV     expected,   ((hubaddr(body) >> 2) & 7)
+                SUB     expected,   stamp1
+                SUB     expected,   probe_cog
+                SUB     expected,   7
+                AND     expected,   7
+                ADD     expected,   stamp1
+                ADD     expected,   19
+                ADD     expected,   phase
+                CMP     stamp2,     expected                    :wz
+    if(!Z)      ADD     failures,   1
+                MOV     expected,   stamp2
+                ADD     expected,   4
+                CMP     finish,     expected                    :wz
+    if(!Z)      ADD     failures,   1
+                ADD     phase,      1
+                CMP     phase,      8                           :wz
+    if(!Z)      JMP     phase_loop
+                JMP     nrel(_end)
+var target:     LONG    pcaddr(probe)
+var index:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var stamp0:     LONG    0
+var stamp1:     LONG    0
+var stamp2:     LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+var phase:      LONG    0
+
+.pack   byte
+.hubexec    0x4000 + 4 * bank + alignment
+probe:
+                GETCT   start
+                REP     4,  3
+body:
+                WAITX   phase
+                ALTD    index,  0
+                GETCT   stamp0
+                ADD     index,  1
+                GETCT   finish
+                JMP     nrel(checked)
+                NOP
+

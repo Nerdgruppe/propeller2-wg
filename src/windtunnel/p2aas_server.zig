@@ -363,7 +363,7 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
             else => return err,
         };
         reader.end += count;
-        // A millisecond ceiling bounds responsiveness even when WAITX can skip many clocks.
+        // Bound each scheduling batch to one millisecond of simulated time.
         const ceiling = hub.counter + @max(1, hub.io.clock_frequency / 1000);
         for (0..4096) |_| {
             const before = hub.counter;
@@ -374,14 +374,6 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
                 std.log.warn("P2AAS cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{ fault.cog, fault.pc, fault.instruction, fault.reason() });
                 return error.SimulationFault;
             }
-            if (hub.next_idle_clock()) |next| hub.counter = @min(next, ceiling);
-            var pending_start = false;
-            for (hub.pending_starts) |pending| if (pending != null) {
-                pending_start = true;
-            };
-            // Stopping all cogs does not close the physical serial adapter. Idle clocks can skip,
-            // but a queued COGINIT still has to run on its scheduled edge.
-            if (!hub.is_any_cog_active() and !pending_start and !hub.io.pending()) hub.counter = ceiling;
             virtual_fixed += @as(u128, hub.counter -% before) * (@as(u128, std.time.ns_per_s) << 32) / frequency;
             if (hub.counter >= ceiling or output.end != 0) break;
         }

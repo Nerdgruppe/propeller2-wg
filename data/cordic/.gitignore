@@ -1,2 +1,5 @@
-captures/
-validation.log
+# Reproducible raw captures and recapture logs; cases.json and vectors.json
+# remain versioned reference data for the arithmetic regression fixture.
+/captures/
+/capture-*/
+/*.log

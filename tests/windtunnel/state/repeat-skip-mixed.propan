@@ -1,0 +1,148 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "kind0-fast0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 14
+//? run: "kind0-fast0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 14
+//? run: "kind1-fast0-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 8
+//? run: "kind1-fast0-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 8
+//? run: "kind2-fast0-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 8
+//? run: "kind2-fast0-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 0
+//? post: cog[*].reg[value] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 8
+//? run: "kind3-fast0-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 0
+//? post: cog[*].reg[value] == 7
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 30
+//? run: "kind3-fast0-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 0
+//? post: cog[*].reg[value] == 7
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 30
+//? run: "kind4-fast0-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: fast = 0
+//? post: cog[*].reg[value] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 24
+//? run: "kind4-fast0-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: fast = 0
+//? post: cog[*].reg[value] == 7
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 24
+//? run: "kind5-fast0-cog0"
+//? cog: 0
+//? const: kind = 5
+//? const: fast = 0
+//? post: cog[*].reg[value] == 5
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 20
+//? run: "kind5-fast0-cog7"
+//? cog: 7
+//? const: kind = 5
+//? const: fast = 0
+//? post: cog[*].reg[value] == 5
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[pattern_out] == 0
+//? post: cog[*].reg[elapsed] == 20
+
+                // _RET_ setup and EXECF must install the pattern for the destination stream.
+                PUSH    nrel(destination)
+                GETCT   a
+.if kind == 0
+    return      SKIP    15
+.elif   kind == 1
+    return      SKIPF   15
+.elif   kind == 2
+                EXECF   target
+.elif   kind == 3
+                REP     4,      3
+                SKIP    2
+.elif   kind == 4
+                REP     3,      3
+                SKIPF   2
+.else
+                REP     2,      3
+                SKIPF   2
+.endif
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                GETCT   b
+                JMP     nrel(checked)
+destination:
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                GETCT   b
+checked:
+                MOV     elapsed,    b
+                SUB     elapsed,    a
+                GETBRK  inside                      :wc
+                GETBRK  pattern_out                 :wz
+                SKIP    0
+                AND     inside,     aug(0xF8000000)
+                JMP     nrel(_end)
+var target:     LONG    pcaddr(destination) | (15 << 10)
+var value:      LONG    0
+var inside:     LONG    0
+var after:      LONG    0
+var pattern_out:
+                LONG    0
+var elapsed:    LONG    0
+var a:          LONG    0
+var b:          LONG    0
+

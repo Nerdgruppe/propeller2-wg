@@ -1,0 +1,111 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_alignment = 0
+//? run: "cog1-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_alignment = 0
+//? run: "cog2-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_alignment = 0
+//? run: "cog3-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_alignment = 0
+//? run: "cog4-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_alignment = 0
+//? run: "cog5-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_alignment = 0
+//? run: "cog6-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_alignment = 0
+//? run: "cog7-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_alignment = 0
+
+                // Prefetch may exhaust a block before software reads it; FBLOCK affects future transport, not GETPTR.
+                RDFAST  1,          aug(hubaddr(block_a))
+                FBLOCK  1,          aug(hubaddr(block_b))
+                WAITX   100
+                POLLFBW                                     :wc
+    if(!C)      ADD     failures,   1
+                MOV     pointer,    aug(hubaddr(block_a))
+                MOV     index,      0
+read_loop:
+                RFLONG  loaded
+                MOV     expected,   aug(0xaaaaaaaa)
+                CMP     index,      16                      :wcz
+    if(>=)      MOV     expected,   aug(0xbbbbbbbb)
+                CMP     loaded,     expected                :wz
+    if(!Z)      ADD     failures,   1
+                ADD     pointer,    4
+                GETPTR  actual
+                CMP     pointer,    actual                  :wz
+    if(!Z)      ADD     failures,   1
+                ADD     index,      1
+                CMP     index,      40                      :wz
+    if(!Z)      JMP     read_loop
+                // Two write blocks land at noncontiguous addresses and each reload can feed an interrupt.
+                STALLI
+                MOV     IJMP1,      vector
+                SETINT1 9
+                WRFAST  1,          aug(hubaddr(block_a))
+                FBLOCK  1,          aug(hubaddr(block_b))
+                MOV     count,      16
+write_a:
+                WFLONG  aug(0x11111111)
+                DJNZ    count,      write_a
+                WAITFBW
+                GETBRK  status              :wcz
+                AND     status,     0x0c
+                CMP     status,     8       :wz
+    if(!Z)      ADD     failures,   1
+                ALLOWI
+                WAITX   32
+                CMP     interrupts, 1       :wz
+    if(!Z)      ADD     failures,   1
+                MOV     count,      16
+write_b:
+                WFLONG  aug(0x22222222)
+                DJNZ    count,      write_b
+                WAITFBW
+                WAITX   32
+                SETINT1 0
+                CMP     interrupts, 2                       :wz
+    if(!Z)      ADD     failures,   1
+                RDLONG  loaded,     aug(hubaddr(block_a))
+                CMP     loaded,     aug(0x11111111)         :wz
+    if(!Z)      ADD     failures,   1
+                RDLONG  loaded,     aug(hubaddr(block_b))
+                CMP     loaded,     aug(0x22222222)         :wz
+    if(!Z)      ADD     failures,   1
+                JMP     nrel(_end)
+vector:
+                ADD     interrupts, 1
+                RETI1
+var loaded:     LONG    0
+var pointer:    LONG    0
+var actual:     LONG    0
+var expected:   LONG    0
+var index:      LONG    0
+var count:      LONG    0
+var status:     LONG    0
+var interrupts: LONG    0
+var failures:   LONG    0
+.data
+.align  64
+block_a:        LONG    [0xaaaaaaaa] * 16
+padding:        LONG    [0] * 32
+block_b:        LONG    [0xbbbbbbbb] * 16
+

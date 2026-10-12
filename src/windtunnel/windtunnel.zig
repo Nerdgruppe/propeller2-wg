@@ -156,7 +156,6 @@ pub fn main(init: std.process.Init) !u8 {
             });
             return 1;
         }
-        if (hub.next_idle_clock()) |next| hub.counter = next;
     }
 
     if (vcd_file != null) try vcd.finish();

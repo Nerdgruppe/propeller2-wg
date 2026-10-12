@@ -162,22 +162,22 @@ pub const Normal = struct {
 };
 
 pub const Repository = struct {
-    raise_at: ?u64 = null,
+    raise_next: bool = false,
 
     /// Retain Z through DIR reset and publish X with its measured completion delay.
     fn step(logic: *Repository, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
         var state = outputs(regs, inputs);
-        if (inputs.ack or inputs.new_x != null or inputs.new_y != null or inputs.reset) logic.raise_at = null;
+        const raise_now = logic.raise_next and !inputs.ack and inputs.new_x == null and inputs.new_y == null and !inputs.reset;
+        logic.raise_next = false;
         if (inputs.new_x != null and regs.enabled) {
             state.y = regs.x;
             state.flag = state.y >> 31 != 0;
-            logic.raise_at = inputs.clock +% 1;
+            logic.raise_next = true;
         }
-        if (logic.raise_at) |at| if (reached(inputs.clock, at)) {
+        if (raise_now) {
             state.in = @intFromBool(regs.enabled);
-            logic.raise_at = null;
-        };
-        state.scheduled = logic.raise_at != null;
+        }
+        state.scheduled = logic.raise_next;
         return state;
     }
 };

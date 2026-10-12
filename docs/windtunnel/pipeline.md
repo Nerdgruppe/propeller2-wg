@@ -5,7 +5,8 @@ instruction subset, 2026-10-09. The five-stage local pipeline, hub data scheduli
 instruction FIFO, command arbitration, and clocked startup pass the validation
 matrix below. Exactness is limited to that subset and the measured oracle device;
 collision data, debug execution, and exact pin/serial timing remain outside the
-claim. No new instructions have been added.
+claim. The initial pipeline work retained its instruction subset; later feature
+extensions are recorded below.
 
 Windtunnel needs clocked instruction fetch, operand capture, execution, and
 writeback, together with hub arbitration and instruction FIFO behavior. A table
@@ -55,11 +56,66 @@ Implement the pipeline for the existing instruction coverage first.
   `const:` parameters. 228 wrappers were consolidated into 14 fixtures without
   dropping cases. See the [checklist syntax](check-list.md#runs-and-initial-values).
 
+## Event consumers and producers
+
+Every cog stores its active event latches in `std.EnumSet(EventId)`. All 16
+`POLLxxx`, 32 `Jxxx`/`JNxxx`, and 15 `WAITxxx` instructions consume those latches
+through generic executor helpers. Polls report event presence; waits report timeout
+in requested C/Z flags. Both branch polarities clear the selected latch even when
+not taken. `SETQ` supplies an absolute low-32-bit CT timeout for waits; there is no
+`WAITQMT` encoding. WAITINT's pending-interrupt predicate is described in the
+INT1–INT3 extension below.
+
+Event production and source configuration live in Cog/Hub, outside the executor.
+Implemented sources are ordinary interrupt entry (INT), CT1..3, all pin/LUT/lock
+selections for SE1..4, pin pattern comparisons (PAT), attention, and CORDIC empty
+reads (QMT), and FIFO block wraps (FBW). XMT, XFI, XRO, and XRL production remain unsupported. Their consumers
+still execute normally: an unset latch polls false, branches according to
+polarity, and waits until signaled or timed out. FIFO configuration clears FBW once on acceptance.
+
+Shared signals and selectable pin sensors use `Hub.signal_event(cog_id, event)`
+and retain the two-clock sampling delay. CT and PAT sensors raise their events locally.
+Reset clears active latches and queued deliveries for that cog. Internal Zig tests
+inject otherwise unavailable events without extending the assembly checklist.
+
+`SETSE1..4` decode D[8:0] into independent LUT/lock or pin sensors. Pin selectors
+read the cog's architectural INA/INB bit every active clock, including during
+instruction stalls. Rising/falling/change modes detect edges; low/high modes
+continuously emit events while their input level matches. Bit 6 is ignored in
+the low/high encodings. Reconfiguration clears only the selected event latch
+and captures the new input as the edge baseline. It leaves notifications already
+in flight intact, so switching away from an asserted level can still receive
+an old notification. Cog reset disables the sensors and clears queued deliveries.
+Input changes and asserted levels are sampled on every simulated clock.
+
+`state/selectable-pin-events.propan` and `state/selectable-pin-arming.propan`
+cover 112 hardware runs with companion-cog drivers, all four trackers, both
+input banks, all five modes and their aliases, arming, reconfiguration, waits,
+branches and interrupt delivery. Input changes settle before observations;
+only sensor arming is checked at adjacent instruction boundaries. These tests
+make no claim about physical I/O propagation delays.
+
+`SETPAT` captures D as the mask and S as the comparison value, with C selecting
+INA/INB and Z selecting equality/mismatch. The cog compares `(INx & D) == S`;
+S is not masked. Each active cog samples its architectural input register every
+clock, including while instructions stall. PAT latches a false-to-true comparison
+transition and stays set until consumed or reconfigured. SETPAT clears the latch
+and establishes the new comparison baseline, so an already-true condition does
+not fire, and consuming a latch under a held true condition does not reassert it.
+Reset disables the matcher. Comparisons are sampled on every simulated clock.
+
+The two-cog `state/pattern-events.propan` fixture verifies these semantics on
+hardware for INA/INB, equality/mismatch, and receiving cogs 0, 3 and 7. Its helper
+holds each driven pattern through a mailbox acknowledgment and a settling wait;
+it makes no assertions about input/output propagation edges. I/O timing is
+unchanged.
+
 Execution results distinguish `not_implemented` (missing simulator support),
 `trap`, and `illegal` with an explanatory string. Illegal execution stops the
 cog, discards its pending pipeline writes, and stops the runner/CLI with that
-reason. RDFAST/RFBYTE during hub execution are illegal because instruction
-fetching already uses the FIFO. RFBYTE also requires a preceding RDFAST;
+reason. Software FIFO configuration and RF/WF operations during hub execution
+are illegal because instruction fetching already uses the FIFO. RF/WF operations
+require the corresponding read/write mode;
 conditionally canceled instructions do not fault.
 
 Validation includes the complete project suite, hardware reruns of the
@@ -387,7 +443,7 @@ summaries and evidence hashes. Executor regeneration is byte-identical after
 formatting. CLI tracing and illegal-execution diagnostics were exercised directly.
 The [bug report](../../BUGREPORT.md) records seven review findings, their
 reproductions and fixes. Counter-rollover regressions additionally cover delayed
-events, FIFO/data responses, waits, idle skipping, UART and image startup.
+events, FIFO/data responses, waits, UART and image startup.
 
 ## Device findings and limits
 
@@ -421,8 +477,9 @@ records a collision and chooses a deterministic local-write result. Such
 collisions and simultaneous instruction-fetch/data-write collisions are exposed
 in traces, and their data values are outside the deterministic exactness claim.
 
-The implemented subset excludes interrupts, REP/SKIP, CORDIC, streamer, debug
-execution, and general smart-pin timing. This implementation adds no instructions.
+The original pipeline investigation excluded interrupts, REP/SKIP, CORDIC,
+streamer, debug execution, and general smart-pin timing. Subsequent extensions
+include CORDIC and INT1–INT3; the latter is described below.
 
 ## Reproduce this investigation
 
@@ -451,3 +508,116 @@ Completion means that the existing supported instruction subset has matching
 clock timing **and** side-effect/prefetch behavior across the validation matrix.
 The acceptance gates above have passed for that scope. Extend the matrix and
 repeat native validation when expanding instruction or device coverage.
+
+## INT1–INT3 extension
+
+Ordinary interrupts now enter through marked synthetic `CALLD IRETx,IJMPx WCZ`
+pipeline entries. Arbitration chooses the highest pending level above any
+active handler, after the request's sampling edge and on an available issue
+slot. Fetch holds the PC and leaves hub FIFO bytes untouched. The marker
+changes return-PC packing to the held PC and exempts internal instructions
+from assembled-code/checkpoint validation; traces label them `injected=intN`.
+The controller changes pending to active and raises INT when the CALLD executes.
+Taken branches can flush a reservation while leaving its request pending.
+
+Instruction stalls freeze the pipeline before injection. Prefix instructions
+in flight shield their consumers. Pending AUGS/AUGD/SETQ state additionally
+requires a consumer already ahead of the synthetic CALLD; immediate-field
+metadata comes from the existing decoder. Explicit `augd_pending` preserves
+zero-valued AUGD. Completion uses ordinary successful CALLD semantics and its
+effective register source, including ALTS redirection.
+
+All event producers enter through `Cog.raise_event`, sharing event-latch and
+interrupt-request delivery. Source reconfiguration and event consumption remain
+independent of requests. The executor's wait helper stays generic over EventId;
+`Cog.event_for_wait` supplies hardware's pending-request predicate for WAITINT.
+Every system clock samples events, interrupt requests, CT comparisons and
+pattern transitions, including clocks spent waiting or with all cogs stopped.
+
+The [measured interrupt behavior](../accumulated.md#ordinary-interrupts-int1int3)
+records the timing formulas and documentation discrepancies. Twelve normal
+fixtures (`interrupt-*.propan`) cover 325 hardware runs, including 192 mode/
+alignment runs sweeping eight CT phases each. Unit tests also inject all source
+IDs, including sources whose engines are still unsupported, and cover rollover,
+reservation flushing, restart, priority, completion and augmentation state.
+
+Reproduce with `zig-0.16.0 build install test -Dcoverage=false` and
+`zig-out/bin/windtunnel-tests --oracle tests/windtunnel/state/interrupt-*.propan`.
+The hardware command uses `P2AAS_ENDPOINT=ws://localhost:12880/` by default.
+INT0/debug, XBYTE and absent event engines remain excluded;
+this extension does not change I/O propagation timing.
+
+## Software FIFO completion (2026-10-11)
+
+All twelve software FIFO instructions use the same clocked interface as hub
+instruction fetching. Read mode retains the nineteen-long ring, fifteen-long
+issue threshold and five-clock RAM responses. Write mode queues byte lanes,
+makes each byte eligible two clocks after WF execution in the current model,
+then commits it at the rotating RAM slice. Cross-long writes use successive
+slices and preserve lanes outside the write. FIFO grants take priority over
+ordinary hub transfers.
+
+RDFAST/WRFAST decode finite blocks and the full-map zero count, support blocking
+and nonblocking setup, and wait for old writes before changing mode. FBLOCK
+updates the reload descriptor, or the initial descriptor when setup is still
+waiting for prior writes. Read-ahead/write grants produce FBW at transport wrap;
+event consumption remains generic over EventId in execute.zig. Cog supplies
+the measured WAITFBW wake/timeout resume delays. GETBRK WCZ bit 20
+reports write mode. GETPTR tracks software byte consumption independently of
+transport wrapping; hub mode and the return to local execution retain the
+instruction FIFO pointer semantics measured on hardware.
+
+Variable reads decode up to four bytes with 7/14/21/29 payload bits. Startup
+response ordering reproduces the nonblocking RDFAST read-completion erratum.
+Hub-fetch setup overlaps draining writes, with the first read eligible at
+`max(branch_clock + 5, last_write_clock + 2)`. Stop/restart discards pending
+configuration, buffers and uncommitted writes.
+FIFO work and response edges are serviced on every system clock.
+
+The nine `state/fifo-*` fixtures cover 347 hardware oracle runs with internal
+bank/phase/alignment sweeps, independent setup/FBW timing formulas, second-cog
+write visibility, full-map wrapping, variable values/flags, block reloads,
+interrupt delivery, pending reconfiguration and hub handover. Existing prefetch,
+mode-transition and FIFO/data-contention fixtures remain regression coverage.
+See [the measured FIFO rules](../accumulated.md#software-hub-fifo) for formulas
+and the startup erratum's boundary conditions. Streamer operation remains outside
+this implementation.
+
+## REP and skipping (2026-10-12)
+
+Read/decode prepares each real instruction's nonlinear fallthrough exactly once.
+It consumes the skip bit, performs up to seven further local SKIPF steps and
+advances the single REP context. This prepared PC supplies relative branch bases,
+LOC and saved return addresses. Stalls do not consume additional skip bits or
+repeat slots. Local repeat wrapping redirects the next fetch without a bubble;
+hub wrapping waits for the current slot to complete and uses the ordinary branch
+refill. Its target selects the execution domain, including a wrapped target below
+$400. Explicit taken branches clear REP; the hidden branch retains its context.
+
+A canceled slot retains its decoded word for existing prefix/decode errata, but
+cannot issue a shared command, incur an execution latency, fault on an unsupported
+opcode, write registers or take a branch. Fast stepping only changes fetched
+addresses: hub resources, events, RNG and CT continue advancing every clock.
+SKIPF uses cancellation while executing from the hub FIFO. EXECF replaces skip
+state and branches to a local address.
+
+Skip suspension uses a four-bit CALL/RET counter independent of the eight-entry
+value stack. PUSH and POP do not change it. ISR execution pauses pattern
+consumption, while its ordinary hardware-stack calls and returns still update
+the counter. GETBRK exposes the remaining pattern, mode and depth. Stop/restart
+clears both skip and repeat state while retaining RAM.
+
+Ordinary interrupt injection is suppressed while the repeat context is active.
+The final repeated slot clears that context at read/decode, allowing the injected
+CALLD to follow the last body instruction without executing another main-code
+instruction first. The assembly fixtures cover the measured boundary, suspended
+patterns, nested calls, prefixes, canceled shared commands, local/hub timing,
+branches and return addresses. See [the measured rules](../accumulated.md#rep-and-instruction-skipping-2026-10-12).
+
+
+Local-PC overflow is a separate known limitation: current local fetch masks the
+whole PC to ten bits, while silicon retains upper bits after $3FF. REP bodies
+spanning that overflow differ from hardware. The retained
+[characterization probes](../../data/timing-data/local-pc-overflow/README.md)
+are intentionally outside the passing regression matrix until that behavior is
+recovered. Bodies ending at the local boundary and hub wrap are covered.

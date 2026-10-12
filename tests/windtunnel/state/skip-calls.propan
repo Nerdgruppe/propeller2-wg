@@ -1,0 +1,354 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "kind0-fast0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind0-fast0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind1-fast0-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind1-fast0-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind2-fast0-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind2-fast0-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind3-fast0-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind3-fast0-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 1
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind4-fast0-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind4-fast0-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind5-fast0-cog0"
+//? cog: 0
+//? const: kind = 5
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind5-fast0-cog7"
+//? cog: 7
+//? const: kind = 5
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind6-fast0-cog0"
+//? cog: 0
+//? const: kind = 6
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind6-fast0-cog7"
+//? cog: 7
+//? const: kind = 6
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind7-fast0-cog0"
+//? cog: 0
+//? const: kind = 7
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind7-fast0-cog7"
+//? cog: 7
+//? const: kind = 7
+//? const: fast = 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind0-fast1-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind0-fast1-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind1-fast1-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind1-fast1-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind2-fast1-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind2-fast1-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind3-fast1-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind3-fast1-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind4-fast1-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind4-fast1-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind5-fast1-cog0"
+//? cog: 0
+//? const: kind = 5
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind5-fast1-cog7"
+//? cog: 7
+//? const: kind = 5
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind6-fast1-cog0"
+//? cog: 0
+//? const: kind = 6
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind6-fast1-cog7"
+//? cog: 7
+//? const: kind = 6
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind7-fast1-cog0"
+//? cog: 0
+//? const: kind = 7
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+//? run: "kind7-fast1-cog7"
+//? cog: 7
+//? const: kind = 7
+//? const: fast = 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? post: cog[*].reg[value] == 1
+
+                // Observe which call families change the skip suspension depth.
+                MOV     PTRA,   stack_address
+                MOV     PTRB,   stack_address
+.if fast
+                SKIPF   2
+.else
+                SKIP    2
+.endif
+.if kind == 0
+                CALL    target
+.elif   kind == 1
+                CALL    nrel(sub)
+.elif   kind == 2
+                CALLPA  123,    target
+.elif   kind == 3
+                CALLPB  123,    target
+.elif   kind == 4
+                CALLA   target
+.elif   kind == 5
+                CALLB   target
+.elif   kind == 6
+                CALLD   link,   target
+.else
+                CALLD   PA,     nrel(sub)
+.endif
+                NOP
+                GETBRK  after                   :wc
+                GETBRK  after_pattern           :wz
+                AND     inside, aug(0xF8000000)
+                AND     after,  aug(0xF8000000)
+                JMP     nrel(_end)
+sub:
+                NOP
+                GETBRK  inside          :wc
+                GETBRK  inside_pattern  :wz
+                ADD     value,  1
+.if kind == 4
+                RETA
+.elif   kind == 5
+                RETB
+.elif   kind == 6
+                JMP     link
+.elif   kind == 7
+                JMP     PA
+.else
+                RET
+.endif
+var target:     LONG    pcaddr(sub)
+var stack_address:
+                LONG    hubaddr(stack_data)
+var link:       LONG    0
+var inside:     LONG    0
+var inside_pattern:
+                LONG    0
+var after:      LONG    0
+var after_pattern:
+                LONG    0
+var value:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+.data
+stack_data:     LONG    0
+

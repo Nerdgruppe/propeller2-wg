@@ -1,0 +1,390 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 5000
+//? max-cycles: 10000000
+//? post: cog[*].reg[failures] == 0
+//? run: "writer0-observer1-size1"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_observer = 1
+//? const: probe_size = 1
+//? run: "writer0-observer1-size2"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_observer = 1
+//? const: probe_size = 2
+//? run: "writer0-observer1-size4"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_observer = 1
+//? const: probe_size = 4
+//? run: "writer1-observer2-size1"
+//? cog: 2
+//? const: probe_writer = 1
+//? const: probe_observer = 2
+//? const: probe_size = 1
+//? run: "writer1-observer2-size2"
+//? cog: 2
+//? const: probe_writer = 1
+//? const: probe_observer = 2
+//? const: probe_size = 2
+//? run: "writer1-observer2-size4"
+//? cog: 2
+//? const: probe_writer = 1
+//? const: probe_observer = 2
+//? const: probe_size = 4
+//? run: "writer2-observer3-size1"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_observer = 3
+//? const: probe_size = 1
+//? run: "writer2-observer3-size2"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_observer = 3
+//? const: probe_size = 2
+//? run: "writer2-observer3-size4"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_observer = 3
+//? const: probe_size = 4
+//? run: "writer3-observer4-size1"
+//? cog: 4
+//? const: probe_writer = 3
+//? const: probe_observer = 4
+//? const: probe_size = 1
+//? run: "writer3-observer4-size2"
+//? cog: 4
+//? const: probe_writer = 3
+//? const: probe_observer = 4
+//? const: probe_size = 2
+//? run: "writer3-observer4-size4"
+//? cog: 4
+//? const: probe_writer = 3
+//? const: probe_observer = 4
+//? const: probe_size = 4
+//? run: "writer4-observer5-size1"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_observer = 5
+//? const: probe_size = 1
+//? run: "writer4-observer5-size2"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_observer = 5
+//? const: probe_size = 2
+//? run: "writer4-observer5-size4"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_observer = 5
+//? const: probe_size = 4
+//? run: "writer5-observer6-size1"
+//? cog: 6
+//? const: probe_writer = 5
+//? const: probe_observer = 6
+//? const: probe_size = 1
+//? run: "writer5-observer6-size2"
+//? cog: 6
+//? const: probe_writer = 5
+//? const: probe_observer = 6
+//? const: probe_size = 2
+//? run: "writer5-observer6-size4"
+//? cog: 6
+//? const: probe_writer = 5
+//? const: probe_observer = 6
+//? const: probe_size = 4
+//? run: "writer6-observer7-size1"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_observer = 7
+//? const: probe_size = 1
+//? run: "writer6-observer7-size2"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_observer = 7
+//? const: probe_size = 2
+//? run: "writer6-observer7-size4"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_observer = 7
+//? const: probe_size = 4
+//? run: "writer7-observer0-size1"
+//? cog: 0
+//? const: probe_writer = 7
+//? const: probe_observer = 0
+//? const: probe_size = 1
+//? run: "writer7-observer0-size2"
+//? cog: 0
+//? const: probe_writer = 7
+//? const: probe_observer = 0
+//? const: probe_size = 2
+//? run: "writer7-observer0-size4"
+//? cog: 0
+//? const: probe_writer = 7
+//? const: probe_observer = 0
+//? const: probe_size = 4
+//? run: "writer0-observer2-size1"
+//? cog: 2
+//? const: probe_writer = 0
+//? const: probe_observer = 2
+//? const: probe_size = 1
+//? run: "writer0-observer2-size2"
+//? cog: 2
+//? const: probe_writer = 0
+//? const: probe_observer = 2
+//? const: probe_size = 2
+//? run: "writer0-observer2-size4"
+//? cog: 2
+//? const: probe_writer = 0
+//? const: probe_observer = 2
+//? const: probe_size = 4
+//? run: "writer0-observer3-size1"
+//? cog: 3
+//? const: probe_writer = 0
+//? const: probe_observer = 3
+//? const: probe_size = 1
+//? run: "writer0-observer3-size2"
+//? cog: 3
+//? const: probe_writer = 0
+//? const: probe_observer = 3
+//? const: probe_size = 2
+//? run: "writer0-observer3-size4"
+//? cog: 3
+//? const: probe_writer = 0
+//? const: probe_observer = 3
+//? const: probe_size = 4
+//? run: "writer0-observer4-size1"
+//? cog: 4
+//? const: probe_writer = 0
+//? const: probe_observer = 4
+//? const: probe_size = 1
+//? run: "writer0-observer4-size2"
+//? cog: 4
+//? const: probe_writer = 0
+//? const: probe_observer = 4
+//? const: probe_size = 2
+//? run: "writer0-observer4-size4"
+//? cog: 4
+//? const: probe_writer = 0
+//? const: probe_observer = 4
+//? const: probe_size = 4
+//? run: "writer0-observer5-size1"
+//? cog: 5
+//? const: probe_writer = 0
+//? const: probe_observer = 5
+//? const: probe_size = 1
+//? run: "writer0-observer5-size2"
+//? cog: 5
+//? const: probe_writer = 0
+//? const: probe_observer = 5
+//? const: probe_size = 2
+//? run: "writer0-observer5-size4"
+//? cog: 5
+//? const: probe_writer = 0
+//? const: probe_observer = 5
+//? const: probe_size = 4
+//? run: "writer0-observer6-size1"
+//? cog: 6
+//? const: probe_writer = 0
+//? const: probe_observer = 6
+//? const: probe_size = 1
+//? run: "writer0-observer6-size2"
+//? cog: 6
+//? const: probe_writer = 0
+//? const: probe_observer = 6
+//? const: probe_size = 2
+//? run: "writer0-observer6-size4"
+//? cog: 6
+//? const: probe_writer = 0
+//? const: probe_observer = 6
+//? const: probe_size = 4
+//? run: "writer0-observer7-size1"
+//? cog: 7
+//? const: probe_writer = 0
+//? const: probe_observer = 7
+//? const: probe_size = 1
+//? run: "writer0-observer7-size2"
+//? cog: 7
+//? const: probe_writer = 0
+//? const: probe_observer = 7
+//? const: probe_size = 2
+//? run: "writer0-observer7-size4"
+//? cog: 7
+//? const: probe_writer = 0
+//? const: probe_observer = 7
+//? const: probe_size = 4
+
+                // Observe both sides of every FIFO commit edge using independent cog RAM-slice windows.
+                MOV     PTRA,   aug(hubaddr(mailbox))
+                MOV     image,  aug(hubaddr(worker))
+                MOV     base,   aug(hubaddr(payload))
+                MOV     bank,   0
+bank_loop:
+                MOV     alignment,  0
+alignment_loop:
+                MOV     address,    base
+                ADD     address,    alignment
+                MOV     phase,      0
+phase_loop:
+                MOV     beat,   0
+beat_loop:
+                MOV     delta,  aug(-2)
+delta_loop:
+                WRLONG  aug(0x55555555),    base
+                MOV     temporary,          base
+                ADD     temporary,          4
+                WRLONG  aug(0x55555555),    temporary
+                WRLONG  0,                  PTRA
+                MOV     temporary,          PTRA
+                ADD     temporary,          4
+                WRLONG  address,            temporary
+                SETQ    PTRA
+                COGINIT probe_writer,       image
+                GETCT   timer
+                ADD     timer,              aug(2048)
+                ANDN    timer,              7
+                ADD     timer,              phase
+                WRLONG  timer,              PTRA
+                MOV     grant,              bank
+                SUB     grant,              phase
+                SUB     grant,              probe_writer
+                AND     grant,              7
+                ADD     grant,              8
+                ADD     grant,              beat
+                MOV     threshold,          grant
+                SUB     threshold,          (probe_observer - probe_writer) & 7
+                SUB     threshold,          8
+                ADD     threshold,          delta
+                MOV     local_timer,        timer
+                ADD     local_timer,        threshold
+                MOV     sample_address,     base
+                MOV     temporary,          beat
+                SHL     temporary,          2
+                ADD     sample_address,     temporary
+                ADDCT1  local_timer,        0
+                WAITCT1
+                GETCT   sample
+                RDLONG  loaded,             sample_address
+                SUB     sample,             timer
+                // Reconstruct the observer's actual grant, including its two-clock memory setup.
+                ADD     sample,             4
+                MOV     temporary,          timer
+                ADD     temporary,          sample
+                ADD     temporary,          probe_observer
+                MOV     sample_bank,        bank
+                ADD     sample_bank,        beat
+                SUB     sample_bank,        temporary
+                AND     sample_bank,        7
+                ADD     sample,             sample_bank
+                MOV     expected,           aug(0x55555555)
+                CMP     sample,             grant                               :wcz
+    if(<)       JMP     compare
+                MOV     bytes,              probe_size
+                MOV     shift,              alignment
+                SHL     shift,              3
+                MOV     value,              aug(0x44332211)
+                CMP     beat,               0                                   :wz
+    if(!Z)      JMP     high_word
+                MOV     temporary,          4
+                SUB     temporary,          alignment
+                FLE     bytes,              temporary
+                SHL     value,              shift
+                JMP     build_mask
+high_word:
+                MOV     temporary,  4
+                SUB     temporary,  alignment
+                SUB     bytes,      temporary
+                SHL     temporary,  3
+                SHR     value,      temporary
+                MOV     shift,      0
+build_mask:
+                MOV     temporary,  4
+                SUB     temporary,  bytes
+                SHL     temporary,  3
+                MOV     mask,       aug(0xffffffff)
+                SHR     mask,       temporary
+                SHL     mask,       shift
+                ANDN    expected,   mask
+                AND     value,      mask
+                OR      expected,   value
+compare:
+                CMP     loaded,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                WAITX   aug(256)
+                ADD     delta,      1
+                CMP     delta,      3           :wz
+    if(!Z)      JMP     delta_loop
+                ADD     beat,       1
+                MOV     temporary,  alignment
+                ADD     temporary,  probe_size
+                CMP     temporary,  4           :wcz
+    if(<=)      JMP     beats_done
+                CMP     beat,       2           :wz
+    if(!Z)      JMP     beat_loop
+beats_done:
+                ADD     phase,      1
+                CMP     phase,      8   :wz
+    if(!Z)      JMP     phase_loop
+                ADD     alignment,  1
+                CMP     alignment,  4   :wz
+    if(!Z)      JMP     alignment_loop
+                ADD     base,       4
+                ADD     bank,       1
+                CMP     bank,       8   :wz
+    if(!Z)      JMP     bank_loop
+                JMP     nrel(_end)
+var image:      LONG    0
+var base:       LONG    0
+var address:    LONG    0
+var bank:       LONG    0
+var alignment:  LONG    0
+var phase:      LONG    0
+var beat:       LONG    0
+var delta:      LONG    0
+var temporary:  LONG    0
+var timer:      LONG    0
+var local_timer:
+                LONG    0
+var threshold:  LONG    0
+var grant:      LONG    0
+var sample_address:
+                LONG    0
+var sample_bank:
+                LONG    0
+var sample:     LONG    0
+var loaded:     LONG    0
+var expected:   LONG    0
+var bytes:      LONG    0
+var shift:      LONG    0
+var value:      LONG    0
+var mask:       LONG    0
+var failures:   LONG    0
+.data
+mailbox:        LONG    [0] * 2
+.align  32
+payload:        LONG    [0] * 12
+.cogexec    0x4000, 0
+worker:
+                MOV     register(301),  PTRA
+                ADD     register(301),  4
+                RDLONG  register(302),  register(301)
+                MOV     register(303),  aug(0x44332211)
+                WRFAST  0,              register(302)
+worker_wait:
+                RDLONG  register(300),  PTRA
+                CMP     register(300),  0       :wz
+    if(Z)       JMP     worker_wait
+                ADDCT1  register(300),  0
+                WAITCT1
+                GETCT   register(304)
+.if probe_size == 1
+                WFBYTE  register(303)
+.elif   probe_size == 2
+                WFWORD  register(303)
+.else
+                WFLONG  register(303)
+.endif
+                WAITX   128
+                COGSTOP probe_writer
+                LONG    [0] * (504 - $)
+.data
+

@@ -1,0 +1,72 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[value] == 7
+//? post: cog[*].reg[pointer_delta] == 0
+//? post: cog[*].reg[flags] == 3
+//? post: cog[*].reg[elapsed] == 4
+//? post: hub[cell] == u32 [0]
+//? run: "slow-cog0"
+//? cog: 0
+//? const: fast = 0
+//? run: "fast-cog0"
+//? cog: 0
+//? const: fast = 1
+//? run: "slow-cog7"
+//? cog: 7
+//? const: fast = 0
+//? run: "fast-cog7"
+//? cog: 7
+//? const: fast = 1
+
+                // Skipped commands, faults, returns and prefixes must have no architectural effects.
+                MOV     PTRA,           address
+                MODCZ   _SET,           _SET            :wcz
+.if fast
+                SKIPF   aug(0x1ffff)
+.else
+                SKIP    aug(0x1ffff)
+.endif
+                COGSTOP 0
+                LOCKNEW value
+                QMUL    3,              4
+                WRLONG  value,          PTRA++
+                RDLONG  value,          PTRA++
+                WAITX   aug(0xffffffff)
+                RDLUT   value,          0
+                SETDACS 0
+                REP     1,              0
+                SKIP    aug(0xffffffff)
+                CALL    target
+                RET
+                ADD     value,          100             :wcz
+                MOV     value,          aug(0xffff0000)
+                // The seventeen canceled words include the three augmentation prefixes above.
+                MOV     value,          7
+                WRC     flags
+                WRZ     flag_z
+                SHL     flag_z,         1
+                OR      flags,          flag_z
+                MOV     pointer_delta,  PTRA
+                SUB     pointer_delta,  address
+                // Neither a skipped stall nor any of the fast steps may distort the following issue cadence.
+                GETCT   start
+                NOP
+                GETCT   elapsed
+                SUB     elapsed,        start
+                SKIP    0
+                JMP     nrel(_end)
+sub:
+                ADD     value,  100
+                RET
+var address:    LONG    hubaddr(cell)
+var target:     LONG    pcaddr(sub)
+var value:      LONG    0
+var flags:      LONG    0
+var flag_z:     LONG    0
+var pointer_delta:
+                LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.data
+cell:           LONG    0
+

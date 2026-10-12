@@ -1,0 +1,88 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "cross-local-wrap"
+//? const: kind = 0
+//? post: cog[0].reg[value] == 1
+
+// Characterize the explicitly open REP body crossing the local PC boundary.
+.if kind == 0
+                MOV     PTRA,           aug(hubaddr(local_rep))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(511)
+                MOV     PTRA,           aug(hubaddr(cog_template))
+                RDLONG  word,           PTRA++
+                MOV     register(0),    word
+                RDLONG  word,           PTRA++
+                MOV     register(1),    word
+                JMP     nrel(local_rep)
+.elif   kind == 1
+                MOV     register(0),    exit_word
+                MOV     PTRA,           aug(hubaddr(local_skip))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(507)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(508)
+                JMP     nrel(local_skip)
+.elif   kind == 4
+                JMP     nrel(maximum)
+.else
+                MOV     PTRA,           aug(hubaddr(hub_template))
+                RDLONG  word,           PTRA++
+.if kind == 2
+                WRLONG  word,           aug(0x7fff8)
+                RDLONG  word,           PTRA++
+                WRLONG  word,           aug(0x7fffc)
+                RDLONG  word,           PTRA++
+                WRLONG  word,           0
+                RDLONG  word,           PTRA++
+                WRLONG  word,           4
+.else
+                WRLONG  word,           aug(0x7fffc)
+                RDLONG  word,           PTRA++
+                WRLONG  word,           0
+                RDLONG  word,           PTRA++
+                WRLONG  word,           4
+                RDLONG  word,           PTRA++
+                WRLONG  word,           8
+.endif
+                JMP     entry_address
+.endif
+done:
+                JMP     nrel(_end)
+var value:      LONG    0
+var word:       LONG    0
+var entry_address:
+                LONG    0xffff8 + 4 * (kind == 3)
+var exit_word:  LONG    0xfd800000 | pcaddr(done)
+
+.cogexec    0x3000, 0
+cog_template:
+                ADD     value,  1
+                JMP     nrel(done)
+.lutexec    0x3100, 0x3fe
+local_rep:
+                REP     2,      3
+                ADD     value,  1
+.lutexec    0x3200, 0x3fb
+local_skip:
+                SKIPF   14
+                ADD     value,  1
+                NOP
+                NOP
+                NOP
+.hubexec    0x4000
+hub_template:
+                REP     2,      3
+                ADD     value,  1
+                ADD     value,  1
+                JMP     nrel(_end)
+.hubexec    0x5000
+maximum:
+                REP     511,    2
+                ADD     value,  1
+                LONG    [0] * 509
+                ADD     value,  1
+                JMP     nrel(_end)
+

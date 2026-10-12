@@ -129,7 +129,7 @@ pub fn forget(cordic: *Cordic, cog: CogId) void {
     };
 }
 
-/// Prevent idle fast-forwarding from skipping an occupied arithmetic or transport stage.
+/// Report whether an arithmetic or transport stage still contains work.
 pub fn in_flight(cordic: *const Cordic) bool {
     return cordic.active != 0;
 }

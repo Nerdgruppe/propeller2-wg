@@ -1,0 +1,384 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_alignment = 0
+//? run: "cog0-align1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_alignment = 1
+//? run: "cog0-align2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_alignment = 2
+//? run: "cog0-align3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_alignment = 3
+//? run: "cog1-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_alignment = 0
+//? run: "cog1-align1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_alignment = 1
+//? run: "cog1-align2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_alignment = 2
+//? run: "cog1-align3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_alignment = 3
+//? run: "cog2-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_alignment = 0
+//? run: "cog2-align1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_alignment = 1
+//? run: "cog2-align2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_alignment = 2
+//? run: "cog2-align3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_alignment = 3
+//? run: "cog3-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_alignment = 0
+//? run: "cog3-align1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_alignment = 1
+//? run: "cog3-align2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_alignment = 2
+//? run: "cog3-align3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_alignment = 3
+//? run: "cog4-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_alignment = 0
+//? run: "cog4-align1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_alignment = 1
+//? run: "cog4-align2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_alignment = 2
+//? run: "cog4-align3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_alignment = 3
+//? run: "cog5-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_alignment = 0
+//? run: "cog5-align1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_alignment = 1
+//? run: "cog5-align2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_alignment = 2
+//? run: "cog5-align3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_alignment = 3
+//? run: "cog6-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_alignment = 0
+//? run: "cog6-align1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_alignment = 1
+//? run: "cog6-align2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_alignment = 2
+//? run: "cog6-align3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_alignment = 3
+//? run: "cog7-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_alignment = 0
+//? run: "cog7-align1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_alignment = 1
+//? run: "cog7-align2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_alignment = 2
+//? run: "cog7-align3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_alignment = 3
+
+                // Mix write sizes and verify packing, pointers, flags and untouched neighboring lanes.
+                MOV     address,    aug(hubaddr(packet))
+                ADD     address,    probe_alignment
+                WRFAST  0,          address
+                GETBRK  status                              :wcz
+                TESTB   status,     20                      :wc
+    if(!C)      ADD     failures,   1
+                WFBYTE  0x12
+                WFWORD  aug(0x3456)
+                WFLONG  aug(0x89abcdef)
+                WFBYTE  0
+                WFWORD  0
+                WFLONG  0
+                WAITX   32
+                GETPTR  pointer
+                MOV     expected,   address
+                ADD     expected,   14
+                CMP     pointer,    expected                :wz
+    if(!Z)      ADD     failures,   1
+                MOV     pointer,    address
+                SUB     pointer,    1
+                RDBYTE  loaded,     pointer
+                CMP     loaded,     0xcc                    :wz
+    if(!Z)      ADD     failures,   1
+                MOV     pointer,    address
+                ADD     pointer,    14
+                RDBYTE  loaded,     pointer
+                CMP     loaded,     0xcc                    :wz
+    if(!Z)      ADD     failures,   1
+                RDFAST  0,          address
+                GETBRK  status                              :wcz
+                TESTB   status,     20                      :wc
+    if(C)       ADD     failures,   1
+                RFBYTE  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(18)                 :wz
+    if(!Z)      ADD     failures,   1
+                RFWORD  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(13398)              :wz
+    if(!Z)      ADD     failures,   1
+                RFLONG  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(2309737967)         :wz
+    if(!Z)      ADD     failures,   1
+                RFBYTE  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+                CMP     loaded,     aug(0)                  :wz
+    if(!Z)      ADD     failures,   1
+                RFWORD  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+                CMP     loaded,     aug(0)                  :wz
+    if(!Z)      ADD     failures,   1
+                RFLONG  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+                CMP     loaded,     aug(0)                  :wz
+    if(!Z)      ADD     failures,   1
+                GETPTR  pointer
+                CMP     pointer,    expected                :wz
+    if(!Z)      ADD     failures,   1
+                // Variable data tests exercise every payload width and both signs; the fourth byte supplies eight bits.
+                RDFAST  0,          aug(hubaddr(variables))
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+                CMP     loaded,     aug(0)                  :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(1)                  :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(63)                 :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(64)                 :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(127)                :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(128)                :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(8191)               :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(8192)               :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(16383)              :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(16384)              :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(1048575)            :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(1048576)            :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(2097151)            :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(2097152)            :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(268435455)          :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(268435456)          :wz
+    if(!Z)      ADD     failures,   1
+                RFVAR   loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(536870911)          :wz
+    if(!Z)      ADD     failures,   1
+                RDFAST  0,          aug(hubaddr(variables))
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+                CMP     loaded,     aug(0)                  :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(1)                  :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(63)                 :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-64)                :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-1)                 :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(128)                :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(8191)               :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-8192)              :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-1)                 :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(16384)              :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(1048575)            :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-1048576)           :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-1)                 :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(2097152)            :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(268435455)          :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-268435456)         :wz
+    if(!Z)      ADD     failures,   1
+                RFVARS  loaded                              :wcz
+    if(!C)      ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                CMP     loaded,     aug(-1)                 :wz
+    if(!Z)      ADD     failures,   1
+                JMP     nrel(_end)
+var address:    LONG    0
+var pointer:    LONG    0
+var expected:   LONG    0
+var loaded:     LONG    0
+var status:     LONG    0
+var failures:   LONG    0
+.data
+.align  32
+padding:        BYTE    [0xcc] * 4
+packet:         BYTE    [0xcc] * 24
+variables:      BYTE    0,  1,  63, 64, 127,    128,    1,  255,    63, 128,    64, 255,    127,    128,    128,    1,  255,    255,    63, 128,    128,    64, 255,    255,    127,    128,    128,    128,    1,  255,    255,    255,    127,    128,    128,    128,    128,    255,    255,    255,    255
+

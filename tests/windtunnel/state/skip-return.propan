@@ -1,0 +1,41 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "underflow-skip-cog0"
+//? cog: 0
+//? const: fast = 0
+//? post: cog[*].reg[status] == 134217728
+//? post: cog[*].reg[pattern_out] == 268435456
+//? run: "underflow-skip-cog7"
+//? cog: 7
+//? const: fast = 0
+//? post: cog[*].reg[status] == 134217728
+//? post: cog[*].reg[pattern_out] == 268435456
+//? run: "underflow-skipf-cog0"
+//? cog: 0
+//? const: fast = 1
+//? post: cog[*].reg[status] == 0
+//? post: cog[*].reg[pattern_out] == 268435456
+//? run: "underflow-skipf-cog7"
+//? cog: 7
+//? const: fast = 1
+//? post: cog[*].reg[status] == 0
+//? post: cog[*].reg[pattern_out] == 268435456
+
+                // A return with a live pattern but no CALL reveals the four-bit counter behavior.
+                PUSH    nrel(done)
+.if fast
+                SKIPF   aug(0x80000000)
+.else
+                SKIP    aug(0x80000000)
+.endif
+                RET
+done:
+                GETBRK  status                  :wc
+                GETBRK  pattern_out             :wz
+                SKIP    0
+                AND     status, aug(0xF8000000)
+                JMP     nrel(_end)
+var status:     LONG    0
+var pattern_out:
+                LONG    0
+

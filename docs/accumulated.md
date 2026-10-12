@@ -312,8 +312,7 @@ Measured self-restart cases (`QMUL 6,7`, on cogs 0, 3 and 7):
 
 The table polls QMT after each indicated group of reads. In the first case, the
 initial read does not wait: reset abandoned logical tracking. The later physical
-result still makes both words ready. Idle fast-forwarding must not skip that
-arrival, even for a stopped or restarted cog.
+result still makes both words ready, even for a stopped or restarted cog.
 
 ### Reproducing the investigation
 
@@ -341,3 +340,371 @@ comparisons beyond the captured regression corpus). That sample used a single
 Python `Random(0xc04d1c)` stream, generating 32-bit D, S and Q words in that order, with 5,000
 rows for each operation in the order just listed. This is strong sampled
 evidence, not exhaustive verification over all 32-bit operand combinations.
+
+
+## Event latch consumption
+
+The official [silicon documentation](p2/silicon-documentation.md#events) specifies
+16 event flags. `POLLxxx` reports presence in requested C/Z flags and clears the
+selected flag. Both `Jxxx` and `JNxxx` clear that flag whether or not the branch
+is taken. A sensor whose condition remains true can set the flag again; CT1..3
+compare the sign bit of the wrapping low-32-bit `CT - target` on every clock.
+
+`WAITxxx` clears the selected flag on completion. An immediately preceding
+`SETQ` supplies an absolute low-32-bit CT timeout; requested C/Z flags report
+timeout rather than event presence. There are only 15 wait instructions: no
+`WAITQMT` exists, because an empty CORDIC read cannot occur while the cog waits.
+The documentation's later mention of `WAITQMT` in the QMT clearing list is
+inconsistent with its explicit instruction inventory and no-WAITQMT explanation.
+These are documentation-backed semantics, not new hardware measurements.
+
+## Pin pattern event edges
+
+Two-cog hardware probes in `tests/windtunnel/state/pattern-events.propan` verify
+SETPAT/PAT using held levels on pins 0..3 and 32..35, with receiving cogs 0, 3
+and 7. C selects INA (0) or INB (1), and Z selects mismatch (0) or equality (1)
+for `(INx & D) == S`. D masks only the input: bits in S outside D remain
+significant. The instruction preserves its operands and C/Z, and later flag
+changes do not affect the captured comparison.
+
+PAT is edge-sensitive: a false-to-true comparison transition sets the sticky
+latch. SETPAT clears PAT and establishes the current condition as its baseline,
+so configuring an already-true condition does not produce an event. After a poll,
+branch or wait consumes PAT, a held true condition does not reassert it. A later
+false-to-true transition generates another event. Changes between two unequal
+patterns in mismatch mode do not generate an event. A latched PAT survives the
+condition becoming false, and reconfiguration clears it. Zero-mask and unmasked-S
+comparisons that are always true or always false have no subsequent edges.
+
+These measurements refine the silicon documentation's phrase "set whenever"
+for PAT; it must not be modeled as a continuously asserted level. The fixture
+also checks WAITPAT wakeup and SETQ timeouts. Its mailbox acknowledgments follow
+64-clock settling waits, so these observations do not characterize I/O propagation
+delays.
+
+## Ordinary interrupts (INT1–INT3)
+
+Hardware measurements in `tests/windtunnel/state/interrupt-*.propan` cover all
+three ordinary levels, all eight cogs, eight CT arrival phases, every
+cog/LUT/hub caller/handler pair, and all four hub byte alignments. They use the
+P2AAS device at `ws://localhost:12880/`; INT0/debug is excluded.
+
+An interrupt injects `CALLD IRETx,IJMPx WCZ` into an issue slot without consuming
+the held instruction or hub FIFO bytes. Older instructions finish first. IRETx
+saves the held PC and interrupted C/Z; IJMPx supplies target PC and incoming
+C/Z. Entry does not use the hardware stack. RETIx is `CALLD INB,IRETx WCZ`;
+RESIx uses IJMPx as D, saving an ISR continuation for its next entry. Any D is
+valid for completion, provided the effective S is a register IRETx and both
+C/Z writes are selected. ALTS-selected IRET sources work; canceled CALLD and
+partial flag modifiers do not complete the interrupt.
+
+INT1 has priority over INT2 over INT3. Higher levels nest within lower handlers.
+Each level has independent idle, pending and active states (GETBRK encodes them
+as 0, 2 and 3). Events while pending/active are ignored. STALLI masks entry,
+including forced requests, while sensors and request latches continue operating.
+SETINTx uses D[3:0]; zero disables the source rather than selecting INT. Source
+changes, including disabling, preserve pending requests. Enabling a source with
+an already-set event latch does not create a request; polling that event does
+not cancel a request already received. TRGINTx works with a disabled source and
+has no effect on an already-pending/active level. NIXINTx clears pending **or
+active** state without changing control flow. This active cancellation extends
+the manual's description of canceling a pending request.
+
+For straight local code, `GETCT start; TRGINTx; MOV ...` lets the first MOV
+complete before entry; the handler's first GETCT reads `start + 10`. Its saved
+return points to the second following instruction. CT-triggered local entry
+reads eight or nine clocks after the target, according to the issue phase.
+There is no universal interrupt-latency constant: instruction stalls, prefixes,
+issue phase and target refill all contribute. A zero AUGS/AUGD still shields;
+a canceled prefix does not. SETQ/SETQ2, ALTx, CRCNIB, SCA/SCAS, GETCT WC and
+XORO32 protect the following consumer. A block transfer completes all beats
+before entry. STALLI immediately following TRGINT prevents entry; NIXINT at
+that position cannot retract an already-scheduled CALLD.
+
+For a synthetic CALLD executing at clock `t`, local target entry is `t + 4`.
+Hub target entry is `t + 13 + ((bank - t - 5 - cog) & 7)`, with
+`bank = (target >> 2) & 7`; all four byte alignments matched this formula.
+Ordinary RETI/RESI target refill follows the same branch mechanism.
+
+**WAITINT differs from the manual on the measured device.** It waits for any
+pending ordinary interrupt request, independently of STALLI. A previously
+latched INT event alone does not satisfy it: a bounded wait times out and
+clears that flag. A canceled WAITINT leaves the flag intact. A pending request
+wakes WAITINT under STALLI without entering a handler; with entry allowed, the
+wait completes before the injected CALLD executes. Other WAIT instructions
+hold pending interrupts until their own event/timeout completes. The tests
+measure the two-clock resume delay and the following instruction's clock.
+POLLINT/JINT/JNINT continue to consume the sticky interrupt-occurred latch.
+
+GETBRK WCZ reports the ordinary interrupt selectors/states, STALLI, and the
+cog's **startup** execution mode (which survives subsequent branches between
+memory domains). GETBRK WC reads event flags without consuming them; measured
+CT1/CT2/CT3 bits are 1/2/3, correcting their reversed order in the silicon
+manual's GETBRK table. GETBRK WZ returns zero/Z=1 without a queued skip pattern.
+On a newly started cog, CT targets reset to zero and their flags assert until
+rearmed. Cog 0's bootloader may additionally leave a selectable event latched;
+status probes normalize these sensors before asserting individual event bits.
+
+## Selectable pin events (SE1–SE4)
+
+Hardware probes in `tests/windtunnel/state/selectable-pin-events.propan` and
+`selectable-pin-arming.propan` use a companion cog to hold input levels. Their
+112 runs cover all four trackers, all eight receiving cogs for arming, INA/INB,
+and pins 0, 31, 32 and 59 for event consumption and interrupt integration.
+Every input change settles for 64 clocks before acknowledgment; these probes
+do not characterize physical I/O propagation timing.
+
+SETSEn uses only D[8:0]. The pin encodings are `%001_PPPPPP` for rising,
+`%010_PPPPPP` for falling, `%011_PPPPPP` for either edge, `%10x_PPPPPP` for low,
+and `%11x_PPPPPP` for high. P selects INA[0..31] or INB[0..31]; the x bit is
+ignored. Each tracker keeps its own selection and edge history.
+
+Rising/falling/change events do not reassert while the input is held steady.
+Low/high events continuously reassert while their level matches. All are
+sticky: leaving a matching level does not clear a previously raised flag, and
+polling it while still matched allows it to reassert before a later input change.
+POLLSEn, both JSEn/JNSEn polarities, WAITSEn with SETQ timeouts, and ordinary
+interrupt source selections 4..7 work with every pin mode.
+
+Reconfiguration clears the selected latch and establishes the new input as its
+edge baseline. Selecting another already-high/low input does not invent an edge.
+An immediately following local POLLSEn after configuring a matching low/high
+level reads clear; later polls see the level and keep seeing it after consumption.
+An old level notification already in flight can arrive after switching to an
+inactive edge sensor. After that notification is consumed, the steady edge
+sensor stays clear. This also explains why initial pin arming can appear to
+generate an event when a previous level sensor was active; normalize the old
+selection and drain its notifications before measuring the new source.
+
+## Software hub FIFO
+
+Measured on the attached P2AAS board on 2026-10-11. The nine `fifo-*` fixtures in
+`tests/windtunnel/state/` cover all twelve FIFO opcodes, all eight cogs, every RAM
+bank and CT phase, all byte alignments, mixed access widths, variable encodings,
+block reloads, event/interrupt delivery, reconfiguration and hub-execution
+handover. The visibility fixture uses a second cog to sample both portions of
+cross-long writes around their physical commit edges. These claims concern the
+software FIFO and instruction-fetch interface; streamer consumption is separate.
+
+### Buffering, blocks and pointers
+
+The shared FIFO has nineteen longs. Reads stop issuing when fifteen longs are
+occupied; already-issued reads return five clocks after their rotating RAM-slice
+grant. Software reads consume this buffered data, so editing hub RAM after
+prefetch does not edit data already in the FIFO. Grants resume as consumption
+releases space.
+
+RDFAST/WRFAST use D[13:0] as a count of 64-byte blocks. Zero means 262144 longs,
+covering the entire 1 MiB address map. D[30:14] and S[31:20] are ignored; D[31]
+selects nonblocking setup. Finite wrapping requires a long-aligned start, as
+specified in the silicon manual. Transfers obey the normal RAM hole and top
+16 KiB mirror, including address rollover and byte enables.
+
+FBW is raised on the grant of the last long in a block. In read mode this is a
+prefetch event: it can occur before software consumes any bytes. In write mode
+it occurs at the final physical write, rather than when WFLONG enqueues it.
+RDFAST, WRFAST and FBLOCK clear the FBW latch when accepted, once per instruction;
+blocking retries do not clear it again. FBW also feeds ordinary interrupt source 9.
+WAITFBW has a direct FIFO wake path: after a pending wait sees FBW, the next
+GETCT executes two clocks later, without the extra two-clock resume used by
+other modeled waits. A pending WAITFBW timeout resumes one clock after its
+absolute SETQ deadline; the following GETCT reads deadline + 3. An already-set
+FBW adds no stall. Read/write wraps, polls and timed waits were checked separately.
+
+FBLOCK replaces the descriptor used on subsequent reloads and leaves existing
+buffered data alone. If a nonblocking configuration is still waiting for prior
+writes to drain, FBLOCK instead replaces that pending initial descriptor.
+
+A newly loaded cog starts with GETPTR = 0. GETPTR advances by the number of
+bytes software consumes/enqueues and wraps at
+20 bits. It advances linearly across FBLOCK reloads even when the new physical
+block is at a noncontiguous address. Background reads/writes do not advance this
+logical pointer. During hub execution GETPTR reports the next instruction's byte
+address. On returning to cog/LUT code, the FIFO retains its prefetched data and
+pointer, including the fetched word discarded by the branch. Software can then
+consume that buffered instruction stream with RF instructions.
+
+RFVAR/RFVARS consume up to four bytes. The first three contribute seven payload
+bits and use bit 7 as continuation; the fourth contributes all eight bits. RFVAR
+zero-extends 7/14/21/29 payload bits; RFVARS sign-extends them. RFVAR WC clears C;
+RFVARS WC reports the decoded sign. Fixed-width RF reads report the width's top
+bit in C. All RF instructions report zero in Z when requested.
+
+### Setup and write timing
+
+Let `t` be the first GETCT value in `GETCT start; instruction; GETCT finish`,
+`b = (S >> 2) & 7`, and `c` be the cog ID. With no pending old writes:
+
+| Operation | Raw `finish - start` |
+| --- | --- |
+| Blocking RDFAST | `12 + ((b - t - c - 5) & 7)` |
+| Blocking WRFAST | `5` |
+| Nonblocking RDFAST/WRFAST | `4` |
+| Buffered RF/WF operation | `4` |
+
+A queued FIFO byte becomes eligible two clocks after its WF execution edge. It
+commits when `(CT + cog_id) & 7 == (address >> 2) & 7`. Only ready lanes in that
+physical long commit; a wide unaligned write uses the following slice for its
+remaining bytes. Neighbouring lanes are preserved, and ordinary hub accesses
+lose any RAM window used by the FIFO.
+
+Reconfiguration drains old writes before discarding/resetting the buffer. Write
+setup overlaps that drain. For `WFLONG; GETCT start; WRFAST/RDFAST; GETCT finish`,
+with no operand-augmentation instruction between the measured instructions,
+let `w = (b - t - c) & 7` refer to the old write address. Blocking WRFAST measures
+`max(5, w + 2 + (old_address_unaligned ? 1 : 0))`; blocking RDFAST measures
+`w + 15`. Entering hub execution overlaps setup with pending writes. Its first
+read can use a slice no earlier than `max(branch_clock + 5, last_write_clock + 2)`;
+normal bank selection and the five-clock read response then apply. Stop/restart clears uncommitted FIFO
+state; committed RAM writes remain.
+
+### Nonblocking read startup erratum
+
+The silicon manual warns about premature ordinary reads after a nonblocking
+RDFAST. Distinct source/target addresses and an explicitly seeded ordinary read
+bus reproduce the following ordering:
+
+- A FIFO read before its initial data is available returns zero and does **not**
+  advance GETPTR. The first data remains available for a later read.
+- The initial software-read FIFO response shares the ordinary hub-read completion
+  strobe. If an ordinary read is pending on that edge, it completes with the
+  retained ordinary read-bus value instead of performing its own access. This
+  includes an ordinary read starting on that edge.
+- An ordinary read that completes before the initial FIFO response is unaffected.
+  An ordinary write is not lost in the corresponding measured window.
+
+`fifo-startup.propan` checks both sides of these boundaries for every cog, source
+bank, CT phase and eight instruction gaps. The simulator models the response
+ordering explicitly, rather than delaying all subsequent hub accesses. As the
+manual requires, programs using nonblocking setup must allow setup to finish
+before relying on normal FIFO data; these premature-access probes characterize
+the measured silicon behavior.
+
+## Shared RNG cog taps and instruction sampling (2026-10-11)
+
+The retained probes and analysis are in [data/random](../data/random/README.md).
+These measurements establish relations and sampling behavior, **not** a recovered
+generator. The numbered xoroshiro output map, transition replay and HUBSET seed
+lane/edge remain unresolved.
+
+Synchronized GETRND captures from all eight cogs divide their 256 output bits into
+64 classes. Each class appears in exactly four distinct cogs, with fixed relative
+inversions. Each cog pair (0,1), (2,3), (4,5) and (6,7) covers all 64 classes without
+overlap. Calibrating on 512 words/cog and checking eight independent uploads of
+1,024 words/cog preserves all these relations across CT phases and both parities.
+The anonymous numbering in `taps.json` does not identify canonical output bits.
+
+For `GETCT before; random_consumer`, GETRND D, flags-only GETRND, BITRND,
+DIRRND, OUTRND, FLTRND and DRVRND use the cog's word at `before + 2` in all 32
+measured consumer observations. Port-B OUTRND uses the same word as port A.
+GETRND C is bit 31; Z is bit 30. Its flags-only encoding sets instruction bit 18,
+has D=0, and suppresses the register write.
+
+For `GETCT before; WAITX D WC/WZ/WCZ; GETCT after`, all 24 measured cases give
+`after - before = 4 + (D & RND(before + 2))`, with masks 0, 1, 3, 7, 15 and 31.
+Requested flags clear; unrequested flags retain their values. Observers covered
+both parities so that waits ending on odd clocks did not require interpolation.
+
+The cog-0 HUBSET probe with even GETCT phases shows the following words delayed
+by 2/4/6/8 clocks according to the hub-command slot. This observation does not
+identify the internal overwrite edge or the scrambler pipeline delay. Official
+documentation describes a partial 32-bit seed of 128 state bits; assuming that
+HUBSET resets a standalone 32-bit or 64-bit generator would be unjustified.
+
+
+### Seed-hammer recovery attempt and shared model (2026-10-11)
+
+The proposed 4–7-cog repeated-zero-seed experiment is prepared as
+[`data/random/seed-hammer.propan`](../data/random/seed-hammer.propan), with a
+phase-wise modal-pattern analyzer. The first upload was rejected with
+"No time quota left." After the user restored P2AAS availability, two independent
+uploads succeeded. Raw frames and per-upload/pooled statistics are retained in
+`data/random/`.
+
+The experiment records 40,960 GETRND words: all eight cogs serve as observer,
+with 0/4/5/6/7 other cogs repeatedly seeding `0x80000000`, across all CT phases.
+Pooling by cog/count/actual phase gives 128 words per condition. No individual
+bit or bit-pair XOR reaches 90% agreement, and no full word repeats within a
+condition. Maximum byte-mode counts are 7/128 for baseline and 5/128 for each
+seeded configuration. No useful seed-induced subset was identified. This is a
+negative result for the measured outlier checks, not proof that all smaller or
+higher-order seed correlations are absent.
+
+Windtunnel now uses the documented/reference xoroshiro128** transition and a
+pipelined scrambler, with a measured cog-incidence map and relative inversions.
+The assignment of those anonymous taps to numbered output bits is arbitrary.
+The historical upper-S1 seed lane and command-edge/pipeline ordering are explicit
+simulation approximations. They must not be cited as recovered production
+hardware facts. Exact numbering, absolute polarity, seed lane and internal delay
+remain open; see [the research notes](../data/random/README.md).
+
+## REP and instruction skipping (2026-10-12)
+
+The `repeat-*` and `skip-*` fixtures in `tests/windtunnel/state/` contain
+hardware-derived results and timing assertions. REP uses D[8:0] as its length;
+zero length disables repetition and zero S repeats indefinitely. A new REP
+replaces the single context. Local repetition has no branch overhead; hub
+repetition performs a hidden branch with the normal FIFO refill delay. Every
+taken explicit branch cancels REP, including branches in the middle of the body
+and absolute branches. A conditionally canceled branch does not cancel it.
+
+Relative branches use the next PC after REP wrapping or SKIPF stepping. Saved
+CALL return addresses use that same nonlinear fallthrough. At the last body
+instruction of an intermediate iteration, the relative base is the repeat start;
+on the final iteration it is sequential. REP preparation occurs before execution:
+a REP 0 at an older repeat boundary cannot undo an already-prefetched wrapped
+instruction. Fast skip stepping consumes its bits before REP wrapping, even when
+that wrapping overrides the stepped PC.
+
+SKIP cancels each selected pipeline instruction in two clocks, suppressing
+register, shared-command, branch and unsupported-instruction effects. SKIPF
+steps over up to seven following selected local instructions per encounter.
+A leading all-one pattern therefore cancels instructions 1, 9, 17 and 25 and
+steps over the others. With `GETCT; AUGD; SKIP/F; 32 ADDs; GETCT`, SKIP takes
+70 clocks for every measured pattern. SKIPF with 0/1/7/8/9/16/32 leading ones
+takes 70/70/58/56/56/42/14 clocks. Both execute `32 - popcount(pattern)` ADDs.
+SKIPF in hub execution falls back to ordinary cancellation; it does not fault.
+EXECF installs its 22-bit pattern and branches to D[9:0] in cog/LUT execution.
+
+JMP continues consuming the skip pattern at its destination. Hardware-stack
+CALL/CALLPA/CALLPB suspend it; CALLA/CALLB/CALLD do not. Suspension uses a
+separate **four-bit counter**, incremented by CALL when the remaining pattern is
+nonzero and decremented by RET/_RET_ when the counter is nonzero. Sixteen calls
+wrap the counter to zero; RET at zero does not underflow. Replacing the skip
+pattern resets the counter. Fast stepping can consume the remaining pattern
+before CALL executes, in which case that CALL does not increment it.
+
+**POP does not resume skipping.** POP of the return address, PUSH/POP pairs,
+restoring the popped return address and overwriting all eight stack entries leave
+the suspension counter unchanged. A synthetic `PUSH destination; RET` decrements
+it. These observations distinguish a separate counter from flags stored in stack
+entries; see `skip-stack.propan` for the measured cases.
+
+Interrupt service routines do not consume skip bits, but CALL/RET inside them
+still update the suspension counter. GETBRK WC returns depth in bits 31..28 and
+SKIP mode in bit 27, with C equal to the current pattern's low bit. GETBRK WZ
+returns the remaining pattern and sets Z when it is empty. REP suppresses
+ordinary interrupt scheduling until the final body slot has passed read/decode;
+the queued CALLD then executes after that slot and before the following ordinary
+instruction. The repeat/skip interrupt fixture checks the boundary and nested
+CALL behavior against hardware.
+
+For the hub timing sweep `GETCT start; REP 4,3; WAITX phase; ALTD index,0;
+GETCT stamp; ADD index,1; GETCT finish`, the first stamp is
+`start + 8 + phase`. Each later stamp is the preceding stamp plus
+`19 + phase + ((bank(body) - preceding_stamp - 7 - cog) & 7)`, and finish is
+four clocks after the third stamp. The fixture sweeps all eight cogs and banks
+at long alignment, plus the three unaligned offsets at bank zero for every cog;
+every run checks eight phases (704 timing cases in 88 runs). When a hub repeat starts at address
+zero after twenty-bit wrap, its hidden branch selects cog execution, just like
+an ordinary branch to zero; sequential hub fetching across wrap stays in hub
+execution.
+
+
+The separate [local-PC overflow probes](../data/timing-data/local-pc-overflow/README.md)
+remain explicitly open. A CALLD after sequential local fetch crosses $3FF saves
+$401, proving that silicon retains upper PC bits which Windtunnel currently
+masks away. A REP body spanning that boundary also differs from the simulator.
+The passing matrix covers bodies ending at $3FF, not bodies spanning this
+unresolved overflow. No general overflow fetch/timing rule is claimed from the
+retained characterization captures.

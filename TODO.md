@@ -118,8 +118,60 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 
 ## Windtunnel
 
+### Known Bugs
+
+#### Cog/LUT Execution Pipeline
+
+- **Status: partial; local-PC overflow is a known, accepted bug.**
+- Sequential execution past `$3FF` currently wraps the whole PC; hardware retains
+  upper bits. Logical PC, physical fetch and operand addressing remain unresolved.
+- Investigation aid: saved-PC stamps and distinguishable instruction/operand
+  signatures using the retained [overflow probes](data/timing-data/local-pc-overflow/README.md).
+  Shares the boundary issue described under REP below.
+
+#### Shared Random Generator
+
+- **Status: partial; deferred/known bug.**
+- Retain the shared xoroshiro approximation and measured cross-cog relations.
+  Exact tap numbering, absolute polarities, production seed lane and internal
+  delay remain open. This applies to `GETRND`, `BITRND`, `DIRRND`, `OUTRND`,
+  `FLTRND`, `DRVRND`, randomized `WAITX`, `HUBSET` seeding and physical noise paths.
+- Investigation aid if revisited: a reproducible seed/reset anchor or stronger
+  state-recovery constraints. Existing seed-hammer experiments did not resolve
+  the mapping; captures and analysis are retained in [data/random](data/random/).
+
+#### REP Hardware Repeat
+
+- **Status: partial; local-PC overflow is a known, accepted bug.**
+- Ordinary REP works. The unresolved case is a body crossing the last LUT
+  address, `$3FF`. The minimal four-instruction layout is:
+
+  ```text
+  LUT $3FE: REP 2, 3
+  LUT $3FF: ADD value, 1
+  COG $000: ADD value, 1
+  COG $001: JMP absolute_exit
+  ```
+
+  With `value` initially zero, Windtunnel produces 6 and hardware repeatedly
+  produces 1; this is a final register value, not an instruction-count trace.
+  A separate NOP-at-$3FF/CALLD-at-cog-zero probe saves return PC `$401` on
+  hardware, proving that the current whole-PC wrap to `$000` loses upper bits.
+  Determine logical PC retention, physical local fetch/operand addressing and
+  REP end/rewind behavior before changing the model. A REP ending at `$3FF`
+  already passes; hub wrap is separately implemented and validated. Retained
+  probes and captures: [local-PC overflow](data/timing-data/local-pc-overflow/README.md).
+
 ### Random Task Collection
 
+- Verify the software FIFO write path's cycle claim: `write_fifo` currently
+  makes newly queued bytes eligible after two clocks, but actual visibility in
+  hub RAM is governed by the cog's rotating hub RAM slice, partial-long
+  placement, and contention. Characterize enqueue-to-write timing across all
+  eight cog/bank phases and under contention, then correct any misleading
+  comments or implementation assumptions. See the existing FIFO write-visibility
+  hardware probes.
+- Implement immediate local relative `JMP`/`CALL` offsets whose low two bits are nonzero; these currently reject execution.
 - Model "previous SETQ" as pipeline state
 - Debug interface
   - Additional Breakpoints
@@ -129,11 +181,69 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - IO Interface Improvement
   - Configuration file support for I/O setup
     - Defaults to "stdio routed to pins 62/63"
-  - Remaining smart modes, analog pads and global input filters
-  - Physical U(S)ART encoding/decoding and exact serial waveform timing
+  - Input filtering
+  - Smart modes
+    - Physical U(S)ART encoding/decoding and exact serial waveform timing
   - Validate physical pad timing with a logic analyzer
   - Optional instruction-level pin logging (VCD and collision diagnostics exist)
+  - Analog subsystem
+    - ADC
+    - DACs
+    - Comparator
+    - `SETDACS`
+    - `SETSCP`, `GETSCP`
 - P2AAS server
   - Feature Parity with hw oracle
 - Validate/implement cog startup behavior
-  - perfect timing clone so hub writes to the coginit'd segment is both detected/logged and 
+  - perfect timing clone so hub writes to the coginit'd segment is both detected/logged and
+- HUBSET Protection and Debug Enables
+- Hardware Chip Reset and ROM Boot
+- Hidden Debug Interrupt and Debug ROM
+- Cache `hub.random.word` to not compute it multiple times per clock
+
+
+#### Clock Configuration
+
+- **Status: partial; analog oscillator/PLL fidelity is deferred.**
+- Nominal frequency selection works; physical clock switching, settling and
+  jitter remain unmodeled.
+- Investigation aid if revisited: dedicated-board access, an independent timing
+  reference and clock-output captures with an oscilloscope/frequency counter.
+
+### Pad Electrical Model
+
+- **Status: partial; analog subsystem deferred.**
+- Keep the existing digital model. Resistance/current drive, thresholds,
+  hysteresis, comparators and analog routing remain unmodeled.
+- Investigation aid if revisited: known loads, voltage sweeps and oscilloscope
+  measurements. I/O propagation-delay corrections remain outside current scope.
+
+### XBYTE Bytecode Executor
+
+- **Status: missing.**
+- Implement phantom return-to-$1FF handling, retained stack entry, bytecode LUT
+  dispatch and the six-clock execution sequence; complete related `GETBRK` fields.
+- Investigation aid: minimal bytecode programs with register signatures and CT
+  timestamps, sweeping dispatch configuration, returns, skipping and interrupts.
+  No external stimuli required.
+
+### Streamer
+
+- **Status: missing; deferred.**
+- Implement `XINIT`, `XZERO`, `XCONT`, `SETXFRQ`, `GETXACC` and the `XSTOP` alias;
+  command buffering, NCO, FIFO/LUT/pin/DAC paths, HDMI and DDS/Goertzel behavior.
+  Include FIFO consumption/arbitration, streamer event producers and related
+  interrupt/status interactions.
+- Add `XMT`, `XFI`,  `XRO` and `XRL` events
+- Investigation aid if revisited: deterministic digital patterns captured by a
+  second cog or logic analyzer, correlated with command/event timestamps and
+  second-cog hub writes. Analog paths remain deferred with the analog subsystems.
+
+### Colorspace Converter
+
+- **Status: missing; deferred.**
+- Implement `SETCY`, `SETCI`, `SETCQ`, `SETCFRQ`, `SETCMOD`, per-clock matrix/IQ
+  processing, DAC overrides and pipeline behavior.
+- Investigation aid if revisited: known vectors with controlled streamer timing
+  and internal result capture if available; otherwise DAC captures through an
+  oscilloscope or external ADC.

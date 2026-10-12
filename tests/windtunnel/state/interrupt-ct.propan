@@ -1,0 +1,261 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "int1-cog0"
+//? cog: 0
+//? const: irq_level = 1
+//? run: "int1-cog1"
+//? cog: 1
+//? const: irq_level = 1
+//? run: "int1-cog2"
+//? cog: 2
+//? const: irq_level = 1
+//? run: "int1-cog3"
+//? cog: 3
+//? const: irq_level = 1
+//? run: "int1-cog4"
+//? cog: 4
+//? const: irq_level = 1
+//? run: "int1-cog5"
+//? cog: 5
+//? const: irq_level = 1
+//? run: "int1-cog6"
+//? cog: 6
+//? const: irq_level = 1
+//? run: "int1-cog7"
+//? cog: 7
+//? const: irq_level = 1
+//? run: "int2-cog0"
+//? cog: 0
+//? const: irq_level = 2
+//? run: "int2-cog1"
+//? cog: 1
+//? const: irq_level = 2
+//? run: "int2-cog2"
+//? cog: 2
+//? const: irq_level = 2
+//? run: "int2-cog3"
+//? cog: 3
+//? const: irq_level = 2
+//? run: "int2-cog4"
+//? cog: 4
+//? const: irq_level = 2
+//? run: "int2-cog5"
+//? cog: 5
+//? const: irq_level = 2
+//? run: "int2-cog6"
+//? cog: 6
+//? const: irq_level = 2
+//? run: "int2-cog7"
+//? cog: 7
+//? const: irq_level = 2
+//? run: "int3-cog0"
+//? cog: 0
+//? const: irq_level = 3
+//? run: "int3-cog1"
+//? cog: 1
+//? const: irq_level = 3
+//? run: "int3-cog2"
+//? cog: 2
+//? const: irq_level = 3
+//? run: "int3-cog3"
+//? cog: 3
+//? const: irq_level = 3
+//? run: "int3-cog4"
+//? cog: 4
+//? const: irq_level = 3
+//? run: "int3-cog5"
+//? cog: 5
+//? const: irq_level = 3
+//? run: "int3-cog6"
+//? cog: 6
+//? const: irq_level = 3
+//? run: "int3-cog7"
+//? cog: 7
+//? const: irq_level = 3
+
+                // Sweep CT1 arrival across a straight instruction stream and record ISR entry and saved return.
+                MOV     failures,                           0
+                MOV     register(0x1f6 - 2 * irq_level),    vector
+                NOP
+                MOV     phase,                              0
+phase_loop:
+                STALLI
+.if irq_level == 1
+                SETINT1 0
+.elif   irq_level == 2
+                SETINT2 0
+.else
+                SETINT3 0
+.endif
+                GETCT   target
+                ADD     target, 128
+                ADD     target, phase
+                ADDCT1  target, 0
+                MOV     marker, 0
+.if irq_level == 1
+                SETINT1 1
+.elif   irq_level == 2
+                SETINT2 1
+.else
+                SETINT3 1
+.endif
+                ALLOWI
+// The stream outlasts the target and provides identifiable return PCs.
+stream:
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                ADD     marker,         1
+                STALLI
+.if irq_level == 1
+                SETINT1 0
+.elif   irq_level == 2
+                SETINT2 0
+.else
+                SETINT3 0
+.endif
+                MOV     deltas,         stamp
+                SUB     deltas,         target
+                // Hardware entry is phase aligned: eight clocks, plus one on the odd phase.
+                MOV     expected,       phase
+                AND     expected,       1
+                ADD     expected,       8
+                CMP     deltas,         expected                                                    :wz
+    if(!Z)      ADD     failures,       1
+                // Each pre-entry ADD must execute exactly once and IRET holds its successor.
+                MOV     expected,       pcaddr(stream)
+                ADD     expected,       markers
+                CMP     saved_returns,  expected                                                    :wz
+    if(!Z)      ADD     failures,       1
+                CMP     statuses,       aug((1 << (4 + 4 * irq_level)) | (3 << (2 * irq_level)))    :wz
+    if(!Z)      ADD     failures,       1
+                CMP     marker,         96                                                          :wz
+    if(!Z)      ADD     failures,       1
+                ADD     phase,          1
+                CMP     phase,          8                                                           :wz
+    if(!Z)      JMP     phase_loop
+                SETQ    0
+                MODCZ   _CLR,           _CLR                                                        :wcz
+                JMP     nrel(_end)
+isr:
+                GETCT   stamp
+                MOV     saved_returns,  register(0x1f7 - 2 * irq_level)
+                MOV     markers,        marker
+                GETBRK  statuses                                        :wcz
+                GETCT   future
+                ADD     future,         aug(4096)
+                ADDCT1  future,         0
+.if irq_level == 1
+                RETI1
+.elif   irq_level == 2
+                RETI2
+.else
+                RETI3
+.endif
+var vector:     LONG    pcaddr(isr)
+var phase:      LONG    0
+var target:     LONG    0
+var future:     LONG    0
+var marker:     LONG    0
+var stamp:      LONG    0
+var deltas:     LONG    0
+var saved_returns:
+                LONG    0
+var statuses:   LONG    0
+var markers:    LONG    0
+var failures:   LONG    0
+var expected:   LONG    0
+

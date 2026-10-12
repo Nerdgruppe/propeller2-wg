@@ -102,7 +102,7 @@ test "initial declarations, pad changes, sparse clocks and CT rollover" {
     try std.testing.expectEqual(@as(u128, 3), vcd.elapsed);
 }
 
-test "tracing does not change shared command timing or idle-clock eligibility" {
+test "tracing does not change shared command timing" {
     const plain = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(plain);
     const traced = try std.testing.allocator.create(Hub);
@@ -125,6 +125,5 @@ test "tracing does not change shared command timing or idle-clock eligibility" {
         try std.testing.expectEqual(plain.counter, traced.counter);
         try std.testing.expectEqual(plain.io.get_in(), traced.io.get_in());
         try std.testing.expectEqual(plain.io.pins[8].smart.registers.result, traced.io.pins[8].smart.registers.result);
-        try std.testing.expectEqual(plain.next_idle_clock(), traced.next_idle_clock());
     }
 }

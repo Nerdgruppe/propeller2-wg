@@ -422,6 +422,9 @@ def render_decoder(
             # skip special-cased NOP
             continue
         opcode = zig_id(snakecase(instr.id))
+        if instr.id == "getrnd":
+            # The flags-only alias sets L and suppresses the register write.
+            stream.write("if ((raw & 0x0FE7FFFF) == 0x0D64001B) return .getrnd;\n")
         # TESTB*/TESTP* share opcodes with BIT*/DIR*: unequal C/Z bits select
         # the test, equal bits select the bit/pin modification instruction.
         flag_rule = " and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19)))" if instr.id.lower().startswith(("testb", "testp")) else ""
@@ -438,7 +441,7 @@ def render_executor_stub(
     groups: dict[str, Group],
 ) -> None:
     alu_source = (DATA_ROOT / "../../src/libp2/alu.zig").read_text(encoding="utf-8")
-    alu_functions = set(re.findall(r"^pub fn ([A-Z][A-Z0-9_]*)\(", alu_source, re.MULTILINE)) - {"BITRND"}
+    alu_functions = set(re.findall(r"^pub fn ([A-Z][A-Z0-9_]*)\(", alu_source, re.MULTILINE))
     stream.write(
         textwrap.dedent(
             """
@@ -451,7 +454,12 @@ def render_executor_stub(
             const decode = @import("decode.zig");
             const encoding = @import("encoding.zig");
             const Cog = @import("Cog.zig");
-            const alu = @import("p2").alu;
+            const Cordic = @import("Cordic.zig");
+            const p2 = @import("p2");
+            const types = p2.types;
+            const alu = p2.alu;
+            const IO = @import("IO.zig");
+            const hub_module = @import("Hub.zig");
 
             // codegen: begin:runtimehelpers
             // codegen: end:runtimehelpers
@@ -555,7 +563,7 @@ def render_executor_stub(
         stream.write("    // return .next;\n")
         stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
         stream.write("}\n")
-    stream.write('\ntest "all deterministic ALU opcodes delegate to libp2" {\n')
+    stream.write('\ntest "all ALU opcodes delegate to libp2" {\n')
     for instr in instructions:
         opcode = snakecase(instr.id)
         if opcode.upper() in alu_functions:

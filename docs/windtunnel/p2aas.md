@@ -68,7 +68,7 @@ cog starts and peripheral direction changes still receive hub clock edges.
 ## Timing and coverage
 
 Use ReleaseFast for live sessions. Execution is paced so simulated time does not run ahead of wall time;
-only proven idle waits skip clocks. Heavy firmware can run slower than the physical board and time out
+every system clock is simulated. Heavy firmware can run slower than the physical board and time out
 before producing its complete output. Clock frequencies follow the documented HUBSET divider/multiplier
 fields, with nominal RCFAST=20 MHz, RCSLOW=20 kHz and a 20 MHz board crystal. PLL settling and electrical
 UART effects, including baud mismatch corruption, are outside the functional terminal model.

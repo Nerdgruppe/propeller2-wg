@@ -27,7 +27,7 @@ cog, PC and instruction, including when DIR is low.
 
 The surrounding `IO.Pin` owns typed `libp2.types.PinConfiguration` WRPIN bit
 fields and decodes OUT/OTHER/SMART selection, DIR/TT output enable and data-source
-participation in idle scheduling. IO owns input/output routing and pad drive
+clocked operation. IO owns input/output routing and pad drive
 resolution. These configuration decisions are independent of smart-engine outputs.
 The normal engine routes SmartA to IN and OUT to SmartOut through the same step
 interface as the other engines. `PinIndex` identifies a smart engine/register bit;
@@ -39,8 +39,15 @@ direction. Register writes and cog resets take effect at that shared boundary.
 Implemented instructions include every DIR, OUT, FLT and DRV variant, TESTP and
 TESTPN with write/AND/OR/XOR flags, and WRPIN, WXPIN, WYPIN, RDPIN, RQPIN and
 AKPIN. Mutation flags report the original base bit. Fields wrap inside their
-32-pin port; SETQ overrides the field count. Random variants use deterministic,
-seedable clock-indexed noise rather than the silicon PRNG's bit mapping.
+32-pin port; SETQ overrides the field count. Random variants use one hub-owned xoroshiro128** generator advancing every
+system clock. Its cog projections preserve measured shared taps and relative
+inversions; their numbered output-bit assignment remains approximate.
+GETRND (including flags-only), BITRND and randomized WAITX use that same cog
+word. GETRND flags select bits 31 and 30; bit/pin mutation flags report the
+original base bit. WAITX samples once on entry and clears only requested flags
+when its deadline is reached. HUBSET partially seeds the shared state using an
+explicitly approximate lane/pipeline model. The retained probes and open mapping
+questions are described in [the RNG research notes](../../data/random/README.md).
 
 ## Smart modes and endpoints
 
@@ -122,6 +129,6 @@ Traces contain CT, each cog's OUTA/B, DIRA/B and INA/B, combined I/O registers,
 and physical P0–P63 with `0`, `1`, `x` and `z`. Combined OUT is the raw OR of cog
 OUT registers; the pads show the direction-gated drive. Initial values and
 subsequent changes are emitted after each settled edge. Timestamps remain
-monotonic across CT rollover and clock skips. One synthetic VCD nanosecond means
+monotonic across CT rollover. One synthetic VCD nanosecond means
 one simulated system clock, independent of HUBSET frequency or wall time.
-Tracing does not change execution or idle skipping.
+Tracing does not change execution timing.
