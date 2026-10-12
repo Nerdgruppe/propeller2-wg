@@ -20,21 +20,39 @@ const clock_reached = hub_module.clock_reached;
 
 /// Read captured D or combine its immediate field with the one-shot AUGD extension.
 fn operandD(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
-    return if (immediate) @intFromEnum(reg) | cog.fetch_augd() else cog.read_operand(reg);
+    return if (immediate)
+        @intFromEnum(reg) | cog.fetch_augd()
+    else
+        cog.read_operand(reg);
 }
 
 /// Resolve captured/alternate S, consume AUGS for an immediate, then apply forwarded source substitution.
 fn operandS(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
-    const selected = if (cog.pipeline[3]) |state| state.alt_s orelse reg else reg;
-    const source = if (immediate) @intFromEnum(selected) | cog.fetch_augs() else cog.read_operand(selected);
-    return if (cog.pipeline[3]) |state| state.s_value orelse source else source;
+    const selected = if (cog.pipeline[3]) |state|
+        state.alt_s orelse reg
+    else
+        reg;
+    const source = if (immediate)
+        @intFromEnum(selected) | cog.fetch_augs()
+    else
+        cog.read_operand(selected);
+    return if (cog.pipeline[3]) |state|
+        state.s_value orelse source
+    else
+        source;
 }
 
 /// Configure the shared interface once while a blocking instruction retries its captured operands.
 fn configureFifo(cog: *Cog, args: encoding.Both_Dimm_Simm, mode: Cog.FifoMode) Cog.ExecResult {
-    if (cog.debug.state == .active) cog.debug.fifo_untouched = false;
-    if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
-    const state = if (cog.collecting_writes) &cog.pipeline[3].? else null;
+    if (cog.debug.state == .active) {
+        cog.debug.fifo_untouched = false;
+    }
+    if (cog.exec_mode == .hub)
+        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+    const state = if (cog.collecting_writes)
+        &cog.pipeline[3].?
+    else
+        null;
     var nonblocking = false;
     if (state == null or !state.?.fifo_started) {
         const config = operandD(cog, args.d, args.d_imm);
@@ -45,16 +63,27 @@ fn configureFifo(cog: *Cog, args: encoding.Both_Dimm_Simm, mode: Cog.FifoMode) C
             instruction.fifo_started = true;
             instruction.fifo_nonblocking = nonblocking;
         }
-    } else nonblocking = state.?.fifo_nonblocking;
-    if (state == null or nonblocking) return .next;
-    if (cog.fifo_state.request != null or cog.fifo_state.engine.?.ready_at != null or (mode == .read and cog.fifo_state.engine.?.count == 0)) return .wait;
+    } else {
+        nonblocking = state.?.fifo_nonblocking;
+    }
+    if (state == null or nonblocking)
+        return .next;
+    if (cog.fifo_state.request != null or
+        cog.fifo_state.engine.?.ready_at != null or
+        (mode == .read and
+            cog.fifo_state.engine.?.count == 0))
+        return .wait;
     return .next;
 }
 
 /// Read a fixed-width FIFO value and update only requested flags.
 fn readFifo(cog: *Cog, args: encoding.Only_D_Flags, size: u3) Cog.ExecResult {
-    if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
-    if (cog.fifo_state.address == null or cog.fifo_state.engine == null or cog.fifo_state.engine.?.mode != .read) return .{ .illegal = "FIFO read requires RDFAST" };
+    if (cog.exec_mode == .hub)
+        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+    if (cog.fifo_state.address == null or
+        cog.fifo_state.engine == null or
+        cog.fifo_state.engine.?.mode != .read)
+        return .{ .illegal = "FIFO read requires RDFAST" };
     const value = cog.read_fifo(size) orelse return .wait;
     cog.write_result(args.d, value);
     setFlags(cog, args, value, @intCast(@as(u6, size) * 8 - 1));
@@ -63,23 +92,39 @@ fn readFifo(cog: *Cog, args: encoding.Only_D_Flags, size: u3) Cog.ExecResult {
 
 /// Decode up to four bytes, using the full fourth byte and the terminating byte's sign bit.
 fn readFifoVariable(cog: *Cog, args: encoding.Only_D_Flags, signed: bool) Cog.ExecResult {
-    if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
-    if (cog.fifo_state.address == null or cog.fifo_state.engine == null or cog.fifo_state.engine.?.mode != .read) return .{ .illegal = "FIFO read requires RDFAST" };
+    if (cog.exec_mode == .hub)
+        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+    if (cog.fifo_state.address == null or
+        cog.fifo_state.engine == null or
+        cog.fifo_state.engine.?.mode != .read)
+        return .{ .illegal = "FIFO read requires RDFAST" };
     var value: u32 = 0;
     var size: u3 = 0;
     var bits: u6 = 0;
     while (size < 4) {
         const byte = cog.peek_fifo(size) orelse {
             cog.write_result(args.d, 0);
-            if (args.c_mod == .write) cog.c = false;
-            if (args.z_mod == .write) cog.z = true;
+            if (args.c_mod == .write) {
+                cog.c = false;
+            }
+            if (args.z_mod == .write) {
+                cog.z = true;
+            }
             return .next;
         };
         const last = size == 3 or byte & 0x80 == 0;
-        value |= @as(u32, if (size == 3) byte else byte & 0x7f) << @intCast(bits);
-        bits += if (size == 3) @as(u6, 8) else 7;
+        value |= @as(u32, if (size == 3)
+            byte
+        else
+            byte & 0x7f) << @intCast(bits);
+        bits += if (size == 3)
+            @as(u6, 8)
+        else
+            7;
         size += 1;
-        if (last) break;
+        if (last) {
+            break;
+        }
     }
     _ = cog.read_fifo(size).?;
     if (signed) {
@@ -87,22 +132,37 @@ fn readFifoVariable(cog: *Cog, args: encoding.Only_D_Flags, signed: bool) Cog.Ex
         value = @bitCast(@as(i32, @bitCast(value << shift)) >> shift);
     }
     cog.write_result(args.d, value);
-    if (args.c_mod == .write) cog.c = signed and value >> 31 != 0;
-    if (args.z_mod == .write) cog.z = value == 0;
+    if (args.c_mod == .write) {
+        cog.c = signed and value >> 31 != 0;
+    }
+    if (args.z_mod == .write) {
+        cog.z = value == 0;
+    }
     return .next;
 }
 
 /// Enqueue a captured value without committing it directly to hub RAM during clocked execution.
 fn writeFifo(cog: *Cog, args: encoding.Only_Dimm, size: u3) Cog.ExecResult {
-    if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
-    if (cog.fifo_state.address == null or cog.fifo_state.engine == null or cog.fifo_state.engine.?.mode != .write) return .{ .illegal = "FIFO write requires WRFAST" };
-    const state = if (cog.collecting_writes) &cog.pipeline[3].? else null;
-    const value = if (state) |instruction| instruction.fifo_write_value orelse capture: {
-        const captured = operandD(cog, args.d, args.d_imm);
-        instruction.fifo_write_value = captured;
-        break :capture captured;
-    } else operandD(cog, args.d, args.d_imm);
-    if (!cog.write_fifo(value, size)) return .wait;
+    if (cog.exec_mode == .hub)
+        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+    if (cog.fifo_state.address == null or
+        cog.fifo_state.engine == null or
+        cog.fifo_state.engine.?.mode != .write)
+        return .{ .illegal = "FIFO write requires WRFAST" };
+    const state = if (cog.collecting_writes)
+        &cog.pipeline[3].?
+    else
+        null;
+    const value = if (state) |instruction|
+        instruction.fifo_write_value orelse capture: {
+            const captured = operandD(cog, args.d, args.d_imm);
+            instruction.fifo_write_value = captured;
+            break :capture captured;
+        }
+    else
+        operandD(cog, args.d, args.d_imm);
+    if (!cog.write_fifo(value, size))
+        return .wait;
     return .next;
 }
 
@@ -111,7 +171,13 @@ fn branchA(cog: *Cog, args: encoding.AbsPointer) u20 {
     // Long relative branches encode a signed byte displacement even in cog RAM.
     const in_hub = cog.exec_mode == .hub;
     const displacement: i20 = @bitCast(args.address);
-    return if (args.relative) cog.next_pc() +% @as(u20, @bitCast(if (in_hub) displacement else displacement >> 2)) else args.address;
+    return if (args.relative)
+        cog.next_pc() +% @as(u20, @bitCast(if (in_hub)
+            displacement
+        else
+            displacement >> 2))
+    else
+        args.address;
 }
 
 /// Resolve a register or immediate branch target, retaining whether the immediate was augmented.
@@ -122,24 +188,43 @@ fn branchS(cog: *Cog, reg: Cog.Register, immediate: bool) u20 {
 
 /// Convert immediate branch displacements to the current PC units; register targets are absolute.
 fn branchValue(cog: *Cog, value: u32, immediate: bool, augmented: bool) u20 {
-    const substituted = if (cog.pipeline[3]) |state| state.s_value != null else false;
+    const substituted = if (cog.pipeline[3]) |state|
+        state.s_value != null
+    else
+        false;
     const raw: u20 = @truncate(value);
-    if (!immediate) return raw;
-    const displacement: u20 = if (augmented or substituted) raw else @bitCast(@as(i20, @as(i9, @bitCast(@as(u9, @truncate(raw))))));
-    const scale: u20 = if (cog.exec_mode == .hub) 4 else 1;
+    if (!immediate)
+        return raw;
+    const displacement: u20 = if (augmented or
+        substituted)
+        raw
+    else
+        @bitCast(@as(i20, @as(i9, @bitCast(@as(u9, @truncate(raw))))));
+    const scale: u20 = if (cog.exec_mode == .hub)
+        4
+    else
+        1;
     return cog.next_pc() +% displacement *% scale;
 }
 
 /// Update only requested C/Z flags using the result sign bit for this access width.
 fn setFlags(cog: *Cog, args: anytype, value: u32, sign_bit: u5) void {
-    if (args.c_mod == .write) cog.c = value & (@as(u32, 1) << sign_bit) != 0;
-    if (args.z_mod == .write) cog.z = value == 0;
+    if (args.c_mod == .write) {
+        cog.c = value & (@as(u32, 1) << sign_bit) != 0;
+    }
+    if (args.z_mod == .write) {
+        cog.z = value == 0;
+    }
 }
 
 /// Restore requested C/Z bits from a packed address, then branch using its low 20 bits.
 fn jumpFlags(cog: *Cog, args: anytype, value: u32) void {
-    if (args.c_mod == .write) cog.c = value >> 31 != 0;
-    if (args.z_mod == .write) cog.z = value & 0x4000_0000 != 0;
+    if (args.c_mod == .write) {
+        cog.c = value >> 31 != 0;
+    }
+    if (args.z_mod == .write) {
+        cog.z = value & 0x4000_0000 != 0;
+    }
     cog.jump(@truncate(value));
 }
 
@@ -158,10 +243,18 @@ fn pointerReg(pointer: encoding.PointerReg) Cog.Register {
 fn memoryAddress(cog: *Cog, reg: Cog.Register, immediate: bool, scale: u3, block: bool) u32 {
     const augmented = cog.augs_pending;
     const value = operandS(cog, reg, immediate);
-    if (!immediate) return value;
-    const shift: u5 = if (augmented) 15 else 0;
-    if (value & (@as(u32, 0x100) << shift) == 0) return value;
-    const pointer: Cog.Register = if (value & (@as(u32, 0x80) << shift) == 0) .PTRA else .PTRB;
+    if (!immediate)
+        return value;
+    const shift: u5 = if (augmented)
+        15
+    else
+        0;
+    if (value & (@as(u32, 0x100) << shift) == 0)
+        return value;
+    const pointer: Cog.Register = if (value & (@as(u32, 0x80) << shift) == 0)
+        .PTRA
+    else
+        .PTRB;
     const update = value & (@as(u32, 0x40) << shift) != 0;
     const post = update and value & (@as(u32, 0x20) << shift) != 0;
     var delta: i32 = if (augmented)
@@ -171,17 +264,29 @@ fn memoryAddress(cog: *Cog, reg: Cog.Register, immediate: bool, scale: u3, block
     else
         @as(i6, @bitCast(@as(u6, @truncate(value))));
     if (!augmented) {
-        if (update and delta == 0) delta = 16;
+        if (update and delta == 0) {
+            delta = 16;
+        }
         delta *= scale;
     }
     if (block and cog.block_pointer_delta) {
-        delta = if (!update) 0 else @bitCast((cog.q +% 1) *% 4);
-        if (update and value & (@as(u32, 0x10) << shift) != 0) delta = -%delta;
+        delta = if (!update)
+            0
+        else
+            @bitCast((cog.q +% 1) *% 4);
+        if (update and value & (@as(u32, 0x10) << shift) != 0) {
+            delta = -%delta;
+        }
     }
     const base = cog.read_operand(pointer);
     const adjusted = base +% @as(u32, @bitCast(delta));
-    if (update) cog.write_reg(pointer, adjusted);
-    return if (post) base else adjusted;
+    if (update) {
+        cog.write_reg(pointer, adjusted);
+    }
+    return if (post)
+        base
+    else
+        adjusted;
 }
 
 /// Start a single/block read once and consume returned beats while execution is stalled.
@@ -192,36 +297,56 @@ fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecRes
         const state = cog.pipeline[3];
         cog.memory_transfer = .{
             .address = memoryAddress(cog, args.s, args.s_imm, size, block),
-            .remaining = if (block) @as(u64, cog.q) + 1 else 1,
-            .reg = @intFromEnum(if (state) |instruction| instruction.alt_r orelse args.d else args.d),
+            .remaining = if (block)
+                @as(u64, cog.q) + 1
+            else
+                1,
+            .reg = @intFromEnum(if (state) |instruction|
+                instruction.alt_r orelse args.d
+            else
+                args.d),
             .lut = block and cog.q2,
             .block = block,
             .timed = cog.collecting_writes,
             .size = size,
             .direction = .{ .read = .{
-                .no_result = if (state) |instruction| instruction.no_result else false,
+                .no_result = if (state) |instruction|
+                    instruction.no_result
+                else
+                    false,
             } },
         };
         const transfer = &cog.memory_transfer.?;
         transfer.direction.read.grant_address = transfer.address;
         transfer.grant_at = cog.memory_grant(transfer.address);
-        transfer.direction.read.grants_left = if (transfer.timed) transfer.remaining else 0;
+        transfer.direction.read.grants_left = if (transfer.timed)
+            transfer.remaining
+        else
+            0;
         if (cog.fifo_state.initial_response and transfer.timed) {
             transfer.direction.read.value = cog.read_bus.latch;
             transfer.direction.read.grants_left = 0;
         }
     }
     const transfer = &cog.memory_transfer.?;
-    const value = if (transfer.timed) transfer.direction.read.value orelse return .wait else cog.hub.read_memory(transfer.address, size);
+    const value = if (transfer.timed)
+        transfer.direction.read.value orelse return .wait
+    else
+        cog.hub.read_memory(transfer.address, size);
     if (!transfer.direction.read.no_result) {
-        if (transfer.lut) cog.write_lut(transfer.reg, value) else if (transfer.block and transfer.reg >= 504) {
+        if (transfer.lut) {
+            cog.write_lut(transfer.reg, value);
+        } else if (transfer.block and transfer.reg >= 504) {
             cog.write_ram(transfer.reg, value);
-        } else cog.write_reg(@enumFromInt(transfer.reg), value);
+        } else {
+            cog.write_reg(@enumFromInt(transfer.reg), value);
+        }
     }
     transfer.address +%= size;
     transfer.reg +%= 1;
     transfer.remaining -= 1;
-    if (transfer.remaining != 0) return .wait;
+    if (transfer.remaining != 0)
+        return .wait;
     cog.memory_transfer = null;
     setFlags(cog, args, value, @intCast(@as(u6, size) * 8 - 1));
     return .next;
@@ -230,26 +355,41 @@ fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecRes
 /// Capture addressing and single/block write state once, then advance it through timed grants.
 fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult {
     if (cog.memory_transfer == null) {
-        const immediate = if (@hasField(@TypeOf(args), "d_imm")) args.d_imm else false;
+        const immediate = if (@hasField(@TypeOf(args), "d_imm"))
+            args.d_imm
+        else
+            false;
         const value = operandD(cog, args.d, immediate);
         const block = size == 4 and cog.setq_pending;
         cog.memory_transfer = .{
             .address = memoryAddress(cog, args.s, args.s_imm, size, block),
-            .remaining = if (block) @as(u64, cog.q) + 1 else 1,
+            .remaining = if (block)
+                @as(u64, cog.q) + 1
+            else
+                1,
             .reg = @intFromEnum(args.d),
             .lut = block and cog.q2,
             .block = block,
             .timed = cog.collecting_writes,
             .size = size,
             .direction = .{ .write = .{
-                .immediate = if (!block or (immediate and !cog.q2)) value else null,
+                .immediate = if (!block or (immediate and !cog.q2))
+                    value
+                else
+                    null,
                 .masked = masked,
-                .origin = if (cog.debug.state == .active) .debug else .application,
+                .origin = if (cog.debug.state == .active)
+                    .debug
+                else
+                    .application,
             } },
         };
         const transfer = &cog.memory_transfer.?;
         // LUT source capture adds one setup clock before the first grant.
-        transfer.grant_at = cog.memory_grant_after(transfer.address, if (transfer.lut) 3 else 2);
+        transfer.grant_at = cog.memory_grant_after(transfer.address, if (transfer.lut)
+            3
+        else
+            2);
         transfer.direction.write.ready_at = transfer.grant_at -% 1 +% @intFromBool((transfer.address & 3) + size > 4);
     }
     return progressWrite(cog, size, masked);
@@ -259,7 +399,8 @@ fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult 
 /// Retain the captured source during stalls and advance the block only after that beat is scheduled.
 fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
     const transfer = &cog.memory_transfer.?;
-    if (transfer.timed and !clock_reached(cog.hub.counter, transfer.direction.write.ready_at)) return .wait;
+    if (transfer.timed and !clock_reached(cog.hub.counter, transfer.direction.write.ready_at))
+        return .wait;
     if (transfer.timed and cog.fifo_grants(cog.hub.counter +% 1)) {
         transfer.grant_at +%= 8;
         transfer.direction.write.ready_at +%= 8;
@@ -270,9 +411,18 @@ fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
         const low_size: u3 = @intCast(@min(size, 4 - (transfer.address & 3)));
         const crossing = low_size < size;
         cog.hub_writeback = .{
-            .address = transfer.address +% (if (crossing) @as(u32, low_size) else 0),
-            .value = if (crossing) value >> @intCast(@as(u6, low_size) * 8) else value,
-            .size = if (crossing) size - low_size else size,
+            .address = transfer.address +% (if (crossing)
+                @as(u32, low_size)
+            else
+                0),
+            .value = if (crossing)
+                value >> @intCast(@as(u6, low_size) * 8)
+            else
+                value,
+            .size = if (crossing)
+                size - low_size
+            else
+                size,
             .masked = masked,
             .origin = transfer.direction.write.origin,
         };
@@ -291,7 +441,8 @@ fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
     transfer.direction.write.source_value = null;
     transfer.direction.write.ready_at +%= 1;
     transfer.grant_at +%= 1;
-    if (transfer.remaining != 0) return .wait;
+    if (transfer.remaining != 0)
+        return .wait;
     cog.memory_transfer = null;
     return .next;
 }
@@ -313,7 +464,8 @@ fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
         };
         cog.write_reg(pointer, address +% 4);
     }
-    if (progressWrite(cog, 4, false) == .wait) return .wait;
+    if (progressWrite(cog, 4, false) == .wait)
+        return .wait;
     cog.jump(target);
     return .next;
 }
@@ -330,12 +482,18 @@ fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog
             .timed = cog.collecting_writes,
             .size = 4,
             .grant_at = cog.memory_grant(address),
-            .direction = .{ .read = .{ .grant_address = address, .grants_left = if (cog.collecting_writes) 1 else 0 } },
+            .direction = .{ .read = .{ .grant_address = address, .grants_left = if (cog.collecting_writes)
+                1
+            else
+                0 } },
         };
         cog.write_reg(pointer, address);
     }
     const transfer = &cog.memory_transfer.?;
-    const value = if (transfer.timed) transfer.direction.read.value orelse return .wait else cog.hub.read_memory(transfer.address, 4);
+    const value = if (transfer.timed)
+        transfer.direction.read.value orelse return .wait
+    else
+        cog.hub.read_memory(transfer.address, 4);
     cog.memory_transfer = null;
     jumpFlags(cog, args, value);
     return .next;
@@ -345,8 +503,12 @@ fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog
 fn pollEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult {
     const occurred = cog.events.contains(event);
     cog.events.remove(event);
-    if (args.c_mod == .write) cog.c = occurred;
-    if (args.z_mod == .write) cog.z = occurred;
+    if (args.c_mod == .write) {
+        cog.c = occurred;
+    }
+    if (args.z_mod == .write) {
+        cog.z = occurred;
+    }
     return .next;
 }
 
@@ -358,7 +520,10 @@ fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult
         const delta = cog.q -% @as(u32, @truncate(cog.hub.counter));
         cog.wait_until = cog.hub.counter +% delta;
     }
-    const timeout = if (cog.wait_until) |deadline| clock_reached(cog.hub.counter, deadline) else false;
+    const timeout = if (cog.wait_until) |deadline|
+        clock_reached(cog.hub.counter, deadline)
+    else
+        false;
     if (cog.collecting_writes) {
         const state = &cog.pipeline[3].?;
         if (state.event_resume_at == null) {
@@ -368,16 +533,25 @@ fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult
             }
             // Sensor-specific wake timing belongs to the cog event subsystem.
             // An already-set event incurs no additional stall.
-            state.event_resume_at = cog.hub.counter +% @as(u64, if (state.waited_for_event) cog.event_wait_resume_clocks(event, occurred) else 0);
+            state.event_resume_at = cog.hub.counter +% @as(u64, if (state.waited_for_event)
+                cog.event_wait_resume_clocks(event, occurred)
+            else
+                0);
             state.event_result = occurred;
         }
-        if (!clock_reached(cog.hub.counter, state.event_resume_at.?)) return .wait;
+        if (!clock_reached(cog.hub.counter, state.event_resume_at.?))
+            return .wait;
         occurred = state.event_result;
-    } else if (!occurred and !timeout) return .wait;
+    } else if (!occurred and !timeout)
+        return .wait;
     cog.wait_until = null;
     cog.events.remove(event);
-    if (args.c_mod == .write) cog.c = !occurred;
-    if (args.z_mod == .write) cog.z = !occurred;
+    if (args.c_mod == .write) {
+        cog.c = !occurred;
+    }
+    if (args.z_mod == .write) {
+        cog.z = !occurred;
+    }
     return .next;
 }
 
@@ -386,7 +560,9 @@ fn branchEvent(cog: *Cog, args: encoding.Only_Simm, event: EventId, positive: bo
     const target = branchS(cog, args.s, args.s_imm);
     const occurred = cog.events.contains(event);
     cog.events.remove(event);
-    if (occurred == positive) cog.jump(target);
+    if (occurred == positive) {
+        cog.jump(target);
+    }
     return .next;
 }
 
@@ -496,10 +672,16 @@ pub fn execute_instruction(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
 /// Shared port-local field decoder for every pin mutation; reads use just D/S[5:0].
 fn pinMask(cog: *Cog, value: u32) u64 {
     const field: types.PinIndexAndCount = @bitCast(value);
-    const count: u5 = if (cog.setq_pending and !cog.q2) @truncate(cog.q) else field.count;
+    const count: u5 = if (cog.setq_pending and !cog.q2)
+        @truncate(cog.q)
+    else
+        field.count;
     const low = @as(u32, std.math.maxInt(u32)) >> (31 - count);
     const bits = std.math.rotl(u32, low, @as(u5, @truncate(field.index)));
-    return @as(u64, bits) << @as(u6, if (field.index < 32) 0 else 32);
+    return @as(u64, bits) << @as(u6, if (field.index < 32)
+        0
+    else
+        32);
 }
 
 /// Queue a semantic pin operation with its issuing cog and instruction.
@@ -510,58 +692,107 @@ fn pinCommand(cog: *Cog, mask: u64, kind: IO.CommandKind, value: u32) void {
         .value = value,
         .cog = cog.id,
         .pc = cog.dispatch_pc,
-        .instruction = if (cog.pipeline[3]) |state| state.instr else 0,
+        .instruction = if (cog.pipeline[3]) |state|
+            state.instr
+        else
+            0,
     });
 }
 
 /// Sample a pin and combine its value with the requested C/Z flags.
-fn testPin(cog: *Cog, args: encoding.Only_Dimm_Flags, inverse: bool, operation: enum { write, and_flags, or_flags, xor_flags }) Cog.ExecResult {
+fn testPin(
+    cog: *Cog,
+    args: encoding.Only_Dimm_Flags,
+    inverse: bool,
+    operation: enum { write, and_flags, or_flags, xor_flags },
+) Cog.ExecResult {
     const index: u6 = @truncate(operandD(cog, args.d, args.d_imm));
     const value = ((cog.hub.io.get_in() >> index) & 1 != 0) != inverse;
-    if (args.c_mod == .write) cog.c = switch (operation) {
-        .write => value,
-        .and_flags => cog.c and value,
-        .or_flags => cog.c or value,
-        .xor_flags => cog.c != value,
-    };
-    if (args.z_mod == .write) cog.z = switch (operation) {
-        .write => value,
-        .and_flags => cog.z and value,
-        .or_flags => cog.z or value,
-        .xor_flags => cog.z != value,
-    };
+    if (args.c_mod == .write)
+        cog.c = switch (operation) {
+            .write => value,
+            .and_flags => cog.c and value,
+            .or_flags => cog.c or value,
+            .xor_flags => cog.c != value,
+        };
+    if (args.z_mod == .write)
+        cog.z = switch (operation) {
+            .write => value,
+            .and_flags => cog.z and value,
+            .or_flags => cog.z or value,
+            .xor_flags => cog.z != value,
+        };
     return .next;
 }
 
 const PinOperation = enum { low, high, carry, not_carry, zero, not_zero, random, invert };
 
 /// Apply a named operation to a port-local pin field and return its prior base bit.
-fn modifyPins(cog: *Cog, args: encoding.Only_Dimm_Flags, family: enum { dir, out, flt, drv }, operation: PinOperation) Cog.ExecResult {
+fn modifyPins(
+    cog: *Cog,
+    args: encoding.Only_Dimm_Flags,
+    family: enum { dir, out, flt, drv },
+    operation: PinOperation,
+) Cog.ExecResult {
     const value = operandD(cog, args.d, args.d_imm);
     const index: u6 = @truncate(value);
-    const reg: Cog.Register = if (family == .dir) (if (index < 32) .DIRA else .DIRB) else (if (index < 32) .OUTA else .OUTB);
-    const mask: u32 = @truncate(pinMask(cog, value) >> @as(u6, if (index < 32) 0 else 32));
+    const reg: Cog.Register = if (family == .dir)
+        (if (index < 32)
+            .DIRA
+        else
+            .DIRB)
+    else
+        (if (index < 32)
+            .OUTA
+        else
+            .OUTB);
+    const mask: u32 = @truncate(pinMask(cog, value) >> @as(u6, if (index < 32)
+        0
+    else
+        32));
     const old = cog.read_operand(reg);
     const selected: u32 = switch (operation) {
         .low => 0,
         .high => std.math.maxInt(u32),
-        .carry => if (cog.c) std.math.maxInt(u32) else 0,
-        .not_carry => if (!cog.c) std.math.maxInt(u32) else 0,
-        .zero => if (cog.z) std.math.maxInt(u32) else 0,
-        .not_zero => if (!cog.z) std.math.maxInt(u32) else 0,
+        .carry => if (cog.c)
+            std.math.maxInt(u32)
+        else
+            0,
+        .not_carry => if (!cog.c)
+            std.math.maxInt(u32)
+        else
+            0,
+        .zero => if (cog.z)
+            std.math.maxInt(u32)
+        else
+            0,
+        .not_zero => if (!cog.z)
+            std.math.maxInt(u32)
+        else
+            0,
         .random => cog.hub.random.word(cog.id),
         .invert => ~old,
     };
     const result = (old & ~mask) | (selected & mask);
     cog.write_reg(reg, result);
     if (family == .flt or family == .drv) {
-        const dir: Cog.Register = if (index < 32) .DIRA else .DIRB;
+        const dir: Cog.Register = if (index < 32)
+            .DIRA
+        else
+            .DIRB;
         const prior = cog.read_operand(dir);
-        cog.write_reg(dir, if (family == .flt) prior & ~mask else prior | mask);
+        cog.write_reg(dir, if (family == .flt)
+            prior & ~mask
+        else
+            prior | mask);
     }
     const flag = old & (@as(u32, 1) << @as(u5, @truncate(index))) != 0;
-    if (args.c_mod == .write) cog.c = flag;
-    if (args.z_mod == .write) cog.z = flag;
+    if (args.c_mod == .write) {
+        cog.c = flag;
+    }
+    if (args.z_mod == .write) {
+        cog.z = flag;
+    }
     return .next;
 }
 
@@ -570,13 +801,18 @@ fn modifyPins(cog: *Cog, args: encoding.Only_Dimm_Flags, family: enum { dir, out
 /// Apply conditional cancellation and ALTx fields before selecting the semantic handler.
 fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
     if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) {
-        if (decode.decode(state.instr) == .brk and cog.debug.state != .active)
+        if (decode.decode(state.instr) == .brk and cog.debug.state != .active) {
             cog.breakpoint(0, false);
+        }
         return .skip;
     }
     var raw = state.instr;
-    if (state.alt_d) |reg| raw = (raw & ~@as(u32, 0x3fe00)) | (@as(u32, @intFromEnum(reg)) << 9);
-    if (state.alt_s) |reg| raw = (raw & ~@as(u32, 0x1ff)) | @intFromEnum(reg);
+    if (state.alt_d) |reg| {
+        raw = (raw & ~@as(u32, 0x3fe00)) | (@as(u32, @intFromEnum(reg)) << 9);
+    }
+    if (state.alt_s) |reg| {
+        raw = (raw & ~@as(u32, 0x1ff)) | @intFromEnum(reg);
+    }
     const opcode = decode.decode(state.instr);
 
     const enc: encoding.Instruction = .{ .raw = raw };
@@ -721,24 +957,49 @@ fn execute_alu(
 ) Cog.ExecResult {
     const Operands = @TypeOf(operands);
     const is_modcz = Operands == encoding.UpdateFlags;
-    const d_reg: ?Cog.Register = if (is_modcz) null else state.alt_d orelse operands.d;
-    const source = if (@hasField(Operands, "s")) operandS(cog, state.alt_s orelse operands.s, operands.s_imm) else 0;
+    const d_reg: ?Cog.Register = if (is_modcz)
+        null
+    else
+        state.alt_d orelse operands.d;
+    const source = if (@hasField(Operands, "s"))
+        operandS(cog, state.alt_s orelse operands.s, operands.s_imm)
+    else
+        0;
     const input: alu.Input = .{
-        .d = if (is_modcz) (state.instr >> 9) & 0x1FF else cog.read_operand(d_reg.?),
-        .s = if (@hasField(Operands, "s")) state.s_value orelse source else 0,
+        .d = if (is_modcz)
+            (state.instr >> 9) & 0x1FF
+        else
+            cog.read_operand(d_reg.?),
+        .s = if (@hasField(Operands, "s"))
+            state.s_value orelse source
+        else
+            0,
         .c = .from_bool(cog.c),
         .z = .from_bool(cog.z),
         .q = cog.q,
         .setq_prefix = cog.setq_pending and !cog.q2,
     };
-    const output = if (@hasField(Operands, "n")) function(input, operands.n) else if (@typeInfo(@TypeOf(function)).@"fn".params.len == 2) function(input, cog.hub.random.word(cog.id)) else function(input);
-    if (writes_result and !state.no_result) cog.write_result(state.alt_r orelse d_reg.?, output.result);
-    if (@hasField(Operands, "c_mod") and operands.c_mod == .write) cog.c = output.c == .set;
-    if (@hasField(Operands, "z_mod") and operands.z_mod == .write) cog.z = output.z == .set;
+    const output = if (@hasField(Operands, "n"))
+        function(input, operands.n)
+    else if (@typeInfo(@TypeOf(function)).@"fn".params.len == 2)
+        function(input, cog.hub.random.word(cog.id))
+    else
+        function(input);
+    if (writes_result and !state.no_result) {
+        cog.write_result(state.alt_r orelse d_reg.?, output.result);
+    }
+    if (@hasField(Operands, "c_mod") and operands.c_mod == .write) {
+        cog.c = output.c == .set;
+    }
+    if (@hasField(Operands, "z_mod") and operands.z_mod == .write) {
+        cog.z = output.z == .set;
+    }
     cog.q = output.q;
     if (output.next_s) |forwarded| {
         // Forward into the following instruction before its operand latch.
-        if (cog.following_instruction()) |next| next.s_value = forwarded;
+        if (cog.following_instruction()) |next| {
+            next.s_value = forwarded;
+        }
     }
     return .next;
 }
@@ -804,7 +1065,12 @@ pub fn callb_a(cog: *Cog, args: encoding.AbsPointer) Cog.ExecResult {
 /// access:      mem=None, reg=Per W, stack=None
 pub fn calld_a(cog: *Cog, args: encoding.LocStyle) Cog.ExecResult {
     // codegen: begin:calld_a
-    const target = branchA(cog, .{ .cond = args.cond, .relative = args.relative, .address = args.address, ._mask1 = 0 });
+    const target = branchA(cog, .{
+        .cond = args.cond,
+        .relative = args.relative,
+        .address = args.address,
+        ._mask1 = 0,
+    });
     const value = cog.return_address();
     cog.write_result(pointerReg(args.pointer), value);
     cog.jump(target);
@@ -860,7 +1126,8 @@ pub fn call_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 pub fn calla_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:calla_d
     const value = cog.read_operand(args.d);
-    if (callPointer(cog, .PTRA, @truncate(value)) == .wait) return .wait;
+    if (callPointer(cog, .PTRA, @truncate(value)) == .wait)
+        return .wait;
     jumpFlags(cog, args, value);
     return .next;
     // codegen: end:calla_d
@@ -876,7 +1143,8 @@ pub fn calla_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 pub fn callb_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:callb_d
     const value = cog.read_operand(args.d);
-    if (callPointer(cog, .PTRB, @truncate(value)) == .wait) return .wait;
+    if (callPointer(cog, .PTRB, @truncate(value)) == .wait)
+        return .wait;
     jumpFlags(cog, args, value);
     return .next;
     // codegen: end:callb_d
@@ -932,7 +1200,10 @@ pub fn jmp_d(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 pub fn jmprel(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:jmprel
     const offset: u20 = @truncate(operandD(cog, args.d, args.d_imm));
-    const scale: u20 = if (cog.exec_mode == .hub) 4 else 1;
+    const scale: u20 = if (cog.exec_mode == .hub)
+        4
+    else
+        1;
     cog.jump(cog.next_pc() +% offset *% scale);
     return .next;
     // codegen: end:jmprel
@@ -1009,8 +1280,12 @@ pub fn ret(cog: *Cog, args: encoding.OnlyFlags) Cog.ExecResult {
     // codegen: begin:ret
     const value = cog.pop();
     cog.return_skip();
-    if (args.c_mod == .write) cog.c = value >> 31 != 0;
-    if (args.z_mod == .write) cog.z = value & 0x4000_0000 != 0;
+    if (args.c_mod == .write) {
+        cog.c = value >> 31 != 0;
+    }
+    if (args.z_mod == .write) {
+        cog.z = value & 0x4000_0000 != 0;
+    }
     cog.jump(@truncate(value));
     return .next;
     // codegen: end:ret
@@ -1060,8 +1335,12 @@ pub fn calld_s(cog: *Cog, args: encoding.Both_D_Simm_Flags) Cog.ExecResult {
     const target = branchValue(cog, source, args.s_imm, augmented);
     const value = cog.return_address();
     cog.write_result(args.d, value);
-    if (args.c_mod == .write) cog.c = source >> 31 != 0;
-    if (args.z_mod == .write) cog.z = source & 0x4000_0000 != 0;
+    if (args.c_mod == .write) {
+        cog.c = source >> 31 != 0;
+    }
+    if (args.z_mod == .write) {
+        cog.z = source & 0x4000_0000 != 0;
+    }
     cog.complete_interrupt(args.s, args.s_imm, args.c_mod == .write and args.z_mod == .write);
     if (!cog.return_debug(args.s, args.s_imm, args.c_mod == .write and args.z_mod == .write, target))
         cog.jump(target);
@@ -1120,7 +1399,9 @@ pub fn djz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     const value = cog.read_operand(args.d) -% 1;
     const target = branchS(cog, args.s, args.s_imm);
     cog.write_result(args.d, value);
-    if (value == 0) cog.jump(target);
+    if (value == 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:djz
 }
@@ -1137,7 +1418,9 @@ pub fn djnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     const value = cog.read_operand(args.d) -% 1;
     const target = branchS(cog, args.s, args.s_imm);
     cog.write_result(args.d, value);
-    if (value != 0) cog.jump(target);
+    if (value != 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:djnz
 }
@@ -1154,7 +1437,9 @@ pub fn djf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     const value = cog.read_operand(args.d) -% 1;
     const target = branchS(cog, args.s, args.s_imm);
     cog.write_result(args.d, value);
-    if (value == 0xffffffff) cog.jump(target);
+    if (value == 0xffffffff) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:djf
 }
@@ -1171,7 +1456,9 @@ pub fn djnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     const value = cog.read_operand(args.d) -% 1;
     const target = branchS(cog, args.s, args.s_imm);
     cog.write_result(args.d, value);
-    if (value != 0xffffffff) cog.jump(target);
+    if (value != 0xffffffff) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:djnf
 }
@@ -1188,7 +1475,9 @@ pub fn ijz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     const value = cog.read_operand(args.d) +% 1;
     const target = branchS(cog, args.s, args.s_imm);
     cog.write_result(args.d, value);
-    if (value == 0) cog.jump(target);
+    if (value == 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:ijz
 }
@@ -1205,7 +1494,9 @@ pub fn ijnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     const value = cog.read_operand(args.d) +% 1;
     const target = branchS(cog, args.s, args.s_imm);
     cog.write_result(args.d, value);
-    if (value != 0) cog.jump(target);
+    if (value != 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:ijnz
 }
@@ -1225,7 +1516,9 @@ pub fn tjz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjz
     const value = cog.read_operand(args.d);
     const target = branchS(cog, args.s, args.s_imm);
-    if (value == 0) cog.jump(target);
+    if (value == 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:tjz
 }
@@ -1241,7 +1534,9 @@ pub fn tjnz(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjnz
     const value = cog.read_operand(args.d);
     const target = branchS(cog, args.s, args.s_imm);
-    if (value != 0) cog.jump(target);
+    if (value != 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:tjnz
 }
@@ -1257,7 +1552,9 @@ pub fn tjf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjf
     const value = cog.read_operand(args.d);
     const target = branchS(cog, args.s, args.s_imm);
-    if (value == 0xffffffff) cog.jump(target);
+    if (value == 0xffffffff) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:tjf
 }
@@ -1273,7 +1570,9 @@ pub fn tjnf(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjnf
     const value = cog.read_operand(args.d);
     const target = branchS(cog, args.s, args.s_imm);
-    if (value != 0xffffffff) cog.jump(target);
+    if (value != 0xffffffff) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:tjnf
 }
@@ -1289,7 +1588,9 @@ pub fn tjs(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjs
     const value = cog.read_operand(args.d);
     const target = branchS(cog, args.s, args.s_imm);
-    if (value >> 31 != 0) cog.jump(target);
+    if (value >> 31 != 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:tjs
 }
@@ -1305,7 +1606,9 @@ pub fn tjns(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjns
     const value = cog.read_operand(args.d);
     const target = branchS(cog, args.s, args.s_imm);
-    if (value >> 31 == 0) cog.jump(target);
+    if (value >> 31 == 0) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:tjns
 }
@@ -1321,7 +1624,9 @@ pub fn tjv(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     // codegen: begin:tjv
     const value = cog.read_operand(args.d);
     const target = branchS(cog, args.s, args.s_imm);
-    if ((value >> 31 != 0) != cog.c) cog.jump(target);
+    if ((value >> 31 != 0) != cog.c) {
+        cog.jump(target);
+    }
     return .next;
     // codegen: end:tjv
 }
@@ -2542,10 +2847,16 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
     const ptra = cog.q;
     var selected: ?u3 = null;
     const pair = d & 0x10 != 0 and d & 1 != 0;
-    if (d & 0x10 == 0) selected = @truncate(d) else {
+    if (d & 0x10 == 0) {
+        selected = @truncate(d);
+    } else {
         for (0..8) |index| {
-            if (pair and index & 1 != 0) continue;
-            if (cog.hub.cogs[index].exec_mode == .stopped and (!pair or cog.hub.cogs[index + 1].exec_mode == .stopped)) {
+            if (pair and index & 1 != 0)
+                continue;
+            if (cog.hub.cogs[index].exec_mode == .stopped and
+                (!pair or
+                    cog.hub.cogs[index + 1].exec_mode == .stopped))
+            {
                 selected = @intCast(index);
                 break;
             }
@@ -2553,21 +2864,44 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
     }
     if (args.c_mod == .write) {
         cog.c = selected == null;
-        if (!args.d_imm) cog.write_result(args.d, if (selected) |id| @as(u32, id) else 15);
+        if (!args.d_imm) {
+            cog.write_result(args.d, if (selected) |id|
+                @as(u32, id)
+            else
+                15);
+        }
     }
     if (selected) |id| {
         const hub = cog.hub;
         if (id == cog.id and cog.collecting_writes) {
             // Self restart takes effect after the next ordinary instruction's
             // writeback. The new startup remains timed from the command grant.
-            hub.pending_starts[id] = .{ .at = hub.counter +% 3, .address = source, .ptra = ptra, .load = d & 0x20 == 0, .command_clock = hub.counter };
+            hub.pending_starts[id] = .{
+                .at = hub.counter +% 3,
+                .address = source,
+                .ptra = ptra,
+                .load = d & 0x20 == 0,
+                .command_clock = hub.counter,
+            };
         } else {
-            hub.start_cog(id, .{ .hub_address = source, .ptra = ptra, .load_image = d & 0x20 == 0, .clocked = cog.collecting_writes }) catch return .trap;
+            hub.start_cog(id, .{
+                .hub_address = source,
+                .ptra = ptra,
+                .load_image = d & 0x20 == 0,
+                .clocked = cog.collecting_writes,
+            }) catch return .trap;
         }
         if (pair) {
-            hub.start_cog(id + 1, .{ .hub_address = source, .ptra = ptra, .load_image = d & 0x20 == 0, .clocked = cog.collecting_writes }) catch return .trap;
+            hub.start_cog(id + 1, .{
+                .hub_address = source,
+                .ptra = ptra,
+                .load_image = d & 0x20 == 0,
+                .clocked = cog.collecting_writes,
+            }) catch return .trap;
         }
-        if (id == cog.id) cog.branched = true;
+        if (id == cog.id) {
+            cog.branched = true;
+        }
     }
     return .next;
     // codegen: end:coginit
@@ -2646,12 +2980,16 @@ pub fn locknew(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
         if (!lock.allocated) {
             lock.allocated = true;
             cog.write_result(args.d, lock.id);
-            if (args.c_mod == .write) cog.c = false;
+            if (args.c_mod == .write) {
+                cog.c = false;
+            }
             return .next;
         }
     }
     cog.write_result(args.d, 15);
-    if (args.c_mod == .write) cog.c = true;
+    if (args.c_mod == .write) {
+        cog.c = true;
+    }
     return .next;
     // codegen: end:locknew
 }
@@ -2667,7 +3005,9 @@ pub fn lockret(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:lockret
     const id: u4 = @truncate(operandD(cog, args.d, args.d_imm));
     cog.hub.locks[id].allocated = false;
-    if (cog.hub.locks[id].taken) cog.hub.release_lock(&cog.hub.locks[id]);
+    if (cog.hub.locks[id].taken) {
+        cog.hub.release_lock(&cog.hub.locks[id]);
+    }
     return .next;
     // codegen: end:lockret
 }
@@ -2689,7 +3029,9 @@ pub fn locktry(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
         lock.owner = cog.id;
         cog.hub.signal_lock(id, true);
     }
-    if (args.c_mod == .write) cog.c = success;
+    if (args.c_mod == .write) {
+        cog.c = success;
+    }
     return .next;
     // codegen: end:locktry
 }
@@ -2707,9 +3049,13 @@ pub fn lockrel(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
     const lock = &cog.hub.locks[id];
     if (args.c_mod == .write) {
         cog.c = lock.taken;
-        if (!args.d_imm) cog.write_result(args.d, lock.owner);
+        if (!args.d_imm) {
+            cog.write_result(args.d, lock.owner);
+        }
     }
-    if (lock.taken and lock.owner == cog.id) cog.hub.release_lock(lock);
+    if (lock.taken and lock.owner == cog.id) {
+        cog.hub.release_lock(lock);
+    }
     return .next;
     // codegen: end:lockrel
 }
@@ -2745,7 +3091,10 @@ pub fn hubset(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn getptr(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // codegen: begin:getptr
-    cog.write_result(args.d, if (cog.exec_mode == .hub) cog.dispatch_pc +% 4 else cog.fifo_state.address orelse 0);
+    cog.write_result(args.d, if (cog.exec_mode == .hub)
+        cog.dispatch_pc +% 4
+    else
+        cog.fifo_state.address orelse 0);
     return .next;
     // codegen: end:getptr
 }
@@ -2763,7 +3112,8 @@ pub fn getptr(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn fblock(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:fblock
-    if (cog.exec_mode == .hub) return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+    if (cog.exec_mode == .hub)
+        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
     cog.fifo_block(operandD(cog, args.d, args.d_imm), operandS(cog, args.s, args.s_imm));
     return .next;
     // codegen: end:fblock
@@ -3190,7 +3540,10 @@ pub fn setint3(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 pub fn getbrk(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getbrk
     const value: u32 = if (args.c_mod == .write and args.z_mod == .write) blk: {
-        cog.c = if (cog.debug.state == .active) cog.debug.coginit else cog.interrupts.stalled;
+        cog.c = if (cog.debug.state == .active)
+            cog.debug.coginit
+        else
+            cog.interrupts.stalled;
         cog.z = cog.started_no_load;
         break :blk cog.interrupt_status();
     } else if (args.c_mod == .write) blk: {
@@ -3332,7 +3685,10 @@ pub fn nop(cog: *Cog, args: encoding.Nop) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn getct(cog: *Cog, args: encoding.Only_D_CFlag) Cog.ExecResult {
     // codegen: begin:getct
-    const value: u32 = if (args.c_mod == .write) @truncate(cog.hub.counter >> 32) else @truncate(cog.hub.counter);
+    const value: u32 = if (args.c_mod == .write)
+        @truncate(cog.hub.counter >> 32)
+    else
+        @truncate(cog.hub.counter);
     cog.write_result(args.d, value);
     return .next;
     // codegen: end:getct
@@ -3349,9 +3705,15 @@ pub fn getrnd(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:getrnd
     const value = cog.hub.random.word(cog.id);
     // Bit 18 selects the flags-only encoding and suppresses the D write.
-    if (args._mask2 == 0) cog.write_result(args.d, value);
-    if (args.c_mod == .write) cog.c = value >> 31 != 0;
-    if (args.z_mod == .write) cog.z = value & 0x4000_0000 != 0;
+    if (args._mask2 == 0) {
+        cog.write_result(args.d, value);
+    }
+    if (args.c_mod == .write) {
+        cog.c = value >> 31 != 0;
+    }
+    if (args.z_mod == .write) {
+        cog.z = value & 0x4000_0000 != 0;
+    }
     return .next;
     // codegen: end:getrnd
 }
@@ -3367,13 +3729,20 @@ pub fn waitx(cog: *Cog, args: encoding.Only_Dimm_Flags) Cog.ExecResult {
     // codegen: begin:waitx
     if (cog.wait_until == null) {
         var delay = operandD(cog, args.d, args.d_imm);
-        if (args.c_mod == .write or args.z_mod == .write) delay &= cog.hub.random.word(cog.id);
+        if (args.c_mod == .write or args.z_mod == .write) {
+            delay &= cog.hub.random.word(cog.id);
+        }
         cog.wait_until = cog.hub.counter +% delay;
     }
-    if (!clock_reached(cog.hub.counter, cog.wait_until.?)) return .wait;
+    if (!clock_reached(cog.hub.counter, cog.wait_until.?))
+        return .wait;
     cog.wait_until = null;
-    if (args.c_mod == .write) cog.c = false;
-    if (args.z_mod == .write) cog.z = false;
+    if (args.c_mod == .write) {
+        cog.c = false;
+    }
+    if (args.z_mod == .write) {
+        cog.z = false;
+    }
     return .next;
     // codegen: end:waitx
 }
@@ -3437,8 +3806,12 @@ pub fn pop(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
     // codegen: begin:pop
     const value = cog.pop();
     cog.write_result(args.d, value);
-    if (args.c_mod == .write) cog.c = value >> 31 != 0;
-    if (args.z_mod == .write) cog.z = value == 0;
+    if (args.c_mod == .write) {
+        cog.c = value >> 31 != 0;
+    }
+    if (args.z_mod == .write) {
+        cog.z = value == 0;
+    }
     return .next;
     // codegen: end:pop
 }
@@ -4236,15 +4609,27 @@ pub fn alti(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
     cog.augs_pending = pending;
     const rmode = (mode >> 6) & 7;
     if (cog.following_instruction()) |next| {
-        if (rmode == 1) next.no_result = true;
+        if (rmode == 1) {
+            next.no_result = true;
+        }
         if (rmode == 5) {
             next.instr = (next.instr & 0x3ffff) | (d & 0xfffc0000);
-            if (mode & 0x20 != 0) next.instr = (next.instr & ~@as(u32, 0x3fe00)) | (d & 0x3fe00);
-            if (mode & 4 != 0) next.instr = (next.instr & ~@as(u32, 0x1ff)) | (d & 0x1ff);
+            if (mode & 0x20 != 0) {
+                next.instr = (next.instr & ~@as(u32, 0x3fe00)) | (d & 0x3fe00);
+            }
+            if (mode & 4 != 0) {
+                next.instr = (next.instr & ~@as(u32, 0x1ff)) | (d & 0x1ff);
+            }
         } else {
-            if (rmode & 4 != 0) next.alt_r = @enumFromInt(@as(u9, @truncate(d >> 19)));
-            if (mode & 0x20 != 0) next.alt_d = @enumFromInt(@as(u9, @truncate(d >> 9)));
-            if (mode & 4 != 0) next.alt_s = @enumFromInt(@as(u9, @truncate(d)));
+            if (rmode & 4 != 0) {
+                next.alt_r = @enumFromInt(@as(u9, @truncate(d >> 19)));
+            }
+            if (mode & 0x20 != 0) {
+                next.alt_d = @enumFromInt(@as(u9, @truncate(d >> 9)));
+            }
+            if (mode & 4 != 0) {
+                next.alt_s = @enumFromInt(@as(u9, @truncate(d)));
+            }
         }
     }
     var value = d;
@@ -4254,7 +4639,10 @@ pub fn alti(cog: *Cog, args: encoding.Both_D_Simm) Cog.ExecResult {
             const width: u5 = @intCast(9 - ((mode >> (field[1] + 9)) & 7));
             const mask = ((@as(u32, 1) << width) - 1) << field[0];
             const delta: u32 = @as(u32, 1) << field[0];
-            const modified = if (control & 1 != 0) d +% delta else d -% delta;
+            const modified = if (control & 1 != 0)
+                d +% delta
+            else
+                d -% delta;
             value = (value & ~mask) | (modified & mask);
         }
     }
@@ -4279,7 +4667,9 @@ pub fn rqpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
     const index: u6 = @truncate(operandS(cog, args.s, args.s_imm));
     const result = cog.hub.io.readResult(@enumFromInt(index), cog.hub.counter);
     cog.write_result(args.d, result.value);
-    if (args.c_mod == .write) cog.c = result.flag;
+    if (args.c_mod == .write) {
+        cog.c = result.flag;
+    }
     return .next;
     // codegen: end:rqpin
 }
@@ -4296,7 +4686,9 @@ pub fn rdpin(cog: *Cog, args: encoding.Both_D_Simm_CFlag) Cog.ExecResult {
     const index: u6 = @truncate(operandS(cog, args.s, args.s_imm));
     const result = cog.hub.io.readResult(@enumFromInt(index), cog.hub.counter);
     cog.write_result(args.d, result.value);
-    if (args.c_mod == .write) cog.c = result.flag;
+    if (args.c_mod == .write) {
+        cog.c = result.flag;
+    }
     pinCommand(cog, @as(u64, 1) << index, .acknowledge, 1);
     return .next;
     // codegen: end:rdpin
@@ -4313,8 +4705,12 @@ pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrpin
     const value = operandD(cog, args.d, args.d_imm);
     const field = operandS(cog, args.s, args.s_imm);
-    if (!IO.supported(value)) return .not_implemented;
-    pinCommand(cog, pinMask(cog, field), if (value & 1 != 0) .acknowledge else .configure, value);
+    if (!IO.supported(value))
+        return .not_implemented;
+    pinCommand(cog, pinMask(cog, field), if (value & 1 != 0)
+        .acknowledge
+    else
+        .configure, value);
     return .next;
     // codegen: end:wrpin
 }
@@ -4487,6 +4883,7 @@ test "HUBSET delegates shared configuration and completes unsupported values" {
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     const args: encoding.Only_Dimm = .{ ._mask1 = 0, .d = @enumFromInt(24), .d_imm = false, ._mask2 = 0, .cond = .IF_ALWAYS };
@@ -4511,36 +4908,44 @@ test "local relative JMP and CALL use nonlinear fallthrough and cancel without s
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
-    for ([_]bool{ false, true }) |is_call| for ([_]i20{ -11, -9, 1, 3, 5, 7 }) |delta| {
-        hub.init();
-        const cog = &hub.cogs[0];
-        cog.exec_mode = .cog;
-        cog.pc = 0x130;
-        cog.c = true;
-        cog.z = false;
-        const word: u32 = (if (is_call) @as(u32, 0xFDB0_0000) else 0xFD90_0000) | @as(u20, @bitCast(delta));
-        // A prepared REP wrap or SKIPF step may differ from both the dispatch PC and current fetch PC.
-        cog.pipeline[3] = .{ .pc = 0x110, .instr = word, .next_pc = 0x120 };
-        cog.dispatch_pc = 0x110;
-        try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, cog.pipeline[3].?));
-        try std.testing.expectEqual(@as(u20, @bitCast(@as(i20, 0x120) + (delta >> 2))), cog.pc);
-        try std.testing.expect(cog.c and !cog.z);
-        if (is_call) try std.testing.expectEqual(@as(u32, 0x8000_0120), cog.stack[0]);
 
-        hub.init();
-        const canceled = &hub.cogs[0];
-        canceled.exec_mode = .cog;
-        canceled.pc = 0x130;
-        canceled.c = false;
-        canceled.z = true;
-        const conditional_word = (word & 0x0fff_ffff) | 0xC000_0000; // IF_C.
-        canceled.pipeline[3] = .{ .pc = 0x110, .instr = conditional_word, .next_pc = 0x120 };
-        canceled.dispatch_pc = 0x110;
-        try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(canceled, canceled.pipeline[3].?));
-        try std.testing.expectEqual(@as(u20, 0x130), canceled.pc);
-        try std.testing.expectEqual(@as(u32, 0), canceled.stack[0]);
-        try std.testing.expect(!canceled.c and canceled.z);
-    };
+    for ([_]bool{ false, true }) |is_call| {
+        for ([_]i20{ -11, -9, 1, 3, 5, 7 }) |delta| {
+            hub.init();
+            const cog = &hub.cogs[0];
+            cog.exec_mode = .cog;
+            cog.pc = 0x130;
+            cog.c = true;
+            cog.z = false;
+            const word: u32 = (if (is_call)
+                @as(u32, 0xFDB0_0000)
+            else
+                0xFD90_0000) | @as(u20, @bitCast(delta));
+            // A prepared REP wrap or SKIPF step may differ from both the dispatch PC and current fetch PC.
+            cog.pipeline[3] = .{ .pc = 0x110, .instr = word, .next_pc = 0x120 };
+            cog.dispatch_pc = 0x110;
+            try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, cog.pipeline[3].?));
+            try std.testing.expectEqual(@as(u20, @bitCast(@as(i20, 0x120) + (delta >> 2))), cog.pc);
+            try std.testing.expect(cog.c and !cog.z);
+            if (is_call) {
+                try std.testing.expectEqual(@as(u32, 0x8000_0120), cog.stack[0]);
+            }
+
+            hub.init();
+            const canceled = &hub.cogs[0];
+            canceled.exec_mode = .cog;
+            canceled.pc = 0x130;
+            canceled.c = false;
+            canceled.z = true;
+            const conditional_word = (word & 0x0fff_ffff) | 0xC000_0000; // IF_C.
+            canceled.pipeline[3] = .{ .pc = 0x110, .instr = conditional_word, .next_pc = 0x120 };
+            canceled.dispatch_pc = 0x110;
+            try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(canceled, canceled.pipeline[3].?));
+            try std.testing.expectEqual(@as(u20, 0x130), canceled.pc);
+            try std.testing.expectEqual(@as(u32, 0), canceled.stack[0]);
+            try std.testing.expect(!canceled.c and canceled.z);
+        }
+    }
 }
 
 test "all ALU opcodes delegate to libp2" {
@@ -4663,94 +5068,133 @@ test "all ALU opcodes delegate to libp2" {
 test "random consumers share the current cog word and wait samples only once" {
     const hub = try std.testing.allocator.create(hub_module);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
-    for (&hub.cogs) |*cog| for (0..8) |phase| {
-        hub.step();
-        hub.counter = 100 + phase;
-        const value = hub.random.word(cog.id);
-        for (0..4) |flags| for ([_]bool{ false, true }) |flags_only| {
-            cog.c = true;
-            cog.z = true;
-            const destination: Cog.Register = @enumFromInt(if (flags_only) @as(u9, 0) else 24);
-            cog.write_reg(destination, 0xdead_beef);
-            const instruction = (if (flags_only) @as(u32, 0xfd64_001b) else 0xfd60_301b) |
-                (@as(u32, @intCast(flags)) << 19);
-            try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
-            try std.testing.expectEqual(if (flags_only) @as(u32, 0xdead_beef) else value, cog.read_reg(destination));
-            try std.testing.expectEqual(if (flags & 2 != 0) value >> 31 != 0 else true, cog.c);
-            try std.testing.expectEqual(if (flags & 1 != 0) value & 0x4000_0000 != 0 else true, cog.z);
-        };
-        cog.write_reg(@enumFromInt(24), 0xffff_ffff);
-        cog.q = 31;
-        cog.setq_pending = true;
-        // A full-width BITRND must use the same word as GETRND on this edge.
-        try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = 0xf4c0_31e0 }));
-        try std.testing.expectEqual(value, cog.read_reg(@enumFromInt(24)));
-        for (1..4) |flags| {
-            cog.c = true;
-            cog.z = true;
-            const start: u64 = std.math.maxInt(u64) - 3;
-            hub.counter = start;
-            const delay = hub.random.word(cog.id) & 31;
-            const instruction = 0xfd64_3e1f | (@as(u32, @intCast(flags)) << 19);
-            const result = execute_instruction(cog, .{ .pc = 0, .instr = instruction });
-            if (delay != 0) {
-                try std.testing.expectEqual(Cog.ExecResult.wait, result);
-                try std.testing.expectEqual(start +% delay, cog.wait_until.?);
-                hub.random.step(); // An unrelated clock must not resample an in-flight WAITX.
-                hub.counter = start +% delay -% 1;
-                try std.testing.expectEqual(Cog.ExecResult.wait, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
-                try std.testing.expectEqual(start +% delay, cog.wait_until.?);
-                hub.counter +%= 1;
-                try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
-            } else try std.testing.expectEqual(Cog.ExecResult.next, result);
-            try std.testing.expect(cog.wait_until == null);
-            try std.testing.expectEqual(flags & 2 == 0, cog.c);
-            try std.testing.expectEqual(flags & 1 == 0, cog.z);
+    for (&hub.cogs) |*cog| {
+        for (0..8) |phase| {
+            hub.step();
+            hub.counter = 100 + phase;
+            const value = hub.random.word(cog.id);
+            for (0..4) |flags| {
+                for ([_]bool{ false, true }) |flags_only| {
+                    cog.c = true;
+                    cog.z = true;
+                    const destination: Cog.Register = @enumFromInt(if (flags_only)
+                        @as(u9, 0)
+                    else
+                        24);
+                    cog.write_reg(destination, 0xdead_beef);
+                    const instruction = (if (flags_only)
+                        @as(u32, 0xfd64_001b)
+                    else
+                        0xfd60_301b) |
+                        (@as(u32, @intCast(flags)) << 19);
+                    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
+                    try std.testing.expectEqual(if (flags_only)
+                        @as(u32, 0xdead_beef)
+                    else
+                        value, cog.read_reg(destination));
+                    try std.testing.expectEqual(if (flags & 2 != 0)
+                        value >> 31 != 0
+                    else
+                        true, cog.c);
+                    try std.testing.expectEqual(if (flags & 1 != 0)
+                        value & 0x4000_0000 != 0
+                    else
+                        true, cog.z);
+                }
+            }
+            cog.write_reg(@enumFromInt(24), 0xffff_ffff);
+            cog.q = 31;
+            cog.setq_pending = true;
+            // A full-width BITRND must use the same word as GETRND on this edge.
+            try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = 0xf4c0_31e0 }));
+            try std.testing.expectEqual(value, cog.read_reg(@enumFromInt(24)));
+            for (1..4) |flags| {
+                cog.c = true;
+                cog.z = true;
+                const start: u64 = std.math.maxInt(u64) - 3;
+                hub.counter = start;
+                const delay = hub.random.word(cog.id) & 31;
+                const instruction = 0xfd64_3e1f | (@as(u32, @intCast(flags)) << 19);
+                const result = execute_instruction(cog, .{ .pc = 0, .instr = instruction });
+                if (delay != 0) {
+                    try std.testing.expectEqual(Cog.ExecResult.wait, result);
+                    try std.testing.expectEqual(start +% delay, cog.wait_until.?);
+                    hub.random.step(); // An unrelated clock must not resample an in-flight WAITX.
+                    hub.counter = start +% delay -% 1;
+                    try std.testing.expectEqual(Cog.ExecResult.wait, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
+                    try std.testing.expectEqual(start +% delay, cog.wait_until.?);
+                    hub.counter +%= 1;
+                    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
+                } else {
+                    try std.testing.expectEqual(Cog.ExecResult.next, result);
+                }
+                try std.testing.expect(cog.wait_until == null);
+                try std.testing.expectEqual(flags & 2 == 0, cog.c);
+                try std.testing.expectEqual(flags & 1 == 0, cog.z);
+            }
         }
-    };
+    }
 }
 
 test "all event polls and waits consume only their selected latch and honor flag writes" {
     const hub = try std.testing.allocator.create(hub_module);
     defer std.testing.allocator.destroy(hub);
+
     for (std.enums.values(EventId)) |event| {
         for ([_]bool{ false, true }) |waiting| {
             // The last event has poll/branch instructions, but no wait encoding.
-            if (waiting and @intFromEnum(event) == std.enums.values(EventId).len - 1) continue;
-            for (0..4) |flags| for (0..4) |seed| for ([_]bool{ false, true }) |active| {
-                hub.init();
-                const cog = &hub.cogs[0];
-                cog.events = .full;
-                cog.events.setPresent(event, active);
-                cog.c = seed & 2 != 0;
-                cog.z = seed & 1 != 0;
-                if (waiting) {
-                    cog.q = 0;
-                    cog.setq_pending = true;
-                    if (event == .INT and active) cog.trigger_interrupt(.int1);
-                }
-                const instruction = @as(u32, 0xFD60_0024) | (@as(u32, @intFromEnum(event)) << 9) |
-                    (@as(u32, @intFromBool(waiting)) << 13) | (@as(u32, @intCast(flags)) << 19);
-                try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
-                var remaining = Cog.EventSet.full;
-                remaining.remove(event);
-                try std.testing.expect(cog.events.eql(remaining));
-                const result = if (waiting) !active else active;
-                try std.testing.expectEqual(if (flags & 2 != 0) result else seed & 2 != 0, cog.c);
-                try std.testing.expectEqual(if (flags & 1 != 0) result else seed & 1 != 0, cog.z);
-                try std.testing.expect(!cog.setq_pending);
+            if (waiting and @intFromEnum(event) == std.enums.values(EventId).len - 1)
+                continue;
+            for (0..4) |flags| {
+                for (0..4) |seed| {
+                    for ([_]bool{ false, true }) |active| {
+                        hub.init();
+                        const cog = &hub.cogs[0];
+                        cog.events = .full;
+                        cog.events.setPresent(event, active);
+                        cog.c = seed & 2 != 0;
+                        cog.z = seed & 1 != 0;
+                        if (waiting) {
+                            cog.q = 0;
+                            cog.setq_pending = true;
+                            if (event == .INT and active) {
+                                cog.trigger_interrupt(.int1);
+                            }
+                        }
+                        const instruction = @as(u32, 0xFD60_0024) | (@as(u32, @intFromEnum(event)) << 9) |
+                            (@as(u32, @intFromBool(waiting)) << 13) | (@as(u32, @intCast(flags)) << 19);
+                        try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
+                        var remaining = Cog.EventSet.full;
+                        remaining.remove(event);
+                        try std.testing.expect(cog.events.eql(remaining));
+                        const result = if (waiting)
+                            !active
+                        else
+                            active;
+                        try std.testing.expectEqual(if (flags & 2 != 0)
+                            result
+                        else
+                            seed & 2 != 0, cog.c);
+                        try std.testing.expectEqual(if (flags & 1 != 0)
+                            result
+                        else
+                            seed & 1 != 0, cog.z);
+                        try std.testing.expect(!cog.setq_pending);
 
-                // A canceled instruction must leave the selected event and flags untouched.
-                cog.events = .full;
-                cog.c = true;
-                cog.z = false;
-                const canceled = (instruction & 0x0fff_ffff) | 0xA000_0000; // IF_Z.
-                try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(cog, .{ .pc = 0, .instr = canceled }));
-                try std.testing.expect(cog.events.eql(.full));
-                try std.testing.expect(cog.c and !cog.z);
-                try std.testing.expect(cog.wait_until == null);
-            };
+                        // A canceled instruction must leave the selected event and flags untouched.
+                        cog.events = .full;
+                        cog.c = true;
+                        cog.z = false;
+                        const canceled = (instruction & 0x0fff_ffff) | 0xA000_0000; // IF_Z.
+                        try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(cog, .{ .pc = 0, .instr = canceled }));
+                        try std.testing.expect(cog.events.eql(.full));
+                        try std.testing.expect(cog.c and !cog.z);
+                        try std.testing.expect(cog.wait_until == null);
+                    }
+                }
+            }
         }
     }
 }
@@ -4758,93 +5202,122 @@ test "all event polls and waits consume only their selected latch and honor flag
 test "all event branch polarities consume the latch with immediate and register targets" {
     const hub = try std.testing.allocator.create(hub_module);
     defer std.testing.allocator.destroy(hub);
-    for (std.enums.values(EventId)) |event| {
-        for ([_]bool{ false, true }) |positive| for ([_]bool{ false, true }) |active| for ([_]bool{ false, true }) |immediate| {
-            hub.init();
-            const cog = &hub.cogs[0];
-            cog.exec_mode = .cog;
-            cog.pc = 7;
-            cog.c = true;
-            cog.events = .full;
-            cog.events.setPresent(event, active);
-            cog.write_reg(@enumFromInt(42), 123);
-            const selector = @as(u32, @intFromEnum(event)) | (if (positive) @as(u32, 0) else 16);
-            const instruction = @as(u32, 0xFBC8_002A) | (selector << 9) | (@as(u32, @intFromBool(immediate)) << 18);
-            try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
-            try std.testing.expectEqual(active == positive, cog.branched);
-            try std.testing.expectEqual(@as(u20, if (active == positive) (if (immediate) 43 else 123) else 7), cog.pc);
-            try std.testing.expect(cog.c and !cog.z);
-            var remaining = Cog.EventSet.full;
-            remaining.remove(event);
-            try std.testing.expect(cog.events.eql(remaining));
 
-            cog.events = .full;
-            cog.branched = false;
-            const canceled = (instruction & 0x0fff_ffff) | 0xA000_0000; // IF_Z.
-            try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(cog, .{ .pc = 0, .instr = canceled }));
-            try std.testing.expect(cog.events.eql(.full));
-            try std.testing.expect(!cog.branched);
-        };
+    for (std.enums.values(EventId)) |event| {
+        for ([_]bool{ false, true }) |positive| {
+            for ([_]bool{ false, true }) |active| {
+                for ([_]bool{ false, true }) |immediate| {
+                    hub.init();
+                    const cog = &hub.cogs[0];
+                    cog.exec_mode = .cog;
+                    cog.pc = 7;
+                    cog.c = true;
+                    cog.events = .full;
+                    cog.events.setPresent(event, active);
+                    cog.write_reg(@enumFromInt(42), 123);
+                    const selector = @as(u32, @intFromEnum(event)) | (if (positive)
+                        @as(u32, 0)
+                    else
+                        16);
+                    const instruction = @as(u32, 0xFBC8_002A) | (selector << 9) | (@as(u32, @intFromBool(immediate)) << 18);
+                    try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
+                    try std.testing.expectEqual(active == positive, cog.branched);
+                    try std.testing.expectEqual(@as(u20, if (active == positive)
+                        (if (immediate)
+                            43
+                        else
+                            123)
+                    else
+                        7), cog.pc);
+                    try std.testing.expect(cog.c and !cog.z);
+                    var remaining = Cog.EventSet.full;
+                    remaining.remove(event);
+                    try std.testing.expect(cog.events.eql(remaining));
+
+                    cog.events = .full;
+                    cog.branched = false;
+                    const canceled = (instruction & 0x0fff_ffff) | 0xA000_0000; // IF_Z.
+                    try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(cog, .{ .pc = 0, .instr = canceled }));
+                    try std.testing.expect(cog.events.eql(.full));
+                    try std.testing.expect(!cog.branched);
+                }
+            }
+        }
     }
 }
 
 test "all event waits retain prefix and pipeline state across delivery timeout and counter rollover" {
     const hub = try std.testing.allocator.create(hub_module);
     defer std.testing.allocator.destroy(hub);
+
     const Scenario = enum { ready, signal, timeout, simultaneous };
     const events = std.enums.values(EventId);
-    for (events[0 .. events.len - 1]) |event| for (std.enums.values(Scenario)) |scenario| {
-        hub.init();
-        const start = std.math.maxInt(u64) - 3;
-        hub.counter = start;
-        const cog = &hub.cogs[0];
-        cog.exec_mode = .cog;
-        cog.interrupts.stalled = true;
-        if (event == .INT) cog.configure_interrupt(.int1, @intFromEnum(EventId.ATN));
-        cog.c = true;
-        cog.z = true;
-        const instruction = @as(u32, 0xFD78_2024) | (@as(u32, @intFromEnum(event)) << 9); // WAITxxx WCZ.
-        cog.pipeline[3] = .{ .pc = 0, .instr = instruction };
-        if (scenario == .ready) {
-            cog.events.insert(event);
-            if (event == .INT) cog.trigger_interrupt(.int1);
-        }
-        if (scenario == .timeout or scenario == .simultaneous) {
-            cog.q = @truncate(start +% 5);
-            cog.setq_pending = true;
-        }
-        const completion: u64 = if (scenario == .ready) 0 else 5 + @as(u64, cog.event_wait_resume_clocks(event, scenario != .timeout));
-        for (0..completion + 1) |elapsed| {
-            if (elapsed == 3 and (scenario == .signal or scenario == .simultaneous)) {
-                hub.clocking = true;
-                hub.signal_event(cog.id, event);
-                if (event == .INT) hub.signal_event(cog.id, .ATN);
-                hub.clocking = false;
+    for (events[0 .. events.len - 1]) |event| {
+        for (std.enums.values(Scenario)) |scenario| {
+            hub.init();
+            const start = std.math.maxInt(u64) - 3;
+            hub.counter = start;
+            const cog = &hub.cogs[0];
+            cog.exec_mode = .cog;
+            cog.interrupts.stalled = true;
+            if (event == .INT) {
+                cog.configure_interrupt(.int1, @intFromEnum(EventId.ATN));
             }
-            hub.step();
-            try std.testing.expect(hub.fault == null);
-            if (elapsed < completion) {
-                try std.testing.expect(cog.pipeline[3] != null);
-                try std.testing.expect(cog.pipeline[4] == null);
-                try std.testing.expect(cog.c and cog.z);
-                if (scenario == .timeout or scenario == .simultaneous) try std.testing.expect(cog.setq_pending);
+            cog.c = true;
+            cog.z = true;
+            const instruction = @as(u32, 0xFD78_2024) | (@as(u32, @intFromEnum(event)) << 9); // WAITxxx WCZ.
+            cog.pipeline[3] = .{ .pc = 0, .instr = instruction };
+            if (scenario == .ready) {
+                cog.events.insert(event);
+                if (event == .INT) {
+                    cog.trigger_interrupt(.int1);
+                }
             }
+            if (scenario == .timeout or scenario == .simultaneous) {
+                cog.q = @truncate(start +% 5);
+                cog.setq_pending = true;
+            }
+            const completion: u64 = if (scenario == .ready)
+                0
+            else
+                5 + @as(u64, cog.event_wait_resume_clocks(event, scenario != .timeout));
+            for (0..completion + 1) |elapsed| {
+                if (elapsed == 3 and (scenario == .signal or scenario == .simultaneous)) {
+                    hub.clocking = true;
+                    hub.signal_event(cog.id, event);
+                    if (event == .INT) {
+                        hub.signal_event(cog.id, .ATN);
+                    }
+                    hub.clocking = false;
+                }
+                hub.step();
+                try std.testing.expect(hub.fault == null);
+                if (elapsed < completion) {
+                    try std.testing.expect(cog.pipeline[3] != null);
+                    try std.testing.expect(cog.pipeline[4] == null);
+                    try std.testing.expect(cog.c and cog.z);
+                    if (scenario == .timeout or scenario == .simultaneous) {
+                        try std.testing.expect(cog.setq_pending);
+                    }
+                }
+            }
+            try std.testing.expect(cog.pipeline[4] != null);
+            try std.testing.expectEqual(instruction, cog.pipeline[4].?.instr);
+            try std.testing.expect(!cog.events.contains(event));
+            try std.testing.expect(cog.wait_until == null);
+            try std.testing.expect(!cog.setq_pending);
+            hub.step(); // Flags become architectural on the next writeback edge.
+            try std.testing.expectEqual(scenario == .timeout, cog.c);
+            try std.testing.expectEqual(scenario == .timeout, cog.z);
         }
-        try std.testing.expect(cog.pipeline[4] != null);
-        try std.testing.expectEqual(instruction, cog.pipeline[4].?.instr);
-        try std.testing.expect(!cog.events.contains(event));
-        try std.testing.expect(cog.wait_until == null);
-        try std.testing.expect(!cog.setq_pending);
-        hub.step(); // Flags become architectural on the next writeback edge.
-        try std.testing.expectEqual(scenario == .timeout, cog.c);
-        try std.testing.expectEqual(scenario == .timeout, cog.z);
-    };
+    }
 }
 
 test "forwarded source stays with a waiting instruction" {
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -4872,6 +5345,7 @@ test "unaligned hub memory wraps, extended pointer indices are unscaled, and zer
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     hub.write_memory(0xffff_ffff, 0x1122_3344, 4, false);
     try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.read_memory(0xfffff, 4));
@@ -4899,16 +5373,22 @@ test "block transfers bypass special registers and wrap register addresses" {
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.write_reg(.PTRA, 0x1000);
     cog.q = 9;
     cog.setq_pending = true;
     cog.block_pointer_delta = true;
-    for (0..10) |i| hub.write_memory(0x1000 + @as(u32, @intCast(i * 4)), @intCast(i + 1), 4, false);
+    for (0..10) |i| {
+        hub.write_memory(0x1000 + @as(u32, @intCast(i * 4)), @intCast(i + 1), 4, false);
+    }
     const read = 0xFB04_0000 | (503 << 9) | 0x100; // RDLONG r503, PTRA
     for (0..10) |i| {
-        try std.testing.expectEqual(@as(Cog.ExecResult, if (i == 9) .next else .wait), execute_instruction(cog, .{ .pc = 0, .instr = read }));
+        try std.testing.expectEqual(@as(Cog.ExecResult, if (i == 9)
+            .next
+        else
+            .wait), execute_instruction(cog, .{ .pc = 0, .instr = read }));
     }
     try std.testing.expectEqual(@as(u32, 1), cog.read_reg(.PB));
     try std.testing.expectEqual(@as(u32, 10), cog.read_reg(@enumFromInt(0)));
@@ -4920,9 +5400,14 @@ test "block transfers bypass special registers and wrap register addresses" {
     cog.setq_pending = true;
     const write = 0xFC64_0000 | (503 << 9) | 0x100; // WRLONG r503, PTRA
     for (0..10) |i| {
-        try std.testing.expectEqual(@as(Cog.ExecResult, if (i == 9) .next else .wait), execute_instruction(cog, .{ .pc = 1, .instr = write }));
+        try std.testing.expectEqual(@as(Cog.ExecResult, if (i == 9)
+            .next
+        else
+            .wait), execute_instruction(cog, .{ .pc = 1, .instr = write }));
     }
-    for (0..10) |i| try std.testing.expectEqual(@as(u32, @intCast(i + 1)), hub.read_memory(0x2000 + @as(u32, @intCast(i * 4)), 4));
+    for (0..10) |i| {
+        try std.testing.expectEqual(@as(u32, @intCast(i + 1)), hub.read_memory(0x2000 + @as(u32, @intCast(i * 4)), 4));
+    }
     try std.testing.expect(cog.memory_transfer == null);
     try std.testing.expect(!cog.setq_pending);
     try std.testing.expectEqual(@as(u32, 0x2000), cog.read_reg(.PTRA));
@@ -4933,6 +5418,7 @@ fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime fun
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     const field = comptime decode.instruction_type.get(opcode);
     const Operands = @FieldType(encoding.Instruction, field);
     var exercised: usize = 0;
@@ -4949,12 +5435,24 @@ fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime fun
                     cog.augs = 0x1234_5600;
                     cog.augd = 0x8765_4200;
                     var operands: Operands = @bitCast(template | 0xF000_0000);
-                    if (@hasField(Operands, "d")) operands.d = @enumFromInt(24);
-                    if (@hasField(Operands, "s")) operands.s = @enumFromInt(25);
-                    if (@hasField(Operands, "s_imm")) operands.s_imm = immediate;
-                    if (@hasField(Operands, "n")) operands.n = std.math.maxInt(@TypeOf(operands.n));
-                    if (@hasField(Operands, "c_mod")) operands.c_mod = @enumFromInt(@as(u1, @truncate(effects >> 1)));
-                    if (@hasField(Operands, "z_mod")) operands.z_mod = @enumFromInt(@as(u1, @truncate(effects)));
+                    if (@hasField(Operands, "d")) {
+                        operands.d = @enumFromInt(24);
+                    }
+                    if (@hasField(Operands, "s")) {
+                        operands.s = @enumFromInt(25);
+                    }
+                    if (@hasField(Operands, "s_imm")) {
+                        operands.s_imm = immediate;
+                    }
+                    if (@hasField(Operands, "n")) {
+                        operands.n = std.math.maxInt(@TypeOf(operands.n));
+                    }
+                    if (@hasField(Operands, "c_mod")) {
+                        operands.c_mod = @enumFromInt(@as(u1, @truncate(effects >> 1)));
+                    }
+                    if (@hasField(Operands, "z_mod")) {
+                        operands.z_mod = @enumFromInt(@as(u1, @truncate(effects)));
+                    }
                     if (Operands == encoding.UpdateFlags) {
                         operands.c_value = @enumFromInt(10);
                         operands.z_value = @enumFromInt(12);
@@ -4962,15 +5460,28 @@ fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime fun
                     const state: Cog.PipelineState = .{
                         .pc = 1,
                         .instr = @bitCast(operands),
-                        .alt_d = if (altered) .PTRA else null,
-                        .alt_s = if (altered) .PB else null,
+                        .alt_d = if (altered)
+                            .PTRA
+                        else
+                            null,
+                        .alt_s = if (altered)
+                            .PB
+                        else
+                            null,
                         .alt_r = .PA,
                     };
                     // Some flag combinations select another opcode (BITx/TESTBx).
-                    if (decode.decode(state.instr) != opcode) continue;
+                    if (decode.decode(state.instr) != opcode)
+                        continue;
                     exercised += 1;
-                    const d_reg: Cog.Register = if (altered) .PTRA else @enumFromInt(24);
-                    const s_reg: Cog.Register = if (altered) .PB else @enumFromInt(25);
+                    const d_reg: Cog.Register = if (altered)
+                        .PTRA
+                    else
+                        @enumFromInt(24);
+                    const s_reg: Cog.Register = if (altered)
+                        .PB
+                    else
+                        @enumFromInt(25);
                     cog.write_reg(d_reg, 0x8000_0001);
                     cog.write_reg(s_reg, 0xDEAD_BEEF);
                     cog.write_reg(.PA, 0xFEED_FACE);
@@ -4978,22 +5489,47 @@ fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime fun
                     cog.pipeline[1] = .{ .pc = 2, .instr = 0 };
                     const has_s = @hasField(Operands, "s");
                     const input: alu.Input = .{
-                        .d = if (Operands == encoding.UpdateFlags) 0xAC else 0x8000_0001,
-                        .s = if (!has_s) 0 else if (immediate) 0x1234_5600 | @as(u32, @intFromEnum(s_reg)) else 0xDEAD_BEEF,
+                        .d = if (Operands == encoding.UpdateFlags)
+                            0xAC
+                        else
+                            0x8000_0001,
+                        .s = if (!has_s)
+                            0
+                        else if (immediate)
+                            0x1234_5600 | @as(u32, @intFromEnum(s_reg))
+                        else
+                            0xDEAD_BEEF,
                         .c = .from_bool(cog.c),
                         .z = .from_bool(cog.z),
                         .q = cog.q,
                         .setq_prefix = true,
                     };
-                    const expected = if (@hasField(Operands, "n")) function(input, operands.n) else if (@typeInfo(@TypeOf(function)).@"fn".params.len == 2) function(input, hub.random.word(cog.id)) else function(input);
+                    const expected = if (@hasField(Operands, "n"))
+                        function(input, operands.n)
+                    else if (@typeInfo(@TypeOf(function)).@"fn".params.len == 2)
+                        function(input, hub.random.word(cog.id))
+                    else
+                        function(input);
                     try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, state));
-                    try std.testing.expectEqual(if (writes_result) expected.result else @as(u32, 0xFEED_FACE), cog.read_reg(.PA));
+                    try std.testing.expectEqual(if (writes_result)
+                        expected.result
+                    else
+                        @as(u32, 0xFEED_FACE), cog.read_reg(.PA));
                     try std.testing.expectEqual(@as(u32, 0x8000_0001), cog.read_reg(d_reg));
-                    try std.testing.expectEqual(if (@hasField(Operands, "c_mod") and operands.c_mod == .write) expected.c == .set else flags & 2 != 0, cog.c);
-                    try std.testing.expectEqual(if (@hasField(Operands, "z_mod") and operands.z_mod == .write) expected.z == .set else flags & 1 != 0, cog.z);
+                    try std.testing.expectEqual(if (@hasField(Operands, "c_mod") and operands.c_mod == .write)
+                        expected.c == .set
+                    else
+                        flags & 2 != 0, cog.c);
+                    try std.testing.expectEqual(if (@hasField(Operands, "z_mod") and operands.z_mod == .write)
+                        expected.z == .set
+                    else
+                        flags & 1 != 0, cog.z);
                     try std.testing.expectEqual(expected.q, cog.q);
                     try std.testing.expectEqual(expected.next_s, cog.pipeline[1].?.s_value);
-                    try std.testing.expectEqual(if (has_s and immediate) @as(u32, 0) else @as(u32, 0x1234_5600), cog.augs);
+                    try std.testing.expectEqual(if (has_s and immediate)
+                        @as(u32, 0)
+                    else
+                        @as(u32, 0x1234_5600), cog.augs);
                     try std.testing.expectEqual(@as(u32, 0x8765_4200), cog.augd);
                     try std.testing.expect(!cog.setq_pending);
                 }
@@ -5006,6 +5542,7 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
     const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -5024,7 +5561,9 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
         // RDFAST #0,r21; RFBYTE r20.
         try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = 0xFC78_0015 }));
         for (case.bytes) |expected| {
-            while (cog.peek_fifo(0) == null) hub.step();
+            while (cog.peek_fifo(0) == null) {
+                hub.step();
+            }
             try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 1, .instr = 0xFD60_2810 }));
             try std.testing.expectEqual(expected, cog.read_reg(@enumFromInt(20)));
         }

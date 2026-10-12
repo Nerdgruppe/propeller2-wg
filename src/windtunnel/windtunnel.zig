@@ -8,6 +8,7 @@ const args_parser = @import("args");
 
 const Hub = @import("sim/Hub.zig");
 const smart_pin = @import("sim/smart_pin.zig");
+const p2aas_server = @import("p2aas_server.zig");
 
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{},
@@ -49,6 +50,7 @@ const CliArgs = struct {
     };
 };
 
+/// Parse CLI options and run the simulator, test suite, or WebSocket server.
 pub fn main(init: std.process.Init) !u8 {
     var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
     defer cli.deinit();
@@ -90,7 +92,7 @@ pub fn main(init: std.process.Init) !u8 {
             std.log.err("--serve cannot be combined with --image", .{});
             return 1;
         }
-        @import("p2aas_server.zig").serve(init.gpa, init.io, cli.options.url, cli.options.@"trace-pipeline") catch |err| {
+        p2aas_server.serve(init.gpa, init.io, cli.options.url, cli.options.@"trace-pipeline") catch |err| {
             std.log.err("P2AAS server failed: {t}", .{err});
             return 1;
         };
@@ -108,7 +110,10 @@ pub fn main(init: std.process.Init) !u8 {
     var trace_buffer: [4096]u8 = undefined;
     var trace = std.Io.File.stderr().writer(init.io, &trace_buffer);
     defer trace.interface.flush() catch {};
-    if (cli.options.@"trace-pipeline") hub.trace_writer = &trace.interface;
+
+    if (cli.options.@"trace-pipeline") {
+        hub.trace_writer = &trace.interface;
+    }
 
     if (cli.options.image.len != 0) {
         var file = try std.Io.Dir.cwd().openFile(init.io, cli.options.image, .{});
@@ -135,12 +140,27 @@ pub fn main(init: std.process.Init) !u8 {
         try std.Io.Dir.cwd().createFile(init.io, cli.options.vcd, .{})
     else
         null;
-    defer if (vcd_file) |file| file.close(init.io);
+    defer {
+        if (vcd_file) |file| {
+            file.close(init.io);
+        }
+    }
+
     var vcd_buffer: [4096]u8 = undefined;
-    var vcd_writer = if (vcd_file) |file| file.writer(init.io, &vcd_buffer) else undefined;
+    var vcd_writer = if (vcd_file) |file|
+        file.writer(init.io, &vcd_buffer)
+    else
+        undefined;
     var vcd: @import("sim/Vcd.zig") = .{ .writer = &vcd_writer.interface };
-    defer if (vcd_file != null) vcd.finish() catch {};
-    if (vcd_file != null) try hub.attachVcd(&vcd);
+    defer {
+        if (vcd_file != null) {
+            vcd.finish() catch {};
+        }
+    }
+
+    if (vcd_file != null) {
+        try hub.attachVcd(&vcd);
+    }
 
     try hub.start_cog(0, .{});
 
@@ -158,7 +178,9 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
-    if (vcd_file != null) try vcd.finish();
+    if (vcd_file != null) {
+        try vcd.finish();
+    }
 
     stdout.interface.flush() catch |err| {
         std.log.err("writing stdout failed: {t}", .{err});
@@ -174,6 +196,7 @@ pub fn main(init: std.process.Init) !u8 {
 
 var global_log_level: std.log.Level = .info;
 
+/// Send simulator log messages to the configured output stream.
 fn writeLog(
     comptime message_level: std.log.Level,
     comptime scope: @TypeOf(.enum_literal),

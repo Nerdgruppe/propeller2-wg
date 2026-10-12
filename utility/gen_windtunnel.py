@@ -285,7 +285,8 @@ def render_encoding(stream: io.TextIOBase, groups: Iterable[Group]) -> None:
             //!
             const std = @import("std");
 
-            const types = @import("p2").types;
+            const p2 = @import("p2");
+            const types = p2.types;
 
             pub const Register = types.Register;
             pub const Condition = types.Condition;
@@ -424,7 +425,8 @@ def render_decoder(
         opcode = zig_id(snakecase(instr.id))
         if instr.id == "getrnd":
             # The flags-only alias sets L and suppresses the register write.
-            stream.write("if ((raw & 0x0FE7FFFF) == 0x0D64001B) return .getrnd;\n")
+            stream.write("    if ((raw & 0x0FE7FFFF) == 0x0D64001B)\n")
+            stream.write("        return .getrnd;\n")
         # TESTB*/TESTP* share opcodes with BIT*/DIR*: unequal C/Z bits select
         # the test, equal bits select the bit/pin modification instruction.
         flag_rule = " and (@as(u1, @truncate(raw >> 20)) != @as(u1, @truncate(raw >> 19)))" if instr.id.lower().startswith(("testb", "testp")) else ""
@@ -466,10 +468,19 @@ def render_executor_stub(
 
             /// Apply conditional cancellation and ALTx fields before selecting the semantic handler.
             fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
-                if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return .skip;
+                if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) {
+                    if (decode.decode(state.instr) == .brk and cog.debug.state != .active) {
+                        cog.breakpoint(0, false);
+                    }
+                    return .skip;
+                }
                 var raw = state.instr;
-                if (state.alt_d) |reg| raw = (raw & ~@as(u32, 0x3fe00)) | (@as(u32, @intFromEnum(reg)) << 9);
-                if (state.alt_s) |reg| raw = (raw & ~@as(u32, 0x1ff)) | @intFromEnum(reg);
+                if (state.alt_d) |reg| {
+                    raw = (raw & ~@as(u32, 0x3fe00)) | (@as(u32, @intFromEnum(reg)) << 9);
+                }
+                if (state.alt_s) |reg| {
+                    raw = (raw & ~@as(u32, 0x1ff)) | @intFromEnum(reg);
+                }
                 const opcode = decode.decode(state.instr);
 
                 const enc: encoding.Instruction = .{ .raw = raw };

@@ -1180,7 +1180,8 @@ pub fn decode(raw: u32) OpCode {
         return .getqx;
     if ((raw & 0x0FE401FF) == 0x0D600019)
         return .getqy;
-    if ((raw & 0x0FE7FFFF) == 0x0D64001B) return .getrnd;
+    if ((raw & 0x0FE7FFFF) == 0x0D64001B)
+        return .getrnd;
     if ((raw & 0x0FE401FF) == 0x0D60001B)
         return .getrnd;
     if ((raw & 0x0FE401FF) == 0x0D60002B)

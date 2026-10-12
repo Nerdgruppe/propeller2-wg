@@ -5,7 +5,8 @@
 //!
 const std = @import("std");
 
-const types = @import("p2").types;
+const p2 = @import("p2");
+const types = p2.types;
 
 pub const Register = types.Register;
 pub const Condition = types.Condition;

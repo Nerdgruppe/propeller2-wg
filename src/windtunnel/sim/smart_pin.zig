@@ -17,7 +17,8 @@ pub const DataSource = union(enum) {
         return switch (source.*) {
             .reader => |reader| blk: {
                 const bytes = reader.buffered();
-                if (bytes.len == 0) break :blk null;
+                if (bytes.len == 0)
+                    break :blk null;
                 const byte = bytes[0];
                 reader.toss(1);
                 break :blk byte;
@@ -59,7 +60,10 @@ pub const SerialTiming = struct {
     /// Decode the fixed-point baud period and the start/data/stop frame length.
     pub fn init(x: u32) SerialTiming {
         const width: u6 = @as(u6, @intCast(x & 31)) + 1;
-        const period: u64 = if (x >> 26 == 0) x & 0xffff_fc00 else x & 0xffff_0000;
+        const period: u64 = if (x >> 26 == 0)
+            x & 0xffff_fc00
+        else
+            x & 0xffff_0000;
         return .{ .bits = width, .frame_clocks = (period * (width + @as(u64, 2)) + 0xffff) >> 16 };
     }
 };
@@ -167,7 +171,11 @@ pub const Repository = struct {
     /// Retain Z through DIR reset and publish X with its measured completion delay.
     fn step(logic: *Repository, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
         var state = outputs(regs, inputs);
-        const raise_now = logic.raise_next and !inputs.ack and inputs.new_x == null and inputs.new_y == null and !inputs.reset;
+        const raise_now = logic.raise_next and
+            !inputs.ack and
+            inputs.new_x == null and
+            inputs.new_y == null and
+            !inputs.reset;
         logic.raise_next = false;
         if (inputs.new_x != null and regs.enabled) {
             state.y = regs.x;
@@ -194,23 +202,31 @@ pub const UartTx = struct {
             logic.buffer = null;
             logic.shifter = null;
         }
-        if (inputs.new_y != null and regs.enabled) logic.buffer = regs.y & wordMask(regs.x);
+        if (inputs.new_y != null and regs.enabled) {
+            logic.buffer = regs.y & wordMask(regs.x);
+        }
         if (regs.enabled) {
             if (logic.shifter != null and reached(inputs.clock, logic.end)) {
-                if (regs.sink) |sink| try sink.write(logic.shifter.?);
+                if (regs.sink) |sink| {
+                    try sink.write(logic.shifter.?);
+                }
                 logic.shifter = null;
             }
             const timing = SerialTiming.init(regs.x);
-            if (logic.shifter == null and timing.frame_clocks != 0) if (logic.buffer) |word| {
-                logic.shifter = word;
-                logic.buffer = null;
-                logic.end = inputs.clock +% timing.frame_clocks;
-                state.in = 1;
-            };
+            if (logic.shifter == null and timing.frame_clocks != 0)
+                if (logic.buffer) |word| {
+                    logic.shifter = word;
+                    logic.buffer = null;
+                    logic.end = inputs.clock +% timing.frame_clocks;
+                    state.in = 1;
+                };
         }
         state.flag = logic.buffer != null or logic.shifter != null;
         state.scheduled = regs.enabled and state.flag;
-        state.smart_out = if (state.scheduled) .x else .one;
+        state.smart_out = if (state.scheduled)
+            .x
+        else
+            .one;
         return state;
     }
 };
@@ -221,15 +237,25 @@ pub const UsartTx = struct {
     /// Prime Y even in reset, then deliver a whole word on clock service when enabled.
     fn step(logic: *UsartTx, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
         var state = serialOutputs(regs, inputs);
-        if (inputs.reset) logic.buffer = null;
-        if (inputs.new_y != null) logic.buffer = regs.y & wordMask(regs.x);
-        if (regs.enabled) if (logic.buffer) |word| {
-            if (regs.sink) |sink| try sink.write(word);
+        if (inputs.reset) {
             logic.buffer = null;
-            state.in = 1;
-        };
+        }
+        if (inputs.new_y != null) {
+            logic.buffer = regs.y & wordMask(regs.x);
+        }
+        if (regs.enabled)
+            if (logic.buffer) |word| {
+                if (regs.sink) |sink| {
+                    try sink.write(word);
+                }
+                logic.buffer = null;
+                state.in = 1;
+            };
         state.scheduled = regs.enabled and logic.buffer != null;
-        state.smart_out = if (regs.enabled) .x else .zero;
+        state.smart_out = if (regs.enabled)
+            .x
+        else
+            .zero;
         return state;
     }
 };
@@ -241,19 +267,22 @@ pub const UartRx = struct {
     /// Receive buffered source words with UART frame timing, aborting a frame on DIR reset.
     fn step(logic: *UartRx, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
         var state = serialOutputs(regs, inputs);
-        if (inputs.reset) logic.shifter = null;
+        if (inputs.reset) {
+            logic.shifter = null;
+        }
         if (regs.enabled) {
             if (logic.shifter != null and reached(inputs.clock, logic.end)) {
                 receive(&state, regs.x, logic.shifter.?);
                 logic.shifter = null;
             }
             const timing = SerialTiming.init(regs.x);
-            if (logic.shifter == null and timing.frame_clocks != 0) if (regs.source) |source| {
-                if (try source.read()) |word| {
-                    logic.shifter = word;
-                    logic.end = inputs.clock +% timing.frame_clocks;
-                }
-            };
+            if (logic.shifter == null and timing.frame_clocks != 0)
+                if (regs.source) |source| {
+                    if (try source.read()) |word| {
+                        logic.shifter = word;
+                        logic.end = inputs.clock +% timing.frame_clocks;
+                    }
+                };
         }
         state.scheduled = regs.enabled and logic.shifter != null;
         return state;
@@ -265,7 +294,11 @@ pub const UsartRx = struct {
     fn step(_: *UsartRx, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
         var state = serialOutputs(regs, inputs);
         if (regs.enabled and !regs.ready) {
-            if (regs.source) |source| if (try source.read()) |word| receive(&state, regs.x, word);
+            if (regs.source) |source| {
+                if (try source.read()) |word| {
+                    receive(&state, regs.x, word);
+                }
+            }
         }
         return state;
     }
@@ -330,9 +363,15 @@ pub const SmartPin = struct {
         var signals = inputs;
         signals.reset = pin.registers.enabled and inputs.dir == 0;
         pin.registers.enabled = inputs.dir != 0;
-        if (inputs.new_x) |value| pin.registers.x = value;
-        if (inputs.new_y) |value| pin.registers.y = value;
-        if (inputs.ack or inputs.new_x != null or inputs.new_y != null or signals.reset) pin.registers.ready = false;
+        if (inputs.new_x) |value| {
+            pin.registers.x = value;
+        }
+        if (inputs.new_y) |value| {
+            pin.registers.y = value;
+        }
+        if (inputs.ack or inputs.new_x != null or inputs.new_y != null or signals.reset) {
+            pin.registers.ready = false;
+        }
         const state = try switch (pin.logic) {
             inline else => |*logic| logic.step(&pin.registers, signals),
         };
@@ -359,6 +398,7 @@ test "buffered endpoints truncate writer words and untimed RX waits for acknowle
 
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
+
     var sink: DataSink = .{ .writer = &output.writer };
     pin = .{};
     pin.configure(.sync_tx);
@@ -427,6 +467,7 @@ test "reconfiguration retains endpoints and registers but discards mode-specific
     var source: DataSource = .{ .reader = &reader };
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
+
     var sink: DataSink = .{ .writer = &output.writer };
     var pin: SmartPin = .{};
     pin.registers.source = &source;

@@ -152,6 +152,10 @@ Typical workflows (started from the workspace root):
   - The styles for `if` also apply to other constructs like `for` or `while`.
     - Really bad style: `if(foo) for(...) {};`
       - Better:`if(foo) { for(...) {} }`
+  - Do not use two code constructs on the same line
+    - This means `if`/`for`/`while` and body should be put onto separate lines.
+    - Forbidden: `if(foo) return X;`
+      - Use `if(foo)<LF>return X;`
   - Do not use inline structs in function signatureds.
     - Bad style: `pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u32 = 0, ptra: u32 = 0, load_image: bool = true, clocked: bool = true, command_clock: ?u64 = null }) !void {`
       - Better: `const StartCogOptions = struct { hub_address: u32 = 0, ptra: u32 = 0, load_image: bool = true, clocked: bool = true, command_clock: ?u64 = null, };  pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {` which will format into readable code.
@@ -160,6 +164,8 @@ Typical workflows (started from the workspace root):
     - Do not introduce new fields with defaults to keep the change count low. Introduce them with defaults if there's never a reason to initialize them otherwise (except testing).
       - Bad style: `pub const Write = struct { origin: Hub.WriteOrigin = .application, ... }` which would then mask all potential code sites using the `Write` struct which are now affected by new semantics.
     - Do not introduce redirection functions to keep old function call locations valid.
+  - Do not cramp code together without empty lines. Empty lines communicate intent and logical blocks 
+    - Insert an empty line afte a `defer` to keep it clearly separated from the following code
 - Always format your code with `zig fmt`
 
 #### Propan

@@ -26,7 +26,9 @@ pub const Port = struct {
     pub fn accept(port: *Port, delivery: Delivery) void {
         port.result = delivery.result;
         port.ready = .initFill(true);
-        if (delivery.tracked) port.pending -= 1;
+        if (delivery.tracked) {
+            port.pending -= 1;
+        }
     }
 
     /// Clear read readiness/tracking while preserving the two physical result words.
@@ -98,9 +100,12 @@ pub fn submit(cordic: *Cordic, cog: CogId, operation: Operation, d: u32, s: u32,
 /// Clock every occupied arithmetic stage once, then return one tagged result to its cog.
 /// A grant enters stage 0 on the next edge, exits the solver at +55, and is readable at +58.
 pub fn step(cordic: *Cordic) ?Delivery {
-    if (cordic.active == 0) return null;
+    if (cordic.active == 0)
+        return null;
     const delivery = cordic.returns[cordic.returns.len - 1];
-    if (delivery != null) cordic.active -= 1;
+    if (delivery != null) {
+        cordic.active -= 1;
+    }
     std.mem.copyBackwards(?Delivery, cordic.returns[1..], cordic.returns[0 .. cordic.returns.len - 1]);
     cordic.returns[0] = if (cordic.pipeline[stage_layout.len - 1]) |last|
         .{ .cog = last.cog, .tracked = last.tracked, .result = last.data.result }
@@ -109,8 +114,13 @@ pub fn step(cordic: *Cordic) ?Delivery {
     var index: usize = stage_layout.len;
     while (index != 0) {
         index -= 1;
-        cordic.pipeline[index] = if (index == 0) cordic.input else cordic.pipeline[index - 1];
-        if (cordic.pipeline[index]) |*entry| advance(entry, stage_layout[index]);
+        cordic.pipeline[index] = if (index == 0)
+            cordic.input
+        else
+            cordic.pipeline[index - 1];
+        if (cordic.pipeline[index]) |*entry| {
+            advance(entry, stage_layout[index]);
+        }
     }
     cordic.input = null;
     return delivery;
@@ -118,15 +128,25 @@ pub fn step(cordic: *Cordic) ?Delivery {
 
 /// Abandon one cog's logical tracking without removing its physical arithmetic or return traffic.
 pub fn forget(cordic: *Cordic, cog: CogId) void {
-    if (cordic.input) |*entry| if (entry.cog == cog) {
-        entry.tracked = false;
-    };
-    for (&cordic.pipeline) |*slot| if (slot.*) |*entry| {
-        if (entry.cog == cog) entry.tracked = false;
-    };
-    for (&cordic.returns) |*slot| if (slot.*) |*delivery| {
-        if (delivery.cog == cog) delivery.tracked = false;
-    };
+    if (cordic.input) |*entry| {
+        if (entry.cog == cog) {
+            entry.tracked = false;
+        }
+    }
+    for (&cordic.pipeline) |*slot| {
+        if (slot.*) |*entry| {
+            if (entry.cog == cog) {
+                entry.tracked = false;
+            }
+        }
+    }
+    for (&cordic.returns) |*slot| {
+        if (slot.*) |*delivery| {
+            if (delivery.cog == cog) {
+                delivery.tracked = false;
+            }
+        }
+    }
 }
 
 /// Report whether an arithmetic or transport stage still contains work.
@@ -146,8 +166,14 @@ fn advance(entry: *Entry, stage: Stage) void {
                 .sqrt => .{ .square_root = .{ .radicand = (@as(u64, args.s) << 32) | args.d } },
                 .rotate, .vector => .{ .circular = .{
                     .x = @as(i32, @bitCast(args.d)),
-                    .y = @as(i32, @bitCast(if (entry.operation == .rotate) args.q else args.s)),
-                    .z = if (entry.operation == .rotate) @as(i64, @as(i32, @bitCast(args.s))) << 8 else 0,
+                    .y = @as(i32, @bitCast(if (entry.operation == .rotate)
+                        args.q
+                    else
+                        args.s)),
+                    .z = if (entry.operation == .rotate)
+                        @as(i64, @as(i32, @bitCast(args.s))) << 8
+                    else
+                        0,
                 } },
                 .log, .exp => .{ .hyperbolic = .{ .input = args.d } },
             };
@@ -158,7 +184,8 @@ fn advance(entry: *Entry, stage: Stage) void {
                 const y: i32 = @intCast(value.y);
                 const magnitude = (@abs(x) | @abs(y)) & 0x7fffffff;
                 value.zero = magnitude == 0;
-                if (value.zero) return;
+                if (value.zero)
+                    return;
                 value.normalization = @intCast(@clz(magnitude) - 1);
                 value.x = @as(i32, @bitCast(@as(u32, @bitCast(x)) << value.normalization));
                 value.y = @as(i32, @bitCast(@as(u32, @bitCast(y)) << value.normalization));
@@ -166,24 +193,44 @@ fn advance(entry: *Entry, stage: Stage) void {
             .hyperbolic => |*value| {
                 const d = value.input;
                 const exponent = entry.operation == .exp;
-                value.magnitude = if (exponent) 31 - @as(u5, @truncate(d >> 27)) else @intCast(@min(@clz(d), 31));
-                value.y = if (exponent) 0 else @as(i64, (d << value.magnitude) & 0x7fffffff) << 6;
-                value.x = if (exponent) 0x7f42e61c5a else value.y + (@as(i64, 1) << 38);
-                value.z = if (exponent) @as(i64, d & 0x7ffffff) << 11 else 0;
+                value.magnitude = if (exponent)
+                    31 - @as(u5, @truncate(d >> 27))
+                else
+                    @intCast(@min(@clz(d), 31));
+                value.y = if (exponent)
+                    0
+                else
+                    @as(i64, (d << value.magnitude) & 0x7fffffff) << 6;
+                value.x = if (exponent)
+                    0x7f42e61c5a
+                else
+                    value.y + (@as(i64, 1) << 38);
+                value.z = if (exponent)
+                    @as(i64, d & 0x7ffffff) << 11
+                else
+                    0;
             },
             else => {},
         },
         .quadrant => if (entry.data == .circular) {
             const value = &entry.data.circular;
-            if (value.zero) return;
+            if (value.zero)
+                return;
             var x: i32 = @intCast(value.x);
             var y: i32 = @intCast(value.y);
             const vector = entry.operation == .vector;
             const angle: u32 = @bitCast(@as(i32, @intCast(value.z >> 8)));
-            if (if (vector) x < 0 else (angle ^ (angle << 1)) & 0x80000000 != 0) {
+            if (if (vector)
+                x < 0
+            else
+                (angle ^ (angle << 1)) & 0x80000000 != 0)
+            {
                 x = -%x;
                 y = -%y;
-                value.z += if (vector or value.z < 0) @as(i64, 1) << 39 else -(@as(i64, 1) << 39);
+                value.z += if (vector or value.z < 0)
+                    @as(i64, 1) << 39
+                else
+                    -(@as(i64, 1) << 39);
             }
             value.x = @as(i64, x) << 7;
             value.y = @as(i64, y) << 7;
@@ -214,14 +261,19 @@ fn advance(entry: *Entry, stage: Stage) void {
 fn iterate(entry: *Entry, index: u5) void {
     switch (entry.data) {
         .multiply => |*value| {
-            if (value.multiplier & 1 != 0) value.product += value.multiplicand;
+            if (value.multiplier & 1 != 0) {
+                value.product += value.multiplicand;
+            }
             value.multiplicand <<= 1;
             value.multiplier >>= 1;
         },
         .divide => |*value| {
             const negative = value.remainder < 0;
             value.remainder = (value.remainder << 1) | @as(i33, value.quotient >> 31);
-            value.remainder = if (negative) value.remainder +% @as(i33, value.divisor) else value.remainder -% @as(i33, value.divisor);
+            value.remainder = if (negative)
+                value.remainder +% @as(i33, value.divisor)
+            else
+                value.remainder -% @as(i33, value.divisor);
             value.quotient = (value.quotient << 1) | @intFromBool(value.remainder >= 0);
         },
         .square_root => |*value| {
@@ -238,7 +290,11 @@ fn iterate(entry: *Entry, index: u5) void {
             const sx = value.y >> index;
             const sy = value.x >> index;
             const delta = circular_angles[index];
-            if (if (entry.operation == .vector) value.y < 0 else value.z >= 0) {
+            if (if (entry.operation == .vector)
+                value.y < 0
+            else
+                value.z >= 0)
+            {
                 value.x -= sx;
                 value.y += sy;
                 value.z -= delta;
@@ -260,7 +316,11 @@ fn hyperbolicStep(value: *Hyperbolic, index: u5, exponent: bool) void {
     const sx = value.y >> index;
     const sy = value.x >> index;
     const delta = hyperbolic_angles[index - 1];
-    if (if (exponent) value.z >= 0 else value.y < 0) {
+    if (if (exponent)
+        value.z >= 0
+    else
+        value.y < 0)
+    {
         value.x += sx;
         value.y += sy;
         value.z -= delta;
@@ -276,24 +336,36 @@ fn finish(entry: Entry) Result {
     return switch (entry.data) {
         .multiply => |value| .{ .x = @truncate(value.product), .y = @truncate(value.product >> 32) },
         .divide => |value| blk: {
-            const remainder = if (value.remainder < 0) value.remainder +% @as(i33, value.divisor) else value.remainder;
+            const remainder = if (value.remainder < 0)
+                value.remainder +% @as(i33, value.divisor)
+            else
+                value.remainder;
             break :blk .{ .x = value.quotient, .y = @truncate(@as(u33, @bitCast(remainder))) };
         },
         .square_root => |value| .{ .x = value.root },
         .circular => |value| blk: {
-            if (value.zero) break :blk .{ .x = 0 };
+            if (value.zero)
+                break :blk .{ .x = 0 };
             const shift: u6 = @as(u6, value.normalization) + 7;
             const half = @as(i64, 1) << (shift - 1);
             break :blk .{
                 .x = @truncate(@as(u64, @bitCast((value.x + half) >> shift))),
-                .y = @truncate(@as(u64, @bitCast(if (entry.operation == .vector) (value.z + 0x20) >> 8 else (value.y + half) >> shift))),
+                .y = @truncate(@as(u64, @bitCast(if (entry.operation == .vector)
+                    (value.z + 0x20) >> 8
+                else
+                    (value.y + half) >> shift))),
             };
         },
         .hyperbolic => |value| blk: {
             const m = value.magnitude;
-            if (entry.operation == .exp) break :blk .{ .x = @intCast(((value.x >> m) + (value.y >> m) + 0x40) >> 7) };
+            if (entry.operation == .exp)
+                break :blk .{ .x = @intCast(((value.x >> m) + (value.y >> m) + 0x40) >> 7) };
             const z = ((value.z >> 2) & ~@as(i64, 0x7f)) + 0x80 + (@as(i64, 31 - m) << 35);
-            break :blk .{ .x = if (m == 0 and z & (@as(i64, 1) << 39) == 0) 0xffffffff else @truncate(@as(u64, @bitCast(z >> 8))) };
+            break :blk .{ .x = if (m == 0 and
+                z & (@as(i64, 1) << 39) == 0)
+                0xffffffff
+            else
+                @truncate(@as(u64, @bitCast(z >> 8))) };
         },
         else => unreachable,
     };
@@ -383,7 +455,9 @@ test "all 54 stages carry live arithmetic before the result reaches cog transpor
     cordic.submit(@enumFromInt(3), .mul, 6, 7, 0);
     for (stage_layout, 0..) |stage, index| {
         try std.testing.expect(cordic.step() == null);
-        for (cordic.pipeline, 0..) |slot, position| try std.testing.expectEqual(position == index, slot != null);
+        for (cordic.pipeline, 0..) |slot, position| {
+            try std.testing.expectEqual(position == index, slot != null);
+        }
         const entry = &cordic.pipeline[index].?;
         try std.testing.expectEqual(@as(CogId, @enumFromInt(3)), entry.cog);
         if (stage == .iterate and stage.iterate == 0) {
@@ -416,8 +490,14 @@ test "one shared pipeline accepts consecutive cog slots at full depth and routes
             try std.testing.expectEqual(@as(u32, @intCast(delivered)), value.result.y);
             delivered += 1;
         }
-        if (clock == 54) for (cordic.pipeline) |slot| try std.testing.expect(slot != null);
-        if (clock < 64) cordic.submit(@enumFromInt(@as(u3, @truncate(clock))), .mul, @intCast(clock + 1), 0xffffffff, 0);
+        if (clock == 54) {
+            for (cordic.pipeline) |slot| {
+                try std.testing.expect(slot != null);
+            }
+        }
+        if (clock < 64) {
+            cordic.submit(@enumFromInt(@as(u3, @truncate(clock))), .mul, @intCast(clock + 1), 0xffffffff, 0);
+        }
     }
     try std.testing.expectEqual(@as(usize, 64), delivered);
     try std.testing.expect(!cordic.in_flight());
@@ -447,7 +527,9 @@ test "reset abandons only one cog's tracking across input arithmetic and return 
             ports[1].begin();
         }
         while (cordic.in_flight()) {
-            if (cordic.step()) |delivery| ports[@intFromEnum(delivery.cog)].accept(delivery);
+            if (cordic.step()) |delivery| {
+                ports[@intFromEnum(delivery.cog)].accept(delivery);
+            }
         }
         try std.testing.expectEqual(@as(u32, 42), ports[0].result.x);
         try std.testing.expect(ports[0].ready.get(.x));

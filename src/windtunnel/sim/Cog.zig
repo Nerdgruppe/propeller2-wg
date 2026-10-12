@@ -229,7 +229,10 @@ pub const FifoBlock = struct {
     /// Decode only the architectural address and fourteen-bit block count fields.
     fn init(config: u32, address: u32) FifoBlock {
         const count: u14 = @truncate(config);
-        return .{ .address = @truncate(address), .longs = if (count == 0) 0x40000 else @as(u19, count) << 4 };
+        return .{ .address = @truncate(address), .longs = if (count == 0)
+            0x40000
+        else
+            @as(u19, count) << 4 };
     }
 };
 
@@ -266,7 +269,8 @@ pub const HubFifo = struct {
 
     /// Consume the next instruction slice; read/decode joins the adjacent slice for an unaligned word.
     fn read(fifo: *HubFifo) ?u32 {
-        if (fifo.count == 0) return null;
+        if (fifo.count == 0)
+            return null;
         const low = fifo.words[fifo.head];
         const value = low >> (@as(u5, fifo.byte_offset) * 8);
         fifo.head = (fifo.head + 1) % fifo.words.len;
@@ -276,7 +280,8 @@ pub const HubFifo = struct {
 
     /// Consume one software-FIFO byte, releasing its buffered long after the fourth byte.
     pub fn read_byte(fifo: *HubFifo) ?u8 {
-        if (fifo.count == 0) return null;
+        if (fifo.count == 0)
+            return null;
         const value: u8 = @truncate(fifo.words[fifo.head] >> (@as(u5, fifo.byte_offset) * 8));
         fifo.byte_offset +%= 1;
         if (fifo.byte_offset == 0) {
@@ -325,16 +330,22 @@ pub fn reset(cog: *Cog) void {
     cog.cordic_result.reset();
     const cordic_result = cog.cordic_result;
     for (&hub.locks) |*lock| {
-        if (lock.taken and lock.owner == id) hub.release_lock(lock);
+        if (lock.taken and lock.owner == id) {
+            hub.release_lock(lock);
+        }
     }
-    for (&hub.pending_events) |*edge| edge[id] = .empty;
+    for (&hub.pending_events) |*edge| {
+        edge[id] = .empty;
+    }
     cog.* = .init(hub, id);
     // Cog and LUT RAM survive COGSTOP and no-load COGINIT.
     cog.registers = registers;
     cog.ram_tail = ram_tail;
     cog.lut = lut;
     cog.cordic_result = cordic_result;
-    for ([_]Register{ .PTRA, .PTRB, .DIRA, .DIRB, .OUTA, .OUTB }) |reg| cog.registers.set(reg, 0);
+    for ([_]Register{ .PTRA, .PTRB, .DIRA, .DIRB, .OUTA, .OUTB }) |reg| {
+        cog.registers.set(reg, 0);
+    }
 }
 
 /// Advance instruction stages for one clock after the hub has serviced shared resources.
@@ -345,42 +356,57 @@ pub fn step(cog: *Cog) void {
     }
 
     for (&cog.ct_targets, [3]EventId{ .CT1, .CT2, .CT3 }) |*target, event| {
-        if (target.*) |value| if (@as(u32, @truncate(cog.hub.counter)) -% value < 0x8000_0000) {
-            cog.raise_event(event);
-        };
+        if (target.*) |value| {
+            if (@as(u32, @truncate(cog.hub.counter)) -% value < 0x8000_0000) {
+                cog.raise_event(event);
+            }
+        }
     }
     for (&cog.selectable_events, [4]EventId{ .SE1, .SE2, .SE3, .SE4 }) |*selection, event| {
-        if (selection.*) |*sensor| switch (sensor.*) {
-            .lut_lock => {},
-            .pin => |*pin| {
-                const value = cog.read_input_bit(pin.index);
-                if (pin.triggered(value)) cog.hub.signal_event(cog.id, event);
-                pin.previous = value;
-            },
-        };
+        if (selection.*) |*sensor|
+            switch (sensor.*) {
+                .lut_lock => {},
+                .pin => |*pin| {
+                    const value = cog.read_input_bit(pin.index);
+                    if (pin.triggered(value)) {
+                        cog.hub.signal_event(cog.id, event);
+                    }
+                    pin.previous = value;
+                },
+            };
     }
     if (cog.pattern) |*pattern| {
         const matched = cog.pattern_matches();
-        if (matched and !pattern.matched) cog.raise_event(.PAT);
+        if (matched and !pattern.matched) {
+            cog.raise_event(.PAT);
+        }
         pattern.matched = matched;
     }
 
     // Unaligned fetch begins with the low word. The adjacent slice returns
     // on the next clock, completing the instruction at its read/decode stage.
     // Complete it before an older ALTx can alter this younger instruction.
-    if (cog.pipeline[1]) |*state| if (state.fifo_tail) {
-        const fifo = &cog.fifo_state.engine.?;
-        if (fifo.count == 0) return;
-        state.instr |= fifo.words[fifo.head] << @intCast(32 - @as(u6, fifo.byte_offset) * 8);
-        state.fifo_tail = false;
-    };
+    if (cog.pipeline[1]) |*state| {
+        if (state.fifo_tail) {
+            const fifo = &cog.fifo_state.engine.?;
+            if (fifo.count == 0)
+                return;
+            state.instr |= fifo.words[fifo.head] << @intCast(32 - @as(u6, fifo.byte_offset) * 8);
+            state.fifo_tail = false;
+        }
+    }
 
     // Q clearing is decoded before branch cancellation, but follows the older
     // instruction's Q reads. Keep the decoded word even if that branch flushes it.
-    const decoded_word: ?u32 = if (cog.pipeline[1]) |state| state.instr else null;
+    const decoded_word: ?u32 = if (cog.pipeline[1]) |state|
+        state.instr
+    else
+        null;
     var late_q_write = false;
     if (cog.pipeline[3]) |*state| {
-        const enabled = !state.cancelled and (state.instr == 0 or cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28)))));
+        const enabled = !state.cancelled and
+            (state.instr == 0 or
+                cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28)))));
         if (enabled and !state.execution_ready and state.ready_at == null) {
             const extra: u64 = switch (decode.decode(state.instr)) {
                 .rdlut => 1,
@@ -417,18 +443,27 @@ pub fn step(cog: *Cog) void {
                 cog.interrupts.levels.getPtr(ordinary).state = .active;
                 cog.raise_event(.INT);
                 const index: u5 = @intFromEnum(ordinary);
-                if (cog.debug.control & ((@as(u32, 1) << (5 + index)) | (@as(u32, 1) << (1 + index))) != 0) cog.request_debug(false);
+                if (cog.debug.control & ((@as(u32, 1) << (5 + index)) | (@as(u32, 1) << (1 + index))) != 0) {
+                    cog.request_debug(false);
+                }
             }
         }
-        const result = if (instr.cancelled) cog.cancel_instruction() else if (instr.command_result) |result| blk: {
+        const result = if (instr.cancelled)
+            cog.cancel_instruction()
+        else if (instr.command_result) |result| blk: {
             cog.writeback = instr.command_writeback;
             break :blk result;
         } else execute.execute_instruction(cog, instr);
         cog.collecting_writes = false;
         // COGSTOP/self-restart can clear the entire pipeline during execution.
-        if (cog.exec_mode == .stopped or cog.pipeline[3] == null) return;
-        if (cog.c != old_c) cog.writeback.c = cog.c;
-        if (cog.z != old_z) cog.writeback.z = cog.z;
+        if (cog.exec_mode == .stopped or cog.pipeline[3] == null)
+            return;
+        if (cog.c != old_c) {
+            cog.writeback.c = cog.c;
+        }
+        if (cog.z != old_z) {
+            cog.writeback.z = cog.z;
+        }
         cog.c = old_c;
         cog.z = old_z;
         if (std.meta.activeTag(result) == .next and instr.instr != 0 and instr.instr >> 28 == 0 and !cog.branched) {
@@ -442,32 +477,54 @@ pub fn step(cog: *Cog) void {
             },
             .next, .skip => {},
             .trap, .not_implemented, .illegal => {
-                cog.hub.fault = .{ .cog = cog.id, .pc = instr.pc, .instruction = instr.instr, .result = result, .debug_rom = instr.debug_rom };
+                cog.hub.fault = .{
+                    .cog = cog.id,
+                    .pc = instr.pc,
+                    .instruction = instr.instr,
+                    .result = result,
+                    .debug_rom = instr.debug_rom,
+                };
                 cog.exec_mode = .stopped;
                 cog.pipeline = @splat(null);
                 cog.writeback = .{};
                 return;
             },
         }
-        if (!cog.branched) if (instr.repeat_target) |target| cog.jump_repeat(target);
+        if (!cog.branched) {
+            if (instr.repeat_target) |target| {
+                cog.jump_repeat(target);
+            }
+        }
     }
 
-    if (cog.pipeline[1]) |*state| cog.prepare_flow(state);
+    if (cog.pipeline[1]) |*state| {
+        cog.prepare_flow(state);
+    }
 
     // ALTx may have changed the next word; a taken branch has discarded it.
-    const next_word = if (cog.branched) decoded_word else if (cog.pipeline[1]) |state| state.instr else null;
-    if (next_word) |word| switch (decode.decode(word)) {
-        .coginit, .qdiv, .qfrac, .qrotate => {
-            if (!late_q_write and !(cog.setq_pending and !cog.q2)) cog.q = 0;
-        },
-        else => {},
-    };
+    const next_word = if (cog.branched)
+        decoded_word
+    else if (cog.pipeline[1]) |state|
+        state.instr
+    else
+        null;
+    if (next_word) |word|
+        switch (decode.decode(word)) {
+            .coginit, .qdiv, .qfrac, .qrotate => {
+                if (!late_q_write and !(cog.setq_pending and !cog.q2)) {
+                    cog.q = 0;
+                }
+            },
+            else => {},
+        };
 
     if (cog.pipeline[2]) |*state| {
         cog.capture_operands(state);
         cog.trace(.latch, state.*);
     }
-    if (cog.pipeline[1]) |state| cog.trace(.read, state);
+    if (cog.pipeline[1]) |state| {
+        cog.trace(.read, state);
+    }
     var fetched = false;
     if (cog.inject_interrupt()) |state| {
         cog.pipeline[0] = state;
@@ -488,9 +545,14 @@ pub fn step(cog: *Cog) void {
 
 /// Receive timed image-load beats and release startup after the final load-to-fetch handoff.
 pub fn clock_startup(cog: *Cog) void {
-    const startup = if (cog.startup) |*value| value else return;
+    const startup = if (cog.startup) |*value|
+        value
+    else
+        return;
     if (startup.release_at) |clock| {
-        if (cog.hub.counter == clock) cog.startup = null;
+        if (cog.hub.counter == clock) {
+            cog.startup = null;
+        }
         return;
     }
     const response = &startup.responses[cog.read_bus.head];
@@ -499,9 +561,12 @@ pub fn clock_startup(cog: *Cog) void {
         cog.read_bus.latch = beat.value;
         response.* = null;
         // The completed load passes through the startup/fetch handoff.
-        if (beat.reg == 503) startup.release_at = cog.hub.counter +% 3;
+        if (beat.reg == 503) {
+            startup.release_at = cog.hub.counter +% 3;
+        }
     }
-    if (startup.remaining == 0 or cog.hub.counter != startup.grant_at) return;
+    if (startup.remaining == 0 or cog.hub.counter != startup.grant_at)
+        return;
     startup.responses[(cog.read_bus.head + 5) % startup.responses.len] = .{
         .reg = startup.reg,
         .value = cog.hub.read_memory(startup.address, 4),
@@ -516,13 +581,23 @@ pub fn clock_startup(cog: *Cog) void {
 /// cog ID (unlike the rotating RAM slices). Evaluate before any cog executes,
 /// so a stop, start, or lock event has the same edge for every observer.
 pub fn clock_command(cog: *Cog) void {
-    if (cog.exec_mode == .stopped or cog.startup != null) return;
-    const state = if (cog.pipeline[3]) |*value| value else return;
-    if (state.cancelled or state.command_result != null or !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return;
+    if (cog.exec_mode == .stopped or cog.startup != null)
+        return;
+    const state = if (cog.pipeline[3]) |*value|
+        value
+    else
+        return;
+    if (state.cancelled or
+        state.command_result != null or
+        !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28)))))
+        return;
     const opcode = decode.decode(state.instr);
     const extra: u64 = switch (opcode) {
         .cogid, .locknew => 2,
-        .coginit, .locktry, .lockrel => if (state.instr & (1 << 20) != 0) 2 else 0,
+        .coginit, .locktry, .lockrel => if (state.instr & (1 << 20) != 0)
+            2
+        else
+            0,
         .cogstop, .lockret, .hubset, .qmul, .qdiv, .qfrac, .qsqrt, .qrotate, .qvector, .qlog, .qexp => 0,
         else => return,
     };
@@ -530,16 +605,22 @@ pub fn clock_command(cog: *Cog) void {
         state.command_at = cog.hub.counter +% ((@as(u64, cog.id) -% cog.hub.counter) & 7);
         state.ready_at = state.command_at.? +% extra;
     }
-    if (cog.hub.counter != state.command_at.?) return;
+    if (cog.hub.counter != state.command_at.?)
+        return;
     const old_c = cog.c;
     const old_z = cog.z;
     cog.collecting_writes = true;
     const result = execute.execute_instruction(cog, state.*);
     cog.collecting_writes = false;
     // A self-stop/restart discarded this command along with its old pipeline.
-    if (cog.pipeline[3] == null) return;
-    if (cog.c != old_c) cog.writeback.c = cog.c;
-    if (cog.z != old_z) cog.writeback.z = cog.z;
+    if (cog.pipeline[3] == null)
+        return;
+    if (cog.c != old_c) {
+        cog.writeback.c = cog.c;
+    }
+    if (cog.z != old_z) {
+        cog.writeback.z = cog.z;
+    }
     cog.c = old_c;
     cog.z = old_z;
     state.command_writeback = cog.writeback;
@@ -551,12 +632,19 @@ pub fn clock_command(cog: *Cog) void {
 pub fn clock_fifo(cog: *Cog) void {
     cog.fifo_state.initial_response = false;
     if (cog.fifo_state.request) |request| {
-        if (cog.fifo_state.engine == null or cog.fifo_state.engine.?.write_count == 0) cog.apply_fifo(request);
+        if (cog.fifo_state.engine == null or cog.fifo_state.engine.?.write_count == 0) {
+            cog.apply_fifo(request);
+        }
     }
-    const fifo = if (cog.fifo_state.engine) |*value| value else return;
-    if (fifo.ready_at) |deadline| if (Hub.clock_reached(cog.hub.counter, deadline)) {
-        fifo.ready_at = null;
-    };
+    const fifo = if (cog.fifo_state.engine) |*value|
+        value
+    else
+        return;
+    if (fifo.ready_at) |deadline| {
+        if (Hub.clock_reached(cog.hub.counter, deadline)) {
+            fifo.ready_at = null;
+        }
+    }
     if (fifo.mode == .read) {
         const response = &fifo.responses[cog.read_bus.head];
         if (response.*) |value| {
@@ -570,7 +658,8 @@ pub fn clock_fifo(cog: *Cog) void {
             response.* = null;
         }
     }
-    if (!cog.fifo_grants(cog.hub.counter)) return;
+    if (!cog.fifo_grants(cog.hub.counter))
+        return;
     cog.fifo_state.granted_at = cog.hub.counter;
     if (fifo.mode == .read) {
         fifo.responses[(cog.read_bus.head + 5) % fifo.responses.len] = cog.hub.read_memory(fifo.address, 4);
@@ -588,8 +677,14 @@ pub fn clock_fifo(cog: *Cog) void {
         fifo.write_head = (fifo.write_head + consumed) % fifo.write_bytes.len;
         fifo.write_count -= consumed;
         fifo.write_ready_count -= consumed;
-        if (fifo.address & 3 == 0) cog.advance_fifo_block();
-        if (fifo.write_count == 0) if (cog.fifo_state.request) |request| cog.apply_fifo(request);
+        if (fifo.address & 3 == 0) {
+            cog.advance_fifo_block();
+        }
+        if (fifo.write_count == 0) {
+            if (cog.fifo_state.request) |request| {
+                cog.apply_fifo(request);
+            }
+        }
     }
 }
 
@@ -597,21 +692,32 @@ pub fn clock_fifo(cog: *Cog) void {
 fn advance_fifo_block(cog: *Cog) void {
     const fifo = &cog.fifo_state.engine.?;
     fifo.remaining -= 1;
-    if (fifo.remaining != 0) return;
+    if (fifo.remaining != 0)
+        return;
     if (fifo.block) |block| {
         fifo.address = block.address & 0xffffc;
         fifo.remaining = block.longs;
         cog.raise_event(.FBW);
-    } else fifo.remaining = 0x40000;
+    } else {
+        fifo.remaining = 0x40000;
+    }
 }
 
 /// Test current/next-clock grants, including returning reads and queued byte readiness.
 pub fn fifo_grants(cog: *const Cog, clock: u64) bool {
     const fifo = cog.fifo_state.engine orelse return false;
-    if (fifo.ready_at) |deadline| if (!Hub.clock_reached(clock, deadline)) return false;
-    if (((fifo.address >> 2) & 7) != ((clock +% cog.id) & 7)) return false;
-    if (fifo.mode == .write) return fifo.write_ready_count != 0 or (clock != cog.hub.counter and fifo.write_pending[fifo.write_pending_head] != 0);
-    const returning: usize = @intFromBool(clock != cog.hub.counter and fifo.responses[(cog.read_bus.head + 1) % fifo.responses.len] != null);
+    if (fifo.ready_at) |deadline| {
+        if (!Hub.clock_reached(clock, deadline))
+            return false;
+    }
+    if (((fifo.address >> 2) & 7) != ((clock +% cog.id) & 7))
+        return false;
+    if (fifo.mode == .write)
+        return fifo.write_ready_count != 0 or
+            (clock != cog.hub.counter and
+                fifo.write_pending[fifo.write_pending_head] != 0);
+    const returning: usize = @intFromBool(clock != cog.hub.counter and
+        fifo.responses[(cog.read_bus.head + 1) % fifo.responses.len] != null);
     return fifo.count + returning < 15;
 }
 
@@ -626,31 +732,41 @@ pub fn commit_results(cog: *Cog) void {
             cog.trace_collision(@intFromEnum(write.reg), .cog_ram);
         }
         if (write.raw) {
-            cog.write_ram(@intFromEnum(write.reg), write.value)
-        }
-        else if (write.debug_overlay) {
-            if (write.reg == .INA)
-                cog.debug.ijmp = write.value
-            else
+            cog.write_ram(@intFromEnum(write.reg), write.value);
+        } else if (write.debug_overlay) {
+            if (write.reg == .INA) {
+                cog.debug.ijmp = write.value;
+            } else {
                 cog.debug.iret = write.value;
-        } 
-        else {
+            }
+        } else {
             cog.write_reg(write.reg, write.value);
         }
     }
-    if (cog.writeback.lut) |write| cog.write_lut(write.address, write.value);
-    if (cog.writeback.c) |value| cog.c = value;
-    if (cog.writeback.z) |value| cog.z = value;
+    if (cog.writeback.lut) |write| {
+        cog.write_lut(write.address, write.value);
+    }
+    if (cog.writeback.c) |value| {
+        cog.c = value;
+    }
+    if (cog.writeback.z) |value| {
+        cog.z = value;
+    }
     cog.writeback = .{};
     cog.retired = cog.pipeline[4];
-    if (cog.retired) |state| cog.trace(.store, state);
+    if (cog.retired) |state| {
+        cog.trace(.store, state);
+    }
     cog.pipeline[4] = null;
 }
 
 /// Hub read grants continue while the cog pipeline is stalled. Each aligned
 /// grant produces a response five clocks later; SETQ streams one per clock.
 pub fn clock_memory(cog: *Cog) void {
-    const transfer = if (cog.memory_transfer) |*value| value else return;
+    const transfer = if (cog.memory_transfer) |*value|
+        value
+    else
+        return;
     // FIFO initialization shares the ordinary hub-read completion strobe. A pending
     // command completes with the retained read bus rather than issuing its own read.
     if (cog.fifo_state.initial_response and !transfer.isWrite()) {
@@ -668,7 +784,13 @@ pub fn clock_memory(cog: *Cog) void {
         if (cog.hub.counter == transfer.grant_at and (transfer.address & 3) + transfer.size > 4) {
             const low_size: u3 = @intCast(4 - (transfer.address & 3));
             const value = cog.transfer_source(transfer);
-            cog.hub.write_memory_from(transfer.address, value, low_size, transfer.direction.write.masked, transfer.direction.write.origin);
+            cog.hub.write_memory_from(
+                transfer.address,
+                value,
+                low_size,
+                transfer.direction.write.masked,
+                transfer.direction.write.origin,
+            );
         }
         return;
     }
@@ -676,16 +798,21 @@ pub fn clock_memory(cog: *Cog) void {
         if (transfer.timed) {
             const slot = &transfer.direction.read.responses[cog.read_bus.head];
             transfer.direction.read.value = slot.*;
-            if (slot.*) |value| cog.read_bus.latch = value;
+            if (slot.*) |value| {
+                cog.read_bus.latch = value;
+            }
             slot.* = null;
         }
         return;
     }
     const slot = &transfer.direction.read.responses[cog.read_bus.head];
     transfer.direction.read.value = slot.*;
-    if (slot.*) |value| cog.read_bus.latch = value;
+    if (slot.*) |value| {
+        cog.read_bus.latch = value;
+    }
     slot.* = null;
-    if (cog.hub.counter != transfer.grant_at) return;
+    if (cog.hub.counter != transfer.grant_at)
+        return;
     if (cog.fifo_state.granted_at == cog.hub.counter) {
         transfer.grant_at +%= 8;
         return;
@@ -697,11 +824,22 @@ pub fn clock_memory(cog: *Cog) void {
         transfer.grant_at +%= 1;
         return;
     }
-    const high_word = if (crossing) cog.hub.read_memory(transfer.direction.read.grant_address +% low_size, 4) else 0;
+    const high_word = if (crossing)
+        cog.hub.read_memory(transfer.direction.read.grant_address +% low_size, 4)
+    else
+        0;
     const high_size = transfer.size - low_size;
-    const high_mask: u32 = if (crossing) (@as(u32, 1) << @intCast(@as(u6, high_size) * 8)) - 1 else 0;
-    const value = if (crossing) transfer.direction.read.partial.? | ((high_word & high_mask) << @intCast(@as(u6, low_size) * 8)) else cog.hub.read_memory(transfer.direction.read.grant_address, transfer.size);
-    if (crossing) transfer.direction.read.partial = high_word >> @intCast(@as(u6, high_size) * 8);
+    const high_mask: u32 = if (crossing)
+        (@as(u32, 1) << @intCast(@as(u6, high_size) * 8)) - 1
+    else
+        0;
+    const value = if (crossing)
+        transfer.direction.read.partial.? | ((high_word & high_mask) << @intCast(@as(u6, low_size) * 8))
+    else
+        cog.hub.read_memory(transfer.direction.read.grant_address, transfer.size);
+    if (crossing) {
+        transfer.direction.read.partial = high_word >> @intCast(@as(u6, high_size) * 8);
+    }
     const response = &transfer.direction.read.responses[(cog.read_bus.head + 5) % transfer.direction.read.responses.len];
     std.debug.assert(response.* == null);
     response.* = value;
@@ -712,8 +850,15 @@ pub fn clock_memory(cog: *Cog) void {
 
 /// Capture a block-write source once per beat, bypassing architectural LUT-read event generation.
 pub fn transfer_source(cog: *Cog, transfer: *MemoryTransfer) u32 {
-    if (transfer.direction.write.source_value) |value| return value;
-    const value = transfer.direction.write.immediate orelse if (transfer.lut) cog.read_lut(transfer.reg) else if (transfer.block and transfer.reg >= 504) cog.ram_tail[transfer.reg - 504] else cog.registers.values[transfer.reg];
+    if (transfer.direction.write.source_value) |value|
+        return value;
+    const value = transfer.direction.write.immediate orelse if (transfer.lut)
+        cog.read_lut(transfer.reg)
+    else if (transfer.block and
+        transfer.reg >= 504)
+        cog.ram_tail[transfer.reg - 504]
+    else
+        cog.registers.values[transfer.reg];
     transfer.direction.write.source_value = value;
     return value;
 }
@@ -734,9 +879,12 @@ pub fn memory_grant_after(cog: *Cog, address: u32, setup: u64) u64 {
 
 /// Test the ordinary interrupt busy latches without confusing STALLI with ISR execution.
 fn in_isr(cog: *const Cog) bool {
-    if (cog.debug.state == .active) 
-    return true;
-    for (cog.interrupts.levels.values) |level| if (level.state == .active) return true;
+    if (cog.debug.state == .active)
+        return true;
+    for (cog.interrupts.levels.values) |level| {
+        if (level.state == .active)
+            return true;
+    }
     return false;
 }
 
@@ -751,7 +899,15 @@ fn cancel_instruction(cog: *Cog) ExecResult {
 /// Install the single repeat context; zero length also cancels an older repeat.
 pub fn begin_repeat(cog: *Cog, length: u32, iterations: u32) void {
     const count: u9 = @truncate(length);
-    cog.repeat = if (count == 0) null else .{ .start = cog.next_pc(), .length = count, .left = count, .iterations = iterations };
+    cog.repeat = if (count == 0)
+        null
+    else
+        .{
+            .start = cog.next_pc(),
+            .length = count,
+            .left = count,
+            .iterations = iterations,
+        };
 }
 
 /// Replace the skip shifter and reset its call suspension counter.
@@ -762,7 +918,8 @@ pub fn begin_skip(cog: *Cog, mode: @FieldType(Skip, "mode"), pattern: u32) void 
 /// Consume one encounter and prepare its fallthrough before any branch can replace the PC.
 /// Fast stepping changes fetched addresses, never the hub clock or instruction issue cadence.
 fn prepare_flow(cog: *Cog, state: *PipelineState) void {
-    if (state.next_pc != null or state.interrupt != null) return;
+    if (state.next_pc != null or state.interrupt != null)
+        return;
     const skipping = !cog.in_isr() and cog.skip.depth == 0;
     if (skipping) {
         state.cancelled = cog.skip.pattern & 1 != 0;
@@ -781,71 +938,116 @@ fn prepare_flow(cog: *Cog, state: *PipelineState) void {
             if (rep.iterations == 1) {
                 cog.repeat = null;
             } else {
-                if (rep.iterations != 0) rep.iterations -= 1;
+                if (rep.iterations != 0) {
+                    rep.iterations -= 1;
+                }
                 rep.left = rep.length;
-                if (cog.exec_mode == .hub) state.repeat_target = rep.start else cog.pc = rep.start;
+                if (cog.exec_mode == .hub) {
+                    state.repeat_target = rep.start;
+                } else {
+                    cog.pc = rep.start;
+                }
             }
         }
     }
     state.next_pc = state.repeat_target orelse cog.pc;
     if (!state.cancelled and cog.debug.state != .active) {
-        if (decode.decode(state.instr) == .brk and cog.debug.control & (1 << 4) != 0) cog.request_debug(false);
+        if (decode.decode(state.instr) == .brk and cog.debug.control & (1 << 4) != 0) {
+            cog.request_debug(false);
+        }
         var step_bit: u5 = 0;
-        for (std.enums.values(InterruptLevel)) |level| if (cog.interrupts.levels.get(level).state == .active) {
-            step_bit = @intCast(@intFromEnum(level) + 1);
-            break;
-        };
+        for (std.enums.values(InterruptLevel)) |level| {
+            if (cog.interrupts.levels.get(level).state == .active) {
+                step_bit = @intCast(@intFromEnum(level) + 1);
+                break;
+            }
+        }
         if (cog.debug.control & (@as(u32, 1) << step_bit) != 0 or
-            (cog.debug.control & (1 << 10) != 0 and state.pc == cog.debug.control >> 12)) cog.request_debug(false);
+            (cog.debug.control & (1 << 10) != 0 and state.pc == cog.debug.control >> 12))
+            cog.request_debug(false);
     }
 }
 
 /// Return the prepared nonlinear fallthrough, or sequential PC for direct semantic callers.
 pub fn next_pc(cog: *const Cog) u20 {
-    if (cog.pipeline[3]) |state| if (state.next_pc) |pc| return pc;
-    return cog.dispatch_pc +% @as(u20, if (cog.exec_mode == .hub) 4 else 1);
+    if (cog.pipeline[3]) |state| {
+        if (state.next_pc) |pc|
+            return pc;
+    }
+    return cog.dispatch_pc +% @as(u20, if (cog.exec_mode == .hub)
+        4
+    else
+        1);
 }
 
 /// Take the implicit REP branch without canceling its context, selecting the target's domain.
 fn jump_repeat(cog: *Cog, target: u20) void {
-    cog.redirect_fetch(target, if (target < 0x400) .cog else .hub);
+    cog.redirect_fetch(target, if (target < 0x400)
+        .cog
+    else
+        .hub);
 }
 
 /// Resume a suspended skip shifter on RET/_RET_; ordinary PUSH/POP do not participate.
 pub fn return_skip(cog: *Cog) void {
-    if (cog.skip.depth != 0) cog.skip.depth -%= 1;
+    if (cog.skip.depth != 0) {
+        cog.skip.depth -%= 1;
+    }
 }
 
 /// Redirect fetch and discard younger stages; entering hub execution restarts its instruction FIFO.
 /// Leaving hub execution keeps the existing FIFO filling, so it may still contend with data transfers.
 pub fn jump(cog: *Cog, target: u20) void {
     cog.repeat = null;
-    if (cog.pipeline[3]) |state| if (state.interrupt == .int0) {
-        cog.pc = target;
-        cog.exec_mode = if (target < 0x400) .cog else .hub;
-        if (cog.exec_mode == .cog) {
-            @memset(cog.pipeline[0..3], null);
-            cog.issue_phase = false;
-            cog.branched = true;
-            return;
+    if (cog.pipeline[3]) |state| {
+        if (state.interrupt == .int0) {
+            cog.pc = target;
+            cog.exec_mode = if (target < 0x400)
+                .cog
+            else
+                .hub;
+            if (cog.exec_mode == .cog) {
+                @memset(cog.pipeline[0..3], null);
+                cog.issue_phase = false;
+                cog.branched = true;
+                return;
+            }
         }
-    };
-    if (cog.debug.state == .active and target >= 0x400) cog.debug.fifo_untouched = false;
-    cog.redirect_fetch(target, if (target < 0x400) .cog else .hub);
+    }
+    if (cog.debug.state == .active and target >= 0x400) {
+        cog.debug.fifo_untouched = false;
+    }
+    cog.redirect_fetch(target, if (target < 0x400)
+        .cog
+    else
+        .hub);
 }
 
 /// Flush and refill a branch target in its selected execution domain.
 fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
-    if (cog.pipeline[3]) |state| cog.trace(.flush, state);
+    if (cog.pipeline[3]) |state| {
+        cog.trace(.flush, state);
+    }
     const was_hub = cog.exec_mode == .hub;
     cog.pc = target;
     cog.exec_mode = mode;
     if (cog.exec_mode == .hub) {
         cog.fifo_state.address = null;
-        const request: FifoRequest = .{ .mode = .read, .block = .init(0, target), .setup = 5, .software = false, .accepted_at = cog.hub.counter };
-        if (cog.fifo_state.engine != null and cog.fifo_state.engine.?.mode == .write and cog.fifo_state.engine.?.write_count != 0) {
+        const request: FifoRequest = .{
+            .mode = .read,
+            .block = .init(0, target),
+            .setup = 5,
+            .software = false,
+            .accepted_at = cog.hub.counter,
+        };
+        if (cog.fifo_state.engine != null and
+            cog.fifo_state.engine.?.mode == .write and
+            cog.fifo_state.engine.?.write_count != 0)
+        {
             cog.fifo_state.request = request;
-        } else cog.apply_fifo(request);
+        } else {
+            cog.apply_fifo(request);
+        }
     } else if (was_hub) {
         // The read FIFO keeps filling after leaving hubexec. Cog fetch no
         // longer consumes it, so it soon fills and stops granting RAM reads.
@@ -860,18 +1062,24 @@ fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
 /// Write a bounded instruction-stage event when pipeline tracing is enabled.
 fn trace(cog: *Cog, stage: enum { fetch, read, latch, execute, store, stall, flush }, state: PipelineState) void {
     const writer = cog.hub.trace_writer orelse return;
-    if (cog.hub.trace_lines_left == 0) return;
+    if (cog.hub.trace_lines_left == 0)
+        return;
     cog.hub.trace_lines_left -= 1;
     writer.print("CT={d} cog={d} stage={t} pc=0x{x} instruction=0x{x}", .{ cog.hub.counter, cog.id, stage, state.pc, state.instr }) catch {};
-    if (state.interrupt) |level| writer.print(" injected={t}", .{level}) catch {};
+    if (state.interrupt) |level| {
+        writer.print(" injected={t}", .{level}) catch {};
+    }
     writer.writeByte('\n') catch {};
-    if (cog.hub.trace_lines_left == 0) writer.writeAll("pipeline trace truncated after 10000 events\n") catch {};
+    if (cog.hub.trace_lines_left == 0) {
+        writer.writeAll("pipeline trace truncated after 10000 events\n") catch {};
+    }
 }
 
 /// Write a bounded collision diagnostic without turning ambiguous RAM data into an execution fault.
 pub fn trace_collision(cog: *Cog, address: u9, kind: enum { cog_ram, lut_write }) void {
     const writer = cog.hub.trace_writer orelse return;
-    if (cog.hub.trace_lines_left == 0) return;
+    if (cog.hub.trace_lines_left == 0)
+        return;
     cog.hub.trace_lines_left -= 1;
     writer.print("CT={d} cog={d} stage=collision kind={t} address=0x{x}\n", .{ cog.hub.counter, cog.id, kind, address }) catch {};
 }
@@ -893,21 +1101,31 @@ pub fn pop(cog: *Cog) u32 {
 /// Push the current return address and flags, then redirect instruction fetch.
 pub fn call(cog: *Cog, target: u20) void {
     cog.push(cog.return_address());
-    if (cog.skip.pattern != 0) cog.skip.depth +%= 1;
+    if (cog.skip.pattern != 0) {
+        cog.skip.depth +%= 1;
+    }
     cog.jump(target);
 }
 
 /// Pack C/Z and the next execution address; local PCs advance by longs and hub PCs by bytes.
 pub fn return_address(cog: *Cog) u32 {
-    const injected = if (cog.pipeline[3]) |state| state.interrupt != null else false;
-    const pc = if (injected) cog.dispatch_pc else cog.next_pc();
+    const injected = if (cog.pipeline[3]) |state|
+        state.interrupt != null
+    else
+        false;
+    const pc = if (injected)
+        cog.dispatch_pc
+    else
+        cog.next_pc();
     return (@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | pc;
 }
 
 /// Latch a sampled event and notify idle interrupt levels selecting that source.
 pub fn raise_event(cog: *Cog, event: EventId) void {
     cog.events.insert(event);
-    if (cog.debug.control & (1 << 9) != 0 and @as(u4, @truncate(cog.debug.control >> 12)) == @intFromEnum(event)) cog.request_debug(false);
+    if (cog.debug.control & (1 << 9) != 0 and @as(u4, @truncate(cog.debug.control >> 12)) == @intFromEnum(event)) {
+        cog.request_debug(false);
+    }
     for (&cog.interrupts.levels.values) |*level| {
         if (level.source == event and level.state == .idle) {
             level.state = .pending;
@@ -920,7 +1138,10 @@ pub fn raise_event(cog: *Cog, event: EventId) void {
 /// Other waits sample their ordinary event latch. This distinction is measured on silicon.
 pub fn event_for_wait(cog: *const Cog, event: EventId) bool {
     if (event == .INT) {
-        for (cog.interrupts.levels.values) |level| if (level.state == .pending) return true;
+        for (cog.interrupts.levels.values) |level| {
+            if (level.state == .pending)
+                return true;
+        }
         return false;
     }
     return cog.events.contains(event);
@@ -928,13 +1149,22 @@ pub fn event_for_wait(cog: *const Cog, event: EventId) bool {
 
 /// Return the measured stalled-wait resume delay; FBW has a direct FIFO wake path.
 pub fn event_wait_resume_clocks(_: *const Cog, event: EventId, occurred: bool) u2 {
-    return if (event == .FBW) (if (occurred) @as(u2, 0) else 1) else 2;
+    return if (event == .FBW)
+        (if (occurred)
+            @as(u2, 0)
+        else
+            1)
+    else
+        2;
 }
 
 /// Select the low-four-bit event ID; zero disables the source without selecting INT.
 pub fn configure_interrupt(cog: *Cog, level: InterruptLevel, value: u32) void {
     const source: EventId = @enumFromInt(@as(u4, @truncate(value)));
-    cog.interrupts.levels.getPtr(level).source = if (source == .INT) null else source;
+    cog.interrupts.levels.getPtr(level).source = if (source == .INT)
+        null
+    else
+        source;
 }
 
 /// Force an idle interrupt into its pending state, retaining STALLI's entry mask.
@@ -954,7 +1184,8 @@ pub fn cancel_interrupt(cog: *Cog, level: InterruptLevel) void {
 
 /// Recognize RETI/RESI and equivalent successful register-source CALLD WCZ instructions.
 pub fn complete_interrupt(cog: *Cog, source: Register, immediate: bool, wcz: bool) void {
-    if (immediate or !wcz) return;
+    if (immediate or !wcz)
+        return;
     const level: InterruptLevel = switch (source) {
         .IRET1 => .int1,
         .IRET2 => .int2,
@@ -968,31 +1199,47 @@ pub fn complete_interrupt(cog: *Cog, source: Register, immediate: bool, wcz: boo
 pub fn interrupt_status(cog: *const Cog) u32 {
     var value: u32 = @intFromBool(cog.started_no_load);
     value |= @as(u32, @intFromBool(cog.interrupts.stalled)) << 1;
-    if (cog.fifo_state.engine) |fifo| value |= @as(u32, @intFromBool(fifo.mode == .write)) << 20;
+    if (cog.fifo_state.engine) |fifo| {
+        value |= @as(u32, @intFromBool(fifo.mode == .write)) << 20;
+    }
     for (cog.interrupts.levels.values, 0..) |level, index| {
         value |= @as(u32, @intFromEnum(level.state)) << @intCast(2 + 2 * index);
-        if (level.source) |source| value |= @as(u32, @intFromEnum(source)) << @intCast(8 + 4 * index);
+        if (level.source) |source| {
+            value |= @as(u32, @intFromEnum(source)) << @intCast(8 + 4 * index);
+        }
     }
-    if (cog.debug.state == .active) value |= (@as(u32, cog.debug.code) << 24) | (@as(u32, @intFromBool(cog.debug.coginit)) << 23);
+    if (cog.debug.state == .active) {
+        value |= (@as(u32, cog.debug.code) << 24) | (@as(u32, @intFromBool(cog.debug.coginit)) << 23);
+    }
     return value;
 }
 
 /// Read event traps, skip mode/depth and LUT/stack status without consuming latches.
 pub fn event_status(cog: *const Cog) u32 {
     var value: u32 = @as(u32, cog.skip.depth) << 28;
-    if (cog.skip.mode == .cancel) value |= 1 << 27;
-    for (std.enums.values(EventId)) |event| {
-        if (cog.events.contains(event)) value |= @as(u32, 1) << @intFromEnum(event);
+    if (cog.skip.mode == .cancel) {
+        value |= 1 << 27;
     }
-    if (cog.lut_sharing) value |= 1 << 26;
-    if (cog.stack[0] == 0x1ff) value |= 1 << 25;
+    for (std.enums.values(EventId)) |event| {
+        if (cog.events.contains(event)) {
+            value |= @as(u32, 1) << @intFromEnum(event);
+        }
+    }
+    if (cog.lut_sharing) {
+        value |= 1 << 26;
+    }
+    if (cog.stack[0] == 0x1ff) {
+        value |= 1 << 25;
+    }
     return value;
 }
 
 /// Protect prefix/forwarding instructions until the following instruction can consume their state.
 fn shields_interrupt(cog: *Cog, state: PipelineState) bool {
-    if (state.cancelled) return false;
-    if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) return false;
+    if (state.cancelled)
+        return false;
+    if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28)))))
+        return false;
     return switch (decode.decode(state.instr)) {
         .altsn,
         .altgn,
@@ -1031,62 +1278,96 @@ fn augmentation_consumers(cog: *Cog) PrefixConsumers {
         var result: std.EnumArray(decode.OpCode, struct { s: u32 = 0, d: u32 = 0 }) = .initFill(.{});
         for (std.enums.values(decode.OpCode)) |opcode| {
             const field = decode.instruction_type.get(opcode);
-            if (field.len == 0) continue;
+            if (field.len == 0)
+                continue;
             const Args = @FieldType(encoding.Instruction, field);
-            if (@hasField(Args, "s_imm")) result.getPtr(opcode).s = 1 << @bitOffsetOf(Args, "s_imm");
-            if (@hasField(Args, "d_imm")) result.getPtr(opcode).d = 1 << @bitOffsetOf(Args, "d_imm");
+            if (@hasField(Args, "s_imm")) {
+                result.getPtr(opcode).s = 1 << @bitOffsetOf(Args, "s_imm");
+            }
+            if (@hasField(Args, "d_imm")) {
+                result.getPtr(opcode).d = 1 << @bitOffsetOf(Args, "d_imm");
+            }
         }
         break :blk result;
     };
     var consumed: PrefixConsumers = .{};
-    for (cog.pipeline[1..4]) |instruction| if (instruction) |state| {
-        consumed.q = consumed.q or !cog.shields_interrupt(state);
-        if (state.instr != 0 and !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28))))) continue;
-        const mask = masks.get(decode.decode(state.instr));
-        consumed.s = consumed.s or state.instr & mask.s != 0;
-        consumed.d = consumed.d or state.instr & mask.d != 0;
-    };
+    for (cog.pipeline[1..4]) |instruction| {
+        if (instruction) |state| {
+            consumed.q = consumed.q or !cog.shields_interrupt(state);
+            if (state.instr != 0 and
+                !cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28)))))
+                continue;
+            const mask = masks.get(decode.decode(state.instr));
+            consumed.s = consumed.s or state.instr & mask.s != 0;
+            consumed.d = consumed.d or state.instr & mask.d != 0;
+        }
+    }
     return consumed;
 }
 
 /// Insert an ordinary CALLD in an available pipeline slot while holding fetch PC and hub FIFO bytes.
 fn inject_interrupt(cog: *Cog) ?PipelineState {
-    if (!cog.issue_phase or cog.repeat != null or cog.debug.state == .active) return null;
+    if (!cog.issue_phase or cog.repeat != null or cog.debug.state == .active)
+        return null;
     const is_debug = cog.debug.state == .pending;
-    if (!is_debug and cog.interrupts.stalled) return null;
+    if (!is_debug and cog.interrupts.stalled)
+        return null;
     const level: InterruptLevel = pending: {
-        if (is_debug) break :pending .int1;
+        if (is_debug)
+            break :pending .int1;
         for (std.enums.values(InterruptLevel)) |level| {
             const slot = cog.interrupts.levels.get(level);
-            if (slot.state == .active) return null;
-            if (slot.state != .pending) continue;
-            if (slot.pending_since == cog.hub.counter) return null;
+            if (slot.state == .active)
+                return null;
+            if (slot.state != .pending)
+                continue;
+            if (slot.pending_since == cog.hub.counter)
+                return null;
             break :pending level;
         }
         return null;
     };
-    for (cog.pipeline) |instruction| if (instruction) |state| {
-        if (state.interrupt != null or (cog.shields_interrupt(state) and !(is_debug and decode.decode(state.instr) == .stalli))) return null;
-    };
+    for (cog.pipeline) |instruction| {
+        if (instruction) |state| {
+            if (state.interrupt != null or
+                (cog.shields_interrupt(state) and
+                    !(is_debug and
+                        decode.decode(state.instr) == .stalli)))
+                return null;
+        }
+    }
     const consumed = cog.augmentation_consumers();
     if ((cog.augs_pending and !consumed.s) or (cog.augd_pending and !consumed.d) or
-        (cog.setq_pending and !consumed.q)) return null;
-    const source: Register = if (is_debug) .INA else switch (level) {
+        (cog.setq_pending and !consumed.q))
+        return null;
+    const source: Register = if (is_debug)
+        .INA
+    else switch (level) {
         .int1 => .IJMP1,
         .int2 => .IJMP2,
         .int3 => .IJMP3,
     };
-    const dest: Register = if (is_debug) .INB else switch (level) {
+    const dest: Register = if (is_debug)
+        .INB
+    else switch (level) {
         .int1 => .IRET1,
         .int2 => .IRET2,
         .int3 => .IRET3,
     };
-    return .{ .pc = cog.pc, .instr = 0xFB38_0000 | (@as(u32, @intFromEnum(dest)) << 9) | @intFromEnum(source), .interrupt = if (is_debug) .int0 else @enumFromInt(@intFromEnum(level) + 1) };
+    return .{
+        .pc = cog.pc,
+        .instr = 0xFB38_0000 | (@as(u32, @intFromEnum(dest)) << 9) | @intFromEnum(source),
+        .interrupt = if (is_debug)
+            .int0
+        else
+            @enumFromInt(@intFromEnum(level) + 1),
+    };
 }
 
 /// Coalesce requests until entry; the configuration is cleared only when INT0 executes.
 pub fn request_debug(cog: *Cog, coginit: bool) void {
-    if (cog.hub.debug.enables & (@as(u8, 1) << cog.id) == 0 or cog.debug.state != .idle) return;
+    if (cog.hub.debug.enables & (@as(u8, 1) << cog.id) == 0 or cog.debug.state != .idle)
+        return;
     cog.debug.state = .pending;
     cog.debug.coginit = coginit;
     cog.debug.pending_since = cog.hub.counter;
@@ -1094,31 +1375,50 @@ pub fn request_debug(cog: *Cog, coginit: bool) void {
 
 /// Hold fetch while the injected debug CALLD drains behind older instructions.
 fn debug_queued(cog: *const Cog) bool {
-    for (cog.pipeline) |slot| if (slot) |state| if (state.interrupt == .int0) return true;
+    for (cog.pipeline) |slot| {
+        if (slot) |state| {
+            if (state.interrupt == .int0)
+                return true;
+        }
+    }
     return false;
 }
 
 /// Configure the next debug entry, or update the application's break code.
 pub fn breakpoint(cog: *Cog, value: u32, condition: bool) void {
     if (cog.debug.state == .active) {
-        if (condition) cog.debug.control = value;
+        if (condition) {
+            cog.debug.control = value;
+        }
     } else {
-        if (condition) cog.debug.code = @truncate(value);
-        if (cog.debug.control & (1 << 4) != 0) cog.request_debug(false);
+        if (condition) {
+            cog.debug.code = @truncate(value);
+        }
+        if (cog.debug.control & (1 << 4) != 0) {
+            cog.request_debug(false);
+        }
     }
 }
 
 /// Send an asynchronous break only from a debug ISR to a valid enabled target.
 pub fn break_cog(cog: *Cog, value: u32) void {
     const index: u4 = @truncate(value);
-    if (cog.debug.state != .active or index >= cog.hub.cogs.len) return;
+    if (cog.debug.state != .active or index >= cog.hub.cogs.len)
+        return;
     const target = &cog.hub.cogs[index];
-    if (target.debug.control & (1 << 8) != 0) target.request_debug(false);
+    if (target.debug.control & (1 << 8) != 0) {
+        target.request_debug(false);
+    }
 }
 
 /// Finish a successful register-source CALLD through IRET0, preserving an untouched hub FIFO.
 pub fn return_debug(cog: *Cog, source: Register, immediate: bool, wcz: bool, target: u20) bool {
-    if (cog.debug.state != .active or cog.debug.control & (1 << 11) != 0 or source != .INB or immediate or !wcz) return false;
+    if (cog.debug.state != .active or
+        cog.debug.control & (1 << 11) != 0 or
+        source != .INB or
+        immediate or
+        !wcz)
+        return false;
     cog.debug.state = .idle;
     if (target == cog.debug.return_pc and cog.debug.return_mode == .hub and cog.debug.fifo_untouched) {
         cog.pc = target;
@@ -1126,16 +1426,21 @@ pub fn return_debug(cog: *Cog, source: Register, immediate: bool, wcz: bool, tar
         @memset(cog.pipeline[0..3], null);
         cog.issue_phase = false;
         cog.branched = true;
-    } else cog.jump(target);
+    } else {
+        cog.jump(target);
+    }
     return true;
 }
 
 /// Apply ALTR/ALTI result redirection or cancellation before scheduling a register write.
 pub fn write_result(cog: *Cog, reg: Register, value: u32) void {
     if (cog.pipeline[3]) |state| {
-        if (state.no_result) return;
+        if (state.no_result)
+            return;
         cog.write_reg(state.alt_r orelse reg, value);
-    } else cog.write_reg(reg, value);
+    } else {
+        cog.write_reg(reg, value);
+    }
 }
 
 /// Arm a counter sensor and clear its event until the comparison becomes true again.
@@ -1147,7 +1452,16 @@ pub fn set_counter_target(cog: *Cog, event: EventId, value: u32) void {
 
 /// Capture the operands and C/Z-selected comparison, clear PAT, and establish its edge baseline.
 pub fn configure_pattern(cog: *Cog, mask: u32, value: u32) void {
-    cog.pattern = .{ .input = if (cog.c) .INB else .INA, .mask = mask, .value = value, .equal = cog.z, .matched = false };
+    cog.pattern = .{
+        .input = if (cog.c)
+            .INB
+        else
+            .INA,
+        .mask = mask,
+        .value = value,
+        .equal = cog.z,
+        .matched = false,
+    };
     cog.pattern.?.matched = cog.pattern_matches();
     cog.events.remove(.PAT);
 }
@@ -1169,7 +1483,16 @@ pub fn configure_selectable(cog: *Cog, event: EventId, value: u32) void {
     else
         .{ .pin = .{
             .index = pin,
-            .mode = if (selection < 0x80) .rising else if (selection < 0xc0) .falling else if (selection < 0x100) .change else if (selection < 0x180) .low else .high,
+            .mode = if (selection < 0x80)
+                .rising
+            else if (selection < 0xc0)
+                .falling
+            else if (selection < 0x100)
+                .change
+            else if (selection < 0x180)
+                .low
+            else
+                .high,
             .previous = cog.read_input_bit(pin),
         } };
     cog.events.remove(event);
@@ -1178,13 +1501,17 @@ pub fn configure_selectable(cog: *Cog, event: EventId, value: u32) void {
 /// Read a selected cog-local INA/INB bit, independently of physical pad routing.
 fn read_input_bit(cog: *Cog, pin: PinIndex) bool {
     const index = @intFromEnum(pin);
-    return cog.read_reg(if (index < 32) .INA else .INB) & (@as(u32, 1) << @as(u5, @truncate(index))) != 0;
+    return cog.read_reg(if (index < 32)
+        .INA
+    else
+        .INB) & (@as(u32, 1) << @as(u5, @truncate(index))) != 0;
 }
 
 /// Consume one CORDIC word, wait for pending work, or signal an empty read while retaining its value.
 pub fn read_cordic_result(cog: *Cog, axis: Cordic.Axis) ?u32 {
     if (!cog.cordic_result.ready.get(axis)) {
-        if (cog.cordic_result.busy()) return null;
+        if (cog.cordic_result.busy())
+            return null;
         cog.raise_event(.QMT);
     }
     cog.cordic_result.ready.set(axis, false);
@@ -1198,10 +1525,23 @@ pub fn read_cordic_result(cog: *Cog, axis: Cordic.Axis) ?u32 {
 pub fn begin_fifo(cog: *Cog, mode: FifoMode, config: u32, address: u32) void {
     cog.events.remove(.FBW);
     cog.fifo_state.address = @truncate(address);
-    const request: FifoRequest = .{ .mode = mode, .block = .init(config, address), .setup = if (mode == .read) 3 else 1, .accepted_at = cog.hub.counter };
-    if (cog.fifo_state.engine != null and cog.fifo_state.engine.?.mode == .write and cog.fifo_state.engine.?.write_count != 0) {
+    const request: FifoRequest = .{
+        .mode = mode,
+        .block = .init(config, address),
+        .setup = if (mode == .read)
+            3
+        else
+            1,
+        .accepted_at = cog.hub.counter,
+    };
+    if (cog.fifo_state.engine != null and
+        cog.fifo_state.engine.?.mode == .write and
+        cog.fifo_state.engine.?.write_count != 0)
+    {
         cog.fifo_state.request = request;
-    } else cog.apply_fifo(request);
+    } else {
+        cog.apply_fifo(request);
+    }
 }
 
 /// Compatibility entry for the unbounded read configuration used by semantic tests.
@@ -1213,15 +1553,31 @@ pub fn begin_fifo_read(cog: *Cog, address: u32) void {
 fn apply_fifo(cog: *Cog, request: FifoRequest) void {
     const initial_ready = request.accepted_at +% request.setup;
     const drained_ready = cog.hub.counter +% 2;
-    const ready = if (request.mode == .write) initial_ready else if (request.software) cog.hub.counter +% request.setup else if (Hub.clock_reached(drained_ready, initial_ready)) drained_ready else initial_ready;
+    const ready = if (request.mode == .write)
+        initial_ready
+    else if (request.software)
+        cog.hub.counter +% request.setup
+    else if (Hub.clock_reached(drained_ready, initial_ready))
+        drained_ready
+    else
+        initial_ready;
     cog.fifo_state.engine = .{
         .mode = request.mode,
         .initializing = request.software and request.mode == .read,
-        .block = if (request.software) request.block else null,
+        .block = if (request.software)
+            request.block
+        else
+            null,
         .remaining = request.block.longs,
         .byte_offset = @truncate(request.block.address),
-        .address = if (request.mode == .read) request.block.address & 0xffffc else request.block.address,
-        .ready_at = if (Hub.clock_reached(cog.hub.counter, ready)) null else ready,
+        .address = if (request.mode == .read)
+            request.block.address & 0xffffc
+        else
+            request.block.address,
+        .ready_at = if (Hub.clock_reached(cog.hub.counter, ready))
+            null
+        else
+            ready,
     };
     cog.fifo_state.request = null;
 }
@@ -1229,14 +1585,19 @@ fn apply_fifo(cog: *Cog, request: FifoRequest) void {
 /// Set the descriptor used for the next and subsequent reloads without disturbing buffered data.
 pub fn fifo_block(cog: *Cog, config: u32, address: u32) void {
     cog.events.remove(.FBW);
-    if (cog.fifo_state.request) |*request| request.block = .init(config, address) else if (cog.fifo_state.engine) |*fifo| fifo.block = .init(config, address);
+    if (cog.fifo_state.request) |*request| {
+        request.block = .init(config, address);
+    } else if (cog.fifo_state.engine) |*fifo| {
+        fifo.block = .init(config, address);
+    }
 }
 
 /// Inspect a buffered byte without advancing the architectural pointer or releasing a long.
 pub fn peek_fifo(cog: *const Cog, offset: usize) ?u8 {
     const fifo = cog.fifo_state.engine orelse return null;
     const position = @as(usize, fifo.byte_offset) + offset;
-    if (position / 4 >= fifo.count) return null;
+    if (position / 4 >= fifo.count)
+        return null;
     return @truncate(fifo.words[(fifo.head + position / 4) % fifo.words.len] >> @intCast((position % 4) * 8));
 }
 
@@ -1244,8 +1605,11 @@ pub fn peek_fifo(cog: *const Cog, offset: usize) ?u8 {
 pub fn read_fifo(cog: *Cog, size: u3) ?u32 {
     const address = cog.fifo_state.address orelse return null;
     var value: u32 = 0;
-    if (cog.fifo_state.request != null or cog.peek_fifo(size - 1) == null) return 0;
-    for (0..size) |index| value |= @as(u32, cog.fifo_state.engine.?.read_byte().?) << @intCast(index * 8);
+    if (cog.fifo_state.request != null or cog.peek_fifo(size - 1) == null)
+        return 0;
+    for (0..size) |index| {
+        value |= @as(u32, cog.fifo_state.engine.?.read_byte().?) << @intCast(index * 8);
+    }
     cog.fifo_state.address = address +% size;
     return value;
 }
@@ -1254,7 +1618,8 @@ pub fn read_fifo(cog: *Cog, size: u3) ?u32 {
 pub fn write_fifo(cog: *Cog, value: u32, size: u3) bool {
     const address = cog.fifo_state.address orelse return false;
     const fifo = &cog.fifo_state.engine.?;
-    if (fifo.write_count + size > fifo.write_bytes.len) return false;
+    if (fifo.write_count + size > fifo.write_bytes.len)
+        return false;
     for (0..size) |index| {
         const slot = (fifo.write_head + fifo.write_count + index) % fifo.write_bytes.len;
         fifo.write_bytes[slot] = @truncate(value >> @intCast(index * 8));
@@ -1267,8 +1632,12 @@ pub fn write_fifo(cog: *Cog, value: u32, size: u3) bool {
 
 /// Move one fixed write-eligibility stage after the edge's instructions have enqueued bytes.
 pub fn advance_fifo_write_ready(cog: *Cog) void {
-    const fifo = if (cog.fifo_state.engine) |*value| value else return;
-    if (fifo.mode != .write) return;
+    const fifo = if (cog.fifo_state.engine) |*value|
+        value
+    else
+        return;
+    if (fifo.mode != .write)
+        return;
     fifo.write_ready_count += fifo.write_pending[fifo.write_pending_head];
     fifo.write_pending[fifo.write_pending_head] = 0;
     fifo.write_pending_head = (fifo.write_pending_head + 1) % fifo.write_pending.len;
@@ -1282,12 +1651,13 @@ pub fn advance_read_bus(cog: *Cog) void {
 /// Raise each selectable LUT/lock event matching this notification, leaving pin sensors independent.
 pub fn signal_selectable(cog: *Cog, config: u6) void {
     for (cog.selectable_events, [4]EventId{ .SE1, .SE2, .SE3, .SE4 }) |selection, event| {
-        if (selection) |sensor| switch (sensor) {
-            .lut_lock => |source| if (source == config) {
-                cog.hub.signal_event(cog.id, event);
-            },
-            .pin => {},
-        };
+        if (selection) |sensor|
+            switch (sensor) {
+                .lut_lock => |source| if (source == config) {
+                    cog.hub.signal_event(cog.id, event);
+                },
+                .pin => {},
+            };
     }
 }
 
@@ -1306,13 +1676,26 @@ pub fn ram_slice(cog: *Cog) u3 {
 pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
-        cog.writeback.writes[cog.writeback.count] = .{ .reg = reg, .value = value, .debug_overlay = cog.debug.state == .active and cog.debug.control & (1 << 11) == 0 and (reg == .INA or reg == .INB) };
+        cog.writeback.writes[cog.writeback.count] = .{
+            .reg = reg,
+            .value = value,
+            .debug_overlay = cog.debug.state == .active and
+                cog.debug.control & (1 << 11) == 0 and
+                (reg == .INA or
+                    reg == .INB),
+        };
         cog.writeback.count += 1;
         return;
     }
     if (cog.debug.state == .active and cog.debug.control & (1 << 11) == 0 and (reg == .INA or reg == .INB)) {
-        if (reg == .INA) cog.debug.ijmp = value else cog.debug.iret = value;
-    } else cog.registers.set(reg, value);
+        if (reg == .INA) {
+            cog.debug.ijmp = value;
+        } else {
+            cog.debug.iret = value;
+        }
+    } else {
+        cog.registers.set(reg, value);
+    }
 }
 
 /// Write underlying cog RAM, including the tail hidden by ordinary special-register access.
@@ -1321,16 +1704,21 @@ pub fn write_ram(cog: *Cog, address: u9, value: u32) void {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
         cog.writeback.writes[cog.writeback.count] = .{ .reg = @enumFromInt(address), .value = value, .raw = true };
         cog.writeback.count += 1;
-    } else if (address >= 504) cog.ram_tail[address - 504] = value else cog.registers.values[address] = value;
+    } else if (address >= 504) {
+        cog.ram_tail[address - 504] = value;
+    } else {
+        cog.registers.values[address] = value;
+    }
 }
 
 /// Read live architectural state; INA/INB are supplied by the pin model rather than stored RAM.
 pub fn read_reg(cog: *Cog, reg: Register) u32 {
-    if (cog.debug.state == .active and cog.debug.control & (1 << 11) == 0) switch (reg) {
-        .INA => return cog.debug.ijmp,
-        .INB => return cog.debug.iret,
-        else => {},
-    };
+    if (cog.debug.state == .active and cog.debug.control & (1 << 11) == 0)
+        switch (reg) {
+            .INA => return cog.debug.ijmp,
+            .INB => return cog.debug.iret,
+            else => {},
+        };
     return switch (reg) {
         .INA => @truncate(cog.hub.io.get_in() >> 0),
         .INB => @truncate(cog.hub.io.get_in() >> 32),
@@ -1340,19 +1728,23 @@ pub fn read_reg(cog: *Cog, reg: Register) u32 {
 
 /// Only execution reads use latched data; debugger/test reads see live state.
 pub fn read_operand(cog: *Cog, reg: Register) u32 {
-    if (cog.pipeline[3]) |state| if (state.operands) |values| {
-        const d: Register = state.alt_d orelse @enumFromInt(@as(u9, @truncate(state.instr >> 9)));
-        const s: Register = state.alt_s orelse @enumFromInt(@as(u9, @truncate(state.instr)));
-        if (reg == d) return values.d;
-        if (reg == s) return values.s;
-        return switch (reg) {
-            .PTRA => values.ptra,
-            .PTRB => values.ptrb,
-            .PA => values.pa,
-            .PB => values.pb,
-            else => cog.read_reg(reg),
-        };
-    };
+    if (cog.pipeline[3]) |state| {
+        if (state.operands) |values| {
+            const d: Register = state.alt_d orelse @enumFromInt(@as(u9, @truncate(state.instr >> 9)));
+            const s: Register = state.alt_s orelse @enumFromInt(@as(u9, @truncate(state.instr)));
+            if (reg == d)
+                return values.d;
+            if (reg == s)
+                return values.s;
+            return switch (reg) {
+                .PTRA => values.ptra,
+                .PTRB => values.ptrb,
+                .PA => values.pa,
+                .PB => values.pb,
+                else => cog.read_reg(reg),
+            };
+        }
+    }
     return cog.read_reg(reg);
 }
 
@@ -1376,10 +1768,18 @@ fn capture_operands(cog: *Cog, state: *PipelineState) void {
         state.operands.?.ptrb = base + 0x40;
         const d: Register = @enumFromInt(@as(u9, @truncate(state.instr >> 9)));
         const s: Register = @enumFromInt(@as(u9, @truncate(state.instr)));
-        if (d == .PTRA) state.operands.?.d = base;
-        if (d == .PTRB) state.operands.?.d = base + 0x40;
-        if (s == .PTRA) state.operands.?.s = base;
-        if (s == .PTRB) state.operands.?.s = base + 0x40;
+        if (d == .PTRA) {
+            state.operands.?.d = base;
+        }
+        if (d == .PTRB) {
+            state.operands.?.d = base + 0x40;
+        }
+        if (s == .PTRA) {
+            state.operands.?.s = base;
+        }
+        if (s == .PTRB) {
+            state.operands.?.s = base + 0x40;
+        }
     }
 }
 
@@ -1388,7 +1788,8 @@ pub fn following_instruction(cog: *Cog) ?*PipelineState {
     var i: usize = 3;
     while (i > 0) {
         i -= 1;
-        if (cog.pipeline[i]) |*state| return state;
+        if (cog.pipeline[i]) |*state|
+            return state;
     }
     return null;
 }
@@ -1398,7 +1799,9 @@ pub fn write_lut(cog: *Cog, addr: u9, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.lut == null);
         cog.writeback.lut = .{ .address = addr, .value = value };
-        if (addr >= 0x1fc) cog.signal_selectable(4 | (@as(u6, @truncate(addr)) & 3));
+        if (addr >= 0x1fc) {
+            cog.signal_selectable(4 | (@as(u6, @truncate(addr)) & 3));
+        }
         return;
     }
     cog.lut[addr] = value;
@@ -1407,7 +1810,9 @@ pub fn write_lut(cog: *Cog, addr: u9, value: u32) void {
     if (addr >= 0x1fc) {
         // Own writes signal from the execution request; a companion sees the
         // physical RAM commit a clock later. Direct semantic calls are untimed.
-        if (!cog.hub.clocking) cog.signal_selectable(4 | (@as(u6, @truncate(addr)) & 3));
+        if (!cog.hub.clocking) {
+            cog.signal_selectable(4 | (@as(u6, @truncate(addr)) & 3));
+        }
         cog.other().signal_selectable(12 | (@as(u6, @truncate(addr)) & 3));
     }
 }
@@ -1508,7 +1913,10 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
                 .pc = cog.pc,
                 .debug_rom = cog.pc >= 504 and cog.pc < 512,
                 .instr = if (cog.pc < 0x200)
-                    if (cog.pc >= 504) debug_rom[cog.pc - 504] else cog.registers.values[cog.pc]
+                    if (cog.pc >= 504)
+                        debug_rom[cog.pc - 504]
+                    else
+                        cog.registers.values[cog.pc]
                 else
                     cog.lut[cog.pc - 0x200],
             };
@@ -1520,13 +1928,24 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
             return instr;
         },
         .hub => {
-            if (cog.fifo_state.request != null or (cog.fifo_state.engine != null and cog.fifo_state.engine.?.mode != .read)) return null;
+            if (cog.fifo_state.request != null or
+                (cog.fifo_state.engine != null and
+                    cog.fifo_state.engine.?.mode != .read))
+                return null;
             if (cog.fifo_state.engine == null) {
-                cog.fifo_state.engine = .{ .byte_offset = @truncate(cog.pc), .address = cog.pc & 0xffffc, .ready_at = cog.hub.counter +% 5 };
+                cog.fifo_state.engine = .{
+                    .byte_offset = @truncate(cog.pc),
+                    .address = cog.pc & 0xffffc,
+                    .ready_at = cog.hub.counter +% 5,
+                };
                 return null;
             }
             const word = cog.fifo_state.engine.?.read() orelse return null;
-            const instr: PipelineState = .{ .pc = cog.pc, .instr = word, .fifo_tail = cog.fifo_state.engine.?.byte_offset != 0 };
+            const instr: PipelineState = .{
+                .pc = cog.pc,
+                .instr = word,
+                .fifo_tail = cog.fifo_state.engine.?.byte_offset != 0,
+            };
             cog.pc +%= 4;
             return instr;
         },
@@ -1553,7 +1972,10 @@ pub const Fault = struct {
     pub fn reason(fault: Fault) []const u8 {
         return switch (fault.result) {
             .trap => "execution trap",
-            .not_implemented => if (fault.debug_rom) "debug ROM execution is not implemented" else "instruction is not implemented",
+            .not_implemented => if (fault.debug_rom)
+                "debug ROM execution is not implemented"
+            else
+                "instruction is not implemented",
             .illegal => |message| message,
             else => unreachable,
         };
@@ -1563,6 +1985,7 @@ pub const Fault = struct {
 test "five clock passage delays writeback and forwards to the following operand latch" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -1588,6 +2011,7 @@ test "five clock passage delays writeback and forwards to the following operand 
 test "execute-only ROM fetch differs from underlying tail RAM and discarded fetches are harmless" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -1599,7 +2023,9 @@ test "execute-only ROM fetch differs from underlying tail RAM and discarded fetc
     try std.testing.expectEqual(@as(u32, 0xdead_beef), cog.ram_tail[0]);
     cog.pc = 502;
     cog.registers.values[502] = 0xFD80_0000; // JMP #0, younger ROM fetch discarded.
-    for (0..12) |_| hub.step();
+    for (0..12) |_| {
+        hub.step();
+    }
     try std.testing.expect(hub.fault == null);
     try std.testing.expectEqual(ExecMode.cog, cog.exec_mode);
 }
@@ -1607,6 +2033,7 @@ test "execute-only ROM fetch differs from underlying tail RAM and discarded fetc
 test "illegal execution stops the cog and discards pending pipeline writes" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .hub;
@@ -1618,15 +2045,20 @@ test "illegal execution stops the cog and discards pending pipeline writes" {
     try std.testing.expectEqualStrings("hub execution uses the FIFO for instruction fetching", fault.result.illegal);
     try std.testing.expectEqual(@as(u20, 0x1000), fault.pc);
     try std.testing.expectEqual(ExecMode.stopped, cog.exec_mode);
-    for (cog.pipeline) |stage| try std.testing.expect(stage == null);
+    for (cog.pipeline) |stage| {
+        try std.testing.expect(stage == null);
+    }
     try std.testing.expectEqual(@as(usize, 0), cog.writeback.count);
-    for (0..8) |_| hub.step();
+    for (0..8) |_| {
+        hub.step();
+    }
     try std.testing.expectEqual(@as(u32, 0), cog.registers.values[20]);
 }
 
 test "stop discards startup, FIFO, transfers and queued results but preserves RAM" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     try hub.start_cog(1, .{});
     const cog = &hub.cogs[1];
@@ -1645,7 +2077,9 @@ test "stop discards startup, FIFO, transfers and queued results but preserves RA
     try std.testing.expect(cog.repeat == null);
     try std.testing.expectEqual(Skip{}, cog.skip);
     try std.testing.expectEqual(@as(u2, 0), cog.writeback.count);
-    for (0..32) |_| hub.step();
+    for (0..32) |_| {
+        hub.step();
+    }
     try std.testing.expectEqual(@as(u32, 77), cog.registers.values[100]);
     try std.testing.expectEqual(@as(u32, 88), cog.lut[100]);
 }
@@ -1653,6 +2087,7 @@ test "stop discards startup, FIFO, transfers and queued results but preserves RA
 test "COGINIT allocates free cogs and pairs, reports failure, and retains RAM on restart" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -1683,7 +2118,9 @@ test "COGINIT allocates free cogs and pairs, reports failure, and retains RAM on
     try std.testing.expectEqual(@as(u32, 2), cog.read_reg(@enumFromInt(20)));
     try std.testing.expectEqual(Cog.ExecMode.cog, hub.cogs[3].exec_mode);
     try std.testing.expectEqual(@as(u32, 0), cog.q);
-    for (&hub.cogs) |*active| active.exec_mode = .cog;
+    for (&hub.cogs) |*active| {
+        active.exec_mode = .cog;
+    }
     cog.write_reg(@enumFromInt(20), 0x30);
     try std.testing.expectEqual(Cog.ExecResult.next, execute.execute_instruction(cog, .{ .pc = 0, .instr = start }));
     try std.testing.expect(cog.c);
@@ -1710,6 +2147,7 @@ test "COGINIT allocates free cogs and pairs, reports failure, and retains RAM on
 test "LUT sharing receives companion writes and selectable events track both cogs" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const even = &hub.cogs[2];
     const odd = even.other();
@@ -1733,6 +2171,7 @@ test "LUT sharing receives companion writes and selectable events track both cog
 test "GETCT reads both halves and counter waits cross the 32-bit wrap" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     hub.counter = 0x1234_5678_ffff_ffff;
@@ -1770,6 +2209,7 @@ test "GETCT reads both halves and counter waits cross the 32-bit wrap" {
 test "counter configuration clears each latch and the reached condition reasserts across rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     for ([_]EventId{ .CT1, .CT2, .CT3 }) |event| {
         hub.init();
         const cog = &hub.cogs[0];
@@ -1780,7 +2220,9 @@ test "counter configuration clears each latch and the reached condition reassert
         var remaining = EventSet.full;
         remaining.remove(event);
         try std.testing.expect(cog.events.eql(remaining));
-        for (0..3) |_| hub.step();
+        for (0..3) |_| {
+            hub.step();
+        }
         try std.testing.expect(!cog.events.contains(event));
         hub.step();
         try std.testing.expect(cog.events.contains(event));
@@ -1793,6 +2235,7 @@ test "counter configuration clears each latch and the reached condition reassert
 test "selectable configuration masks nine bits and clears only the configured event" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     for ([_]EventId{ .SE1, .SE2, .SE3, .SE4 }, 0..) |event, index| {
@@ -1812,6 +2255,7 @@ test "selectable configuration masks nine bits and clears only the configured ev
 test "selectable pin sensors sample every architectural input with independent edge and level latches" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     const cases = [_]struct { config: u9, expected: [6]bool }{
         .{ .config = 0x40, .expected = .{ false, true, false, false, false, true } },
         .{ .config = 0x80, .expected = .{ false, false, false, true, false, false } },
@@ -1821,40 +2265,52 @@ test "selectable pin sensors sample every architectural input with independent e
         .{ .config = 0x180, .expected = .{ false, true, true, false, false, true } },
         .{ .config = 0x1c0, .expected = .{ false, true, true, false, false, true } },
     };
-    for (0..64) |index| for (cases) |case| {
-        hub.init();
-        const cog = &hub.cogs[3];
-        cog.exec_mode = .cog;
-        hub.io.samples.active = true;
-        const mask = @as(u64, 1) << @intCast(index);
-        for ([_]EventId{ .SE1, .SE2, .SE3, .SE4 }) |event| cog.configure_selectable(event, case.config | @as(u9, @intCast(index)));
-        for ([_]bool{ false, true, true, false, false, true }, case.expected) |value, expected| {
-            // Every unselected input is opposite: the sensor must read its INA/INB bit.
-            hub.io.samples.input_registers = if (value) mask else ~mask;
-            cog.step();
+    for (0..64) |index| {
+        for (cases) |case| {
+            hub.init();
+            const cog = &hub.cogs[3];
+            cog.exec_mode = .cog;
+            hub.io.samples.active = true;
+            const mask = @as(u64, 1) << @intCast(index);
             for ([_]EventId{ .SE1, .SE2, .SE3, .SE4 }) |event| {
-                try std.testing.expectEqual(expected, cog.events.contains(event));
-                cog.events.remove(event);
+                cog.configure_selectable(event, case.config | @as(u9, @intCast(index)));
+            }
+            for ([_]bool{ false, true, true, false, false, true }, case.expected) |value, expected| {
+                // Every unselected input is opposite: the sensor must read its INA/INB bit.
+                hub.io.samples.input_registers = if (value)
+                    mask
+                else
+                    ~mask;
+                cog.step();
+                for ([_]EventId{ .SE1, .SE2, .SE3, .SE4 }) |event| {
+                    try std.testing.expectEqual(expected, cog.events.contains(event));
+                    cog.events.remove(event);
+                }
+            }
+            // Selecting another, already-high input establishes a fresh edge baseline.
+            hub.io.samples.input_registers = ~mask;
+            const neighbor = @as(u6, @intCast(index)) +% 1;
+            cog.configure_selectable(.SE1, 0x40 | @as(u9, neighbor));
+            cog.step();
+            try std.testing.expect(!cog.events.contains(.SE1));
+            // LUT/lock strobes cannot accidentally notify any pin selector.
+            cog.events = .empty;
+            for (0..64) |source| {
+                cog.signal_selectable(@intCast(source));
+            }
+            try std.testing.expectEqual(@as(usize, 0), cog.events.count());
+            cog.reset();
+            for (cog.selectable_events) |selection| {
+                try std.testing.expect(selection == null);
             }
         }
-        // Selecting another, already-high input establishes a fresh edge baseline.
-        hub.io.samples.input_registers = ~mask;
-        const neighbor = @as(u6, @intCast(index)) +% 1;
-        cog.configure_selectable(.SE1, 0x40 | @as(u9, neighbor));
-        cog.step();
-        try std.testing.expect(!cog.events.contains(.SE1));
-        // LUT/lock strobes cannot accidentally notify any pin selector.
-        cog.events = .empty;
-        for (0..64) |source| cog.signal_selectable(@intCast(source));
-        try std.testing.expectEqual(@as(usize, 0), cog.events.count());
-        cog.reset();
-        for (cog.selectable_events) |selection| try std.testing.expect(selection == null);
-    };
+    }
 }
 
 test "RDFAST clears block-wrap only on accepted initialization and not on stalled retries" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -1868,6 +2324,7 @@ test "RDFAST clears block-wrap only on accepted initialization and not on stalle
     cog.pipeline[3] = read;
     cog.collecting_writes = true;
     defer cog.collecting_writes = false;
+
     cog.events.insert(.FBW);
     try std.testing.expectEqual(ExecResult.wait, execute.execute_instruction(cog, read));
     try std.testing.expect(!cog.events.contains(.FBW));
@@ -1891,6 +2348,7 @@ test "RDFAST clears block-wrap only on accepted initialization and not on stalle
 test "FBLOCK replaces the descriptor of a configuration still draining prior writes" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.begin_fifo(.write, 0, 0x1000);
@@ -1899,14 +2357,18 @@ test "FBLOCK replaces the descriptor of a configuration still draining prior wri
     cog.fifo_block(2, 0x3000);
     try std.testing.expectEqual(FifoMode.write, cog.fifo_state.engine.?.mode);
     try std.testing.expectEqual(@as(u20, 0x3000), cog.fifo_state.request.?.block.address);
-    while (cog.fifo_state.request != null) hub.step();
+    while (cog.fifo_state.request != null) {
+        hub.step();
+    }
     try std.testing.expectEqual(@as(u32, 0x11223344), hub.read_memory(0x1000, 4));
     try std.testing.expectEqual(FifoMode.read, cog.fifo_state.engine.?.mode);
     try std.testing.expectEqual(@as(u19, 32), cog.fifo_state.engine.?.remaining);
     try std.testing.expectEqual(@as(u20, 0x3000), cog.fifo_state.engine.?.block.?.address);
     try std.testing.expectEqual(@as(u19, 32), cog.fifo_state.engine.?.block.?.longs);
     while (!cog.events.contains(.FBW)) {
-        if (cog.peek_fifo(3) != null) _ = cog.read_fifo(4);
+        if (cog.peek_fifo(3) != null) {
+            _ = cog.read_fifo(4);
+        }
         hub.step();
     }
     try std.testing.expectEqual(@as(u20, 0x3000), cog.fifo_state.engine.?.address);
@@ -1917,6 +2379,7 @@ test "FBLOCK replaces the descriptor of a configuration still draining prior wri
 test "FIFO ring reads cross the physical end and full writes retain their augmented operand across retries" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.begin_fifo(.read, 0, 0xfffff);
@@ -1929,7 +2392,9 @@ test "FIFO ring reads cross the physical end and full writes retain their augmen
     try std.testing.expectEqual(@as(usize, 1), cog.fifo_state.engine.?.count);
 
     cog.begin_fifo(.write, 0, 0x1000);
-    for (0..19) |_| try std.testing.expect(cog.write_fifo(0, 4));
+    for (0..19) |_| {
+        try std.testing.expect(cog.write_fifo(0, 4));
+    }
     try std.testing.expect(!cog.write_fifo(1, 1));
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xfd64f017 }; // WFLONG #$78.
     cog.augd = 0x12345600;
@@ -1946,6 +2411,7 @@ test "FIFO ring reads cross the physical end and full writes retain their augmen
 test "FIFO byte eligibility survives CT rollover and reset discards only uncommitted writes" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     hub.counter = std.math.maxInt(u64) - 1;
@@ -1959,7 +2425,9 @@ test "FIFO byte eligibility survives CT rollover and reset discards only uncommi
     try std.testing.expect(cog.write_fifo(0x55667788, 4));
     cog.begin_fifo(.read, 0, 0x2000);
     cog.reset();
-    for (0..32) |_| hub.step();
+    for (0..32) |_| {
+        hub.step();
+    }
     try std.testing.expectEqual(@as(u32, 0x11223344), hub.read_memory(0, 4));
     try std.testing.expectEqual(@as(u32, 0), hub.read_memory(4, 4));
     try std.testing.expect(cog.fifo_state.engine == null);
@@ -1969,6 +2437,7 @@ test "FIFO byte eligibility survives CT rollover and reset discards only uncommi
 test "FIFO write eligibility still waits for the rotating hub RAM slice" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     for (0..8) |phase| {
         hub.init();
         hub.counter = phase;
@@ -1976,7 +2445,9 @@ test "FIFO write eligibility still waits for the rotating hub RAM slice" {
         cog.begin_fifo(.write, 0, 0);
         try std.testing.expect(cog.write_fifo(0x1234_5678, 4));
         var first_grant = (8 - phase) % 8;
-        if (first_grant < 2) first_grant += 8;
+        if (first_grant < 2) {
+            first_grant += 8;
+        }
         for (0..first_grant) |_| {
             try std.testing.expectEqual(@as(u32, 0), hub.read_memory(0, 4));
             hub.step();
@@ -1990,6 +2461,7 @@ test "FIFO write eligibility still waits for the rotating hub RAM slice" {
 test "pattern comparison reads architectural INA or INB and retains the SETPAT flag selections" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     const cases = [_]struct { mask: u32, value: u32, input: u32, equal: bool }{
         .{ .mask = 0xf, .value = 5, .input = 0xffff_fff5, .equal = true },
         .{ .mask = 0xf, .value = 5, .input = 6, .equal = false },
@@ -1999,36 +2471,41 @@ test "pattern comparison reads architectural INA or INB and retains the SETPAT f
         .{ .mask = 0xffff_ffff, .value = 0x8000_0000, .input = 0x8000_0000, .equal = true },
         .{ .mask = 0xffff_ffff, .value = 0x8000_0000, .input = 0, .equal = false },
     };
-    for (cases) |case| for ([_]bool{ false, true }) |port_b| for ([_]bool{ false, true }) |equal| {
-        hub.init();
-        const cog = &hub.cogs[0];
-        hub.io.samples.active = true;
-        // Pads and unsampled routing deliberately disagree with the architectural register.
-        hub.io.pads = @splat(.x);
-        hub.io.routed_inputs = ~@as(u64, case.input);
-        hub.io.samples.input_registers = if (port_b)
-            (@as(u64, case.input) << 32) | ~case.input
-        else
-            (@as(u64, ~case.input) << 32) | case.input;
-        cog.c = port_b;
-        cog.z = equal;
-        cog.events = .full;
-        cog.configure_pattern(case.mask, case.value);
-        try std.testing.expectEqual(port_b, cog.c);
-        try std.testing.expectEqual(equal, cog.z);
-        var remaining = EventSet.full;
-        remaining.remove(.PAT);
-        try std.testing.expect(cog.events.eql(remaining));
-        // Changing the CPU flags later must not change the configured sensor.
-        cog.c = !port_b;
-        cog.z = !equal;
-        try std.testing.expectEqual(case.equal == equal, cog.pattern_matches());
-    };
+    for (cases) |case| {
+        for ([_]bool{ false, true }) |port_b| {
+            for ([_]bool{ false, true }) |equal| {
+                hub.init();
+                const cog = &hub.cogs[0];
+                hub.io.samples.active = true;
+                // Pads and unsampled routing deliberately disagree with the architectural register.
+                hub.io.pads = @splat(.x);
+                hub.io.routed_inputs = ~@as(u64, case.input);
+                hub.io.samples.input_registers = if (port_b)
+                    (@as(u64, case.input) << 32) | ~case.input
+                else
+                    (@as(u64, ~case.input) << 32) | case.input;
+                cog.c = port_b;
+                cog.z = equal;
+                cog.events = .full;
+                cog.configure_pattern(case.mask, case.value);
+                try std.testing.expectEqual(port_b, cog.c);
+                try std.testing.expectEqual(equal, cog.z);
+                var remaining = EventSet.full;
+                remaining.remove(.PAT);
+                try std.testing.expect(cog.events.eql(remaining));
+                // Changing the CPU flags later must not change the configured sensor.
+                cog.c = !port_b;
+                cog.z = !equal;
+                try std.testing.expectEqual(case.equal == equal, cog.pattern_matches());
+            }
+        }
+    }
 }
 
 test "pattern latches survive a false condition and rearm on new edges during waits until reset" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     const other_cog = &hub.cogs[1];
@@ -2097,94 +2574,135 @@ test "pattern latches survive a false condition and rearm on new edges during wa
 test "SETPAT dispatch resolves registers immediates augmentation and cancellation without changing operands or flags" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
-    for ([_]bool{ false, true }) |d_imm| for ([_]bool{ false, true }) |s_imm| for ([_]bool{ false, true }) |augmented| for (0..4) |flags| {
-        hub.init();
-        const cog = &hub.cogs[0];
-        const mask: u32 = if (augmented) 0x8000_000f else 0xf;
-        const value: u32 = if (augmented) 0x8000_0005 else 5;
-        cog.c = flags & 2 != 0;
-        cog.z = flags & 1 != 0;
-        cog.write_reg(@enumFromInt(20), mask);
-        cog.write_reg(@enumFromInt(21), value);
-        cog.augd = if (d_imm and augmented) mask & ~@as(u32, 0x1ff) else 0;
-        cog.augs = if (s_imm and augmented) value & ~@as(u32, 0x1ff) else 0;
-        cog.augs_pending = s_imm and augmented;
-        const d: u32 = if (d_imm) mask & 0x1ff else 20;
-        const s: u32 = if (s_imm) value & 0x1ff else 21;
-        const instruction = @as(u32, 0xFBF0_0000) | (@as(u32, @intFromBool(d_imm)) << 19) |
-            (@as(u32, @intFromBool(s_imm)) << 18) | (d << 9) | s;
-        try std.testing.expectEqual(ExecResult.next, execute.execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
-        try std.testing.expectEqual(mask, cog.pattern.?.mask);
-        try std.testing.expectEqual(value, cog.pattern.?.value);
-        try std.testing.expectEqual(@as(Register, if (flags & 2 != 0) .INB else .INA), cog.pattern.?.input);
-        try std.testing.expectEqual(flags & 1 != 0, cog.pattern.?.equal);
-        try std.testing.expectEqual(mask, cog.read_reg(@enumFromInt(20)));
-        try std.testing.expectEqual(value, cog.read_reg(@enumFromInt(21)));
-        try std.testing.expectEqual(flags & 2 != 0, cog.c);
-        try std.testing.expectEqual(flags & 1 != 0, cog.z);
-        if (d_imm) try std.testing.expectEqual(@as(u32, 0), cog.augd);
-        if (s_imm) try std.testing.expect(!cog.augs_pending);
-        const previous = cog.pattern.?;
-        cog.events.insert(.PAT);
-        cog.z = false;
-        const canceled = (instruction & 0x0fff_ffff) | 0xA000_0000; // IF_Z.
-        try std.testing.expectEqual(ExecResult.skip, execute.execute_instruction(cog, .{ .pc = 0, .instr = canceled }));
-        try std.testing.expectEqualDeep(previous, cog.pattern.?);
-        try std.testing.expect(cog.events.contains(.PAT));
-    };
+
+    for ([_]bool{ false, true }) |d_imm| {
+        for ([_]bool{ false, true }) |s_imm| {
+            for ([_]bool{ false, true }) |augmented| {
+                for (0..4) |flags| {
+                    hub.init();
+                    const cog = &hub.cogs[0];
+                    const mask: u32 = if (augmented)
+                        0x8000_000f
+                    else
+                        0xf;
+                    const value: u32 = if (augmented)
+                        0x8000_0005
+                    else
+                        5;
+                    cog.c = flags & 2 != 0;
+                    cog.z = flags & 1 != 0;
+                    cog.write_reg(@enumFromInt(20), mask);
+                    cog.write_reg(@enumFromInt(21), value);
+                    cog.augd = if (d_imm and augmented)
+                        mask & ~@as(u32, 0x1ff)
+                    else
+                        0;
+                    cog.augs = if (s_imm and augmented)
+                        value & ~@as(u32, 0x1ff)
+                    else
+                        0;
+                    cog.augs_pending = s_imm and augmented;
+                    const d: u32 = if (d_imm)
+                        mask & 0x1ff
+                    else
+                        20;
+                    const s: u32 = if (s_imm)
+                        value & 0x1ff
+                    else
+                        21;
+                    const instruction = @as(u32, 0xFBF0_0000) | (@as(u32, @intFromBool(d_imm)) << 19) |
+                        (@as(u32, @intFromBool(s_imm)) << 18) | (d << 9) | s;
+                    try std.testing.expectEqual(ExecResult.next, execute.execute_instruction(cog, .{ .pc = 0, .instr = instruction }));
+                    try std.testing.expectEqual(mask, cog.pattern.?.mask);
+                    try std.testing.expectEqual(value, cog.pattern.?.value);
+                    try std.testing.expectEqual(@as(Register, if (flags & 2 != 0)
+                        .INB
+                    else
+                        .INA), cog.pattern.?.input);
+                    try std.testing.expectEqual(flags & 1 != 0, cog.pattern.?.equal);
+                    try std.testing.expectEqual(mask, cog.read_reg(@enumFromInt(20)));
+                    try std.testing.expectEqual(value, cog.read_reg(@enumFromInt(21)));
+                    try std.testing.expectEqual(flags & 2 != 0, cog.c);
+                    try std.testing.expectEqual(flags & 1 != 0, cog.z);
+                    if (d_imm) {
+                        try std.testing.expectEqual(@as(u32, 0), cog.augd);
+                    }
+                    if (s_imm) {
+                        try std.testing.expect(!cog.augs_pending);
+                    }
+                    const previous = cog.pattern.?;
+                    cog.events.insert(.PAT);
+                    cog.z = false;
+                    const canceled = (instruction & 0x0fff_ffff) | 0xA000_0000; // IF_Z.
+                    try std.testing.expectEqual(ExecResult.skip, execute.execute_instruction(cog, .{ .pc = 0, .instr = canceled }));
+                    try std.testing.expectEqualDeep(previous, cog.pattern.?);
+                    try std.testing.expect(cog.events.contains(.PAT));
+                }
+            }
+        }
+    }
 }
 
 test "interrupt requests select every event source independently of event latches" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
-    for (std.enums.values(EventId)[1..]) |event| for (std.enums.values(InterruptLevel)) |level| {
-        hub.init();
-        const cog = &hub.cogs[3];
-        const slot = cog.interrupts.levels.getPtr(level);
-        cog.events.insert(event);
-        cog.configure_interrupt(level, 0xffff_fff0 | @as(u32, @intFromEnum(event)));
-        try std.testing.expectEqual(@as(?EventId, event), slot.source);
-        try std.testing.expectEqual(InterruptState.idle, slot.state);
-        cog.interrupts.stalled = true;
-        hub.counter = std.math.maxInt(u64);
-        cog.raise_event(event);
-        try std.testing.expectEqual(InterruptState.pending, slot.state);
-        try std.testing.expectEqual(hub.counter, slot.pending_since);
-        cog.events.remove(event);
-        cog.configure_interrupt(level, 0);
-        try std.testing.expect(slot.source == null);
-        try std.testing.expectEqual(InterruptState.pending, slot.state);
-        cog.trigger_interrupt(level);
-        try std.testing.expectEqual(hub.counter, slot.pending_since);
-        slot.state = .active;
-        cog.raise_event(event);
-        cog.trigger_interrupt(level);
-        try std.testing.expectEqual(InterruptState.active, slot.state);
-        cog.cancel_interrupt(level);
-        try std.testing.expectEqual(InterruptState.idle, slot.state);
-        cog.trigger_interrupt(level);
-        try std.testing.expectEqual(InterruptState.pending, slot.state);
-        cog.reset();
-        try std.testing.expectEqual(InterruptState.idle, cog.interrupts.levels.get(level).state);
-        try std.testing.expect(cog.interrupts.levels.get(level).source == null);
-        try std.testing.expect(!cog.interrupts.stalled);
-    };
+
+    for (std.enums.values(EventId)[1..]) |event| {
+        for (std.enums.values(InterruptLevel)) |level| {
+            hub.init();
+            const cog = &hub.cogs[3];
+            const slot = cog.interrupts.levels.getPtr(level);
+            cog.events.insert(event);
+            cog.configure_interrupt(level, 0xffff_fff0 | @as(u32, @intFromEnum(event)));
+            try std.testing.expectEqual(@as(?EventId, event), slot.source);
+            try std.testing.expectEqual(InterruptState.idle, slot.state);
+            cog.interrupts.stalled = true;
+            hub.counter = std.math.maxInt(u64);
+            cog.raise_event(event);
+            try std.testing.expectEqual(InterruptState.pending, slot.state);
+            try std.testing.expectEqual(hub.counter, slot.pending_since);
+            cog.events.remove(event);
+            cog.configure_interrupt(level, 0);
+            try std.testing.expect(slot.source == null);
+            try std.testing.expectEqual(InterruptState.pending, slot.state);
+            cog.trigger_interrupt(level);
+            try std.testing.expectEqual(hub.counter, slot.pending_since);
+            slot.state = .active;
+            cog.raise_event(event);
+            cog.trigger_interrupt(level);
+            try std.testing.expectEqual(InterruptState.active, slot.state);
+            cog.cancel_interrupt(level);
+            try std.testing.expectEqual(InterruptState.idle, slot.state);
+            cog.trigger_interrupt(level);
+            try std.testing.expectEqual(InterruptState.pending, slot.state);
+            cog.reset();
+            try std.testing.expectEqual(InterruptState.idle, cog.interrupts.levels.get(level).state);
+            try std.testing.expect(cog.interrupts.levels.get(level).source == null);
+            try std.testing.expect(!cog.interrupts.stalled);
+        }
+    }
 }
 
 test "interrupt completion requires a register IRET source and both flag writes" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     for (std.enums.values(InterruptLevel), [_]Register{ .IRET1, .IRET2, .IRET3 }) |level, source| {
         hub.init();
         const cog = &hub.cogs[0];
-        for (&cog.interrupts.levels.values) |*slot| slot.state = .active;
+        for (&cog.interrupts.levels.values) |*slot| {
+            slot.state = .active;
+        }
         cog.complete_interrupt(source, true, true);
         cog.complete_interrupt(source, false, false);
         cog.complete_interrupt(.INB, false, true); // Debug return is outside the ordinary controller.
         try std.testing.expectEqual(InterruptState.active, cog.interrupts.levels.get(level).state);
         cog.complete_interrupt(source, false, true);
         for (std.enums.values(InterruptLevel)) |other_level| {
-            try std.testing.expectEqual(if (other_level == level) InterruptState.idle else .active, cog.interrupts.levels.get(other_level).state);
+            try std.testing.expectEqual(if (other_level == level)
+                InterruptState.idle
+            else
+                .active, cog.interrupts.levels.get(other_level).state);
         }
     }
 }
@@ -2192,13 +2710,16 @@ test "interrupt completion requires a register IRET source and both flag writes"
 test "interrupt injection holds the PC and FIFO and respects priority reservation and rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.exec_mode = .hub;
     cog.pc = 0x4003;
     cog.fifo_state.engine = .{ .byte_offset = 3, .address = 0x4040, .ready_at = null, .count = 12 };
     hub.counter = std.math.maxInt(u64);
-    for (std.enums.values(InterruptLevel)) |level| cog.trigger_interrupt(level);
+    for (std.enums.values(InterruptLevel)) |level| {
+        cog.trigger_interrupt(level);
+    }
     try std.testing.expect(cog.inject_interrupt() == null);
     hub.counter +%= 1;
     cog.issue_phase = false;
@@ -2235,6 +2756,7 @@ test "interrupt injection holds the PC and FIFO and respects priority reservatio
 test "zero augmentations shield until a non-canceled consumer is ahead of the interrupt" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.trigger_interrupt(.int1);
@@ -2268,6 +2790,7 @@ test "zero augmentations shield until a non-canceled consumer is ahead of the in
 test "WAITINT samples pending requests rather than the pollable interrupt latch" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
+
     hub.init();
     const cog = &hub.cogs[0];
     cog.events.insert(.INT);
