@@ -58,7 +58,7 @@ pub const Arithmetic = union(enum) {
     result: Result,
 };
 pub const Entry = struct { cog: CogId, tracked: bool = true, operation: Operation, data: Arithmetic };
-pub const Delivery = struct { cog: CogId, tracked: bool, result: Result };
+pub const Delivery = struct { cog: CogId, tracked: bool, operation: Operation, result: Result };
 pub const Stage = union(enum) { decode, normalize, quadrant, iterate: u5, scale: u5, repeat: u5, finish };
 
 /// The official depth is 54. The allocation of arithmetic work to individual cells is inferred,
@@ -108,7 +108,7 @@ pub fn step(cordic: *Cordic) ?Delivery {
     }
     std.mem.copyBackwards(?Delivery, cordic.returns[1..], cordic.returns[0 .. cordic.returns.len - 1]);
     cordic.returns[0] = if (cordic.pipeline[stage_layout.len - 1]) |last|
-        .{ .cog = last.cog, .tracked = last.tracked, .result = last.data.result }
+        .{ .cog = last.cog, .tracked = last.tracked, .operation = last.operation, .result = last.data.result }
     else
         null;
     var index: usize = stage_layout.len;

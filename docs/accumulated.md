@@ -925,3 +925,19 @@ These measurements cover the observable overflow paths above on the connected
 board. They do not claim every combination of ALTI substitution, missing streamer
 activity, or uncontrolled pin-driven instruction words, nor a board/revision-wide
 rule for unrelated RAM collision paths.
+
+## Address domains used by debugger inspection
+
+The GUI/debugger implementation follows the simulator's existing address rules:
+architectural `$1F8..$1FF` values, the underlying eight tail-RAM longs, and
+execute-only ROM are distinct views. A carried local PC can fetch from the LUT
+or reuse the operand S port; its physical source is not always `PC & $1FF`.
+Saved return words carry C/Z in bits 31/30 and the target in bits 19..0; flags
+must be removed before classifying cog, LUT or hub references. Every physical
+stack slot can retain a matching address, so inspecting these slots does not
+establish a call depth. GPIO pad output enable follows delayed physical DIR;
+smart modes use TT independently of the DIR-controlled engine enable.
+
+These are inspection rules derived from the existing model, not new hardware
+measurements. See [debugger.md](windtunnel/debugger.md) and the headless
+[regressions](../src/windtunnel/debugger_tests.zig).

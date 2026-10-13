@@ -5,6 +5,10 @@ const checklist = @import("check_list.zig");
 const Cog = @import("sim/Cog.zig");
 const Hub = @import("sim/Hub.zig");
 const smart_pin = @import("sim/smart_pin.zig");
+const disassembly = @import("sim/disassemble.zig");
+comptime {
+    _ = disassembly;
+}
 const decode = @import("sim/decode.zig");
 const encoding = @import("sim/encoding.zig");
 const oracle = @import("oracle.zig");

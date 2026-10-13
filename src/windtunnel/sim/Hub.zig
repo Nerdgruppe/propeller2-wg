@@ -9,6 +9,7 @@ const Cordic = @import("Cordic.zig");
 const Random = @import("Random.zig");
 const Vcd = @import("Vcd.zig");
 const Hub = @This();
+pub const Debugger = @import("Debugger.zig");
 const p2 = @import("p2");
 const EventId = p2.types.EventId;
 
@@ -31,6 +32,10 @@ comptime {
 /// Captured at the issuing instruction, never inferred from a later cog state.
 pub const WriteOrigin = enum { application, debug };
 
+debugger: ?*Debugger = null,
+access_context: Debugger.Provenance = .{},
+read_class: Debugger.ReadClass = .data,
+
 memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
@@ -50,7 +55,7 @@ fault: ?Cog.Fault = null,
 locks: [16]Lock = undefined,
 /// True only while step() processes a clock edge; direct semantic calls apply shared effects immediately.
 clocking: bool = false,
-pending_starts: [8]?struct { at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
+pending_starts: [8]?struct { provenance: Debugger.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
 pending_events: [4][8]Cog.EventSet = @splat(@splat(.empty)),
 event_head: usize = 0,
 
@@ -146,16 +151,24 @@ pub fn send_attention(hub: *Hub, mask: u32) void {
     }
 }
 
+/// Resolve a physical read to a backing RAM byte, accounting for protection and the upper mirror.
+pub fn readBackingAddress(hub: *const Hub, address: u32) ?u19 {
+    const byte_address = address & 0xfffff;
+    if (byte_address < (if (hub.debug.protected) @as(u32, 0x7c000) else 0x80000) or byte_address >= 0xfc000)
+        return @truncate(byte_address);
+    return null;
+}
+
 /// Read little-endian bytes through the 20-bit RAM/hole/mirror map, wrapping each byte address.
 pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
     var value: u32 = 0;
     for (0..size) |i| {
         const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
-        if (byte_address < (if (hub.debug.protected)
-            @as(u32, 0x7c000)
-        else
-            0x80000) or byte_address >= 0xfc000)
-            value |= @as(u32, hub.memory[byte_address & 0x7ffff]) << @intCast(i * 8);
+        if (hub.readBackingAddress(byte_address)) |backing| {
+            const byte = hub.memory[backing];
+            value |= @as(u32, byte) << @intCast(i * 8);
+            hub.observe(.hub, null, backing, .read, byte, hub.read_class, .ram);
+        }
     }
     return value;
 }
@@ -177,15 +190,44 @@ pub fn write_memory_from(hub: *Hub, address: u32, value: u32, size: u3, masked: 
                 origin == .debug);
         if (mapped and authorized and (!masked or byte != 0)) {
             hub.memory[byte_address & 0x7ffff] = byte;
+            hub.observe(.hub, null, byte_address & 0x7ffff, .write, byte, .data, .ram);
         }
+    }
+}
+
+/// Report simulator traffic only. Host inspection and edits run outside clocking.
+pub fn observe(hub: *Hub, space: Debugger.Space, cog: ?u3, address: u32, access: Debugger.Access, value: u32, class: Debugger.ReadClass, storage: Debugger.Storage) void {
+    if (!hub.clocking)
+        return;
+    if (hub.debugger) |debugger| {
+        debugger.observe(.{
+            .watchpoint = 0,
+            .clock = hub.counter,
+            .provenance = hub.access_context,
+            .space = space,
+            .cog = cog,
+            .address = address,
+            .access = access,
+            .value = value,
+            .class = class,
+            .storage = storage,
+        });
     }
 }
 
 /// Commit old writes, advance I/O once, execute cogs, then capture traces and advance CT.
 /// All cogs observe previous-edge writes before any cog executes on this edge.
 pub fn step(hub: *Hub) void {
+    if (hub.debugger) |debugger| {
+        if (!debugger.beforeClock(hub))
+            return;
+    }
     hub.clocking = true;
-    defer hub.clocking = false;
+    defer {
+        hub.clocking = false;
+        hub.access_context = .{};
+        hub.read_class = .data;
+    }
 
     const events = &hub.pending_events[hub.event_head];
     for (&hub.cogs, events) |*cog, pending| {
@@ -197,10 +239,13 @@ pub fn step(hub: *Hub) void {
     }
     events.* = @splat(.empty);
     var lut_writes: [8]@TypeOf(hub.cogs[0].writeback.lut) = undefined;
+    var lut_provenance: [8]Debugger.Provenance = undefined;
     for (&hub.cogs, &lut_writes) |*cog, *write| {
         write.* = cog.writeback.lut;
+        lut_provenance[cog.id] = cog.writeback.provenance;
     }
     for (&hub.cogs) |*cog| {
+        hub.access_context = cog.writeback.provenance;
         cog.commit_results();
     }
     // Both RAM ports complete together. Distinct-address writes both become
@@ -216,12 +261,15 @@ pub fn step(hub: *Hub) void {
             }
             if (other.lut_sharing and (own == null or own.?.address != value.address)) {
                 other.lut[value.address] = value.value;
+                hub.access_context = lut_provenance[cog.id];
+                hub.observe(.lut, other.id, value.address, .write, value.value, .data, .ram);
             }
         }
     }
     // All previous-edge writes are visible before any cog samples this edge.
     for (&hub.cogs) |*cog| {
         if (cog.hub_writeback) |write| {
+            hub.access_context = write.provenance;
             hub.write_memory_from(write.address, write.value, write.size, write.masked, write.origin);
             cog.hub_writeback = null;
         }
@@ -230,6 +278,7 @@ pub fn step(hub: *Hub) void {
         if (pending.*) |start| {
             if (start.at == hub.counter) {
                 pending.* = null;
+                hub.access_context = start.provenance;
                 hub.start_cog(@intCast(id), .{
                     .hub_address = start.address,
                     .ptra = start.ptra,
@@ -240,23 +289,33 @@ pub fn step(hub: *Hub) void {
         }
     }
     for (&hub.cogs) |*cog| {
+        hub.access_context = cog.provenance();
+        hub.read_class = .data;
         cog.clock_startup();
     }
     for (&hub.cogs) |*cog| {
+        hub.access_context = cog.provenance();
+        hub.read_class = .data;
         cog.clock_fifo();
     }
     for (&hub.cogs) |*cog| {
+        hub.access_context = cog.provenance();
+        hub.read_class = .data;
         cog.clock_memory();
     }
     if (hub.cordic.step()) |delivery| {
         hub.cogs[@intFromEnum(delivery.cog)].cordic_result.accept(delivery);
     }
     for (&hub.cogs) |*cog| {
+        hub.access_context = cog.provenance();
+        hub.read_class = .data;
         cog.clock_command();
     }
     hub.io.step(hub);
     if (hub.fault == null) {
         for (&hub.cogs) |*cog| {
+            hub.access_context = cog.provenance();
+            hub.read_class = .data;
             cog.step();
         }
     }
@@ -274,6 +333,9 @@ pub fn step(hub: *Hub) void {
         };
     hub.random.step();
     hub.counter +%= 1;
+    if (hub.debugger) |debugger| {
+        debugger.afterClock(hub);
+    }
 }
 
 /// Return whether any cog is executing or waiting for startup to complete.
@@ -302,6 +364,7 @@ pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {
     if (options.load_image) {
         if (options.clocked) {
             cog.startup = .{
+                .provenance = if (hub.access_context.cog == null) .{ .cog = index } else hub.access_context,
                 .address = base,
                 .grant_at = command_clock +% 17 +% (((@as(u64, base) >> 2) -% (command_clock +% 17 +% index)) & 7),
                 .remaining = 504,
@@ -320,6 +383,7 @@ pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {
             .hub;
         if (options.clocked) {
             cog.startup = .{
+                .provenance = if (hub.access_context.cog == null) .{ .cog = index } else hub.access_context,
                 .address = base,
                 .grant_at = 0,
                 .remaining = 0,
@@ -552,6 +616,7 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
         hub.write_memory(read_address, 0x5566_7788, 4, false);
         hub.cogs[0].fifo_state.engine = .{ .address = @intCast(fifo_address), .byte_offset = 0, .ready_at = hub.counter };
         hub.cogs[1].memory_transfer = .{
+            .provenance = .{ .cog = 1 },
             .address = read_address,
             .remaining = 1,
             .reg = 20,
@@ -836,11 +901,11 @@ test "deferred write authorization survives a debug state transition" {
     const before = hub.read_memory(0xfc000, 4);
     const cog = &hub.cogs[0];
     cog.debug.state = .active;
-    cog.hub_writeback = .{ .address = 0xfc000, .value = 0xdead_beef, .size = 4, .masked = false, .origin = .application };
+    cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0xdead_beef, .size = 4, .masked = false, .origin = .application };
     hub.step();
     try std.testing.expectEqual(before, hub.read_memory(0xfc000, 4));
     cog.debug.state = .idle;
-    cog.hub_writeback = .{ .address = 0xfc000, .value = 0x1234_5678, .size = 4, .masked = false, .origin = .debug };
+    cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0x1234_5678, .size = 4, .masked = false, .origin = .debug };
     hub.step();
     try std.testing.expectEqual(@as(u32, 0x1234_5678), hub.read_memory(0xfc000, 4));
 }

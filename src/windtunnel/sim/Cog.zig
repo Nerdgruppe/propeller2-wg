@@ -5,6 +5,7 @@ const std = @import("std");
 const logger = std.log.scoped(.cog);
 
 const Cog = @This();
+const Debugger = @import("Debugger.zig");
 const Hub = @import("Hub.zig");
 const Cordic = @import("Cordic.zig");
 
@@ -92,7 +93,7 @@ pattern: ?Pattern = null,
 pixel_pivot: u8 = 0,
 pixel_mode: u6 = 0,
 memory_transfer: ?MemoryTransfer = null,
-hub_writeback: ?struct { address: u32, value: u32, size: u3, masked: bool, origin: Hub.WriteOrigin } = null,
+hub_writeback: ?struct { provenance: Debugger.Provenance, address: u32, value: u32, size: u3, masked: bool, origin: Hub.WriteOrigin } = null,
 startup: ?Startup = null,
 
 pub const Pattern = struct {
@@ -159,6 +160,7 @@ const XbyteMode = enum(u9) { _ };
 
 /// Latches used only while the phantom bytecode dispatch owns the pipeline.
 const Xbyte = struct {
+    provenance: Debugger.Provenance,
     phase: enum { lookup, latch, execute, branch } = .lookup,
     address: u9 = 0,
     entry: u32 = 0,
@@ -196,6 +198,7 @@ pub const Interrupts = struct {
 };
 
 pub const Startup = struct {
+    provenance: Debugger.Provenance,
     address: u32,
     grant_at: u64,
     remaining: u10,
@@ -233,6 +236,7 @@ pub const MemoryTransfer = struct {
     /// Exactly one direction owns the transfer-specific latches.
     pub const Direction = union(enum) { read: Read, write: Write };
 
+    provenance: Debugger.Provenance,
     address: u32,
     remaining: u64,
     reg: u9,
@@ -272,6 +276,7 @@ pub const FifoBlock = struct {
 
 /// A requested configuration waits for the preceding write stream to drain.
 pub const FifoRequest = struct {
+    provenance: Debugger.Provenance,
     mode: FifoMode,
     block: FifoBlock,
     setup: u4,
@@ -282,11 +287,13 @@ pub const FifoRequest = struct {
 /// The RAM return path holds five requests; the FIFO holds nineteen longs.
 /// Stop issuing at fifteen occupied words so returning reads cannot overflow.
 pub const HubFifo = struct {
+    provenance: Debugger.Provenance = .{},
     mode: FifoMode = .read,
     initializing: bool = false,
     block: ?FifoBlock = null,
     remaining: u19 = 0x40000,
     write_bytes: [76]u8 = undefined,
+    write_provenance: [76]Debugger.Provenance = @splat(.{}),
     /// Byte counts awaiting the fixed two-clock eligibility stage.
     write_pending: [2]usize = @splat(0),
     write_pending_head: usize = 0,
@@ -294,6 +301,11 @@ pub const HubFifo = struct {
     write_head: usize = 0,
     write_count: usize = 0,
     words: [19]u32 = undefined,
+    /// Physical source and readable lanes travel with each returned long through block reloads.
+    word_addresses: [19]u20 = @splat(0),
+    word_valid: [19]u4 = @splat(0),
+    response_addresses: [8]u20 = @splat(0),
+    response_valid: [8]u4 = @splat(0),
     head: usize = 0,
     count: usize = 0,
     byte_offset: u2,
@@ -336,6 +348,7 @@ pub const FifoState = struct {
 };
 
 const Writeback = struct {
+    provenance: Debugger.Provenance = .{},
     writes: [3]struct { reg: Register, value: u32, raw: bool = false, debug_overlay: bool = false } = undefined,
     count: u2 = 0,
     c: ?bool = null,
@@ -443,6 +456,7 @@ pub fn step(cog: *Cog) void {
         null;
     var late_q_write = false;
     if (cog.pipeline[3]) |*state| {
+        state.debugger_attempted = true;
         const enabled = !state.cancelled and
             (state.instr == 0 or
                 cog.is_condition_met(@enumFromInt(@as(u4, @truncate(state.instr >> 28)))));
@@ -587,6 +601,7 @@ pub fn clock_startup(cog: *Cog) void {
         value
     else
         return;
+    cog.hub.access_context = startup.provenance;
     if (startup.release_at) |clock| {
         if (cog.hub.counter == clock) {
             cog.startup = null;
@@ -639,6 +654,7 @@ pub fn clock_command(cog: *Cog) void {
         .cogstop, .lockret, .hubset, .qmul, .qdiv, .qfrac, .qsqrt, .qrotate, .qvector, .qlog, .qexp => 0,
         else => return,
     };
+    state.debugger_attempted = true;
     if (state.command_at == null) {
         state.command_at = cog.hub.counter +% ((@as(u64, cog.id) -% cog.hub.counter) & 7);
         state.ready_at = state.command_at.? +% extra;
@@ -691,7 +707,10 @@ pub fn clock_fifo(cog: *Cog) void {
                 fifo.initializing = false;
             }
             std.debug.assert(fifo.count < fifo.words.len);
-            fifo.words[(fifo.head + fifo.count) % fifo.words.len] = value;
+            const slot = (fifo.head + fifo.count) % fifo.words.len;
+            fifo.words[slot] = value;
+            fifo.word_addresses[slot] = fifo.response_addresses[cog.read_bus.head];
+            fifo.word_valid[slot] = fifo.response_valid[cog.read_bus.head];
             fifo.count += 1;
             response.* = null;
         }
@@ -700,7 +719,21 @@ pub fn clock_fifo(cog: *Cog) void {
         return;
     cog.fifo_state.granted_at = cog.hub.counter;
     if (fifo.mode == .read) {
-        fifo.responses[(cog.read_bus.head + 5) % fifo.responses.len] = cog.hub.read_memory(fifo.address, 4);
+        cog.hub.read_class = .physical;
+        cog.hub.access_context = fifo.provenance;
+        if (cog.hub.access_context.cog == null) {
+            cog.hub.access_context = .{ .cog = cog.id };
+        }
+        const response = (cog.read_bus.head + 5) % fifo.responses.len;
+        fifo.responses[response] = cog.hub.read_memory(fifo.address, 4);
+        fifo.response_addresses[response] = fifo.address;
+        fifo.response_valid[response] = 0;
+        for (0..4) |i| {
+            if (cog.hub.readBackingAddress(fifo.address +% @as(u20, @intCast(i))) != null) {
+                fifo.response_valid[response] |= @as(u4, 1) << @intCast(i);
+            }
+        }
+        cog.hub.read_class = .data;
         fifo.address +%= 4;
         cog.advance_fifo_block();
     } else {
@@ -709,6 +742,7 @@ pub fn clock_fifo(cog: *Cog) void {
         var consumed: usize = 0;
         while (consumed < size and consumed < fifo.write_ready_count) : (consumed += 1) {
             const index = (fifo.write_head + consumed) % fifo.write_bytes.len;
+            cog.hub.access_context = fifo.write_provenance[index];
             cog.hub.write_memory(fifo.address, fifo.write_bytes[index], 1, false);
             fifo.address +%= 1;
         }
@@ -778,6 +812,7 @@ pub fn commit_results(cog: *Cog) void {
         if (write.raw) {
             cog.write_ram(@intFromEnum(write.reg), write.value);
         } else if (write.debug_overlay) {
+            cog.hub.observe(.registers, cog.id, @intFromEnum(write.reg), .write, write.value, .data, .architectural);
             if (write.reg == .INA) {
                 cog.debug.ijmp = write.value;
             } else {
@@ -811,6 +846,9 @@ pub fn clock_memory(cog: *Cog) void {
         value
     else
         return;
+    cog.hub.access_context = transfer.provenance;
+    cog.hub.read_class = .physical;
+    defer cog.hub.read_class = .data;
     // FIFO initialization shares the ordinary hub-read completion strobe. A pending
     // command completes with the retained read bus rather than issuing its own read.
     if (cog.fifo_state.initial_response and !transfer.isWrite()) {
@@ -884,6 +922,12 @@ pub fn clock_memory(cog: *Cog) void {
     if (crossing) {
         transfer.direction.read.partial = high_word >> @intCast(@as(u6, high_size) * 8);
     }
+    for (0..transfer.size) |i| {
+        const address = (transfer.direction.read.grant_address +% @as(u32, @intCast(i))) & 0xfffff;
+        if (address < (if (cog.hub.debug.protected) @as(u32, 0x7c000) else 0x80000) or address >= 0xfc000) {
+            cog.hub.observe(.hub, null, address & 0x7ffff, .read, @as(u8, @truncate(value >> @intCast(i * 8))), .consumed, .ram);
+        }
+    }
     const response = &transfer.direction.read.responses[(cog.read_bus.head + 5) % transfer.direction.read.responses.len];
     std.debug.assert(response.* == null);
     response.* = value;
@@ -903,6 +947,9 @@ pub fn transfer_source(cog: *Cog, transfer: *MemoryTransfer) u32 {
         cog.ram_tail[transfer.reg - 504]
     else
         cog.registers.values[transfer.reg];
+    if (transfer.direction.write.immediate == null and !transfer.lut) {
+        cog.hub.observe(.registers, cog.id, transfer.reg, .read, value, .data, .ram);
+    }
     transfer.direction.write.source_value = value;
     return value;
 }
@@ -1063,7 +1110,7 @@ pub fn return_stack(cog: *Cog) ExecResult {
             }
         }
     }
-    cog.xbyte = .{};
+    cog.xbyte = .{ .provenance = cog.provenance() };
     cog.begin_skip(.fast, 0);
     cog.repeat = null;
     cog.setq_pending = false;
@@ -1077,6 +1124,7 @@ pub fn return_stack(cog: *Cog) ExecResult {
 /// Clock the hidden lookup and EXECF while hub services and event sensors continue independently.
 fn clock_xbyte(cog: *Cog) void {
     const state = &cog.xbyte.?;
+    cog.hub.access_context = state.provenance;
     switch (state.phase) {
         .lookup => {
             const byte: u8 = @truncate(cog.read_fifo(1).?);
@@ -1143,6 +1191,7 @@ fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
     if (cog.exec_mode == .hub) {
         cog.fifo_state.address = null;
         const request: FifoRequest = .{
+            .provenance = cog.provenance(),
             .mode = .read,
             .block = .init(0, target),
             .setup = 5,
@@ -1638,6 +1687,7 @@ pub fn begin_fifo(cog: *Cog, mode: FifoMode, config: u32, address: u32) void {
     cog.events.remove(.FBW);
     cog.fifo_state.address = @truncate(address);
     const request: FifoRequest = .{
+        .provenance = cog.provenance(),
         .mode = mode,
         .block = .init(config, address),
         .setup = if (mode == .read)
@@ -1674,6 +1724,7 @@ fn apply_fifo(cog: *Cog, request: FifoRequest) void {
     else
         initial_ready;
     cog.fifo_state.engine = .{
+        .provenance = request.provenance,
         .mode = request.mode,
         .initializing = request.software and request.mode == .read,
         .block = if (request.software)
@@ -1719,8 +1770,15 @@ pub fn read_fifo(cog: *Cog, size: u3) ?u32 {
     var value: u32 = 0;
     if (cog.fifo_state.request != null or cog.peek_fifo(size - 1) == null)
         return 0;
+    const fifo = &cog.fifo_state.engine.?;
     for (0..size) |index| {
-        value |= @as(u32, cog.fifo_state.engine.?.read_byte().?) << @intCast(index * 8);
+        const source = fifo.word_addresses[fifo.head] +% fifo.byte_offset;
+        const valid = fifo.word_valid[fifo.head] & (@as(u4, 1) << fifo.byte_offset) != 0;
+        const byte = fifo.read_byte().?;
+        value |= @as(u32, byte) << @intCast(index * 8);
+        if (valid) {
+            cog.hub.observe(.hub, null, source & 0x7ffff, .read, byte, .consumed, .ram);
+        }
     }
     cog.fifo_state.address = address +% size;
     return value;
@@ -1734,6 +1792,7 @@ pub fn write_fifo(cog: *Cog, value: u32, size: u3) bool {
         return false;
     for (0..size) |index| {
         const slot = (fifo.write_head + fifo.write_count + index) % fifo.write_bytes.len;
+        fifo.write_provenance[slot] = cog.provenance();
         fifo.write_bytes[slot] = @truncate(value >> @intCast(index * 8));
     }
     fifo.write_pending[(fifo.write_pending_head + 1) % fifo.write_pending.len] += size;
@@ -1796,9 +1855,11 @@ pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
                 (reg == .INA or
                     reg == .INB),
         };
+        cog.writeback.provenance = cog.provenance();
         cog.writeback.count += 1;
         return;
     }
+    cog.hub.observe(.registers, cog.id, @intFromEnum(reg), .write, value, .data, .architectural);
     if (cog.debug.state == .active and cog.debug.control & (1 << 11) == 0 and (reg == .INA or reg == .INB)) {
         if (reg == .INA) {
             cog.debug.ijmp = value;
@@ -1810,15 +1871,26 @@ pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
     }
 }
 
+/// Capture the issuing instruction, or identify a cog-only service such as startup.
+pub fn provenance(cog: *const Cog) Debugger.Provenance {
+    if (cog.pipeline[3]) |state| {
+        return .{ .cog = cog.id, .pc = state.pc, .instruction = state.instr };
+    }
+    return .{ .cog = cog.id };
+}
+
 /// Write underlying cog RAM, including the tail hidden by ordinary special-register access.
 pub fn write_ram(cog: *Cog, address: u9, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
         cog.writeback.writes[cog.writeback.count] = .{ .reg = @enumFromInt(address), .value = value, .raw = true };
+        cog.writeback.provenance = cog.provenance();
         cog.writeback.count += 1;
     } else if (address >= 504) {
+        cog.hub.observe(.registers, cog.id, address, .write, value, .data, .ram);
         cog.ram_tail[address - 504] = value;
     } else {
+        cog.hub.observe(.registers, cog.id, address, .write, value, .data, .ram);
         cog.registers.values[address] = value;
     }
 }
@@ -1840,6 +1912,14 @@ pub fn read_reg(cog: *Cog, reg: Register) u32 {
 
 /// Only execution reads use latched data; debugger/test reads see live state.
 pub fn read_operand(cog: *Cog, reg: Register) u32 {
+    const value = cog.operand_value(reg);
+    const class: Debugger.ReadClass = if (cog.pipeline[3] != null and cog.pipeline[3].?.operands != null) .consumed else .data;
+    cog.hub.observe(.registers, cog.id, @intFromEnum(reg), .read, value, class, .architectural);
+    return value;
+}
+
+/// Resolve captured operand values without reporting an inspection read.
+fn operand_value(cog: *Cog, reg: Register) u32 {
     if (cog.pipeline[3]) |state| {
         if (state.operands) |values| {
             const d: Register = state.alt_d orelse @enumFromInt(@as(u9, @truncate(state.instr >> 9)));
@@ -1870,6 +1950,21 @@ fn capture_operands(cog: *Cog, state: *PipelineState) void {
         .pa = cog.read_reg(.PA),
         .pb = cog.read_reg(.PB),
     };
+    const addresses = [_]Register{
+        state.alt_d orelse @enumFromInt(@as(u9, @truncate(state.instr >> 9))),
+        state.alt_s orelse @enumFromInt(@as(u9, @truncate(state.instr))),
+        .PTRA,
+        .PTRB,
+        .PA,
+        .PB,
+    };
+    const values = state.operands.?;
+    const saved = cog.hub.access_context;
+    cog.hub.access_context = .{ .cog = cog.id, .pc = state.pc, .instruction = state.instr };
+    for (addresses, [_]u32{ values.d, values.s, values.ptra, values.ptrb, values.pa, values.pb }) |reg, value| {
+        cog.hub.observe(.registers, cog.id, @intFromEnum(reg), .read, value, .physical, .architectural);
+    }
+    cog.hub.access_context = saved;
     if (state.interrupt == .int0) {
         state.operands.?.s = cog.debug.ijmp;
         state.operands.?.d = cog.debug.iret;
@@ -1910,6 +2005,7 @@ pub fn following_instruction(cog: *Cog) ?*PipelineState {
 pub fn write_lut(cog: *Cog, addr: u9, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.lut == null);
+        cog.writeback.provenance = cog.provenance();
         cog.writeback.lut = .{ .address = addr, .value = value };
         if (addr >= 0x1fc) {
             cog.signal_selectable(4 | (@as(u6, @truncate(addr)) & 3));
@@ -1917,6 +2013,7 @@ pub fn write_lut(cog: *Cog, addr: u9, value: u32) void {
         return;
     }
     cog.lut[addr] = value;
+    cog.hub.observe(.lut, cog.id, addr, .write, value, .data, .ram);
     if (!cog.hub.clocking and cog.other().lut_sharing)
         cog.other().lut[addr] = value;
     if (addr >= 0x1fc) {
@@ -1935,7 +2032,9 @@ pub fn read_lut(cog: *Cog, addr: u9) u32 {
         cog.signal_selectable(@as(u6, @truncate(addr)) & 3);
         cog.other().signal_selectable(8 | (@as(u6, @truncate(addr)) & 3));
     }
-    return cog.lut[addr];
+    const value = cog.lut[addr];
+    cog.hub.observe(.lut, cog.id, addr, .read, value, .data, .ram);
+    return value;
 }
 
 /// Checks if `cond` would currently apply to this cog or not.
@@ -1971,6 +2070,8 @@ pub fn resolve_operand(cog: *Cog, reg: Register, imm: bool) u32 {
 pub const PipelineState = struct {
     pc: u20,
     instr: u32,
+    /// One encounter survives all execute stalls and command scheduling retries.
+    debugger_attempted: bool = false,
     /// Physical local instruction source; null for hub fetches and injected instructions.
     local_address: ?u10 = null,
     /// Fallthrough after repeat wrap and fast skip stepping, captured at read/decode.
@@ -2018,7 +2119,7 @@ pub fn fetch_augd(cog: *Cog) u32 {
 }
 
 /// Select the local RAM read port: overflow leaves it on the preceding instruction's S address.
-fn local_fetch_address(cog: *const Cog) u10 {
+pub fn local_fetch_address(cog: *const Cog) u10 {
     if (cog.pc & 0x200 != 0)
         return @as(u10, @truncate(cog.pc));
     if (cog.pc < 0x200)
@@ -2061,6 +2162,10 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
                 else
                     cog.registers.values[address],
             };
+            const saved = cog.hub.access_context;
+            cog.hub.access_context = .{ .cog = cog.id, .pc = instr.pc, .instruction = instr.instr };
+            cog.hub.observe(if (address < 0x200) .registers else .lut, cog.id, address & 0x1ff, .read, instr.instr, .physical, if (rom) .execute_rom else .ram);
+            cog.hub.access_context = saved;
             cog.pc +%= 1;
             return instr;
         },

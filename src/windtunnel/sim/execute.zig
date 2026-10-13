@@ -34,6 +34,8 @@ fn operandS(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
         reg;
     const source = if (immediate)
         @intFromEnum(selected) | cog.fetch_augs()
+    else if (cog.pipeline[3] != null and cog.pipeline[3].?.s_value != null)
+        0
     else
         cog.read_operand(selected);
     return if (cog.pipeline[3]) |state|
@@ -296,6 +298,7 @@ fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecRes
         const block = size == 4 and cog.setq_pending;
         const state = cog.pipeline[3];
         cog.memory_transfer = .{
+            .provenance = cog.provenance(),
             .address = memoryAddress(cog, args.s, args.s_imm, size, block),
             .remaining = if (block)
                 @as(u64, cog.q) + 1
@@ -359,9 +362,10 @@ fn writeMemory(cog: *Cog, args: anytype, size: u3, masked: bool) Cog.ExecResult 
             args.d_imm
         else
             false;
-        const value = operandD(cog, args.d, immediate);
         const block = size == 4 and cog.setq_pending;
+        const value = if (block and !immediate) 0 else operandD(cog, args.d, immediate);
         cog.memory_transfer = .{
+            .provenance = cog.provenance(),
             .address = memoryAddress(cog, args.s, args.s_imm, size, block),
             .remaining = if (block)
                 @as(u64, cog.q) + 1
@@ -411,6 +415,7 @@ fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
         const low_size: u3 = @intCast(@min(size, 4 - (transfer.address & 3)));
         const crossing = low_size < size;
         cog.hub_writeback = .{
+            .provenance = transfer.provenance,
             .address = transfer.address +% (if (crossing)
                 @as(u32, low_size)
             else
@@ -453,6 +458,7 @@ fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
         const address = cog.read_operand(pointer);
         const grant = cog.memory_grant(address);
         cog.memory_transfer = .{
+            .provenance = cog.provenance(),
             .address = address,
             .remaining = 1,
             .reg = 0,
@@ -475,6 +481,7 @@ fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog
     if (cog.memory_transfer == null) {
         const address = cog.read_operand(pointer) -% 4;
         cog.memory_transfer = .{
+            .provenance = cog.provenance(),
             .address = address,
             .remaining = 1,
             .reg = 0,
@@ -968,6 +975,11 @@ fn execute_alu(
     const input: alu.Input = .{
         .d = if (is_modcz)
             (state.instr >> 9) & 0x1FF
+        else if (switch (decode.decode(state.instr)) {
+            .mov, .not, .abs, .neg, .negc, .negnc, .negz, .negnz, .encod, .ones, .getnib, .getbyte, .getword, .decod, .bmask, .wrc, .wrnc, .wrz, .wrnz => true,
+            else => false,
+        })
+            0
         else
             cog.read_operand(d_reg.?),
         .s = if (@hasField(Operands, "s"))
@@ -2875,6 +2887,7 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
             // Self restart takes effect after the next ordinary instruction's
             // writeback. The new startup remains timed from the command grant.
             hub.pending_starts[id] = .{
+                .provenance = cog.provenance(),
                 .at = hub.counter +% 3,
                 .address = source,
                 .ptra = ptra,

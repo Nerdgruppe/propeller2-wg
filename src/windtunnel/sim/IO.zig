@@ -22,11 +22,13 @@ pub const Pin = struct {
     smart: SmartPin = .{},
     /// Logic outputs published after every pin has advanced for the frame.
     outputs: smart_pin.Outputs = .{},
+    /// Host architectural edits deliver their engine strobes on the next complete hub edge.
+    edits: struct { x: ?u32 = null, y: ?u32 = null } = .{},
 
     const OutputSource = enum { out, other, smart };
 
     /// Apply WRPIN to the routing configuration and replace the smart engine's logic.
-    fn configure(pin: *Pin, configuration: PinConfiguration) void {
+    pub fn configure(pin: *Pin, configuration: PinConfiguration) void {
         pin.configuration = configuration;
         pin.smart.configure(engineMode(configuration));
     }
@@ -45,7 +47,7 @@ pub const Pin = struct {
 
     /// Decode physical output enable: DIR without smart logic, otherwise WRPIN's TT low bit.
     /// This is pad control; DIR independently controls reset inside the smart engine.
-    fn outputEnabled(pin: *const Pin, dir: bool) bool {
+    pub fn outputEnabled(pin: *const Pin, dir: bool) bool {
         return switch (pin.configuration.mode) {
             .gpio => dir,
             else => pin.configuration.output_enable,
@@ -219,6 +221,9 @@ pub fn step(io: *IO, hub: *Hub) void {
     var inputs: [64]smart_pin.Inputs = undefined;
     for (&inputs, 0..) |*sample, i| {
         sample.* = io.pinInputs(@enumFromInt(i));
+        sample.new_x = io.pins[i].edits.x;
+        sample.new_y = io.pins[i].edits.y;
+        io.pins[i].edits = .{};
     }
     const slot = &io.commands.slots[io.commands.head];
     var touched: u64 = 0;
@@ -365,6 +370,38 @@ fn applyState(io: *IO, directions: u64, outputs: u64) void {
     io.dirty = true;
 }
 
+/// Report the physical output gate used by pad resolution, including delayed GPIO DIR and smart TT.
+pub fn outputEnabled(io: *const IO, index: PadIndex) bool {
+    const i = @intFromEnum(index);
+    return io.pins[i].outputEnabled(io.physical_directions & (@as(u64, 1) << i) != 0);
+}
+
+/// Apply a host WRPIN edit through the same configuration decoder as delayed commands.
+pub fn editConfiguration(io: *IO, index: PinIndex, value: u32) void {
+    io.pins[@intFromEnum(index)].configure(@bitCast(value));
+    io.dirty = true;
+}
+
+pub const SmartRegister = enum { x, y };
+
+/// Update a paused architectural register and retain the write strobe for the next engine clock.
+/// A simulated command delivered on that edge has priority over the host edit.
+pub fn editSmartRegister(io: *IO, index: PinIndex, register: SmartRegister, value: u32) void {
+    const pin = &io.pins[@intFromEnum(index)];
+    switch (register) {
+        .x => {
+            pin.smart.registers.x = value;
+            pin.edits.x = value;
+        },
+        .y => {
+            pin.smart.registers.y = value;
+            pin.edits.y = value;
+        },
+    }
+    pin.smart.registers.ready = false;
+    io.dirty = true;
+}
+
 /// Stage an external physical pad driver for resolution during the next frame.
 pub fn setExternal(io: *IO, index: PadIndex, state: Signal) void {
     io.external[@intFromEnum(index)] = state;
@@ -422,7 +459,7 @@ fn outputState(io: *const IO, index: PadIndex) Signal {
 fn drive(io: *const IO, index: PadIndex) Signal {
     const i = @intFromEnum(index);
     const configuration = io.pins[i].configuration;
-    if (!io.pins[i].outputEnabled(io.physical_directions & (@as(u64, 1) << i) != 0))
+    if (!io.outputEnabled(index))
         return .z;
     const state = if (configuration.synchronous)
         io.sync_out[i]

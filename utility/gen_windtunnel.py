@@ -12,6 +12,7 @@ from typing import Iterable, Callable
 
 from common import (
     Instruction,
+    OpType,
     P2INSTRUCTIONS_JSON,
     P2INSTRUCTIONS_TSV,
     decode_dataset,
@@ -435,6 +436,18 @@ def render_decoder(
 
     stream.write("    return .invalid;\n\n")
     stream.write("}\n\n")
+    stream.write("/// Operand syntax retained from the canonical instruction database.\n")
+    stream.write("pub const Operand = enum { " + ", ".join(o.value for o in OpType) + " };\n")
+    stream.write("pub const Metadata = struct { mnemonic: []const u8, operands: []const Operand, flag_prefix: []const u8 };\n")
+    stream.write("/// Return canonical mnemonic and operand syntax for the decoder result.\n")
+    stream.write("pub fn metadata(opcode: OpCode) Metadata {\nreturn switch (opcode) {\n")
+    stream.write('.invalid => .{ .mnemonic = "INVALID", .operands = &.{}, .flag_prefix = "" },\n')
+    for instr in sorted(instructions, key=lambda i: i.id):
+        operands = ", ".join("." + o.value for o in instr.operands)
+        prefix = next((p for p in ["AND", "OR", "XOR"] if any(f.value.startswith(p) for f in instr.flags)), "W")
+        stream.write(f'.{zig_id(snakecase(instr.id))} => .{{ .mnemonic = "{instr.name}", .operands = &.{{ {operands} }}, .flag_prefix = "{prefix}" }},\n')
+    stream.write("};\n}\n")
+
 
 
 def render_executor_stub(

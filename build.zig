@@ -362,6 +362,12 @@ pub fn build(b: *std.Build) !void {
             gui_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
         }
 
+        const gui_tests = b.addTest(.{ .name = "windtunnel-gui-tests", .root_module = gui_mod, .use_llvm = true });
+        const gui_test_run = b.addRunArtifact(gui_tests);
+        const gui_test_step = b.step("test-windtunnel-gui", "Render all Windtunnel inspectors headlessly");
+        gui_test_step.dependOn(&gui_test_run.step);
+        windtunnel_test_step.dependOn(&gui_test_run.step);
+
         const run_gui = b.addRunArtifact(exe);
         if (b.args) |args| {
             run_gui.addArgs(args);
@@ -388,6 +394,19 @@ pub fn build(b: *std.Build) !void {
         .use_llvm = if (kcov_path != null) true else null,
     });
     fb.installArtifact(windtunnel_tests);
+    const debugger_module = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel/debugger_tests.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{.{ .name = "p2", .module = mod_p2 }},
+    });
+    debugger_module.addImport("boot-rom", boot_rom);
+    const debugger_tests = b.addTest(.{ .name = "windtunnel-debugger-tests", .root_module = debugger_module });
+    const debugger_run = b.addRunArtifact(debugger_tests);
+    const debugger_step = b.step("test-windtunnel-debugger", "Run headless debugger and simulator regressions");
+    debugger_step.dependOn(&debugger_run.step);
+    windtunnel_test_step.dependOn(&debugger_run.step);
+
     const harness_tests = b.addTest(.{
         .name = "windtunnel-harness-tests",
         .root_module = windtunnel_suite,

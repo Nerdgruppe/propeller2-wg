@@ -8,6 +8,13 @@ const args_parser = @import("args");
 
 pub const types = @import("p2").types;
 
+const disassembly = @import("sim/disassemble.zig");
+pub const disassemble = disassembly.disassemble;
+pub const Frame = @import("sim/Frame.zig");
+pub const inspect = @import("sim/inspect.zig");
+pub const Debugger = @import("sim/Debugger.zig");
+pub const Cordic = @import("sim/Cordic.zig");
+
 pub const Hub = @import("sim/Hub.zig");
 pub const Cog = @import("sim/Cog.zig");
 pub const IO = @import("sim/IO.zig");
