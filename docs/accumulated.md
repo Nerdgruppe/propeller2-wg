@@ -941,3 +941,72 @@ smart modes use TT independently of the DIR-controlled engine enable.
 These are inspection rules derived from the existing model, not new hardware
 measurements. See [debugger.md](windtunnel/debugger.md) and the headless
 [regressions](../src/windtunnel/debugger_tests.zig).
+
+## Non-smart adjacent-feedback input selection (2026-10-13)
+
+The official [hardware manual's pad-mode table](p2/hardware-manual.md#m-pin-mode)
+specifies **Adj Logic** input for pad mode `%0010` and **Adj Schmitt** input for
+`%0101`; both modes also drive their output from that input. This selection is
+part of the physical pad mode, independently of the later A/B relative selectors.
+It also applies while DIR disables the output.
+
+The Windtunnel survey found that its output feedback selects the adjacent pad,
+but its input route still selects the local pad. A simulator probe with P0 high,
+P1 low, P0 DIR=0 and mode `%0010` returned IN0=1 instead of the documented adjacent
+input value 0. This is a source/specification discrepancy, not a new silicon
+measurement; see [STATE.md](../STATE.md).
+
+
+## COGID, protected hub stacks, and digital input filters (2026-10-13)
+
+Measured using the local P2AAS board at `ws://localhost:12880/`. Probe sources,
+raw observation frames, and reproduction instructions are retained in
+[digital-inputs](../data/timing-data/digital-inputs/README.md).
+
+### COGID
+
+An immediate operand without WC completes without changing either flags or the
+register named by the encoded D field, including with AUGD. This form does not
+have the additional two-clock result delay of register ID and WC status forms.
+The phase sweep measures GETCT-to-GETCT intervals of 4–11 clocks for immediate
+without WC, versus 6–13 for the two result forms. All eight executing cog IDs
+were exercised. Timing checks derive the next grant from the measured CT, since
+WAITCT1 may resume with a different issue phase. WC queries use D[3:0]; IDs 8–15 return zero rather than aliasing
+IDs 0–7. WC preserves D, and augmentation does not change the four-bit ID rule.
+
+### CALLA/CALLB inside INT0
+
+Both immediate-target and register-target CALLA/CALLB write their packed return
+address through the protected upper alias when executed inside a debug ISR.
+The same four forms in application code leave protected stack memory unchanged.
+Authorization belongs to the issued transfer, as for ordinary WRLONG; simulator
+regressions also cover a debug-state change while that transfer is stalled.
+These measurements do not resolve FIFO write privilege.
+
+### Adjacent feedback and unanimous input filters
+
+Pad modes `%0010` and `%0101` read the paired pad before input inversion and
+A/B relative selection. The hardware fixture makes the driven local pad the
+opposite of its paired pad using output inversion, and tests both parities,
+Schmitt/logic variants, synchronous sampling, input inversion, and a remote
+consumer of the routed input. Output-disabled routing is covered with synthetic
+external drivers in the simulator.
+
+Boolean modes produce `(A,B)`, `(A AND B,B)`, `(A OR B,B)`, and `(A XOR B,B)`.
+Filter modes retain independent A/B eight-bit histories and outputs, using the
+selected global setting's 2/3/5/8 low history bits for unanimous decisions.
+WRPIN, DIR transitions, switching filter settings, and HUBSET reconfiguration
+preserve history. Bypassing the filter stops its sampling. Shortening a frozen
+partial history can change the output without another input sample. A newly
+enabled frozen filter retains its initialized low state rather than adopting A.
+
+CT-aligned traces for taps 0, 1, 2, and 5 fit a sampled timing tap half a sampling
+period ahead of GETCT's phase (tap 0 samples every clock). Windtunnel detects both
+transitions of that phased tap. History comparison and two output sampling
+stages use preceding-edge values. A threshold sweep distinguishes the two-clock
+OUT-selector input sampling delay from the filter delay: after OUTH, TESTP first
+sees a bypassed OUT input with two intervening NOPs, or filt0 length two with four.
+The same latency model matches rising/falling traces across the tested lengths
+and taps. WAITCT1 can resume the probe four clocks later; long-tap traces normalize
+that observed CT phase before comparison rather than assuming a fixed wakeup. Tap 31 and counter rollover are checked synthetically; no multi-second
+silicon capture of the highest tap periods is claimed.

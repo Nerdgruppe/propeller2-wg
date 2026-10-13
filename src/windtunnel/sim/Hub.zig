@@ -93,7 +93,7 @@ pub fn init(hub: *Hub) void {
     }
 }
 
-/// Apply a HUBSET value to the shared clock or random generator.
+/// Apply shared clock, random, debug, or input-filter configuration from HUBSET.
 /// Unsupported configurations leave the current hub state intact.
 pub fn configure(hub: *Hub, mode: u32) void {
     if (mode & 0x8000_0000 != 0) {
@@ -105,6 +105,8 @@ pub fn configure(hub: *Hub, mode: u32) void {
                 .protected = mode & (1 << 16) != 0,
                 .locked = mode & (1 << 17) != 0,
             };
+    } else if (mode & 0xf000_0000 == 0x4000_0000) {
+        hub.io.configureFilter(mode);
     } else if (!hub.io.setClock(mode)) {
         std.log.warn("unsupported HUBSET value 0x{x:0>8}", .{mode});
     }

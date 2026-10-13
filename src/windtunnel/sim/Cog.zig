@@ -646,7 +646,8 @@ pub fn clock_command(cog: *Cog) void {
         return;
     const opcode = decode.decode(state.instr);
     const extra: u64 = switch (opcode) {
-        .cogid, .locknew => 2,
+        .cogid => if (state.instr & (1 << 20) != 0 or state.instr & (1 << 18) == 0) 2 else 0,
+        .locknew => 2,
         .coginit, .locktry, .lockrel => if (state.instr & (1 << 20) != 0)
             2
         else

@@ -1,0 +1,147 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? timeout-ms: 2000
+//? max-cycles: 4000000
+//? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00"
+
+// Exercise all stack-call encodings without relying on RETA/RETB for a blocked write.
+const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+.cogexec    0
+                HUBSET  aug(CLOCK)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                WXPIN   aug(UART),              62
+                DIRH    62
+                WAITX   aug(2000000)
+                SETQ    15
+                RDLONG  register(0x100),        aug(hubaddr(debug_image))
+                SETQ    15
+                WRLONG  register(0x100),        aug(0xFFF40)
+                SETQ    3
+                WRLONG  aug(0x12345678),        aug(0xFF800)
+                HUBSET  aug(0x20010002)
+                MOV     PTRA,                   aug(0xFF800 + 0)
+                MOV     register(0x80),         pcaddr(app_sub0)
+                CALLA   app_sub0
+app_after0:
+                RDLONG  register(0x81), aug(0xFF800 + 0)
+                CMP     register(0x81), aug(0x12345678)     :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     app_next0
+app_sub0:
+                JMP     app_after0
+app_next0:
+                MOV     PTRA,           aug(0xFF800 + 4)
+                MOV     register(0x80), pcaddr(app_sub1)
+                CALLA   register(0x80)
+app_after1:
+                RDLONG  register(0x81), aug(0xFF800 + 4)
+                CMP     register(0x81), aug(0x12345678)     :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     app_next1
+app_sub1:
+                JMP     app_after1
+app_next1:
+                MOV     PTRB,           aug(0xFF800 + 8)
+                MOV     register(0x80), pcaddr(app_sub2)
+                CALLB   app_sub2
+app_after2:
+                RDLONG  register(0x81), aug(0xFF800 + 8)
+                CMP     register(0x81), aug(0x12345678)     :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     app_next2
+app_sub2:
+                JMP     app_after2
+app_next2:
+                MOV     PTRB,           aug(0xFF800 + 12)
+                MOV     register(0x80), pcaddr(app_sub3)
+                CALLB   register(0x80)
+app_after3:
+                RDLONG  register(0x81), aug(0xFF800 + 12)
+                CMP     register(0x81), aug(0x12345678)     :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     app_next3
+app_sub3:
+                JMP     app_after3
+app_next3:
+                WRLONG  register(0x90), aug(0x1000)
+                COGINIT 1,              aug(hubaddr(target))
+                WAITX   aug(100000)
+                MOV     PTRB,           aug(0x1000)
+                MOV     register(0x90), 8
+byte:
+                RDBYTE  PA, PTRB++
+                WYPIN   PA, 62
+                WAITX   1
+ready:
+                TESTP   62                      :wc
+    if(!C)      JMP     ready
+                DJNZ    register(0x90), byte
+                WAITX   aug(20000)
+_end:
+                JMP     _end
+
+.pack   off
+.cogexec    0x2000, 0
+debug_image:
+                JMP     nrel(debug_handler)
+                LONG    [0] * 15
+.cogexec    0x3000, 0
+target:
+                COGSTOP 1
+.org    0x100
+// A startup INT0 runs these calls against the protected upper hub alias.
+debug_handler:
+                MOV     register(0x90), 0
+                MOV     PTRA,           aug(0xFF800 + 0)
+                MOV     register(0x80), pcaddr(debug_sub0)
+                MODCZ   _SET,           _CLR                :wcz
+                CALLA   debug_sub0
+debug_after0:
+                RDLONG  register(0x81), aug(0xFF800 + 0)
+                CMP     register(0x81), aug(0x80000000 | pcaddr(debug_after0))  :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     debug_next0
+debug_sub0:
+                JMP     debug_after0
+debug_next0:
+                MOV     PTRA,           aug(0xFF800 + 4)
+                MOV     register(0x80), pcaddr(debug_sub1)
+                MODCZ   _SET,           _CLR                :wcz
+                CALLA   register(0x80)
+debug_after1:
+                RDLONG  register(0x81), aug(0xFF800 + 4)
+                CMP     register(0x81), aug(0x80000000 | pcaddr(debug_after1))  :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     debug_next1
+debug_sub1:
+                JMP     debug_after1
+debug_next1:
+                MOV     PTRB,           aug(0xFF800 + 8)
+                MOV     register(0x80), pcaddr(debug_sub2)
+                MODCZ   _SET,           _CLR                :wcz
+                CALLB   debug_sub2
+debug_after2:
+                RDLONG  register(0x81), aug(0xFF800 + 8)
+                CMP     register(0x81), aug(0x80000000 | pcaddr(debug_after2))  :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     debug_next2
+debug_sub2:
+                JMP     debug_after2
+debug_next2:
+                MOV     PTRB,           aug(0xFF800 + 12)
+                MOV     register(0x80), pcaddr(debug_sub3)
+                MODCZ   _SET,           _CLR                :wcz
+                CALLB   register(0x80)
+debug_after3:
+                RDLONG  register(0x81), aug(0xFF800 + 12)
+                CMP     register(0x81), aug(0x80000000 | pcaddr(debug_after3))  :wz
+    if(!Z)      ADD     register(0x90), 1
+                JMP     debug_next3
+debug_sub3:
+                JMP     debug_after3
+debug_next3:
+                WRLONG  register(0x90), aug(0x1004)
+                JMP     nrel(0x1fd)
+

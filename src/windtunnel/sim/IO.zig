@@ -14,6 +14,56 @@ pub const DataSource = smart_pin.DataSource;
 pub const DataSink = smart_pin.DataSink;
 const IO = @This();
 
+/// One global unanimous-filter setting, selected independently by each pin.
+pub const FilterConfiguration = struct {
+    length: enum(u2) {
+        two,
+        three,
+        five,
+        eight,
+
+        /// Return the history bits participating in the unanimity comparison.
+        fn mask(length: @This()) u8 {
+            return switch (length) {
+                .two => 0x03,
+                .three => 0x07,
+                .five => 0x1f,
+                .eight => 0xff,
+            };
+        }
+    },
+    tap: u5,
+
+    /// Detect either transition of the sampled CT tap, half a period ahead of GETCT's phase.
+    /// CT-aligned silicon traces are retained in data/timing-data/digital-inputs.
+    fn samples(config: FilterConfiguration, clock: u64, previous: u64) bool {
+        const phase = if (config.tap == 0) @as(u64, 0) else @as(u64, 1) << (config.tap - 1);
+        const changed = (clock +% phase) ^ (previous +% phase);
+        return changed & (@as(u64, 1) << config.tap) != 0;
+    }
+};
+
+/// Each pin retains separate A/B histories and outputs across configuration and DIR changes.
+const InputFilter = struct {
+    history: u8 = 0,
+    output: bool = false,
+    sampled_output: bool = false,
+
+    /// Clock unanimity and its two output stages from the old history, then shift a CT-tap sample.
+    fn step(filter: *InputFilter, input: Signal, mask: u8, sample: bool) Signal {
+        const output = filter.sampled_output;
+        filter.sampled_output = filter.output;
+        const history = filter.history & mask;
+        if (history == 0 or history == mask) {
+            filter.output = history != 0;
+        }
+        if (sample) {
+            filter.history = (filter.history << 1) | @intFromBool(input.sample());
+        }
+        return Signal.from(output);
+    }
+};
+
 /// Surrounding pin logic: WRPIN routing, the smart engine and its published output snapshot.
 pub const Pin = struct {
     /// Full WRPIN word, including routing, pad drive and smart-mode selection.
@@ -24,6 +74,8 @@ pub const Pin = struct {
     outputs: smart_pin.Outputs = .{},
     /// Host architectural edits deliver their engine strobes on the next complete hub edge.
     edits: struct { x: ?u32 = null, y: ?u32 = null } = .{},
+    filter_a: InputFilter = .{},
+    filter_b: InputFilter = .{},
 
     const OutputSource = enum { out, other, smart };
 
@@ -106,9 +158,11 @@ const CommandPipeline = struct {
     head: usize = 0,
 };
 
-/// Pad, input, and smart-result samples from the same four-clock window.
+/// Pad, OUT, input, and smart-result samples from the same four-clock window.
 const Samples = struct {
     pads: [4][64]Signal = @splat(@splat(.z)),
+    /// OUT selectors cross the same two input sampling stages as physical pad reads.
+    out: [4]u64 = @splat(0),
     inputs: [4]u64 = @splat(0),
     results: [4][64]ReadResult = @splat(@splat(.{})),
     input_registers: u64 = 0,
@@ -116,6 +170,12 @@ const Samples = struct {
 };
 
 pins: [64]Pin = @splat(.{}),
+filters: [4]FilterConfiguration = .{
+    .{ .length = .two, .tap = 0 },
+    .{ .length = .three, .tap = 5 },
+    .{ .length = .five, .tap = 19 },
+    .{ .length = .eight, .tap = 22 },
+},
 /// Accelerate serial endpoints while retaining cog, command and pad clock delays.
 fast_io: bool = false,
 smart_a: [64]Signal = @splat(.z),
@@ -140,6 +200,8 @@ crystal_frequency: u64 = 20_000_000,
 /// Current shared output, latched by step; physical pad tap numbering is approximate.
 random_bits: u64 = 0,
 last_clock: u64 = 0,
+/// Last input-routing edge, including the initial CT=0 reset state.
+input_clock: u64 = 0,
 commands: CommandPipeline = .{},
 owners: [64]struct { cog: u3 = 0, pc: u20 = 0, instruction: u32 = 0 } = @splat(.{}),
 collision: ?struct { clock: u64, pin: PinIndex, cogs: u8 } = null,
@@ -160,8 +222,16 @@ pub fn supported(value: u32) bool {
     if (value & 1 != 0)
         return true; // WRPIN #1 / AKPIN acknowledges only.
     const configuration: PinConfiguration = @bitCast(value);
-    return @intFromEnum(configuration.pad_mode) <= @intFromEnum(PinConfiguration.PadMode.schmitt_adjacent_feedback) and
-        @intFromEnum(configuration.input_logic) < @intFromEnum(PinConfiguration.InputLogic.filter0);
+    return @intFromEnum(configuration.pad_mode) <= @intFromEnum(PinConfiguration.PadMode.schmitt_adjacent_feedback);
+}
+
+/// Decode HUBSET's global filter selector, history length, and CT timing tap.
+pub fn configureFilter(io: *IO, value: u32) void {
+    const index: u2 = @truncate(value >> 7);
+    io.filters[index] = .{
+        .length = @enumFromInt(@as(u2, @truncate(value >> 5))),
+        .tap = @truncate(value),
+    };
 }
 
 /// Apply a supported HUBSET clock operation; the hub owns random seeding.
@@ -206,6 +276,7 @@ pub fn step(io: *IO, hub: *Hub) void {
     io.updateDirections(hub);
     if (!io.samples.active) {
         io.samples.pads = @splat(io.pads);
+        io.samples.out = @splat(io.drives);
         io.samples.inputs = @splat(io.routed_inputs);
         for (&io.samples.results) |*edge| {
             for (edge, &io.pins) |*result, *pin| {
@@ -302,6 +373,7 @@ pub fn step(io: *IO, hub: *Hub) void {
         io.resolvePads();
     }
     io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
+    io.samples.out[hub.counter % io.samples.out.len] = io.drives;
     io.samples.inputs[hub.counter % io.samples.inputs.len] = io.routed_inputs;
     io.samples.input_registers = io.samples.inputs[(hub.counter -% 2) % io.samples.inputs.len];
     const results = &io.samples.results[hub.counter % io.samples.results.len];
@@ -496,8 +568,12 @@ fn selected(io: *const IO, index: PinIndex, selector: PinConfiguration.Selector)
         .minus1 => 63,
     };
     const pad: PadIndex = @enumFromInt(i +% offset);
+    const out = if (io.samples.active)
+        io.samples.out[(io.last_clock -% 2) % io.samples.out.len]
+    else
+        io.drives;
     const state = if (selector.source == .out)
-        Signal.from(io.drives & (@as(u64, 1) << i) != 0)
+        Signal.from(out & (@as(u64, 1) << i) != 0)
     else
         io.pad_reads[@intFromEnum(pad)];
     return if (selector.invert)
@@ -548,16 +624,23 @@ fn resolvePads(io: *IO) void {
 
 /// Compute SmartA/SmartB from the previous pad samples without advancing smart logic.
 fn routeInputs(io: *IO) void {
+    const previous_clock = io.input_clock;
+    io.input_clock = io.last_clock;
     const pads = if (io.samples.active)
         io.samples.pads[(io.last_clock -% 2) % io.samples.pads.len]
     else
         io.pads;
     for (&io.pad_reads, 0..) |*state, i| {
-        const input = if (io.pins[i].configuration.synchronous)
-            io.sync_in[i]
+        const configuration = io.pins[i].configuration;
+        const source = switch (configuration.pad_mode) {
+            .logic_adjacent_feedback, .schmitt_adjacent_feedback => i ^ 1,
+            else => i,
+        };
+        const input = if (configuration.synchronous)
+            io.sync_in[source]
         else
-            pads[i];
-        state.* = if (io.pins[i].configuration.invert_input)
+            pads[source];
+        state.* = if (configuration.invert_input)
             input.invert()
         else
             input;
@@ -566,9 +649,21 @@ fn routeInputs(io: *IO) void {
         const configuration = io.pins[i].configuration;
         const a = io.selected(@enumFromInt(i), configuration.a);
         const b = io.selected(@enumFromInt(i), configuration.b);
-        const operation: signal.InputLogic = @enumFromInt(@as(u2, @intCast(@intFromEnum(configuration.input_logic))));
-        io.smart_a[i] = Signal.logic(a, b, operation);
-        io.smart_b[i] = b;
+        switch (configuration.input_logic) {
+            .a, .a_and_b, .a_or_b, .a_xor_b => {
+                const operation: signal.InputLogic = @enumFromInt(@intFromEnum(configuration.input_logic));
+                io.smart_a[i] = Signal.logic(a, b, operation);
+                io.smart_b[i] = b;
+            },
+            .filter0, .filter1, .filter2, .filter3 => {
+                const index = @intFromEnum(configuration.input_logic) - @intFromEnum(PinConfiguration.InputLogic.filter0);
+                const filter = io.filters[index];
+                const pin = &io.pins[i];
+                const sample = filter.samples(io.last_clock, previous_clock);
+                io.smart_a[i] = pin.filter_a.step(a, filter.length.mask(), sample);
+                io.smart_b[i] = pin.filter_b.step(b, filter.length.mask(), sample);
+            },
+        }
     }
 }
 
@@ -951,4 +1046,152 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
         hub.step();
     }
     try std.testing.expectEqual(Signal.zero, hub.io.pads[1]);
+}
+
+test "unanimous histories reject glitches and register agreement before publishing" {
+    const lengths = [_]u4{ 2, 3, 5, 8 };
+    for (lengths) |length| {
+        const mask: u8 = @intCast((@as(u16, 1) << length) - 1);
+        var filter: InputFilter = .{};
+        for (0..length - 1) |_| {
+            try std.testing.expectEqual(Signal.zero, filter.step(.one, mask, true));
+        }
+        _ = filter.step(.zero, mask, true);
+        try std.testing.expect(!filter.output);
+        // History comparison and output sampling use the preceding edge's values.
+        for (0..length) |_| {
+            try std.testing.expectEqual(Signal.zero, filter.step(.one, mask, true));
+        }
+        try std.testing.expectEqual(Signal.zero, filter.step(.zero, mask, false));
+        try std.testing.expectEqual(Signal.zero, filter.step(.zero, mask, false));
+        try std.testing.expectEqual(Signal.one, filter.step(.zero, mask, false));
+        for (0..length - 1) |_| {
+            try std.testing.expectEqual(Signal.one, filter.step(.zero, mask, true));
+        }
+        try std.testing.expectEqual(Signal.one, filter.step(.z, mask, true));
+        try std.testing.expectEqual(Signal.one, filter.step(.x, mask, false));
+        try std.testing.expectEqual(Signal.one, filter.step(.x, mask, false));
+        try std.testing.expectEqual(Signal.zero, filter.step(.x, mask, false));
+        try std.testing.expectEqual(Signal.zero, filter.step(.x, mask, true));
+    }
+}
+
+test "all global filters independently sample selected inverted A and B on both CT edges" {
+    var io: IO = .{};
+    for (0..4) |index| {
+        io.configureFilter(0x4000_0000 | (@as(u32, @intCast(index)) << 7) | (3 << 5) | 2);
+        io.pins[index].configure(.{
+            .input_logic = @enumFromInt(@intFromEnum(PinConfiguration.InputLogic.filter0) + index),
+            .a = .{ .source = .plus1, .invert = false },
+            .b = .{ .source = .plus2, .invert = true },
+        });
+    }
+    // Every selected A is high and each inverted B is low.
+    io.pads = @splat(.one);
+    for (0..31) |clock| {
+        io.last_clock = clock;
+        io.routeInputs();
+        for (io.pins[0..4]) |pin| {
+            try std.testing.expectEqual(@as(u8, 0), pin.filter_b.history);
+        }
+    }
+    for (io.pins[0..4]) |pin| {
+        try std.testing.expectEqual(@as(u8, 0xff), pin.filter_a.history);
+        try std.testing.expect(!pin.filter_a.output);
+    }
+    for (31..34) |clock| {
+        io.last_clock = clock;
+        io.routeInputs();
+    }
+    for (0..4) |i| {
+        try std.testing.expectEqual(Signal.one, io.smart_a[i]);
+        try std.testing.expectEqual(Signal.zero, io.smart_b[i]);
+    }
+    // Reconfiguration must use the retained history even without a new sample.
+    io.configureFilter(0x4000_001f);
+    io.pins[0].filter_a.history = 3;
+    io.last_clock = 34;
+    io.routeInputs();
+    try std.testing.expectEqual(Signal.one, io.smart_a[0]);
+    // The sampled CT tap is half a period ahead: test both transitions and rollover.
+    io.pins[0].filter_a.history = 0;
+    io.input_clock = (@as(u64, 1) << 30) - 1;
+    io.last_clock = @as(u64, 1) << 30;
+    io.routeInputs();
+    try std.testing.expectEqual(@as(u8, 1), io.pins[0].filter_a.history);
+    io.input_clock = (@as(u64, 3) << 30) - 1;
+    io.last_clock = @as(u64, 3) << 30;
+    io.routeInputs();
+    try std.testing.expectEqual(@as(u8, 3), io.pins[0].filter_a.history);
+    io.input_clock = std.math.maxInt(u64);
+    io.last_clock = 0;
+    io.routeInputs();
+    try std.testing.expectEqual(@as(u8, 3), io.pins[0].filter_a.history);
+}
+
+test "adjacent pad input precedes inversion and selectors even with output disabled" {
+    var io: IO = .{};
+    io.pads[0] = .one;
+    io.pads[1] = .zero;
+    io.sync_in = io.pads;
+    for ([_]PinConfiguration.PadMode{ .logic_adjacent_feedback, .schmitt_adjacent_feedback }) |mode| {
+        for ([_]bool{ false, true }) |synchronous| {
+            for ([_]bool{ false, true }) |invert| {
+                io.pins[0].configure(.{ .pad_mode = mode, .synchronous = synchronous, .invert_input = invert });
+                io.pins[1].configure(.{ .pad_mode = mode, .synchronous = synchronous, .invert_input = invert });
+                io.pins[63].configure(.{ .a = .{ .source = .plus1, .invert = false } });
+                io.routeInputs();
+                try std.testing.expectEqual(Signal.from(invert), io.smart_a[0]);
+                try std.testing.expectEqual(Signal.from(!invert), io.smart_a[1]);
+                try std.testing.expectEqual(io.smart_a[0], io.smart_a[63]);
+                try std.testing.expect(!io.outputEnabled(@enumFromInt(0)));
+            }
+        }
+    }
+}
+
+test "Boolean routing changes A only and preserves four-state B" {
+    var io: IO = .{};
+    for ([_]Signal{ .zero, .one, .x, .z }) |a| {
+        for ([_]Signal{ .zero, .one, .x, .z }) |b| {
+            io.pads[0] = a;
+            io.pads[1] = b;
+            inline for ([_]PinConfiguration.InputLogic{ .a, .a_and_b, .a_or_b, .a_xor_b }) |logic| {
+                io.pins[0].configure(.{ .input_logic = logic, .b = .{ .source = .plus1, .invert = false } });
+                io.routeInputs();
+                try std.testing.expectEqual(Signal.logic(a, b, @enumFromInt(@intFromEnum(logic))), io.smart_a[0]);
+                try std.testing.expectEqual(b, io.smart_b[0]);
+            }
+        }
+    }
+}
+
+test "GPIO and smart modes receive filtered A and B through the common frame routing" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]smart_pin.Mode{ .gpio, .repository }) |mode| {
+        hub.init();
+        try std.testing.expectEqual(@as(u5, 0), hub.io.filters[0].tap);
+        try std.testing.expectEqual(@as(u5, 5), hub.io.filters[1].tap);
+        try std.testing.expectEqual(@as(u5, 19), hub.io.filters[2].tap);
+        try std.testing.expectEqual(@as(u5, 22), hub.io.filters[3].tap);
+        hub.io.setExternal(@enumFromInt(0), .one);
+        hub.io.setExternal(@enumFromInt(1), .zero);
+        hub.io.pins[2].configure(.{
+            .mode = mode,
+            .input_logic = .filter0,
+            .a = .{ .source = .minus2, .invert = false },
+            .b = .{ .source = .minus1, .invert = false },
+        });
+        hub.cogs[0].write_reg(.DIRA, 4);
+        for (0..20) |_| {
+            hub.step();
+        }
+        const inputs = hub.io.pinInputs(@enumFromInt(2));
+        try std.testing.expectEqual(Signal.one, inputs.a);
+        try std.testing.expectEqual(Signal.zero, inputs.b);
+        // GPIO publishes A; a smart mode publishes its own completion flag instead.
+        try std.testing.expectEqual(if (mode == .gpio) @as(u64, 4) else 0, hub.io.get_in() & 4);
+    }
 }

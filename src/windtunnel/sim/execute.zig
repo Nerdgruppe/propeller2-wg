@@ -466,7 +466,11 @@ fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
             .timed = cog.collecting_writes,
             .size = 4,
             .grant_at = grant,
-            .direction = .{ .write = .{ .immediate = cog.return_address(), .ready_at = grant -% 1 +% @intFromBool(address & 3 != 0) } },
+            .direction = .{ .write = .{
+                .immediate = cog.return_address(),
+                .ready_at = grant -% 1 +% @intFromBool(address & 3 != 0),
+                .origin = if (cog.debug.state == .active) .debug else .application,
+            } },
         };
         cog.write_reg(pointer, address +% 4);
     }
@@ -2935,19 +2939,22 @@ pub fn cogid(cog: *Cog, args: encoding.Only_Dimm_CFlag) Cog.ExecResult {
         // cog D/# into C, where C=0 indicates the cog is free (stopped or never started)
         // and C=1 indicates the cog is busy (started).
 
-        const id: u3 = @truncate(operandD(cog, args.d, args.d_imm));
+        const id: u4 = @truncate(operandD(cog, args.d, args.d_imm));
 
         // COGID ThatCog WC ' C=1 if ThatCog is busy
-        cog.c = (cog.hub.cogs[id].exec_mode != .stopped);
+        cog.c = id < cog.hub.cogs.len and cog.hub.cogs[id].exec_mode != .stopped;
         return .next;
     } else {
         // A cog can discover its own ID by doing a COGID instruction, which will
         // return its ID into D[3:0], with upper bits cleared.
         // This is useful, in case the cog wants to restart or stop itself, as shown above.
 
-        if (args.d_imm)
-            return .trap; // TODO: Figure this out
-        cog.write_result(args.d, cog.id);
+        if (args.d_imm) {
+            // Silicon completes the command without a destination or flag write.
+            _ = operandD(cog, args.d, true);
+        } else {
+            cog.write_result(args.d, cog.id);
+        }
         return .next;
     }
     // codegen: end:cogid
@@ -5581,4 +5588,38 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
         }
     }
 }
+
+test "hub stack transfers retain their issue-time privilege through stalls and writeback" {
+    const hub = try std.testing.allocator.create(hub_module);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]Cog.Register{ .PTRA, .PTRB }) |pointer| {
+        for ([_]bool{ false, true }) |debug| {
+            hub.init();
+            hub.debug.protected = true;
+            const previous_value = hub.read_memory(0xff800, 4);
+            const cog = &hub.cogs[0];
+            cog.write_reg(pointer, 0xff800);
+            cog.c = true;
+            cog.debug.state = if (debug) .active else .idle;
+            cog.pipeline[3] = .{ .pc = 17, .instr = 0xfd60_002e, .next_pc = 18 };
+            const return_value = cog.return_address();
+            cog.collecting_writes = true;
+            try std.testing.expectEqual(Cog.ExecResult.wait, callPointer(cog, pointer, 32));
+            const origin: hub_module.WriteOrigin = if (debug) .debug else .application;
+            try std.testing.expectEqual(origin, cog.memory_transfer.?.direction.write.origin);
+            // Authorization belongs to the instruction, even if debug state changes while it waits.
+            cog.debug.state = if (debug) .idle else .active;
+            hub.counter = cog.memory_transfer.?.direction.write.ready_at;
+            try std.testing.expectEqual(Cog.ExecResult.next, callPointer(cog, pointer, 32));
+            try std.testing.expectEqual(origin, cog.hub_writeback.?.origin);
+            cog.collecting_writes = false;
+            cog.exec_mode = .stopped;
+            hub.step();
+            try std.testing.expectEqual(if (debug) return_value else previous_value, hub.read_memory(0xff800, 4));
+            try std.testing.expectEqual(@as(u32, 0xff804), cog.read_reg(pointer));
+        }
+    }
+}
+
 // codegen: end:executortests
