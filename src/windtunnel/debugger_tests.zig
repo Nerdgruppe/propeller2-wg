@@ -8,6 +8,7 @@ const inspect = @import("sim/inspect.zig");
 const disassembly = @import("sim/disassemble.zig");
 const decode = @import("sim/decode.zig");
 const encoding = @import("sim/encoding.zig");
+const smart_pin = @import("sim/smart_pin.zig");
 
 comptime {
     _ = disassembly;
@@ -24,7 +25,7 @@ fn newHub() !*Hub {
 /// Advance at most a bounded number of edges, requiring a structured debugger stop.
 fn untilStop(hub: *Hub, limit: usize) !void {
     for (0..limit) |_| {
-        hub.step();
+        _ = hub.step();
         if (hub.debugger.?.stop != .none)
             return;
     }
@@ -72,18 +73,18 @@ test "execution stops precede the whole edge and acknowledge all simultaneous en
         .origin = .application,
     };
     const random = hub.random;
-    hub.step();
+    try std.testing.expectEqual(Hub.StepResult.breakpoint, hub.step());
     try std.testing.expectEqual(Debugger.Stop.execution, debugger.stop);
     try std.testing.expectEqual(@as(usize, 2), debugger.encounters.items.len);
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
     try std.testing.expectEqual(@as(u8, 0), hub.memory[8]);
     try std.testing.expectEqualDeep(random, hub.random);
     debugger.acknowledge(hub);
-    hub.step();
+    try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
     try std.testing.expectEqual(@as(u8, 99), hub.memory[8]);
     try std.testing.expectEqual(Debugger.Stop.none, debugger.stop);
-    hub.step();
+    try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u32, 9), hub.cogs[0].registers.values[20]);
     try std.testing.expectEqual(@as(u32, 9), hub.cogs[1].registers.values[20]);
 }
@@ -109,7 +110,7 @@ test "loop encounters retrigger but stalled retries do not" {
     try untilStop(hub, 1);
     debugger.acknowledge(hub);
     for (0..4) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(Debugger.Stop.none, debugger.stop);
         try std.testing.expect(cog.pipeline[3] != null);
     }
@@ -130,7 +131,7 @@ test "execution matches domain and cog and excludes cancelled instructions" {
     hub.cogs[0].pipeline[3].?.cancelled = true;
     try std.testing.expect(debugger.beforeClock(hub));
     hub.cogs[0].pipeline[3].?.cancelled = false;
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(Debugger.Stop.execution, debugger.stop);
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
 }
@@ -147,9 +148,9 @@ test "data hits include same-value commits and every cog sharing the edge" {
         cog.registers.values[20] = 9;
         encounter(cog, 7, 0xf604_2809, .cog);
     }
-    hub.step(); // Issue both writes.
+    try std.testing.expectEqual(Hub.StepResult.normal, hub.step()); // Issue both writes.
     try std.testing.expectEqual(@as(usize, 0), debugger.hits.items.len);
-    hub.step(); // Commit both on the same edge.
+    try std.testing.expectEqual(Hub.StepResult.breakpoint, hub.step()); // Commit both on the same edge.
     try std.testing.expectEqual(Debugger.Stop.data, debugger.stop);
     try std.testing.expectEqual(@as(u64, 2), hub.counter);
     try std.testing.expectEqual(@as(usize, 2), debugger.hits.items.len);
@@ -174,21 +175,21 @@ test "physical preloads see cancelled words while data reads see only consumed o
     cog.exec_mode = .cog;
     cog.registers.values[20] = 123;
     cog.pipeline[2] = .{ .pc = 9, .local_address = 9, .instr = 0xf600_2a14, .cancelled = true }; // MOV r21,r20
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(debugger.hits.items.len >= 6);
     for (debugger.hits.items) |hit| {
         try std.testing.expectEqual(@as(usize, 1), hit.watchpoint);
         try std.testing.expectEqual(Debugger.ReadClass.physical, hit.class);
     }
     debugger.acknowledge(hub);
-    hub.step(); // Cancelled execute consumes nothing.
+    _ = hub.step(); // Cancelled execute consumes nothing.
     for (debugger.hits.items) |hit| {
         try std.testing.expectEqual(@as(usize, 1), hit.watchpoint);
     }
     debugger.acknowledge(hub);
     encounter(cog, 9, 0xf600_2a14, .cog);
     cog.pipeline[3].?.operands = .{ .d = 0, .s = 123, .ptra = 0, .ptrb = 0, .pa = 0, .pb = 0 };
-    hub.step();
+    _ = hub.step();
     var consumed = false;
     for (debugger.hits.items) |hit| {
         if (hit.watchpoint == 0) {
@@ -218,7 +219,7 @@ test "RAM watches use backing aliases and exclude holes protection and masked la
         .masked = true,
         .origin = .application,
     };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
     try std.testing.expectEqual(@as(usize, 3), debugger.hits.items.len);
     try std.testing.expectEqual(@as(u32, 0x7ffff), debugger.hits.items[0].address);
@@ -234,7 +235,7 @@ test "RAM watches use backing aliases and exclude holes protection and masked la
         .masked = false,
         .origin = .application,
     };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), debugger.hits.items.len);
     cog.hub_writeback = .{
         .provenance = .{ .cog = 2 },
@@ -244,7 +245,7 @@ test "RAM watches use backing aliases and exclude holes protection and masked la
         .masked = false,
         .origin = .debug,
     };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), debugger.hits.items.len);
     cog.hub_writeback = .{
         .provenance = .{ .cog = 2 },
@@ -254,7 +255,7 @@ test "RAM watches use backing aliases and exclude holes protection and masked la
         .masked = false,
         .origin = .debug,
     };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 1), debugger.hits.items.len);
     try std.testing.expectEqual(@as(u32, 0x7c000), debugger.hits.items[0].address);
 }
@@ -276,7 +277,7 @@ test "startup reads and delayed RAM writes retain their issuer" {
     var saw_write = false;
     for (0..10) |_| {
         debugger.acknowledge(hub);
-        hub.step();
+        _ = hub.step();
         for (debugger.hits.items) |hit| {
             if (hit.space == .registers) {
                 saw_write = true;
@@ -299,7 +300,7 @@ test "shared LUT commits report receiver address and original issuer" {
     hub.cogs[1].lut_sharing = true;
     hub.cogs[0].writeback.lut = .{ .address = 510, .value = 1234 };
     hub.cogs[0].writeback.provenance = .{ .cog = 0, .pc = 10, .instruction = 42 };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 2), debugger.hits.items.len);
     try std.testing.expectEqual(@as(?u3, 0), debugger.hits.items[0].cog);
     try std.testing.expectEqual(@as(?u3, 1), debugger.hits.items[1].cog);
@@ -327,7 +328,7 @@ test "block writes read raw tail RAM and commit delayed hub lanes with provenanc
     var raw_seen = false;
     var committed = false;
     for (0..40) |_| {
-        hub.step();
+        _ = hub.step();
         for (debugger.hits.items) |hit| {
             if (hit.space == .registers and hit.address == 504 and hit.storage == .ram) {
                 raw_seen = true;
@@ -357,13 +358,13 @@ test "software FIFO reads consume data while prefetch is physical and writes pre
     cog.begin_fifo_read(0x100);
     hub.write_memory(0x100, 0x12345678, 4, false);
     for (0..16) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(Debugger.Stop.none, debugger.stop);
     }
     // RFLONG r20 consumes the already-prefetched bytes at its own instruction PC.
     encounter(cog, 7, 0xfd60_2812, .cog);
     try std.testing.expectEqual(decode.OpCode.rflong, decode.decode(cog.pipeline[3].?.instr));
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 4), debugger.hits.items.len);
     try std.testing.expectEqual(@as(?u20, 7), debugger.hits.items[0].provenance.pc);
     try std.testing.expectEqual(@as(u32, 0x78), debugger.hits.items[0].value);
@@ -395,8 +396,8 @@ test "repeated inspection is pure and debugger without breakpoints preserves exe
         hub.cogs[0].stack = @splat(0xc0000210);
     }
     for (0..100) |_| {
-        detached.step();
-        attached.step();
+        _ = detached.step();
+        _ = attached.step();
         try std.testing.expectEqualSlices(u8, &detached.memory, &attached.memory);
         try std.testing.expectEqualSlices(u32, &detached.cogs[0].registers.values, &attached.cogs[0].registers.values);
         try std.testing.expectEqualDeep(detached.cogs[0].pipeline, attached.cogs[0].pipeline);
@@ -512,6 +513,7 @@ test "frame budget expires between edges Step is one edge and fault or break int
     frame = Frame.advance(hub, .run, clock.source());
     try std.testing.expectEqual(@as(u64, 1), frame.clocks);
     try std.testing.expect(hub.fault != null);
+    try std.testing.expectEqual(Hub.StepResult.trap, frame.notification);
     try std.testing.expect(!frame.running);
     frame = Frame.advance(hub, .step, clock.source());
     try std.testing.expectEqual(@as(u64, 0), frame.clocks);
@@ -534,15 +536,15 @@ test "FIFO reloads retain actual backing read addresses while the architectural 
     hub.write_memory(0x200, 0x11223344, 4, false);
     hub.write_memory(0x100, 0xaabbccdd, 4, false);
     for (0..24) |_| {
-        hub.step();
+        _ = hub.step();
     }
     encounter(cog, 7, 0xfd602812, .cog); // RFLONG r20
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 4), debugger.hits.items.len);
     try std.testing.expectEqual(@as(u32, 0x200), debugger.hits.items[0].address);
     debugger.acknowledge(hub);
     encounter(cog, 8, 0xfd602812, .cog);
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 4), debugger.hits.items.len);
     try std.testing.expectEqual(@as(u32, 0x100), debugger.hits.items[0].address);
     try std.testing.expectEqual(@as(u32, 0xdd), debugger.hits.items[0].value);
@@ -561,7 +563,7 @@ test "frame stops after a data-hit edge and host register edits preserve capture
     encounter(cog, 3, 0xf6002a14, .cog); // MOV r21,r20
     cog.pipeline[3].?.operands = .{ .d = 0, .s = 123, .ptra = 0, .ptrb = 0, .pa = 0, .pb = 0 };
     cog.write_reg(@enumFromInt(20), 456);
-    hub.step(); // Uses captured 123 and queues the write.
+    _ = hub.step(); // Uses captured 123 and queues the write.
     cog.write_reg(@enumFromInt(21), 789);
     try std.testing.expectEqual(@as(usize, 0), debugger.hits.items.len);
     var clock: FakeClock = .{ .increment = 1 };
@@ -579,12 +581,12 @@ test "pad output enable follows delayed GPIO and smart TT for all sixty-four pad
 
     hub.cogs[0].write_reg(.DIRA, std.math.maxInt(u32));
     hub.cogs[0].write_reg(.DIRB, std.math.maxInt(u32));
-    hub.step();
+    _ = hub.step();
     for (0..64) |i| {
         try std.testing.expect(!hub.io.outputEnabled(@enumFromInt(i)));
     }
     for (0..5) |_| {
-        hub.step();
+        _ = hub.step();
     }
     for (0..64) |i| {
         try std.testing.expect(hub.io.outputEnabled(@enumFromInt(i)));
@@ -596,7 +598,32 @@ test "pad output enable follows delayed GPIO and smart TT for all sixty-four pad
     hub.io.editConfiguration(@enumFromInt(0), 2); // Repository.
     hub.io.editSmartRegister(@enumFromInt(0), .x, 123);
     try std.testing.expectEqual(@as(u32, 123), hub.io.pins[0].smart.registers.x);
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 123), hub.io.pins[0].smart.registers.result);
     try std.testing.expect(hub.io.pins[0].edits.x == null);
+}
+
+test "HUBSET instruction returns reset and terminates its host frame at initial state" {
+    const hub = try newHub();
+    defer std.testing.allocator.destroy(hub);
+
+    // A reset on the command slot must not consume pending host RX data later on the same edge.
+    var reader = std.Io.Reader.fixed("Z");
+    var source: smart_pin.DataSource = .{ .reader = &reader };
+    hub.io.pins[63].smart.configure(.uart_rx);
+    hub.io.pins[63].smart.rx_mode = .{ .virtual = &source };
+    hub.io.pins[63].smart.registers.x = (8 << 16) | 7;
+    hub.cogs[1].registers.set(.DIRB, 1 << 31);
+    hub.counter = 200;
+    encounter(&hub.cogs[0], 0, 0xfd64_0000, .cog); // HUBSET #0, with AUGD supplying the reset selector.
+    hub.cogs[0].augd = 0x1000_0000;
+    hub.cogs[0].augd_pending = true;
+    var clock: FakeClock = .{ .increment = 1_000_000 };
+    const frame = Frame.advance(hub, .run, clock.source());
+    try std.testing.expectEqual(Hub.StepResult.reset, frame.notification);
+    try std.testing.expectEqual(@as(usize, 1), reader.bufferedLen());
+    try std.testing.expect(!frame.running);
+    try std.testing.expectEqual(@as(u64, 0), hub.counter);
+    try std.testing.expect(!hub.is_any_cog_active());
+    try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
 }

@@ -137,8 +137,8 @@
                 GETBRK  status                              :wcz
                 TESTB   status,     20                      :wc
     if(!C)      ADD     failures,   1
-                WFBYTE  0x12
-                WFWORD  aug(0x3456)
+                WFBYTE  aug(0xfedcba12)
+                WFWORD  aug(0x98763456)
                 WFLONG  aug(0x89abcdef)
                 WFBYTE  0
                 WFWORD  0

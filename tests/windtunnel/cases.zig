@@ -14,6 +14,7 @@ pub const fixtures = [_][]const u8{
     "tests/windtunnel/program/dir-register-uart.propan",
     "tests/windtunnel/program/echo.propan",
     "tests/windtunnel/program/hello-world.propan",
+    "tests/windtunnel/program/hub-reset.propan",
     "tests/windtunnel/program/server-loader.propan",
     "tests/windtunnel/program/server-terminal.propan",
     "tests/windtunnel/program/uart-checkpoint.propan",

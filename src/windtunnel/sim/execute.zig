@@ -5091,7 +5091,7 @@ test "random consumers share the current cog word and wait samples only once" {
     hub.init();
     for (&hub.cogs) |*cog| {
         for (0..8) |phase| {
-            hub.step();
+            _ = hub.step();
             hub.counter = 100 + phase;
             const value = hub.random.word(cog.id);
             for (0..4) |flags| {
@@ -5309,7 +5309,7 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
                     }
                     hub.clocking = false;
                 }
-                hub.step();
+                _ = hub.step();
                 try std.testing.expect(hub.fault == null);
                 if (elapsed < completion) {
                     try std.testing.expect(cog.pipeline[3] != null);
@@ -5325,7 +5325,7 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
             try std.testing.expect(!cog.events.contains(event));
             try std.testing.expect(cog.wait_until == null);
             try std.testing.expect(!cog.setq_pending);
-            hub.step(); // Flags become architectural on the next writeback edge.
+            _ = hub.step(); // Flags become architectural on the next writeback edge.
             try std.testing.expectEqual(scenario == .timeout, cog.c);
             try std.testing.expectEqual(scenario == .timeout, cog.z);
         }
@@ -5348,7 +5348,7 @@ test "forwarded source stays with a waiting instruction" {
     cog.write_reg(@enumFromInt(3), 0xFD64_0003); // COGSTOP #0.
     var saw_wait = false;
     while (hub.is_any_cog_active() and hub.counter < 32) {
-        hub.step();
+        _ = hub.step();
         if (cog.wait_until != null) {
             saw_wait = true;
             try std.testing.expectEqual(@as(?u32, 1), cog.pipeline[3].?.s_value);
@@ -5581,7 +5581,7 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
         try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 0, .instr = 0xFC78_0015 }));
         for (case.bytes) |expected| {
             while (cog.peek_fifo(0) == null) {
-                hub.step();
+                _ = hub.step();
             }
             try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, .{ .pc = 1, .instr = 0xFD60_2810 }));
             try std.testing.expectEqual(expected, cog.read_reg(@enumFromInt(20)));
@@ -5615,7 +5615,7 @@ test "hub stack transfers retain their issue-time privilege through stalls and w
             try std.testing.expectEqual(origin, cog.hub_writeback.?.origin);
             cog.collecting_writes = false;
             cog.exec_mode = .stopped;
-            hub.step();
+            _ = hub.step();
             try std.testing.expectEqual(if (debug) return_value else previous_value, hub.read_memory(0xff800, 4));
             try std.testing.expectEqual(@as(u32, 0xff804), cog.read_reg(pointer));
         }

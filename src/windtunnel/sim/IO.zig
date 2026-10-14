@@ -708,7 +708,7 @@ fn testCommand(hub: *Hub, index: PinIndex, kind: CommandKind, value: u32) void {
         .instruction = 0,
     });
     for (0..command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
 }
 
@@ -732,18 +732,18 @@ test "clock fields and reader-backed UART input are independent of terminal pin 
     testCommand(hub, @enumFromInt(9), .write_x, (8 << 16) | 7); // Eight-clock bits, including UART start and stop timing.
     try std.testing.expectEqual(@as(usize, 2), reader.bufferedLen());
     hub.cogs[0].write_reg(.DIRA, 1 << 9);
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 1), reader.bufferedLen());
     for (0..78) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(u32, 'a') << 24, pin.registers.result);
     try std.testing.expectEqual(@as(usize, 0), reader.bufferedLen());
     // DIR reset discards the in-flight second frame before it becomes readable.
     hub.cogs[0].write_reg(.DIRA, 0);
-    hub.step();
+    _ = hub.step();
     for (0..20) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expect(!pin.registers.ready);
     try std.testing.expectEqual(@as(u32, 'a') << 24, pin.registers.result);
@@ -760,21 +760,21 @@ test "hardware repository command timing and OR-combined mixed command buses" {
     testCommand(hub, @enumFromInt(40), .configure, 2);
     testCommand(hub, @enumFromInt(40), .write_x, 0);
     for (0..6) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.counter = 100;
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_x, .value = 0x155, .cog = 0, .pc = 1, .instruction = 0 });
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_x, .value = 0xaa, .cog = 7, .pc = 2, .instruction = 0 });
     for (0..4) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(@as(u32, 0), hub.io.readResult(@enumFromInt(40), hub.counter -% 1).value);
         try std.testing.expect(hub.io.get_in() & (@as(u64, 1) << 40) != 0);
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 0x1ff), pin.registers.result);
     try std.testing.expect(hub.io.get_in() & (@as(u64, 1) << 40) == 0);
     try std.testing.expectEqual(@as(u8, 0x81), hub.io.collision.?.cogs);
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(hub.io.get_in() & (@as(u64, 1) << 40) != 0);
     hub.cogs[0].write_reg(.DIRB, 0);
     testCommand(hub, @enumFromInt(40), .write_x, 0x12345678);
@@ -785,7 +785,7 @@ test "hardware repository command timing and OR-combined mixed command buses" {
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_x, .value = 0x100, .cog = 0, .pc = 1, .instruction = 0 });
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_y, .value = 1, .cog = 1, .pc = 2, .instruction = 0 });
     for (0..5) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(u32, 0x1ff), pin.registers.result);
     try std.testing.expectEqual(@as(u32, 2), @as(u32, @bitCast(hub.io.pins[40].configuration)));
@@ -801,18 +801,18 @@ test "GPIO pad pipeline has fixed cycle timing at every clock frequency" {
         hub.cogs[0].registers.set(.DIRA, 1);
         hub.cogs[0].registers.set(.OUTA, 1);
         for (0..3) |_| {
-            hub.step();
+            _ = hub.step();
             try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
         }
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
 
         hub.cogs[0].registers.set(.OUTA, 0);
         for (0..3) |_| {
-            hub.step();
+            _ = hub.step();
             try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
         }
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(Signal.zero, hub.io.pads[0]);
     }
 }
@@ -824,7 +824,7 @@ test "frequency changes preserve in-flight GPIO timing and history" {
     hub.init();
     hub.cogs[0].registers.set(.DIRA, 1 << 4);
     for (0..8) |_| {
-        hub.step();
+        _ = hub.step();
     }
     // Clock changes on the publication edges must neither delay nor advance queued transitions.
     const expected = [_]Signal{ .zero, .zero, .zero, .one, .one, .one, .one, .one, .zero, .zero };
@@ -836,7 +836,7 @@ test "frequency changes preserve in-flight GPIO timing and history" {
             8 => hub.io.clock_frequency = 20_000_000,
             else => {},
         }
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(level, hub.io.pads[4]);
     }
 }
@@ -848,7 +848,7 @@ test "synchronous output retains pending transitions while deselected across clo
     hub.init();
     hub.cogs[0].registers.set(.DIRA, 1 << 4);
     for (0..8) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.io.editConfiguration(@enumFromInt(4), 1 << 16);
     const pin = &hub.io.pins[4];
@@ -869,7 +869,7 @@ test "synchronous output retains pending transitions while deselected across clo
             },
             else => {},
         }
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(level, hub.io.pads[4]);
         if (clock >= 4 and clock < 7) {
             try std.testing.expectEqualDeep(frozen, pin.sync_output_pipeline);
@@ -885,18 +885,18 @@ test "GPIO cog OR, A/B routing, float, feedback and contention remain separate f
     hub.cogs[0].write_reg(.DIRA, 1);
     hub.cogs[1].write_reg(.OUTA, 1);
     for (0..9) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.zero, hub.io.pads[0]);
     hub.cogs[1].write_reg(.DIRA, 1);
     for (0..9) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
     try std.testing.expectEqual(@as(u64, 1), hub.io.get_in());
     hub.io.setExternal(@enumFromInt(0), .zero);
     for (0..5) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.x, hub.io.pads[0]);
     try std.testing.expectEqual(@as(u64, 0), hub.io.get_in());
@@ -904,7 +904,7 @@ test "GPIO cog OR, A/B routing, float, feedback and contention remain separate f
     hub.cogs[0].write_reg(.DIRA, 0);
     hub.cogs[1].write_reg(.DIRA, 0);
     for (0..9) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
     hub.io.setExternal(@enumFromInt(63), .one);
@@ -916,7 +916,7 @@ test "GPIO cog OR, A/B routing, float, feedback and contention remain separate f
     hub.cogs[0].write_reg(.OUTA, 1);
     hub.cogs[0].write_reg(.DIRA, 1);
     for (0..5) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
     // Adjacent-pin feedback drives pin 0 from externally driven pin 1.
@@ -927,7 +927,7 @@ test "GPIO cog OR, A/B routing, float, feedback and contention remain separate f
     hub.cogs[0].write_reg(.DIRA, 5);
     testCommand(hub, @enumFromInt(2), .write_x, 0);
     for (0..3) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.z, hub.io.pads[2]);
     try std.testing.expect(hub.io.get_in() & 4 != 0);
@@ -952,7 +952,7 @@ test "independent UART pins and endpoint errors identify their pin and issuing c
     hub.io.enqueue(hub, .{ .mask = 1 << 4, .kind = .write_y, .value = 'a', .cog = 0, .pc = 0, .instruction = 0 });
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 33, .kind = .write_y, .value = 'b', .cog = 1, .pc = 0, .instruction = 0 });
     for (0..command_delay + 11) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqualStrings("ab", output.written());
     const Broken = struct {
@@ -966,7 +966,7 @@ test "independent UART pins and endpoint errors identify their pin and issuing c
     hub.io.pins[33].smart.tx_mode = .{ .virtual = &broken };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 33, .kind = .write_y, .value = 'c', .cog = 6, .pc = 123, .instruction = 456 });
     for (0..command_delay + 11) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(PinIndex, @enumFromInt(33)), hub.io.failure.?.pin);
     try std.testing.expectEqual(error.TestSinkFailure, hub.io.failure.?.err);
@@ -985,7 +985,7 @@ test "a primed USART exposes its first bit on enable and waits for B clocks" {
     try std.testing.expect(!hub.io.pins[8].outputs.scheduled);
     hub.cogs[0].write_reg(.DIRA, 1 << 8);
     try std.testing.expect(!hub.io.pins[8].smart.registers.enabled);
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(hub.io.pins[8].smart.logic.sync_tx.buffer == null);
     try std.testing.expect(hub.io.pins[8].smart.logic.sync_tx.shifter != null);
     try std.testing.expect(!hub.io.pins[8].smart.registers.ready);
@@ -1003,14 +1003,14 @@ test "digital repository aliases select the repository engine while preserving W
         try std.testing.expectEqual(configuration, @as(u32, @bitCast(hub.io.pins[8].configuration)));
         try std.testing.expect(pin.logic == .repository);
         testCommand(hub, @enumFromInt(8), .write_x, 0x89abcdef);
-        hub.step();
+        _ = hub.step();
         try std.testing.expect(pin.registers.ready);
         try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
         hub.cogs[0].write_reg(.DIRA, 0);
         testCommand(hub, @enumFromInt(8), .write_x, 0);
         try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
         hub.cogs[0].write_reg(.DIRA, 1 << 8);
-        hub.step();
+        _ = hub.step();
     }
 }
 
@@ -1029,10 +1029,10 @@ test "dummy smart modes fault at command delivery with DIR low and retain issuin
         .instruction = 0xfc000009,
     });
     for (0..command_delay) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expect(hub.fault == null);
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(hub.io.pins[9].smart.logic == .usb_pair);
     try std.testing.expectEqual(@as(u64, 0), hub.io.directions);
     try std.testing.expectEqual(index, hub.io.failure.?.pin);
@@ -1075,7 +1075,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
     try std.testing.expectEqual(@as(usize, 0), device.calls);
     try std.testing.expect(hub.io.pins[0].smart.logic == .gpio);
     for (0..command_delay) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expect(hub.fault == null);
         try std.testing.expectEqual(@as(usize, 0), device.calls);
         // Even ordinary GPIO pins receive the aggregate DIR in their one frame update.
@@ -1083,7 +1083,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
             try std.testing.expect(pin.smart.registers.enabled);
         }
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(hub.fault == null);
     try std.testing.expectEqual(@as(usize, 64), device.calls);
     for (&hub.io.pins) |*pin| {
@@ -1093,10 +1093,10 @@ test "each pin advances once per frame and outputs publish together after fixed 
     // A receiver holds its word until the shared ACK arrives; that frame reads once again.
     hub.io.enqueue(hub, .{ .mask = std.math.maxInt(u64), .kind = .acknowledge, .value = 0, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..command_delay) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(@as(usize, 64), device.calls);
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(hub.fault == null);
     try std.testing.expectEqual(@as(usize, 128), device.calls);
     // External updates and command queueing cannot invoke a pin between frames.
@@ -1121,10 +1121,10 @@ test "reused frame inputs do not replay writes or acknowledgements" {
     testCommand(hub, @enumFromInt(10), .configure, @bitCast(configuration));
     testCommand(hub, @enumFromInt(10), .write_x, 7);
     testCommand(hub, @enumFromInt(10), .write_y, 'A');
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqualStrings("A", bytes.written());
     for (0..4) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expect(hub.io.frame_inputs[10].new_x == null);
         try std.testing.expect(hub.io.frame_inputs[10].new_y == null);
         try std.testing.expect(!hub.io.frame_inputs[10].ack);
@@ -1132,7 +1132,7 @@ test "reused frame inputs do not replay writes or acknowledgements" {
     try std.testing.expectEqualStrings("A", bytes.written());
     try std.testing.expect(hub.io.pins[10].smart.registers.ready);
     testCommand(hub, @enumFromInt(10), .acknowledge, 0);
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(!hub.io.frame_inputs[10].ack);
     try std.testing.expect(!hub.io.pins[10].smart.registers.ready);
 }
@@ -1146,7 +1146,7 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     hub.cogs[0].write_reg(.DIRA, 1);
     hub.cogs[0].write_reg(.OUTA, 1);
     for (0..5) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
     const pin = &hub.io.pins[1];
@@ -1157,13 +1157,13 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     try std.testing.expect(!pin.smart.registers.enabled);
     // WRPIN changes the mux without filling its output pipeline with UART's idle level.
     for (0..2) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.one, pin.outputs.smart_out);
     try std.testing.expectEqual(Signal.one, hub.io.pads[1]);
     hub.cogs[0].write_reg(.DIRA, 3);
     for (0..9) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(usize, 1), reader.bufferedLen());
     testCommand(hub, @enumFromInt(1), .configure, 0xfc); // SMART overrides OTHER in UART TX.
@@ -1178,17 +1178,17 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     testCommand(hub, @enumFromInt(1), .configure, 0xfa);
     try std.testing.expect(!pin.smart.registers.enabled);
     for (0..2) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.zero, hub.io.pads[1]);
     testCommand(hub, @enumFromInt(1), .configure, 0xc0); // Normal mode uses DIR regardless of TT.
     for (0..2) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.z, hub.io.pads[1]);
     hub.cogs[0].write_reg(.DIRA, 3);
     for (0..5) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.zero, hub.io.pads[1]);
 }
@@ -1331,7 +1331,7 @@ test "GPIO and smart modes receive filtered A and B through the common frame rou
         });
         hub.cogs[0].write_reg(.DIRA, 4);
         for (0..20) |_| {
-            hub.step();
+            _ = hub.step();
         }
         const inputs = hub.io.pinInputs(@enumFromInt(2));
         try std.testing.expectEqual(Signal.one, inputs.a);
@@ -1352,18 +1352,18 @@ test "switching to virtual TX preserves the ordinary output propagation delay" {
     hub.cogs[0].write_reg(.DIRA, 1 << 4);
     testCommand(hub, @enumFromInt(4), .write_y, 0);
     for (0..5) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(Signal.zero, hub.io.pads[4]);
     const discard: DataSink = .discard;
     pin.smart.tx_mode = .{ .virtual = &discard };
     for (0..2) |clock| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(Signal.zero, hub.io.pads[4]);
         try std.testing.expectEqual(if (clock == 0) Signal.zero else Signal.one, pin.outputs.smart_out);
     }
     for (0..20) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(Signal.one, hub.io.pads[4]);
         try std.testing.expectEqual(Signal.one, pin.outputs.smart_out);
     }

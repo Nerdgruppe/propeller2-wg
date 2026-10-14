@@ -139,7 +139,7 @@ test "initial declarations, pad changes, sparse clocks and CT rollover" {
     try vcd.capture(hub);
     hub.io.setExternal(@enumFromInt(63), .one);
     hub.counter = 0;
-    hub.step();
+    _ = hub.step();
     try vcd.capture(hub);
     try vcd.capture(hub); // No duplicate timestamp for an unchanged snapshot.
     try vcd.finish();
@@ -170,13 +170,12 @@ test "tracing does not change shared command timing" {
         hub.cogs[0].write_reg(.DIRA, 1 << 8);
         hub.io.enqueue(hub, .{ .mask = 1 << 8, .kind = .configure, .value = 2, .cog = 0, .pc = 0, .instruction = 0 });
         for (0..IO.command_delay + 1) |_| {
-            hub.step();
+            _ = hub.step();
         }
         hub.io.enqueue(hub, .{ .mask = 1 << 8, .kind = .write_x, .value = 123, .cog = 0, .pc = 0, .instruction = 0 });
     }
     for (0..10) |_| {
-        plain.step();
-        traced.step();
+        try std.testing.expectEqual(plain.step(), traced.step());
         try std.testing.expectEqual(plain.counter, traced.counter);
         try std.testing.expectEqual(plain.io.get_in(), traced.io.get_in());
         try std.testing.expectEqual(plain.io.pins[8].smart.registers.result, traced.io.pins[8].smart.registers.result);

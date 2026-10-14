@@ -32,6 +32,9 @@ comptime {
 /// Captured at the issuing instruction, never inferred from a later cog state.
 pub const WriteOrigin = enum { application, debug };
 
+/// Notify the host when execution continues, stops at a breakpoint, resets, or faults.
+pub const StepResult = enum { normal, breakpoint, reset, trap };
+
 debugger: ?*Debugger = null,
 access_context: Debugger.Provenance = .{},
 read_class: Debugger.ReadClass = .data,
@@ -55,6 +58,8 @@ fault: ?Cog.Fault = null,
 locks: [16]Lock = undefined,
 /// True only while step() processes a clock edge; direct semantic calls apply shared effects immediately.
 clocking: bool = false,
+/// HUBSET reset is consumed at the next step boundary or immediately after its issuing cog.
+reset_requested: bool = false,
 pending_starts: [8]?struct { provenance: Debugger.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
 pending_events: [4][8]Cog.EventSet = @splat(@splat(.empty)),
 event_head: usize = 0,
@@ -93,11 +98,13 @@ pub fn init(hub: *Hub) void {
     }
 }
 
-/// Apply shared clock, random, debug, or input-filter configuration from HUBSET.
+/// Apply shared clock, random, debug, or input-filter configuration, or request a full reset.
 /// Unsupported configurations leave the current hub state intact.
 pub fn configure(hub: *Hub, mode: u32) void {
     if (mode & 0x8000_0000 != 0) {
         hub.random.seed(mode);
+    } else if (mode & 0xf000_0000 == 0x1000_0000) {
+        hub.reset_requested = true;
     } else if (mode & 0xf000_0000 == 0x2000_0000) {
         if (!hub.debug.locked)
             hub.debug = .{
@@ -219,11 +226,21 @@ pub fn observe(hub: *Hub, space: Debugger.Space, cog: ?u3, address: u32, access:
 
 /// Commit old writes, advance I/O once, execute cogs, then capture traces and advance CT.
 /// All cogs observe previous-edge writes before any cog executes on this edge.
-pub fn step(hub: *Hub) void {
+/// Reset returns only after init() has restored the entire hub and stopped every cog.
+pub fn step(hub: *Hub) StepResult {
+    if (hub.reset_requested) {
+        hub.init();
+        return .reset;
+    }
     if (hub.debugger) |debugger| {
         if (!debugger.beforeClock(hub))
-            return;
+            return if (hub.fault != null or debugger.stop == .fault or debugger.stop == .allocation_failure)
+                .trap
+            else
+                .breakpoint;
     }
+    if (hub.fault != null)
+        return .trap;
     hub.clocking = true;
     defer {
         hub.clocking = false;
@@ -312,6 +329,10 @@ pub fn step(hub: *Hub) void {
         hub.access_context = cog.provenance();
         hub.read_class = .data;
         cog.clock_command();
+        if (hub.reset_requested) {
+            hub.init();
+            return .reset;
+        }
     }
     hub.io.step(hub);
     if (hub.fault == null) {
@@ -319,6 +340,10 @@ pub fn step(hub: *Hub) void {
             hub.access_context = cog.provenance();
             hub.read_class = .data;
             cog.step();
+            if (hub.reset_requested) {
+                hub.init();
+                return .reset;
+            }
         }
     }
     for (&hub.cogs) |*cog| {
@@ -337,7 +362,12 @@ pub fn step(hub: *Hub) void {
     hub.counter +%= 1;
     if (hub.debugger) |debugger| {
         debugger.afterClock(hub);
+        if (debugger.stop == .allocation_failure)
+            return .trap;
+        if (hub.fault == null and debugger.stop != .none)
+            return .breakpoint;
     }
+    return if (hub.fault != null) .trap else .normal;
 }
 
 /// Return whether any cog is executing or waiting for startup to complete.
@@ -416,18 +446,18 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     hub.init();
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (100 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.cogs[0].write_reg(.DIRB, 1 << 30);
     try std.testing.expect(!hub.io.pins[62].smart.registers.enabled);
-    hub.step();
+    _ = hub.step();
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'x', .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expect(hub.io.pins[62].outputs.scheduled);
     hub.cogs[0].write_reg(.DIRB, 0);
@@ -444,39 +474,39 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     hub.cogs[1].writeback.writes[0] = .{ .reg = .DIRB, .value = 1 << 30 };
     hub.cogs[0].writeback.count = 1;
     hub.cogs[0].writeback.writes[0] = .{ .reg = .DIRB, .value = 0 };
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(hub.io.pins[62].outputs.scheduled);
     hub.cogs[1].write_reg(.DIRB, 0);
     try std.testing.expect(hub.io.pins[62].smart.registers.enabled);
     try std.testing.expect(hub.io.pins[62].outputs.scheduled);
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(!hub.io.pins[62].smart.registers.enabled);
     try std.testing.expect(!hub.io.pins[62].outputs.scheduled);
     try std.testing.expect(!hub.io.pins[62].smart.registers.ready);
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'y', .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expect(hub.io.pins[62].smart.logic.uart_tx.buffer == null);
 
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 63, .kind = .configure, .value = 0x3e, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 63, .kind = .write_x, .value = (100 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.cogs[0].write_reg(.DIRB, 1 << 31);
-    hub.step();
+    _ = hub.step();
     var reader = std.Io.Reader.fixed("z");
     var source: IO.DataSource = .{ .reader = &reader };
     hub.io.pins[63].smart.rx_mode = .{ .emulated = &source };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), reader.bufferedLen());
     hub.cogs[0].write_reg(.DIRB, 0);
     hub.counter +%= 1000;
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(!hub.io.pins[63].smart.registers.ready);
     try std.testing.expectEqual(@as(u32, 0), hub.io.pins[63].smart.registers.result);
 }
@@ -494,18 +524,18 @@ test "COGSTOP aborts a UART frame before its completion edge" {
     pin.smart.tx_mode = .{ .emulated = &sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (100 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.cogs[0].write_reg(.DIRB, 1 << 30);
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'x', .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
-    hub.step();
+    _ = hub.step();
     const completion = hub.counter + 1000;
     try std.testing.expect(pin.smart.logic.uart_tx.shifter != null);
 
@@ -513,12 +543,12 @@ test "COGSTOP aborts a UART frame before its completion edge" {
     hub.cogs[0].write_reg(@enumFromInt(0), 0xFD64_0003); // COGSTOP #0.
     hub.cogs[0].exec_mode = .cog;
     while (hub.is_any_cog_active() and hub.counter < completion) {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expect(!hub.is_any_cog_active());
     try std.testing.expect(hub.counter < completion);
     hub.counter = completion;
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(!pin.smart.registers.enabled);
     try std.testing.expect(pin.smart.logic.uart_tx.shifter == null);
     try std.testing.expect(pin.smart.logic.uart_tx.buffer == null);
@@ -549,12 +579,12 @@ test "event delivery coalesces without crossing cogs and reset cancels queued la
     hub.cogs[0].reset();
     try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
     for (0..2) |_| {
-        hub.step();
+        _ = hub.step();
         for (hub.cogs) |cog| {
             try std.testing.expectEqual(@as(usize, 0), cog.events.count());
         }
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
     try std.testing.expect(hub.cogs[1].events.eql(.full));
     try std.testing.expect(hub.cogs[2].events.eql(.full));
@@ -577,12 +607,12 @@ test "pending events arrive during a timed wait" {
         const cog = &hub.cogs[0];
         cog.exec_mode = .cog;
         cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_161F }; // WAITX #11.
-        hub.step();
+        _ = hub.step();
         hub.clocking = true;
         hub.signal_event(cog.id, event);
         hub.clocking = false;
         for (0..3) |_| {
-            hub.step();
+            _ = hub.step();
         }
         try std.testing.expect(cog.events.contains(event));
         // WAITX ignores unrelated event latches after delivery has settled.
@@ -599,10 +629,10 @@ test "pending events keep their two-clock delay across counter rollover" {
     hub.signal_event(0, .QMT);
     hub.clocking = false;
     for (0..2) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(hub.cogs[0].events.eql(.initOne(.QMT)));
 }
 
@@ -630,11 +660,11 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
             .direction = .{ .read = .{ .grant_address = read_address, .grants_left = 1 } },
         };
         for (0..5) |_| {
-            hub.step();
+            _ = hub.step();
             try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].fifo_state.engine.?.count);
             try std.testing.expect(hub.cogs[1].memory_transfer.?.direction.read.value == null);
         }
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(@as(usize, 1), hub.cogs[0].fifo_state.engine.?.count);
         try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[0].fifo_state.engine.?.words[0]);
         try std.testing.expectEqual(@as(?u32, 0x5566_7788), hub.cogs[1].memory_transfer.?.direction.read.value);
@@ -650,13 +680,13 @@ test "wait deadlines remain future across counter rollover" {
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_161F }; // WAITX #11.
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(?u64, 6), cog.wait_until);
     for (1..11) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expect(cog.wait_until != null);
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(cog.wait_until == null);
 }
 
@@ -673,22 +703,22 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     hub.io.pins[62].smart.tx_mode = .{ .emulated = &terminal_sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (8 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
-        hub.step();
+        _ = hub.step();
     }
     hub.cogs[0].write_reg(.DIRB, 1 << 30);
     try std.testing.expect(!hub.io.pins[62].smart.registers.enabled);
-    hub.step();
+    _ = hub.step();
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'x', .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 81) |_| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(@as(usize, 0), output.written().len);
     }
-    hub.step();
-    hub.step();
+    _ = hub.step();
+    _ = hub.step();
     try std.testing.expectEqualStrings("x", output.written());
 
     hub.init();
@@ -700,7 +730,7 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     }
     try hub.start_cog(1, .{ .hub_address = 0x1000 });
     for (0..550) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expect(hub.cogs[1].startup == null);
     try std.testing.expectEqual(Cog.ExecMode.stopped, hub.cogs[1].exec_mode);
@@ -720,7 +750,7 @@ test "pattern conditions are sampled while a cog waits" {
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
     cog.z = true;
     cog.configure_pattern(1, 1);
-    hub.step(); // Stable zero input does not match.
+    _ = hub.step(); // Stable zero input does not match.
     // Model a new architectural snapshot, independently of I/O propagation timing.
     hub.io.samples.input_registers = 1;
     cog.step();
@@ -741,13 +771,13 @@ test "selectable pin samples retain delayed notifications during waits" {
     cog.configure_selectable(.SE1, 0x100); // Held low input.
     cog.configure_interrupt(.int1, @intFromEnum(EventId.SE1));
     cog.interrupts.stalled = true;
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(!cog.events.contains(.SE1));
     // Reconfiguration clears the latch, but cannot retract the sample already in flight.
     cog.configure_selectable(.SE1, 0x40);
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(!cog.events.contains(.SE1));
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(cog.events.contains(.SE1));
     try std.testing.expectEqual(Cog.InterruptState.pending, cog.interrupts.levels.get(.int1).state);
     cog.cancel_interrupt(.int1);
@@ -778,7 +808,7 @@ test "cog restart clears pending interrupts and controller state" {
         try std.testing.expectEqual(@as(u32, 1), cog.interrupt_status());
         cog.exec_mode = .cog;
         cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
-        hub.step();
+        _ = hub.step();
         cog.interrupts.stalled = true;
         cog.trigger_interrupt(level);
         try hub.start_cog(3, .{ .clocked = false });
@@ -804,7 +834,7 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
         }
         try std.testing.expectEqualDeep(before, hub.random);
         try std.testing.expect(!hub.is_any_cog_active());
-        hub.step();
+        _ = hub.step();
         expected.step();
         try std.testing.expectEqualDeep(expected, hub.random);
         // Pad noise borrows the same output sampled by the cogs on this edge.
@@ -816,7 +846,7 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
         for (0..8) |phase| {
             hub.init();
             for (0..16) |_| {
-                hub.step();
+                _ = hub.step();
             }
             hub.counter = phase;
             const cog = &hub.cogs[id];
@@ -830,7 +860,7 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
                     expected.seed(0x80001234);
                 }
                 expected.step();
-                hub.step();
+                _ = hub.step();
                 try std.testing.expectEqualDeep(expected, hub.random);
                 try std.testing.expectEqual(@as(u32, 0), hub.io.clock_mode);
             }
@@ -882,7 +912,7 @@ test "debug ROM saves and restores sixteen registers for all eight cogs" {
             cog.registers.values[reg] = 0;
         }
         for (0..200) |_| {
-            hub.step();
+            _ = hub.step();
             if (cog.registers.values[20] == 7) {
                 break;
             }
@@ -907,10 +937,65 @@ test "deferred write authorization survives a debug state transition" {
     const cog = &hub.cogs[0];
     cog.debug.state = .active;
     cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0xdead_beef, .size = 4, .masked = false, .origin = .application };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(before, hub.read_memory(0xfc000, 4));
     cog.debug.state = .idle;
     cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0x1234_5678, .size = 4, .masked = false, .origin = .debug };
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 0x1234_5678), hub.read_memory(0xfc000, 4));
+}
+
+test "HUBSET reset clears the entire Hub even while a debugger stop is pending" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    @memset(&hub.memory, 0xaa);
+    hub.counter = 123;
+    hub.debug = .{ .enables = 0xff, .protected = true, .locked = true };
+    hub.random.seed(0x87654321);
+    hub.io.setExternal(@enumFromInt(0), .one);
+    hub.io.pins[0].smart.registers.x = 99;
+    hub.locks[0].allocated = true;
+    hub.locks[0].taken = true;
+    for (&hub.cogs) |*cog| {
+        cog.exec_mode = .cog;
+        cog.registers.set(.OUTA, 1);
+        cog.lut[0] = 42;
+        cog.begin_fifo(.write, 0, 0x1000);
+        try std.testing.expect(cog.write_fifo(0xaabbccdd, 4));
+    }
+    var debugger: Debugger = .{ .allocator = std.testing.allocator, .stop = .execution };
+    defer debugger.deinit();
+
+    var trace: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer trace.deinit();
+
+    var vcd: Vcd = .{ .writer = &trace.writer };
+    hub.trace_writer = &trace.writer;
+    hub.vcd = &vcd;
+    hub.debugger = &debugger;
+    hub.configure(0x1fff_ffff);
+    try std.testing.expectEqual(StepResult.reset, hub.step());
+    try std.testing.expectEqual(@as(u64, 0), hub.counter);
+    try std.testing.expectEqual(@as(u64, 20_000_000), hub.io.clock_frequency);
+    try std.testing.expectEqual(@as(u8, 0), hub.debug.enables);
+    try std.testing.expect(!hub.debug.protected and !hub.debug.locked);
+    try std.testing.expectEqualDeep(Random{}, hub.random);
+    try std.testing.expectEqual(IO.Signal.z, hub.io.external[0]);
+    try std.testing.expectEqual(@as(u32, 0), hub.io.pins[0].smart.registers.x);
+    try std.testing.expect(!hub.locks[0].allocated and !hub.locks[0].taken);
+    try std.testing.expect(hub.debugger == null and hub.trace_writer == null and hub.vcd == null);
+    try std.testing.expect(hub.fault == null and !hub.reset_requested and !hub.clocking);
+    try std.testing.expect(std.mem.allEqual(u8, hub.memory[0..0x7c000], 0));
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    for (&hub.cogs, 0..) |*cog, id| {
+        try std.testing.expectEqual(Cog.ExecMode.stopped, cog.exec_mode);
+        try std.testing.expect(cog.hub == hub and cog.id == id);
+        try std.testing.expectEqual(@as(u32, 0), cog.registers.get(.OUTA));
+        try std.testing.expectEqual(@as(u32, 0), cog.lut[0]);
+        try std.testing.expect(cog.fifo_state.engine == null);
+    }
+    try std.testing.expectEqual(StepResult.normal, hub.step());
+    try std.testing.expectEqual(@as(u64, 1), hub.counter);
 }

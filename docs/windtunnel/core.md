@@ -26,13 +26,27 @@ CORDIC execution support. Code that needs Q preserved should initialize the
 word fetched past a local return jump, for example with a NOP guard.
 
 The [I/O subsystem](io.md) implements pin instructions, digital pads and routing,
-long repository, UART and functional USART modes, plus VCD export. General
-software FIFO, streamer (including its colorspace converter), CORDIC, interrupts,
-debugging, skipping, and REP remain outside this coverage. GETRND, BITRND,
-randomized WAITX, and general HUBSET configuration are also unfinished.
+long repository, UART and functional USART modes, plus VCD export. Software FIFO,
+CORDIC, interrupts, debugging, skipping, REP and shared RNG behavior are documented
+in the [pipeline notes](pipeline.md) and [hardware findings](../accumulated.md).
+Streamer support, including its colorspace converter, remains unfinished.
+
+`Hub.step()` returns `normal`, `breakpoint`, `reset`, or `trap`. Breakpoints stop
+before execution or after a complete edge for data watchpoints; traps retain the
+fault diagnostic. HUBSET with top nibble `$1` stops the simulation and returns
+`reset` after restoring the entire Hub through `init()`, including RAM, ROM, cogs,
+pins, counter and clock configuration. It detaches host tracing, terminal and
+debugger links. Hosts may explicitly attach them again; boot ROM execution is not
+restarted automatically.
+
+WFBYTE, WFWORD and WFLONG write the low 1/2/4 operand bytes into the shared FIFO
+in little-endian order. GETPTR advances on enqueue; hub memory changes only when
+the two-clock write-eligibility stage and rotating RAM-slice grant permit it.
+Mixed widths preserve neighboring lanes and split unaligned writes across slices.
+The existing `fifo-*` fixtures check these paths against hardware at RCFAST.
 
 Execution uses a five-stage pipeline with two-clock issue, operand capture, delayed writeback, stalls, and branch refill. Hub accesses use rotating RAM grants, five-clock read responses, boundary-crossing transfers, and streaming blocks. Hub instruction fetch uses a buffered FIFO; cog/lock commands have separate round-robin slots. Cog startup streams the 504-long image before fetching instructions. The existing
-blocking RDFAST 0/RFBYTE path shares the same clocked FIFO. Execution reports
+RDFAST/WRFAST/FBLOCK and RF/WF instructions share the same clocked FIFO. Execution reports
 `not_implemented` for missing simulator support and `illegal` with a reason for
 prohibited use; both stop the runner/CLI. RDFAST/RFBYTE cannot use the instruction
 FIFO during hub execution, and RFBYTE requires a preceding RDFAST.

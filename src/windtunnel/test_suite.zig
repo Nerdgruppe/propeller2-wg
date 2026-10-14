@@ -998,7 +998,27 @@ fn runOne(
                 try validateDispatch(compiled.module, dut_origin, instruction);
             }
         }
-        hub.step();
+        switch (hub.step()) {
+            .normal => {},
+            .trap => {
+                const fault = hub.fault orelse return error.ExecutionTrap;
+                try ctx.errors.print("{s}: cog {d}, pc 0x{x}, {t}: {s}\n", .{
+                    path,
+                    fault.cog,
+                    fault.pc,
+                    decode.decode(fault.instruction),
+                    fault.reason(),
+                });
+                return switch (fault.result) {
+                    .not_implemented => error.NotImplementedInstruction,
+                    .illegal => error.IllegalInstruction,
+                    .trap => error.ExecutionTrap,
+                    else => unreachable,
+                };
+            },
+            .reset => break,
+            .breakpoint => return error.UnexpectedBreakpoint,
+        }
         if (!supplied_stdin and stdout.written().len >= list.stdin_after.len) {
             if (!std.mem.startsWith(u8, stdout.written(), list.stdin_after))
                 return error.ReadinessMismatch;
@@ -1015,21 +1035,7 @@ fn runOne(
                 .{ .emulated = &terminal_source };
             supplied_stdin = true;
         }
-        if (hub.fault) |fault| {
-            try ctx.errors.print("{s}: cog {d}, pc 0x{x}, {t}: {s}\n", .{
-                path,
-                fault.cog,
-                fault.pc,
-                decode.decode(fault.instruction),
-                fault.reason(),
-            });
-            return switch (fault.result) {
-                .not_implemented => error.NotImplementedInstruction,
-                .illegal => error.IllegalInstruction,
-                .trap => error.ExecutionTrap,
-                else => unreachable,
-            };
-        }
+
         if (stdout.written().len > 1 << 20)
             return error.OutputLimit;
     }
@@ -1626,7 +1632,7 @@ test "RCFAST hello world preserves inherited ROM baud timing and drains UART wit
                 if (instruction.pc == halt)
                     break;
             }
-            hub.step();
+            _ = hub.step();
         }
         try std.testing.expect(hub.counter < 10_000);
         try std.testing.expectEqualStrings("Hello world!\r\n", output.written());
@@ -1656,7 +1662,7 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
     const endpoint = try std.fmt.allocPrint(std.testing.allocator, "ws://127.0.0.1:{d}/", .{listener.socket.address.getPort()});
     defer std.testing.allocator.free(endpoint);
 
-    var server = try std.Io.concurrent(std.testing.io, serveTestConnections, .{ &listener, 3 });
+    var server = try std.Io.concurrent(std.testing.io, serveTestConnections, .{ &listener, 4 });
     defer server.cancel(std.testing.io) catch {};
 
     for ([_][]const u8{ "\x00\x80\xff", "ABC" }) |packet| {
@@ -1674,9 +1680,34 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
         try std.testing.expectEqual(@as(usize, 4), output.items.len);
         try std.testing.expectEqualSlices(u8, packet, output.items[1..]);
     }
-    // A simulator fault must finish the close handshake and release the board just like a transport failure.
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
+
+    // HUBSET reset must close normally instead of waiting for the runtime quota.
+    {
+        const reset_source = ".cogexec\nHUBSET aug(0x10000000)\n";
+        try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "reset.propan", .data = reset_source });
+        const reset_path = try tmp.dir.realPathFileAlloc(std.testing.io, "reset.propan", std.testing.allocator);
+        defer std.testing.allocator.free(reset_path);
+
+        var reset = try propan.assemble(std.testing.allocator, std.testing.io, reset_path, reset_source, &errors.writer);
+        defer reset.deinit();
+
+        var reset_output: std.ArrayList(u8) = .empty;
+        defer reset_output.deinit(std.testing.allocator);
+
+        const before_reset = errors.written().len;
+        try p2aas.run(std.testing.allocator, std.testing.io, endpoint, .{
+            .image = reset.image,
+            .stdin = "",
+            .ready = "",
+            .baudrate = serial_boot.baudrate,
+            .timeout_ms = 1000,
+        }, &reset_output, &errors.writer);
+        try std.testing.expectEqual(@as(usize, 0), reset_output.items.len);
+        try std.testing.expect(std.mem.find(u8, errors.written()[before_reset..], "P2AAS close 1000:") != null);
+    }
+    // A simulator fault must finish the close handshake and release the board just like a transport failure.
 
     const illegal_source = ".cogexec\nJMP hub_entry\n.hubexec 0x1000\nhub_entry:\nRFBYTE PA\n";
     try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "illegal.propan", .data = illegal_source });

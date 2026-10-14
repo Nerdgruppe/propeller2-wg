@@ -323,7 +323,7 @@ const Frames = struct {
     }
 };
 
-const Event = union(enum) { peer: Close, receive_error: anyerror, execution_error: anyerror, timeout };
+const Event = union(enum) { peer: Close, receive_error: anyerror, execution_error: anyerror, finished, timeout };
 /// Simulation behavior shared by every board session served by this listener.
 pub const SimulationOptions = struct {
     trace: bool,
@@ -463,10 +463,23 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
             const before = hub.counter;
             const frequency = hub.io.clock_frequency;
             // Hub edges still reset pin directions and service queued cog starts after self-stop.
-            hub.step();
-            if (hub.fault) |fault| {
-                std.log.warn("P2AAS cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{ fault.cog, fault.pc, fault.instruction, fault.reason() });
-                return error.SimulationFault;
+            switch (hub.step()) {
+                .normal => {},
+                .trap => {
+                    if (hub.fault) |fault| {
+                        std.log.warn("P2AAS cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{
+                            fault.cog, fault.pc, fault.instruction, fault.reason(),
+                        });
+                    }
+                    return error.SimulationFault;
+                },
+                .breakpoint, .reset => {
+                    if (output.end != 0) {
+                        try connection.send(output.buffered(), .binary);
+                        output.end = 0;
+                    }
+                    return;
+                },
             }
             virtual_fixed += @as(u128, hub.counter -% before) * (@as(u128, std.time.ns_per_s) << 32) / frequency;
             if (hub.counter >= ceiling or output.end != 0) {
@@ -485,9 +498,13 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
     }
 }
 
-/// Report a simulator failure through the same event path as socket termination and runtime timeout.
+/// Notify the session of normal simulation shutdown or an execution failure.
 fn execution(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8), events: *std.Io.Queue(Event)) !void {
-    simulate(connection, hub, input) catch |err| try events.putOne(connection.io, .{ .execution_error = err });
+    simulate(connection, hub, input) catch |err| {
+        try events.putOne(connection.io, .{ .execution_error = err });
+        return;
+    };
+    try events.putOne(connection.io, .finished);
 }
 
 /// Enqueue a timeout after the allotted execution time.
@@ -509,7 +526,7 @@ fn closeExchange(connection: *Connection, code: u16, reason: []const u8, events:
         while (true)
             switch (try queue.getOne(connection.io)) {
                 .peer, .receive_error => return,
-                .execution_error => {},
+                .execution_error, .finished => {},
                 .timeout => {},
             };
     } else {
@@ -661,6 +678,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
             );
         },
         .execution_error => try closeBounded(connection, 1011, internal_reason, &events),
+        .finished => try closeBounded(connection, 1000, "Simulation stopped.", &events),
     }
 }
 

@@ -60,6 +60,7 @@ separate host baud override.
 | Termination | Close status / reason |
 |---|---|
 | Client close | Normal closure, `1000` |
+| HUBSET reset | `1000`, `Simulation stopped.` |
 | Upload / frame protocol violation | `1002`, with a reason |
 | Runtime quota expired | `1008`, `No time quota left for user code.` |
 | Total request quota expired during runtime | `1008`, `No time quota left.` |
@@ -68,7 +69,8 @@ separate host baud override.
 
 The total quota is ten wall-clock seconds. Runtime quota starts after loading. Close handshakes have
 an additional two-second cleanup bound. All cogs stopping does not close the session early. Pending
-cog starts and peripheral direction changes still receive hub clock edges.
+cog starts and peripheral direction changes still receive hub clock edges. HUBSET reset
+clears the simulated Hub and closes the session immediately, preserving already-delivered UART output.
 
 ## Timing and coverage
 

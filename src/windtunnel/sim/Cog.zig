@@ -2259,7 +2259,7 @@ test "reset cancels every XBYTE phase and mode while retaining LUT RAM" {
         cog.lut[0x100] = 0x20;
         try std.testing.expectEqual(ExecResult.next, cog.return_stack());
         for (0..clocks) |_| {
-            hub.step();
+            _ = hub.step();
         }
         try std.testing.expect(cog.xbyte != null);
         cog.reset();
@@ -2282,18 +2282,18 @@ test "five clock passage delays writeback and forwards to the following operand 
     cog.registers.values[0] = 0xF604_2807;
     cog.registers.values[1] = 0xF104_2801;
     for (1..5) |stage| {
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(@as(u20, 0), cog.pipeline[stage].?.pc);
         try std.testing.expectEqual(@as(u32, 0), cog.registers.values[20]);
     }
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 7), cog.registers.values[20]);
     try std.testing.expectEqual(@as(u20, 0), cog.retired.?.pc);
     try std.testing.expectEqual(@as(u20, 1), cog.pipeline[3].?.pc);
     try std.testing.expectEqual(@as(u32, 7), cog.pipeline[3].?.operands.?.d);
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 7), cog.registers.values[20]);
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 8), cog.registers.values[20]);
 }
 
@@ -2313,7 +2313,7 @@ test "execute-only ROM fetch differs from underlying tail RAM and discarded fetc
     cog.pc = 502;
     cog.registers.values[502] = 0xFD80_0000; // JMP #0, younger ROM fetch discarded.
     for (0..12) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expect(hub.fault == null);
     try std.testing.expectEqual(ExecMode.cog, cog.exec_mode);
@@ -2329,7 +2329,7 @@ test "illegal execution stops the cog and discards pending pipeline writes" {
     // RFBYTE r20: the instruction FIFO cannot also serve software reads.
     cog.pipeline[3] = .{ .pc = 0x1000, .instr = 0xFD60_2810 };
     cog.pipeline[2] = .{ .pc = 0x1004, .instr = 0xF604_2807 };
-    hub.step();
+    _ = hub.step();
     const fault = hub.fault.?;
     try std.testing.expectEqualStrings("hub execution uses the FIFO for instruction fetching", fault.result.illegal);
     try std.testing.expectEqual(@as(u20, 0x1000), fault.pc);
@@ -2339,7 +2339,7 @@ test "illegal execution stops the cog and discards pending pipeline writes" {
     }
     try std.testing.expectEqual(@as(usize, 0), cog.writeback.count);
     for (0..8) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(u32, 0), cog.registers.values[20]);
 }
@@ -2367,7 +2367,7 @@ test "stop discards startup, FIFO, transfers and queued results but preserves RA
     try std.testing.expectEqual(Skip{}, cog.skip);
     try std.testing.expectEqual(@as(u2, 0), cog.writeback.count);
     for (0..32) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(u32, 77), cog.registers.values[100]);
     try std.testing.expectEqual(@as(u32, 88), cog.lut[100]);
@@ -2479,10 +2479,10 @@ test "GETCT reads both halves and counter waits cross the 32-bit wrap" {
     hub.counter = 0xffff_fffe;
     cog.exec_mode = .cog;
     cog.ct_targets[2] = 0;
-    hub.step();
-    hub.step();
+    _ = hub.step();
+    _ = hub.step();
     try std.testing.expect(!cog.events.contains(.CT3));
-    hub.step();
+    _ = hub.step();
     try std.testing.expect(cog.events.contains(.CT3));
     cog.q = 4;
     cog.setq_pending = true;
@@ -2510,13 +2510,13 @@ test "counter configuration clears each latch and the reached condition reassert
         remaining.remove(event);
         try std.testing.expect(cog.events.eql(remaining));
         for (0..3) |_| {
-            hub.step();
+            _ = hub.step();
         }
         try std.testing.expect(!cog.events.contains(event));
-        hub.step();
+        _ = hub.step();
         try std.testing.expect(cog.events.contains(event));
         cog.events.remove(event);
-        hub.step();
+        _ = hub.step();
         try std.testing.expect(cog.events.contains(event));
     }
 }
@@ -2650,7 +2650,7 @@ test "FBLOCK replaces the descriptor of a configuration still draining prior wri
     try std.testing.expectEqual(FifoMode.write, cog.fifo_state.engine.?.mode);
     try std.testing.expectEqual(@as(u20, 0x3000), cog.fifo_state.request.?.block.address);
     while (cog.fifo_state.request != null) {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(u32, 0x11223344), hub.read_memory(0x1000, 4));
     try std.testing.expectEqual(FifoMode.read, cog.fifo_state.engine.?.mode);
@@ -2661,7 +2661,7 @@ test "FBLOCK replaces the descriptor of a configuration still draining prior wri
         if (cog.peek_fifo(3) != null) {
             _ = cog.read_fifo(4);
         }
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(u20, 0x3000), cog.fifo_state.engine.?.address);
     try std.testing.expectEqual(@as(u19, 32), cog.fifo_state.engine.?.remaining);
@@ -2709,16 +2709,16 @@ test "FIFO byte eligibility survives CT rollover and reset discards only uncommi
     hub.counter = std.math.maxInt(u64) - 1;
     cog.begin_fifo(.write, 0, 0);
     try std.testing.expect(cog.write_fifo(0x11223344, 4));
-    hub.step();
-    hub.step();
+    _ = hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 0), hub.read_memory(0, 4));
-    hub.step();
+    _ = hub.step();
     try std.testing.expectEqual(@as(u32, 0x11223344), hub.read_memory(0, 4));
     try std.testing.expect(cog.write_fifo(0x55667788, 4));
     cog.begin_fifo(.read, 0, 0x2000);
     cog.reset();
     for (0..32) |_| {
-        hub.step();
+        _ = hub.step();
     }
     try std.testing.expectEqual(@as(u32, 0x11223344), hub.read_memory(0, 4));
     try std.testing.expectEqual(@as(u32, 0), hub.read_memory(4, 4));
@@ -2742,10 +2742,10 @@ test "FIFO write eligibility still waits for the rotating hub RAM slice" {
         }
         for (0..first_grant) |_| {
             try std.testing.expectEqual(@as(u32, 0), hub.read_memory(0, 4));
-            hub.step();
+            _ = hub.step();
         }
         try std.testing.expectEqual(@as(u32, 0), hub.read_memory(0, 4));
-        hub.step();
+        _ = hub.step();
         try std.testing.expectEqual(@as(u32, 0x1234_5678), hub.read_memory(0, 4));
     }
 }

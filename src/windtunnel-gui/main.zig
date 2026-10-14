@@ -331,6 +331,10 @@ const GUI = struct {
             .context = io,
             .now = monotonic,
         });
+        if (gui.frame.notification == .reset) {
+            gui.debugger.acknowledge(&gui.hub);
+            gui.hub.debugger = &gui.debugger;
+        }
         gui.is_running = gui.frame.running;
         gui.step_requested = false;
     }
@@ -379,6 +383,9 @@ const GUI = struct {
         _ = hexInput("HUBSET clock/debug", &gui.hubset, false);
         if (zgui.button("Apply HUBSET", .{})) {
             hub.configure(gui.hubset);
+            if (hub.reset_requested) {
+                gui.step_requested = true;
+            }
         }
         if (zgui.inputScalar("Crystal frequency Hz", u64, .{ .v = &hub.io.crystal_frequency })) {
             _ = hub.io.setClock(hub.io.clock_mode);

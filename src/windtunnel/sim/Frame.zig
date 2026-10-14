@@ -9,6 +9,7 @@ pub const Clock = struct {
 clocks: u64 = 0,
 nanoseconds: i96 = 0,
 running: bool = false,
+notification: Hub.StepResult = .normal,
 pub const budget_ns = 14_000_000;
 
 /// Advance whole hub edges until the deadline, a stop, or a fault; never catch up skipped host time.
@@ -18,27 +19,21 @@ pub fn advance(hub: *Hub, mode: Mode, clock: Clock) Frame {
         return result;
     const start = clock.now(clock.context);
     while (true) {
-        if (hub.fault != null) {
-            if (hub.debugger) |debugger| {
-                debugger.stop = .fault;
-            }
-            result.running = false;
-            break;
-        }
-        if (hub.debugger != null and hub.debugger.?.stop != .none) {
+        if (hub.reset_requested or hub.fault != null or
+            (hub.debugger != null and hub.debugger.?.stop != .none))
+        {
+            result.notification = hub.step();
             result.running = false;
             break;
         }
         if (mode == .run and clock.now(clock.context) - start >= budget_ns)
             break;
         const before = hub.counter;
-        hub.step();
-        if (hub.counter != before) {
+        result.notification = hub.step();
+        if (result.notification != .reset and hub.counter != before) {
             result.clocks += 1;
         }
-        if (hub.counter == before or hub.fault != null or
-            (hub.debugger != null and hub.debugger.?.stop != .none))
-        {
+        if (result.notification != .normal) {
             result.running = false;
             break;
         }

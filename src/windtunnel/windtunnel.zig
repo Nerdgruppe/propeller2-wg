@@ -195,14 +195,19 @@ pub fn main(init: std.process.Init) !u8 {
     var final_edge = false;
     while (hub.is_any_cog_active() or !final_edge) {
         const inactive = !hub.is_any_cog_active();
-        hub.step();
-        final_edge = inactive;
-        if (hub.fault) |fault| {
-            std.log.err("cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{
-                fault.cog, fault.pc, fault.instruction, fault.reason(),
-            });
-            return 1;
+        switch (hub.step()) {
+            .normal => {},
+            .trap => {
+                if (hub.fault) |fault| {
+                    std.log.err("cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{
+                        fault.cog, fault.pc, fault.instruction, fault.reason(),
+                    });
+                }
+                return 1;
+            },
+            .breakpoint, .reset => break,
         }
+        final_edge = inactive;
     }
 
     if (vcd_file != null) {
