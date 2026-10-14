@@ -2,18 +2,14 @@
 //? profile: program
 //? stop: _end
 //? timeout-ms: 2000
-//? max-cycles: 4000000
+//? max-cycles: 1_000_000
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00"
 
 // Exercise all stack-call encodings without relying on RETA/RETB for a blocked write.
-const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
-const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
 .cogexec    0
-                HUBSET  aug(CLOCK)
+                HUBSET  0xF0
                 WRPIN   P_TT_01 | P_ASYNC_TX,   62
-                WXPIN   aug(UART),              62
                 DIRH    62
-                WAITX   aug(2000000)
                 SETQ    15
                 RDLONG  register(0x100),        aug(hubaddr(debug_image))
                 SETQ    15
@@ -78,7 +74,10 @@ ready:
                 TESTP   62                      :wc
     if(!C)      JMP     ready
                 DJNZ    register(0x90), byte
-                WAITX   aug(20000)
+
+flush:
+                RQPIN   PB, 62  :wc
+    if(C)       JMP     flush
 _end:
                 JMP     _end
 
@@ -144,4 +143,3 @@ debug_sub3:
 debug_next3:
                 WRLONG  register(0x90), aug(0x1004)
                 JMP     nrel(0x1fd)
-

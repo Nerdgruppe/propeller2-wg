@@ -1,0 +1,687 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode3-write0"
+//? const: pll = 0
+//? const: mode = 3
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000e222
+//? post: cog[*].reg[completions] == 0x00001000
+//? post: cog[*].reg[reset_result] == 0x02468acf
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0xf13579bd
+//? post: cog[*].reg[result4] == 0xf13579bd
+//? post: cog[*].reg[result5] == 0xf13579bd
+//? post: cog[*].reg[result6] == 0xf13579bd
+//? post: cog[*].reg[result7] == 0x02468acf
+//? post: cog[*].reg[result8] == 0x02468acf
+//? post: cog[*].reg[result9] == 0x02468acf
+//? post: cog[*].reg[result10] == 0x02468acf
+//? post: cog[*].reg[result11] == 0x02468acf
+//? post: cog[*].reg[result12] == 0x02468acf
+//? post: cog[*].reg[result13] == 0x02468acf
+//? post: cog[*].reg[result14] == 0x02468acf
+//? post: cog[*].reg[result15] == 0x02468acf
+//? run: "pll0-mode3-write1"
+//? const: pll = 0
+//? const: mode = 3
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000e000
+//? post: cog[*].reg[completions] == 0x00001000
+//? post: cog[*].reg[reset_result] == 0x0eca8642
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0xf13579bd
+//? post: cog[*].reg[result4] == 0xf13579bd
+//? post: cog[*].reg[result5] == 0xf13579bd
+//? post: cog[*].reg[result6] == 0xf13579bd
+//? post: cog[*].reg[result7] == 0x0eca8642
+//? post: cog[*].reg[result8] == 0x0eca8642
+//? post: cog[*].reg[result9] == 0x0eca8642
+//? post: cog[*].reg[result10] == 0x0eca8642
+//? post: cog[*].reg[result11] == 0x0eca8642
+//? post: cog[*].reg[result12] == 0x0eca8642
+//? post: cog[*].reg[result13] == 0x0eca8642
+//? post: cog[*].reg[result14] == 0x0eca8642
+//? post: cog[*].reg[result15] == 0x0eca8642
+//? run: "pll0-mode35-write0"
+//? const: pll = 0
+//? const: mode = 35
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00002222
+//? post: cog[*].reg[completions] == 0x00008000
+//? post: cog[*].reg[reset_result] == 0x02468acf
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x02468acf
+//? post: cog[*].reg[result4] == 0x02468acf
+//? post: cog[*].reg[result5] == 0x02468acf
+//? post: cog[*].reg[result6] == 0x02468acf
+//? post: cog[*].reg[result7] == 0x02468acf
+//? post: cog[*].reg[result8] == 0x02468acf
+//? post: cog[*].reg[result9] == 0x02468acf
+//? post: cog[*].reg[result10] == 0x02468acf
+//? post: cog[*].reg[result11] == 0x02468acf
+//? post: cog[*].reg[result12] == 0x02468acf
+//? post: cog[*].reg[result13] == 0x02468acf
+//? post: cog[*].reg[result14] == 0x02468acf
+//? post: cog[*].reg[result15] == 0x02468acf
+//? run: "pll0-mode35-write1"
+//? const: pll = 0
+//? const: mode = 35
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00002000
+//? post: cog[*].reg[completions] == 0x00009000
+//? post: cog[*].reg[reset_result] == 0x0eca8642
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x02468acf
+//? post: cog[*].reg[result4] == 0x02468acf
+//? post: cog[*].reg[result5] == 0x02468acf
+//? post: cog[*].reg[result6] == 0x02468acf
+//? post: cog[*].reg[result7] == 0x0eca8642
+//? post: cog[*].reg[result8] == 0x0eca8642
+//? post: cog[*].reg[result9] == 0x0eca8642
+//? post: cog[*].reg[result10] == 0x0eca8642
+//? post: cog[*].reg[result11] == 0x0eca8642
+//? post: cog[*].reg[result12] == 0x0eca8642
+//? post: cog[*].reg[result13] == 0x0eca8642
+//? post: cog[*].reg[result14] == 0x0eca8642
+//? post: cog[*].reg[result15] == 0x0eca8642
+//? run: "pll0-mode7-write0"
+//? const: pll = 0
+//? const: mode = 7
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000ee3c
+//? post: cog[*].reg[completions] == 0x00000100
+//? post: cog[*].reg[reset_result] == 0xf02468ac
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xdf13579b
+//? post: cog[*].reg[result8] == 0xdf13579b
+//? post: cog[*].reg[result9] == 0xdf13579b
+//? post: cog[*].reg[result10] == 0xdf13579b
+//? post: cog[*].reg[result11] == 0xdf13579b
+//? post: cog[*].reg[result12] == 0xdf13579b
+//? post: cog[*].reg[result13] == 0xdf13579b
+//? post: cog[*].reg[result14] == 0xdf13579b
+//? post: cog[*].reg[result15] == 0xf02468ac
+//? run: "pll0-mode7-write1"
+//? const: pll = 0
+//? const: mode = 7
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000ee10
+//? post: cog[*].reg[completions] == 0x00000100
+//? post: cog[*].reg[reset_result] == 0x20eca864
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xdf13579b
+//? post: cog[*].reg[result8] == 0xdf13579b
+//? post: cog[*].reg[result9] == 0xdf13579b
+//? post: cog[*].reg[result10] == 0xdf13579b
+//? post: cog[*].reg[result11] == 0xdf13579b
+//? post: cog[*].reg[result12] == 0xdf13579b
+//? post: cog[*].reg[result13] == 0xdf13579b
+//? post: cog[*].reg[result14] == 0xdf13579b
+//? post: cog[*].reg[result15] == 0x20eca864
+//? run: "pll0-mode39-write0"
+//? const: pll = 0
+//? const: mode = 39
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00003c3c
+//? post: cog[*].reg[completions] == 0x00008000
+//? post: cog[*].reg[reset_result] == 0xf02468ac
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xf02468ac
+//? post: cog[*].reg[result8] == 0xf02468ac
+//? post: cog[*].reg[result9] == 0xf02468ac
+//? post: cog[*].reg[result10] == 0xf02468ac
+//? post: cog[*].reg[result11] == 0xf02468ac
+//? post: cog[*].reg[result12] == 0xf02468ac
+//? post: cog[*].reg[result13] == 0xf02468ac
+//? post: cog[*].reg[result14] == 0xf02468ac
+//? post: cog[*].reg[result15] == 0xf02468ac
+//? run: "pll0-mode39-write1"
+//? const: pll = 0
+//? const: mode = 39
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00003c10
+//? post: cog[*].reg[completions] == 0x00008100
+//? post: cog[*].reg[reset_result] == 0x20eca864
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xf02468ac
+//? post: cog[*].reg[result8] == 0xf02468ac
+//? post: cog[*].reg[result9] == 0xf02468ac
+//? post: cog[*].reg[result10] == 0xf02468ac
+//? post: cog[*].reg[result11] == 0xf02468ac
+//? post: cog[*].reg[result12] == 0xf02468ac
+//? post: cog[*].reg[result13] == 0xf02468ac
+//? post: cog[*].reg[result14] == 0xf02468ac
+//? post: cog[*].reg[result15] == 0x20eca864
+//? run: "pll1-mode3-write0"
+//? const: pll = 1
+//? const: mode = 3
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000f111
+//? post: cog[*].reg[completions] == 0x00001000
+//? post: cog[*].reg[reset_result] == 0x02468acf
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0xf13579bd
+//? post: cog[*].reg[result4] == 0xf13579bd
+//? post: cog[*].reg[result5] == 0xf13579bd
+//? post: cog[*].reg[result6] == 0xf13579bd
+//? post: cog[*].reg[result7] == 0x02468acf
+//? post: cog[*].reg[result8] == 0x02468acf
+//? post: cog[*].reg[result9] == 0x02468acf
+//? post: cog[*].reg[result10] == 0x02468acf
+//? post: cog[*].reg[result11] == 0x02468acf
+//? post: cog[*].reg[result12] == 0x02468acf
+//? post: cog[*].reg[result13] == 0x02468acf
+//? post: cog[*].reg[result14] == 0x02468acf
+//? post: cog[*].reg[result15] == 0x02468acf
+//? run: "pll1-mode3-write1"
+//? const: pll = 1
+//? const: mode = 3
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000f000
+//? post: cog[*].reg[completions] == 0x00001000
+//? post: cog[*].reg[reset_result] == 0x0eca8642
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0xf13579bd
+//? post: cog[*].reg[result4] == 0xf13579bd
+//? post: cog[*].reg[result5] == 0xf13579bd
+//? post: cog[*].reg[result6] == 0xf13579bd
+//? post: cog[*].reg[result7] == 0x0eca8642
+//? post: cog[*].reg[result8] == 0x0eca8642
+//? post: cog[*].reg[result9] == 0x0eca8642
+//? post: cog[*].reg[result10] == 0x0eca8642
+//? post: cog[*].reg[result11] == 0x0eca8642
+//? post: cog[*].reg[result12] == 0x0eca8642
+//? post: cog[*].reg[result13] == 0x0eca8642
+//? post: cog[*].reg[result14] == 0x0eca8642
+//? post: cog[*].reg[result15] == 0x0eca8642
+//? run: "pll1-mode35-write0"
+//? const: pll = 1
+//? const: mode = 35
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00001111
+//? post: cog[*].reg[completions] == 0x00008000
+//? post: cog[*].reg[reset_result] == 0x02468acf
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x02468acf
+//? post: cog[*].reg[result4] == 0x02468acf
+//? post: cog[*].reg[result5] == 0x02468acf
+//? post: cog[*].reg[result6] == 0x02468acf
+//? post: cog[*].reg[result7] == 0x02468acf
+//? post: cog[*].reg[result8] == 0x02468acf
+//? post: cog[*].reg[result9] == 0x02468acf
+//? post: cog[*].reg[result10] == 0x02468acf
+//? post: cog[*].reg[result11] == 0x02468acf
+//? post: cog[*].reg[result12] == 0x02468acf
+//? post: cog[*].reg[result13] == 0x02468acf
+//? post: cog[*].reg[result14] == 0x02468acf
+//? post: cog[*].reg[result15] == 0x02468acf
+//? run: "pll1-mode35-write1"
+//? const: pll = 1
+//? const: mode = 35
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00001000
+//? post: cog[*].reg[completions] == 0x00009000
+//? post: cog[*].reg[reset_result] == 0x0eca8642
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x02468acf
+//? post: cog[*].reg[result4] == 0x02468acf
+//? post: cog[*].reg[result5] == 0x02468acf
+//? post: cog[*].reg[result6] == 0x02468acf
+//? post: cog[*].reg[result7] == 0x0eca8642
+//? post: cog[*].reg[result8] == 0x0eca8642
+//? post: cog[*].reg[result9] == 0x0eca8642
+//? post: cog[*].reg[result10] == 0x0eca8642
+//? post: cog[*].reg[result11] == 0x0eca8642
+//? post: cog[*].reg[result12] == 0x0eca8642
+//? post: cog[*].reg[result13] == 0x0eca8642
+//? post: cog[*].reg[result14] == 0x0eca8642
+//? post: cog[*].reg[result15] == 0x0eca8642
+//? run: "pll1-mode7-write0"
+//? const: pll = 1
+//? const: mode = 7
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000f71e
+//? post: cog[*].reg[completions] == 0x00000100
+//? post: cog[*].reg[reset_result] == 0xf02468ac
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xdf13579b
+//? post: cog[*].reg[result8] == 0xdf13579b
+//? post: cog[*].reg[result9] == 0xdf13579b
+//? post: cog[*].reg[result10] == 0xdf13579b
+//? post: cog[*].reg[result11] == 0xdf13579b
+//? post: cog[*].reg[result12] == 0xdf13579b
+//? post: cog[*].reg[result13] == 0xdf13579b
+//? post: cog[*].reg[result14] == 0xdf13579b
+//? post: cog[*].reg[result15] == 0xf02468ac
+//? run: "pll1-mode7-write1"
+//? const: pll = 1
+//? const: mode = 7
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000001
+//? post: cog[*].reg[waveform] == 0x0000f708
+//? post: cog[*].reg[completions] == 0x00000100
+//? post: cog[*].reg[reset_result] == 0x20eca864
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xdf13579b
+//? post: cog[*].reg[result8] == 0xdf13579b
+//? post: cog[*].reg[result9] == 0xdf13579b
+//? post: cog[*].reg[result10] == 0xdf13579b
+//? post: cog[*].reg[result11] == 0xdf13579b
+//? post: cog[*].reg[result12] == 0xdf13579b
+//? post: cog[*].reg[result13] == 0xdf13579b
+//? post: cog[*].reg[result14] == 0xdf13579b
+//? post: cog[*].reg[result15] == 0x20eca864
+//? run: "pll1-mode39-write0"
+//? const: pll = 1
+//? const: mode = 39
+//? const: write = 0
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00001e1e
+//? post: cog[*].reg[completions] == 0x00008000
+//? post: cog[*].reg[reset_result] == 0xf02468ac
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xf02468ac
+//? post: cog[*].reg[result8] == 0xf02468ac
+//? post: cog[*].reg[result9] == 0xf02468ac
+//? post: cog[*].reg[result10] == 0xf02468ac
+//? post: cog[*].reg[result11] == 0xf02468ac
+//? post: cog[*].reg[result12] == 0xf02468ac
+//? post: cog[*].reg[result13] == 0xf02468ac
+//? post: cog[*].reg[result14] == 0xf02468ac
+//? post: cog[*].reg[result15] == 0xf02468ac
+//? run: "pll1-mode39-write1"
+//? const: pll = 1
+//? const: mode = 39
+//? const: write = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[updated_output] == 0x00000000
+//? post: cog[*].reg[waveform] == 0x00001e08
+//? post: cog[*].reg[completions] == 0x00008100
+//? post: cog[*].reg[reset_result] == 0x20eca864
+//? post: cog[*].reg[reset_output] == 0x00000000
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[result4] == 0x00000000
+//? post: cog[*].reg[result5] == 0x00000000
+//? post: cog[*].reg[result6] == 0x00000000
+//? post: cog[*].reg[result7] == 0xf02468ac
+//? post: cog[*].reg[result8] == 0xf02468ac
+//? post: cog[*].reg[result9] == 0xf02468ac
+//? post: cog[*].reg[result10] == 0xf02468ac
+//? post: cog[*].reg[result11] == 0xf02468ac
+//? post: cog[*].reg[result12] == 0xf02468ac
+//? post: cog[*].reg[result13] == 0xf02468ac
+//? post: cog[*].reg[result14] == 0xf02468ac
+//? post: cog[*].reg[result15] == 0x20eca864
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // P5 clocks the P4 USART transmitter; P6 observes its physical output.
+                DRVL    5
+                WRPIN   aug(0x01000000 | P_TT_01 | P_SYNC_TX),  4
+                WRPIN   aug(0x60000000),                        6
+                WXPIN   mode,                                   4
+                WYPIN   aug(0x89abcdef),                        4
+                WAITX   32
+                DIRH    4
+                WAITX   32
+                TESTP   6                                                           :wc
+                WRC     initial_output
+                RQPIN   initial_result,                         4
+                WYPIN   aug(0x12345678),                        4
+                WAITX   16
+                TESTP   6                                                           :wc
+                WRC     updated_output
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result0,                                4
+                DRVL    5
+                WAITX   8
+
+.if write
+                WYPIN   aug(0x76543210),                        4
+.endif
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result1,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result2,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result3,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result4,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result5,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result6,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result7,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result8,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result9,                                4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result10,                               4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result11,                               4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result12,                               4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result13,                               4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result14,                               4
+                DRVL    5
+                WAITX   8
+
+                // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
+                DRVH    5
+                WAITX   8
+                TESTP   6                                                           :wc
+                RCL     waveform,                               1
+                TESTP   4                                                           :wc
+                RCL     completions,                            1
+                RDPIN   result15,                               4
+                DRVL    5
+                WAITX   8
+
+                DIRL    4
+                DIRL    5
+                WAITX   8
+                RQPIN   reset_result,                           4
+                TESTP   6                                                           :wc
+                WRC     reset_output
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                                      aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var initial_output:
+                LONG    0
+var initial_result:
+                LONG    0
+var updated_output:
+                LONG    0
+var waveform:   LONG    0
+var completions:
+                LONG    0
+var reset_result:
+                LONG    0
+var reset_output:
+                LONG    0
+var result0:    LONG    0
+var result1:    LONG    0
+var result2:    LONG    0
+var result3:    LONG    0
+var result4:    LONG    0
+var result5:    LONG    0
+var result6:    LONG    0
+var result7:    LONG    0
+var result8:    LONG    0
+var result9:    LONG    0
+var result10:   LONG    0
+var result11:   LONG    0
+var result12:   LONG    0
+var result13:   LONG    0
+var result14:   LONG    0
+var result15:   LONG    0
+

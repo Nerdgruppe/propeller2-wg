@@ -85,6 +85,15 @@ The following community documentation is available as well:
 
 ## Working in the Repository
 
+### Persistent Memory
+
+- Keep active task progress, decisions, discoveries, blockers, and next steps in `.memory/task.md`.
+- Write information to `.memory` immediately when it comes up, before continuing; unwritten context can be lost.
+- Clear `.memory/task.md` when the task is complete.
+- Keep necessary project information missing from `AGENTS.md` and existing documentation in `.memory/project.md`.
+- Never clear `.memory/project.md`.
+- Use terse, compressed notes in both files; omit prose, preserve information.
+
 ### General Rules
 
 There's a `justfile` in the workspace root which has these recipies:

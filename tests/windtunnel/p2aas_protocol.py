@@ -14,6 +14,7 @@ import websockets
 def address(endpoint, **parameters):
     url = urllib.parse.urlsplit(endpoint)
     query = dict(urllib.parse.parse_qsl(url.query, keep_blank_values=True))
+    query.setdefault("baudrate", "2000000")
     query.update(parameters)
     return urllib.parse.urlunsplit(url._replace(query=urllib.parse.urlencode(query)))
 

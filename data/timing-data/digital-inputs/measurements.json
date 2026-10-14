@@ -1,0 +1,4073 @@
+{
+  "date": "2026-10-13",
+  "endpoint": "ws://localhost:12880/",
+  "runs": [
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase6",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 6
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase3",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase1",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase4",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 4
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase5",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 5
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase6",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 6
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase2",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase0",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase5",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 5
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase5",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 5
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase2",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase4",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 4
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase7",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 7
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase4",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 4
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase1",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind2-phase0",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase3",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase2",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase6",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 6
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase7",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 7
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase7",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 7
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind1-phase3",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase0",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-timing.propan",
+      "run": "kind0-phase1",
+      "source_sha256": "c9301e004a8cdaf787601ea9df106f4a30589c1ccbd176725e0306caa70d6b7e",
+      "constants": [
+        {
+          "name": "kind",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "timing_error": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin8-sync1-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin8-sync0-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin9-sync1-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin8-sync1-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin8-sync0-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin9-sync1-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin8-sync1-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin8-sync0-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin9-sync0-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin9-sync0-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin8-sync1-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode5-pin9-sync0-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 5
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin9-sync0-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin9-sync1-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin9-sync1-invert1",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 9
+        },
+        {
+          "name": "sync",
+          "value": 1
+        },
+        {
+          "name": "invert",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 1
+        },
+        "relative": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/adjacent-feedback.propan",
+      "run": "mode2-pin8-sync0-invert0",
+      "source_sha256": "67b42ace18fa7075f837928b07aeab00f9538f7d7a944e801468c9d65ac79c65",
+      "constants": [
+        {
+          "name": "mode",
+          "value": 2
+        },
+        {
+          "name": "pin",
+          "value": 8
+        },
+        {
+          "name": "sync",
+          "value": 0
+        },
+        {
+          "name": "invert",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "local": {
+          "register": 13,
+          "value": 0
+        },
+        "relative": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 5",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 5,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 5
+        },
+        "statuses": {
+          "register": 59,
+          "value": 1024
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 4",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 4,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 4
+        },
+        "statuses": {
+          "register": 59,
+          "value": 2048
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 7",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 7,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 7
+        },
+        "statuses": {
+          "register": 59,
+          "value": 256
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 3",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 3,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 3
+        },
+        "statuses": {
+          "register": 59,
+          "value": 4096
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 0",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 0,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 0
+        },
+        "statuses": {
+          "register": 59,
+          "value": 32768
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 6",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 6,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 6
+        },
+        "statuses": {
+          "register": 59,
+          "value": 512
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 2",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 2,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 2
+        },
+        "statuses": {
+          "register": 59,
+          "value": 8192
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/cogid-forms.propan",
+      "run": "cog 1",
+      "source_sha256": "08cebb2f061af4d3b8ee2322e379d873fa064de878f5963d751d4bfd9b38a9f1",
+      "constants": [],
+      "cog": 1,
+      "observed": {
+        "immediate": {
+          "register": 55,
+          "value": 305419896
+        },
+        "augmented": {
+          "register": 56,
+          "value": 305419896
+        },
+        "carry": {
+          "register": 57,
+          "value": 1
+        },
+        "zero": {
+          "register": 58,
+          "value": 1
+        },
+        "id": {
+          "register": 60,
+          "value": 8
+        },
+        "reg_status": {
+          "register": 61,
+          "value": 0
+        },
+        "aug_status": {
+          "register": 62,
+          "value": 0
+        },
+        "cancelled": {
+          "register": 63,
+          "value": 2271560481
+        },
+        "normal": {
+          "register": 54,
+          "value": 1
+        },
+        "statuses": {
+          "register": 59,
+          "value": 16384
+        }
+      },
+      "c": false,
+      "z": true,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/program/debug-stack-protection.propan",
+      "run": "run 1",
+      "source_sha256": "56860daca881c27f847d8577c7c0bb3cf555fcc44e713c112a29e3019543e578",
+      "constants": [],
+      "stdout_hex": "0000000000000000"
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-history.propan",
+      "run": "run 1",
+      "source_sha256": "3e41c3139725dcebb2988499a455381dbc7cfc10c2ad3c6a1a4626fd998e8980",
+      "constants": [],
+      "cog": 0,
+      "observed": {
+        "rewrite": {
+          "register": 71,
+          "value": 1
+        },
+        "frozen": {
+          "register": 72,
+          "value": 1
+        },
+        "disabled": {
+          "register": 73,
+          "value": 1
+        },
+        "bypass": {
+          "register": 74,
+          "value": 0
+        },
+        "restored": {
+          "register": 75,
+          "value": 1
+        },
+        "lengthened": {
+          "register": 76,
+          "value": 1
+        },
+        "switched": {
+          "register": 77,
+          "value": 1
+        },
+        "fresh": {
+          "register": 78,
+          "value": 0
+        },
+        "tracked": {
+          "register": 79,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-length.propan",
+      "run": "run 1",
+      "source_sha256": "99e38e8afe8c7ce6a20cce1a281200558b76f470c943e2474e39223daedfb940",
+      "constants": [],
+      "cog": 0,
+      "observed": {
+        "before": {
+          "register": 21,
+          "value": 0
+        },
+        "after": {
+          "register": 22,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter3-length1",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 3
+        },
+        {
+          "name": "length",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter1-length2",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 1
+        },
+        {
+          "name": "length",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter3-length2",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 3
+        },
+        {
+          "name": "length",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter2-length0",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 2
+        },
+        {
+          "name": "length",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter3-length0",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 3
+        },
+        {
+          "name": "length",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter3-length3",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 3
+        },
+        {
+          "name": "length",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter0-length0",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 0
+        },
+        {
+          "name": "length",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter1-length1",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 1
+        },
+        {
+          "name": "length",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter0-length3",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 0
+        },
+        {
+          "name": "length",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter0-length2",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 0
+        },
+        {
+          "name": "length",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter0-length1",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 0
+        },
+        {
+          "name": "length",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter2-length2",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 2
+        },
+        {
+          "name": "length",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter2-length1",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 2
+        },
+        {
+          "name": "length",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter1-length0",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 1
+        },
+        {
+          "name": "length",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter1-length3",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 1
+        },
+        {
+          "name": "length",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-shared.propan",
+      "run": "filter2-length3",
+      "source_sha256": "3ad65a5e9435664510c439a5b130c707b8e484e42bb0a91d55724d36a96e8016",
+      "constants": [
+        {
+          "name": "index",
+          "value": 2
+        },
+        {
+          "name": "length",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "highs": {
+          "register": 22,
+          "value": 3
+        },
+        "lows": {
+          "register": 23,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap6",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 6
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 18,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap2",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 14,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap0",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 12,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap3",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 15,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap5",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 5
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 17,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap1",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 13,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap0",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 12,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap4",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 4
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 16,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap3",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 3
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 15,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap5",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 5
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 17,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap1",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 13,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic4-gap7",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 4
+        },
+        {
+          "name": "gap",
+          "value": 7
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 19,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap6",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 6
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 18,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap2",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 2
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 14,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap4",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 4
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 16,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-threshold.propan",
+      "run": "logic0-gap7",
+      "source_sha256": "4696106838491a5cc86e051687a1d452751ec77e6809ee4e91020edc90cadc6f",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "gap",
+          "value": 7
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 19,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic0-a1-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic1-a0-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 1
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic3-a0-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 3
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic1-a1-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 1
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic0-a0-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic1-a0-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 1
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic1-a1-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 1
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic0-a1-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic2-a1-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 2
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic0-a0-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 0
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic2-a0-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 2
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic3-a1-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 3
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic2-a1-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 2
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic2-a0-b1",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 2
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic3-a0-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 3
+        },
+        {
+          "name": "a",
+          "value": 0
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-logic.propan",
+      "run": "logic3-a1-b0",
+      "source_sha256": "69d8836d251061cd3b606a7b44cb65793ff1921297723acf8fe447e475a993ab",
+      "constants": [
+        {
+          "name": "logic",
+          "value": 3
+        },
+        {
+          "name": "a",
+          "value": 1
+        },
+        {
+          "name": "b",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "result": {
+          "register": 8,
+          "value": 1
+        }
+      },
+      "c": true,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap2-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 536870911
+        },
+        "falling": {
+          "register": 151,
+          "value": 3758096384
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap2-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 8388607
+        },
+        "falling": {
+          "register": 151,
+          "value": 4286578688
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap0-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 536870911
+        },
+        "falling": {
+          "register": 150,
+          "value": 3758096384
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap5-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 152,
+          "value": 0
+        },
+        "falling": {
+          "register": 153,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap5-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 153,
+          "value": 0
+        },
+        "falling": {
+          "register": 154,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap1-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 151,
+          "value": 3758096384
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap2-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 536870911
+        },
+        "falling": {
+          "register": 150,
+          "value": 4026531840
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap0-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 150,
+          "value": 3221225472
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap5-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 152,
+          "value": 4095
+        },
+        "falling": {
+          "register": 153,
+          "value": 4294959104
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap1-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 134217727
+        },
+        "falling": {
+          "register": 150,
+          "value": 4160749568
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap5-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 152,
+          "value": 0
+        },
+        "falling": {
+          "register": 153,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap5-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 153,
+          "value": 0
+        },
+        "falling": {
+          "register": 154,
+          "value": 0
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap1-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 134217727
+        },
+        "falling": {
+          "register": 151,
+          "value": 4160749568
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap1-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 536870911
+        },
+        "falling": {
+          "register": 150,
+          "value": 3758096384
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap5-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 153,
+          "value": 2097151
+        },
+        "falling": {
+          "register": 154,
+          "value": 4292870144
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap2-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 67108863
+        },
+        "falling": {
+          "register": 151,
+          "value": 4227858432
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap2-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 67108863
+        },
+        "falling": {
+          "register": 150,
+          "value": 4261412864
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap0-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 151,
+          "value": 3221225472
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap0-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 151,
+          "value": 3758096384
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap1-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 150,
+          "value": 3221225472
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap5-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 152,
+          "value": 1048575
+        },
+        "falling": {
+          "register": 153,
+          "value": 4292870144
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap1-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 536870911
+        },
+        "falling": {
+          "register": 151,
+          "value": 4026531840
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap0-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 151,
+          "value": 3221225472
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap0-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 536870911
+        },
+        "falling": {
+          "register": 151,
+          "value": 4026531840
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap2-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 268435455
+        },
+        "falling": {
+          "register": 151,
+          "value": 4026531840
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap0-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 150,
+          "value": 3221225472
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap2-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 268435455
+        },
+        "falling": {
+          "register": 150,
+          "value": 4160749568
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap0-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 0
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 268435455
+        },
+        "falling": {
+          "register": 150,
+          "value": 4026531840
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length0-tap1-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 0
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 150,
+          "value": 1073741823
+        },
+        "falling": {
+          "register": 151,
+          "value": 3221225472
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length2-tap1-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 2
+        },
+        {
+          "name": "tap",
+          "value": 1
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 268435455
+        },
+        "falling": {
+          "register": 150,
+          "value": 4026531840
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length1-tap5-phase1",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 1
+        },
+        {
+          "name": "tap",
+          "value": 5
+        },
+        {
+          "name": "phase",
+          "value": 1
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 153,
+          "value": 8191
+        },
+        "falling": {
+          "register": 154,
+          "value": 4294959104
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    },
+    {
+      "fixture": "tests/windtunnel/state/input-filter-timing.propan",
+      "run": "length3-tap2-phase0",
+      "source_sha256": "3c8b5ade5f9c6c636c83c005333fbdb5549b7229dde6c8fa2aa8fed762b4eaae",
+      "constants": [
+        {
+          "name": "length",
+          "value": 3
+        },
+        {
+          "name": "tap",
+          "value": 2
+        },
+        {
+          "name": "phase",
+          "value": 0
+        }
+      ],
+      "cog": 0,
+      "observed": {
+        "rising": {
+          "register": 149,
+          "value": 8388607
+        },
+        "falling": {
+          "register": 150,
+          "value": 4290772992
+        }
+      },
+      "c": false,
+      "z": false,
+      "q": 0
+    }
+  ]
+}

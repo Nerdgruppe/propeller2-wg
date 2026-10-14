@@ -1,0 +1,206 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-out0-in0-phase0"
+//? const: pll = 0
+//? const: out_sync = 0
+//? const: in_sync = 0
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll0-out0-in0-phase1"
+//? const: pll = 0
+//? const: out_sync = 0
+//? const: in_sync = 0
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll0-out0-in1-phase0"
+//? const: pll = 0
+//? const: out_sync = 0
+//? const: in_sync = 1
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll0-out0-in1-phase1"
+//? const: pll = 0
+//? const: out_sync = 0
+//? const: in_sync = 1
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll0-out1-in0-phase0"
+//? const: pll = 0
+//? const: out_sync = 1
+//? const: in_sync = 0
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll0-out1-in0-phase1"
+//? const: pll = 0
+//? const: out_sync = 1
+//? const: in_sync = 0
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll0-out1-in1-phase0"
+//? const: pll = 0
+//? const: out_sync = 1
+//? const: in_sync = 1
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll0-out1-in1-phase1"
+//? const: pll = 0
+//? const: out_sync = 1
+//? const: in_sync = 1
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out0-in0-phase0"
+//? const: pll = 1
+//? const: out_sync = 0
+//? const: in_sync = 0
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out0-in0-phase1"
+//? const: pll = 1
+//? const: out_sync = 0
+//? const: in_sync = 0
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out0-in1-phase0"
+//? const: pll = 1
+//? const: out_sync = 0
+//? const: in_sync = 1
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out0-in1-phase1"
+//? const: pll = 1
+//? const: out_sync = 0
+//? const: in_sync = 1
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out1-in0-phase0"
+//? const: pll = 1
+//? const: out_sync = 1
+//? const: in_sync = 0
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out1-in0-phase1"
+//? const: pll = 1
+//? const: out_sync = 1
+//? const: in_sync = 0
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out1-in1-phase0"
+//? const: pll = 1
+//? const: out_sync = 1
+//? const: in_sync = 1
+//? const: phase = 0
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+//? run: "pll1-out1-in1-phase1"
+//? const: pll = 1
+//? const: out_sync = 1
+//? const: in_sync = 1
+//? const: phase = 1
+//? post: cog[*].reg[rising] == 0x00003fff
+//? post: cog[*].reg[falling] == 0x0000c000
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // Pin 1 observes the physical pad of pin 0; DIR stays low on the observer.
+                DRVL    0
+                WRPIN   aug(out_sync << 16),                0
+                WRPIN   aug(0x70000000 | (in_sync << 16)),  1
+                WAITX   32
+                WAITX   phase
+                OUTH    0
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                TESTP   1                                       :wc
+                RCL     rising,                             1
+                OUTL    0
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                TESTP   1                                       :wc
+                RCL     falling,                            1
+                DIRL    0
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var rising:     LONG    0
+var falling:    LONG    0
+

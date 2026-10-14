@@ -3,6 +3,7 @@
 const std = @import("std");
 const Hub = @import("sim/Hub.zig");
 const smart_pin = @import("sim/smart_pin.zig");
+const serial_boot = @import("serial_boot.zig");
 const WebSocket = std.http.Server.WebSocket;
 const max_payload = 512 * 1024;
 const max_request_head = 768 * 1024;
@@ -424,12 +425,18 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
     var output_buffer: [4096]u8 = undefined;
     var output = std.Io.Writer.fixed(&output_buffer);
     var terminal_sink: smart_pin.DataSink = .{ .writer = &output };
-    hub.io.pins[62].smart.registers.sink = &terminal_sink;
+    hub.io.pins[62].smart.tx_mode = if (connection.simulation.fast_io)
+        .{ .virtual = &terminal_sink }
+    else
+        .{ .emulated = &terminal_sink };
     var input_buffer: [4096]u8 = undefined;
     var reader = std.Io.Reader.fixed(&input_buffer);
     reader.end = 0;
     var terminal_source: smart_pin.DataSource = .{ .reader = &reader };
-    hub.io.pins[63].smart.registers.source = &terminal_source;
+    hub.io.pins[63].smart.rx_mode = if (connection.simulation.fast_io)
+        .{ .virtual = &terminal_source }
+    else
+        .{ .emulated = &terminal_source };
     var trace_buffer: [4096]u8 = undefined;
     var trace = std.Io.File.stderr().writer(connection.io, &trace_buffer);
     if (connection.simulation.trace) {
@@ -551,7 +558,6 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
     };
     const hub = try arena.allocator().create(Hub);
     hub.init();
-    hub.io.fast_io = connection.simulation.fast_io;
     const options = Options.parse(request.head.target, &hub.memory) catch |err| {
         try request.respond(queryReason(err), .{
             .status = .bad_request,
@@ -610,6 +616,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
         checksum -%= std.mem.readInt(u32, word[0..4], .little);
     }
     hub.write_memory(@intCast(payload.len), checksum, 4, false);
+    serial_boot.prepare(hub);
     try hub.start_cog(0, .{});
     connection.running = true;
     var input_buffer: [65536]u8 = undefined;

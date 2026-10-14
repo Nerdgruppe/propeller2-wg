@@ -22,8 +22,11 @@ The server uses Zig's standard library and requires no external service, interpr
 
 One request owns the board at a time; later connections wait. Every accepted image starts with reset
 hub/cog/peripheral state and cog 0 loading the initial 504 longs from hub address zero.
-Other cogs start stopped. The initial counter is zero; physical loader execution time and RC oscillator
-drift are not reproduced.
+Other cogs start stopped. The serial-ROM handoff selects nominal 20 MHz RCFAST
+(`$F0`) and preserves 2 Mbaud 8N1 dividers in pins 62 and 63, with modes and DIR
+cleared. Restoring the UART modes reuses those dividers without WXPIN or a startup
+wait. The initial counter is zero; physical loader execution time, calibration
+error, and RC oscillator drift are not reproduced.
 
 | Parameter | Default | Validation |
 |---|---|---|
@@ -121,5 +124,6 @@ optional Python `websockets` package; its result parser is shared with the seria
 CORDIC commands and result reads are implemented; their measured arithmetic, pipeline timing,
 and empty-read behavior are described in [Accumulated Propeller 2 Knowledge](../accumulated.md#cordic-computer).
 All eight other timing cases matched the hardware service across eight hub phases, including cog
-startup. The timing fixture waits 100 ms before its first UART marker to allow the hardware loader's
-runtime baud switch to finish; this wait is outside the measured region.
+startup. The timing fixture now retains RCFAST and the ROM-calibrated upload
+baud rate, so it needs no initial clock or UART settling wait. The serial and
+P2AAS timing transports both use 2 Mbaud.

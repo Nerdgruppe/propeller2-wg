@@ -1,0 +1,1648 @@
+// Research only: placeholders are not measured expectations. P2AAS quota prevented this capture.
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode6-x1-phase0"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x1-phase1"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x1-phase2"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x1-phase3"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x1-phase4"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x1-phase5"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x1-phase6"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x1-phase7"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase0"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase1"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase2"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase3"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase4"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase5"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase6"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x2-phase7"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase0"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase1"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase2"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase3"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase4"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase5"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase6"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x3-phase7"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase0"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase1"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase2"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase3"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase4"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase5"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase6"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x4-phase7"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase0"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase1"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase2"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase3"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase4"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase5"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase6"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode6-x5-phase7"
+//? const: pll = 0
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase0"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase1"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase2"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase3"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase4"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase5"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase6"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x1-phase7"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase0"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase1"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase2"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase3"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase4"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase5"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase6"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x2-phase7"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase0"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase1"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase2"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase3"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase4"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase5"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase6"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x3-phase7"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase0"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase1"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase2"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase3"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase4"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase5"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase6"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x4-phase7"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase0"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase1"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase2"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase3"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase4"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase5"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase6"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll0-mode7-x5-phase7"
+//? const: pll = 0
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase0"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase1"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase2"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase3"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase4"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase5"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase6"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x1-phase7"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 1
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase0"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase1"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase2"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase3"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase4"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase5"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase6"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x2-phase7"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 2
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase0"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase1"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase2"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase3"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase4"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase5"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase6"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x3-phase7"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 3
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase0"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase1"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase2"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase3"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase4"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase5"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase6"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x4-phase7"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 4
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase0"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase1"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase2"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase3"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase4"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase5"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase6"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode6-x5-phase7"
+//? const: pll = 1
+//? const: mode = 6
+//? const: x = 5
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase0"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase1"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase2"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase3"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase4"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase5"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase6"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x1-phase7"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 1
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase0"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase1"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase2"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase3"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase4"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase5"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase6"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x2-phase7"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 2
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase0"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase1"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase2"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase3"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase4"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase5"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase6"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x3-phase7"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 3
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase0"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase1"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase2"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase3"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase4"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase5"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase6"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x4-phase7"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 4
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase0"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase1"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase2"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase3"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase4"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase5"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase6"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+//? run: "pll1-mode7-x5-phase7"
+//? const: pll = 1
+//? const: mode = 7
+//? const: x = 5
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0
+//? post: cog[*].reg[ready] == 0
+//? post: cog[*].reg[result] == 0
+//? post: cog[*].reg[flag] == 0
+//? post: cog[*].reg[held] == 0
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // Start a fresh NCO and time its first completion through the pin-event bus.
+                WRPIN   (mode << 1),        4
+                WXPIN   x,                  4
+                SETSE1  0
+                WAITX   64
+                POLLSE1
+                SETSE1  (0x40 | 4)
+                GETCT   started
+                DIRH    4
+                WAITX   phase
+                WYPIN   aug(0x87654321),    4
+                WAITSE1
+                GETCT   elapsed
+                SUB     elapsed,            started
+                TESTP   4                           :wc
+                WRC     ready
+                RQPIN   result,             4       :wc
+                WRC     flag
+                DIRL    4
+                WAITX   16
+                RQPIN   held,               4
+
+var started:    LONG    0
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var elapsed:    LONG    0
+var ready:      LONG    0
+var result:     LONG    0
+var flag:       LONG    0
+var held:       LONG    0
+

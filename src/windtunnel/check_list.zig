@@ -42,7 +42,7 @@ pub const List = struct {
     fast_io_off: ?[]const u8 = null,
     max_cycles: u64 = 1_000_000,
     timeout_ms: u32 = 5000,
-    baudrate: u32 = 115200,
+    baudrate: u32 = 2_000_000,
     stdin: []const u8 = "",
     stdout: []const u8 = "",
     stdin_after: []const u8 = "",
@@ -323,13 +323,20 @@ const Parser = struct {
     }
 };
 
+/// Identify fixture sources without treating imported assembly helpers as standalone tests.
+pub fn hasHeader(source: []const u8) bool {
+    var lines = std.mem.splitScalar(u8, source, '\n');
+    return std.mem.eql(u8, std.mem.trim(u8, lines.next() orelse "", " \t\r"), "//? WINDTUNNEL CHECK LIST");
+}
+
 /// Allocations belong to the caller's arena, including token and value storage.
 pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8, errors: *std.Io.Writer) !List {
-    var lines = std.mem.splitScalar(u8, source, '\n');
-    if (!std.mem.eql(u8, std.mem.trim(u8, lines.next() orelse "", " \t\r"), "//? WINDTUNNEL CHECK LIST")) {
+    if (!hasHeader(source)) {
         try errors.print("{s}:1: checklist: missing WINDTUNNEL CHECK LIST header\n", .{path});
         return error.InvalidChecklist;
     }
+    var lines = std.mem.splitScalar(u8, source, '\n');
+    _ = lines.next();
     var tokens: std.ArrayList(Token) = .empty;
     var line_number: u32 = 1;
     while (lines.next()) |raw| {

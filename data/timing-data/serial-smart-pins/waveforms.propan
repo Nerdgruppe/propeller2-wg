@@ -1,0 +1,67 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? max-cycles: 1_000_000
+//? timeout-ms: 1000
+
+// One simulation frame; the capture driver increases this finite RAM-only repeat count.
+const REPEATS = 1
+.cogexec
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                DRVL    0
+                DRVL    6
+                MOV     repeats,    REPEATS
+frame:
+// Configure UART P4 and synchronous TX P5 before the three-pulse frame marker.
+                DIRL    4
+                DIRL    5
+                WRPIN   P_TT_01 | P_ASYNC_TX,                   4
+                WRPIN   aug(0x01000000 | P_TT_01 | P_SYNC_TX),  5
+                WXPIN   aug((2000 << 16) | 7),                  4
+                WXPIN   39,                                     5
+                WYPIN   0xa5,                                   5
+                DIRH    4
+                DIRH    5
+                WAITX   32
+                MOV     count,                                  3
+marker:
+                OUTH    0
+                WAITX   aug(2000)
+                OUTL    0
+                WAITX   aug(2000)
+                DJNZ    count,  marker
+                // The independent clock drives two synchronous words alongside one UART frame.
+                WYPIN   0xa5,   4
+                MOV     count,  16
+clocks:
+                DRVH    6
+                WAITX   aug(998)
+                DRVL    6
+                WAITX   aug(998)
+                CMP     count,      16                  :wz
+    if(Z)       WYPIN   0x3c,       5
+                DJNZ    count,      clocks
+                WAITX   aug(20000)
+                DJNZ    repeats,    frame
+                // UART TT can drive despite DIR low; restore GPIO before releasing every test pad.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,          aug(0 | (7 << 6))
+                WAITX   16
+_end:
+// Restore calibrated terminal timing and send an explicit completion record before stopping.
+                HUBSET  0xf0
+                WAITX   64
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                DIRH    62
+                WYPIN   '!',                    62
+                MOV     count,                  aug(10000)
+flush:
+                RQPIN   PA,     62      :wc
+    if(!C)      COGSTOP 0
+                DJNZ    count,  flush
+                COGSTOP 0
+var count:      LONG    0
+var repeats:    LONG    0
+

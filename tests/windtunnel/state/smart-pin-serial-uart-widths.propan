@@ -1,0 +1,1082 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-bits1"
+//? const: pll = 0
+//? const: bits = 1
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x80000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xe26af37b
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits2"
+//? const: pll = 0
+//? const: bits = 2
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xc0000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf13579bd
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits3"
+//? const: pll = 0
+//? const: bits = 3
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xe0000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf89abcde
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits4"
+//? const: pll = 0
+//? const: bits = 4
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xf0000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xfc4d5e6f
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits5"
+//? const: pll = 0
+//? const: bits = 5
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x78000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xbe26af37
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits6"
+//? const: pll = 0
+//? const: bits = 6
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xbc000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xdf13579b
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits7"
+//? const: pll = 0
+//? const: bits = 7
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xde000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef89abcd
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits8"
+//? const: pll = 0
+//? const: bits = 8
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits9"
+//? const: pll = 0
+//? const: bits = 9
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xf7800000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xfbe26af3
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits10"
+//? const: pll = 0
+//? const: bits = 10
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x7bc00000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xbdf13579
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits11"
+//? const: pll = 0
+//? const: bits = 11
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xbde00000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xdef89abc
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits12"
+//? const: pll = 0
+//? const: bits = 12
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xdef00000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef7c4d5e
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits13"
+//? const: pll = 0
+//? const: bits = 13
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf3
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x6f780000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xb7be26af
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits14"
+//? const: pll = 0
+//? const: bits = 14
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x37bc0000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x9bdf1357
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits15"
+//? const: pll = 0
+//? const: bits = 15
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x9bde0000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xcdef89ab
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits16"
+//? const: pll = 0
+//? const: bits = 16
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xe6f7c4d5
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits17"
+//? const: pll = 0
+//? const: bits = 17
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xe6f78000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf37be26a
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits18"
+//? const: pll = 0
+//? const: bits = 18
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xf37bc000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf9bdf135
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits19"
+//? const: pll = 0
+//? const: bits = 19
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff3fffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x79bde000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xbcdef89a
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits20"
+//? const: pll = 0
+//? const: bits = 20
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff3fffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xbcdef000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xde6f7c4d
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits21"
+//? const: pll = 0
+//? const: bits = 21
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff33ffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x5e6f7800
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xaf37be26
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits22"
+//? const: pll = 0
+//? const: bits = 22
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff33ffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xaf37bc00
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xd79bdf13
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits23"
+//? const: pll = 0
+//? const: bits = 23
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333fff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x579bde00
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xabcdef89
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits24"
+//? const: pll = 0
+//? const: bits = 24
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333fff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xabcdef00
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xd5e6f7c4
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits25"
+//? const: pll = 0
+//? const: bits = 25
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333fff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xd5e6f780
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xeaf37be2
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits26"
+//? const: pll = 0
+//? const: bits = 26
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333cff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x6af37bc0
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xb579bdf1
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits27"
+//? const: pll = 0
+//? const: bits = 27
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c3f
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x3579bde0
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x9abcdef8
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits28"
+//? const: pll = 0
+//? const: bits = 28
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c3f
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x9abcdef0
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xcd5e6f7c
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits29"
+//? const: pll = 0
+//? const: bits = 29
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c33
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x4d5e6f78
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xa6af37be
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits30"
+//? const: pll = 0
+//? const: bits = 30
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c30
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x26af37bc
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x93579bdf
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits31"
+//? const: pll = 0
+//? const: bits = 31
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c30
+//? post: cog[*].reg[wave2] == 0x3fffffff
+//? post: cog[*].reg[result] == 0x13579bde
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x89abcdef
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-bits32"
+//? const: pll = 0
+//? const: bits = 32
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c30
+//? post: cog[*].reg[wave2] == 0x3fffffff
+//? post: cog[*].reg[result] == 0x89abcdef
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xc4d5e6f7
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits1"
+//? const: pll = 1
+//? const: bits = 1
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x80000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xe26af37b
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits2"
+//? const: pll = 1
+//? const: bits = 2
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xc0000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf13579bd
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits3"
+//? const: pll = 1
+//? const: bits = 3
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xe0000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf89abcde
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits4"
+//? const: pll = 1
+//? const: bits = 4
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcfffffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xf0000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xfc4d5e6f
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits5"
+//? const: pll = 1
+//? const: bits = 5
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x78000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xbe26af37
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits6"
+//? const: pll = 1
+//? const: bits = 6
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xbc000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xdf13579b
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits7"
+//? const: pll = 1
+//? const: bits = 7
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xde000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef89abcd
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits8"
+//? const: pll = 1
+//? const: bits = 8
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits9"
+//? const: pll = 1
+//? const: bits = 9
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3ffff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xf7800000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xfbe26af3
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits10"
+//? const: pll = 1
+//? const: bits = 10
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x7bc00000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xbdf13579
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits11"
+//? const: pll = 1
+//? const: bits = 11
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xbde00000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xdef89abc
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits12"
+//? const: pll = 1
+//? const: bits = 12
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcff
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xdef00000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef7c4d5e
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits13"
+//? const: pll = 1
+//? const: bits = 13
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf3
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x6f780000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xb7be26af
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits14"
+//? const: pll = 1
+//? const: bits = 14
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x37bc0000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x9bdf1357
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits15"
+//? const: pll = 1
+//? const: bits = 15
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x9bde0000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xcdef89ab
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits16"
+//? const: pll = 1
+//? const: bits = 16
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xe6f7c4d5
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits17"
+//? const: pll = 1
+//? const: bits = 17
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xe6f78000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf37be26a
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits18"
+//? const: pll = 1
+//? const: bits = 18
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xffffffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xf37bc000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf9bdf135
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits19"
+//? const: pll = 1
+//? const: bits = 19
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff3fffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x79bde000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xbcdef89a
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits20"
+//? const: pll = 1
+//? const: bits = 20
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff3fffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xbcdef000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xde6f7c4d
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits21"
+//? const: pll = 1
+//? const: bits = 21
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff33ffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x5e6f7800
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xaf37be26
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits22"
+//? const: pll = 1
+//? const: bits = 22
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff33ffff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xaf37bc00
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xd79bdf13
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits23"
+//? const: pll = 1
+//? const: bits = 23
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333fff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x579bde00
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xabcdef89
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits24"
+//? const: pll = 1
+//? const: bits = 24
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333fff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xabcdef00
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xd5e6f7c4
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits25"
+//? const: pll = 1
+//? const: bits = 25
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333fff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0xd5e6f780
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xeaf37be2
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits26"
+//? const: pll = 1
+//? const: bits = 26
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333cff
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x6af37bc0
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xb579bdf1
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits27"
+//? const: pll = 1
+//? const: bits = 27
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c3f
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x3579bde0
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x9abcdef8
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits28"
+//? const: pll = 1
+//? const: bits = 28
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c3f
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x9abcdef0
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xcd5e6f7c
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits29"
+//? const: pll = 1
+//? const: bits = 29
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c33
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x4d5e6f78
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xa6af37be
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits30"
+//? const: pll = 1
+//? const: bits = 30
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c30
+//? post: cog[*].reg[wave2] == 0xffffffff
+//? post: cog[*].reg[result] == 0x26af37bc
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x93579bdf
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits31"
+//? const: pll = 1
+//? const: bits = 31
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c30
+//? post: cog[*].reg[wave2] == 0x3fffffff
+//? post: cog[*].reg[result] == 0x13579bde
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0x89abcdef
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-bits32"
+//? const: pll = 1
+//? const: bits = 32
+//? const: period = 524288
+//? const: phase = 0
+//? post: cog[*].reg[wave0] == 0xcff3fcf0
+//? post: cog[*].reg[wave1] == 0xff333c30
+//? post: cog[*].reg[wave2] == 0x3fffffff
+//? post: cog[*].reg[result] == 0x89abcdef
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xc4d5e6f7
+//? post: cog[*].reg[busy] == 0x00000000
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+                // Initialize a UART loopback through physical routed pads, without endpoint injection.
+                WRPIN   P_TT_01 | P_ASYNC_TX,           4
+                WRPIN   aug(0x70000000 | P_ASYNC_RX),   5
+                WRPIN   aug(0x60000000),                6
+                WXPIN   aug(period | (bits - 1)),       4
+                WXPIN   aug(period | (bits - 1)),       5
+                DIRH    4
+                DIRH    5
+                WAITX   32
+                WAITX   phase
+                WYPIN   aug(0x89abcdef),                4
+
+                // Observe 128 clocks of the transmitted physical level.
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+                TESTP   6                                                   :wc
+                RCL     wave0,                          1
+
+                // Observe 128 clocks of the transmitted physical level.
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+                TESTP   6                                                   :wc
+                RCL     wave1,                          1
+
+                // Observe 128 clocks of the transmitted physical level.
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+                TESTP   6                                                   :wc
+                RCL     wave2,                          1
+
+                // Read completion, modal carry and result, then release pins.
+                RQPIN   result,                         5                   :wc
+                WRC     carry
+                TESTP   5                                                   :wc
+                WRC     ready
+                RQPIN   tx_result,                      4                   :wc
+                WRC     busy
+                DIRL    4
+                DIRL    5
+
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var wave0:      LONG    0
+var wave1:      LONG    0
+var wave2:      LONG    0
+var result:     LONG    0
+var carry:      LONG    0
+var ready:      LONG    0
+var tx_result:  LONG    0
+var busy:       LONG    0
+

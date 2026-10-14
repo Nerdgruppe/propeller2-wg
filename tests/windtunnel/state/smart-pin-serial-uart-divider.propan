@@ -1,0 +1,154 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 2_000_000
+//? run: "pll0-period196608"
+//? const: pll = 0
+//? const: x = 196608
+//? const: wait = 100
+//? post: cog[*].reg[result] == 0xef3fffff
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef44d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-period262144"
+//? const: pll = 0
+//? const: x = 262144
+//? const: wait = 112
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef44d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-period327680"
+//? const: pll = 0
+//? const: x = 327680
+//? const: wait = 124
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-period4161536"
+//? const: pll = 0
+//? const: x = 4161536
+//? const: wait = 820
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-period4227072"
+//? const: pll = 0
+//? const: x = 4227072
+//? const: wait = 832
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll0-period4294901760"
+//? const: pll = 0
+//? const: x = 4294901760
+//? const: wait = 786484
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-period196608"
+//? const: pll = 1
+//? const: x = 196608
+//? const: wait = 100
+//? post: cog[*].reg[result] == 0xef3fffff
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef44d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-period262144"
+//? const: pll = 1
+//? const: x = 262144
+//? const: wait = 112
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef44d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-period327680"
+//? const: pll = 1
+//? const: x = 327680
+//? const: wait = 124
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xef44d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-period4161536"
+//? const: pll = 1
+//? const: x = 4161536
+//? const: wait = 820
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-period4227072"
+//? const: pll = 1
+//? const: x = 4227072
+//? const: wait = 832
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+//? run: "pll1-period4294901760"
+//? const: pll = 1
+//? const: x = 4294901760
+//? const: wait = 786484
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
+//? post: cog[*].reg[busy] == 0x00000000
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // Exercise the minimum supported UART divider, fractional cutoff and maximum integer divider.
+                WRPIN   P_TT_01 | P_ASYNC_TX,           4
+                WRPIN   aug(0x70000000 | P_ASYNC_RX),   5
+                WXPIN   aug(x | 7),                     4
+                WXPIN   aug(x | 7),                     5
+                DIRH    4
+                DIRH    5
+                WAITX   32
+                WYPIN   aug(0x89abcdef),                4
+                WAITX   aug(wait)
+                RQPIN   result,                         5                   :wc
+                WRC     carry
+                TESTP   5                                                   :wc
+                WRC     ready
+                RQPIN   tx_result,                      4                   :wc
+                WRC     busy
+                DIRL    4
+                DIRL    5
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var result:     LONG    0
+var carry:      LONG    0
+var ready:      LONG    0
+var tx_result:  LONG    0
+var busy:       LONG    0
+

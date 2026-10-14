@@ -2,18 +2,14 @@
 //? profile: program
 //? stop: _end
 //? timeout-ms: 1000
-//? max-cycles: 22_000_000
+//? max-cycles: 1_000_000
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x00\x00\x00\x02\x00\x00\xc0\x00\x00\x00\x11\xf8\x01\x00\x00\x78\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x11\xf8\x01\x00\x00\x88\x00\x00\x00\x09\x00\x00\x00\x00\x00\x00\x2a\xf8\x01\x00\x00\x78\x00\x00\x00"
 
 // Standard ROM entry/exit, saved flags, BRK codes and the false-condition exception.
-const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
-const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
 .cogexec    0
-                HUBSET  aug(CLOCK)
+                HUBSET  0xF0
                 WRPIN   P_TT_01 | P_ASYNC_TX,   62
-                WXPIN   aug(UART),              62
                 DIRH    62
-                WAITX   aug(2_000_000)
                 // Copy the actual sixteen-long ISR image into cog 1's cached debugger slot.
                 SETQ    15
                 RDLONG  register(0x100),        aug(hubaddr(debug_image))
@@ -43,7 +39,10 @@ ready:
     if(!C)      JMP     ready
                 DJNZ    register(0x91), byte
                 DJNZ    register(0x90), record
-                WAITX   aug(20000)
+
+flush:
+                RQPIN   PB, 62  :wc
+    if(C)       JMP     flush
 _end:
                 JMP     _end
 
@@ -76,4 +75,3 @@ target:
                 BRK     42
                 NOP
                 COGSTOP 1
-

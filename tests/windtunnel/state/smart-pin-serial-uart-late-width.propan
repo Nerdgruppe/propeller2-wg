@@ -1,0 +1,272 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-delay520"
+//? const: pll = 0
+//? const: delay = 520
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll0-delay536"
+//? const: pll = 0
+//? const: delay = 536
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll0-delay552"
+//? const: pll = 0
+//? const: delay = 552
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll0-delay560"
+//? const: pll = 0
+//? const: delay = 560
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll0-delay576"
+//? const: pll = 0
+//? const: delay = 576
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll0-delay600"
+//? const: pll = 0
+//? const: delay = 600
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll0-delay608"
+//? const: pll = 0
+//? const: delay = 608
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay609"
+//? const: pll = 0
+//? const: delay = 609
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay610"
+//? const: pll = 0
+//? const: delay = 610
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay611"
+//? const: pll = 0
+//? const: delay = 611
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay612"
+//? const: pll = 0
+//? const: delay = 612
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay613"
+//? const: pll = 0
+//? const: delay = 613
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay614"
+//? const: pll = 0
+//? const: delay = 614
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay615"
+//? const: pll = 0
+//? const: delay = 615
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay616"
+//? const: pll = 0
+//? const: delay = 616
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay617"
+//? const: pll = 0
+//? const: delay = 617
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay618"
+//? const: pll = 0
+//? const: delay = 618
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay619"
+//? const: pll = 0
+//? const: delay = 619
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay620"
+//? const: pll = 0
+//? const: delay = 620
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay621"
+//? const: pll = 0
+//? const: delay = 621
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay622"
+//? const: pll = 0
+//? const: delay = 622
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay623"
+//? const: pll = 0
+//? const: delay = 623
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll0-delay624"
+//? const: pll = 0
+//? const: delay = 624
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay520"
+//? const: pll = 1
+//? const: delay = 520
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll1-delay536"
+//? const: pll = 1
+//? const: delay = 536
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll1-delay552"
+//? const: pll = 1
+//? const: delay = 552
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll1-delay560"
+//? const: pll = 1
+//? const: delay = 560
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll1-delay576"
+//? const: pll = 1
+//? const: delay = 576
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll1-delay600"
+//? const: pll = 1
+//? const: delay = 600
+//? post: cog[*].reg[result] == 0xcdef0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? run: "pll1-delay608"
+//? const: pll = 1
+//? const: delay = 608
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay609"
+//? const: pll = 1
+//? const: delay = 609
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay610"
+//? const: pll = 1
+//? const: delay = 610
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay611"
+//? const: pll = 1
+//? const: delay = 611
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay612"
+//? const: pll = 1
+//? const: delay = 612
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay613"
+//? const: pll = 1
+//? const: delay = 613
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay614"
+//? const: pll = 1
+//? const: delay = 614
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay615"
+//? const: pll = 1
+//? const: delay = 615
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay616"
+//? const: pll = 1
+//? const: delay = 616
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay617"
+//? const: pll = 1
+//? const: delay = 617
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay618"
+//? const: pll = 1
+//? const: delay = 618
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay619"
+//? const: pll = 1
+//? const: delay = 619
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay620"
+//? const: pll = 1
+//? const: delay = 620
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay621"
+//? const: pll = 1
+//? const: delay = 621
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay622"
+//? const: pll = 1
+//? const: delay = 622
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay623"
+//? const: pll = 1
+//? const: delay = 623
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? run: "pll1-delay624"
+//? const: pll = 1
+//? const: delay = 624
+//? post: cog[*].reg[result] == 0xef000000
+//? post: cog[*].reg[ready] == 0x00000000
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // Extend RX during the final data sample and the following completion interval.
+                WRPIN   P_TT_01 | P_ASYNC_TX,           3
+                WRPIN   aug(0x70000000 | P_ASYNC_RX),   4
+                WXPIN   aug((64 << 16) | 31),           3
+                WXPIN   aug((64 << 16) | 7),            4
+                DIRH    3
+                DIRH    4
+                WAITX   32
+                WYPIN   aug(0x89abcdef),                3
+                WAITX   aug(delay)
+                WXPIN   aug((64 << 16) | 15),           4
+                WAITX   aug(640)
+                RQPIN   result,                         4
+                TESTP   4                                                   :wc
+                WRC     ready
+                DIRL    3
+                DIRL    4
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var result:     LONG    0
+var ready:      LONG    0
+

@@ -2,7 +2,7 @@
 //? profile: program
 //? stop: _end
 //? timeout-ms: 1000
-//? max-cycles: 22_000_000
+//? max-cycles: 1_000_000
 //? run: "trigger=0"
 //? const: trigger = 0
 //? const: control = 1
@@ -45,14 +45,10 @@
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x11\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x00"
 
 // Main/ISR stepping, ISR entry, instruction, event and address triggers.
-const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
-const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
 .cogexec    0
-                HUBSET  aug(CLOCK)
+                HUBSET  0xF0
                 WRPIN   P_TT_01 | P_ASYNC_TX,   62
-                WXPIN   aug(UART),              62
                 DIRH    62
-                WAITX   aug(2_000_000)
                 // Copy the actual sixteen-long ISR image into cog 1's cached debugger slot.
                 SETQ    15
                 RDLONG  register(0x100),        aug(hubaddr(debug_image))
@@ -81,7 +77,10 @@ ready:
                 TESTP   62                      :wc
     if(!C)      JMP     ready
                 DJNZ    register(0x90), byte
-                WAITX   aug(20000)
+
+flush:
+                RQPIN   PB, 62  :wc
+    if(C)       JMP     flush
 _end:
                 JMP     _end
 .pack   off
@@ -143,4 +142,3 @@ isr3:
                 NOP
                 NOP
                 RETI3
-

@@ -471,7 +471,7 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     hub.step();
     var reader = std.Io.Reader.fixed("z");
     var source: IO.DataSource = .{ .reader = &reader };
-    hub.io.pins[63].smart.registers.source = &source;
+    hub.io.pins[63].smart.rx_mode = .{ .emulated = &source };
     hub.step();
     try std.testing.expectEqual(@as(usize, 0), reader.bufferedLen());
     hub.cogs[0].write_reg(.DIRB, 0);
@@ -491,7 +491,7 @@ test "COGSTOP aborts a UART frame before its completion edge" {
 
     var sink: IO.DataSink = .{ .writer = &output.writer };
     const pin = &hub.io.pins[62];
-    pin.smart.registers.sink = &sink;
+    pin.smart.tx_mode = .{ .emulated = &sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
         hub.step();
@@ -505,7 +505,8 @@ test "COGSTOP aborts a UART frame before its completion edge" {
     for (0..IO.command_delay + 1) |_| {
         hub.step();
     }
-    const completion = pin.smart.logic.uart_tx.end;
+    hub.step();
+    const completion = hub.counter + 1000;
     try std.testing.expect(pin.smart.logic.uart_tx.shifter != null);
 
     // Execute a real self-stop while the frame is underway, then service its completion edge.
@@ -669,12 +670,12 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     defer output.deinit();
 
     var terminal_sink: IO.DataSink = .{ .writer = &output.writer };
-    hub.io.pins[62].smart.registers.sink = &terminal_sink;
+    hub.io.pins[62].smart.tx_mode = .{ .emulated = &terminal_sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
         hub.step();
     }
-    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (1 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
+    hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_x, .value = (8 << 16) | 7, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
         hub.step();
     }
@@ -682,10 +683,11 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     try std.testing.expect(!hub.io.pins[62].smart.registers.enabled);
     hub.step();
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .write_y, .value = 'x', .cog = 0, .pc = 0, .instruction = 0 });
-    for (0..IO.command_delay + 10) |_| {
+    for (0..IO.command_delay + 81) |_| {
         hub.step();
         try std.testing.expectEqual(@as(usize, 0), output.written().len);
     }
+    hub.step();
     hub.step();
     try std.testing.expectEqualStrings("x", output.written());
 
@@ -750,8 +752,9 @@ test "selectable pin samples retain delayed notifications during waits" {
     try std.testing.expectEqual(Cog.InterruptState.pending, cog.interrupts.levels.get(.int1).state);
     cog.cancel_interrupt(.int1);
     cog.events.remove(.SE1);
-    // Only the architectural input changes here; no pad propagation timing is involved.
+    // Only the sampled event/architectural input buses change; no pad propagation is involved.
     hub.io.samples.input_registers = 1;
+    hub.io.samples.inputs = @splat(1);
     cog.step();
     try std.testing.expect(cog.events.contains(.SE1));
     cog.reset();

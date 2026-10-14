@@ -1657,7 +1657,7 @@ test-cases:
     WAITX 4
     TESTP 40 :wc
     WRC rt_result
-  expect_result: 1
+  expect_result: 0
 - name: GPIO OUTL -> TESTP, gap 7
   prepare: |
     DIRL 40
@@ -1806,7 +1806,7 @@ test-cases:
     MOV rt_result, INB
     SHR rt_result, 8
     AND rt_result, 1
-  expect_result: 1
+  expect_result: 0
 - name: GPIO OUTL -> MOV, gap 8
   prepare: |
     DIRL 40

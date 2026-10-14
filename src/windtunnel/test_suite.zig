@@ -14,6 +14,7 @@ const encoding = @import("sim/encoding.zig");
 const oracle = @import("oracle.zig");
 const p2aas = @import("p2aas.zig");
 const p2aas_server = @import("p2aas_server.zig");
+const serial_boot = @import("serial_boot.zig");
 
 pub const std_options: std.Options = .{ .log_level = .err };
 
@@ -21,15 +22,23 @@ const Options = struct {
     help: bool = false,
     oracle: bool = false,
     characterize: bool = false,
+    jobs: usize = 0,
+    include: ?[]const u8 = null,
+    exclude: ?[]const u8 = null,
+    @"timing-report": ?[]const u8 = null,
     @"trace-pipeline": bool = false,
     @"fast-io": bool = false,
     @"prepare-oracle": bool = false,
     @"artifact-dir": []const u8 = ".zig-cache/windtunnel-artifacts",
-    pub const shorthands = .{ .h = "help" };
+    pub const shorthands = .{ .h = "help", .j = "jobs" };
     pub const meta = .{ .usage_summary = "[FILE.propan ...]", .option_docs = .{
         .help = "Show usage",
         .oracle = "Run the hardware oracle through P2AAS_ENDPOINT",
         .characterize = "Capture hardware measurements without executing or checking the simulator",
+        .jobs = "Number of parallel simulator workers (0 uses all cores); hardware runs use one worker",
+        .include = "Run files matching any comma-separated path substring (case-sensitive)",
+        .exclude = "Skip files matching any comma-separated path substring; exclusions override includes",
+        .@"timing-report" = "Write file totals, min/average/max run times and individual run times to a Markdown file",
         .@"trace-pipeline" = "Retain up to 10000 pipeline events with prepared images and failure evidence",
         .@"fast-io" = "Transfer UART/USART endpoint words at single-clock throughput unless a fixture requires timing",
         .@"prepare-oracle" = "Generate oracle images and requests without uploading them",
@@ -48,6 +57,472 @@ const Context = struct {
 const Kind = oracle.Kind;
 const Observation = oracle.Observation;
 const Resolved = oracle.Resolved;
+
+/// Match one of the validated, comma-separated substrings against a complete fixture path.
+fn matchesFileFilter(path: []const u8, filter: []const u8) bool {
+    var patterns = std.mem.splitScalar(u8, filter, ',');
+    while (patterns.next()) |raw| {
+        const pattern = std.mem.trim(u8, raw, " \t\r\n");
+        if (std.mem.find(u8, path, pattern) != null)
+            return true;
+    }
+    return false;
+}
+
+/// Compact the file list before parsing or assembling fixtures; reject empty filter patterns.
+fn filterFiles(paths: *std.ArrayList([]const u8), options: Options) !void {
+    for ([_]?[]const u8{ options.include, options.exclude }) |filter| {
+        if (filter) |value| {
+            var patterns = std.mem.splitScalar(u8, value, ',');
+            while (patterns.next()) |pattern| {
+                if (std.mem.trim(u8, pattern, " \t\r\n").len == 0)
+                    return error.EmptyFileFilter;
+            }
+        }
+    }
+    var selected: usize = 0;
+    for (paths.items) |path| {
+        if (options.include) |filter| {
+            if (!matchesFileFilter(path, filter))
+                continue;
+        }
+        if (options.exclude) |filter| {
+            if (matchesFileFilter(path, filter))
+                continue;
+        }
+        paths.items[selected] = path;
+        selected += 1;
+    }
+    paths.shrinkRetainingCapacity(selected);
+}
+
+test "file filters combine includes, prioritize excludes and reject empty patterns" {
+    const input = [_][]const u8{
+        "tests/windtunnel/state/fifo-write-visibility.propan",
+        "tests/windtunnel/state/fifo-startup.propan",
+        "tests/windtunnel/state/cogid.propan",
+        "tests/windtunnel/program/hello-world.propan",
+    };
+    var paths: std.ArrayList([]const u8) = .empty;
+    defer paths.deinit(std.testing.allocator);
+
+    try paths.appendSlice(std.testing.allocator, &input);
+    try filterFiles(&paths, .{});
+    try std.testing.expectEqual(input.len, paths.items.len);
+    try filterFiles(&paths, .{ .include = "state/, hello-world", .exclude = "fifo-write-visibility.propan,cogid.propan" });
+    try std.testing.expectEqual(@as(usize, 2), paths.items.len);
+    try std.testing.expectEqualStrings(input[1], paths.items[0]);
+    try std.testing.expectEqualStrings(input[3], paths.items[1]);
+    try filterFiles(&paths, .{ .include = "DOES-NOT-MATCH" });
+    try std.testing.expectEqual(@as(usize, 0), paths.items.len);
+    for ([_][]const u8{ "", " ", ",fifo", "fifo,", "fifo,,cogid" }) |filter| {
+        try std.testing.expectError(error.EmptyFileFilter, filterFiles(&paths, .{ .include = filter }));
+        try std.testing.expectError(error.EmptyFileFilter, filterFiles(&paths, .{ .exclude = filter }));
+    }
+    try paths.appendSlice(std.testing.allocator, &input);
+    try filterFiles(&paths, .{ .exclude = ".propan" });
+    try std.testing.expectEqual(@as(usize, 0), paths.items.len);
+}
+
+/// Adapt attached -jN values to the argument parser's separate-value shorthand syntax.
+const Arguments = struct {
+    items: []const [:0]const u8,
+    index: usize = 0,
+    pending: ?[:0]const u8 = null,
+    positional: bool = false,
+
+    /// Yield arguments without rewriting positional filenames after --.
+    pub fn next(iterator: *Arguments) ?[:0]const u8 {
+        if (iterator.pending) |value| {
+            iterator.pending = null;
+            return value;
+        }
+        if (iterator.index == iterator.items.len)
+            return null;
+        const value = iterator.items[iterator.index];
+        iterator.index += 1;
+        if (std.mem.eql(u8, value, "--")) {
+            iterator.positional = true;
+        }
+        if (!iterator.positional and value.len > 2 and std.mem.startsWith(u8, value, "-j")) {
+            iterator.pending = value[2..];
+            return "-j";
+        }
+        return value;
+    }
+};
+
+/// One independently assembled and simulated case, with diagnostics owned by its worker.
+const Job = struct {
+    path: []const u8,
+    source: []const u8,
+    list: checklist.List,
+    name: []const u8,
+    fixture: usize,
+    progress: std.Progress.Node,
+    diagnostics: std.Io.Writer.Allocating,
+    status: ?oracle.Status = null,
+    failure: ?anyerror = null,
+    elapsed_ns: u64 = 0,
+};
+
+/// Measure elapsed wall time, including assembly, simulation, assertions and optional hardware access.
+fn elapsedSince(io: std.Io, started: std.Io.Timestamp) u64 {
+    return @intCast(std.Io.Timestamp.now(io, .awake).toNanoseconds() - started.toNanoseconds());
+}
+
+/// Keep literal run names and paths inside one Markdown table cell.
+fn timingCell(writer: *std.Io.Writer, value: []const u8) !void {
+    for (value) |byte| {
+        switch (byte) {
+            '\\', '|', '`' => {
+                try writer.writeByte('\\');
+                try writer.writeByte(byte);
+            },
+            '\r', '\n' => try writer.writeByte(' '),
+            else => try writer.writeByte(byte),
+        }
+    }
+}
+
+/// Summarize elapsed run durations for one file; preparation contributes only to its total.
+const FileTiming = struct {
+    path: []const u8,
+    count: usize = 0,
+    total_ns: u64,
+    run_ns: u64 = 0,
+    min_ns: u64 = std.math.maxInt(u64),
+    max_ns: u64 = 0,
+
+    /// Rank the most expensive files first, breaking ties by path.
+    fn longestFirst(_: void, a: FileTiming, b: FileTiming) bool {
+        if (a.total_ns != b.total_ns)
+            return a.total_ns > b.total_ns;
+        return std.mem.lessThan(u8, a.path, b.path);
+    }
+};
+
+/// Write a complete, longest-first overview after every worker has finished, including failed cases.
+fn writeTimingReport(
+    allocator: std.mem.Allocator,
+    writer: *std.Io.Writer,
+    paths: []const []const u8,
+    preparation_ns: []const u64,
+    jobs: []const Job,
+    workers: usize,
+    suite_ns: u64,
+) !void {
+    const files = try allocator.alloc(FileTiming, paths.len);
+    defer allocator.free(files);
+
+    for (files, paths, preparation_ns) |*file, path, preparation| {
+        file.* = .{ .path = path, .total_ns = preparation };
+    }
+    const runs = try allocator.alloc(*const Job, jobs.len);
+    defer allocator.free(runs);
+
+    for (jobs, runs) |*job, *run| {
+        run.* = job;
+        const file = &files[job.fixture];
+        file.count += 1;
+        file.total_ns += job.elapsed_ns;
+        file.run_ns += job.elapsed_ns;
+        file.min_ns = @min(file.min_ns, job.elapsed_ns);
+        file.max_ns = @max(file.max_ns, job.elapsed_ns);
+    }
+    std.mem.sort(FileTiming, files, {}, FileTiming.longestFirst);
+    std.mem.sort(*const Job, runs, {}, struct {
+        /// Rank runs by elapsed duration, then by file path and case name.
+        fn longestFirst(_: void, a: *const Job, b: *const Job) bool {
+            if (a.elapsed_ns != b.elapsed_ns)
+                return a.elapsed_ns > b.elapsed_ns;
+            if (!std.mem.eql(u8, a.path, b.path))
+                return std.mem.lessThan(u8, a.path, b.path);
+            return std.mem.lessThan(u8, a.name, b.name);
+        }
+    }.longestFirst);
+    const seconds: f64 = std.time.ns_per_s;
+    try writer.print(
+        "# Windtunnel timing report\n\nWorkers: {d}. Suite elapsed: {d:.6} s. Files: {d}. Runs: {d}.\n\n" ++
+            "All times are elapsed wall time in seconds. File totals include checklist preparation and " ++
+            "the sum of their run times. Each run includes assembly, simulation, assertions and any hardware access; " ++
+            "queue waiting and report generation are excluded. Parallel run times overlap and include CPU contention; " ++
+            "use `-j1` for comparisons.\n\n" ++
+            "## Files (longest first)\n\n" ++
+            "| File | Runs | Total (s) | Min/run (s) | Avg/run (s) | Max/run (s) |\n" ++
+            "| --- | ---: | ---: | ---: | ---: | ---: |\n",
+        .{ workers, @as(f64, @floatFromInt(suite_ns)) / seconds, paths.len, jobs.len },
+    );
+    for (files) |file| {
+        try writer.writeAll("| ");
+        try timingCell(writer, file.path);
+        try writer.print(" | {d} | {d:.6} |", .{ file.count, @as(f64, @floatFromInt(file.total_ns)) / seconds });
+        if (file.count == 0) {
+            try writer.writeAll(" — | — | — |\n");
+        } else {
+            const average = @as(f64, @floatFromInt(file.run_ns)) / @as(f64, @floatFromInt(file.count));
+            try writer.print(" {d:.6} | {d:.6} | {d:.6} |\n", .{
+                @as(f64, @floatFromInt(file.min_ns)) / seconds,
+                average / seconds,
+                @as(f64, @floatFromInt(file.max_ns)) / seconds,
+            });
+        }
+    }
+    try writer.writeAll(
+        "\n## Individual runs (longest first)\n\n" ++
+            "| File | Run | Time (s) | Result |\n| --- | --- | ---: | --- |\n",
+    );
+    for (runs) |job| {
+        try writer.writeAll("| ");
+        try timingCell(writer, job.path);
+        try writer.writeAll(" | ");
+        try timingCell(writer, job.name);
+        try writer.print(" | {d:.6} | ", .{@as(f64, @floatFromInt(job.elapsed_ns)) / seconds});
+        if (job.failure) |err| {
+            try writer.print("FAIL ({t})", .{err});
+        } else {
+            try writer.print("{s} (oracle {t})", .{
+                if (job.status == .captured) "CAPTURE" else "PASS",
+                job.status.?,
+            });
+        }
+        try writer.writeAll(" |\n");
+    }
+}
+
+/// A bounded group of workers dynamically claims cases to balance uneven fixture matrices.
+const WorkGroup = struct {
+    context: Context,
+    jobs: []Job,
+    next: std.atomic.Value(usize) = .init(0),
+
+    /// Run each claimed case in isolation; only the owner writes its result and diagnostics.
+    fn worker(work: *WorkGroup) void {
+        while (true) {
+            const index = work.next.fetchAdd(1, .monotonic);
+            if (index >= work.jobs.len)
+                return;
+            const job = &work.jobs[index];
+            const fixture_progress = job.progress.start(job.path, 1);
+            defer fixture_progress.end();
+
+            const progress = fixture_progress.start(job.name, 0);
+            defer progress.end();
+
+            var context = work.context;
+            context.errors = &job.diagnostics.writer;
+            const started = if (context.options.@"timing-report" != null)
+                std.Io.Timestamp.now(context.io, .awake)
+            else
+                null;
+            defer {
+                if (started) |timestamp| {
+                    job.elapsed_ns = elapsedSince(context.io, timestamp);
+                }
+            }
+
+            job.status = runOne(context, job.path, job.source, job.list, job.name) catch |err| {
+                job.failure = err;
+                continue;
+            };
+        }
+    }
+
+    /// Use the caller as one worker and await all additional standard-library pool tasks.
+    fn run(work: *WorkGroup, workers: usize) !void {
+        std.debug.assert(workers > 0);
+        var group: std.Io.Group = .init;
+        defer group.cancel(work.context.io);
+
+        const count = @max(1, @min(workers, work.jobs.len));
+        work.context.options.jobs = count;
+        for (1..count) |_| {
+            try group.concurrent(work.context.io, worker, .{work});
+        }
+        worker(work);
+        try group.await(work.context.io);
+    }
+};
+
+/// Resolve automatic parallelism while keeping a shared hardware board exclusively owned.
+fn workerCount(options: Options, cpu_count: usize) usize {
+    if ((options.oracle or options.characterize) and !options.@"prepare-oracle")
+        return 1;
+    return @max(1, if (options.jobs == 0) cpu_count else options.jobs);
+}
+
+test "worker options accept separate and attached counts and serialize hardware access" {
+    for ([_][]const [:0]const u8{
+        &.{ "-j", "4", "fixture.propan" },
+        &.{ "-j4", "fixture.propan" },
+        &.{ "--jobs", "4", "fixture.propan" },
+    }) |items| {
+        var iterator: Arguments = .{ .items = items };
+        var parsed = try args.parse(Options, &iterator, std.testing.allocator, .print);
+        defer parsed.deinit();
+
+        try std.testing.expectEqual(@as(usize, 4), parsed.options.jobs);
+        try std.testing.expectEqualStrings("fixture.propan", parsed.positionals[0]);
+    }
+    var iterator: Arguments = .{ .items = &.{
+        "-j0",                          "--timing-report", "timings.md",
+        "--include",                    "state/,program/", "--exclude",
+        "fifo-write-visibility.propan", "--",              "-j1",
+    } };
+    var parsed = try args.parse(Options, &iterator, std.testing.allocator, .print);
+    defer parsed.deinit();
+
+    try std.testing.expectEqual(@as(usize, 0), parsed.options.jobs);
+    try std.testing.expectEqualStrings("timings.md", parsed.options.@"timing-report".?);
+    try std.testing.expectEqualStrings("state/,program/", parsed.options.include.?);
+    try std.testing.expectEqualStrings("fifo-write-visibility.propan", parsed.options.exclude.?);
+    try std.testing.expectEqualStrings("-j1", parsed.positionals[0]);
+    try std.testing.expectEqual(@as(usize, 8), workerCount(.{}, 8));
+    try std.testing.expectEqual(@as(usize, 1), workerCount(.{ .jobs = 1 }, 8));
+    try std.testing.expectEqual(@as(usize, 4), workerCount(.{ .jobs = 4 }, 8));
+    try std.testing.expectEqual(@as(usize, 1), workerCount(.{ .oracle = true }, 8));
+    try std.testing.expectEqual(@as(usize, 1), workerCount(.{ .characterize = true, .jobs = 4 }, 8));
+    try std.testing.expectEqual(@as(usize, 8), workerCount(.{ .oracle = true, .@"prepare-oracle" = true }, 8));
+}
+
+test "workers isolate cases, retain failures and finish every queued job" {
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    const source =
+        "//? WINDTUNNEL CHECK LIST\n" ++
+        "//? post: cog[0].reg[result] == 7\n" ++
+        "//? run: \"first\"\n//? pre: sym[value] = u32 [7]\n" ++
+        "//? run: \"failure\"\n//? pre: sym[value] = u32 [8]\n" ++
+        "//? run: \"last\"\n//? pre: sym[value] = u32 [7]\n" ++
+        "\nMOV result, value\nJMP nrel(_end)\nvar result: LONG 0\nvar value: LONG 0\n";
+    try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "fixture.propan", .data = source });
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+    const path = try tmp.dir.realPathFileAlloc(std.testing.io, "fixture.propan", allocator);
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const list = try checklist.parse(allocator, path, source, &errors.writer);
+    for ([_]usize{ 1, 4 }) |workers| {
+        var jobs: [3]Job = undefined;
+        for (&jobs, list.runs) |*job, run| {
+            job.* = .{
+                .path = path,
+                .source = source,
+                .list = try list.forRun(allocator, run),
+                .name = run.name.?,
+                .fixture = 0,
+                .progress = .none,
+                .diagnostics = .init(std.testing.allocator),
+            };
+        }
+        defer {
+            for (&jobs) |*job| {
+                job.diagnostics.deinit();
+            }
+        }
+
+        var work: WorkGroup = .{
+            .context = .{
+                .allocator = std.testing.allocator,
+                .io = std.testing.io,
+                .errors = &errors.writer,
+                .options = .{ .@"timing-report" = if (workers > 1) "unused.md" else null },
+                .retain_failures = false,
+            },
+            .jobs = &jobs,
+        };
+        try work.run(workers);
+        try std.testing.expectEqual(oracle.Status.skipped, jobs[0].status.?);
+        try std.testing.expectEqual(error.AssertionFailed, jobs[1].failure.?);
+        try std.testing.expect(jobs[1].diagnostics.written().len != 0);
+        try std.testing.expectEqual(oracle.Status.skipped, jobs[2].status.?);
+        try std.testing.expect(jobs[0].failure == null and jobs[2].failure == null);
+        for (jobs) |job| {
+            try std.testing.expectEqual(workers > 1, job.elapsed_ns > 0);
+        }
+    }
+    var empty: WorkGroup = .{
+        .context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer },
+        .jobs = &.{},
+    };
+    try empty.run(4);
+}
+
+test "timing reports aggregate and rank files and runs, including failures and empty files" {
+    var jobs = [_]Job{
+        .{
+            .path = "fast.propan",
+            .source = "",
+            .list = .{},
+            .name = "fast",
+            .fixture = 0,
+            .progress = .none,
+            .diagnostics = .init(std.testing.allocator),
+            .status = .skipped,
+            .elapsed_ns = 2 * std.time.ns_per_s,
+        },
+        .{
+            .path = "slow.propan",
+            .source = "",
+            .list = .{},
+            .name = "failed | case",
+            .fixture = 1,
+            .progress = .none,
+            .diagnostics = .init(std.testing.allocator),
+            .failure = error.AssertionFailed,
+            .elapsed_ns = std.time.ns_per_s,
+        },
+        .{
+            .path = "slow.propan",
+            .source = "",
+            .list = .{},
+            .name = "slow",
+            .fixture = 1,
+            .progress = .none,
+            .diagnostics = .init(std.testing.allocator),
+            .status = .skipped,
+            .elapsed_ns = 3 * std.time.ns_per_s,
+        },
+    };
+    defer {
+        for (&jobs) |*job| {
+            job.diagnostics.deinit();
+        }
+    }
+
+    var report: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer report.deinit();
+
+    try writeTimingReport(
+        std.testing.allocator,
+        &report.writer,
+        &.{ "fast.propan", "slow.propan", "empty.propan" },
+        &.{ std.time.ns_per_s, std.time.ns_per_s / 2, std.time.ns_per_s / 5 },
+        &jobs,
+        2,
+        7 * std.time.ns_per_s,
+    );
+    const text = report.written();
+    try std.testing.expect(std.mem.find(u8, text, "Workers: 2. Suite elapsed: 7.000000 s. Files: 3. Runs: 3.") != null);
+    try std.testing.expect(std.mem.find(
+        u8,
+        text,
+        "| slow.propan | 2 | 4.500000 | 1.000000 | 2.000000 | 3.000000 |\n" ++
+            "| fast.propan | 1 | 3.000000 | 2.000000 | 2.000000 | 2.000000 |\n" ++
+            "| empty.propan | 0 | 0.200000 | — | — | — |\n",
+    ) != null);
+    try std.testing.expect(std.mem.find(
+        u8,
+        text,
+        "| slow.propan | slow | 3.000000 | PASS (oracle skipped) |\n" ++
+            "| fast.propan | fast | 2.000000 | PASS (oracle skipped) |\n" ++
+            "| slow.propan | failed \\| case | 1.000000 | FAIL (AssertionFailed) |\n",
+    ) != null);
+}
 
 /// Resolve a numeric or symbolic address in the requested address space.
 fn address(module: propan.Module, value: checklist.Address, kind: Kind) !u32 {
@@ -305,6 +780,8 @@ fn runOne(
     defer arena.deinit();
 
     const allocator = arena.allocator();
+    if (list.profile == .cog and list.baudrate != serial_boot.baudrate)
+        return error.OracleRequiresUploadBaud;
     const oracle_ctx: oracle.Context = .{ .allocator = ctx.allocator, .io = ctx.io, .errors = ctx.errors };
     var program_source: std.Io.Writer.Allocating = .init(allocator);
     defer program_source.deinit();
@@ -428,13 +905,17 @@ fn runOne(
         });
     const hub = try allocator.create(Hub);
     hub.init();
-    hub.io.fast_io = ctx.options.@"fast-io" and list.fast_io_off == null;
+    serial_boot.prepare(hub);
+    const virtual_terminal = ctx.options.@"fast-io" and list.fast_io_off == null;
     @memcpy(hub.memory[0..compiled.image.len], compiled.image);
     var stdout: std.Io.Writer.Allocating = .init(allocator);
     defer stdout.deinit();
 
     var terminal_sink: smart_pin.DataSink = .{ .writer = &stdout.writer };
-    hub.io.pins[62].smart.registers.sink = &terminal_sink;
+    hub.io.pins[62].smart.tx_mode = if (virtual_terminal)
+        .{ .virtual = &terminal_sink }
+    else
+        .{ .emulated = &terminal_sink };
     var stdin = std.Io.Reader.fixed(list.stdin);
     var terminal_source: smart_pin.DataSource = .{ .reader = &stdin };
     var trace: std.Io.Writer.Allocating = .init(allocator);
@@ -482,16 +963,17 @@ fn runOne(
     var reached = false;
     var dut_started = false;
     var supplied_stdin = list.stdin.len == 0;
-    const started = std.Io.Timestamp.now(ctx.io, .awake).toNanoseconds();
-    // Program fixtures include a twenty-million-clock board warmup. With every
-    // clock simulated, allow it to finish even in Debug; max_cycles still bounds execution.
-    const wall_limit_ns: i96 = (if (list.profile == .program)
+    // Parallel workers use CPU time so scheduler contention cannot consume a case's execution budget.
+    const simulation_clock: std.Io.Clock = if (ctx.options.jobs > 1) .cpu_thread else .awake;
+    const started = std.Io.Timestamp.now(ctx.io, simulation_clock).toNanoseconds();
+    // Complete program fixtures can intentionally run longer than isolated cog checks.
+    const execution_limit_ns: i96 = (if (list.profile == .program)
         @as(i96, 600)
     else
         30) * std.time.ns_per_s;
     while (hub.is_any_cog_active() and hub.counter < list.max_cycles) {
         if (hub.counter & 1023 == 0 and
-            std.Io.Timestamp.now(ctx.io, .awake).toNanoseconds() - started > wall_limit_ns)
+            std.Io.Timestamp.now(ctx.io, simulation_clock).toNanoseconds() - started > execution_limit_ns)
             return error.SimulatorTimeout;
         if (stop) |pc| {
             if (hub.cogs[list.cog].pipeline[3]) |instruction| {
@@ -525,9 +1007,12 @@ fn runOne(
             if (receiver.logic != .uart_rx or
                 !receiver.registers.enabled or
                 timing.bits != 8 or
-                (timing.frame_clocks == 0 and !hub.io.fast_io))
+                (timing.period == 0 and !virtual_terminal))
                 return error.UartRxNotReady;
-            receiver.registers.source = &terminal_source;
+            receiver.rx_mode = if (virtual_terminal)
+                .{ .virtual = &terminal_source }
+            else
+                .{ .emulated = &terminal_source };
             supplied_stdin = true;
         }
         if (hub.fault) |fault| {
@@ -639,7 +1124,10 @@ fn runOne(
 
 /// Collect fixtures and report the test suite result.
 pub fn main(init: std.process.Init) !u8 {
-    var cli = args.parseForCurrentProcess(Options, init, .print) catch return 1;
+    const arguments = try init.minimal.args.toSlice(init.arena.allocator());
+    var iterator: Arguments = .{ .items = arguments };
+    const executable_name = iterator.next() orelse "windtunnel-tests";
+    var cli = args.parse(Options, &iterator, init.arena.allocator(), .print) catch return 1;
     defer cli.deinit();
 
     var stderr_buffer: [4096]u8 = undefined;
@@ -647,7 +1135,7 @@ pub fn main(init: std.process.Init) !u8 {
     defer stderr.interface.flush() catch {};
 
     if (cli.options.help) {
-        try args.printHelp(Options, cli.executable_name orelse "windtunnel-tests", &stderr.interface);
+        try args.printHelp(Options, executable_name, &stderr.interface);
         return 0;
     }
     const endpoint = init.environ_map.get("P2AAS_ENDPOINT") orelse "ws://localhost:12880/";
@@ -670,12 +1158,28 @@ pub fn main(init: std.process.Init) !u8 {
 
         while (try walker.next(init.io)) |file| {
             if (file.kind == .file and std.mem.endsWith(u8, file.path, ".propan")) {
-                try paths.append(allocator, try std.fs.path.join(allocator, &.{ "tests/windtunnel", file.path }));
+                const path = try std.fs.path.join(allocator, &.{ "tests/windtunnel", file.path });
+                const source = try std.Io.Dir.cwd().readFileAlloc(init.io, path, allocator, .limited(1 << 20));
+                if (checklist.hasHeader(source)) {
+                    try paths.append(allocator, path);
+                }
             }
         }
     }
     if (paths.items.len == 0)
         return error.EmptySuite;
+    const available_files = paths.items.len;
+    filterFiles(&paths, cli.options) catch |err| {
+        try stderr.interface.print("Invalid file filter: {t}; provide nonempty comma-separated path substrings\n", .{err});
+        return 1;
+    };
+    if (paths.items.len == 0) {
+        try stderr.interface.writeAll("No fixture files matched the include/exclude filters\n");
+        return 1;
+    }
+    if (cli.options.include != null or cli.options.exclude != null) {
+        try stderr.interface.print("File filters: selected {d} of {d} fixtures\n", .{ paths.items.len, available_files });
+    }
     std.mem.sort([]const u8, paths.items, {}, struct {
         /// Sort fixture paths into a stable execution order.
         fn less(_: void, a: []const u8, b: []const u8) bool {
@@ -690,59 +1194,85 @@ pub fn main(init: std.process.Init) !u8 {
 
     // The build runner treats captured stderr as diagnostics.
     const report_success = !init.environ_map.contains("ZIG_PROGRESS");
+    const fixture_failed = try allocator.alloc(bool, paths.items.len);
+    @memset(fixture_failed, false);
+    const suite_started = if (cli.options.@"timing-report" != null)
+        std.Io.Timestamp.now(init.io, .awake)
+    else
+        null;
+    const preparation_ns = if (suite_started != null) try allocator.alloc(u64, paths.items.len) else null;
+
+    var jobs: std.ArrayList(Job) = .empty;
+    defer {
+        for (jobs.items) |*job| {
+            job.diagnostics.deinit();
+        }
+    }
+
     var failed: usize = 0;
-    var total_runs: usize = 0;
     var failed_runs: usize = 0;
-    for (paths.items) |path| {
-        const fixture_progress = progress.start(path, 0);
-        defer fixture_progress.end();
+    for (paths.items, fixture_failed, 0..) |path, *failed_fixture, fixture_index| {
+        const started = if (suite_started != null) std.Io.Timestamp.now(init.io, .awake) else null;
+        defer {
+            if (started) |timestamp| {
+                preparation_ns.?[fixture_index] = elapsedSince(init.io, timestamp);
+            }
+        }
 
         const source = try std.Io.Dir.cwd().readFileAlloc(init.io, path, allocator, .limited(1 << 20));
-        var arena: std.heap.ArenaAllocator = .init(init.gpa);
-        defer arena.deinit();
-
-        const list = checklist.parse(arena.allocator(), path, source, &stderr.interface) catch |err| {
+        const list = checklist.parse(allocator, path, source, &stderr.interface) catch |err| {
             try stderr.interface.print("FAIL {s}: {t}\n", .{ path, err });
-            failed += 1;
+            failed_fixture.* = true;
             continue;
         };
-        fixture_progress.setEstimatedTotalItems(list.runs.len);
-        var fixture_failed = false;
         for (list.runs, 1..) |run, index| {
-            total_runs += 1;
-            const name = run.name orelse try std.fmt.allocPrint(arena.allocator(), "run {d}", .{index});
-            const run_progress = fixture_progress.start(name, 0);
-            defer run_progress.end();
-
-            const status = runOne(
-                .{ .allocator = init.gpa, .io = init.io, .errors = &stderr.interface, .options = cli.options, .endpoint = endpoint },
-                path,
-                source,
-                try list.forRun(arena.allocator(), run),
-                name,
-            ) catch |err| {
-                try stderr.interface.print("FAIL {s} [{s}]: {t}\n", .{ path, name, err });
-                fixture_failed = true;
-                failed_runs += 1;
-                continue;
-            };
-            if (report_success) {
-                try stderr.interface.print("{s} {s} [{s}] (oracle {t})\n", .{
-                    if (cli.options.characterize)
-                        "CAPTURE"
-                    else
-                        "PASS",
-                    path,
-                    name,
-                    status,
-                });
-            }
-            try stderr.interface.flush();
+            try jobs.append(allocator, .{
+                .path = path,
+                .source = source,
+                .list = try list.forRun(allocator, run),
+                .name = run.name orelse try std.fmt.allocPrint(allocator, "run {d}", .{index}),
+                .fixture = fixture_index,
+                .progress = progress,
+                .diagnostics = .init(init.gpa),
+            });
         }
-        if (fixture_failed) {
+    }
+    progress.setEstimatedTotalItems(jobs.items.len);
+    try stderr.interface.flush();
+    var work: WorkGroup = .{
+        .context = .{
+            .allocator = init.gpa,
+            .io = init.io,
+            .errors = &stderr.interface,
+            .options = cli.options,
+            .endpoint = endpoint,
+        },
+        .jobs = jobs.items,
+    };
+    const cpus = if (cli.options.jobs == 0) try std.Thread.getCpuCount() else 1;
+    try work.run(workerCount(cli.options, cpus));
+    const suite_ns = if (suite_started) |timestamp| elapsedSince(init.io, timestamp) else 0;
+    for (jobs.items) |*job| {
+        try stderr.interface.writeAll(job.diagnostics.written());
+        if (job.failure) |err| {
+            try stderr.interface.print("FAIL {s} [{s}]: {t}\n", .{ job.path, job.name, err });
+            fixture_failed[job.fixture] = true;
+            failed_runs += 1;
+        } else if (report_success) {
+            try stderr.interface.print("{s} {s} [{s}] (oracle {t})\n", .{
+                if (cli.options.characterize) "CAPTURE" else "PASS",
+                job.path,
+                job.name,
+                job.status.?,
+            });
+        }
+    }
+    for (fixture_failed) |failed_fixture| {
+        if (failed_fixture) {
             failed += 1;
         }
     }
+    const total_runs = jobs.items.len;
     if (report_success or failed != 0) {
         try stderr.interface.print("{d} fixtures: {d} {s}, {d} failed; {d} runs: {d} {s}, {d} failed\n", .{
             paths.items.len,
@@ -760,6 +1290,24 @@ pub fn main(init: std.process.Init) !u8 {
                 "passed",
             failed_runs,
         });
+    }
+    if (cli.options.@"timing-report") |path| {
+        const file = try std.Io.Dir.cwd().createFile(init.io, path, .{});
+        defer file.close(init.io);
+
+        var buffer: [4096]u8 = undefined;
+        var writer = file.writer(init.io, &buffer);
+        try writeTimingReport(
+            init.gpa,
+            &writer.interface,
+            paths.items,
+            preparation_ns.?,
+            jobs.items,
+            work.context.options.jobs,
+            suite_ns,
+        );
+        try writer.interface.flush();
+        try stderr.interface.print("Timing report: {s}\n", .{path});
     }
     return if (failed == 0)
         0
@@ -784,6 +1332,11 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
     defer errors.deinit();
 
     const ctx: Context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer, .retain_failures = false };
+    try std.testing.expect(std.mem.find(u8, @embedFile("oracle-template"), "WAITX") == null);
+    try std.testing.expectError(error.OracleRequiresUploadBaud, runTemporary(
+        ctx,
+        "//? WINDTUNNEL CHECK LIST\n//? baudrate: 115200\n//? post: cog[0].c == false\n\nJMP nrel(_end)\n",
+    ));
     const code = "\nMOV result, 7\nJMP nrel(_end)\nvar result: LONG 0\n";
     _ = try runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[result] == 7\n" ++ code);
     try std.testing.expectError(error.AssertionFailed, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[result] == 8\n" ++ code));
@@ -1037,6 +1590,52 @@ fn serveTestConnections(listener: *std.Io.net.Server, count: usize) !void {
     }
 }
 
+test "RCFAST hello world preserves inherited ROM baud timing and drains UART without WAITX" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const path = "examples/hello-world-no-pll.propan";
+    const source = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, std.testing.allocator, .limited(1 << 20));
+    defer std.testing.allocator.free(source);
+
+    try std.testing.expect(std.mem.find(u8, source, "WAITX") == null);
+    var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, source, &errors.writer);
+    defer compiled.deinit();
+
+    const halt = try codeAddress(compiled.module, ".halt");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    // Model serial ROM handoff at three RCFAST rates, including a fractional divider.
+    for ([_]u32{ 0x000a_0007, 0x000b_8007, 0x000f_0007 }) |divider| {
+        hub.init();
+        serial_boot.prepare(hub);
+        try std.testing.expectEqual(@as(u32, 0x000a_0007), hub.io.pins[63].smart.registers.x);
+        @memcpy(hub.memory[0..compiled.image.len], compiled.image);
+        var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+        defer output.deinit();
+
+        var sink: smart_pin.DataSink = .{ .writer = &output.writer };
+        const tx = &hub.io.pins[62].smart;
+        tx.registers.x = divider;
+        tx.tx_mode = .{ .emulated = &sink };
+        try hub.start_cog(0, .{});
+
+        while (hub.counter < 10_000) {
+            if (hub.cogs[0].pipeline[3]) |instruction| {
+                if (instruction.pc == halt)
+                    break;
+            }
+            hub.step();
+        }
+        try std.testing.expect(hub.counter < 10_000);
+        try std.testing.expectEqualStrings("Hello world!\r\n", output.written());
+        try std.testing.expectEqual(divider, tx.registers.x);
+        try std.testing.expectEqual(@as(u32, 0xf0), hub.io.clock_mode);
+        try std.testing.expect(!hub.io.pins[62].outputs.flag);
+    }
+}
+
 test "native P2AAS client uses the simulator server and subsequent sessions start fresh" {
     var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer errors.deinit();
@@ -1047,12 +1646,7 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
     const source = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, std.testing.allocator, .limited(1 << 20));
     defer std.testing.allocator.free(source);
 
-    // The physical-board fixture settles for 100 ms. The local protocol test only
-    // needs clocked UART startup, so do not spend 20 million simulated edges here.
-    const local_source = try std.mem.replaceOwned(u8, std.testing.allocator, source, "20_000_000", "2_000");
-    defer std.testing.allocator.free(local_source);
-
-    var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, local_source, &errors.writer);
+    var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, source, &errors.writer);
     defer compiled.deinit();
 
     const ip = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
@@ -1073,7 +1667,7 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
             .image = compiled.image,
             .stdin = packet,
             .ready = "!",
-            .baudrate = 115200,
+            .baudrate = serial_boot.baudrate,
             // Debug builds share CPU with the fixture suite; allow clocked I/O to finish.
             .timeout_ms = 3000,
         }, &output, &errors.writer);

@@ -174,6 +174,7 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Hardware Chip Reset and ROM Boot
 - Cache `hub.random.word` to not compute it multiple times per clock
 - Implement Streamer FIFO bypass erratum
+- Extend test runner to store/print the time per test fixture and test run to find outliers.
 
 #### Clock Configuration
 

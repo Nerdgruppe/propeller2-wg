@@ -179,7 +179,7 @@
 //? post: cog[*].reg[probe_result] == 1
 //? run: "GPIO OUTL -> TESTP, gap 6"
 //? const: probe_case = 59
-//? post: cog[*].reg[probe_result] == 1
+//? post: cog[*].reg[probe_result] == 0
 //? run: "GPIO OUTL -> TESTP, gap 7"
 //? const: probe_case = 60
 //? post: cog[*].reg[probe_result] == 0
@@ -212,7 +212,7 @@
 //? post: cog[*].reg[probe_result] == 1
 //? run: "GPIO OUTL -> MOV, gap 7"
 //? const: probe_case = 70
-//? post: cog[*].reg[probe_result] == 1
+//? post: cog[*].reg[probe_result] == 0
 //? run: "GPIO OUTL -> MOV, gap 8"
 //? const: probe_case = 71
 //? post: cog[*].reg[probe_result] == 0

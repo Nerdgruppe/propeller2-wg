@@ -3,9 +3,10 @@
 `sim/IO.zig` owns 64 `Pin` instances, each containing a typed WRPIN
 configuration, a `SmartPin` from `sim/smart_pin.zig`, and its published outputs.
 `SmartPin` owns one shared `Registers` struct and a `Logic` union tagged by
-`libp2.types.SmartPinMode`. Repository, UART TX/RX and USART TX/RX payloads
-contain only their private transfer state. `configure()` replaces the payload
-and retains registers and endpoints. `step(Inputs)` updates X/Y, enabled and
+`libp2.types.SmartPinMode`. Repository, digital smart pins, UART TX/RX and USART TX/RX payloads
+contain only their private engine state. `configure()` retains the payload for
+same-mode digital and serial WRPIN writes and replaces it on mode changes, retaining shared
+registers and host-selected receive/transmit modes. `step(Inputs)` updates X/Y, enabled and
 acknowledgement state, dispatches the active payload with the shared registers,
 and latches the returned result and IN signal. Inputs carry DIR/OUT,
 SmartA/SmartB, optional X/Y writes and acknowledgement; outputs carry SmartOut,
@@ -51,54 +52,96 @@ questions are described in [the RNG research notes](../../data/random/README.md)
 
 ## Smart modes and endpoints
 
-Long repository (smart mode 1, including mode aliases 2/3), UART TX/RX and USART
-TX/RX are supported. UART transfers use the configured 1–32-bit word width and
-fixed-point frame duration. Transmit has a shifter and one pending word; receive
-overwrites unread UART results. Receiver results are MSB justified. COGSTOP
-clears the cog's DIR bits; the next shared edge aborts an unfinished transfer
-if no other cog keeps that pin enabled. Runners do not drain transmissions
-after shutdown or a fixture checkpoint. Programs that require complete output
-must wait for UART completion before stopping.
+All twenty digital smart modes (4–23) are implemented: finite pulses and transitions,
+frequency/duty NCO, triangle/sawtooth/SMPS PWM, quadrature and gated/up/down
+counting, rise/high counting, state/high timing, event timing and missing-event
+alarms, fixed-period timing/high measurements, and minimum-window timing/high/
+period measurements. They advance once per system clock; `--fast-io` does not
+change their behavior. SMPS uses digital A/B voltage/current gates. X/Y writes
+acknowledge IN without resetting a running engine. Same-mode WRPIN preserves
+private state. Each engine defines its reset, result retention, saturation and
+carry behavior separately; state timing returns the previous input level in C.
+[Hardware probes, waveforms and limitations](../../data/timing-data/digital-smart-pins/README.md)
+provide the validation record.
 
-Attach caller-owned `smart_pin.DataSink` and `smart_pin.DataSource` objects:
+UART and USART use separate host-selected modes on each `SmartPin`:
+
+| Direction | Mode | Behavior |
+| --- | --- | --- |
+| RX | `.exact` | Decode routed SmartA/SmartB samples and transitions |
+| RX | `.{ .emulated = &source }` | Receive endpoint words with bit timing; USART still requires routed B edges |
+| RX | `.{ .virtual = &source }` | Receive at most one word per simulation clock, waiting for acknowledgement |
+| TX | `.{ .emulated = &sink }` | Generate serial SmartOut and deliver each completed word to the sink |
+| TX | `.{ .virtual = &sink }` | Deliver at most one word per clock without serial transitions |
+
+RX defaults to exact operation. TX defaults to emulated operation with a discard sink.
+Attach caller-owned endpoint descriptors, independently of WRPIN:
 
 ```zig
-var sink: IO.DataSink = .{ .writer = writer };
 var source: IO.DataSource = .{ .reader = reader };
-hub.io.pins[40].smart.registers.sink = &sink;
-hub.io.pins[41].smart.registers.source = &source;
+const sink: IO.DataSink = .{ .writer = writer };
+hub.io.pins[40].smart.tx_mode = .{ .emulated = &sink };
+hub.io.pins[41].smart.rx_mode = .exact;
+hub.io.pins[42].smart.rx_mode = .{ .emulated = &source };
+hub.io.pins[43].smart.rx_mode = .{ .virtual = &source };
 ```
 
-Writer adapters truncate to a byte; Reader adapters promote a byte to a 32-bit
-word. Callback endpoints preserve all 32 bits. A callback source returns `null`
-when no word is available. Readers consume only already buffered bytes: the host
-must refill them outside simulation steps. Keep endpoints and their backing
-objects alive while attached. Sink/source errors stop execution with pin and
-instruction provenance.
+Writer adapters truncate completed words to a byte; Reader adapters promote a byte
+to a word. Callback endpoints preserve all 32 bits. A source returns `null` when no
+word is available. Readers consume only buffered bytes; the host owns refill and
+EOF handling outside simulation steps. Keep descriptors and their backing objects
+alive while attached. Endpoint errors stop execution with pin and instruction provenance.
+No external process or library is needed to use the endpoint API.
 
-Endpoints attach to the smart engine and bypass physical routing and serial
-encoding/decoding. USART deliberately transfers whole words without modelling B
-clock edges: TX sends on a pin update, RX takes an available word and holds it
-until acknowledgement. UART uses frame timing, but active TX pads are unknown
-(`x`), rather than a generated serial waveform. The server and test harness
-attach their input Reader to P63; CLI/server/test runners attach their output
-Writer to P62. IO has no default terminal endpoints or terminal queue. The server
-refills its Reader from the WebSocket input queue outside simulation steps,
-and the test harness attaches its fixed input after the readiness marker.
-UART receive timing comes from the smart pin's X register for every source.
-The P2AAS baudrate query remains accepted for protocol compatibility; the
-simulator does not apply a separate host baud override.
+Timed receivers share their bit state between exact and emulated operation. Switching
+between those modes preserves the partial shift register, receive position and baud
+phase. On an exact-to-emulated handoff, the next source value is the **whole current
+word**, including bits already received. It stays unmasked until completion, so a
+later WXPIN can extend the word. A staged source word survives endpoint replacement
+and an intervening exact interval; the next completed word releases it. An empty
+emulated source supplies no new word; a partially received emulated word waits for
+its source data rather than inventing samples. USART never synthesizes a B clock.
 
-`windtunnel --fast-io` (also available with `--serve`) ignores UART baud periods:
-TX completes one clock after accepting a word and can complete one word on every
-clock. RX transfers an available word on a pin update and holds it until acknowledged,
-so queued host input is not overwritten before the cog reads it. Width masking,
-MSB justification, DIR reset, endpoints and their errors still apply, including
-when the configured baud period is zero. USART already uses this endpoint
-throughput. This mode changes serial timing, not cog execution, smart-pin command
-delivery, pad sampling delays, or explicit waits in the program. Set
-`hub.io.fast_io = true` when embedding the simulator. Clocked behavior remains
-the default.
+UART validates the start bit, then samples LSB first with a live integer/fractional
+baud divider. USART samples the previous or coincident A value on positive B edges
+according to X[5]; WRPIN inversion also supports the opposite clock edge. Receive
+width changes take effect during the word. Divider changes affect subsequent UART
+reloads while retaining the current interval and fractional remainder. Shortening
+below the current count can stall reception until reset. Timed reception overwrites
+unread results; virtual reception waits for ACK. RX results are MSB justified and
+unused low bits can contain earlier samples, including across DIR reset.
+
+UART TX has a shifter and one pending word, start/data/stop signals, an IN indication
+when the pending word advances, and busy in C through the stop bit. USART TX uses
+routed B edges and supports continuous or start/stop buffering and reset-time priming.
+Its output crosses the registered smart-output path. Serial TX shifters feed routed
+A samples into their high bits, which is visible through RQPIN; UART exposes its
+running shifter and USART latches a result at word boundaries. Both emulated TX
+engines deliver completed, width-masked payloads to their current sink. Aborted words
+produce no sink delivery. Virtual TX generates the protocol reset level (UART high,
+USART low); the ordinary SmartOut propagation, WRPIN output selection and electrical
+resolution still apply. Selecting virtual mode does not flush queued output transitions.
+
+Apply host mode changes between simulation clocks. Entering virtual mode aborts
+partial transfers and pending TX data. Returning from virtual starts fresh timed
+state. Host mode changes preserve completed RX Z/IN; subsequent timed reception retains its normal overwrite behavior. WRPIN
+preserves host selections, and same-mode serial WRPIN preserves active logic.
+DIR reset aborts private transfers and clears IN while retaining Z; receivers also
+retain their sampled shift register. COGSTOP clears that cog's DIR contributions;
+other enabled cogs can keep a pin running. Runners do not drain pending output after
+shutdown or a fixture checkpoint, so programs must wait for required TX completion.
+
+CLI/server/test runners explicitly attach terminal output to P62. The server attaches
+its receive Reader to P63 and refills it from the WebSocket queue outside simulation
+steps. The test harness attaches input after its readiness marker. The P2AAS baudrate
+query does not override smart-pin X timing.
+
+`windtunnel --fast-io`, including server mode, selects virtual terminal transfers on
+P62/P63 only. It preserves cog execution, routing, command delays and explicit waits.
+Other pins keep their independently selected modes. Embedded users select the tagged
+unions directly; there is no global `IO.fast_io`. Fixtures can retain timed terminal
+behavior with `fast-io: off "reason"`. [Serial hardware validation](../../data/timing-data/serial-smart-pins/README.md)
+records the measured limits and reproducible checks.
 
 ## Digital pads and timing
 
@@ -106,8 +149,9 @@ the default.
 `z`). Pads resolve internal and external drives, including floating drive modes
 and contention. A/B selectors route local/relative pads or the gated OUT bit;
 inversion, digital A/B logic, feedback and optional synchronization are modelled.
-Digital and Schmitt modes use digital levels; analog behaviour, input filters,
-DAC/scope instructions and remaining smart modes are explicitly unsupported.
+Digital and Schmitt modes use digital levels. The 2/3/5/8-sample unanimous input
+filters and their selectable clock taps feed both GPIO and smart engines. Analog
+behavior, DAC/scope instructions, ADC and USB smart modes remain unsupported.
 Boolean IN samples `x` and `z` as zero.
 
 Commands distinguish configuration, X/Y writes and acknowledgement. Commands
@@ -117,12 +161,44 @@ The shared return pipeline makes repository X-to-Z and acknowledgement observabl
 after four clocks, and the repository's IN indication after five. Repository Z
 survives DIR reset; X writes while held reset update X without changing Z.
 
-GPIO drive changes occur five clocks after instruction execution. Input sampling
-adds the documented latency: the first changed TESTP result is at instruction
-spacing nine clocks, and an INA/INB operand at ten. These timings, command
-collisions and per-cog output gating were measured on hardware. The 82 probes and
+GPIO loopback timing depends on frequency. The model places drive changes four
+clocks after execution below 170 MHz, or five at higher frequencies. The first
+changed TESTP result is at instruction spacing eight/nine clocks respectively,
+and an INA/INB operand at nine/ten. The original sweep was stable through 167 MHz and from
+170 MHz. A later sweep with a different PLL divider and pad load crossed earlier
+at 166/167 MHz; 168/169 MHz also produced mixed samples. The frequency-only model
+retains 170 MHz as its deterministic boundary. It does not model electrical jitter
+or PLL-divider/load-dependent transitions within that intermediate band. The
+loopback measurements do not distinguish output propagation from input propagation.
+These timings, command collisions and per-cog output gating were measured on hardware. The 82 probes and
 eight phase captures are in `data/timing-data/smart-pin-{cases,results}.yaml`;
 the matching simulator/hardware checklist is `state/smart-pin-hardware.propan`.
+The [frequency sweep](../../data/timing-data/serial-boot/gpio-frequency.json)
+retains both boundary samples and probe sources. The current 82-probe captures
+use RCFAST; the earlier five-clock drive model was derived at 200 MHz.
+The selected SmartOut/OTHER signal crosses a common registered output pipeline
+in every mode. GPIO's SmartOut forwards the registered cog OUT bus; output-generating
+engines publish through their output register. Both registrations live in `SmartPin`,
+remain clocked across WRPIN changes, and feed the same I/O forwarding path. The model
+assigns two clocks to cog OUT transport, one to output-engine publication, and a
+common one/two-clock pad path below/at-or-above 170 MHz. This decomposition reproduces
+the measured instruction-visible boundaries; it does not identify exact physical
+register placement. DIR reaches the output gate separately.
+WRPIN changes selection without resetting or filling the pipeline, and virtual TX
+uses the same path. Immediate GPIO-to-UART and UART-to-GPIO selection boundaries
+were measured at RCFAST and 200 MHz; the retained `output-selection.propan` probe
+contains 36 cases and 144 silicon observations in `data/timing-data/serial-smart-pins`.
+Clocked output selection adds a further pipeline, which advances once per frame while selected.
+Reconfiguration while DIR is low and settled is covered by regression. Active
+WRPIN switching of the clocked output mux can expose physical retained-latch
+glitches; their exact transient phase is not modeled. Selectable pin events sample
+one stage earlier than TESTP/INA, including smart completion events and interrupts.
+Smart result reads use the engine's measured return-bus stage, separate from IN.
+NCOs separate the base divider, registered accumulator and physical adder output.
+The accumulator consumes the preceding divider boundary; publication captures
+that registered value at the current boundary when the adder carries. Separate
+DIR samples gate reset and publication. These stages share the ordinary digital
+result return delay; no divider-specific readback rule is used.
 Serial mode timing is functional and has no physical waveform equivalence claim.
 
 ## VCD

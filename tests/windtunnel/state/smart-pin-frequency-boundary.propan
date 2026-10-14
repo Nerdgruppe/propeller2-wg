@@ -1,0 +1,422 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "mhz160-sync0-gap0"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 0
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync0-gap1"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 1
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync0-gap2"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 2
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync0-gap3"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 3
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync0-gap4"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 4
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz160-sync0-gap5"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 5
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz160-sync0-gap6"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 6
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz160-sync0-gap7"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 7
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz160-sync0-gap8"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 0
+//? const: gap = 8
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz160-sync1-gap0"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 0
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync1-gap1"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 1
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync1-gap2"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 2
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync1-gap3"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 3
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync1-gap4"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 4
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync1-gap5"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 5
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz160-sync1-gap6"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 6
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz160-sync1-gap7"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 7
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz160-sync1-gap8"
+//? const: pll = 0
+//? const: clock_mode = 21798907
+//? const: sync = 1
+//? const: gap = 8
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz170-sync0-gap0"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 0
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync0-gap1"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 1
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync0-gap2"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 2
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync0-gap3"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 3
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync0-gap4"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 4
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync0-gap5"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 5
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz170-sync0-gap6"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 6
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz170-sync0-gap7"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 7
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz170-sync0-gap8"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 0
+//? const: gap = 8
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz170-sync1-gap0"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 0
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync1-gap1"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 1
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync1-gap2"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 2
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync1-gap3"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 3
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync1-gap4"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 4
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync1-gap5"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 5
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz170-sync1-gap6"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 6
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz170-sync1-gap7"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 7
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz170-sync1-gap8"
+//? const: pll = 0
+//? const: clock_mode = 21801467
+//? const: sync = 1
+//? const: gap = 8
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz200-sync0-gap0"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 0
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync0-gap1"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 1
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync0-gap2"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 2
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync0-gap3"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 3
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync0-gap4"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 4
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync0-gap5"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 5
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz200-sync0-gap6"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 6
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz200-sync0-gap7"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 7
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz200-sync0-gap8"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 0
+//? const: gap = 8
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz200-sync1-gap0"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 0
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync1-gap1"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 1
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync1-gap2"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 2
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync1-gap3"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 3
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync1-gap4"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 4
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync1-gap5"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 5
+//? post: cog[*].reg[rising] == 0x00000000
+//? post: cog[*].reg[falling] == 0x00000001
+//? run: "mhz200-sync1-gap6"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 6
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz200-sync1-gap7"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 7
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+//? run: "mhz200-sync1-gap8"
+//? const: pll = 0
+//? const: clock_mode = 21809147
+//? const: sync = 1
+//? const: gap = 8
+//? post: cog[*].reg[rising] == 0x00000001
+//? post: cog[*].reg[falling] == 0x00000000
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // A 1 MHz PLL input permits an integer multiplier for each frequency in this sweep.
+                HUBSET  aug(clock_mode & ~3)
+                WAITX   aug(200000)
+                HUBSET  aug(clock_mode)
+                WAITX   64
+                DRVL    40
+                WRPIN   aug(sync << 16),    40
+                WRPIN   aug(0x70000000),    41
+                WAITX   32
+                OUTH    40
+.if gap
+                WAITX   gap
+.endif
+                TESTP   41                      :wc
+                WRC     rising
+                WAITX   32
+                OUTL    40
+.if gap
+                WAITX   gap
+.endif
+                TESTP   41                      :wc
+                WRC     falling
+                DIRL    40
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var rising:     LONG    0
+var falling:    LONG    0
+

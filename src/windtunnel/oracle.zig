@@ -229,11 +229,10 @@ pub fn assemble(
         try source.writer.print("const {s} = {d}\n", .{ constant.name, constant.value });
     }
     try source.writer.print(
-        "const _wt_baudrate = {d}\n" ++
-            "const _wt_target_cog = {d}\n" ++
+        "const _wt_target_cog = {d}\n" ++
             "const _wt_is_oracle = {d}\n" ++
             "const _wt_test_entry = {d}\n",
-        .{ list.baudrate, list.cog, @intFromBool(hardware), entry },
+        .{ list.cog, @intFromBool(hardware), entry },
     );
     try source.writer.print("const _wt_observation_count = {d}\nconst _wt_payload_length = {d}\nconst _wt_extra_length = {d}\nconst _wt_memory_count = {d}\n", .{
         observationCount(observations),

@@ -1,0 +1,182 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode28"
+//? const: pll = 0
+//? const: mode = 28
+//? post: cog[*].reg[complete] == 0xff13579b
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[reset_result] == 0xff13579b
+//? post: cog[*].reg[reset_carry] == 0x00000001
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xff13579b
+//? post: cog[*].reg[reconfigured] == 0xff13579b
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode29"
+//? const: pll = 0
+//? const: mode = 29
+//? post: cog[*].reg[complete] == 0xff000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[reset_result] == 0xff000000
+//? post: cog[*].reg[reset_carry] == 0x00000001
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xff000000
+//? post: cog[*].reg[reconfigured] == 0xff000000
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode30"
+//? const: pll = 0
+//? const: mode = 30
+//? post: cog[*].reg[complete] == 0xffc4d5e6
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[reset_result] == 0xffc4d5e6
+//? post: cog[*].reg[reset_carry] == 0x00000000
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xffc4d5e6
+//? post: cog[*].reg[reconfigured] == 0xffc4d5e6
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode31"
+//? const: pll = 0
+//? const: mode = 31
+//? post: cog[*].reg[complete] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[reset_result] == 0xef000000
+//? post: cog[*].reg[reset_carry] == 0x00000001
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xef000000
+//? post: cog[*].reg[reconfigured] == 0xef000000
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode28"
+//? const: pll = 1
+//? const: mode = 28
+//? post: cog[*].reg[complete] == 0xff13579b
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[reset_result] == 0xff13579b
+//? post: cog[*].reg[reset_carry] == 0x00000001
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xff13579b
+//? post: cog[*].reg[reconfigured] == 0xff13579b
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode29"
+//? const: pll = 1
+//? const: mode = 29
+//? post: cog[*].reg[complete] == 0xff000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[reset_result] == 0xff000000
+//? post: cog[*].reg[reset_carry] == 0x00000001
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xff000000
+//? post: cog[*].reg[reconfigured] == 0xff000000
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode30"
+//? const: pll = 1
+//? const: mode = 30
+//? post: cog[*].reg[complete] == 0xffc4d5e6
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[reset_result] == 0xffc4d5e6
+//? post: cog[*].reg[reset_carry] == 0x00000000
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xffc4d5e6
+//? post: cog[*].reg[reconfigured] == 0xffc4d5e6
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode31"
+//? const: pll = 1
+//? const: mode = 31
+//? post: cog[*].reg[complete] == 0xef000000
+//? post: cog[*].reg[carry] == 0x00000001
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[reset_result] == 0xef000000
+//? post: cog[*].reg[reset_carry] == 0x00000001
+//? post: cog[*].reg[reset_ready] == 0x00000000
+//? post: cog[*].reg[restarted] == 0xef000000
+//? post: cog[*].reg[reconfigured] == 0xef000000
+//? post: cog[*].reg[count] == 0x00000000
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // P3 supplies UART data or a steady synchronous sample; P5 supplies B clocks.
+                DRVH    3
+                DRVL    5
+.if mode == 28 or mode == 30
+                WRPIN   aug(0x71000000 | P_TT_01 | (mode << 1)),    4
+.else
+                WRPIN   aug(0x71000000 | (mode << 1)),              4
+.endif
+                WXPIN   aug((8 << 16) | 7),                         4
+                WYPIN   aug(0x89abcdef),                            4
+                DIRH    4
+                WAITX   32
+.if mode == 31
+                WRPIN   P_TT_01 | P_ASYNC_TX,                       3
+                WXPIN   aug((8 << 16) | 7),                         3
+                WYPIN   aug(0x89abcdef),                            3
+.endif
+.if mode == 30
+                WYPIN   aug(0x89abcdef),                            4
+.endif
+.if mode == 28 or mode == 29
+                MOV     count,                                      8
+clocks:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,                          clocks
+.endif
+                WAITX   200
+                RQPIN   complete,                       4                   :wc
+                WRC     carry
+                TESTP   4                                                   :wc
+                WRC     ready
+                // Hold reset, re-enable, then reconfigure without altering X/Y or the result latch.
+                DIRL    4
+                WAITX   16
+                RQPIN   reset_result,                   4                   :wc
+                WRC     reset_carry
+                TESTP   4                                                   :wc
+                WRC     reset_ready
+                DIRH    4
+                WAITX   16
+                RQPIN   restarted,                      4
+                WRPIN   aug(0x71000000 | (mode << 1)),  4
+                WAITX   16
+                RQPIN   reconfigured,                   4
+                DIRL    3
+                DIRL    4
+                DIRL    5
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var complete:   LONG    0
+var carry:      LONG    0
+var ready:      LONG    0
+var reset_result:
+                LONG    0
+var reset_carry:
+                LONG    0
+var reset_ready:
+                LONG    0
+var restarted:  LONG    0
+var reconfigured:
+                LONG    0
+var count:      LONG    0
+

@@ -1,0 +1,84 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? max-cycles: 3_000_000
+//? timeout-ms: 1000
+
+// One 200 MHz pass for VCD; the capture driver substitutes a bounded repeat count in RAM.
+.cogexec
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                DRVL    0
+                DRVL    3
+                DRVL    5
+                MOV     repeats,    1
+pass:
+                MOV     mode,   4
+next_mode:
+// Marker pulse count identifies the following mode (one pulse for mode 4, etc.).
+                DIRL    4
+                MOV     count,  mode
+                SUB     count,  3
+marker:
+                OUTH    0
+                WAITX   aug(2000)
+                OUTL    0
+                WAITX   aug(2000)
+                DJNZ    count,          marker
+
+                // P3/P5 provide digital A/B feedback; P4 is the only smart output.
+                MOV     configuration,  mode
+                SHL     configuration,  1
+                OR      configuration,  aug(0x71000000 | P_TT_01)
+                WRPIN   configuration,  4
+                MOV     x,              aug(2000)
+                CMP     mode,           4                           :wz
+    if(Z)       OR      x,              aug(1000 << 16)
+                CMP     mode,           8                           :wcz
+    if(!C)      OR      x,              aug(7 << 16)
+                WXPIN   x,              4
+                MOV     y,              35
+                CMP     mode,           6                           :wcz
+    if(!C)      MOV     y,              aug(0x40000000)
+                CMP     mode,           8                           :wcz
+    if(!C)      MOV     y,              3
+                WYPIN   y,              4
+                DIRH    4
+                WYPIN   y,              4
+
+                // Observe SMPS voltage waiting and current cutoff with independent digital gates.
+                CMP     mode,           10                          :wz
+    if(Z)       JMP     feedback
+                WAITX   aug(200000)
+                JMP     done_mode
+feedback:
+                WAITX   aug(60000)
+                OUTH    3
+                WAITX   aug(40000)
+                OUTL    3
+                WAITX   aug(40000)
+                OUTH    5
+                WAITX   aug(30000)
+                OUTL    5
+                WAITX   aug(30000)
+done_mode:
+                ADD     mode,       1
+                CMP     mode,       11      :wz
+    if(!Z)      JMP     next_mode
+                DJNZ    repeats,    pass
+
+                // Release the complete tested bank before leaving the RAM probe.
+                DIRL    aug(0 | (7 << 6))
+                WAITX   16
+_end:
+                COGSTOP 0
+
+var mode:       LONG    0
+var configuration:
+                LONG    0
+var count:      LONG    0
+var repeats:    LONG    0
+var x:          LONG    0
+var y:          LONG    0
+

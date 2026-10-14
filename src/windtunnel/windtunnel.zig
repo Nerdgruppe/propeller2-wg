@@ -24,6 +24,7 @@ pub const SmartPin = smart_pin.SmartPin;
 pub const smart_pin = @import("sim/smart_pin.zig");
 
 const p2aas_server = @import("p2aas_server.zig");
+const serial_boot = @import("serial_boot.zig");
 
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{},
@@ -60,7 +61,7 @@ const CliArgs = struct {
             .serve = "Serve the P2AAS upload and terminal protocol",
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
-            .@"fast-io" = "Transfer UART/USART endpoint words at single-clock throughput",
+            .@"fast-io" = "Use virtual serial transfers on terminal pins P62/P63",
             .image = "The image file which contains the hub data.",
             .vcd = "Export digital signals for an image run (one VCD time unit = one system clock)",
         },
@@ -125,10 +126,13 @@ pub fn main(init: std.process.Init) !u8 {
 
     var hub: Hub = undefined;
     hub.init();
-    hub.io.fast_io = cli.options.@"fast-io";
+    serial_boot.prepare(&hub);
 
     var terminal_sink: smart_pin.DataSink = .{ .live_writer = &stdout.interface };
-    hub.io.pins[62].smart.registers.sink = &terminal_sink;
+    hub.io.pins[62].smart.tx_mode = if (cli.options.@"fast-io")
+        .{ .virtual = &terminal_sink }
+    else
+        .{ .emulated = &terminal_sink };
 
     var trace_buffer: [4096]u8 = undefined;
     var trace = std.Io.File.stderr().writer(init.io, &trace_buffer);

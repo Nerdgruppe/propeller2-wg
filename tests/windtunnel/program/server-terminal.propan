@@ -2,9 +2,9 @@
 //? profile: program
 //? stop: _end
 //? stdin-after: "!"
-//? max-cycles: 30_000_000
+//? max-cycles: 1_000_000
 //? timeout-ms: 1000
-//? baudrate: 115200
+//? baudrate: 2000000
 //? run: "binary terminal packet"
 //? stdin: hex [00 80 ff]
 //? stdout: "!\x00\x80\xff"
@@ -15,16 +15,12 @@
 // A repeatable terminal protocol: announce readiness, then echo three-byte packets.
 // Collect each packet before transmitting so RX does not overrun while TX is busy.
 // The server tests send several packets over one connection; local checks stop after the first.
-const UART_CFG = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
 .cogexec
-                HUBSET  aug(0x0100_09fb)
+                HUBSET  0xF0
                 WRPIN   P_TT_01 | P_ASYNC_TX,   62
-                WXPIN   aug(UART_CFG),          62
                 DIRH    62
                 WRPIN   P_ASYNC_RX,             63
-                WXPIN   aug(UART_CFG),          63
                 DIRH    63
-                WAITX   aug(20_000_000)
                 MOV     PA,                     '!'
                 CALL    write_byte
 main:

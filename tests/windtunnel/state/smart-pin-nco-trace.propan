@@ -1,0 +1,236 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-x1-y1"
+//? const: pll = 0
+//? const: x = 1
+//? const: y = 1
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x00000000
+//? post: cog[*].reg[z3] == 0x00000000
+//? post: cog[*].reg[z4] == 0x00000000
+//? post: cog[*].reg[z5] == 0x00000000
+//? post: cog[*].reg[z6] == 0x00000000
+//? post: cog[*].reg[z7] == 0x00000000
+//? post: cog[*].reg[z8] == 0x00000000
+//? post: cog[*].reg[z9] == 0x00000000
+//? post: cog[*].reg[z10] == 0x00000000
+//? post: cog[*].reg[z11] == 0x00000000
+//? post: cog[*].reg[z12] == 0x00000000
+//? post: cog[*].reg[z13] == 0x00000000
+//? post: cog[*].reg[z14] == 0x00000000
+//? post: cog[*].reg[z15] == 0x00000000
+//? run: "pll0-x1-y40000000"
+//? const: pll = 0
+//? const: x = 1
+//? const: y = 1073741824
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x00000000
+//? post: cog[*].reg[z3] == 0x00000000
+//? post: cog[*].reg[z4] == 0x00000000
+//? post: cog[*].reg[z5] == 0x00000000
+//? post: cog[*].reg[z6] == 0x00000000
+//? post: cog[*].reg[z7] == 0x00000000
+//? post: cog[*].reg[z8] == 0x00000000
+//? post: cog[*].reg[z9] == 0x00000000
+//? post: cog[*].reg[z10] == 0x00000000
+//? post: cog[*].reg[z11] == 0x00000000
+//? post: cog[*].reg[z12] == 0x00000000
+//? post: cog[*].reg[z13] == 0x00000000
+//? post: cog[*].reg[z14] == 0x00000000
+//? post: cog[*].reg[z15] == 0x00000000
+//? run: "pll0-x1-y87654321"
+//? const: pll = 0
+//? const: x = 1
+//? const: y = 2271560481
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x0eca8642
+//? post: cog[*].reg[z3] == 0x1d950c84
+//? post: cog[*].reg[z4] == 0x2c5f92c6
+//? post: cog[*].reg[z5] == 0x3b2a1908
+//? post: cog[*].reg[z6] == 0x49f49f4a
+//? post: cog[*].reg[z7] == 0x58bf258c
+//? post: cog[*].reg[z8] == 0x6789abce
+//? post: cog[*].reg[z9] == 0x76543210
+//? post: cog[*].reg[z10] == 0x851eb852
+//? post: cog[*].reg[z11] == 0x0c83fb73
+//? post: cog[*].reg[z12] == 0x1b4e81b5
+//? post: cog[*].reg[z13] == 0x2a1907f7
+//? post: cog[*].reg[z14] == 0x38e38e39
+//? post: cog[*].reg[z15] == 0x47ae147b
+//? run: "pll0-x3-y1"
+//? const: pll = 0
+//? const: x = 3
+//? const: y = 1
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x00000000
+//? post: cog[*].reg[z3] == 0x00000000
+//? post: cog[*].reg[z4] == 0x00000000
+//? post: cog[*].reg[z5] == 0x00000000
+//? post: cog[*].reg[z6] == 0x00000000
+//? post: cog[*].reg[z7] == 0x00000000
+//? post: cog[*].reg[z8] == 0x00000000
+//? post: cog[*].reg[z9] == 0x00000000
+//? post: cog[*].reg[z10] == 0x00000000
+//? post: cog[*].reg[z11] == 0x00000000
+//? post: cog[*].reg[z12] == 0x00000000
+//? post: cog[*].reg[z13] == 0x00000000
+//? post: cog[*].reg[z14] == 0x00000000
+//? post: cog[*].reg[z15] == 0x00000000
+//? run: "pll0-x3-y40000000"
+//? const: pll = 0
+//? const: x = 3
+//? const: y = 1073741824
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x00000000
+//? post: cog[*].reg[z3] == 0x00000000
+//? post: cog[*].reg[z4] == 0x00000000
+//? post: cog[*].reg[z5] == 0x00000000
+//? post: cog[*].reg[z6] == 0x00000000
+//? post: cog[*].reg[z7] == 0xc0000000
+//? post: cog[*].reg[z8] == 0xc0000000
+//? post: cog[*].reg[z9] == 0xc0000000
+//? post: cog[*].reg[z10] == 0xc0000000
+//? post: cog[*].reg[z11] == 0xc0000000
+//? post: cog[*].reg[z12] == 0xc0000000
+//? post: cog[*].reg[z13] == 0xc0000000
+//? post: cog[*].reg[z14] == 0xc0000000
+//? post: cog[*].reg[z15] == 0xc0000000
+//? run: "pll0-x3-y87654321"
+//? const: pll = 0
+//? const: x = 3
+//? const: y = 2271560481
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x00000000
+//? post: cog[*].reg[z3] == 0x00000000
+//? post: cog[*].reg[z4] == 0x87654321
+//? post: cog[*].reg[z5] == 0x87654321
+//? post: cog[*].reg[z6] == 0x87654321
+//? post: cog[*].reg[z7] == 0x962fc963
+//? post: cog[*].reg[z8] == 0x962fc963
+//? post: cog[*].reg[z9] == 0x962fc963
+//? post: cog[*].reg[z10] == 0xa4fa4fa5
+//? post: cog[*].reg[z11] == 0xa4fa4fa5
+//? post: cog[*].reg[z12] == 0xa4fa4fa5
+//? post: cog[*].reg[z13] == 0xb3c4d5e7
+//? post: cog[*].reg[z14] == 0xb3c4d5e7
+//? post: cog[*].reg[z15] == 0xb3c4d5e7
+//? run: "pll0-x12340001-y1"
+//? const: pll = 0
+//? const: x = 305397761
+//? const: y = 1
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x00000000
+//? post: cog[*].reg[z3] == 0x00000000
+//? post: cog[*].reg[z4] == 0x00000000
+//? post: cog[*].reg[z5] == 0x00000000
+//? post: cog[*].reg[z6] == 0x00000000
+//? post: cog[*].reg[z7] == 0x00000000
+//? post: cog[*].reg[z8] == 0x00000000
+//? post: cog[*].reg[z9] == 0x00000000
+//? post: cog[*].reg[z10] == 0x00000000
+//? post: cog[*].reg[z11] == 0x00000000
+//? post: cog[*].reg[z12] == 0x00000000
+//? post: cog[*].reg[z13] == 0x00000000
+//? post: cog[*].reg[z14] == 0x00000000
+//? post: cog[*].reg[z15] == 0x00000000
+//? run: "pll0-x12340001-y40000000"
+//? const: pll = 0
+//? const: x = 305397761
+//? const: y = 1073741824
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x00000000
+//? post: cog[*].reg[z3] == 0x12340000
+//? post: cog[*].reg[z4] == 0x12340000
+//? post: cog[*].reg[z5] == 0x12340000
+//? post: cog[*].reg[z6] == 0x12340000
+//? post: cog[*].reg[z7] == 0x12340000
+//? post: cog[*].reg[z8] == 0x12340000
+//? post: cog[*].reg[z9] == 0x12340000
+//? post: cog[*].reg[z10] == 0x12340000
+//? post: cog[*].reg[z11] == 0x12340000
+//? post: cog[*].reg[z12] == 0x12340000
+//? post: cog[*].reg[z13] == 0x12340000
+//? post: cog[*].reg[z14] == 0x12340000
+//? post: cog[*].reg[z15] == 0x12340000
+//? run: "pll0-x12340001-y87654321"
+//? const: pll = 0
+//? const: x = 305397761
+//? const: y = 2271560481
+//? post: cog[*].reg[z0] == 0x00000000
+//? post: cog[*].reg[z1] == 0x00000000
+//? post: cog[*].reg[z2] == 0x20fe8642
+//? post: cog[*].reg[z3] == 0x2fc90c84
+//? post: cog[*].reg[z4] == 0x3e9392c6
+//? post: cog[*].reg[z5] == 0x4d5e1908
+//? post: cog[*].reg[z6] == 0x5c289f4a
+//? post: cog[*].reg[z7] == 0x6af3258c
+//? post: cog[*].reg[z8] == 0x79bdabce
+//? post: cog[*].reg[z9] == 0x0122eeef
+//? post: cog[*].reg[z10] == 0x0fed7531
+//? post: cog[*].reg[z11] == 0x1eb7fb73
+//? post: cog[*].reg[z12] == 0x2d8281b5
+//? post: cog[*].reg[z13] == 0x3c4d07f7
+//? post: cog[*].reg[z14] == 0x4b178e39
+//? post: cog[*].reg[z15] == 0x59e2147b
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                WRPIN   12,     4
+                WXPIN   aug(x), 4
+                DIRH    4
+                WYPIN   aug(y), 4
+                RQPIN   z0,     4
+                RQPIN   z1,     4
+                RQPIN   z2,     4
+                RQPIN   z3,     4
+                RQPIN   z4,     4
+                RQPIN   z5,     4
+                RQPIN   z6,     4
+                RQPIN   z7,     4
+                RQPIN   z8,     4
+                RQPIN   z9,     4
+                RQPIN   z10,    4
+                RQPIN   z11,    4
+                RQPIN   z12,    4
+                RQPIN   z13,    4
+                RQPIN   z14,    4
+                RQPIN   z15,    4
+                DIRL    4
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var z0:         LONG    0
+var z1:         LONG    0
+var z2:         LONG    0
+var z3:         LONG    0
+var z4:         LONG    0
+var z5:         LONG    0
+var z6:         LONG    0
+var z7:         LONG    0
+var z8:         LONG    0
+var z9:         LONG    0
+var z10:        LONG    0
+var z11:        LONG    0
+var z12:        LONG    0
+var z13:        LONG    0
+var z14:        LONG    0
+var z15:        LONG    0
+

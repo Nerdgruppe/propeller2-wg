@@ -1010,3 +1010,216 @@ The same latency model matches rising/falling traces across the tested lengths
 and taps. WAITCT1 can resume the probe four clocks later; long-tap traces normalize
 that observed CT phase before comparison rather than assuming a fixed wakeup. Tap 31 and counter rollover are checked synthetically; no multi-second
 silicon capture of the highest tap periods is claimed.
+
+## RCFAST UART without startup waits (2026-10-13)
+
+`HUBSET #$F0` selects RCFAST, the boot clock source. RCFAST is specified as
+20 MHz or higher, so assuming exactly 20 MHz for a UART divisor is insufficient.
+The [ROM loader](p2/bootrom/bootrom.spin2) calibrates TX pin 62's X register
+against the host's serial timing. Before launching the image, its `reset_pins`
+routine clears DIR and WRPIN modes but leaves that calibrated X register intact.
+Hardware confirms that restoring asynchronous TX mode without WXPIN reuses the
+calibration successfully while the clock remains on RCFAST.
+
+[hello-world-no-pll.propan](../examples/hello-world-no-pll.propan) keeps `$F0`,
+restores TX mode, and sends immediately using that inherited divider. It contains
+no WAITX, requires neither a crystal nor the PLL, and polls RQPIN's busy flag
+before each byte and after the last stop bit. This version requires ROM serial
+loading and a receiver that stays at the upload baud rate. P2AAS uses 2 Mbaud for
+uploads, so request `baudrate=2000000`. Other upload rates can also be inherited;
+SPI/SD boot does not provide this serial calibration.
+
+Matching the upload baud removes a host baud-change race. An earlier crystal
+probe at 115,200 baud, without its 250 ms host startup wait, captured complete
+output in 10/10 runs with 1,000,000 RCFAST settling clocks and 10/10 with 600,000,
+but only 6/10 with 300,000 and 6/10 with 150,000. The failed captures contained
+corrupted bytes. Matching 2 Mbaud avoids that change instead of estimating a
+safe host delay.
+
+The final RCFAST example captured exactly the 14 bytes `Hello world!\r\n` in
+100 consecutive reset/upload runs through `ws://localhost:12880/`, with no
+missing or extra bytes. The focused simulator regression in `test_suite.zig`
+seeds the ROM handoff's X register with three different integer/fractional baud
+dividers and verifies preservation, complete output, `$F0`, and final drain.
+Loaded images now receive that nominal serial-ROM handoff in the fixture runner,
+CLI, and simulator server: `$F0`, cleared modes/DIR, and X=`$000A0007` on RX/TX.
+Raw `Hub.init` still models hardware reset. The shared oracle and program fixtures
+retain those dividers and need no initial WAITX. UART drains poll busy instead of
+assuming a frame duration. The timing-data fixture preserves its original DUT
+origin (`$2C`), since shifting the source image changes COGINIT loading latency.
+Tools were built with `zig-0.16.0`. Recheck with:
+
+```sh
+zig-0.16.0 build test-windtunnel-unit -Doptimize=ReleaseFast -Dcoverage=false
+zig-out/bin/windtunnel-tests --oracle data/timing-data/hello-world-no-pll.propan
+```
+
+During this refactor, `debug-context.propan` produced only its first expected
+long followed by zeros on silicon. The same result occurred with its original
+200 MHz PLL/115,200-baud setup and a conservative 100 ms UART wait, and with
+RCFAST/2 Mbaud using explicit cog-completion polling. Thus the discrepancy
+predates the UART change; its exact debugger semantics remain unresolved. The
+fixture retains its simulator assertions and explicitly disables hardware
+comparison. [Both sources and measured byte streams](../data/timing-data/serial-boot/debug-context.json)
+are retained for follow-up.
+
+The RCFAST conversion exposed two GPIO boundary expectations derived at 200 MHz:
+`OUTL; WAITX 4; TESTP` and `OUTL; WAITX 5; MOV INB` now observe the new low level.
+Both were low across all eight phases and ten repeated uploads. A separate
+PLL sweep found both old high samples stable at 170, 180 and 200 MHz, and both
+new low samples stable at 40, 80, 100, 120, 140, 160, 165, 166 and 167 MHz.
+Samples at 168 and 169 MHz varied. These are loopback measurements; they do not
+separate physical output and input propagation. The simulator represents the
+stable bands with an effective GPIO drive edge at execution+4 below 170 MHz,
+or +5 at/above 170 MHz, and chooses the earlier deterministic edge in the marginal band.
+[Sources and all frequency-sweep samples](../data/timing-data/serial-boot/gpio-frequency.json)
+are retained; the 82 timing cases/results now use RCFAST expectations.
+
+Final validation used `zig-0.16.0` ReleaseFast: all 2,564 registered fixture runs
+passed, with 309 unit tests passed and two skipped. Hardware comparisons passed
+163 cog/pipeline/input runs, 82 smart-pin runs, and 51 program runs. The 11
+instruction-timing probes, all 82 eight-phase smart-pin timing probes, and the
+terminal/full-size-loader protocol checks also passed at 2 Mbaud.
+
+## Bench wiring verification
+
+On 2026-10-13, the two-board bench passed slow GPIO continuity and mapping
+checks: Logic 16 channels 0–7 map to the P2AAS board's P0–P7, and channels
+8–15 map to P32–P39. P8–P15 connect in order between that board and the
+Parallax P2-EVAL with serial ID `PLX6ZJKWX`; all 256 byte patterns matched
+in both directions using 1.5 kOhm drive and a 150 kOhm receiver pulldown.
+The analyzer mapping matched three walking-one/walking-zero frames at
+500 kS/s. These establish slow digital connectivity, not high-speed signal
+integrity. [Probe sources and captured evidence](../data/timing-data/wiring-check/README.md)
+are retained for repeat checks.
+
+
+## Digital smart pins: measured engine and return-bus behavior
+
+The 2026-10-13/14 two-board validation covers all twenty digital modes (4–23)
+at RCFAST and 200 MHz. [Sources and raw observations](../data/timing-data/digital-smart-pins/README.md)
+retain run constants, source/image hashes, register offsets and reporter frames.
+The following details matter when separating a smart engine from its physical pad:
+
+- Pulse/transition base dividers include an extra startup clock. Y requests are
+  accepted after the current divider boundary. Transition Z reports the parity
+  of the completed Y request, which can differ from the physical output level
+  after successive requests.
+- NCO Z is an overflow publication bus, not a continuously readable accumulator.
+  Without publication, earlier Z remains visible. A single arithmetic operation
+  per base boundary does not explain short-divider readback and reset retention.
+  The model derived from consecutive reads and waveform samples separates the
+  base counter, registered accumulator, physical adder output and result latch.
+  The accumulator consumes the preceding divider boundary; carry publication at
+  the current boundary captures that registered value. DIR sampling gates these
+  paths separately. Phase writes replace the high sixteen accumulator bits.
+- PWM duty is captured at frame boundaries. Z duplicates the frame-length field
+  in both halves. Reducing an active sawtooth frame below its current position
+  does not cause an immediate boundary: the equality comparator must be reached
+  after wrapping the sixteen-bit position. SMPS A stalls the next frame and B
+  inhibits the remainder of the current frame.
+- Gated/up-down rise counters use the preceding sampled B at an A rise. Continuous
+  counter Z precedes the current adder update. Window completion carries the
+  boundary event into the next window. Count arithmetic wraps through 32 bits;
+  duration measurements saturate at 0x80000000. State-duration C is the completed
+  state, independently of the result sign bit.
+- X=0 means a full 2^32 count/window for fixed-period and minimum-window modes,
+  rather than an immediate completion. These long limits are exercised with
+  synthetic engine state, not a claimed 2^32-clock hardware capture.
+- Selectable pin events see an input stage one clock fresher than TESTP/INA. Clear
+  SETSE and consume the pending event before measuring a new rising-edge source;
+  otherwise a loader-era notification can satisfy WAITSE immediately.
+
+The stable RCFAST/200 MHz acceptance bands do not establish exact electrical
+behavior at every PLL setting. With a 1 MHz PLL reference and the analyzer removed
+from P40, later GPIO sweeps already showed the longer path at 166/167 MHz. The
+frequency-only 170 MHz simulation boundary remains an approximation. Changing
+clocked output selection with DIR high can expose one-clock physical latch
+transients; exact transient phase is not modeled. Configure with DIR low and
+allow the pipelines to settle for deterministic comparisons.
+
+
+Final software validation with `zig-0.16.0` passed all 3,718 registered runs,
+323 unit tests (two skipped), and 220 Debug harness/debugger tests. The final
+physical-pin VCD matched 368 three-channel frames at 100 MS/s and 552 four-channel
+frames at 50 MS/s within two samples, after independent GPIO-marker calibration.
+The external board checks passed 276 observations. The optional NCO first-completion probe then expired its requested one-second
+runtime allowance. That close was initially misclassified as shared quota exhaustion;
+the configured P2AAS allowance is 60 seconds per run. The additional ten-repeat
+campaign and optional NCO first-completion measurement were not collected. Those are explicitly uncollected; saved silicon
+traces cover the final NCO return-bus corrections. The evidence manifest records
+this boundary rather than claiming fresh post-correction uploads.
+
+
+## Serial smart pins: live configuration and retained state (2026-10-14)
+
+An additional 36-case GPIO-to-idle-UART-to-GPIO probe (144 observations) checks
+immediate WRPIN output selection at RCFAST and 200 MHz. With cog OUT already high,
+selecting UART TX without WYPIN keeps the observed pad high. With OUT low, the first
+high TESTP sample follows `WAITX 4` at RCFAST or `WAITX 5` at 200 MHz; the preceding
+offset still reads low. Returning to GPIO with OUT low first reads low after
+`WAITX 3` or `WAITX 4`, respectively. GPIO OUT remains unchanged throughout.
+These are instruction-visible boundaries, including input sampling; they establish
+delayed selection in both directions without proving an exact physical pipeline
+topology. Filling an output queue with UART's idle level on WRPIN is not justified
+by these measurements. Sources, original images and snapshots are retained in
+`data/timing-data/serial-smart-pins/output-selection.propan` and
+`evidence/output-selection.{json,tar.gz}` in that directory.
+
+The UART/USART campaign uses primary P2AAS exclusively and the independently
+clocked secondary on the existing P8–P15 wiring. The retained sources, checksummed
+native register snapshots and analyzer captures are in
+[data/timing-data/serial-smart-pins](../data/timing-data/serial-smart-pins/README.md).
+These are measured properties, including undocumented behavior relevant to RMII:
+
+- Both RX engines compare the live X word-length field during reception. Extending
+  4 to 8 or 8 to 16 bits retains already shifted data; shortening before the new
+  terminal count completes at that count. Shortening below the current count stalls
+  in the tested long streams: over 64 synchronous edges and over 5,000 UART clocks
+  did not produce completion. Reset recovers reception.
+- UART's live length comparison remains open after the nominal final data sample,
+  through the following bit interval before Z capture. Extending eight to sixteen
+  bits in that interval still produces the original sixteen-bit word. Single-clock
+  writes around the capture boundary distinguish this from committing the length
+  at the last sample or waiting until the delayed IN publication.
+- UART divider writes alter a running reception without restarting the current
+  interval. Subsequent reloads use the new divider. The retained 64-to-32 and
+  64-to-128 captures distinguish these cases from fixed whole-frame deadlines.
+- RX Z and the underlying 32-bit shift register survive DIR reset. With synchronous
+  eight-bit all-one words separated by reset, Z progresses from `0xff000000` to
+  `0xffff0000`. UART's second such word is `0xff7fc000`, exposing intervening
+  start/stop samples. Only the configured high bits constitute the current word.
+- Same-mode WRPIN during a partial synchronous or asynchronous word preserves
+  receive state while acknowledging IN. A mode-only host configuration must not
+  silently reset reception on those writes.
+- USART X[5] selects the preceding or coincident A sample relative to registered B.
+  Output buffering differs between continuous and start/stop modes. During reset
+  the Y buffer primes the shifter; re-enabling after a partial word restores its
+  initial buffered bit without another WYPIN. UART WYPIN while held reset does
+  not queue a transmission.
+- TX shifts routed A back into the high bits of its serial shifter. RQPIN exposes
+  the running UART shifter, including an unfinished frame retained on reset;
+  USART captures the pre-final-shift word at the word boundary. A forced-high A
+  source distinguishes this from rotating the transmitted payload.
+- Buffered UART words retain the fractional baud phase across the stop/start
+  boundary. Quarter-clock and half-clock periods with odd/even word widths
+  distinguish continuous phase from restarting a rounded frame deadline.
+- USART TX/RX loopback at clock/2, clock/4 and clock/8 matches the on-chip captures
+  at both RCFAST and 200 MHz, with both X[5] receive positions and 8/16/32-bit words.
+  These fast checks use NCO-generated clocks and register observations, not the
+  bandwidth-limited analyzer.
+- UART busy is separate from Z's sign and clears in reset even when retained Z
+  has bit 31 set. IN acknowledges buffer-to-shifter movement, not TX completion.
+  UART receive-ready publication and selectable events have measured pipeline
+  delays; the eight-phase fixture fixes their instruction-visible boundaries.
+- Fractional UART periods apply only below 64 integer clocks. The campaign covers
+  periods 3, 4, 5, 7.25, 7.5, 63.5, 64.5 (fraction ignored), and 65,535 clocks. At the
+  minimum period, idle sampling can populate the unused low receive bits; tests
+  retain the observed `0xef3fffff` result instead of assuming zero padding.
+
+The independent-board checks cover all 1–32-bit UART/USART widths and a live
+8-to-16-bit receive extension. The clone analyzer uses four channels at 50 MS/s;
+500 complete UART/USART frames match the simulated physical pin edges within two
+samples, using independent GPIO markers to calibrate clock scale. Fast serial
+behavior is additionally checked on-chip rather than inferred from overloaded
+analyzer captures.

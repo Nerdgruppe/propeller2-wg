@@ -1660,13 +1660,9 @@ pub fn configure_selectable(cog: *Cog, event: EventId, value: u32) void {
     cog.events.remove(event);
 }
 
-/// Read a selected cog-local INA/INB bit, independently of physical pad routing.
+/// Read the selected event-bus input, one sample ahead of the architectural IN registers.
 fn read_input_bit(cog: *Cog, pin: PinIndex) bool {
-    const index = @intFromEnum(pin);
-    return cog.read_reg(if (index < 32)
-        .INA
-    else
-        .INB) & (@as(u32, 1) << @as(u5, @truncate(index))) != 0;
+    return cog.hub.io.eventInput(pin);
 }
 
 /// Consume one CORDIC word, wait for pending work, or signal an empty read while retaining its value.
@@ -2574,6 +2570,8 @@ test "selectable pin sensors sample every architectural input with independent e
                     mask
                 else
                     ~mask;
+                // Hold the synthetic level through both the event and architectural sampling stages.
+                hub.io.samples.inputs = @splat(hub.io.samples.input_registers);
                 cog.step();
                 for ([_]EventId{ .SE1, .SE2, .SE3, .SE4 }) |event| {
                     try std.testing.expectEqual(expected, cog.events.contains(event));
@@ -2582,6 +2580,7 @@ test "selectable pin sensors sample every architectural input with independent e
             }
             // Selecting another, already-high input establishes a fresh edge baseline.
             hub.io.samples.input_registers = ~mask;
+            hub.io.samples.inputs = @splat(~mask);
             const neighbor = @as(u6, @intCast(index)) +% 1;
             cog.configure_selectable(.SE1, 0x40 | @as(u9, neighbor));
             cog.step();

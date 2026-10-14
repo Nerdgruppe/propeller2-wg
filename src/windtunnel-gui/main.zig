@@ -866,7 +866,7 @@ const GUI = struct {
                     io.samples.results[i][id].flag,
                 });
             }
-            show("GPIO delivery", io.gpio);
+            show("DIR delivery", io.direction_pipeline);
             signalText("Synchronous OUT", io.sync_out[id]);
             signalText("Synchronous IN", io.sync_in[id]);
         }

@@ -1,0 +1,151 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode29-rewrite0"
+//? const: pll = 0
+//? const: mode = 29
+//? const: rewrite = 0
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xffff0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode29-rewrite1"
+//? const: pll = 0
+//? const: mode = 29
+//? const: rewrite = 1
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xffff0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode31-rewrite0"
+//? const: pll = 0
+//? const: mode = 31
+//? const: rewrite = 0
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xff7fc000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode31-rewrite1"
+//? const: pll = 0
+//? const: mode = 31
+//? const: rewrite = 1
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xff7fc000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode29-rewrite0"
+//? const: pll = 1
+//? const: mode = 29
+//? const: rewrite = 0
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xffff0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode29-rewrite1"
+//? const: pll = 1
+//? const: mode = 29
+//? const: rewrite = 1
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xffff0000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode31-rewrite0"
+//? const: pll = 1
+//? const: mode = 31
+//? const: rewrite = 0
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xff7fc000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll1-mode31-rewrite1"
+//? const: pll = 1
+//? const: mode = 31
+//? const: rewrite = 1
+//? post: cog[*].reg[first_result] == 0xff000000
+//? post: cog[*].reg[second_result] == 0xff7fc000
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // Receive two identical words with a DIR reset between them; optionally rewrite the active mux.
+                DRVH    3
+                DRVL    5
+                WRPIN   aug(0x71000000 | (mode << 1)),  4
+                WXPIN   aug((32 << 16) | 7),            4
+                DIRH    4
+                WAITX   32
+.if mode == 31
+                WRPIN   P_TT_01 | P_ASYNC_TX,           3
+                WXPIN   aug((32 << 16) | 7),            3
+                WYPIN   0xff,                           3
+                WAITX   400
+.else
+                MOV     count,                          8
+first:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,                          first
+.endif
+                RQPIN   first_result,                   4
+                DIRL    4
+                WAITX   32
+                DIRH    4
+                WAITX   32
+.if mode == 31
+                WYPIN   0xff,                           3
+                WAITX   128
+.if rewrite
+                WRPIN   aug(0x71000000 | (mode << 1)),  4
+.endif
+                WAITX   400
+.else
+                MOV     count,                          4
+second_a:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,                          second_a
+.if rewrite
+                WRPIN   aug(0x71000000 | (mode << 1)),  4
+.endif
+                MOV     count,                          4
+second_b:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,          second_b
+.endif
+                RQPIN   second_result,  4
+                TESTP   4                                   :wc
+                WRC     ready
+                DIRL    3
+                DIRL    4
+                DIRL    5
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var first_result:
+                LONG    0
+var second_result:
+                LONG    0
+var ready:      LONG    0
+var count:      LONG    0
+

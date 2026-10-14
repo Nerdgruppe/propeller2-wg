@@ -1,0 +1,497 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode4-phase0"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode4-phase1"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode4-phase2"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode4-phase3"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode4-phase4"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode4-phase5"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode4-phase6"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode4-phase7"
+//? const: pll = 0
+//? const: mode = 4
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0x0000002a
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase0"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0x0000001b
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase1"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0x0000001b
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase2"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase3"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase4"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase5"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase6"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll0-mode5-phase7"
+//? const: pll = 0
+//? const: mode = 5
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase0"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase1"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase2"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase3"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase4"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase5"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase6"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode4-phase7"
+//? const: pll = 1
+//? const: mode = 4
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0x0000002a
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000000
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase0"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 0
+//? post: cog[*].reg[elapsed] == 0x0000001b
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase1"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 1
+//? post: cog[*].reg[elapsed] == 0x0000001b
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase2"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 2
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase3"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 3
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase4"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 4
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase5"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 5
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase6"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 6
+//? post: cog[*].reg[elapsed] == 0x00000020
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+//? run: "pll1-mode5-phase7"
+//? const: pll = 1
+//? const: mode = 5
+//? const: phase = 7
+//? post: cog[*].reg[elapsed] == 0x00000025
+//? post: cog[*].reg[ready] == 0x00000001
+//? post: cog[*].reg[result] == 0x00000001
+//? post: cog[*].reg[flag] == 0x00000000
+//? post: cog[*].reg[acknowledged] == 0x00000000
+//? post: cog[*].reg[second_ready] == 0x00000001
+//? post: cog[*].reg[second_result] == 0x00000001
+//? post: cog[*].reg[second_pad] == 0x00000000
+//? post: cog[*].reg[irq_count] == 0x00000001
+
+// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
+.if pll
+                HUBSET  aug(0x010009f8)
+                WAITX   aug(200000)
+                HUBSET  aug(0x010009fb)
+                WAITX   64
+.endif
+
+                // Observe smart completion through the ordinary pin-event and interrupt machinery.
+                WRPIN   aug(P_TT_01 | (mode << 1)), 4
+                WRPIN   aug(0x60000000),            6
+                WXPIN   aug((2 << 16) | 5),         4
+// Normalize any loader/configuration notification before arming the first sensor.
+                SETSE1  0
+                WAITX   64
+                POLLSE1
+                SETSE1  (0x40 | 4)
+                GETCT   started
+                DIRH    4
+                WAITX   phase
+                WYPIN   3,                          4
+                WAITSE1
+                GETCT   elapsed
+                SUB     elapsed,                    started
+                TESTP   4                                               :wc
+                WRC     ready
+                RDPIN   result,                     4                   :wc
+                WRC     flag
+                WAITX   8
+                TESTP   4                                               :wc
+                WRC     acknowledged
+                // A second finite request must generate a fresh completion event without rearming the selector.
+                WYPIN   3,                          4
+                WAITSE1
+                TESTP   4                                               :wc
+                WRC     second_ready
+                RDPIN   second_result,              4
+                WAITX   8
+                TESTP   6                                               :wc
+                WRC     second_pad
+                // Deliver one more completion as INT1 and retain the ISR's observable side effect.
+                SETSE1  (0x40 | 4)
+                STALLI
+                NIXINT1
+                MOV     IJMP1,                      aug(cogaddr(isr))
+                SETINT1 4
+                ALLOWI
+                WYPIN   3,                          4
+                WAITX   100
+                DIRL    4
+                JMP     finished
+isr:
+                SETINT1 0
+                ADD     irq_count,  1
+                RETI1
+finished:
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var elapsed:    LONG    0
+var ready:      LONG    0
+var result:     LONG    0
+var flag:       LONG    0
+var acknowledged:
+                LONG    0
+var second_ready:
+                LONG    0
+var second_result:
+                LONG    0
+var second_pad: LONG    0
+var irq_count:  LONG    0
+
+var started:    LONG    0
+

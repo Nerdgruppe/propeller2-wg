@@ -7,6 +7,49 @@ checklist. Run the suite with
 `zig-0.16.0 build install test-windtunnel`, or select files with
 `zig-out/bin/windtunnel-tests FILE.propan ...`.
 
+Use `--include FILTERS` and `--exclude FILTERS` to select files before assembling
+or running their cases. Each value is a comma-separated list of case-sensitive
+substrings matched against the file path; surrounding whitespace is ignored.
+Multiple include patterns are alternatives, and exclusions always take precedence.
+Without includes, all candidate files are eligible. Empty patterns and selections
+that match no files are errors. Filters apply to explicit file arguments and
+automatic discovery, which ignores imported helpers without checklist headers.
+Summaries and timing reports describe only the selected files.
+
+For routine validation without the expensive FIFO visibility sweep:
+
+```sh
+zig-out/bin/windtunnel-tests --exclude fifo-write-visibility.propan
+zig-0.16.0 build install test -Doptimize=ReleaseSafe -Dcoverage=false -Dwindtunnel-exclude=fifo-write-visibility.propan
+```
+
+Build-driven runs also accept `-Dwindtunnel-include=FILTERS`. Omit the filter
+options for final validation of the complete registered suite; exclusions are
+never enabled by default.
+
+The runner uses a bounded worker group and defaults to all available logical cores.
+Use `-j N` (or `-jN`) to select the worker count; `-j 0` uses all cores and `-j 1`
+runs sequentially. Build-driven fixture runs accept `-Dwindtunnel-jobs=N`;
+Zig's own `-j` option controls build parallelism separately. Hardware oracle and
+characterization uploads always use one worker to keep the board exclusively owned.
+Prepared images can be generated in parallel. Cases retain independent simulator
+state, and diagnostic output is reported in fixture order after the workers finish.
+
+Measure simulator performance changes with ReleaseSafe, coverage disabled, and
+`-j 1`, using the same fixtures and excluding compilation time. Report parallel
+scaling separately from improvements to sequential execution.
+
+Add `--timing-report FILE.md` to the runner, or `-Dwindtunnel-timing-report=FILE.md`
+to the build, to write a Markdown report sorted from longest to shortest. It lists
+each file's total and run count, minimum/average/maximum run duration, followed by
+every individual run with its duration and result (including failures). Timings
+use elapsed wall time: file totals include checklist preparation plus the sum of
+run durations, and runs include assembly, simulation, assertions and hardware
+access when enabled. Queue waiting and report generation are excluded. Parallel
+durations overlap and include scheduling contention; use `-j1` for comparisons.
+No timing clock reads are added when the report is disabled. Build-driven reports
+always execute the fixtures afresh instead of reusing a cached test result.
+
 ## Runs and initial values
 
 Conditions before the first `run:` apply to every run. Each `run:` starts a new
@@ -122,7 +165,7 @@ Configuration directives precede all run sections and apply to every run.
 | `stop: symbol` | Optional checkpoint for a program fixture; cog fixtures always exit through `_end` |
 | `max-cycles: N` | `1000000`; positive simulator cycle limit per run |
 | `timeout-ms: N` | `5000`; hardware timeout, 100..10000 ms |
-| `baudrate: N` | `115200`; UART baud rate |
+| `baudrate: N` | `2000000`; UART baud rate; cog reporters require the upload rate |
 | `oracle: required` | Default; hardware checks run when enabled |
 | `oracle: off "reason"` | Skip hardware checks for the stated nonempty reason |
 | `fast-io: off "reason"` | Retain clocked serial timing even with `--fast-io`; requires a nonempty reason |
@@ -135,15 +178,20 @@ and `\\` escapes. Nonempty stdin requires `stdin-after`, which must be a prefix 
 the expected stdout. Program fixtures support symbol patches and serial checks;
 cog fixtures support state checks and reserve serial I/O for the reporter.
 
+Loaded images receive the serial ROM's nominal RCFAST handoff: 20 MHz, cleared
+UART modes and DIR, and retained 2 Mbaud 8N1 dividers in pins 62 and 63. Program
+fixtures can restore TX/RX mode without WXPIN or a startup delay. The hardware
+ROM calibrates those dividers against the upload stream. Keep the host at
+2 Mbaud to avoid a runtime baud change. Cog reporters use this same handoff.
+
 Simulation also has a host-time guard: 30 seconds per cog run and 600 seconds
-per program run. The larger program budget allows board warmup waits to finish
-with every clock simulated, including Debug builds. `max-cycles` remains the
+per program run. `max-cycles` remains the
 simulated execution limit; `timeout-ms` controls hardware runs only.
 
 `zig-out/bin/windtunnel-tests --fast-io FILE.propan ...` accelerates serial endpoints
 for fixtures without a `fast-io: off` directive. The build option `-Dfast-io=true`
-passes this flag to the fixture runner. CPU execution and explicit board warmup
-waits are unchanged; hardware oracle images are unchanged as well.
+passes this flag to the fixture runner. CPU execution and waits that are part
+of a test remain unchanged; hardware oracle images are unchanged as well.
 
 The runner reports each run separately and continues after a failed run. Its exit
 code is nonzero if any fixture or run fails. Failure evidence and

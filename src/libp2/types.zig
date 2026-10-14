@@ -146,6 +146,129 @@ pub const SmartPinMode = enum(u5) {
     uart_rx = 0b11111,
 
     pub const dac_noise: SmartPinMode = .repository;
+
+    /// Report whether same-mode WRPIN retains the running digital or serial engine state.
+    pub fn retainsState(mode: SmartPinMode) bool {
+        return switch (mode) {
+            .pulse,
+            .transition,
+            .nco_frequency,
+            .nco_duty,
+            .pwm_triangle,
+            .pwm_sawtooth,
+            .pwm_smps,
+            .quadrature,
+            .reg_up,
+            .reg_up_down,
+            .count_rises,
+            .count_highs,
+            .state_ticks,
+            .high_ticks,
+            .events_ticks,
+            .periods_ticks,
+            .periods_highs,
+            .counter_ticks,
+            .counter_highs,
+            .counter_periods,
+            .sync_tx,
+            .sync_rx,
+            .uart_tx,
+            .uart_rx,
+            => true,
+
+            .gpio,
+            .repository,
+            .dac_dither_rnd,
+            .dac_dither_pwm,
+            .adc,
+            .adc_ext,
+            .adc_scope,
+            .usb_pair,
+            => false,
+        };
+    }
+
+    /// Identify digital engines with measured reset-release and result stages.
+    pub fn digitalLogic(mode: SmartPinMode) bool {
+        return switch (mode) {
+            .pulse,
+            .transition,
+            .nco_frequency,
+            .nco_duty,
+            .pwm_triangle,
+            .pwm_sawtooth,
+            .pwm_smps,
+            .quadrature,
+            .reg_up,
+            .reg_up_down,
+            .count_rises,
+            .count_highs,
+            .state_ticks,
+            .high_ticks,
+            .events_ticks,
+            .periods_ticks,
+            .periods_highs,
+            .counter_ticks,
+            .counter_highs,
+            .counter_periods,
+            => true,
+
+            .gpio,
+            .repository,
+            .dac_dither_rnd,
+            .dac_dither_pwm,
+            .adc,
+            .adc_ext,
+            .adc_scope,
+            .usb_pair,
+            .sync_tx,
+            .sync_rx,
+            .uart_tx,
+            .uart_rx,
+            => false,
+        };
+    }
+
+    /// Decode the engine override of WRPIN's OUT/OTHER output selector.
+    pub fn overridesOutput(mode: SmartPinMode) bool {
+        return switch (mode) {
+            .pulse,
+            .transition,
+            .nco_frequency,
+            .nco_duty,
+            .pwm_triangle,
+            .pwm_sawtooth,
+            .pwm_smps,
+            .usb_pair,
+            .sync_tx,
+            .uart_tx,
+            => true,
+
+            .gpio,
+            .repository,
+            .dac_dither_rnd,
+            .dac_dither_pwm,
+            .quadrature,
+            .reg_up,
+            .reg_up_down,
+            .count_rises,
+            .count_highs,
+            .state_ticks,
+            .high_ticks,
+            .events_ticks,
+            .periods_ticks,
+            .periods_highs,
+            .counter_ticks,
+            .counter_highs,
+            .counter_periods,
+            .adc,
+            .adc_ext,
+            .adc_scope,
+            .sync_rx,
+            .uart_rx,
+            => false,
+        };
+    }
 };
 
 /// Index of a smart engine and its associated cog register bit.

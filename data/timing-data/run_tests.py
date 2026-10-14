@@ -140,6 +140,7 @@ def read_results(stdout: BinaryIO) -> list[Result]:
 
 
 async def run_p2aas(fixture: bytes, endpoint: str) -> list[Result]:
+    """Capture a timing fixture while keeping the host at the 2 Mbaud upload rate."""
     # The optional transport needs websockets; direct serial use keeps its existing dependencies.
     import websockets
 
@@ -147,7 +148,7 @@ async def run_p2aas(fixture: bytes, endpoint: str) -> list[Result]:
     query = dict(urllib.parse.parse_qsl(url.query, keep_blank_values=True))
     if "code" in query:
         raise ValueError("P2AAS_ENDPOINT must not select URL-code upload")
-    query.setdefault("baudrate", "115200")
+    query["baudrate"] = "2000000"
     query.setdefault("timeout_ms", "5000")
     address = urllib.parse.urlunsplit(url._replace(query=urllib.parse.urlencode(query)))
     output = bytearray()
@@ -161,8 +162,7 @@ async def run_p2aas(fixture: bytes, endpoint: str) -> list[Result]:
                 output.extend(chunk)
                 if len(output) > 65536:
                     raise RuntimeError("Timing fixture exceeded its output limit")
-                # COGSTOP disables TX and can discard the final NUL while it is still shifting.
-                # The eighth record's fourth newline is the same completion point used by serial parsing.
+                # The eighth record's fourth newline is the completion point used by serial parsing.
                 if output.count(b"\x03") == 8 and output.rsplit(b"\x03", 1)[1].count(b"\n") >= 4:
                     break
         except websockets.ConnectionClosed as close:
@@ -171,12 +171,13 @@ async def run_p2aas(fixture: bytes, endpoint: str) -> list[Result]:
 
 
 def run_fixture(fixture: bytes) -> list[Result]:
+    """Load and capture a fixture over P2AAS or direct serial without a baud change."""
     endpoint = os.environ.get("P2AAS_ENDPOINT", "ws://localhost:12880/")
     if endpoint:
         return asyncio.run(run_p2aas(fixture, endpoint))
 
     args = [
-        "turboprop", f"--port={PORT}", "--baudrate=115200", "--reset=dtr",
+        "turboprop", f"--port={PORT}", "--baudrate=2000000", "--reset=dtr",
         "--monitor", "--monitor-format=raw", "-",
     ]
     with Popen(args=args, stdin=PIPE, stdout=PIPE) as proc:

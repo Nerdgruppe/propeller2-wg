@@ -8,22 +8,19 @@ const _wt_length  = register(3)
 const _wt_value   = register(4)
 const _wt_crc     = register(5)
 const _wt_bits    = register(6)
-const _wt_clock   = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
-const _wt_uart    = SmartPin.UartTx.config(baud=_wt_baudrate, bits=8, clk=200_000_000)
 
 .cogexec    0
 _wt_entry:
 .if _wt_is_oracle
-                HUBSET  aug(_wt_clock)
+                // Keep RCFAST and the ROM's calibrated 2 Mbaud TX divider.
+                HUBSET  0xF0
                 WRPIN   P_TT_01 | P_ASYNC_TX,   62
-                WXPIN   aug(_wt_uart),          62
                 DIRH    62
-                WAITX   aug(20_000_000)
 .endif
                 COGINIT _wt_target_cog,         aug(hubaddr(_wt_start))
                 COGSTOP 0
 
-// Leave room for the clock/UART bootstrap; everything else follows the fixture.
+// Keep the DUT origin fixed; everything else follows the fixture.
 .cogexec    0x40
 _wt_start:
                 JMP     nrel(_wt_setup)
@@ -108,15 +105,15 @@ _wt_send:
                 RDBYTE  PA,         PTRA++
                 CALL    _wt_write_byte
                 DJNZ    _wt_count,  _wt_send
-                // TX-ready means buffer space, so wait a complete final 8N1 frame before shutting down.
-                WAITX   aug(200_000_000 * 10 / _wt_baudrate + 100)
+// Drain the final stop bit before stopping the owner of TX's DIR.
+_wt_flush:
+                RQPIN   _wt_value,  62      :wc
+    if(C)       JMP     _wt_flush
                 JMP     nrel(_wt_shutdown)
 _wt_write_byte:
-                WYPIN   PA, 62
-                WAITX   1
-_wt_wait_tx:
-                TESTP   62          :wc
-    if(!C)      JMP     _wt_wait_tx
+                RQPIN   _wt_value,  62  :wc
+    if(C)       JMP     _wt_write_byte
+                WYPIN   PA,         62
                 RET
 .endif
 _wt_shutdown:
@@ -128,4 +125,3 @@ _wt_setup:
                 MODCZ   _wt_initial_c,  _wt_initial_z   :wcz
                 SETQ    aug(_wt_initial_q)
                 JMP     nrel(_wt_test_entry)
-

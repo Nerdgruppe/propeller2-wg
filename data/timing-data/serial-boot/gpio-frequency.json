@@ -1,0 +1,393 @@
+{
+  "date": "2026-10-13",
+  "endpoint": "ws://localhost:12880/",
+  "observations": {
+    "testp_gap6": "GPIO OUTL, WAITX 4, TESTP on the same driven pin",
+    "mov_gap7": "GPIO OUTL, WAITX 5, MOV INB on the same driven pin"
+  },
+  "sources": {
+    ".zig-cache/gpio-frequency-evidence": "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stop: halt\n//? max-cycles: 1000000\n//? timeout-ms: 100\n//? baudrate: 2000000\n//? run: \"40 MHz repeat 1\"\n//? const: setting = 16779035\n//? run: \"40 MHz repeat 2\"\n//? const: setting = 16779035\n//? run: \"40 MHz repeat 3\"\n//? const: setting = 16779035\n//? run: \"80 MHz repeat 1\"\n//? const: setting = 16779019\n//? run: \"80 MHz repeat 2\"\n//? const: setting = 16779019\n//? run: \"80 MHz repeat 3\"\n//? const: setting = 16779019\n//? run: \"100 MHz repeat 1\"\n//? const: setting = 16778491\n//? run: \"100 MHz repeat 2\"\n//? const: setting = 16778491\n//? run: \"100 MHz repeat 3\"\n//? const: setting = 16778491\n//? run: \"120 MHz repeat 1\"\n//? const: setting = 16778747\n//? run: \"120 MHz repeat 2\"\n//? const: setting = 16778747\n//? run: \"120 MHz repeat 3\"\n//? const: setting = 16778747\n//? run: \"140 MHz repeat 1\"\n//? const: setting = 16779003\n//? run: \"140 MHz repeat 2\"\n//? const: setting = 16779003\n//? run: \"140 MHz repeat 3\"\n//? const: setting = 16779003\n//? run: \"160 MHz repeat 1\"\n//? const: setting = 16779259\n//? run: \"160 MHz repeat 2\"\n//? const: setting = 16779259\n//? run: \"160 MHz repeat 3\"\n//? const: setting = 16779259\n//? run: \"180 MHz repeat 1\"\n//? const: setting = 16779515\n//? run: \"180 MHz repeat 2\"\n//? const: setting = 16779515\n//? run: \"180 MHz repeat 3\"\n//? const: setting = 16779515\n//? run: \"200 MHz repeat 1\"\n//? const: setting = 16779771\n//? run: \"200 MHz repeat 2\"\n//? const: setting = 16779771\n//? run: \"200 MHz repeat 3\"\n//? const: setting = 16779771\n\n.cogexec\n    HUBSET 0xf0\n    HUBSET aug(setting & 0xfffffffc)\n    WAITX aug(300000)\n    HUBSET aug(setting)\n    DIRL 40\n    WRPIN 0, 40\n    OUTH 40\n    DIRH 40\n    WAITX 32\n    OUTL 40\n    WAITX 4\n    TESTP 40 :wc\n    WRC first\n    OUTH 40\n    WAITX 32\n    OUTL 40\n    WAITX 5\n    MOV second, INB\n    SHR second, 8\n    AND second, 1\n    HUBSET aug(setting & 0xfffffffc)\n    HUBSET 0xf0\n    WRPIN P_TT_01 | P_ASYNC_TX, 62\n    DIRH 62\n    MOV PA, first\n    CALL send\n    MOV PA, second\n    CALL send\nflush:\n    RQPIN PB, 62 :wc\nif(C) JMP flush\nhalt:\n    JMP halt\nsend:\n    RQPIN PB, 62 :wc\nif(C) JMP send\n    WYPIN PA, 62\n    RET\nvar first: LONG 0\nvar second: LONG 0\n",
+    ".zig-cache/gpio-frequency-boundary-evidence": "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stop: halt\n//? max-cycles: 1000000\n//? timeout-ms: 100\n//? baudrate: 2000000\n//? run: \"165 MHz repeat 1\"\n//? const: setting = 17572091\n//? run: \"165 MHz repeat 2\"\n//? const: setting = 17572091\n//? run: \"165 MHz repeat 3\"\n//? const: setting = 17572091\n//? run: \"165 MHz repeat 4\"\n//? const: setting = 17572091\n//? run: \"165 MHz repeat 5\"\n//? const: setting = 17572091\n//? run: \"166 MHz repeat 1\"\n//? const: setting = 19157755\n//? run: \"166 MHz repeat 2\"\n//? const: setting = 19157755\n//? run: \"166 MHz repeat 3\"\n//? const: setting = 19157755\n//? run: \"166 MHz repeat 4\"\n//? const: setting = 19157755\n//? run: \"166 MHz repeat 5\"\n//? const: setting = 19157755\n//? run: \"167 MHz repeat 1\"\n//? const: setting = 21800699\n//? run: \"167 MHz repeat 2\"\n//? const: setting = 21800699\n//? run: \"167 MHz repeat 3\"\n//? const: setting = 21800699\n//? run: \"167 MHz repeat 4\"\n//? const: setting = 21800699\n//? run: \"167 MHz repeat 5\"\n//? const: setting = 21800699\n//? run: \"170 MHz repeat 1\"\n//? const: setting = 17043707\n//? run: \"170 MHz repeat 2\"\n//? const: setting = 17043707\n//? run: \"170 MHz repeat 3\"\n//? const: setting = 17043707\n//? run: \"170 MHz repeat 4\"\n//? const: setting = 17043707\n//? run: \"170 MHz repeat 5\"\n//? const: setting = 17043707\n\n.cogexec\n    HUBSET 0xf0\n    HUBSET aug(setting & 0xfffffffc)\n    WAITX aug(300000)\n    HUBSET aug(setting)\n    DIRL 40\n    WRPIN 0, 40\n    OUTH 40\n    DIRH 40\n    WAITX 32\n    OUTL 40\n    WAITX 4\n    TESTP 40 :wc\n    WRC first\n    OUTH 40\n    WAITX 32\n    OUTL 40\n    WAITX 5\n    MOV second, INB\n    SHR second, 8\n    AND second, 1\n    HUBSET aug(setting & 0xfffffffc)\n    HUBSET 0xf0\n    WRPIN P_TT_01 | P_ASYNC_TX, 62\n    DIRH 62\n    MOV PA, first\n    CALL send\n    MOV PA, second\n    CALL send\nflush:\n    RQPIN PB, 62 :wc\nif(C) JMP flush\nhalt:\n    JMP halt\nsend:\n    RQPIN PB, 62 :wc\nif(C) JMP send\n    WYPIN PA, 62\n    RET\nvar first: LONG 0\nvar second: LONG 0\n",
+    ".zig-cache/gpio-frequency-edge-evidence": "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stop: halt\n//? max-cycles: 1000000\n//? timeout-ms: 100\n//? baudrate: 2000000\n//? run: \"168 MHz repeat 1\"\n//? const: setting = 17836539\n//? run: \"168 MHz repeat 2\"\n//? const: setting = 17836539\n//? run: \"168 MHz repeat 3\"\n//? const: setting = 17836539\n//? run: \"168 MHz repeat 4\"\n//? const: setting = 17836539\n//? run: \"168 MHz repeat 5\"\n//? const: setting = 17836539\n//? run: \"169 MHz repeat 1\"\n//? const: setting = 21801211\n//? run: \"169 MHz repeat 2\"\n//? const: setting = 21801211\n//? run: \"169 MHz repeat 3\"\n//? const: setting = 21801211\n//? run: \"169 MHz repeat 4\"\n//? const: setting = 21801211\n//? run: \"169 MHz repeat 5\"\n//? const: setting = 21801211\n\n.cogexec\n    HUBSET 0xf0\n    HUBSET aug(setting & 0xfffffffc)\n    WAITX aug(300000)\n    HUBSET aug(setting)\n    DIRL 40\n    WRPIN 0, 40\n    OUTH 40\n    DIRH 40\n    WAITX 32\n    OUTL 40\n    WAITX 4\n    TESTP 40 :wc\n    WRC first\n    OUTH 40\n    WAITX 32\n    OUTL 40\n    WAITX 5\n    MOV second, INB\n    SHR second, 8\n    AND second, 1\n    HUBSET aug(setting & 0xfffffffc)\n    HUBSET 0xf0\n    WRPIN P_TT_01 | P_ASYNC_TX, 62\n    DIRH 62\n    MOV PA, first\n    CALL send\n    MOV PA, second\n    CALL send\nflush:\n    RQPIN PB, 62 :wc\nif(C) JMP flush\nhalt:\n    JMP halt\nsend:\n    RQPIN PB, 62 :wc\nif(C) JMP send\n    WYPIN PA, 62\n    RET\nvar first: LONG 0\nvar second: LONG 0\n"
+  },
+  "runs": [
+    {
+      "frequency_mhz": 40,
+      "run": "40 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 40,
+      "run": "40 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 40,
+      "run": "40 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 80,
+      "run": "80 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 80,
+      "run": "80 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 80,
+      "run": "80 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 100,
+      "run": "100 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 100,
+      "run": "100 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 100,
+      "run": "100 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 120,
+      "run": "120 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 120,
+      "run": "120 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 120,
+      "run": "120 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 140,
+      "run": "140 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 140,
+      "run": "140 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 140,
+      "run": "140 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 160,
+      "run": "160 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 160,
+      "run": "160 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 160,
+      "run": "160 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 165,
+      "run": "165 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 165,
+      "run": "165 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 165,
+      "run": "165 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 165,
+      "run": "165 MHz repeat 4",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 165,
+      "run": "165 MHz repeat 5",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 166,
+      "run": "166 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 166,
+      "run": "166 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 166,
+      "run": "166 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 166,
+      "run": "166 MHz repeat 4",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 166,
+      "run": "166 MHz repeat 5",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 167,
+      "run": "167 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 167,
+      "run": "167 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 167,
+      "run": "167 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 167,
+      "run": "167 MHz repeat 4",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 167,
+      "run": "167 MHz repeat 5",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 168,
+      "run": "168 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 168,
+      "run": "168 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 168,
+      "run": "168 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 0
+    },
+    {
+      "frequency_mhz": 168,
+      "run": "168 MHz repeat 4",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 168,
+      "run": "168 MHz repeat 5",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 169,
+      "run": "169 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 169,
+      "run": "169 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 169,
+      "run": "169 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 169,
+      "run": "169 MHz repeat 4",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 169,
+      "run": "169 MHz repeat 5",
+      "source": ".zig-cache/gpio-frequency-edge-evidence",
+      "testp_gap6": 0,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 170,
+      "run": "170 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 170,
+      "run": "170 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 170,
+      "run": "170 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 170,
+      "run": "170 MHz repeat 4",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 170,
+      "run": "170 MHz repeat 5",
+      "source": ".zig-cache/gpio-frequency-boundary-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 180,
+      "run": "180 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 180,
+      "run": "180 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 180,
+      "run": "180 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 200,
+      "run": "200 MHz repeat 1",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 200,
+      "run": "200 MHz repeat 2",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    },
+    {
+      "frequency_mhz": 200,
+      "run": "200 MHz repeat 3",
+      "source": ".zig-cache/gpio-frequency-evidence",
+      "testp_gap6": 1,
+      "mov_gap7": 1
+    }
+  ]
+}

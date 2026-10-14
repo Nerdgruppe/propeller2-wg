@@ -358,7 +358,7 @@ test-results:
   results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
     durations: 12
-    results: 1
+    results: 0
 - test: GPIO OUTL -> TESTP, gap 7
   pass: true
   results:
@@ -424,7 +424,7 @@ test-results:
   results:
     offsets: [0, 1, 2, 3, 4, 5, 6, 7]
     durations: 15
-    results: 1
+    results: 0
 - test: GPIO OUTL -> MOV, gap 8
   pass: true
   results:

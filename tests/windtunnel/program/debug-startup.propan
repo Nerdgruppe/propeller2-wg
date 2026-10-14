@@ -1,7 +1,7 @@
 //? WINDTUNNEL CHECK LIST
 //? profile: program
 //? timeout-ms: 1000
-//? max-cycles: 22_000_000
+//? max-cycles: 1_000_000
 //? run: "kind=0 cog=0"
 //? const: target_cog = 0
 //? const: observer_cog = 7
@@ -164,14 +164,10 @@
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
 
 // Debug-enabled loaded, no-load cog, LUT and hub starts on all eight cogs.
-const CLOCK = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
-const UART  = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
 .cogexec    0
-                HUBSET  aug(CLOCK)
+                HUBSET  0xF0
                 WRPIN   P_TT_01 | P_ASYNC_TX,   62
-                WXPIN   aug(UART),              62
                 DIRH    62
-                WAITX   aug(2_000_000)
                 // Hand the controller to a separate cog, including when the target is cog zero.
                 COGINIT observer_cog,           aug(hubaddr(controller))
                 COGSTOP 0
@@ -212,7 +208,10 @@ ready:
                 TESTP   62                      :wc
     if(!C)      JMP     ready
                 DJNZ    register(0x90), byte
-                WAITX   aug(20000)
+
+flush:
+                RQPIN   PB, 62  :wc
+    if(C)       JMP     flush
 _end:
                 COGSTOP observer_cog
 
@@ -244,4 +243,3 @@ lut_application:
 .hubexec    0x6000
 hub_application:
                 COGSTOP target_cog
-
