@@ -1,0 +1,37 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[result] == 3
+//? post: cog[*].reg[sensors] == 1
+
+                // Streamer lookup reads use their own XRL source, as well as the armed LUT read sensor.
+                MOV     result,                                     0
+                MOV     sensors,                                    0
+                WRLUT   aug(0x12345678),                            aug(0x1ff)
+                SETSE1  3
+                SETXFRQ 0
+                XINIT   aug(X_IMM_4X8_LUT | (15 << 16) | 0xffff),   31
+                WAITX   20
+                POLLSE1                                                         :wc
+                MUXC    sensors,                                    1
+                JXRL    found
+                JMP     missing
+found:
+                OR      result, 1
+                JNXRL   cleared
+                JMP     missing
+cleared:
+                OR      result,                                     2
+                // A new XINIT does not clear an unread XRL latch.
+                XINIT   aug(X_IMM_4X8_LUT | (15 << 16) | 0xffff),   31
+                WAITX   20
+                XSTOP
+                WAITXRL
+                POLLXRL                                                 :wc
+                MUXC    sensors,                                    2
+                JMP     nrel(_end)
+missing:
+                MOV     result, 0
+                XSTOP
+                JMP     nrel(_end)
+var result:     LONG    0
+var sensors:    LONG    0
+

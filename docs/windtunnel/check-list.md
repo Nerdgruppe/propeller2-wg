@@ -147,6 +147,10 @@ pairs of hexadecimal digits, for example `hex [ 00 80 ff ]`.
 //? post: cog[0].q == 3
 ```
 
+Local-only postconditions also accept `cog[*].dacs == u8 [0x12 0x34 0x56 0x78]`.
+Exactly four u8 values and an explicit `oracle: off` reason are required.
+DAC state cannot be seeded or observed through the hardware reporting protocol.
+
 Register addresses may be symbols or numeric register indices. Hub addresses may
 be symbols or numeric byte offsets. State targets select the configured cog; `cog[*]` follows run-local selection.
 Register 0 and registers 506..511 belong to the scaffold or special registers;

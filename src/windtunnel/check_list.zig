@@ -11,6 +11,7 @@ pub const Target = union(enum) {
     c,
     z,
     q,
+    dacs,
 };
 pub const Assignment = struct {
     line: u32,
@@ -218,6 +219,8 @@ const Parser = struct {
             return .z;
         if (std.mem.eql(u8, field, ".q"))
             return .q;
+        if (std.mem.eql(u8, field, ".dacs"))
+            return .dacs;
         if (!std.mem.eql(u8, field, ".reg"))
             return p.fail("unsupported cog field");
         try p.expect("[");
@@ -474,7 +477,7 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
             const target = try p.target();
             const is_pre = std.mem.eql(u8, name, "pre");
             if (is_pre and
-                (target == .reg or
+                (target == .dacs or target == .reg or
                     target == .hub))
                 return p.fail("preconditions support only sym, C, Z and Q");
             if (!is_pre and target == .sym)
@@ -493,6 +496,14 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
                     return p.fail("expected true or false");
                 },
                 .reg, .q => try p.numberBytes(4, try p.integer(try p.take())),
+                .dacs => blk: {
+                    if (!std.mem.eql(u8, p.peek(), "u8"))
+                        return p.fail("DAC state requires exactly four u8 values");
+                    const values = try p.block();
+                    if (values.len != 4)
+                        return p.fail("DAC state requires exactly four u8 values");
+                    break :blk values;
+                },
                 .hub, .sym => try p.block(),
             };
             const assignment: Assignment = .{ .line = line, .cog = p.target_cog, .target = target, .bytes = bytes };
@@ -584,6 +595,8 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
         const selected_cog = run.cog orelse list.cog;
         for ([_][]const Assignment{ list.pre, list.post, run.pre, run.post }) |assignments| {
             for (assignments) |a| {
+                if (a.target == .dacs and list.oracle_off == null)
+                    return p.fail("DAC state is local-only; specify oracle: off with a reason");
                 if (a.cog) |cog| {
                     if (cog != selected_cog)
                         return p.fail("state target must match selected cog");

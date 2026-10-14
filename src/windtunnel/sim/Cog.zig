@@ -8,6 +8,8 @@ const Cog = @This();
 const Debugger = @import("Debugger.zig");
 const Hub = @import("Hub.zig");
 const Cordic = @import("Cordic.zig");
+const Streamer = @import("Streamer.zig");
+const ColorConverter = @import("ColorConverter.zig");
 
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
@@ -48,6 +50,10 @@ lut: [512]u32 = @splat(0),
 
 pc: u20 = 0,
 q: u32 = 0,
+dacs: [4]u8 = @splat(0),
+raw_dacs: [4]u8 = @splat(0),
+converter: ColorConverter = .{},
+streamer: Streamer = .{},
 cordic_result: Cordic.Port = .{},
 setq_pending: bool = false,
 block_pointer_delta: bool = false,
@@ -354,6 +360,8 @@ const Writeback = struct {
     c: ?bool = null,
     z: ?bool = null,
     lut: ?struct { address: u9, value: u32 } = null,
+    streamer: ?Streamer.Action = null,
+    converter: ?ColorConverter.Action = null,
 };
 
 /// Create a stopped cog with cleared execution state and a link to its shared hub.
@@ -831,6 +839,13 @@ pub fn commit_results(cog: *Cog) void {
     }
     if (cog.writeback.z) |value| {
         cog.z = value;
+    }
+    if (cog.writeback.streamer) |action| {
+        cog.streamer.apply(cog, action);
+    }
+    if (cog.writeback.converter) |action| {
+        cog.converter.apply(action);
+        cog.dacs = cog.converter.output(cog.raw_dacs);
     }
     cog.writeback = .{};
     cog.retired = cog.pipeline[4];
@@ -1360,6 +1375,8 @@ pub fn complete_interrupt(cog: *Cog, source: Register, immediate: bool, wcz: boo
 /// Report ordinary cog interrupt status; startup mode survives subsequent execution-mode changes.
 pub fn interrupt_status(cog: *const Cog) u32 {
     var value: u32 = @intFromBool(cog.started_no_load);
+    value |= @as(u32, @intFromBool(cog.streamer.active != null)) << 21;
+    value |= @as(u32, @intFromBool(cog.converter.active())) << 22;
     value |= @as(u32, @intFromBool(cog.interrupts.stalled)) << 1;
     if (cog.fifo_state.engine) |fifo| {
         value |= @as(u32, @intFromBool(fifo.mode == .write)) << 20;
@@ -1781,7 +1798,25 @@ pub fn read_fifo(cog: *Cog, size: u3) ?u32 {
     return value;
 }
 
-/// Enqueue a software write; modeled eligibility precedes the actual hub RAM-slice grant.
+/// Software WF instructions displace automatic capture writes on their execution edge.
+pub fn fifo_write_in_use(cog: *const Cog) bool {
+    const state = cog.pipeline[3] orelse return false;
+    if (state.cancelled or cog.exec_mode == .stopped or cog.startup != null)
+        return false;
+    if (state.ready_at) |deadline| {
+        if (!Hub.clock_reached(cog.hub.counter, deadline))
+            return false;
+    }
+    const condition: types.Condition = @enumFromInt(@as(u4, @truncate(state.instr >> 28)));
+    if (!cog.is_condition_met(condition))
+        return false;
+    return switch (decode.decode(state.instr)) {
+        .wfbyte, .wfword, .wflong => true,
+        else => false,
+    };
+}
+
+/// Enqueue one write; modeled eligibility precedes the actual hub RAM-slice grant.
 pub fn write_fifo(cog: *Cog, value: u32, size: u3) bool {
     const address = cog.fifo_state.address orelse return false;
     const fifo = &cog.fifo_state.engine.?;
@@ -1789,7 +1824,10 @@ pub fn write_fifo(cog: *Cog, value: u32, size: u3) bool {
         return false;
     for (0..size) |index| {
         const slot = (fifo.write_head + fifo.write_count + index) % fifo.write_bytes.len;
-        fifo.write_provenance[slot] = cog.provenance();
+        fifo.write_provenance[slot] = if (cog.hub.access_context.cog != null)
+            cog.hub.access_context
+        else
+            cog.provenance();
         fifo.write_bytes[slot] = @truncate(value >> @intCast(index * 8));
     }
     fifo.write_pending[(fifo.write_pending_head + 1) % fifo.write_pending.len] += size;
@@ -2035,7 +2073,7 @@ pub fn read_lut(cog: *Cog, addr: u9) u32 {
 }
 
 /// Checks if `cond` would currently apply to this cog or not.
-pub fn is_condition_met(cog: *Cog, cond: types.Condition) bool {
+pub fn is_condition_met(cog: *const Cog, cond: types.Condition) bool {
     return switch (cond) {
         ._RET_ => true,
         .IF_NC_AND_NZ => !cog.c and !cog.z,
@@ -2081,6 +2119,7 @@ pub const PipelineState = struct {
     fifo_started: bool = false,
     fifo_nonblocking: bool = false,
     fifo_write_value: ?u32 = null,
+    streamer_command: ?Streamer.Command = null,
 
     alt_r: ?Register = null,
     alt_s: ?Register = null,

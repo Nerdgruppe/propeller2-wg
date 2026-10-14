@@ -1,0 +1,1169 @@
+//? WINDTUNNEL CHECK LIST
+//? oracle: off "Converter DAC bytes verified with independent two-P2 ADC measurements"
+//? run: "physical vector 000"
+//? const: dacs = 0x7075ef80
+//? const: cy = 0x982fc357
+//? const: ci = 0x5685922c
+//? const: cq = 0x294fe5ba
+//? const: mode = 0x2b
+//? const: angle = 0x3f
+//? post: cog[*].dacs == u8 [0xff 0x51 0x01 0xf3]
+//? run: "physical vector 001"
+//? const: dacs = 0x2c7c48cd
+//? const: cy = 0xd095cd40
+//? const: ci = 0x46920eb
+//? const: cq = 0xa7a9afcf
+//? const: mode = 0x2c
+//? const: angle = 0xf5
+//? post: cog[*].dacs == u8 [0xff 0x0e 0x31 0x58]
+//? run: "physical vector 002"
+//? const: dacs = 0x7fb9a99a
+//? const: cy = 0x7260d593
+//? const: ci = 0xeda73e0f
+//? const: cq = 0x1638332f
+//? const: mode = 0x20
+//? const: angle = 0x9
+//? post: cog[*].dacs == u8 [0x00 0xd9 0x3d 0xa8]
+//? run: "physical vector 003"
+//? const: dacs = 0x65bfd383
+//? const: cy = 0xdfe96f02
+//? const: ci = 0x88dfb613
+//? const: cq = 0xfc465876
+//? const: mode = 0x2e
+//? const: angle = 0xc4
+//? post: cog[*].dacs == u8 [0xff 0xb9 0x7a 0x47]
+//? run: "physical vector 004"
+//? const: dacs = 0x7a468dc8
+//? const: cy = 0x20f92106
+//? const: ci = 0x909d88ce
+//? const: cq = 0x9bf17945
+//? const: mode = 0x2e
+//? const: angle = 0x86
+//? post: cog[*].dacs == u8 [0x00 0xa9 0x0a 0x99]
+//? run: "physical vector 005"
+//? const: dacs = 0x7c163285
+//? const: cy = 0x5a41e22a
+//? const: ci = 0x20728848
+//? const: cq = 0xd6aff10
+//? const: mode = 0x20
+//? const: angle = 0x35
+//? post: cog[*].dacs == u8 [0xff 0x92 0xaf 0xe4]
+//? run: "physical vector 006"
+//? const: dacs = 0x6893685e
+//? const: cy = 0x21303066
+//? const: ci = 0x782fc694
+//? const: cq = 0x41db6bb7
+//? const: mode = 0x2f
+//? const: angle = 0xdb
+//? post: cog[*].dacs == u8 [0xff 0x9c 0x2a 0x3c]
+//? run: "physical vector 007"
+//? const: dacs = 0x7000f0e7
+//? const: cy = 0xdb5ffc20
+//? const: ci = 0x7be5ac58
+//? const: cq = 0x8418ff8f
+//? const: mode = 0x2d
+//? const: angle = 0x69
+//? post: cog[*].dacs == u8 [0x00 0xe0 0xed 0x9f]
+//? run: "physical vector 008"
+//? const: dacs = 0x24f5b96c
+//? const: cy = 0xef93476a
+//? const: ci = 0xe27e4816
+//? const: cq = 0x8bfafa8c
+//? const: mode = 0x2e
+//? const: angle = 0xaa
+//? post: cog[*].dacs == u8 [0x00 0x66 0x1a 0x99]
+//? run: "physical vector 009"
+//? const: dacs = 0xdb80bc95
+//? const: cy = 0xa6e4b089
+//? const: ci = 0xae52425b
+//? const: cq = 0x63a83fc4
+//? const: mode = 0x2e
+//? const: angle = 0x8f
+//? post: cog[*].dacs == u8 [0xff 0x06 0xcc 0x20]
+//? run: "physical vector 010"
+//? const: dacs = 0x3957ef86
+//? const: cy = 0x8502d278
+//? const: ci = 0xc52fe386
+//? const: cq = 0x698238ca
+//? const: mode = 0x23
+//? const: angle = 0xca
+//? post: cog[*].dacs == u8 [0xff 0x3f 0xa5 0x3c]
+//? run: "physical vector 011"
+//? const: dacs = 0x6d882447
+//? const: cy = 0x6829b4e0
+//? const: ci = 0xf12c5a40
+//? const: cq = 0x56722345
+//? const: mode = 0x2d
+//? const: angle = 0x89
+//? post: cog[*].dacs == u8 [0x00 0x11 0x9c 0xdd]
+//? run: "physical vector 012"
+//? const: dacs = 0xb5a7ef00
+//? const: cy = 0x55a3b044
+//? const: ci = 0x2846ef35
+//? const: cq = 0x5cb0decb
+//? const: mode = 0x2f
+//? const: angle = 0xcc
+//? post: cog[*].dacs == u8 [0xff 0xd1 0x87 0xd9]
+//? run: "physical vector 013"
+//? const: dacs = 0x41fb810d
+//? const: cy = 0x3a802e4b
+//? const: ci = 0x103d620f
+//? const: cq = 0xd78d7003
+//? const: mode = 0x22
+//? const: angle = 0x21
+//? post: cog[*].dacs == u8 [0xff 0x02 0xf1 0x91]
+//? run: "physical vector 014"
+//? const: dacs = 0x8903ed66
+//? const: cy = 0x7e6d31a
+//? const: ci = 0x82f7935f
+//? const: cq = 0x9bd501a3
+//? const: mode = 0x21
+//? const: angle = 0xca
+//? post: cog[*].dacs == u8 [0xff 0x4f 0x00 0xad]
+//? run: "physical vector 015"
+//? const: dacs = 0x51d0ca3f
+//? const: cy = 0xa768378d
+//? const: ci = 0xe77bf41a
+//? const: cq = 0xe94011b2
+//? const: mode = 0x25
+//? const: angle = 0x2f
+//? post: cog[*].dacs == u8 [0x00 0xc8 0x34 0xf6]
+//? run: "physical vector 016"
+//? const: dacs = 0x1cd952c0
+//? const: cy = 0xcb7abf43
+//? const: ci = 0x8674269f
+//? const: cq = 0xd5e1c985
+//? const: mode = 0x26
+//? const: angle = 0x3a
+//? post: cog[*].dacs == u8 [0x00 0x71 0x59 0xb8]
+//? run: "physical vector 017"
+//? const: dacs = 0xdc48e25
+//? const: cy = 0xf34139b1
+//? const: ci = 0xbf011793
+//? const: cq = 0x8484460
+//? const: mode = 0x20
+//? const: angle = 0xa4
+//? post: cog[*].dacs == u8 [0xff 0x1a 0xc1 0x6c]
+//? run: "physical vector 018"
+//? const: dacs = 0x8d0633ae
+//? const: cy = 0xd016ed12
+//? const: ci = 0x641e6f99
+//? const: cq = 0x9298556c
+//? const: mode = 0x22
+//? const: angle = 0x5c
+//? post: cog[*].dacs == u8 [0x00 0xe3 0x34 0x56]
+//? run: "physical vector 019"
+//? const: dacs = 0xd9263cef
+//? const: cy = 0x97629d88
+//? const: ci = 0xd91c27d0
+//? const: cq = 0x8dc330c9
+//? const: mode = 0x2c
+//? const: angle = 0x89
+//? post: cog[*].dacs == u8 [0xff 0x08 0x49 0xdd]
+//? run: "physical vector 020"
+//? const: dacs = 0x24d08608
+//? const: cy = 0x858686d1
+//? const: ci = 0x491d2686
+//? const: cq = 0xe65c707f
+//? const: mode = 0x2a
+//? const: angle = 0x1e
+//? post: cog[*].dacs == u8 [0x00 0xd2 0xf1 0x64]
+//? run: "physical vector 021"
+//? const: dacs = 0x69052371
+//? const: cy = 0xea1987ca
+//? const: ci = 0x295c7652
+//? const: cq = 0x825d9a01
+//? const: mode = 0x23
+//? const: angle = 0xe
+//? post: cog[*].dacs == u8 [0x00 0x0a 0x97 0xaf]
+//? run: "physical vector 022"
+//? const: dacs = 0x7bf315fa
+//? const: cy = 0xb5d1fa8d
+//? const: ci = 0xac95d176
+//? const: cq = 0x5b7a1f09
+//? const: mode = 0x26
+//? const: angle = 0x49
+//? post: cog[*].dacs == u8 [0x00 0x47 0x52 0xf0]
+//? run: "physical vector 023"
+//? const: dacs = 0x32b64e93
+//? const: cy = 0x99484df0
+//? const: ci = 0x311db8bb
+//? const: cq = 0x6ec26c96
+//? const: mode = 0x27
+//? const: angle = 0xf1
+//? post: cog[*].dacs == u8 [0x00 0xa9 0xfa 0xc1]
+//? run: "physical vector 024"
+//? const: dacs = 0x24face2c
+//? const: cy = 0x54f34907
+//? const: ci = 0x2b186c67
+//? const: cq = 0x21eee2fd
+//? const: mode = 0x3f
+//? const: angle = 0x48
+//? post: cog[*].dacs == u8 [0xff 0xde 0x7b 0xa6]
+//? run: "physical vector 025"
+//? const: dacs = 0x7414c7e9
+//? const: cy = 0xb84ee563
+//? const: ci = 0xa93a202
+//? const: cq = 0x26679879
+//? const: mode = 0x3b
+//? const: angle = 0x18
+//? post: cog[*].dacs == u8 [0x00 0xf2 0x67 0xec]
+//? run: "physical vector 026"
+//? const: dacs = 0xa829b05e
+//? const: cy = 0xd0c5d4dd
+//? const: ci = 0xf4c1cb2c
+//? const: cq = 0xc434d0a8
+//? const: mode = 0x3b
+//? const: angle = 0x77
+//? post: cog[*].dacs == u8 [0xff 0x85 0xbf 0xac]
+//? run: "physical vector 027"
+//? const: dacs = 0xacbbeb7
+//? const: cy = 0x6ef9f1ea
+//? const: ci = 0xf58eea19
+//? const: cq = 0x88aeef55
+//? const: mode = 0x31
+//? const: angle = 0xff
+//? post: cog[*].dacs == u8 [0x00 0xb0 0x42 0xd1]
+//? run: "physical vector 028"
+//? const: dacs = 0x45ae5678
+//? const: cy = 0x4eb3a703
+//? const: ci = 0x584e3ec9
+//? const: cq = 0x1cbc23a
+//? const: mode = 0x32
+//? const: angle = 0xfe
+//? post: cog[*].dacs == u8 [0x00 0x40 0x8c 0x88]
+//? run: "physical vector 029"
+//? const: dacs = 0xc7dfa529
+//? const: cy = 0x58ad923b
+//? const: ci = 0xf0538aad
+//? const: cq = 0xb4273ca6
+//? const: mode = 0x3f
+//? const: angle = 0x2a
+//? post: cog[*].dacs == u8 [0x00 0xea 0xb5 0xce]
+//? run: "physical vector 030"
+//? const: dacs = 0xdcbc2312
+//? const: cy = 0x22364165
+//? const: ci = 0x9c9ef66b
+//? const: cq = 0x9f37addd
+//? const: mode = 0x38
+//? const: angle = 0x5
+//? post: cog[*].dacs == u8 [0x00 0x70 0x2c 0x12]
+//? run: "physical vector 031"
+//? const: dacs = 0xfff0369b
+//? const: cy = 0xa4d51ba4
+//? const: ci = 0x2a4f3b03
+//? const: cq = 0x8daacda5
+//? const: mode = 0x37
+//? const: angle = 0xfd
+//? post: cog[*].dacs == u8 [0x00 0xa4 0x9e 0xa7]
+//? run: "physical vector 032"
+//? const: dacs = 0x6c0ecdb0
+//? const: cy = 0x1aae9586
+//? const: ci = 0xc172912d
+//? const: cq = 0x7533c798
+//? const: mode = 0x33
+//? const: angle = 0x49
+//? post: cog[*].dacs == u8 [0xff 0x55 0x52 0xe7]
+//? run: "physical vector 033"
+//? const: dacs = 0xfaf522ed
+//? const: cy = 0x9bc8dcb7
+//? const: ci = 0xa0d846df
+//? const: cq = 0x57208ce6
+//? const: mode = 0x31
+//? const: angle = 0xdf
+//? post: cog[*].dacs == u8 [0x00 0xae 0xe9 0x7c]
+//? run: "physical vector 034"
+//? const: dacs = 0xa7bf801e
+//? const: cy = 0xb7e4cc6f
+//? const: ci = 0x842e8052
+//? const: cq = 0x6b3082f4
+//? const: mode = 0x37
+//? const: angle = 0x5f
+//? post: cog[*].dacs == u8 [0xff 0x67 0x92 0xb1]
+//? run: "physical vector 035"
+//? const: dacs = 0x9c5b72af
+//? const: cy = 0xa19c86a8
+//? const: ci = 0xf67ff50b
+//? const: cq = 0x2394e77d
+//? const: mode = 0x38
+//? const: angle = 0x3c
+//? post: cog[*].dacs == u8 [0xff 0x44 0x4f 0x2f]
+//? run: "physical vector 036"
+//? const: dacs = 0xe69a40dc
+//? const: cy = 0x4398e73c
+//? const: ci = 0xf4c287b7
+//? const: cq = 0x79b24da5
+//? const: mode = 0x3b
+//? const: angle = 0xbd
+//? post: cog[*].dacs == u8 [0xff 0x23 0x1a 0x06]
+//? run: "physical vector 037"
+//? const: dacs = 0x83c7df09
+//? const: cy = 0xfe12813
+//? const: ci = 0x1dde8f32
+//? const: cq = 0x44b4457a
+//? const: mode = 0x31
+//? const: angle = 0xa2
+//? post: cog[*].dacs == u8 [0x00 0xc1 0x55 0x37]
+//? run: "physical vector 038"
+//? const: dacs = 0x53847df2
+//? const: cy = 0xda14e4f8
+//? const: ci = 0xec9c17b4
+//? const: cq = 0x9161ce81
+//? const: mode = 0x35
+//? const: angle = 0x1d
+//? post: cog[*].dacs == u8 [0xff 0x6c 0x48 0xd8]
+//? run: "physical vector 039"
+//? const: dacs = 0x84b4b8f7
+//? const: cy = 0x473a8a5f
+//? const: ci = 0xc1675326
+//? const: cq = 0x78bd37c2
+//? const: mode = 0x32
+//? const: angle = 0x61
+//? post: cog[*].dacs == u8 [0xff 0x25 0xed 0x50]
+//? run: "physical vector 040"
+//? const: dacs = 0x5d612438
+//? const: cy = 0x69d5dca
+//? const: ci = 0x7c1e47e7
+//? const: cq = 0x359e8e44
+//? const: mode = 0x34
+//? const: angle = 0xa0
+//? post: cog[*].dacs == u8 [0x00 0x00 0xa3 0x9d]
+//? run: "physical vector 041"
+//? const: dacs = 0x9f1687b5
+//? const: cy = 0x3a31147d
+//? const: ci = 0x5e264d92
+//? const: cq = 0x5e3b7785
+//? const: mode = 0x3d
+//? const: angle = 0xe6
+//? post: cog[*].dacs == u8 [0x00 0x81 0x13 0x97]
+//? run: "physical vector 042"
+//? const: dacs = 0x9abbba1e
+//? const: cy = 0x142a3e61
+//? const: ci = 0x36a92a4b
+//? const: cq = 0xe6744e81
+//? const: mode = 0x37
+//? const: angle = 0x95
+//? post: cog[*].dacs == u8 [0xff 0x9a 0x67 0x10]
+//? run: "physical vector 043"
+//? const: dacs = 0xaca6ede7
+//? const: cy = 0x2c01b9cb
+//? const: ci = 0x6147909
+//? const: cq = 0xa9f1681a
+//? const: mode = 0x31
+//? const: angle = 0xca
+//? post: cog[*].dacs == u8 [0x00 0x52 0x0b 0x83]
+//? run: "physical vector 044"
+//? const: dacs = 0xc5d85938
+//? const: cy = 0x88b97091
+//? const: ci = 0x747d4584
+//? const: cq = 0xc75e7532
+//? const: mode = 0x32
+//? const: angle = 0x22
+//? post: cog[*].dacs == u8 [0x00 0x02 0x39 0xae]
+//? run: "physical vector 045"
+//? const: dacs = 0x4fff9b9
+//? const: cy = 0x6f908f0a
+//? const: ci = 0xf5d776ef
+//? const: cq = 0x9755effd
+//? const: mode = 0x32
+//? const: angle = 0xc7
+//? post: cog[*].dacs == u8 [0xff 0x3a 0x82 0x52]
+//? run: "physical vector 046"
+//? const: dacs = 0x275a8d16
+//? const: cy = 0xb5aadae4
+//? const: ci = 0x251117e2
+//? const: cq = 0xc109d0ec
+//? const: mode = 0x36
+//? const: angle = 0x5b
+//? post: cog[*].dacs == u8 [0x00 0xc0 0x28 0x66]
+//? run: "physical vector 047"
+//? const: dacs = 0x7891656f
+//? const: cy = 0xac039ef1
+//? const: ci = 0xed5bd761
+//? const: cq = 0x8220089a
+//? const: mode = 0x38
+//? const: angle = 0x9f
+//? post: cog[*].dacs == u8 [0xff 0x4e 0x95 0xc7]
+//? run: "physical vector 048"
+//? const: dacs = 0x14577d54
+//? const: cy = 0xb65f5a88
+//? const: ci = 0x78d1274c
+//? const: cq = 0x6960b029
+//? const: mode = 0x4f
+//? const: angle = 0xe
+//? post: cog[*].dacs == u8 [0x3c 0x38 0x4b 0x4b]
+//? run: "physical vector 049"
+//? const: dacs = 0x30d0825d
+//? const: cy = 0x4c8ec2a8
+//? const: ci = 0xc60b5071
+//? const: cq = 0x6217aeaa
+//? const: mode = 0x44
+//? const: angle = 0x57
+//? post: cog[*].dacs == u8 [0x71 0xe7 0xae 0xae]
+//? run: "physical vector 050"
+//? const: dacs = 0x15bfad6e
+//? const: cy = 0x26b6c2bf
+//? const: ci = 0x32eb270b
+//? const: cq = 0xce18d939
+//? const: mode = 0x45
+//? const: angle = 0x57
+//? post: cog[*].dacs == u8 [0x00 0x56 0x1d 0x1d]
+//? run: "physical vector 051"
+//? const: dacs = 0x11015d63
+//? const: cy = 0xf1aeeded
+//? const: ci = 0x9cc91aa3
+//? const: cq = 0xf8bc48b9
+//? const: mode = 0x4e
+//? const: angle = 0x9f
+//? post: cog[*].dacs == u8 [0x00 0x9c 0xe3 0xe3]
+//? run: "physical vector 052"
+//? const: dacs = 0x7313dae0
+//? const: cy = 0xcac647a
+//? const: ci = 0x90bedf54
+//? const: cq = 0x752329b8
+//? const: mode = 0x48
+//? const: angle = 0x86
+//? post: cog[*].dacs == u8 [0x48 0xf8 0x88 0x88]
+//? run: "physical vector 053"
+//? const: dacs = 0xf4ef7ba5
+//? const: cy = 0xabb97920
+//? const: ci = 0x723cbe14
+//? const: cq = 0xae4acc0c
+//? const: mode = 0x46
+//? const: angle = 0xf8
+//? post: cog[*].dacs == u8 [0x14 0xba 0xc2 0xc2]
+//? run: "physical vector 054"
+//? const: dacs = 0x5afe8116
+//? const: cy = 0x407881af
+//? const: ci = 0xd0e83776
+//? const: cq = 0xdb02cacf
+//? const: mode = 0x41
+//? const: angle = 0xcc
+//? post: cog[*].dacs == u8 [0x00 0x91 0xc2 0xc2]
+//? run: "physical vector 055"
+//? const: dacs = 0xb2911447
+//? const: cy = 0x63e9aedf
+//? const: ci = 0x64acd8ca
+//? const: cq = 0xc067f7
+//? const: mode = 0x4e
+//? const: angle = 0x1e
+//? post: cog[*].dacs == u8 [0x00 0xaa 0xb3 0xb3]
+//? run: "physical vector 056"
+//? const: dacs = 0x5d8ae8a4
+//? const: cy = 0x33c2d561
+//? const: ci = 0x49b5e067
+//? const: cq = 0x5ac779a4
+//? const: mode = 0x4a
+//? const: angle = 0xcd
+//? post: cog[*].dacs == u8 [0xd9 0x46 0x7b 0x7b]
+//? run: "physical vector 057"
+//? const: dacs = 0xf2ffe55
+//? const: cy = 0xe1044650
+//? const: ci = 0xb5f7c5ff
+//? const: cq = 0x9ef387ac
+//? const: mode = 0x47
+//? const: angle = 0x8b
+//? post: cog[*].dacs == u8 [0xff 0x4b 0x9e 0x9e]
+//? run: "physical vector 058"
+//? const: dacs = 0x7a4a7ace
+//? const: cy = 0xb4a1bb5f
+//? const: ci = 0xc72eefac
+//? const: cq = 0xab351910
+//? const: mode = 0x4d
+//? const: angle = 0x4c
+//? post: cog[*].dacs == u8 [0x00 0x4e 0x3e 0x3e]
+//? run: "physical vector 059"
+//? const: dacs = 0x51e4bc0f
+//? const: cy = 0xfedcac3c
+//? const: ci = 0x5b1af803
+//? const: cq = 0x75d868e6
+//? const: mode = 0x48
+//? const: angle = 0xc9
+//? post: cog[*].dacs == u8 [0x00 0xd8 0xf2 0xf2]
+//? run: "physical vector 060"
+//? const: dacs = 0x45427a58
+//? const: cy = 0xca3d170e
+//? const: ci = 0xe627236e
+//? const: cq = 0x1127ac4d
+//? const: mode = 0x44
+//? const: angle = 0x3d
+//? post: cog[*].dacs == u8 [0xb0 0x86 0xe9 0xe9]
+//? run: "physical vector 061"
+//? const: dacs = 0xb02cc1a1
+//? const: cy = 0xef553142
+//? const: ci = 0x3c243421
+//? const: cq = 0x270115fe
+//? const: mode = 0x45
+//? const: angle = 0x2d
+//? post: cog[*].dacs == u8 [0x21 0x5b 0x7e 0x7e]
+//? run: "physical vector 062"
+//? const: dacs = 0x7fef91a
+//? const: cy = 0xc7456565
+//? const: ci = 0x643b20d7
+//? const: cq = 0x42ccdb94
+//? const: mode = 0x4e
+//? const: angle = 0xe
+//? post: cog[*].dacs == u8 [0x00 0xdc 0x48 0x48]
+//? run: "physical vector 063"
+//? const: dacs = 0x1904285f
+//? const: cy = 0xb02e90d8
+//? const: ci = 0x61866c7a
+//? const: cq = 0x161448e8
+//? const: mode = 0x46
+//? const: angle = 0x69
+//? post: cog[*].dacs == u8 [0x00 0xba 0xd2 0xd2]
+//? run: "physical vector 064"
+//? const: dacs = 0x3df98f8
+//? const: cy = 0xa57b1360
+//? const: ci = 0x596a4ad6
+//? const: cq = 0xda721fd4
+//? const: mode = 0x4c
+//? const: angle = 0x2f
+//? post: cog[*].dacs == u8 [0x50 0xc1 0x3d 0x3d]
+//? run: "physical vector 065"
+//? const: dacs = 0xe6dc52c1
+//? const: cy = 0x9e17079d
+//? const: ci = 0x73b5ddcc
+//? const: cq = 0x4944b2bc
+//? const: mode = 0x47
+//? const: angle = 0x1f
+//? post: cog[*].dacs == u8 [0xcc 0x38 0x48 0x48]
+//? run: "physical vector 066"
+//? const: dacs = 0xed107e66
+//? const: cy = 0x67e106b0
+//? const: ci = 0xd59d42fd
+//? const: cq = 0x5c39bb81
+//? const: mode = 0x47
+//? const: angle = 0x1f
+//? post: cog[*].dacs == u8 [0x00 0xd3 0x52 0x52]
+//? run: "physical vector 067"
+//? const: dacs = 0x951ca217
+//? const: cy = 0x706e014
+//? const: ci = 0xcded152e
+//? const: cq = 0x1fd39638
+//? const: mode = 0x4e
+//? const: angle = 0x5b
+//? post: cog[*].dacs == u8 [0x00 0x07 0xcf 0xcf]
+//? run: "physical vector 068"
+//? const: dacs = 0x23596e8
+//? const: cy = 0xd0624f25
+//? const: ci = 0x6629908b
+//? const: cq = 0xd726feaa
+//? const: mode = 0x40
+//? const: angle = 0xdb
+//? post: cog[*].dacs == u8 [0xad 0x99 0x9c 0x9c]
+//? run: "physical vector 069"
+//? const: dacs = 0x343c5b19
+//? const: cy = 0x4e36e00b
+//? const: ci = 0x3e3f90aa
+//? const: cq = 0x8bccddbd
+//? const: mode = 0x42
+//? const: angle = 0xbe
+//? post: cog[*].dacs == u8 [0xaa 0x6a 0x57 0x57]
+//? run: "physical vector 070"
+//? const: dacs = 0xe98867fa
+//? const: cy = 0x6b3cda64
+//? const: ci = 0x906bbb98
+//? const: cq = 0x87f54792
+//? const: mode = 0x42
+//? const: angle = 0x31
+//? post: cog[*].dacs == u8 [0x00 0x96 0x04 0x04]
+//? run: "physical vector 071"
+//? const: dacs = 0x1630a82b
+//? const: cy = 0x2bea6004
+//? const: ci = 0xde441e87
+//? const: cq = 0x2f1ac509
+//? const: mode = 0x49
+//? const: angle = 0x7f
+//? post: cog[*].dacs == u8 [0x00 0xf7 0xee 0xee]
+//? run: "physical vector 072"
+//? const: dacs = 0xda13e5cc
+//? const: cy = 0x752f9138
+//? const: ci = 0x4a6029fe
+//? const: cq = 0x36df412d
+//? const: mode = 0x55
+//? const: angle = 0x9a
+//? post: cog[*].dacs == u8 [0x3f 0x3b 0x4d 0x4d]
+//? run: "physical vector 073"
+//? const: dacs = 0xdcf638f9
+//? const: cy = 0xc08b0ef4
+//? const: ci = 0x64fa44fd
+//? const: cq = 0x45d44a5b
+//? const: mode = 0x54
+//? const: angle = 0xb7
+//? post: cog[*].dacs == u8 [0xfd 0x18 0xba 0xba]
+//? run: "physical vector 074"
+//? const: dacs = 0xc6e4c6ae
+//? const: cy = 0x7d782d3c
+//? const: ci = 0xf02ad287
+//? const: cq = 0x8c3ca643
+//? const: mode = 0x53
+//? const: angle = 0x89
+//? post: cog[*].dacs == u8 [0x00 0x1b 0xd8 0xd8]
+//? run: "physical vector 075"
+//? const: dacs = 0xbcee8a8f
+//? const: cy = 0xd1c239af
+//? const: ci = 0x485be9a2
+//? const: cq = 0xca1cc426
+//? const: mode = 0x52
+//? const: angle = 0x48
+//? post: cog[*].dacs == u8 [0x00 0x35 0x0f 0x0f]
+//? run: "physical vector 076"
+//? const: dacs = 0x9f4634c
+//? const: cy = 0xa46ac6c0
+//? const: ci = 0xef662a75
+//? const: cq = 0xd2e1d8e6
+//? const: mode = 0x56
+//? const: angle = 0x46
+//? post: cog[*].dacs == u8 [0x56 0x09 0x79 0x79]
+//? run: "physical vector 077"
+//? const: dacs = 0xad529b5d
+//? const: cy = 0x6ce14f21
+//? const: ci = 0x77ceb78f
+//? const: cq = 0xe1b5261d
+//? const: mode = 0x5d
+//? const: angle = 0xcd
+//? post: cog[*].dacs == u8 [0x8f 0x33 0xa5 0xa5]
+//? run: "physical vector 078"
+//? const: dacs = 0x7ceea162
+//? const: cy = 0xbf5caeb6
+//? const: ci = 0xb9960f10
+//? const: cq = 0x2586f6c7
+//? const: mode = 0x56
+//? const: angle = 0xcf
+//? post: cog[*].dacs == u8 [0x00 0xdd 0x16 0x16]
+//? run: "physical vector 079"
+//? const: dacs = 0xcc8fe16b
+//? const: cy = 0xa6727fd4
+//? const: ci = 0x995e262a
+//? const: cq = 0x92c68abb
+//? const: mode = 0x52
+//? const: angle = 0x21
+//? post: cog[*].dacs == u8 [0x00 0xda 0x1f 0x1f]
+//? run: "physical vector 080"
+//? const: dacs = 0xb632af4
+//? const: cy = 0x8f6d66b4
+//? const: ci = 0x3ec0be3c
+//? const: cq = 0x20bd7337
+//? const: mode = 0x5e
+//? const: angle = 0xca
+//? post: cog[*].dacs == u8 [0x20 0x00 0xe9 0xe9]
+//? run: "physical vector 081"
+//? const: dacs = 0xf834ccc1
+//? const: cy = 0x2d2ba02c
+//? const: ci = 0xbf7f14d4
+//? const: cq = 0xe9860061
+//? const: mode = 0x5b
+//? const: angle = 0xb0
+//? post: cog[*].dacs == u8 [0xd4 0x5d 0xd0 0xd0]
+//? run: "physical vector 082"
+//? const: dacs = 0x579e7406
+//? const: cy = 0x71a7111a
+//? const: ci = 0xa664fe93
+//? const: cq = 0x714a2937
+//? const: mode = 0x52
+//? const: angle = 0xcf
+//? post: cog[*].dacs == u8 [0x00 0x55 0x1e 0x1e]
+//? run: "physical vector 083"
+//? const: dacs = 0xd167cc0f
+//? const: cy = 0xe499bb37
+//? const: ci = 0xf0c14661
+//? const: cq = 0x9ae0ab69
+//? const: mode = 0x57
+//? const: angle = 0xb3
+//? post: cog[*].dacs == u8 [0x00 0x99 0x30 0x30]
+//? run: "physical vector 084"
+//? const: dacs = 0x93d8ae7c
+//? const: cy = 0xf62518fe
+//? const: ci = 0xf5432deb
+//? const: cq = 0xad10c8bd
+//? const: mode = 0x55
+//? const: angle = 0x76
+//? post: cog[*].dacs == u8 [0x51 0x78 0x0c 0x0c]
+//? run: "physical vector 085"
+//? const: dacs = 0xc013d60d
+//? const: cy = 0x2ff48b39
+//? const: ci = 0x2bec8239
+//? const: cq = 0xd8b7ee61
+//? const: mode = 0x5e
+//? const: angle = 0xd4
+//? post: cog[*].dacs == u8 [0x39 0x85 0x5d 0x5d]
+//? run: "physical vector 086"
+//? const: dacs = 0xb93cb09e
+//? const: cy = 0x3624ae5c
+//? const: ci = 0xb960563c
+//? const: cq = 0x1a45b503
+//? const: mode = 0x5b
+//? const: angle = 0xca
+//? post: cog[*].dacs == u8 [0x00 0x2c 0x29 0x29]
+//? run: "physical vector 087"
+//? const: dacs = 0x3d5edf3
+//? const: cy = 0x1f0388aa
+//? const: ci = 0x36e02493
+//? const: cq = 0x6489d3ad
+//? const: mode = 0x5f
+//? const: angle = 0xe7
+//? post: cog[*].dacs == u8 [0x00 0xa4 0xf7 0xf7]
+//? run: "physical vector 088"
+//? const: dacs = 0xed0a269c
+//? const: cy = 0x2639d098
+//? const: ci = 0xa2a57bcb
+//? const: cq = 0xb21105db
+//? const: mode = 0x55
+//? const: angle = 0x5f
+//? post: cog[*].dacs == u8 [0xd4 0x57 0x50 0x50]
+//? run: "physical vector 089"
+//? const: dacs = 0xf0c410bd
+//? const: cy = 0x5d396816
+//? const: ci = 0x3632f54c
+//? const: cq = 0xe2c5be16
+//? const: mode = 0x55
+//? const: angle = 0x64
+//? post: cog[*].dacs == u8 [0x4c 0x06 0x3c 0x3c]
+//? run: "physical vector 090"
+//? const: dacs = 0x5e4cabbe
+//? const: cy = 0x17c3bd66
+//? const: ci = 0x162fe96b
+//? const: cq = 0x2a72c2e2
+//? const: mode = 0x5c
+//? const: angle = 0x51
+//? post: cog[*].dacs == u8 [0x00 0xd3 0xf1 0xf1]
+//? run: "physical vector 091"
+//? const: dacs = 0xc0ff3b27
+//? const: cy = 0x63ba12d3
+//? const: ci = 0x7f786167
+//? const: cq = 0x7827ff36
+//? const: mode = 0x52
+//? const: angle = 0x26
+//? post: cog[*].dacs == u8 [0x00 0x4f 0x19 0x19]
+//? run: "physical vector 092"
+//? const: dacs = 0x6fc64e54
+//? const: cy = 0x4c4042b7
+//? const: ci = 0xe9822d8b
+//? const: cq = 0x3eeb8a3
+//? const: mode = 0x5a
+//? const: angle = 0x60
+//? post: cog[*].dacs == u8 [0x84 0xa0 0x81 0x81]
+//? run: "physical vector 093"
+//? const: dacs = 0x10d8a2c9
+//? const: cy = 0x2ddfdbe1
+//? const: ci = 0x55a0bcce
+//? const: cq = 0x399eff32
+//? const: mode = 0x51
+//? const: angle = 0xce
+//? post: cog[*].dacs == u8 [0xce 0x5d 0xf9 0xf9]
+//? run: "physical vector 094"
+//? const: dacs = 0xd2d3bc1a
+//? const: cy = 0x76806eb1
+//? const: ci = 0x40c894f5
+//? const: cq = 0xf386bd12
+//? const: mode = 0x5a
+//? const: angle = 0x34
+//? post: cog[*].dacs == u8 [0x00 0xac 0x9a 0x9a]
+//? run: "physical vector 095"
+//? const: dacs = 0x3f6cf053
+//? const: cy = 0x8c349789
+//? const: ci = 0xef495a6e
+//? const: cq = 0xb2655dbb
+//? const: mode = 0x54
+//? const: angle = 0x27
+//? post: cog[*].dacs == u8 [0x00 0xc0 0x05 0x05]
+//? run: "physical vector 096"
+//? const: dacs = 0x4c2cbd90
+//? const: cy = 0x664f8d18
+//? const: ci = 0xad33702d
+//? const: cq = 0xd6d5c1dd
+//? const: mode = 0x62
+//? const: angle = 0x23
+//? post: cog[*].dacs == u8 [0x1e 0x1e 0x1e 0x1e]
+//? run: "physical vector 097"
+//? const: dacs = 0x2df63e39
+//? const: cy = 0x54c8399e
+//? const: ci = 0x71e66325
+//? const: cq = 0xb960d12e
+//? const: mode = 0x6c
+//? const: angle = 0x44
+//? post: cog[*].dacs == u8 [0x0b 0x0b 0x0b 0x0b]
+//? run: "physical vector 098"
+//? const: dacs = 0x1939d002
+//? const: cy = 0x1981f7c1
+//? const: ci = 0xcf08ceb5
+//? const: cq = 0xc5d99ef0
+//? const: mode = 0x6c
+//? const: angle = 0x4e
+//? post: cog[*].dacs == u8 [0xf6 0xf6 0xf6 0xf6]
+//? run: "physical vector 099"
+//? const: dacs = 0xafdb1ab
+//? const: cy = 0x78d8797
+//? const: ci = 0xc4b348d
+//? const: cq = 0xac8f5e44
+//? const: mode = 0x66
+//? const: angle = 0x1f
+//? post: cog[*].dacs == u8 [0xe0 0xe0 0xe0 0xe0]
+//? run: "physical vector 100"
+//? const: dacs = 0xdf41dca4
+//? const: cy = 0x1d65d4bb
+//? const: ci = 0xbce63557
+//? const: cq = 0x30a17130
+//? const: mode = 0x62
+//? const: angle = 0xc0
+//? post: cog[*].dacs == u8 [0x9f 0x9f 0x9f 0x9f]
+//? run: "physical vector 101"
+//? const: dacs = 0xc5179a3d
+//? const: cy = 0xabc7c256
+//? const: ci = 0xa6ee654b
+//? const: cq = 0xbaf68158
+//? const: mode = 0x64
+//? const: angle = 0x3c
+//? post: cog[*].dacs == u8 [0x93 0x93 0x93 0x93]
+//? run: "physical vector 102"
+//? const: dacs = 0x386f68ca
+//? const: cy = 0x55122c95
+//? const: ci = 0x7987e397
+//? const: cq = 0x3ac8e31f
+//? const: mode = 0x69
+//? const: angle = 0x54
+//? post: cog[*].dacs == u8 [0x86 0x86 0x86 0x86]
+//? run: "physical vector 103"
+//? const: dacs = 0x907a9fb7
+//? const: cy = 0x5d2f4317
+//? const: ci = 0x599fd8a
+//? const: cq = 0x5e738dc9
+//? const: mode = 0x6b
+//? const: angle = 0x20
+//? post: cog[*].dacs == u8 [0xd1 0xd1 0xd1 0xd1]
+//? run: "physical vector 104"
+//? const: dacs = 0xfbfd5d80
+//? const: cy = 0x11556a6b
+//? const: ci = 0x294b1c92
+//? const: cq = 0x1ebde3dc
+//? const: mode = 0x63
+//? const: angle = 0x94
+//? post: cog[*].dacs == u8 [0x40 0x40 0x40 0x40]
+//? run: "physical vector 105"
+//? const: dacs = 0x2e7df461
+//? const: cy = 0xe67f68d0
+//? const: ci = 0xc0607ffc
+//? const: cq = 0xc193a275
+//? const: mode = 0x6b
+//? const: angle = 0xd7
+//? post: cog[*].dacs == u8 [0xb2 0xb2 0xb2 0xb2]
+//? run: "physical vector 106"
+//? const: dacs = 0xa87266d2
+//? const: cy = 0x85edfcee
+//? const: ci = 0xcf682b09
+//? const: cq = 0xd62cde6c
+//? const: mode = 0x64
+//? const: angle = 0x52
+//? post: cog[*].dacs == u8 [0x5b 0x5b 0x5b 0x5b]
+//? run: "physical vector 107"
+//? const: dacs = 0x9ce18dbb
+//? const: cy = 0xe7cf8a60
+//? const: ci = 0x4904dbe2
+//? const: cq = 0xca7fe9c8
+//? const: mode = 0x69
+//? const: angle = 0xb4
+//? post: cog[*].dacs == u8 [0x49 0x49 0x49 0x49]
+//? run: "physical vector 108"
+//? const: dacs = 0x5b687f4c
+//? const: cy = 0xdde6a91
+//? const: ci = 0xde7960c7
+//? const: cq = 0x59ab13db
+//? const: mode = 0x60
+//? const: angle = 0x14
+//? post: cog[*].dacs == u8 [0x77 0x77 0x77 0x77]
+//? run: "physical vector 109"
+//? const: dacs = 0xa97dae0d
+//? const: cy = 0x4e1bf8d3
+//? const: ci = 0xf69c50b1
+//? const: cq = 0x6c10eb18
+//? const: mode = 0x67
+//? const: angle = 0xe6
+//? post: cog[*].dacs == u8 [0xbd 0xbd 0xbd 0xbd]
+//? run: "physical vector 110"
+//? const: dacs = 0x6993e6b2
+//? const: cy = 0xef45798e
+//? const: ci = 0x6d438f3f
+//? const: cq = 0xabb6d7cc
+//? const: mode = 0x6b
+//? const: angle = 0xee
+//? post: cog[*].dacs == u8 [0xc5 0xc5 0xc5 0xc5]
+//? run: "physical vector 111"
+//? const: dacs = 0x9179619b
+//? const: cy = 0x83b77fea
+//? const: ci = 0xaa162ea1
+//? const: cq = 0xa4ac9522
+//? const: mode = 0x62
+//? const: angle = 0xc0
+//? post: cog[*].dacs == u8 [0xfa 0xfa 0xfa 0xfa]
+//? run: "physical vector 112"
+//? const: dacs = 0xb5ae4860
+//? const: cy = 0x954c8ca
+//? const: ci = 0x9cba9854
+//? const: cq = 0x7fafc332
+//? const: mode = 0x6c
+//? const: angle = 0x90
+//? post: cog[*].dacs == u8 [0xbb 0xbb 0xbb 0xbb]
+//? run: "physical vector 113"
+//? const: dacs = 0xf3ef5ab5
+//? const: cy = 0xd4fb33f1
+//? const: ci = 0x50057213
+//? const: cq = 0xbd2bccee
+//? const: mode = 0x63
+//? const: angle = 0x52
+//? post: cog[*].dacs == u8 [0x08 0x08 0x08 0x08]
+//? run: "physical vector 114"
+//? const: dacs = 0x720949c6
+//? const: cy = 0xc293e4f6
+//? const: ci = 0xa18bb32a
+//? const: cq = 0xfdd1e38d
+//? const: mode = 0x66
+//? const: angle = 0x54
+//? post: cog[*].dacs == u8 [0xd3 0xd3 0xd3 0xd3]
+//? run: "physical vector 115"
+//? const: dacs = 0xacd74e0b
+//? const: cy = 0x3b00e20b
+//? const: ci = 0x984c114d
+//? const: cq = 0x4f085b04
+//? const: mode = 0x6d
+//? const: angle = 0x11
+//? post: cog[*].dacs == u8 [0xa7 0xa7 0xa7 0xa7]
+//? run: "physical vector 116"
+//? const: dacs = 0xbf9b3878
+//? const: cy = 0x92099f0
+//? const: ci = 0x17eca15e
+//? const: cq = 0x1a337961
+//? const: mode = 0x6d
+//? const: angle = 0xcf
+//? post: cog[*].dacs == u8 [0xe8 0xe8 0xe8 0xe8]
+//? run: "physical vector 117"
+//? const: dacs = 0xf81dce49
+//? const: cy = 0x81d66aca
+//? const: ci = 0x968718f2
+//? const: cq = 0xfccc62ca
+//? const: mode = 0x6e
+//? const: angle = 0x49
+//? post: cog[*].dacs == u8 [0xaf 0xaf 0xaf 0xaf]
+//? run: "physical vector 118"
+//? const: dacs = 0xfc76bb4e
+//? const: cy = 0xb918a3b4
+//? const: ci = 0x57968052
+//? const: cq = 0x17c007e6
+//? const: mode = 0x61
+//? const: angle = 0x4b
+//? post: cog[*].dacs == u8 [0x11 0x11 0x11 0x11]
+//? run: "physical vector 119"
+//? const: dacs = 0x8e7f337
+//? const: cy = 0x6887d90a
+//? const: ci = 0x69686311
+//? const: cq = 0xbf612487
+//? const: mode = 0x6f
+//? const: angle = 0xf2
+//? post: cog[*].dacs == u8 [0x26 0x26 0x26 0x26]
+//? run: "physical vector 120"
+//? const: dacs = 0x4bca7148
+//? const: cy = 0x3aa9d946
+//? const: ci = 0xaab8b775
+//? const: cq = 0xf23ff5ca
+//? const: mode = 0x7d
+//? const: angle = 0x36
+//? post: cog[*].dacs == u8 [0xb7 0xb7 0xb7 0xb7]
+//? run: "physical vector 121"
+//? const: dacs = 0x902bd1c5
+//? const: cy = 0x32fb9187
+//? const: ci = 0x359b4aec
+//? const: cq = 0xdbf70a1
+//? const: mode = 0x70
+//? const: angle = 0xa9
+//? post: cog[*].dacs == u8 [0xca 0xca 0xca 0xca]
+//? run: "physical vector 122"
+//? const: dacs = 0xa46dd57e
+//? const: cy = 0x1929c542
+//? const: ci = 0x8b946952
+//? const: cq = 0x67dfe599
+//? const: mode = 0x76
+//? const: angle = 0xfc
+//? post: cog[*].dacs == u8 [0x28 0x28 0x28 0x28]
+//? run: "physical vector 123"
+//? const: dacs = 0xbe843f63
+//? const: cy = 0x1c2de75e
+//? const: ci = 0xb542795a
+//? const: cq = 0x3365439c
+//? const: mode = 0x78
+//? const: angle = 0xe8
+//? post: cog[*].dacs == u8 [0xeb 0xeb 0xeb 0xeb]
+//? run: "physical vector 124"
+//? const: dacs = 0x3905296c
+//? const: cy = 0xbd45ab27
+//? const: ci = 0x3683b3b5
+//? const: cq = 0xc799d4bc
+//? const: mode = 0x75
+//? const: angle = 0xb5
+//? post: cog[*].dacs == u8 [0xf4 0xf4 0xf4 0xf4]
+//? run: "physical vector 125"
+//? const: dacs = 0x149d3e3d
+//? const: cy = 0x2e5a6ca1
+//? const: ci = 0xccc8c5d6
+//? const: cq = 0x50be0c45
+//? const: mode = 0x73
+//? const: angle = 0x58
+//? post: cog[*].dacs == u8 [0x3a 0x3a 0x3a 0x3a]
+//? run: "physical vector 126"
+//? const: dacs = 0xe9a0a8c2
+//? const: cy = 0x5d6f8774
+//? const: ci = 0x1f76cffc
+//? const: cq = 0x805d4549
+//? const: mode = 0x72
+//? const: angle = 0xbe
+//? post: cog[*].dacs == u8 [0xa0 0xa0 0xa0 0xa0]
+//? run: "physical vector 127"
+//? const: dacs = 0xc4e214b3
+//? const: cy = 0xe0db55b8
+//? const: ci = 0xe48cc8d5
+//? const: cq = 0x1cc03d46
+//? const: mode = 0x72
+//? const: angle = 0x60
+//? post: cog[*].dacs == u8 [0x22 0x22 0x22 0x22]
+//? run: "physical vector 128"
+//? const: dacs = 0x3057bec8
+//? const: cy = 0x9cbf551b
+//? const: ci = 0x7e98f1a1
+//? const: cq = 0x3b4bd663
+//? const: mode = 0x77
+//? const: angle = 0xe2
+//? post: cog[*].dacs == u8 [0x33 0x33 0x33 0x33]
+//? run: "physical vector 129"
+//? const: dacs = 0x5950705d
+//? const: cy = 0xe2415397
+//? const: ci = 0x69311af9
+//? const: cq = 0x51890e88
+//? const: mode = 0x7e
+//? const: angle = 0x7b
+//? post: cog[*].dacs == u8 [0xef 0xef 0xef 0xef]
+//? run: "physical vector 130"
+//? const: dacs = 0x54849df2
+//? const: cy = 0xa471a66e
+//? const: ci = 0x99835c9f
+//? const: cq = 0xce09c278
+//? const: mode = 0x77
+//? const: angle = 0x3f
+//? post: cog[*].dacs == u8 [0x43 0x43 0x43 0x43]
+//? run: "physical vector 131"
+//? const: dacs = 0x9ef2545f
+//? const: cy = 0xc807870
+//? const: ci = 0x55eb7459
+//? const: cq = 0xbf82fd5c
+//? const: mode = 0x75
+//? const: angle = 0xae
+//? post: cog[*].dacs == u8 [0xc7 0xc7 0xc7 0xc7]
+//? run: "physical vector 132"
+//? const: dacs = 0xfe3b8fe8
+//? const: cy = 0xe3e3741d
+//? const: ci = 0x1f10fdf3
+//? const: cq = 0x68ef90b5
+//? const: mode = 0x76
+//? const: angle = 0x6c
+//? post: cog[*].dacs == u8 [0x08 0x08 0x08 0x08]
+//? run: "physical vector 133"
+//? const: dacs = 0xd0336715
+//? const: cy = 0xf7d7274e
+//? const: ci = 0xa1a6b88e
+//? const: cq = 0x48e0a5a4
+//? const: mode = 0x7b
+//? const: angle = 0x79
+//? post: cog[*].dacs == u8 [0x73 0x73 0x73 0x73]
+//? run: "physical vector 134"
+//? const: dacs = 0xbf9bb71e
+//? const: cy = 0x362d0f5d
+//? const: ci = 0x1b8bfce4
+//? const: cq = 0xf1008e1d
+//? const: mode = 0x72
+//? const: angle = 0xe
+//? post: cog[*].dacs == u8 [0x56 0x56 0x56 0x56]
+//? run: "physical vector 135"
+//? const: dacs = 0x8bdc7daf
+//? const: cy = 0xb66619c0
+//? const: ci = 0x9fa81db5
+//? const: cq = 0x48fbe8ae
+//? const: mode = 0x77
+//? const: angle = 0x3c
+//? post: cog[*].dacs == u8 [0xee 0xee 0xee 0xee]
+//? run: "physical vector 136"
+//? const: dacs = 0xce9559c
+//? const: cy = 0x996c7ab0
+//? const: ci = 0xce9d9442
+//? const: cq = 0x320ff406
+//? const: mode = 0x76
+//? const: angle = 0xec
+//? post: cog[*].dacs == u8 [0xcc 0xcc 0xcc 0xcc]
+//? run: "physical vector 137"
+//? const: dacs = 0x2ac59451
+//? const: cy = 0xbc789e9b
+//? const: ci = 0x8a9b4c7d
+//? const: cq = 0xdfa000b7
+//? const: mode = 0x72
+//? const: angle = 0x20
+//? post: cog[*].dacs == u8 [0xf3 0xf3 0xf3 0xf3]
+//? run: "physical vector 138"
+//? const: dacs = 0xbc12eaae
+//? const: cy = 0xb4bcc631
+//? const: ci = 0x48892d80
+//? const: cq = 0xf0c7a9ef
+//? const: mode = 0x75
+//? const: angle = 0xb8
+//? post: cog[*].dacs == u8 [0xae 0xae 0xae 0xae]
+//? run: "physical vector 139"
+//? const: dacs = 0x62cada33
+//? const: cy = 0x613c33d
+//? const: ci = 0x95734038
+//? const: cq = 0xea88469c
+//? const: mode = 0x7b
+//? const: angle = 0xe8
+//? post: cog[*].dacs == u8 [0xaf 0xaf 0xaf 0xaf]
+//? run: "physical vector 140"
+//? const: dacs = 0xd5982590
+//? const: cy = 0x5c9a508f
+//? const: ci = 0x21f6cae1
+//? const: cq = 0xbd936d86
+//? const: mode = 0x7a
+//? const: angle = 0x42
+//? post: cog[*].dacs == u8 [0xae 0xae 0xae 0xae]
+//? run: "physical vector 141"
+//? const: dacs = 0xa2ae0c55
+//? const: cy = 0x7c3af199
+//? const: ci = 0xd090bce9
+//? const: cq = 0x9ee3eb6a
+//? const: mode = 0x78
+//? const: angle = 0xd9
+//? post: cog[*].dacs == u8 [0x2d 0x2d 0x2d 0x2d]
+//? run: "physical vector 142"
+//? const: dacs = 0x96d69eaa
+//? const: cy = 0xc4decb59
+//? const: ci = 0xec5172a1
+//? const: cq = 0xf9751c5a
+//? const: mode = 0x77
+//? const: angle = 0x87
+//? post: cog[*].dacs == u8 [0x1b 0x1b 0x1b 0x1b]
+//? run: "physical vector 143"
+//? const: dacs = 0x22f1b1c3
+//? const: cy = 0x721f944
+//? const: ci = 0x3e877766
+//? const: cq = 0xec2951cd
+//? const: mode = 0x72
+//? const: angle = 0xea
+//? post: cog[*].dacs == u8 [0xb9 0xb9 0xb9 0xb9]
+
+                // Configure from independently measured vectors; bypass clears carrier phase.
+                SETCMOD 0
+                SETCFRQ 0
+                SETDACS aug(dacs)
+                SETCY   aug(cy)
+                SETCI   aug(ci)
+                SETCQ   aug(cq)
+                SETCMOD mode
+                // Advance exactly two carrier clocks, then retain the selected phase.
+                SETCFRQ aug(angle << 23)
+                SETCFRQ 0
+                WAITX   12
+                JMP     nrel(_end)
+

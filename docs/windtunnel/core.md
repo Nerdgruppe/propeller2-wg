@@ -29,7 +29,10 @@ The [I/O subsystem](io.md) implements pin instructions, digital pads and routing
 long repository, UART and functional USART modes, plus VCD export. Software FIFO,
 CORDIC, interrupts, debugging, skipping, REP and shared RNG behavior are documented
 in the [pipeline notes](pipeline.md) and [hardware findings](../accumulated.md).
-Streamer support, including its colorspace converter, remains unfinished.
+The [digital streamer](streamer.md) supports timed pin output/capture, FIFO/LUT
+transfers, pixel unpacking, TMDS output, events and inspectable DAC bytes.
+The [digital color converter](converter.md) transforms those bytes and supports
+component, S-Video and composite modes. DDS/Goertzel and analog I/O remain unsupported.
 
 `Hub.step()` returns `normal`, `breakpoint`, `reset`, or `trap`. Breakpoints stop
 before execution or after a complete edge for data watchpoints; traps retain the

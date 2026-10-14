@@ -14,6 +14,8 @@ pub const Frame = @import("sim/Frame.zig");
 pub const inspect = @import("sim/inspect.zig");
 pub const Debugger = @import("sim/Debugger.zig");
 pub const Cordic = @import("sim/Cordic.zig");
+pub const Streamer = @import("sim/Streamer.zig");
+pub const ColorConverter = @import("sim/ColorConverter.zig");
 
 pub const Hub = @import("sim/Hub.zig");
 pub const Cog = @import("sim/Cog.zig");

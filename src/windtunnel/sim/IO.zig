@@ -441,7 +441,7 @@ fn updateDirections(io: *IO, hub: *Hub) void {
         const out = @as(u64, cog.registers.get(.OUTA)) | (@as(u64, cog.registers.get(.OUTB)) << 32);
         directions |= dir;
         outputs |= out;
-        drives |= dir & out;
+        drives |= dir & (out | cog.streamer.pins);
     }
     if (directions != io.directions or outputs != io.outputs or drives != io.drives) {
         io.directions = directions;

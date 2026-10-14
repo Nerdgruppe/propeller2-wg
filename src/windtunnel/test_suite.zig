@@ -576,10 +576,11 @@ fn resolve(module: propan.Module, assignment: checklist.Assignment) !Resolved {
         .c => .c,
         .z => .z,
         .q => .q,
+        .dacs => .dacs,
     };
     const offset = switch (assignment.target) {
         .reg, .hub => |a| try address(module, a, kind),
-        .c, .z, .q => 0,
+        .c, .z, .q, .dacs => 0,
         .sym => unreachable,
     };
     const len: u32 = @intCast(assignment.bytes.len);
@@ -748,6 +749,7 @@ fn read(hub: *Hub, cog: u3, observation: Observation, out: *std.Io.Writer) !void
     switch (observation.kind) {
         .reg => try out.writeInt(u32, hub.cogs[cog].registers.get(@enumFromInt(observation.offset)), .little),
         .q => try out.writeInt(u32, hub.cogs[cog].q, .little),
+        .dacs => try out.writeAll(&hub.cogs[cog].dacs),
         .hub => try out.writeAll(hub.memory[observation.offset..][0..observation.len]),
         .c => try out.writeByte(@intFromBool(hub.cogs[cog].c)),
         .z => try out.writeByte(@intFromBool(hub.cogs[cog].z)),
@@ -1356,8 +1358,8 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
     try std.testing.expectError(error.MissingExitJump, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nCOGSTOP 0\n"));
     try std.testing.expectError(error.MissingExitJump, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nif(C) JMP nrel(_end)\n"));
     try std.testing.expectError(error.StopNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nCOGSTOP 0\nJMP nrel(_end)\n"));
-    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nSETDACS 0\nJMP nrel(_end)\n"));
-    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nSETDACS 0\nCOGSTOP 0\n"));
+    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nGETSCP register(20)\nJMP nrel(_end)\n"));
+    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nGETSCP register(20)\nCOGSTOP 0\n"));
     try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWRPIN P_USB_PAIR, 1\nCOGSTOP 0\n"));
     try std.testing.expectError(error.ReadinessNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: \"x\"\n//? stdin-after: \"READY\"\n//? stdout: \"READYx\"\n\n.cogexec\nCOGSTOP 0\n"));
 }
@@ -1729,4 +1731,40 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
     }, &output, &errors.writer));
     try std.testing.expect(std.mem.find(u8, errors.written(), "P2AAS close 1011:") != null);
     try server.await(std.testing.io);
+}
+
+test "DAC checklist observations are local-only, bounded and reject preconditions" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const ctx: Context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer, .retain_failures = false };
+    const header = "//? WINDTUNNEL CHECK LIST\n//? oracle: off \"no digital DAC readback\"\n";
+    const code = "\nSETDACS aug(0x78563412)\nJMP nrel(_end)\n";
+    try std.testing.expectEqual(oracle.Status.off, try runTemporary(ctx, header ++ "//? post: cog[*].dacs == u8 [0x12 0x34 0x56 0x78]\n" ++ code));
+    try std.testing.expectError(error.AssertionFailed, runTemporary(ctx, header ++ "//? post: cog[*].dacs == u8 [0 0 0 0]\n" ++ code));
+    try std.testing.expectError(error.InvalidChecklist, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[*].dacs == u8 [0 0 0 0]\n" ++ code));
+    try std.testing.expectError(error.InvalidChecklist, runTemporary(ctx, header ++ "//? post: cog[*].dacs == u8 [0 0 0]\n" ++ code));
+    try std.testing.expectError(error.InvalidChecklist, runTemporary(ctx, header ++ "//? post: cog[*].dacs == u32 [0]\n" ++ code));
+    try std.testing.expectError(error.InvalidChecklist, runTemporary(ctx, header ++ "//? pre: cog[*].dacs = u8 [0 0 0 0]\n" ++ code));
+}
+
+test "streamer excluded modes and FIFO ownership fail explicitly, while cancellation is inert" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const ctx: Context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer, .retain_failures = false };
+    const header = "//? WINDTUNNEL CHECK LIST\n//? post: cog[*].c == false\n\n";
+    for ([_][]const u8{
+        "XINIT aug(X_DDS_GOERTZEL_SINC1 | 1), 0\n",
+        "XINIT aug(X_1ADC8_0P_1DAC8_WFBYTE | 1), 0\n",
+        "GETXACC register(20)\n",
+    }) |instruction| {
+        const source = try std.mem.concat(ctx.allocator, u8, &.{ header, instruction, "JMP nrel(_end)\n" });
+        defer ctx.allocator.free(source);
+
+        try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, source));
+    }
+    try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_RFLONG_32P_4DAC8 | 1), 0\nCOGSTOP 0\n"));
+    try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 1), 0\nCOGSTOP 0\n"));
+    try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx, header ++ "if(C) SETCMOD 0x120\nif(C) XINIT aug(X_DDS_GOERTZEL_SINC1 | 1), 0\nJMP nrel(_end)\n"));
 }

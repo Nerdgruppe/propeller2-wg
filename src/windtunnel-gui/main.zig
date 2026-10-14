@@ -701,6 +701,14 @@ const GUI = struct {
         show("XBYTE default mode", cog.xbyte_default_mode);
         show("XBYTE phase", cog.xbyte);
         show("FIFO", cog.fifo_state);
+        if (header("DAC outputs", .{ .default_open = true })) {
+            for (cog.dacs, 0..) |value, index| {
+                zgui.text("DAC{d}: {d} (0x{x:0>2})", .{ index, value, value });
+            }
+        }
+        show("Raw DAC inputs", cog.raw_dacs);
+        show("Color converter", cog.converter);
+        show("Streamer", cog.streamer);
         show("Memory transfer", cog.memory_transfer);
         show("Startup", cog.startup);
         show("Read bus", cog.read_bus);
@@ -1067,6 +1075,23 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     const execution: Debugger.Execution = .{ .cog = 0, .domain = .cog, .pc = 0 };
     try gui.debugger.toggleExecution(execution);
     for (&gui.hub.cogs) |*cog| {
+        cog.streamer.apply(cog, .{ .command = try windtunnel.Streamer.Command.init(
+            0x7f01ffff,
+            0x78563412,
+            null,
+            .immediate,
+            .{},
+        ) });
+        cog.streamer.apply(cog, .{ .command = try windtunnel.Streamer.Command.init(
+            0x7f010020,
+            0xfedcba98,
+            null,
+            .continuous,
+            .{},
+        ) });
+        cog.converter.apply(.{ .cy = 0x8000_0000 });
+        cog.converter.apply(.{ .control = 0x120 });
+        _ = cog.converter.step(cog.raw_dacs);
         for (&cog.pipeline, 0..) |*slot, i| {
             slot.* = .{
                 .pc = @intCast(i),
@@ -1082,6 +1107,10 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     _ = gui.hub.cordic.step();
     gui.selected_cell = 1;
     const cordic = gui.hub.cordic;
+    const streamer = gui.hub.cogs[0].streamer;
+    const dacs = gui.hub.cogs[0].dacs;
+    const raw_dacs = gui.hub.cogs[0].raw_dacs;
+    const converter = gui.hub.cogs[0].converter;
     const registers = gui.hub.cogs[0].registers;
     const pipeline = gui.hub.cogs[0].pipeline;
     const random = gui.hub.random;
@@ -1103,6 +1132,10 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     try std.testing.expectEqualDeep(pipeline, gui.hub.cogs[0].pipeline);
     try std.testing.expectEqualDeep(random, gui.hub.random);
     try std.testing.expectEqualDeep(cordic, gui.hub.cordic);
+    try std.testing.expectEqualDeep(streamer, gui.hub.cogs[0].streamer);
+    try std.testing.expectEqualDeep(dacs, gui.hub.cogs[0].dacs);
+    try std.testing.expectEqualDeep(raw_dacs, gui.hub.cogs[0].raw_dacs);
+    try std.testing.expectEqualDeep(converter, gui.hub.cogs[0].converter);
     try std.testing.expectEqual(@as(usize, 0), gui.debugger.hits.items.len);
     try std.testing.expect(gui.debugger.hasExecution(execution));
     try std.testing.expectEqual(@as(u32, 0x7fff0), gui.jump);

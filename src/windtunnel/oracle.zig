@@ -3,7 +3,7 @@ const propan = @import("propan");
 const checklist = @import("check_list.zig");
 const p2aas = @import("p2aas.zig");
 
-pub const Kind = enum { reg, hub, c, z, q };
+pub const Kind = enum { reg, hub, c, z, q, dacs };
 pub const Observation = struct {
     kind: Kind,
     offset: u32 = 0,
@@ -218,7 +218,7 @@ pub fn assemble(
             .c => initial_c = seed.bytes[0] != 0,
             .z => initial_z = seed.bytes[0] != 0,
             .q => initial_q = std.mem.readInt(u32, seed.bytes[0..4], .little),
-            .reg, .hub => return error.InvalidPrecondition,
+            .reg, .hub, .dacs => return error.InvalidPrecondition,
         };
     for (observations) |o| {
         if (o.kind == .hub) {
@@ -456,6 +456,7 @@ pub fn run(ctx: Context, case: Case) !Status {
         var ok = true;
         for (case.observations) |o| {
             const hardware = switch (o.kind) {
+                .dacs => unreachable, // Local-only fixtures are rejected above before hardware preparation.
                 .reg => actual[o.offset * 4 ..][0..4],
                 .q => actual[506 * 4 ..][0..4],
                 .c => actual[506 * 4 + 4 ..][0..1],

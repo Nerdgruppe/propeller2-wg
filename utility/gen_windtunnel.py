@@ -470,6 +470,8 @@ def render_executor_stub(
             const encoding = @import("encoding.zig");
             const Cog = @import("Cog.zig");
             const Cordic = @import("Cordic.zig");
+            const Streamer = @import("Streamer.zig");
+            const ColorConverter = @import("ColorConverter.zig");
             const p2 = @import("p2");
             const types = p2.types;
             const alu = p2.alu;

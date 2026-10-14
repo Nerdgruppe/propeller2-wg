@@ -1,0 +1,34 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "partial stop"
+//? post: cog[*].reg[amount] == 0
+//? post: hub[buffer] == u8 [204]
+//? const: second = 0
+//? run: "partial chained 3+5"
+//? post: cog[*].reg[amount] == 0
+//? post: hub[buffer] == u8 [204]
+//? const: second = 5
+//? run: "partial chained 3+8"
+//? post: cog[*].reg[amount] == 1
+//? post: hub[buffer] == u8 [255]
+//? const: second = 8
+
+                // Observe whether partial capture bytes survive command boundaries or flush on stop.
+                DRVH    0
+                WAITX   20
+                WRFAST  0,                                              aug(hubaddr(buffer))
+                SETXFRQ aug(0x10000000)
+                XINIT   aug(X_1P_1DAC1_WFBYTE | X_WRITE_ON | 3),        0
+.if second
+                XCONT   aug(X_1P_1DAC1_WFBYTE | X_WRITE_ON | second),   0
+.endif
+                WAITXFI
+                GETPTR  amount
+                SUB     amount,                                         aug(hubaddr(buffer))
+                WAITX   100
+                DIRL    0
+                JMP     nrel(_end)
+var amount:     LONG    0
+.data
+.align  4
+var buffer:     BYTE    [0xcc] * 16
+

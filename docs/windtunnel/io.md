@@ -156,8 +156,10 @@ record the measured limits; regression fixtures live in `tests/windtunnel/`.
 and contention. A/B selectors route local/relative pads or the gated OUT bit;
 inversion, digital A/B logic, feedback and optional synchronization are modelled.
 Digital and Schmitt modes use digital levels. The 2/3/5/8-sample unanimous input
-filters and their selectable clock taps feed both GPIO and smart engines. Analog
-behavior, DAC/scope instructions, ADC and USB smart modes remain unsupported.
+filters and their selectable clock taps feed both GPIO and smart engines. SETDACS,
+the [digital streamer](streamer.md), and the [color converter](converter.md) expose
+per-cog DAC bytes without feeding them into pads. Analog behavior, scope instructions, ADC and USB smart
+modes remain unsupported.
 Boolean IN samples `x` and `z` as zero.
 
 Commands distinguish configuration, X/Y writes and acknowledgement. Commands

@@ -69,7 +69,7 @@ INT1–INT3 extension below.
 Event production and source configuration live in Cog/Hub, outside the executor.
 Implemented sources are ordinary interrupt entry (INT), CT1..3, all pin/LUT/lock
 selections for SE1..4, pin pattern comparisons (PAT), attention, and CORDIC empty
-reads (QMT), and FIFO block wraps (FBW). XMT, XFI, XRO, and XRL production remain unsupported. Their consumers
+reads (QMT), and FIFO block wraps (FBW). The [digital streamer](streamer.md) now produces XMT, XFI, XRO, and XRL. Their consumers
 still execute normally: an unset latch polls false, branches according to
 polarity, and waits until signaled or timed out. FIFO configuration clears FBW once on acceptance.
 
@@ -673,3 +673,7 @@ mode/byte combinations, loop timing, cog/LUT handlers, flags, stack escape,
 trailing skips, calls, blocking/nonblocking RDFAST, mode lifetime and CT1 interrupt
 boundaries. See [the measured rules](../accumulated.md#xbyte-bytecode-execution-2026-10-12).
 Local-PC overflow has separate hardware coverage in the preceding section.
+
+The [color converter](converter.md) runs independently of instruction stalls. Its
+measured input, coefficient and phase delays are five, four and three clocks;
+GETBRK WCZ also reports converter activity in bit 22.

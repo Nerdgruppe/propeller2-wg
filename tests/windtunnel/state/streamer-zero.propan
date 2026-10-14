@@ -1,0 +1,39 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "XINIT zero from idle"
+//? post: cog[*].reg[result] == 0
+//? const: start = 0
+//? const: cont = 0
+//? run: "XINIT zero from active"
+//? post: cog[*].reg[result] == 6
+//? const: start = 1
+//? const: cont = 0
+//? run: "XCONT zero from idle"
+//? post: cog[*].reg[result] == 1
+//? const: start = 0
+//? const: cont = 1
+//? run: "XCONT zero from active"
+//? post: cog[*].reg[result] == 7
+//? const: start = 1
+//? const: cont = 1
+
+                // Read event latches after a zero-duration stop command.
+                MOV     result,                     0
+                SETXFRQ aug(0x40000000)
+.if start
+                XINIT   aug(X_IMM_1X32_4DAC8 | 8),  0
+.endif
+.if cont
+                XCONT   0,                          0
+.else
+                XSTOP
+.endif
+                WAITX   100
+                POLLXMT                                 :wc
+                MUXC    result,                     1
+                POLLXFI                                 :wc
+                MUXC    result,                     2
+                POLLXRO                                 :wc
+                MUXC    result,                     4
+                JMP     nrel(_end)
+var result:     LONG    0
+

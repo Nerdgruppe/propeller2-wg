@@ -8,6 +8,8 @@ const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
 const Cog = @import("Cog.zig");
 const Cordic = @import("Cordic.zig");
+const Streamer = @import("Streamer.zig");
+const ColorConverter = @import("ColorConverter.zig");
 const p2 = @import("p2");
 const types = p2.types;
 const alu = p2.alu;
@@ -42,6 +44,60 @@ fn operandS(cog: *Cog, reg: Cog.Register, immediate: bool) u32 {
         state.s_value orelse source
     else
         source;
+}
+
+/// Commit peripheral writes with cog results; direct semantic callers use the same operation immediately.
+fn streamerAction(cog: *Cog, action: Streamer.Action) void {
+    if (cog.collecting_writes) {
+        cog.writeback.streamer = action;
+    } else {
+        cog.streamer.apply(cog, action);
+    }
+}
+
+/// Commit coefficient/frequency writes with results; CMOD selects the final mux one clock earlier.
+fn converterAction(cog: *Cog, action: ColorConverter.Action) void {
+    if (cog.collecting_writes and action != .control) {
+        cog.writeback.converter = action;
+    } else {
+        cog.converter.apply(action);
+        cog.dacs = cog.converter.output(cog.raw_dacs);
+    }
+}
+
+/// Capture a streamer command once, then wait only for space in its one-entry buffer.
+fn streamerCommand(cog: *Cog, args: encoding.Both_Dimm_Simm, start: Streamer.Start) Cog.ExecResult {
+    const state = if (cog.collecting_writes) &cog.pipeline[3].? else null;
+    const command = if (state != null and state.?.streamer_command != null)
+        state.?.streamer_command.?
+    else capture: {
+        const control = operandD(cog, args.d, args.d_imm);
+        const data = operandS(cog, args.s, args.s_imm);
+        const frequency = if (cog.setq_pending and !cog.q2) cog.q else null;
+        const command = Streamer.Command.init(control, data, frequency, start, cog.provenance()) catch |err| {
+            return switch (err) {
+                error.UnsupportedMode => .not_implemented,
+                error.ReservedMode => .{ .illegal = "reserved streamer mode" },
+            };
+        };
+        if (command.fifoMode()) |mode| {
+            if (cog.exec_mode == .hub)
+                return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+            if (cog.fifo_state.engine == null or cog.fifo_state.address == null or cog.fifo_state.engine.?.mode != mode)
+                return .{ .illegal = "streamer FIFO mode requires matching RDFAST/WRFAST" };
+            if (cog.debug.state == .active) {
+                cog.debug.fifo_untouched = false;
+            }
+        }
+        if (state) |instruction| {
+            instruction.streamer_command = command;
+        }
+        break :capture command;
+    };
+    if (start != .immediate and cog.streamer.pending != null)
+        return .wait;
+    streamerAction(cog, .{ .command = command });
+    return .next;
 }
 
 /// Configure the shared interface once while a blocking instruction retries its captured operands.
@@ -1812,10 +1868,8 @@ pub fn getqy(cog: *Cog, args: encoding.Only_D_Flags) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setcy(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcy
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    converterAction(cog, .{ .cy = operandD(cog, args.d, args.d_imm) });
+    return .next;
     // codegen: end:setcy
 }
 
@@ -1828,10 +1882,8 @@ pub fn setcy(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setci(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setci
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    converterAction(cog, .{ .ci = operandD(cog, args.d, args.d_imm) });
+    return .next;
     // codegen: end:setci
 }
 
@@ -1844,10 +1896,8 @@ pub fn setci(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setcq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcq
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    converterAction(cog, .{ .cq = operandD(cog, args.d, args.d_imm) });
+    return .next;
     // codegen: end:setcq
 }
 
@@ -1860,10 +1910,8 @@ pub fn setcq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setcfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcfrq
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    converterAction(cog, .{ .frequency = operandD(cog, args.d, args.d_imm) });
+    return .next;
     // codegen: end:setcfrq
 }
 
@@ -1876,10 +1924,8 @@ pub fn setcfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setcmod(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setcmod
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    converterAction(cog, .{ .control = @truncate(operandD(cog, args.d, args.d_imm)) });
+    return .next;
     // codegen: end:setcmod
 }
 
@@ -4775,10 +4821,8 @@ pub fn wypin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setdacs(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setdacs
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    streamerAction(cog, .{ .dacs = operandD(cog, args.d, args.d_imm) });
+    return .next;
     // codegen: end:setdacs
 }
 
@@ -4827,10 +4871,7 @@ pub fn getscp(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn xinit(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:xinit
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return streamerCommand(cog, args, .immediate);
     // codegen: end:xinit
 }
 
@@ -4843,10 +4884,7 @@ pub fn xinit(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn xzero(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:xzero
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return streamerCommand(cog, args, .zero);
     // codegen: end:xzero
 }
 
@@ -4859,10 +4897,7 @@ pub fn xzero(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn xcont(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:xcont
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    return streamerCommand(cog, args, .continuous);
     // codegen: end:xcont
 }
 
@@ -4875,10 +4910,8 @@ pub fn xcont(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setxfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setxfrq
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    streamerAction(cog, .{ .frequency = operandD(cog, args.d, args.d_imm) });
+    return .next;
     // codegen: end:setxfrq
 }
 

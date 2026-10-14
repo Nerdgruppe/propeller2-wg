@@ -1,0 +1,129 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "LUT shift 0 phase 0"
+//? const: phase = 0
+//? const: shift = 0
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x0
+//? post: cog[*].reg[s4] == 0x12345678
+//? post: cog[*].reg[s5] == 0x12345678
+//? post: cog[*].reg[s6] == 0x12345678
+//? post: cog[*].reg[s7] == 0x12345678
+//? post: cog[*].reg[s8] == 0x12345678
+//? post: cog[*].reg[s9] == 0x12345678
+//? post: cog[*].reg[s10] == 0x12345678
+//? post: cog[*].reg[s11] == 0x12345678
+//? run: "LUT shift 0 phase 1"
+//? const: phase = 1
+//? const: shift = 0
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x12345678
+//? post: cog[*].reg[s4] == 0x12345678
+//? post: cog[*].reg[s5] == 0x12345678
+//? post: cog[*].reg[s6] == 0x12345678
+//? post: cog[*].reg[s7] == 0x12345678
+//? post: cog[*].reg[s8] == 0x12345678
+//? post: cog[*].reg[s9] == 0x12345678
+//? post: cog[*].reg[s10] == 0x12345678
+//? post: cog[*].reg[s11] == 0x12345678
+//? run: "LUT shift 1 phase 0"
+//? const: phase = 0
+//? const: shift = 1
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x0
+//? post: cog[*].reg[s4] == 0x12345678
+//? post: cog[*].reg[s5] == 0x12345678
+//? post: cog[*].reg[s6] == 0x12345678
+//? post: cog[*].reg[s7] == 0x12345678
+//? post: cog[*].reg[s8] == 0x12345678
+//? post: cog[*].reg[s9] == 0x12345678
+//? post: cog[*].reg[s10] == 0x12345678
+//? post: cog[*].reg[s11] == 0x12345678
+//? run: "LUT shift 1 phase 1"
+//? const: phase = 1
+//? const: shift = 1
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x12345678
+//? post: cog[*].reg[s4] == 0x12345678
+//? post: cog[*].reg[s5] == 0x12345678
+//? post: cog[*].reg[s6] == 0x12345678
+//? post: cog[*].reg[s7] == 0x12345678
+//? post: cog[*].reg[s8] == 0x12345678
+//? post: cog[*].reg[s9] == 0x12345678
+//? post: cog[*].reg[s10] == 0x12345678
+//? post: cog[*].reg[s11] == 0x12345678
+
+                // A paired writer occupies the LUT second port while the streamer repeatedly reads location zero.
+                SETLUTS 1
+                WRLUT   aug(0x12345678),                        0
+                MOV     OUTA,                                   0
+                MOV     DIRA,                                   aug(0xffffffff)
+                MOV     PTRA,                                   aug(hubaddr(mailbox))
+                MOV     image,                                  aug(hubaddr(writer))
+                SETQ    PTRA
+                COGINIT 1,                                      image
+                SETXFRQ aug(0x80000000)
+                GETCT   timer
+                ADD     timer,                                  aug(2048)
+                ANDN    timer,                                  7
+                WRLONG  timer,                                  PTRA
+                ADDCT1  timer,                                  0
+                WAITCT1
+                WAITX   shift
+                XINIT   aug(X_IMM_4X8_LUT | X_PINS_ON | 64),    0
+                WAITX   phase
+                MOV     s0,                                     INA
+                MOV     s1,                                     INA
+                MOV     s2,                                     INA
+                MOV     s3,                                     INA
+                MOV     s4,                                     INA
+                MOV     s5,                                     INA
+                MOV     s6,                                     INA
+                MOV     s7,                                     INA
+                MOV     s8,                                     INA
+                MOV     s9,                                     INA
+                MOV     s10,                                    INA
+                MOV     s11,                                    INA
+                XSTOP
+                MOV     DIRA,                                   0
+                COGSTOP 1
+                SETLUTS 0
+                JMP     nrel(_end)
+var image:      LONG    0
+var timer:      LONG    0
+var s0:         LONG    0
+var s1:         LONG    0
+var s2:         LONG    0
+var s3:         LONG    0
+var s4:         LONG    0
+var s5:         LONG    0
+var s6:         LONG    0
+var s7:         LONG    0
+var s8:         LONG    0
+var s9:         LONG    0
+var s10:        LONG    0
+var s11:        LONG    0
+.data
+.align  4
+var mailbox:    LONG    0
+.cogexec    0x4000, 0
+writer:
+                MOV     register(301),  aug(0x55667788)
+wait:
+                RDLONG  register(300),  PTRA
+                TJZ     register(300),  wait
+                ADDCT1  register(300),  0
+                WAITCT1
+                REP     1,              128
+                WRLUT   register(301),  100
+                COGSTOP 1
+                LONG    [0] * 480
+.data
+

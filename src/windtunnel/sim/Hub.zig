@@ -260,6 +260,7 @@ pub fn step(hub: *Hub) StepResult {
     var lut_writes: [8]@TypeOf(hub.cogs[0].writeback.lut) = undefined;
     var lut_provenance: [8]Debugger.Provenance = undefined;
     for (&hub.cogs, &lut_writes) |*cog, *write| {
+        cog.streamer.lut_write = null;
         write.* = cog.writeback.lut;
         lut_provenance[cog.id] = cog.writeback.provenance;
     }
@@ -273,6 +274,9 @@ pub fn step(hub: *Hub) StepResult {
     for (&hub.cogs, lut_writes) |*cog, write| {
         if (write) |value| {
             const other = cog.other();
+            if (other.lut_sharing) {
+                other.streamer.lut_write = value.address;
+            }
             const own = lut_writes[other.id];
             if (other.lut_sharing and own != null and own.?.address == value.address) {
                 other.lut_collision = .{ .clock = hub.counter, .address = value.address };
@@ -333,6 +337,11 @@ pub fn step(hub: *Hub) StepResult {
             hub.init();
             return .reset;
         }
+    }
+    for (&hub.cogs) |*cog| {
+        hub.access_context = cog.provenance();
+        cog.streamer.step(cog);
+        cog.dacs = cog.converter.step(cog.raw_dacs);
     }
     hub.io.step(hub);
     if (hub.fault == null) {
@@ -998,4 +1007,28 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     }
     try std.testing.expectEqual(StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
+}
+
+test "converter clocks independently of execution and cog reset clears only its own DAC state" {
+    var hub: Hub = undefined;
+    hub.init();
+    const cog = &hub.cogs[0];
+    cog.streamer.apply(cog, .{ .dacs = 0x7856_3412 });
+    cog.converter.apply(.{ .cy = 0x8000_0001 });
+    cog.converter.apply(.{ .ci = 0x0080_0002 });
+    cog.converter.apply(.{ .cq = 0x0000_8003 });
+    cog.converter.apply(.{ .control = 0x120 });
+    for (0..6) |_| {
+        _ = hub.step();
+    }
+    try std.testing.expectEqual([4]u8{ 18, 52, 86, 120 }, cog.raw_dacs);
+    try std.testing.expectEqual([4]u8{ 0, 55, 88, 121 }, cog.dacs);
+    try std.testing.expectEqual(@as(u32, 1 << 22), cog.interrupt_status());
+    try std.testing.expectEqual([4]u8{ 0, 0, 0, 0 }, hub.cogs[1].dacs);
+    const adjacent = hub.cogs[1].converter;
+    cog.reset();
+    try std.testing.expectEqual([4]u8{ 0, 0, 0, 0 }, cog.dacs);
+    try std.testing.expectEqual([4]u8{ 0, 0, 0, 0 }, cog.raw_dacs);
+    try std.testing.expect(!cog.converter.active());
+    try std.testing.expectEqualDeep(adjacent, hub.cogs[1].converter);
 }

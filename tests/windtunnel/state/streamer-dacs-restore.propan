@@ -1,0 +1,13 @@
+//? WINDTUNNEL CHECK LIST
+//? oracle: off "DAC output state has no digital silicon readback"
+//? post: cog[*].dacs == u8 [0xfe 0xdc 0xba 0x98]
+
+                // Background writes during a stream become visible after its overrides end.
+                SETDACS aug(0x78563412)
+                SETXFRQ 0
+                XINIT   aug(X_IMM_1X32_4DAC8 | X_DACS_3_2_1_0 | 0xffff),    aug(0xefcdab89)
+                SETDACS aug(0x98badcfe)
+                XSTOP
+                WAITX   10
+                JMP     nrel(_end)
+

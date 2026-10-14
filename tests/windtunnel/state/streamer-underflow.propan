@@ -1,0 +1,44 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[amount] == 0
+//? post: cog[*].reg[value] == 0
+//? run: "phase 0"
+//? const: phase = 0
+//? run: "phase 1"
+//? const: phase = 1
+//? run: "phase 2"
+//? const: phase = 2
+//? run: "phase 3"
+//? const: phase = 3
+//? run: "phase 4"
+//? const: phase = 4
+//? run: "phase 5"
+//? const: phase = 5
+//? run: "phase 6"
+//? const: phase = 6
+//? run: "phase 7"
+//? const: phase = 7
+
+                // Start a frozen FIFO command before nonblocking RDFAST can return its first data.
+                MOV     OUTA,                                           0
+                MOV     DIRA,                                           aug(0xffffffff)
+                SETXFRQ 0
+                GETCT   target
+                ADD     target,                                         aug(40 + phase)
+                ADDCT1  target,                                         0
+                WAITCT1
+                RDFAST  aug(0x80000000),                                aug(hubaddr(data))
+                XINIT   aug(X_RFLONG_32P_4DAC8 | X_PINS_ON | 0xffff),   0
+                WAITX   100
+                GETPTR  amount
+                SUB     amount,                                         aug(hubaddr(data))
+                MOV     value,                                          INA
+                XSTOP
+                MOV     DIRA,                                           0
+                JMP     nrel(_end)
+var target:     LONG    0
+var amount:     LONG    0
+var value:      LONG    0
+.data
+.align  4
+var data:       LONG    0x87654321
+

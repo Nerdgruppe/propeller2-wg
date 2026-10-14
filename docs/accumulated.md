@@ -1319,3 +1319,141 @@ The original constant-current timing campaign's nominal 40 MHz setting used a
 verified on this board. The later voltage experiment uses 160 MHz VCO divided by
 four for that clock. Earlier fixed-cycle-plus-nanosecond fits remain descriptive,
 rather than isolated calibrated transport measurements.
+
+## Streamer event latches at RCFAST (2026-10-14)
+
+Native P2AAS cog fixtures at nominal 20 MHz RCFAST sampled POLLXMT/POLLXFI
+before commands, immediately after XINIT, while a command was buffered, and after
+WAITXMT/WAITXFI. Initial flags are clear. XINIT alone did not produce XMT.
+A buffered XCONT eventually produced XMT, consumed by WAITXMT. Polling again
+while the buffer remained empty returned clear. XFI likewise remained clear
+following WAITXFI, including after an additional WAITX 10. These are transition
+latches, not continuously reasserted idle/empty levels. Two chained commands of
+8 and 4 samples at XFREQ=$08000000 took 202 clocks from GETCT before XINIT
+(including its AUGD) to GETCT after WAITXFI. Temporary capture artifacts are in
+`.zig-cache/streamer-probes`; retained regressions should assert the observations.
+
+RCFAST two-clock MOV snapshots at both instruction phases resolve raw streamer
+output one clock behind the simulator's existing GPIO OUT input path. TMDS
+literal/RGB output has four total clocks of latency at this boundary. Before the first encoded
+character arrives, TMDS publishes clock-positive, zero-data differential pairs
+($56 forward / $6A reverse). Coarser MOV/AND snapshots initially suggested a
+shared four-clock delay; the finer two-phase probe distinguishes the paths.
+Forward/reverse ordering and ten-clock TMDS sequences agree with digital
+snapshots. This models observable boundaries, not identified physical registers.
+
+Zero-count stop probes distinguish idle from active commands. XINIT 0,0 from
+idle leaves XMT/XFI/XRO clear. XCONT 0,0 from idle produces XMT only. From an
+active eight-sample command at XFREQ=$40000000, immediate XINIT 0,0 leaves XFI
+and XRO set; a buffered zero-count XCONT leaves all three set after completion.
+The extra XRO can occur between command acceptance/flag clearing and command
+port delivery. XCONT/XZERO third-command stalls and captured SETQ frequency
+handoffs agree with four retained fractional/perpetual chain timings.
+
+Eight nonblocking RDFAST startup phases followed immediately by a frequency-zero
+RFLONG streamer command all produced zero output and left GETPTR at the starting
+address after WAITX 100. The initial empty read does not advance the pointer or
+retry when the FIFO subsequently fills. Full/slow-rate 64-long streams consumed
+or enqueued 256 bytes. Mixing 20 software WFLONG instructions with a full-rate
+64-long capture enqueued only 304 bytes, rather than 336: the eight software
+writes overlapping capture displaced eight capture samples. This identifies a
+shared access-port collision, not a RAM bandwidth or FIFO-capacity limit.
+Streamer LUT reads of $1FF also trigger an armed local SETSE1 3 read sensor;
+XRL and selectable LUT-read sensors both apply to streamer accesses.
+
+Partial one-pin captures do not flush a partial byte or carry it across queued
+commands: count 3 alone and chained counts 3+5 leave GETPTR unchanged and the
+sentinel byte untouched; 3+8 enqueues exactly one $FF byte for a held-high input.
+The paired-cog LUT probe samples both observer and command-start phases while
+the companion writes a different LUT address every two clocks. The initial
+lookup remains available at command publication and subsequent constant lookup
+output is retained. The simulator represents the initial lookup as prefetched,
+and retains the previous result for displaced ongoing reads. This is a timing
+model consistent with the retained probes, not a measurement of individual RAM
+port registers or arbitrary collision data.
+
+## Color converter arithmetic and transport, 2026-10-14
+
+Two P2 boards were used: the DUT exclusively through P2AAS and the P2-EVAL
+PLX6ZJKWX as an independent ADC observer over direct serial. Recorded wiring
+connects P8..P15 one-to-one. DUT P8..P11 output DAC0..DAC3 using the 75-ohm/2 V
+channel mode; observer P8..P11 are ADC inputs. P12 carries a DUT timing marker;
+observer P13 provides capture readiness. Measurement firmware releases all
+experiment pins afterwards. This adds no analog simulation.
+
+The observer runs at nominal 160 MHz. Settled observations use SINC2 periods of
+8,192 observer clocks, discard three initial conversions, and average 512 or
+1,024 samples. Difficult code comparisons use 8,192 samples. Initial 16-sample
+averages and a single global calibration were insufficient: noise and common
+ADC drift could exceed one DAC code. Calibrations sweep all 256 bypass codes on
+all four channels; decisive checks compare each converter result against nearby
+bypass controls on the same physical DAC/ADC channel. Calibration converts to
+DAC code, not externally calibrated voltage.
+
+For timing, the DUT was slowed to nominal 1 MHz with PLL setting `$0100009B`
+(20 MHz VCO divided by 20); the 160 MHz observer captures raw ADC bits plus marker
+at every observer clock through the physical streamer's digital-input mode.
+Repeated marker durations agreed to observer sampling resolution. This PLL VCO
+is below the documented recommended 100..200 MHz range: its observed repeatability
+supports this measurement session, not a general operating guarantee. RCFAST and
+160 MHz DUT controls were also measured. The DUT's RCFAST control was about
+25.7 MHz, rather than assuming nominal 20 MHz. Marker alignment and bypass
+controls separate ADC feedback/transport from converter delay.
+
+Eight input I/Q pairs were swept over all 256 held phase angles, with a fresh
+256-code bypass calibration per pair. A further 108 fractional and overflow
+vectors distinguished these integer rules:
+
+- Matrix sums use unsigned DAC samples and signed or zero-extended coefficient
+  bytes. Component output extracts `(sum >> 7) & $FF`, with arithmetic shift for
+  negative sums; output additions wrap, rather than saturate.
+- The chroma coordinates start as signed eleven-bit slices `(sum >> 4) & $7FF`,
+  retaining three fractional bits relative to the signed component bytes.
+- Normalize the upper phase byte to -64..63 by reversing both coordinates when
+  needed. Five CORDIC iterations use quantized angles 32, 19, 10, 5 and 3 and
+  coordinate shifts 0..4. Each coordinate addition/subtraction wraps to twelve
+  bits. The final IQ byte extracts `(rotated_y >> 4) & $FF`.
+- Thus chroma amplitude is approximately 0.823 times signed component I/Q, rather
+  than applying the documented 1.646 directly to component bytes. Wider internal
+  coordinates or discarded input fractions fail distinguishing measurements.
+- One globally calibrated vector appeared a code too high. Four longer,
+  interleaved comparisons established its output as 131: DAC3=255,
+  CI=`$FF000000`, CQ=0, CY=128, CMOD=`$60`, held phase `$D0000000`.
+
+Independent validation used 144 fresh seeded vectors: 24 each in component,
+signed component, S-Video, signed S-Video, composite and signed composite modes.
+DAC0 sync states, coefficient/offset bytes, addition controls and held phases vary.
+All matched interleaved physical bypass references. One short-average comparison
+was repeated with three longer converter/reference pairs and then passed.
+These input/expected-byte vectors are retained in `converter-vectors.propan`.
+Analog comparison uncertainty is not an exhaustive proof for every possible
+coefficient, input or phase; the simulator arithmetic remains deterministic.
+
+Repeated 1 MHz transitions establish external delays of five clocks from a DAC
+change, four from a coefficient change, and three from carrier phase. Low-byte
+CY offsets affect the output immediately. DAC0 sync/blank controls follow the
+five-clock input path. SETCMOD's final mux selection precedes the ordinary setter
+output boundary by one clock. Register-source setters and bypass controls avoid
+confusing AUGD instruction clocks with peripheral latency. The second timing
+campaign collected 32 raw ADC captures per case, including a quarter-turn carrier
+step distinguishing the phase boundary.
+
+Disabling conversion clears carrier phase. Rewriting the same enabled mode
+preserves phase; frequency pulses while disabled do not leave a retained phase.
+Arithmetic cells retain data while disabled and can expose stale values during
+re-enable. Input, matrix, grouped rotation and output registers provide an
+observable-equivalent model of these delays; their allocation is inferred, not
+published physical RTL. TMDS remains independent of DAC conversion.
+
+A separate second-P2 observation of cog 1 confirmed that both COGSTOP followed
+by COGINIT and direct replacement COGINIT clear the configured coefficient words.
+The replacement image wrote SETDACS and enabled component mode without rewriting
+CY/CI/CQ; its matrix outputs were zero. Stop itself restored all four DAC
+outputs to zero while the pin-driving cog remained running.
+
+A replacement cog image which set CY/CI/CQ and enabled composite output without
+writing CFRQ produced the expected stationary Q-only level. Both stop/start and
+direct replacement therefore cleared the previous `$80000000` carrier frequency.
+A signed-coefficient CMOD transition with DAC3=64 and coefficient 128 changed
+64 to 192 at the four-clock coefficient boundary, independently of the earlier
+final-mode mux boundary.
