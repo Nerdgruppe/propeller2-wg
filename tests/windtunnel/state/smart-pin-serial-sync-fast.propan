@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-bits8-sample0-divider1"
-//? const: pll = 0
 //? const: bits = 8
 //? const: sample = 0
 //? const: divider = 1
@@ -12,7 +11,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits8-sample0-divider2"
-//? const: pll = 0
 //? const: bits = 8
 //? const: sample = 0
 //? const: divider = 2
@@ -22,7 +20,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits8-sample0-divider4"
-//? const: pll = 0
 //? const: bits = 8
 //? const: sample = 0
 //? const: divider = 4
@@ -32,7 +29,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits8-sample1-divider1"
-//? const: pll = 0
 //? const: bits = 8
 //? const: sample = 1
 //? const: divider = 1
@@ -42,7 +38,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits8-sample1-divider2"
-//? const: pll = 0
 //? const: bits = 8
 //? const: sample = 1
 //? const: divider = 2
@@ -52,7 +47,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits8-sample1-divider4"
-//? const: pll = 0
 //? const: bits = 8
 //? const: sample = 1
 //? const: divider = 4
@@ -62,7 +56,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits16-sample0-divider1"
-//? const: pll = 0
 //? const: bits = 16
 //? const: sample = 0
 //? const: divider = 1
@@ -72,7 +65,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits16-sample0-divider2"
-//? const: pll = 0
 //? const: bits = 16
 //? const: sample = 0
 //? const: divider = 2
@@ -82,7 +74,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits16-sample0-divider4"
-//? const: pll = 0
 //? const: bits = 16
 //? const: sample = 0
 //? const: divider = 4
@@ -92,7 +83,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits16-sample1-divider1"
-//? const: pll = 0
 //? const: bits = 16
 //? const: sample = 1
 //? const: divider = 1
@@ -102,7 +92,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits16-sample1-divider2"
-//? const: pll = 0
 //? const: bits = 16
 //? const: sample = 1
 //? const: divider = 2
@@ -112,7 +101,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits16-sample1-divider4"
-//? const: pll = 0
 //? const: bits = 16
 //? const: sample = 1
 //? const: divider = 4
@@ -122,7 +110,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits32-sample0-divider1"
-//? const: pll = 0
 //? const: bits = 32
 //? const: sample = 0
 //? const: divider = 1
@@ -132,7 +119,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits32-sample0-divider2"
-//? const: pll = 0
 //? const: bits = 32
 //? const: sample = 0
 //? const: divider = 2
@@ -142,7 +128,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits32-sample0-divider4"
-//? const: pll = 0
 //? const: bits = 32
 //? const: sample = 0
 //? const: divider = 4
@@ -152,7 +137,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits32-sample1-divider1"
-//? const: pll = 0
 //? const: bits = 32
 //? const: sample = 1
 //? const: divider = 1
@@ -162,7 +146,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits32-sample1-divider2"
-//? const: pll = 0
 //? const: bits = 32
 //? const: sample = 1
 //? const: divider = 2
@@ -172,187 +155,6 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 //? run: "pll0-bits32-sample1-divider4"
-//? const: pll = 0
-//? const: bits = 32
-//? const: sample = 1
-//? const: divider = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits8-sample0-divider1"
-//? const: pll = 1
-//? const: bits = 8
-//? const: sample = 0
-//? const: divider = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits8-sample0-divider2"
-//? const: pll = 1
-//? const: bits = 8
-//? const: sample = 0
-//? const: divider = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits8-sample0-divider4"
-//? const: pll = 1
-//? const: bits = 8
-//? const: sample = 0
-//? const: divider = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits8-sample1-divider1"
-//? const: pll = 1
-//? const: bits = 8
-//? const: sample = 1
-//? const: divider = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits8-sample1-divider2"
-//? const: pll = 1
-//? const: bits = 8
-//? const: sample = 1
-//? const: divider = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits8-sample1-divider4"
-//? const: pll = 1
-//? const: bits = 8
-//? const: sample = 1
-//? const: divider = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits16-sample0-divider1"
-//? const: pll = 1
-//? const: bits = 16
-//? const: sample = 0
-//? const: divider = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits16-sample0-divider2"
-//? const: pll = 1
-//? const: bits = 16
-//? const: sample = 0
-//? const: divider = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits16-sample0-divider4"
-//? const: pll = 1
-//? const: bits = 16
-//? const: sample = 0
-//? const: divider = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits16-sample1-divider1"
-//? const: pll = 1
-//? const: bits = 16
-//? const: sample = 1
-//? const: divider = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits16-sample1-divider2"
-//? const: pll = 1
-//? const: bits = 16
-//? const: sample = 1
-//? const: divider = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits16-sample1-divider4"
-//? const: pll = 1
-//? const: bits = 16
-//? const: sample = 1
-//? const: divider = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits32-sample0-divider1"
-//? const: pll = 1
-//? const: bits = 32
-//? const: sample = 0
-//? const: divider = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits32-sample0-divider2"
-//? const: pll = 1
-//? const: bits = 32
-//? const: sample = 0
-//? const: divider = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits32-sample0-divider4"
-//? const: pll = 1
-//? const: bits = 32
-//? const: sample = 0
-//? const: divider = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits32-sample1-divider1"
-//? const: pll = 1
-//? const: bits = 32
-//? const: sample = 1
-//? const: divider = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits32-sample1-divider2"
-//? const: pll = 1
-//? const: bits = 32
-//? const: sample = 1
-//? const: divider = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[tx_result] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? run: "pll1-bits32-sample1-divider4"
-//? const: pll = 1
 //? const: bits = 32
 //? const: sample = 1
 //? const: divider = 4
@@ -362,13 +164,7 @@
 //? post: cog[*].reg[tx_result] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // P5 generates the fastest deterministic B clock; P3 sends data and P4 receives it.
                 WRPIN   aug(0x02000000 | P_TT_01 | P_SYNC_TX),  3

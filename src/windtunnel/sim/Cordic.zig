@@ -2,6 +2,8 @@
 //! Every occupied stage carries its issuer and live arithmetic state; results are never precomputed.
 
 const std = @import("std");
+const delay_pipeline = @import("pipeline.zig");
+const Pipeline = delay_pipeline.Pipeline;
 const Cordic = @This();
 
 pub const CogId = enum(u3) { _ };
@@ -88,7 +90,7 @@ input: ?Entry = null,
 pipeline: [stage_layout.len]?Entry = @splat(null),
 active: usize = 0,
 /// Read-side transport is separate from the 54 arithmetic cells. It calibrates GETQ timing.
-returns: [3]?Delivery = @splat(null),
+returns: Pipeline(?Delivery, 3) = .init(null),
 
 /// Accept at most one hub-slot command on this edge, retaining operands for the first stage.
 pub fn submit(cordic: *Cordic, cog: CogId, operation: Operation, d: u32, s: u32, q: u32) void {
@@ -102,15 +104,13 @@ pub fn submit(cordic: *Cordic, cog: CogId, operation: Operation, d: u32, s: u32,
 pub fn step(cordic: *Cordic) ?Delivery {
     if (cordic.active == 0)
         return null;
-    const delivery = cordic.returns[cordic.returns.len - 1];
+    const delivery = cordic.returns.step(if (cordic.pipeline[stage_layout.len - 1]) |last|
+        .{ .cog = last.cog, .tracked = last.tracked, .operation = last.operation, .result = last.data.result }
+    else
+        null);
     if (delivery != null) {
         cordic.active -= 1;
     }
-    std.mem.copyBackwards(?Delivery, cordic.returns[1..], cordic.returns[0 .. cordic.returns.len - 1]);
-    cordic.returns[0] = if (cordic.pipeline[stage_layout.len - 1]) |last|
-        .{ .cog = last.cog, .tracked = last.tracked, .operation = last.operation, .result = last.data.result }
-    else
-        null;
     var index: usize = stage_layout.len;
     while (index != 0) {
         index -= 1;
@@ -140,7 +140,7 @@ pub fn forget(cordic: *Cordic, cog: CogId) void {
             }
         }
     }
-    for (&cordic.returns) |*slot| {
+    for (cordic.returns.pending()) |*slot| {
         if (slot.*) |*delivery| {
             if (delivery.cog == cog) {
                 delivery.tracked = false;
@@ -469,7 +469,7 @@ test "all 54 stages carry live arithmetic before the result reaches cog transpor
     }
     try std.testing.expectEqual(@as(u32, 43), cordic.pipeline[53].?.data.result.x);
     try std.testing.expect(cordic.step() == null);
-    try std.testing.expectEqual(@as(u32, 43), cordic.returns[0].?.result.x);
+    try std.testing.expectEqual(@as(u32, 43), cordic.returns.tap(0).?.result.x);
     try std.testing.expect(cordic.step() == null);
     try std.testing.expect(cordic.step() == null);
     const delivery = cordic.step().?;

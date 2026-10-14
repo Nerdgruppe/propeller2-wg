@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-n8-to4-at2-p64"
-//? const: pll = 0
 //? const: old = 8
 //? const: new = 4
 //? const: at = 2
@@ -16,7 +15,6 @@
 //? post: cog[*].reg[result3] == 0x25533c00
 //? post: cog[*].reg[ready3] == 0x00000001
 //? run: "pll0-n4-to8-at2-p64"
-//? const: pll = 0
 //? const: old = 4
 //? const: new = 8
 //? const: at = 2
@@ -30,7 +28,6 @@
 //? post: cog[*].reg[result3] == 0x4d3cdef0
 //? post: cog[*].reg[ready3] == 0x00000001
 //? run: "pll0-n8-to2-at5-p64"
-//? const: pll = 0
 //? const: old = 8
 //? const: new = 2
 //? const: at = 5
@@ -44,7 +41,6 @@
 //? post: cog[*].reg[result3] == 0x00000000
 //? post: cog[*].reg[ready3] == 0x00000000
 //? run: "pll0-n8-to8-at3-p32"
-//? const: pll = 0
 //? const: old = 8
 //? const: new = 8
 //? const: at = 3
@@ -58,77 +54,6 @@
 //? post: cog[*].reg[result3] == 0x181981e6
 //? post: cog[*].reg[ready3] == 0x00000001
 //? run: "pll0-n8-to8-at3-p128"
-//? const: pll = 0
-//? const: old = 8
-//? const: new = 8
-//? const: at = 3
-//? const: p = 128
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[ready0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x77000000
-//? post: cog[*].reg[ready1] == 0x00000001
-//? post: cog[*].reg[result2] == 0x77000000
-//? post: cog[*].reg[ready2] == 0x00000001
-//? post: cog[*].reg[result3] == 0x77000000
-//? post: cog[*].reg[ready3] == 0x00000001
-//? run: "pll1-n8-to4-at2-p64"
-//? const: pll = 1
-//? const: old = 8
-//? const: new = 4
-//? const: at = 2
-//? const: p = 64
-//? post: cog[*].reg[result0] == 0xf0000000
-//? post: cog[*].reg[ready0] == 0x00000001
-//? post: cog[*].reg[result1] == 0x33c00000
-//? post: cog[*].reg[ready1] == 0x00000001
-//? post: cog[*].reg[result2] == 0x54cf0000
-//? post: cog[*].reg[ready2] == 0x00000001
-//? post: cog[*].reg[result3] == 0x25533c00
-//? post: cog[*].reg[ready3] == 0x00000001
-//? run: "pll1-n4-to8-at2-p64"
-//? const: pll = 1
-//? const: old = 4
-//? const: new = 8
-//? const: at = 2
-//? const: p = 64
-//? post: cog[*].reg[result0] == 0xef000000
-//? post: cog[*].reg[ready0] == 0x00000001
-//? post: cog[*].reg[result1] == 0xef000000
-//? post: cog[*].reg[ready1] == 0x00000001
-//? post: cog[*].reg[result2] == 0xf37bc000
-//? post: cog[*].reg[ready2] == 0x00000001
-//? post: cog[*].reg[result3] == 0x4d3cdef0
-//? post: cog[*].reg[ready3] == 0x00000001
-//? run: "pll1-n8-to2-at5-p64"
-//? const: pll = 1
-//? const: old = 8
-//? const: new = 2
-//? const: at = 5
-//? const: p = 64
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[ready0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[ready1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[ready2] == 0x00000000
-//? post: cog[*].reg[result3] == 0x00000000
-//? post: cog[*].reg[ready3] == 0x00000000
-//? run: "pll1-n8-to8-at3-p32"
-//? const: pll = 1
-//? const: old = 8
-//? const: new = 8
-//? const: at = 3
-//? const: p = 32
-//? post: cog[*].reg[result0] == 0x9f000000
-//? post: cog[*].reg[ready0] == 0x00000001
-//? post: cog[*].reg[result1] == 0x1e67c000
-//? post: cog[*].reg[ready1] == 0x00000001
-//? post: cog[*].reg[result2] == 0x660799f0
-//? post: cog[*].reg[ready2] == 0x00000001
-//? post: cog[*].reg[result3] == 0x181981e6
-//? post: cog[*].reg[ready3] == 0x00000001
-//? run: "pll1-n8-to8-at3-p128"
-//? const: pll = 1
 //? const: old = 8
 //? const: new = 8
 //? const: at = 3
@@ -142,13 +67,7 @@
 //? post: cog[*].reg[result3] == 0x77000000
 //? post: cog[*].reg[ready3] == 0x00000001
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // P3 supplies a long hardware UART frame; P4 changes its receive configuration mid-frame.
                 WRPIN   P_TT_01 | P_ASYNC_TX,           3

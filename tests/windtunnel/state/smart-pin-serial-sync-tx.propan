@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode3-write0"
-//? const: pll = 0
 //? const: mode = 3
 //? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -29,7 +28,6 @@
 //? post: cog[*].reg[result14] == 0x02468acf
 //? post: cog[*].reg[result15] == 0x02468acf
 //? run: "pll0-mode3-write1"
-//? const: pll = 0
 //? const: mode = 3
 //? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -56,7 +54,6 @@
 //? post: cog[*].reg[result14] == 0x0eca8642
 //? post: cog[*].reg[result15] == 0x0eca8642
 //? run: "pll0-mode35-write0"
-//? const: pll = 0
 //? const: mode = 35
 //? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -83,7 +80,6 @@
 //? post: cog[*].reg[result14] == 0x02468acf
 //? post: cog[*].reg[result15] == 0x02468acf
 //? run: "pll0-mode35-write1"
-//? const: pll = 0
 //? const: mode = 35
 //? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -110,7 +106,6 @@
 //? post: cog[*].reg[result14] == 0x0eca8642
 //? post: cog[*].reg[result15] == 0x0eca8642
 //? run: "pll0-mode7-write0"
-//? const: pll = 0
 //? const: mode = 7
 //? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -137,7 +132,6 @@
 //? post: cog[*].reg[result14] == 0xdf13579b
 //? post: cog[*].reg[result15] == 0xf02468ac
 //? run: "pll0-mode7-write1"
-//? const: pll = 0
 //? const: mode = 7
 //? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -164,7 +158,6 @@
 //? post: cog[*].reg[result14] == 0xdf13579b
 //? post: cog[*].reg[result15] == 0x20eca864
 //? run: "pll0-mode39-write0"
-//? const: pll = 0
 //? const: mode = 39
 //? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -191,7 +184,6 @@
 //? post: cog[*].reg[result14] == 0xf02468ac
 //? post: cog[*].reg[result15] == 0xf02468ac
 //? run: "pll0-mode39-write1"
-//? const: pll = 0
 //? const: mode = 39
 //? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -217,230 +209,8 @@
 //? post: cog[*].reg[result13] == 0xf02468ac
 //? post: cog[*].reg[result14] == 0xf02468ac
 //? post: cog[*].reg[result15] == 0x20eca864
-//? run: "pll1-mode3-write0"
-//? const: pll = 1
-//? const: mode = 3
-//? const: write = 0
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000001
-//? post: cog[*].reg[waveform] == 0x0000f111
-//? post: cog[*].reg[completions] == 0x00001000
-//? post: cog[*].reg[reset_result] == 0x02468acf
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0xf13579bd
-//? post: cog[*].reg[result4] == 0xf13579bd
-//? post: cog[*].reg[result5] == 0xf13579bd
-//? post: cog[*].reg[result6] == 0xf13579bd
-//? post: cog[*].reg[result7] == 0x02468acf
-//? post: cog[*].reg[result8] == 0x02468acf
-//? post: cog[*].reg[result9] == 0x02468acf
-//? post: cog[*].reg[result10] == 0x02468acf
-//? post: cog[*].reg[result11] == 0x02468acf
-//? post: cog[*].reg[result12] == 0x02468acf
-//? post: cog[*].reg[result13] == 0x02468acf
-//? post: cog[*].reg[result14] == 0x02468acf
-//? post: cog[*].reg[result15] == 0x02468acf
-//? run: "pll1-mode3-write1"
-//? const: pll = 1
-//? const: mode = 3
-//? const: write = 1
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000001
-//? post: cog[*].reg[waveform] == 0x0000f000
-//? post: cog[*].reg[completions] == 0x00001000
-//? post: cog[*].reg[reset_result] == 0x0eca8642
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0xf13579bd
-//? post: cog[*].reg[result4] == 0xf13579bd
-//? post: cog[*].reg[result5] == 0xf13579bd
-//? post: cog[*].reg[result6] == 0xf13579bd
-//? post: cog[*].reg[result7] == 0x0eca8642
-//? post: cog[*].reg[result8] == 0x0eca8642
-//? post: cog[*].reg[result9] == 0x0eca8642
-//? post: cog[*].reg[result10] == 0x0eca8642
-//? post: cog[*].reg[result11] == 0x0eca8642
-//? post: cog[*].reg[result12] == 0x0eca8642
-//? post: cog[*].reg[result13] == 0x0eca8642
-//? post: cog[*].reg[result14] == 0x0eca8642
-//? post: cog[*].reg[result15] == 0x0eca8642
-//? run: "pll1-mode35-write0"
-//? const: pll = 1
-//? const: mode = 35
-//? const: write = 0
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000000
-//? post: cog[*].reg[waveform] == 0x00001111
-//? post: cog[*].reg[completions] == 0x00008000
-//? post: cog[*].reg[reset_result] == 0x02468acf
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0x02468acf
-//? post: cog[*].reg[result4] == 0x02468acf
-//? post: cog[*].reg[result5] == 0x02468acf
-//? post: cog[*].reg[result6] == 0x02468acf
-//? post: cog[*].reg[result7] == 0x02468acf
-//? post: cog[*].reg[result8] == 0x02468acf
-//? post: cog[*].reg[result9] == 0x02468acf
-//? post: cog[*].reg[result10] == 0x02468acf
-//? post: cog[*].reg[result11] == 0x02468acf
-//? post: cog[*].reg[result12] == 0x02468acf
-//? post: cog[*].reg[result13] == 0x02468acf
-//? post: cog[*].reg[result14] == 0x02468acf
-//? post: cog[*].reg[result15] == 0x02468acf
-//? run: "pll1-mode35-write1"
-//? const: pll = 1
-//? const: mode = 35
-//? const: write = 1
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000000
-//? post: cog[*].reg[waveform] == 0x00001000
-//? post: cog[*].reg[completions] == 0x00009000
-//? post: cog[*].reg[reset_result] == 0x0eca8642
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0x02468acf
-//? post: cog[*].reg[result4] == 0x02468acf
-//? post: cog[*].reg[result5] == 0x02468acf
-//? post: cog[*].reg[result6] == 0x02468acf
-//? post: cog[*].reg[result7] == 0x0eca8642
-//? post: cog[*].reg[result8] == 0x0eca8642
-//? post: cog[*].reg[result9] == 0x0eca8642
-//? post: cog[*].reg[result10] == 0x0eca8642
-//? post: cog[*].reg[result11] == 0x0eca8642
-//? post: cog[*].reg[result12] == 0x0eca8642
-//? post: cog[*].reg[result13] == 0x0eca8642
-//? post: cog[*].reg[result14] == 0x0eca8642
-//? post: cog[*].reg[result15] == 0x0eca8642
-//? run: "pll1-mode7-write0"
-//? const: pll = 1
-//? const: mode = 7
-//? const: write = 0
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000001
-//? post: cog[*].reg[waveform] == 0x0000f71e
-//? post: cog[*].reg[completions] == 0x00000100
-//? post: cog[*].reg[reset_result] == 0xf02468ac
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0x00000000
-//? post: cog[*].reg[result4] == 0x00000000
-//? post: cog[*].reg[result5] == 0x00000000
-//? post: cog[*].reg[result6] == 0x00000000
-//? post: cog[*].reg[result7] == 0xdf13579b
-//? post: cog[*].reg[result8] == 0xdf13579b
-//? post: cog[*].reg[result9] == 0xdf13579b
-//? post: cog[*].reg[result10] == 0xdf13579b
-//? post: cog[*].reg[result11] == 0xdf13579b
-//? post: cog[*].reg[result12] == 0xdf13579b
-//? post: cog[*].reg[result13] == 0xdf13579b
-//? post: cog[*].reg[result14] == 0xdf13579b
-//? post: cog[*].reg[result15] == 0xf02468ac
-//? run: "pll1-mode7-write1"
-//? const: pll = 1
-//? const: mode = 7
-//? const: write = 1
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000001
-//? post: cog[*].reg[waveform] == 0x0000f708
-//? post: cog[*].reg[completions] == 0x00000100
-//? post: cog[*].reg[reset_result] == 0x20eca864
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0x00000000
-//? post: cog[*].reg[result4] == 0x00000000
-//? post: cog[*].reg[result5] == 0x00000000
-//? post: cog[*].reg[result6] == 0x00000000
-//? post: cog[*].reg[result7] == 0xdf13579b
-//? post: cog[*].reg[result8] == 0xdf13579b
-//? post: cog[*].reg[result9] == 0xdf13579b
-//? post: cog[*].reg[result10] == 0xdf13579b
-//? post: cog[*].reg[result11] == 0xdf13579b
-//? post: cog[*].reg[result12] == 0xdf13579b
-//? post: cog[*].reg[result13] == 0xdf13579b
-//? post: cog[*].reg[result14] == 0xdf13579b
-//? post: cog[*].reg[result15] == 0x20eca864
-//? run: "pll1-mode39-write0"
-//? const: pll = 1
-//? const: mode = 39
-//? const: write = 0
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000000
-//? post: cog[*].reg[waveform] == 0x00001e1e
-//? post: cog[*].reg[completions] == 0x00008000
-//? post: cog[*].reg[reset_result] == 0xf02468ac
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0x00000000
-//? post: cog[*].reg[result4] == 0x00000000
-//? post: cog[*].reg[result5] == 0x00000000
-//? post: cog[*].reg[result6] == 0x00000000
-//? post: cog[*].reg[result7] == 0xf02468ac
-//? post: cog[*].reg[result8] == 0xf02468ac
-//? post: cog[*].reg[result9] == 0xf02468ac
-//? post: cog[*].reg[result10] == 0xf02468ac
-//? post: cog[*].reg[result11] == 0xf02468ac
-//? post: cog[*].reg[result12] == 0xf02468ac
-//? post: cog[*].reg[result13] == 0xf02468ac
-//? post: cog[*].reg[result14] == 0xf02468ac
-//? post: cog[*].reg[result15] == 0xf02468ac
-//? run: "pll1-mode39-write1"
-//? const: pll = 1
-//? const: mode = 39
-//? const: write = 1
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[updated_output] == 0x00000000
-//? post: cog[*].reg[waveform] == 0x00001e08
-//? post: cog[*].reg[completions] == 0x00008100
-//? post: cog[*].reg[reset_result] == 0x20eca864
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[result3] == 0x00000000
-//? post: cog[*].reg[result4] == 0x00000000
-//? post: cog[*].reg[result5] == 0x00000000
-//? post: cog[*].reg[result6] == 0x00000000
-//? post: cog[*].reg[result7] == 0xf02468ac
-//? post: cog[*].reg[result8] == 0xf02468ac
-//? post: cog[*].reg[result9] == 0xf02468ac
-//? post: cog[*].reg[result10] == 0xf02468ac
-//? post: cog[*].reg[result11] == 0xf02468ac
-//? post: cog[*].reg[result12] == 0xf02468ac
-//? post: cog[*].reg[result13] == 0xf02468ac
-//? post: cog[*].reg[result14] == 0xf02468ac
-//? post: cog[*].reg[result15] == 0x20eca864
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // P5 clocks the P4 USART transmitter; P6 observes its physical output.
                 DRVL    5

@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode6-x1-gap0"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 0
@@ -10,7 +9,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap1"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 1
@@ -18,7 +16,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap2"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 2
@@ -26,7 +23,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap3"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 3
@@ -34,7 +30,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap4"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 4
@@ -42,7 +37,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap5"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 5
@@ -50,7 +44,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap6"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 6
@@ -58,7 +51,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap7"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 7
@@ -66,7 +58,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x1-gap8"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: gap = 8
@@ -74,7 +65,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap0"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 0
@@ -82,7 +72,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap1"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 1
@@ -90,7 +79,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap2"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 2
@@ -98,7 +86,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap3"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 3
@@ -106,7 +93,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap4"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 4
@@ -114,7 +100,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap5"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 5
@@ -122,7 +107,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap6"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 6
@@ -130,7 +114,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap7"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 7
@@ -138,7 +121,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode6-x3-gap8"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 3
 //? const: gap = 8
@@ -146,7 +128,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap0"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 0
@@ -154,7 +135,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap1"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 1
@@ -162,7 +142,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap2"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 2
@@ -170,7 +149,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap3"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 3
@@ -178,7 +156,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap4"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 4
@@ -186,7 +163,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap5"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 5
@@ -194,7 +170,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap6"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 6
@@ -202,7 +177,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap7"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 7
@@ -210,7 +184,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x1-gap8"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: gap = 8
@@ -218,7 +191,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap0"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 0
@@ -226,7 +198,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap1"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 1
@@ -234,7 +205,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap2"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 2
@@ -242,7 +212,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap3"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 3
@@ -250,7 +219,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap4"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 4
@@ -258,7 +226,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap5"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 5
@@ -266,7 +233,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap6"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 6
@@ -274,7 +240,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap7"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 7
@@ -282,295 +247,6 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 //? run: "pll0-mode7-x3-gap8"
-//? const: pll = 0
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 8
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap0"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 0
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap1"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap2"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap3"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 3
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap4"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap5"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 5
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap6"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 6
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap7"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 7
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x1-gap8"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: gap = 8
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap0"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 0
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap1"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap2"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap3"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 3
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap4"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap5"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 5
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap6"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 6
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap7"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 7
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode6-x3-gap8"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 3
-//? const: gap = 8
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap0"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 0
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap1"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap2"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap3"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 3
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap4"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap5"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 5
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap6"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 6
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap7"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 7
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x1-gap8"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: gap = 8
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap0"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 0
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap1"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 1
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap2"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 2
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap3"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 3
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap4"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 4
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap5"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 5
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap6"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 6
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap7"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 3
-//? const: gap = 7
-//? post: cog[*].reg[first] == 0x00000000
-//? post: cog[*].reg[second] == 0x00000000
-//? post: cog[*].reg[held] == 0x00000000
-//? run: "pll1-mode7-x3-gap8"
-//? const: pll = 1
 //? const: mode = 7
 //? const: x = 3
 //? const: gap = 8
@@ -578,13 +254,7 @@
 //? post: cog[*].reg[second] == 0x00000000
 //? post: cog[*].reg[held] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Unit increment exposes exact start and return-bus delays without phase aliasing.
                 WRPIN   aug(mode << 1), 4

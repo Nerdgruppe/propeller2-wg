@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode29"
-//? const: pll = 0
 //? const: mode = 29
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[ready0] == 0x00000000
@@ -13,29 +12,6 @@
 //? post: cog[*].reg[reset_result] == 0x00000000
 //? post: cog[*].reg[count] == 0x00000000
 //? run: "pll0-mode31"
-//? const: pll = 0
-//? const: mode = 31
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[ready0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[ready1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[ready2] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode29"
-//? const: pll = 1
-//? const: mode = 29
-//? post: cog[*].reg[result0] == 0x00000000
-//? post: cog[*].reg[ready0] == 0x00000000
-//? post: cog[*].reg[result1] == 0x00000000
-//? post: cog[*].reg[ready1] == 0x00000000
-//? post: cog[*].reg[result2] == 0x00000000
-//? post: cog[*].reg[ready2] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode31"
-//? const: pll = 1
 //? const: mode = 31
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[ready0] == 0x00000000
@@ -46,13 +22,7 @@
 //? post: cog[*].reg[reset_result] == 0x00000000
 //? post: cog[*].reg[count] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Supply a start or clock stream, then shorten below the active bit count.
                 DRVH    3

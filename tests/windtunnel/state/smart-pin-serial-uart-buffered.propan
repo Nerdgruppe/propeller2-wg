@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-bits1-period491520"
-//? const: pll = 0
 //? const: bits = 1
 //? const: period = 491520
 //? post: cog[*].reg[wave0] == 0x9e3fffff
@@ -13,7 +12,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits1-period475136"
-//? const: pll = 0
 //? const: bits = 1
 //? const: period = 475136
 //? post: cog[*].reg[wave0] == 0x9c3fffff
@@ -24,7 +22,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits3-period491520"
-//? const: pll = 0
 //? const: bits = 3
 //? const: period = 491520
 //? post: cog[*].reg[wave0] == 0x9fc03fff
@@ -35,7 +32,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits3-period475136"
-//? const: pll = 0
 //? const: bits = 3
 //? const: period = 475136
 //? post: cog[*].reg[wave0] == 0x9fc07fff
@@ -46,7 +42,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits8-period491520"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? post: cog[*].reg[wave0] == 0x9fcff01f
@@ -57,7 +52,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits8-period475136"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 475136
 //? post: cog[*].reg[wave0] == 0x9fcfe03f
@@ -68,7 +62,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits9-period491520"
-//? const: pll = 0
 //? const: bits = 9
 //? const: period = 491520
 //? post: cog[*].reg[wave0] == 0x9fcffc07
@@ -79,7 +72,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits9-period475136"
-//? const: pll = 0
 //? const: bits = 9
 //? const: period = 475136
 //? post: cog[*].reg[wave0] == 0x9fcff80f
@@ -90,7 +82,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits31-period491520"
-//? const: pll = 0
 //? const: bits = 31
 //? const: period = 491520
 //? post: cog[*].reg[wave0] == 0x9fcff387
@@ -101,7 +92,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits31-period475136"
-//? const: pll = 0
 //? const: bits = 31
 //? const: period = 475136
 //? post: cog[*].reg[wave0] == 0x9fcfe78f
@@ -112,7 +102,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits32-period491520"
-//? const: pll = 0
 //? const: bits = 32
 //? const: period = 491520
 //? post: cog[*].reg[wave0] == 0x9fcff387
@@ -123,7 +112,6 @@
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-bits32-period475136"
-//? const: pll = 0
 //? const: bits = 32
 //? const: period = 475136
 //? post: cog[*].reg[wave0] == 0x9fcfe78f
@@ -133,146 +121,8 @@
 //? post: cog[*].reg[result] == 0x891a2b3c
 //? post: cog[*].reg[busy] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits1-period491520"
-//? const: pll = 1
-//? const: bits = 1
-//? const: period = 491520
-//? post: cog[*].reg[wave0] == 0x9e1fffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0x848d159e
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits1-period475136"
-//? const: pll = 1
-//? const: bits = 1
-//? const: period = 475136
-//? post: cog[*].reg[wave0] == 0x9e3fffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0x848d159e
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits3-period491520"
-//? const: pll = 1
-//? const: bits = 3
-//? const: period = 491520
-//? post: cog[*].reg[wave0] == 0x9fe03fff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0x81234567
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits3-period475136"
-//? const: pll = 1
-//? const: bits = 3
-//? const: period = 475136
-//? post: cog[*].reg[wave0] == 0x9fc03fff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0x81234567
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits8-period491520"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? post: cog[*].reg[wave0] == 0x9fe7f00f
-//? post: cog[*].reg[wave1] == 0xe7ffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0xbc091a2b
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits8-period475136"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 475136
-//? post: cog[*].reg[wave0] == 0x9fcfe01f
-//? post: cog[*].reg[wave1] == 0xcfffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0xbc091a2b
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits9-period491520"
-//? const: pll = 1
-//? const: bits = 9
-//? const: period = 491520
-//? post: cog[*].reg[wave0] == 0x9fe7fc07
-//? post: cog[*].reg[wave1] == 0xf87fffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0x9e048d15
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits9-period475136"
-//? const: pll = 1
-//? const: bits = 9
-//? const: period = 475136
-//? post: cog[*].reg[wave0] == 0x9fcff80f
-//? post: cog[*].reg[wave1] == 0xf1ffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[wave3] == 0xffffffff
-//? post: cog[*].reg[result] == 0x9e048d15
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits31-period491520"
-//? const: pll = 1
-//? const: bits = 31
-//? const: period = 491520
-//? post: cog[*].reg[wave0] == 0x9fe7f3c7
-//? post: cog[*].reg[wave1] == 0xf993c306
-//? post: cog[*].reg[wave2] == 0x01fc3c98
-//? post: cog[*].reg[wave3] == 0x19c0c21f
-//? post: cog[*].reg[result] == 0x92345678
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits31-period475136"
-//? const: pll = 1
-//? const: bits = 31
-//? const: period = 475136
-//? post: cog[*].reg[wave0] == 0x9fcfe78f
-//? post: cog[*].reg[wave1] == 0xf2670c18
-//? post: cog[*].reg[wave2] == 0x0ff1e4c0
-//? post: cog[*].reg[wave3] == 0x9e0c21ff
-//? post: cog[*].reg[result] == 0x92345678
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits32-period491520"
-//? const: pll = 1
-//? const: bits = 32
-//? const: period = 491520
-//? post: cog[*].reg[wave0] == 0x9fe7f3c7
-//? post: cog[*].reg[wave1] == 0xf993c307
-//? post: cog[*].reg[wave2] == 0x807f0f66
-//? post: cog[*].reg[wave3] == 0x06f03181
-//? post: cog[*].reg[result] == 0x891a2b3c
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-bits32-period475136"
-//? const: pll = 1
-//? const: bits = 32
-//? const: period = 475136
-//? post: cog[*].reg[wave0] == 0x9fcfe78f
-//? post: cog[*].reg[wave1] == 0xf2670c1e
-//? post: cog[*].reg[wave2] == 0x03f87b30
-//? post: cog[*].reg[wave3] == 0x6783181f
-//? post: cog[*].reg[result] == 0x891a2b3c
-//? post: cog[*].reg[busy] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Queue two UART words without waiting for the first stop bit; preserve fractional phase across them.
                 WRPIN   P_TT_01 | P_ASYNC_TX,       4

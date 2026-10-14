@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 2_000_000
 //? run: "pll0-period196608"
-//? const: pll = 0
 //? const: x = 196608
 //? const: wait = 100
 //? post: cog[*].reg[result] == 0xef3fffff
@@ -11,7 +10,6 @@
 //? post: cog[*].reg[tx_result] == 0xef44d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-period262144"
-//? const: pll = 0
 //? const: x = 262144
 //? const: wait = 112
 //? post: cog[*].reg[result] == 0xef000000
@@ -20,7 +18,6 @@
 //? post: cog[*].reg[tx_result] == 0xef44d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-period327680"
-//? const: pll = 0
 //? const: x = 327680
 //? const: wait = 124
 //? post: cog[*].reg[result] == 0xef000000
@@ -29,7 +26,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-period4161536"
-//? const: pll = 0
 //? const: x = 4161536
 //? const: wait = 820
 //? post: cog[*].reg[result] == 0xef000000
@@ -38,7 +34,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-period4227072"
-//? const: pll = 0
 //? const: x = 4227072
 //? const: wait = 832
 //? post: cog[*].reg[result] == 0xef000000
@@ -47,61 +42,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-period4294901760"
-//? const: pll = 0
-//? const: x = 4294901760
-//? const: wait = 786484
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-period196608"
-//? const: pll = 1
-//? const: x = 196608
-//? const: wait = 100
-//? post: cog[*].reg[result] == 0xef3fffff
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xef44d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-period262144"
-//? const: pll = 1
-//? const: x = 262144
-//? const: wait = 112
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xef44d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-period327680"
-//? const: pll = 1
-//? const: x = 327680
-//? const: wait = 124
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xef44d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-period4161536"
-//? const: pll = 1
-//? const: x = 4161536
-//? const: wait = 820
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-period4227072"
-//? const: pll = 1
-//? const: x = 4227072
-//? const: wait = 832
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-period4294901760"
-//? const: pll = 1
 //? const: x = 4294901760
 //? const: wait = 786484
 //? post: cog[*].reg[result] == 0xef000000
@@ -110,13 +50,7 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Exercise the minimum supported UART divider, fractional cutoff and maximum integer divider.
                 WRPIN   P_TT_01 | P_ASYNC_TX,           4

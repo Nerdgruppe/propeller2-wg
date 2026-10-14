@@ -2,6 +2,8 @@
 const std = @import("std");
 const p2 = @import("p2");
 const signal = @import("signal.zig");
+const pipeline = @import("pipeline.zig");
+const Pipeline = pipeline.Pipeline;
 pub const Mode = p2.types.SmartPinMode;
 const Signal = signal.Signal;
 
@@ -59,13 +61,6 @@ pub const RxMode = union(enum) {
 pub const TxMode = union(enum) {
     emulated: *const DataSink,
     virtual: *const DataSink,
-
-    /// Obtain the current completion endpoint without copying its descriptor.
-    fn sink(mode: TxMode) *const DataSink {
-        return switch (mode) {
-            inline else => |endpoint| endpoint,
-        };
-    }
 };
 
 const discard_sink: DataSink = .discard;
@@ -230,13 +225,22 @@ pub const UartTx = struct {
     position: u6 = 0,
     timer: BaudTimer = .{},
     line: Signal = .one,
-    a: bool = false,
+    a: Pipeline(bool, 1) = .init(false),
 
     /// Buffer writes, serialize start/data/stop, and deliver completed words to the current sink.
     fn step(logic: *UartTx, regs: *Registers, inputs: Inputs, mode: TxMode) SmartPinError!Outputs {
+        if (mode == .virtual) {
+            logic.* = .{};
+            var state = try transmitImmediate(regs, inputs, mode.virtual);
+            state.smart_out = .one;
+            state.flag = false;
+            if (regs.enabled and inputs.new_y != null) {
+                state.y = regs.y;
+            }
+            return state;
+        }
         var state = outputs(regs, inputs);
-        const a = logic.a;
-        logic.a = inputs.a.sample();
+        const a = logic.a.step(inputs.a.sample());
         if (!regs.enabled) {
             logic.* = .{};
             state.smart_out = .one;
@@ -249,13 +253,11 @@ pub const UartTx = struct {
             logic.buffer = regs.y;
         }
         if (logic.shifter) |word| {
-            if (mode == .virtual or logic.timer.tick(regs.x)) {
-                if (mode == .virtual or logic.position == SerialTiming.init(regs.x).bits + 1) {
-                    if (mode != .virtual) {
-                        logic.shift = (logic.shift >> 1) | (@as(u32, @intFromBool(a)) << 31);
-                        state.y = logic.shift;
-                    }
-                    try mode.sink().write(word & wordMask(regs.x));
+            if (logic.timer.tick(regs.x)) {
+                if (logic.position == SerialTiming.init(regs.x).bits + 1) {
+                    logic.shift = (logic.shift >> 1) | (@as(u32, @intFromBool(a)) << 31);
+                    state.y = logic.shift;
+                    try mode.emulated.write(word & wordMask(regs.x));
                     logic.shifter = null;
                     logic.line = .one;
                 } else {
@@ -273,9 +275,7 @@ pub const UartTx = struct {
                 }
             }
         }
-        if (logic.shifter == null and (buffered or mode == .virtual) and
-            (mode == .virtual or BaudTimer.period(regs.x) != 0))
-        {
+        if (logic.shifter == null and buffered and BaudTimer.period(regs.x) != 0) {
             if (logic.buffer) |word| {
                 logic.shifter = word;
                 logic.shift = word;
@@ -291,7 +291,7 @@ pub const UartTx = struct {
         }
         state.flag = logic.buffer != null or logic.shifter != null;
         state.scheduled = state.flag;
-        state.smart_out = if (mode == .virtual) .one else logic.line;
+        state.smart_out = logic.line;
         return state;
     }
 };
@@ -303,14 +303,19 @@ pub const UsartTx = struct {
     count: u5 = 0,
     b: bool = false,
     line: Signal = .zero,
-    a: bool = false,
+    a: Pipeline(bool, 1) = .init(false),
     primed: bool = false,
 
     /// Prime in reset and shift data on routed B edges, delaying each output update two clocks.
     fn step(logic: *UsartTx, regs: *Registers, inputs: Inputs, mode: TxMode) SmartPinError!Outputs {
+        if (mode == .virtual) {
+            logic.* = .{ .a = .init(inputs.a.sample()), .b = inputs.b.sample() };
+            var state = try transmitImmediate(regs, inputs, mode.virtual);
+            state.smart_out = .zero;
+            return state;
+        }
         var state = outputs(regs, inputs);
-        const a = logic.a;
-        logic.a = inputs.a.sample();
+        const a = logic.a.step(inputs.a.sample());
         const b = inputs.b.sample();
         const rising = b and !logic.b;
         logic.b = b;
@@ -321,28 +326,11 @@ pub const UsartTx = struct {
             if (inputs.new_y != null) {
                 logic.buffer = regs.y;
             }
-            if (mode == .emulated or inputs.new_y != null) {
-                logic.shifter = regs.y;
-                logic.shift = regs.y;
-                logic.count = 0;
-                logic.primed = true;
-            }
+            logic.shifter = regs.y;
+            logic.shift = regs.y;
+            logic.count = 0;
+            logic.primed = true;
             state.smart_out = .zero;
-            return state;
-        }
-        if (mode == .virtual) {
-            if (logic.shifter) |word| {
-                try mode.sink().write(word & wordMask(regs.x));
-                logic.shifter = null;
-                logic.buffer = null;
-                state.in = 1;
-            }
-            if (inputs.new_y != null) {
-                logic.shifter = regs.y;
-                state.in = 1;
-            }
-            state.smart_out = .zero;
-            state.scheduled = logic.shifter != null;
             return state;
         }
         if (logic.primed) {
@@ -361,7 +349,7 @@ pub const UsartTx = struct {
         if (rising) {
             if (logic.count == @as(u5, @truncate(regs.x))) {
                 if (logic.shifter) |word| {
-                    try mode.sink().write(word & wordMask(regs.x));
+                    try mode.emulated.write(word & wordMask(regs.x));
                 }
                 state.y = logic.shift;
                 logic.shifter = regs.y;
@@ -408,6 +396,7 @@ pub const UartRx = struct {
     /// Recover UART samples with live word length and divider reloads in both timed modes.
     fn step(logic: *UartRx, regs: *Registers, inputs: Inputs, mode: RxMode) SmartPinError!Outputs {
         if (mode == .virtual) {
+            logic.* = .{};
             return receiveImmediate(regs, inputs, mode.virtual);
         }
         var state = outputs(regs, inputs);
@@ -504,24 +493,25 @@ pub const UartRx = struct {
 pub const UsartRx = struct {
     shift: u32 = 0,
     count: u6 = 0,
-    a: bool = false,
+    a: Pipeline(bool, 1) = .init(false),
     b: bool = false,
     source_word: ?u32 = null,
 
     /// Shift the previous or coincident A sample on routed B edges using the live terminal count.
     fn step(logic: *UsartRx, regs: *Registers, inputs: Inputs, mode: RxMode) SmartPinError!Outputs {
         if (mode == .virtual) {
+            logic.* = .{ .a = .init(inputs.a.sample()), .b = inputs.b.sample() };
             return receiveImmediate(regs, inputs, mode.virtual);
         }
         var state = outputs(regs, inputs);
         const a = inputs.a.sample();
         const b = inputs.b.sample();
-        const sample = if (regs.x & 32 != 0) a else logic.a;
+        const previous_a = logic.a.step(a);
+        const sample = if (regs.x & 32 != 0) a else previous_a;
         const rising = b and !logic.b;
-        logic.a = a;
         logic.b = b;
         if (!regs.enabled) {
-            logic.* = .{ .shift = logic.shift, .a = a, .b = b };
+            logic.* = .{ .shift = logic.shift, .a = .init(a), .b = b };
         } else if (rising) {
             if (mode == .emulated and logic.source_word == null) {
                 logic.source_word = try mode.emulated.read();
@@ -546,6 +536,16 @@ pub const UsartRx = struct {
         return state;
     }
 };
+
+/// Deliver an enabled virtual WYPIN immediately without retaining any timed transmission state.
+fn transmitImmediate(regs: *const Registers, inputs: Inputs, sink: *const DataSink) SmartPinError!Outputs {
+    var state = outputs(regs, inputs);
+    if (regs.enabled and inputs.new_y != null) {
+        try sink.write(regs.y & wordMask(regs.x));
+        state.in = 1;
+    }
+    return state;
+}
 
 /// Receive at most one endpoint word per clock, preserving unread data until acknowledgement.
 fn receiveImmediate(regs: *Registers, inputs: Inputs, source: *DataSource) SmartPinError!Outputs {
@@ -658,27 +658,24 @@ pub fn Nco(comptime duty: bool) type {
     return struct {
         divider: Divider = .{},
         accumulator: u32 = 0,
-        direction_pipeline: [2]u1 = @splat(0),
-        tick_previous: bool = false,
+        direction_pipeline: Pipeline(u1, 2) = .init(0),
+        tick_pipeline: Pipeline(bool, 1) = .init(false),
 
         /// Keep the base counter running until the sampled DIR has also entered reset.
         fn enabled(logic: *const @This(), dir: u1) bool {
-            return dir != 0 or logic.direction_pipeline[1] != 0;
+            return dir != 0 or logic.direction_pipeline.tap(1) != 0;
         }
 
         /// Advance the divider, registered accumulator and independently gated publication bus.
         fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
             var state = outputs(regs, inputs);
-            const phase_enabled = logic.direction_pipeline[1] != 0;
-            const publish_enabled = logic.direction_pipeline[0] != 0 and phase_enabled;
-            logic.direction_pipeline[1] = logic.direction_pipeline[0];
-            logic.direction_pipeline[0] = inputs.dir;
+            const phase_enabled = logic.direction_pipeline.step(inputs.dir) != 0;
+            const publish_enabled = logic.direction_pipeline.tap(1) != 0 and phase_enabled;
 
             if (inputs.new_x != null) {
                 logic.accumulator = (logic.accumulator & 0xffff) | (regs.x & 0xffff0000);
             }
             const sum = @addWithOverflow(logic.accumulator, regs.y);
-            const tick_previous = logic.tick_previous;
             var tick = false;
             if (regs.enabled) {
                 tick = logic.divider.tick(regs.x);
@@ -686,7 +683,7 @@ pub fn Nco(comptime duty: bool) type {
                 logic.divider.remaining = 0;
                 state.in = 0;
             }
-            logic.tick_previous = tick;
+            const tick_previous = logic.tick_pipeline.step(tick);
 
             // The accumulator consumes the preceding divider boundary. The physical drive
             // sees the adder output, while Z captures the registered accumulator on a carry.
@@ -1028,12 +1025,10 @@ pub const SmartPin = struct {
     logic: Logic = .{ .gpio = .{} },
     rx_mode: RxMode = .exact,
     tx_mode: TxMode = .{ .emulated = &discard_sink },
-    previous_rx: std.meta.Tag(RxMode) = .exact,
-    previous_tx: std.meta.Tag(TxMode) = .emulated,
     /// Cog OUT transport remains clocked while an engine overrides the output.
-    out_pipeline: [2]u1 = @splat(0),
+    out_pipeline: Pipeline(u1, 2) = .init(0),
     /// Output engines publish through a register; GPIO passes the registered cog OUT bus through.
-    output_register: Signal = .zero,
+    output_register: Pipeline(Signal, 1) = .init(.zero),
 
     pub const Logic = union(Mode) {
         gpio: Normal,
@@ -1104,10 +1099,8 @@ pub const SmartPin = struct {
     /// Apply command inputs, dispatch the active logic, then latch its result and IN signal.
     pub fn step(pin: *SmartPin, inputs: Inputs) SmartPinError!Outputs {
         var signals = inputs;
-        signals.out = pin.out_pipeline[0];
-        const out = pin.out_pipeline[1];
-        pin.out_pipeline[1] = pin.out_pipeline[0];
-        pin.out_pipeline[0] = inputs.out;
+        signals.out = pin.out_pipeline.tap(0);
+        const out = pin.out_pipeline.step(inputs.out);
         const enabled = switch (pin.logic) {
             inline .nco_frequency, .nco_duty => |*logic| logic.enabled(inputs.dir),
             else => inputs.dir != 0,
@@ -1123,27 +1116,6 @@ pub const SmartPin = struct {
         if (inputs.ack or inputs.new_x != null or inputs.new_y != null or signals.reset) {
             pin.registers.ready = false;
         }
-        const rx = std.meta.activeTag(pin.rx_mode);
-        const tx = std.meta.activeTag(pin.tx_mode);
-        const rx_restart = rx != pin.previous_rx and (rx == .virtual or pin.previous_rx == .virtual);
-        const tx_restart = tx != pin.previous_tx;
-        switch (pin.logic) {
-            .uart_rx => |*logic| if (rx_restart) {
-                logic.* = .{};
-            },
-            .sync_rx => |*logic| if (rx_restart) {
-                logic.* = .{ .a = inputs.a.sample(), .b = inputs.b.sample() };
-            },
-            .uart_tx => |*logic| if (tx_restart) {
-                logic.* = .{};
-            },
-            .sync_tx => |*logic| if (tx_restart) {
-                logic.* = .{ .a = inputs.a.sample(), .b = inputs.b.sample() };
-            },
-            else => {},
-        }
-        pin.previous_rx = rx;
-        pin.previous_tx = tx;
         var state = try switch (pin.logic) {
             .uart_rx => |*logic| logic.step(&pin.registers, signals, pin.rx_mode),
             .sync_rx => |*logic| logic.step(&pin.registers, signals, pin.rx_mode),
@@ -1151,9 +1123,8 @@ pub const SmartPin = struct {
             .sync_tx => |*logic| logic.step(&pin.registers, signals, pin.tx_mode),
             inline else => |*logic| logic.step(&pin.registers, signals),
         };
-        const output = state.smart_out;
-        state.smart_out = if (pin.overridesOutput()) pin.output_register else Signal.from(out != 0);
-        pin.output_register = output;
+        const output = pin.output_register.step(state.smart_out);
+        state.smart_out = if (pin.overridesOutput()) output else Signal.from(out != 0);
         pin.registers.result = state.y;
         pin.registers.ready = state.in != 0;
         return state;
@@ -1196,7 +1167,7 @@ const SerialDevice = struct {
     }
 };
 
-test "virtual serial modes are per pin, acknowledge RX, and pipeline TX without transitions" {
+test "virtual serial modes acknowledge RX and deliver TX writes immediately without transitions" {
     for ([_]Mode{ .uart_rx, .sync_rx }) |mode| {
         var device: SerialDevice = .{ .values = &.{ 0x89abcdef, 0x12345678 } };
         var source = device.source();
@@ -1223,14 +1194,109 @@ test "virtual serial modes are per pin, acknowledge RX, and pipeline TX without 
         for (0..32) |i| {
             const state = try pin.step(.{ .dir = 1, .new_x = 31, .new_y = @as(u32, 0x80000000) + @as(u32, @intCast(i)) });
             try std.testing.expectEqual(if (mode == .uart_tx) Signal.one else Signal.zero, state.smart_out);
-            try std.testing.expectEqual(i, device.writes);
+            try std.testing.expectEqual(i + 1, device.writes);
         }
         _ = try pin.step(.{ .dir = 1 });
         try std.testing.expectEqual(@as(usize, 32), device.writes);
         try std.testing.expectEqual(@as(u32, 0x8000001f), device.written[31]);
         _ = try pin.step(.{ .dir = 1, .new_y = 0xffffffff });
         _ = try pin.step(.{});
-        try std.testing.expectEqual(@as(usize, 32), device.writes);
+        try std.testing.expectEqual(@as(usize, 33), device.writes);
+        try std.testing.expectEqual(@as(u32, 0xffffffff), device.written[32]);
+        // Writes while reset do not prime a virtual or subsequent timed transfer.
+        _ = try pin.step(.{ .new_y = 123 });
+        _ = try pin.step(.{ .dir = 1 });
+        try std.testing.expectEqual(@as(usize, 33), device.writes);
+    }
+}
+
+test "virtual reception discards partial words and returns to a complete fresh timed word" {
+    for ([_]Mode{ .uart_rx, .sync_rx }) |mode| {
+        var device: SerialDevice = .{ .values = &.{ 0xff, 0x55, 0xa5 } };
+        var source = device.source();
+        var pin: SmartPin = .{ .rx_mode = .{ .emulated = &source } };
+        pin.configure(mode);
+        _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 7 });
+        if (mode == .uart_rx) {
+            for (0..30) |_| {
+                _ = try pin.step(.{ .dir = 1 });
+            }
+        } else {
+            for (0..4) |_| {
+                _ = try pin.step(.{ .dir = 1, .b = .one });
+                _ = try pin.step(.{ .dir = 1 });
+            }
+        }
+        try std.testing.expectEqual(@as(usize, 1), device.reads);
+        try std.testing.expect(!pin.registers.ready);
+        pin.rx_mode = .{ .virtual = &source };
+        for (0..8) |clock| {
+            _ = try pin.step(.{ .dir = 1, .a = .one, .b = Signal.from(clock % 2 != 0) });
+        }
+        try std.testing.expectEqual(@as(usize, 2), device.reads);
+        try std.testing.expectEqual(@as(u32, 0x55000000), pin.registers.result);
+        pin.rx_mode = .{ .emulated = &source };
+        _ = try pin.step(.{ .dir = 1, .ack = true, .b = .one });
+        if (mode == .uart_rx) {
+            // A complete new UART frame must elapse; the discarded prefix cannot shorten it.
+            for (0..70) |_| {
+                _ = try pin.step(.{ .dir = 1 });
+                try std.testing.expect(!pin.registers.ready);
+            }
+            for (0..20) |_| {
+                _ = try pin.step(.{ .dir = 1 });
+            }
+        } else {
+            // The held-high clock is not an edge, and none of the old four bits survive.
+            try std.testing.expectEqual(@as(usize, 2), device.reads);
+            for (0..8) |bit| {
+                _ = try pin.step(.{ .dir = 1 });
+                _ = try pin.step(.{ .dir = 1, .b = .one });
+                try std.testing.expectEqual(bit == 7, pin.registers.ready);
+            }
+        }
+        try std.testing.expect(pin.registers.ready);
+        try std.testing.expectEqual(@as(usize, 3), device.reads);
+        try std.testing.expectEqual(@as(u32, 0xa5), pin.registers.result >> 24);
+    }
+}
+
+test "virtual transmission abandons timed state and leaves no word to resume" {
+    for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
+        var device: SerialDevice = .{ .values = &.{} };
+        const sink = device.sink();
+        var pin: SmartPin = .{ .tx_mode = .{ .emulated = &sink } };
+        pin.configure(mode);
+        _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 39, .new_y = 0xff });
+        for (0..3) |_| {
+            _ = try pin.step(.{ .dir = 1 });
+            _ = try pin.step(.{ .dir = 1, .b = .one });
+        }
+        pin.tx_mode = .{ .virtual = &sink };
+        _ = try pin.step(.{ .dir = 1, .new_y = 0xa5, .a = .one, .b = .one });
+        try std.testing.expectEqual(@as(usize, 1), device.writes);
+        try std.testing.expectEqual(@as(u32, 0xa5), device.written[0]);
+        for (0..20) |_| {
+            _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+        }
+        pin.tx_mode = .{ .emulated = &sink };
+        for (0..100) |_| {
+            _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+        }
+        try std.testing.expectEqual(@as(usize, 1), device.writes);
+        _ = try pin.step(.{ .dir = 1, .new_y = 0x3c, .b = .one });
+        if (mode == .uart_tx) {
+            for (0..100) |_| {
+                _ = try pin.step(.{ .dir = 1 });
+            }
+        } else {
+            for (0..8) |_| {
+                _ = try pin.step(.{ .dir = 1 });
+                _ = try pin.step(.{ .dir = 1, .b = .one });
+            }
+        }
+        try std.testing.expectEqual(@as(usize, 2), device.writes);
+        try std.testing.expectEqual(@as(u32, 0x3c), device.written[1]);
     }
 }
 
@@ -1519,8 +1585,8 @@ test "WRPIN retains host modes and endpoint errors propagate through all serial 
     try std.testing.expect(pin.rx_mode.emulated == &source);
     for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
         pin.configure(mode);
-        _ = try pin.step(.{ .dir = 1, .new_y = 0x12345678 });
-        try std.testing.expectError(error.TestSinkFailure, pin.step(.{ .dir = 1 }));
+        try std.testing.expectError(error.TestSinkFailure, pin.step(.{ .dir = 1, .new_y = 0x12345678 }));
+        _ = try pin.step(.{ .dir = 1 });
         try std.testing.expect(pin.tx_mode.virtual == &sink);
     }
 }
@@ -1556,6 +1622,13 @@ test "returning from virtual USART waits for a new B edge" {
     _ = try pin.step(.{ .dir = 1, .b = .one });
     try std.testing.expectEqual(@as(usize, 2), device.reads);
     try std.testing.expectEqual(@as(u6, 1), pin.logic.sync_rx.count);
+    // A real low-to-high transition on the first timed step must not be suppressed either.
+    pin.rx_mode = .{ .virtual = &source };
+    _ = try pin.step(.{ .dir = 1, .a = .one });
+    pin.rx_mode = .exact;
+    _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+    try std.testing.expectEqual(@as(u6, 1), pin.logic.sync_rx.count);
+    try std.testing.expectEqual(@as(u32, 0x80000000), pin.logic.sync_rx.shift);
 }
 
 test "virtual transmitters do not invent words when enabled without WYPIN" {

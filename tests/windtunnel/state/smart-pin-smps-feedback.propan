@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-a0-b0"
-//? const: pll = 0
 //? const: a = 0
 //? const: b = 0
 //? post: cog[*].reg[initial] == 0x31c6318e
@@ -11,7 +10,6 @@
 //? post: cog[*].reg[recovery] == 0xe318c718
 //? post: cog[*].reg[second_result] == 0x00070007
 //? run: "pll0-a0-b1"
-//? const: pll = 0
 //? const: a = 0
 //? const: b = 1
 //? post: cog[*].reg[initial] == 0x00000000
@@ -20,7 +18,6 @@
 //? post: cog[*].reg[recovery] == 0xe318c718
 //? post: cog[*].reg[second_result] == 0x00070007
 //? run: "pll0-a1-b0"
-//? const: pll = 0
 //? const: a = 1
 //? const: b = 0
 //? post: cog[*].reg[initial] == 0x30000000
@@ -29,7 +26,6 @@
 //? post: cog[*].reg[recovery] == 0x8c718c63
 //? post: cog[*].reg[second_result] == 0x00070007
 //? run: "pll0-a1-b1"
-//? const: pll = 0
 //? const: a = 1
 //? const: b = 1
 //? post: cog[*].reg[initial] == 0x00000000
@@ -37,50 +33,8 @@
 //? post: cog[*].reg[first_ready] == 0x00000000
 //? post: cog[*].reg[recovery] == 0x8c718c63
 //? post: cog[*].reg[second_result] == 0x00070007
-//? run: "pll1-a0-b0"
-//? const: pll = 1
-//? const: a = 0
-//? const: b = 0
-//? post: cog[*].reg[initial] == 0x38c631c6
-//? post: cog[*].reg[first_result] == 0x00070007
-//? post: cog[*].reg[first_ready] == 0x00000001
-//? post: cog[*].reg[recovery] == 0x6318e318
-//? post: cog[*].reg[second_result] == 0x00070007
-//? run: "pll1-a0-b1"
-//? const: pll = 1
-//? const: a = 0
-//? const: b = 1
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[first_result] == 0x00070007
-//? post: cog[*].reg[first_ready] == 0x00000001
-//? post: cog[*].reg[recovery] == 0x6318e318
-//? post: cog[*].reg[second_result] == 0x00070007
-//? run: "pll1-a1-b0"
-//? const: pll = 1
-//? const: a = 1
-//? const: b = 0
-//? post: cog[*].reg[initial] == 0x38000000
-//? post: cog[*].reg[first_result] == 0x00000000
-//? post: cog[*].reg[first_ready] == 0x00000000
-//? post: cog[*].reg[recovery] == 0x8e318c71
-//? post: cog[*].reg[second_result] == 0x00070007
-//? run: "pll1-a1-b1"
-//? const: pll = 1
-//? const: a = 1
-//? const: b = 1
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[first_result] == 0x00000000
-//? post: cog[*].reg[first_ready] == 0x00000000
-//? post: cog[*].reg[recovery] == 0x8e318c71
-//? post: cog[*].reg[second_result] == 0x00070007
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Establish feedback before enabling SMPS; capture initial gating and recovery from either source.
                 DRVL    3

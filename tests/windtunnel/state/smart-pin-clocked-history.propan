@@ -2,61 +2,27 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-initial0-phase0"
-//? const: pll = 0
 //? const: initial = 0
 //? const: phase = 0
 //? post: cog[*].reg[enabled] == 0x00000000
 //? post: cog[*].reg[bypassed] == 0x00000000
 //? run: "pll0-initial0-phase1"
-//? const: pll = 0
 //? const: initial = 0
 //? const: phase = 1
 //? post: cog[*].reg[enabled] == 0x00000000
 //? post: cog[*].reg[bypassed] == 0x00000000
 //? run: "pll0-initial1-phase0"
-//? const: pll = 0
 //? const: initial = 1
 //? const: phase = 0
 //? post: cog[*].reg[enabled] == 0x0000ffff
 //? post: cog[*].reg[bypassed] == 0x0000ffff
 //? run: "pll0-initial1-phase1"
-//? const: pll = 0
-//? const: initial = 1
-//? const: phase = 1
-//? post: cog[*].reg[enabled] == 0x0000ffff
-//? post: cog[*].reg[bypassed] == 0x0000ffff
-//? run: "pll1-initial0-phase0"
-//? const: pll = 1
-//? const: initial = 0
-//? const: phase = 0
-//? post: cog[*].reg[enabled] == 0x00000000
-//? post: cog[*].reg[bypassed] == 0x00000000
-//? run: "pll1-initial0-phase1"
-//? const: pll = 1
-//? const: initial = 0
-//? const: phase = 1
-//? post: cog[*].reg[enabled] == 0x00000000
-//? post: cog[*].reg[bypassed] == 0x00000000
-//? run: "pll1-initial1-phase0"
-//? const: pll = 1
-//? const: initial = 1
-//? const: phase = 0
-//? post: cog[*].reg[enabled] == 0x0000ffff
-//? post: cog[*].reg[bypassed] == 0x0000ffff
-//? run: "pll1-initial1-phase1"
-//? const: pll = 1
 //? const: initial = 1
 //? const: phase = 1
 //? post: cog[*].reg[enabled] == 0x0000ffff
 //? post: cog[*].reg[bypassed] == 0x0000ffff
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Establish a known sampled low before changing modes; configure physical pads only with DIR low.
                 DIRL    40

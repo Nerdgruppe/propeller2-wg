@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode28"
-//? const: pll = 0
 //? const: mode = 28
 //? post: cog[*].reg[complete] == 0xff13579b
 //? post: cog[*].reg[carry] == 0x00000001
@@ -14,7 +13,6 @@
 //? post: cog[*].reg[reconfigured] == 0xff13579b
 //? post: cog[*].reg[count] == 0x00000000
 //? run: "pll0-mode29"
-//? const: pll = 0
 //? const: mode = 29
 //? post: cog[*].reg[complete] == 0xff000000
 //? post: cog[*].reg[carry] == 0x00000001
@@ -26,7 +24,6 @@
 //? post: cog[*].reg[reconfigured] == 0xff000000
 //? post: cog[*].reg[count] == 0x00000000
 //? run: "pll0-mode30"
-//? const: pll = 0
 //? const: mode = 30
 //? post: cog[*].reg[complete] == 0xffc4d5e6
 //? post: cog[*].reg[carry] == 0x00000000
@@ -38,55 +35,6 @@
 //? post: cog[*].reg[reconfigured] == 0xffc4d5e6
 //? post: cog[*].reg[count] == 0x00000000
 //? run: "pll0-mode31"
-//? const: pll = 0
-//? const: mode = 31
-//? post: cog[*].reg[complete] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xef000000
-//? post: cog[*].reg[reset_carry] == 0x00000001
-//? post: cog[*].reg[reset_ready] == 0x00000000
-//? post: cog[*].reg[restarted] == 0xef000000
-//? post: cog[*].reg[reconfigured] == 0xef000000
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode28"
-//? const: pll = 1
-//? const: mode = 28
-//? post: cog[*].reg[complete] == 0xff13579b
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0xff13579b
-//? post: cog[*].reg[reset_carry] == 0x00000001
-//? post: cog[*].reg[reset_ready] == 0x00000000
-//? post: cog[*].reg[restarted] == 0xff13579b
-//? post: cog[*].reg[reconfigured] == 0xff13579b
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode29"
-//? const: pll = 1
-//? const: mode = 29
-//? post: cog[*].reg[complete] == 0xff000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xff000000
-//? post: cog[*].reg[reset_carry] == 0x00000001
-//? post: cog[*].reg[reset_ready] == 0x00000000
-//? post: cog[*].reg[restarted] == 0xff000000
-//? post: cog[*].reg[reconfigured] == 0xff000000
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode30"
-//? const: pll = 1
-//? const: mode = 30
-//? post: cog[*].reg[complete] == 0xffc4d5e6
-//? post: cog[*].reg[carry] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xffc4d5e6
-//? post: cog[*].reg[reset_carry] == 0x00000000
-//? post: cog[*].reg[reset_ready] == 0x00000000
-//? post: cog[*].reg[restarted] == 0xffc4d5e6
-//? post: cog[*].reg[reconfigured] == 0xffc4d5e6
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode31"
-//? const: pll = 1
 //? const: mode = 31
 //? post: cog[*].reg[complete] == 0xef000000
 //? post: cog[*].reg[carry] == 0x00000001
@@ -98,13 +46,7 @@
 //? post: cog[*].reg[reconfigured] == 0xef000000
 //? post: cog[*].reg[count] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // P3 supplies UART data or a steady synchronous sample; P5 supplies B clocks.
                 DRVH    3

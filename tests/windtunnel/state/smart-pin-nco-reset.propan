@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-x1-phase0"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 0
 //? post: cog[*].reg[running] == 0x6af37c05
@@ -15,7 +14,6 @@
 //? post: cog[*].reg[z6] == 0x1eb851ec
 //? post: cog[*].reg[z7] == 0x1eb851ec
 //? run: "pll0-x1-phase1"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 1
 //? post: cog[*].reg[running] == 0x79be0247
@@ -28,7 +26,6 @@
 //? post: cog[*].reg[z6] == 0x1eb851ec
 //? post: cog[*].reg[z7] == 0x1eb851ec
 //? run: "pll0-x1-phase2"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 2
 //? post: cog[*].reg[running] == 0x01234568
@@ -41,7 +38,6 @@
 //? post: cog[*].reg[z6] == 0x2d82d82e
 //? post: cog[*].reg[z7] == 0x2d82d82e
 //? run: "pll0-x1-phase3"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 3
 //? post: cog[*].reg[running] == 0x01234568
@@ -54,7 +50,6 @@
 //? post: cog[*].reg[z6] == 0x2d82d82e
 //? post: cog[*].reg[z7] == 0x2d82d82e
 //? run: "pll0-x1-phase4"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 4
 //? post: cog[*].reg[running] == 0x0fedcbaa
@@ -67,7 +62,6 @@
 //? post: cog[*].reg[z6] == 0x3c4d5e70
 //? post: cog[*].reg[z7] == 0x3c4d5e70
 //? run: "pll0-x1-phase5"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 5
 //? post: cog[*].reg[running] == 0x0fedcbaa
@@ -80,7 +74,6 @@
 //? post: cog[*].reg[z6] == 0x3c4d5e70
 //? post: cog[*].reg[z7] == 0x3c4d5e70
 //? run: "pll0-x1-phase6"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 6
 //? post: cog[*].reg[running] == 0x1eb851ec
@@ -93,7 +86,6 @@
 //? post: cog[*].reg[z6] == 0x4b17e4b2
 //? post: cog[*].reg[z7] == 0x4b17e4b2
 //? run: "pll0-x1-phase7"
-//? const: pll = 0
 //? const: x = 1
 //? const: phase = 7
 //? post: cog[*].reg[running] == 0x1eb851ec
@@ -106,7 +98,6 @@
 //? post: cog[*].reg[z6] == 0x4b17e4b2
 //? post: cog[*].reg[z7] == 0x4b17e4b2
 //? run: "pll0-x2-phase0"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 0
 //? post: cog[*].reg[running] == 0xf92c5f93
@@ -119,7 +110,6 @@
 //? post: cog[*].reg[z6] == 0x8f5c28f6
 //? post: cog[*].reg[z7] == 0x8f5c28f6
 //? run: "pll0-x2-phase1"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 1
 //? post: cog[*].reg[running] == 0xf92c5f93
@@ -132,7 +122,6 @@
 //? post: cog[*].reg[z6] == 0x8f5c28f6
 //? post: cog[*].reg[z7] == 0x8f5c28f6
 //? run: "pll0-x2-phase2"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 2
 //? post: cog[*].reg[running] == 0x8091a2b4
@@ -145,7 +134,6 @@
 //? post: cog[*].reg[z6] == 0x8f5c28f6
 //? post: cog[*].reg[z7] == 0x8f5c28f6
 //? run: "pll0-x2-phase3"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 3
 //? post: cog[*].reg[running] == 0x8091a2b4
@@ -158,7 +146,6 @@
 //? post: cog[*].reg[z6] == 0x8f5c28f6
 //? post: cog[*].reg[z7] == 0x8f5c28f6
 //? run: "pll0-x2-phase4"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 4
 //? post: cog[*].reg[running] == 0x8091a2b4
@@ -171,7 +158,6 @@
 //? post: cog[*].reg[z6] == 0x9e26af38
 //? post: cog[*].reg[z7] == 0x9e26af38
 //? run: "pll0-x2-phase5"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 5
 //? post: cog[*].reg[running] == 0x8091a2b4
@@ -184,7 +170,6 @@
 //? post: cog[*].reg[z6] == 0x9e26af38
 //? post: cog[*].reg[z7] == 0x9e26af38
 //? run: "pll0-x2-phase6"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 6
 //? post: cog[*].reg[running] == 0x8f5c28f6
@@ -197,7 +182,6 @@
 //? post: cog[*].reg[z6] == 0x9e26af38
 //? post: cog[*].reg[z7] == 0x9e26af38
 //? run: "pll0-x2-phase7"
-//? const: pll = 0
 //? const: x = 2
 //? const: phase = 7
 //? post: cog[*].reg[running] == 0x8f5c28f6
@@ -210,7 +194,6 @@
 //? post: cog[*].reg[z6] == 0x9e26af38
 //? post: cog[*].reg[z7] == 0x9e26af38
 //? run: "pll0-x3-phase0"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 0
 //? post: cog[*].reg[running] == 0xeca86420
@@ -223,7 +206,6 @@
 //? post: cog[*].reg[z6] == 0x82d82d83
 //? post: cog[*].reg[z7] == 0x82d82d83
 //? run: "pll0-x3-phase1"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 1
 //? post: cog[*].reg[running] == 0xeca86420
@@ -236,7 +218,6 @@
 //? post: cog[*].reg[z6] == 0x82d82d83
 //? post: cog[*].reg[z7] == 0x82d82d83
 //? run: "pll0-x3-phase2"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 2
 //? post: cog[*].reg[running] == 0xfb72ea62
@@ -249,7 +230,6 @@
 //? post: cog[*].reg[z6] == 0x82d82d83
 //? post: cog[*].reg[z7] == 0x82d82d83
 //? run: "pll0-x3-phase3"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 3
 //? post: cog[*].reg[running] == 0xfb72ea62
@@ -262,7 +242,6 @@
 //? post: cog[*].reg[z6] == 0x82d82d83
 //? post: cog[*].reg[z7] == 0x82d82d83
 //? run: "pll0-x3-phase4"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 4
 //? post: cog[*].reg[running] == 0xfb72ea62
@@ -275,7 +254,6 @@
 //? post: cog[*].reg[z6] == 0x82d82d83
 //? post: cog[*].reg[z7] == 0x82d82d83
 //? run: "pll0-x3-phase5"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 5
 //? post: cog[*].reg[running] == 0x82d82d83
@@ -288,7 +266,6 @@
 //? post: cog[*].reg[z6] == 0x91a2b3c5
 //? post: cog[*].reg[z7] == 0x91a2b3c5
 //? run: "pll0-x3-phase6"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 6
 //? post: cog[*].reg[running] == 0x82d82d83
@@ -301,7 +278,6 @@
 //? post: cog[*].reg[z6] == 0x91a2b3c5
 //? post: cog[*].reg[z7] == 0x91a2b3c5
 //? run: "pll0-x3-phase7"
-//? const: pll = 0
 //? const: x = 3
 //? const: phase = 7
 //? post: cog[*].reg[running] == 0x82d82d83
@@ -314,7 +290,6 @@
 //? post: cog[*].reg[z6] == 0x91a2b3c5
 //? post: cog[*].reg[z7] == 0x91a2b3c5
 //? run: "pll0-x4-phase0"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 0
 //? post: cog[*].reg[running] == 0xb17e4b18
@@ -327,7 +302,6 @@
 //? post: cog[*].reg[z6] == 0xc048d15a
 //? post: cog[*].reg[z7] == 0xc048d15a
 //? run: "pll0-x4-phase1"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 1
 //? post: cog[*].reg[running] == 0xb17e4b18
@@ -340,7 +314,6 @@
 //? post: cog[*].reg[z6] == 0xc048d15a
 //? post: cog[*].reg[z7] == 0xc048d15a
 //? run: "pll0-x4-phase2"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 2
 //? post: cog[*].reg[running] == 0xc048d15a
@@ -353,7 +326,6 @@
 //? post: cog[*].reg[z6] == 0xc048d15a
 //? post: cog[*].reg[z7] == 0xc048d15a
 //? run: "pll0-x4-phase3"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 3
 //? post: cog[*].reg[running] == 0xc048d15a
@@ -366,7 +338,6 @@
 //? post: cog[*].reg[z6] == 0xc048d15a
 //? post: cog[*].reg[z7] == 0xc048d15a
 //? run: "pll0-x4-phase4"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 4
 //? post: cog[*].reg[running] == 0xc048d15a
@@ -379,7 +350,6 @@
 //? post: cog[*].reg[z6] == 0xcf13579c
 //? post: cog[*].reg[z7] == 0xcf13579c
 //? run: "pll0-x4-phase5"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 5
 //? post: cog[*].reg[running] == 0xc048d15a
@@ -392,7 +362,6 @@
 //? post: cog[*].reg[z6] == 0xcf13579c
 //? post: cog[*].reg[z7] == 0xcf13579c
 //? run: "pll0-x4-phase6"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 6
 //? post: cog[*].reg[running] == 0xc048d15a
@@ -405,7 +374,6 @@
 //? post: cog[*].reg[z6] == 0xcf13579c
 //? post: cog[*].reg[z7] == 0xcf13579c
 //? run: "pll0-x4-phase7"
-//? const: pll = 0
 //? const: x = 4
 //? const: phase = 7
 //? post: cog[*].reg[running] == 0xc048d15a
@@ -418,7 +386,6 @@
 //? post: cog[*].reg[z6] == 0xcf13579c
 //? post: cog[*].reg[z7] == 0xcf13579c
 //? run: "pll0-x5-phase0"
-//? const: pll = 0
 //? const: x = 5
 //? const: phase = 0
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -431,7 +398,6 @@
 //? post: cog[*].reg[z6] == 0x93e93e94
 //? post: cog[*].reg[z7] == 0x93e93e94
 //? run: "pll0-x5-phase1"
-//? const: pll = 0
 //? const: x = 5
 //? const: phase = 1
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -444,7 +410,6 @@
 //? post: cog[*].reg[z6] == 0x93e93e94
 //? post: cog[*].reg[z7] == 0x93e93e94
 //? run: "pll0-x5-phase2"
-//? const: pll = 0
 //? const: x = 5
 //? const: phase = 2
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -457,7 +422,6 @@
 //? post: cog[*].reg[z6] == 0x93e93e94
 //? post: cog[*].reg[z7] == 0x93e93e94
 //? run: "pll0-x5-phase3"
-//? const: pll = 0
 //? const: x = 5
 //? const: phase = 3
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -470,7 +434,6 @@
 //? post: cog[*].reg[z6] == 0xa2b3c4d6
 //? post: cog[*].reg[z7] == 0xa2b3c4d6
 //? run: "pll0-x5-phase4"
-//? const: pll = 0
 //? const: x = 5
 //? const: phase = 4
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -483,7 +446,6 @@
 //? post: cog[*].reg[z6] == 0xa2b3c4d6
 //? post: cog[*].reg[z7] == 0xa2b3c4d6
 //? run: "pll0-x5-phase5"
-//? const: pll = 0
 //? const: x = 5
 //? const: phase = 5
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -496,7 +458,6 @@
 //? post: cog[*].reg[z6] == 0xa2b3c4d6
 //? post: cog[*].reg[z7] == 0xa2b3c4d6
 //? run: "pll0-x5-phase6"
-//? const: pll = 0
 //? const: x = 5
 //? const: phase = 6
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -509,527 +470,6 @@
 //? post: cog[*].reg[z6] == 0xa2b3c4d6
 //? post: cog[*].reg[z7] == 0xa2b3c4d6
 //? run: "pll0-x5-phase7"
-//? const: pll = 0
-//? const: x = 5
-//? const: phase = 7
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0xa2b3c4d6
-//? post: cog[*].reg[z1] == 0xa2b3c4d6
-//? post: cog[*].reg[z2] == 0xa2b3c4d6
-//? post: cog[*].reg[z3] == 0xa2b3c4d6
-//? post: cog[*].reg[z4] == 0xa2b3c4d6
-//? post: cog[*].reg[z5] == 0xa2b3c4d6
-//? post: cog[*].reg[z6] == 0xa2b3c4d6
-//? post: cog[*].reg[z7] == 0xa2b3c4d6
-//? run: "pll1-x1-phase0"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 0
-//? post: cog[*].reg[running] == 0x6af37c05
-//? post: cog[*].reg[z0] == 0x0fedcbaa
-//? post: cog[*].reg[z1] == 0x1eb851ec
-//? post: cog[*].reg[z2] == 0x1eb851ec
-//? post: cog[*].reg[z3] == 0x1eb851ec
-//? post: cog[*].reg[z4] == 0x1eb851ec
-//? post: cog[*].reg[z5] == 0x1eb851ec
-//? post: cog[*].reg[z6] == 0x1eb851ec
-//? post: cog[*].reg[z7] == 0x1eb851ec
-//? run: "pll1-x1-phase1"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 1
-//? post: cog[*].reg[running] == 0x79be0247
-//? post: cog[*].reg[z0] == 0x0fedcbaa
-//? post: cog[*].reg[z1] == 0x1eb851ec
-//? post: cog[*].reg[z2] == 0x1eb851ec
-//? post: cog[*].reg[z3] == 0x1eb851ec
-//? post: cog[*].reg[z4] == 0x1eb851ec
-//? post: cog[*].reg[z5] == 0x1eb851ec
-//? post: cog[*].reg[z6] == 0x1eb851ec
-//? post: cog[*].reg[z7] == 0x1eb851ec
-//? run: "pll1-x1-phase2"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 2
-//? post: cog[*].reg[running] == 0x01234568
-//? post: cog[*].reg[z0] == 0x1eb851ec
-//? post: cog[*].reg[z1] == 0x2d82d82e
-//? post: cog[*].reg[z2] == 0x2d82d82e
-//? post: cog[*].reg[z3] == 0x2d82d82e
-//? post: cog[*].reg[z4] == 0x2d82d82e
-//? post: cog[*].reg[z5] == 0x2d82d82e
-//? post: cog[*].reg[z6] == 0x2d82d82e
-//? post: cog[*].reg[z7] == 0x2d82d82e
-//? run: "pll1-x1-phase3"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 3
-//? post: cog[*].reg[running] == 0x01234568
-//? post: cog[*].reg[z0] == 0x1eb851ec
-//? post: cog[*].reg[z1] == 0x2d82d82e
-//? post: cog[*].reg[z2] == 0x2d82d82e
-//? post: cog[*].reg[z3] == 0x2d82d82e
-//? post: cog[*].reg[z4] == 0x2d82d82e
-//? post: cog[*].reg[z5] == 0x2d82d82e
-//? post: cog[*].reg[z6] == 0x2d82d82e
-//? post: cog[*].reg[z7] == 0x2d82d82e
-//? run: "pll1-x1-phase4"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 4
-//? post: cog[*].reg[running] == 0x0fedcbaa
-//? post: cog[*].reg[z0] == 0x2d82d82e
-//? post: cog[*].reg[z1] == 0x3c4d5e70
-//? post: cog[*].reg[z2] == 0x3c4d5e70
-//? post: cog[*].reg[z3] == 0x3c4d5e70
-//? post: cog[*].reg[z4] == 0x3c4d5e70
-//? post: cog[*].reg[z5] == 0x3c4d5e70
-//? post: cog[*].reg[z6] == 0x3c4d5e70
-//? post: cog[*].reg[z7] == 0x3c4d5e70
-//? run: "pll1-x1-phase5"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 5
-//? post: cog[*].reg[running] == 0x0fedcbaa
-//? post: cog[*].reg[z0] == 0x2d82d82e
-//? post: cog[*].reg[z1] == 0x3c4d5e70
-//? post: cog[*].reg[z2] == 0x3c4d5e70
-//? post: cog[*].reg[z3] == 0x3c4d5e70
-//? post: cog[*].reg[z4] == 0x3c4d5e70
-//? post: cog[*].reg[z5] == 0x3c4d5e70
-//? post: cog[*].reg[z6] == 0x3c4d5e70
-//? post: cog[*].reg[z7] == 0x3c4d5e70
-//? run: "pll1-x1-phase6"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 6
-//? post: cog[*].reg[running] == 0x1eb851ec
-//? post: cog[*].reg[z0] == 0x3c4d5e70
-//? post: cog[*].reg[z1] == 0x4b17e4b2
-//? post: cog[*].reg[z2] == 0x4b17e4b2
-//? post: cog[*].reg[z3] == 0x4b17e4b2
-//? post: cog[*].reg[z4] == 0x4b17e4b2
-//? post: cog[*].reg[z5] == 0x4b17e4b2
-//? post: cog[*].reg[z6] == 0x4b17e4b2
-//? post: cog[*].reg[z7] == 0x4b17e4b2
-//? run: "pll1-x1-phase7"
-//? const: pll = 1
-//? const: x = 1
-//? const: phase = 7
-//? post: cog[*].reg[running] == 0x1eb851ec
-//? post: cog[*].reg[z0] == 0x3c4d5e70
-//? post: cog[*].reg[z1] == 0x4b17e4b2
-//? post: cog[*].reg[z2] == 0x4b17e4b2
-//? post: cog[*].reg[z3] == 0x4b17e4b2
-//? post: cog[*].reg[z4] == 0x4b17e4b2
-//? post: cog[*].reg[z5] == 0x4b17e4b2
-//? post: cog[*].reg[z6] == 0x4b17e4b2
-//? post: cog[*].reg[z7] == 0x4b17e4b2
-//? run: "pll1-x2-phase0"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 0
-//? post: cog[*].reg[running] == 0xf92c5f93
-//? post: cog[*].reg[z0] == 0x8091a2b4
-//? post: cog[*].reg[z1] == 0x8f5c28f6
-//? post: cog[*].reg[z2] == 0x8f5c28f6
-//? post: cog[*].reg[z3] == 0x8f5c28f6
-//? post: cog[*].reg[z4] == 0x8f5c28f6
-//? post: cog[*].reg[z5] == 0x8f5c28f6
-//? post: cog[*].reg[z6] == 0x8f5c28f6
-//? post: cog[*].reg[z7] == 0x8f5c28f6
-//? run: "pll1-x2-phase1"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 1
-//? post: cog[*].reg[running] == 0xf92c5f93
-//? post: cog[*].reg[z0] == 0x8091a2b4
-//? post: cog[*].reg[z1] == 0x8f5c28f6
-//? post: cog[*].reg[z2] == 0x8f5c28f6
-//? post: cog[*].reg[z3] == 0x8f5c28f6
-//? post: cog[*].reg[z4] == 0x8f5c28f6
-//? post: cog[*].reg[z5] == 0x8f5c28f6
-//? post: cog[*].reg[z6] == 0x8f5c28f6
-//? post: cog[*].reg[z7] == 0x8f5c28f6
-//? run: "pll1-x2-phase2"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 2
-//? post: cog[*].reg[running] == 0x8091a2b4
-//? post: cog[*].reg[z0] == 0x8f5c28f6
-//? post: cog[*].reg[z1] == 0x8f5c28f6
-//? post: cog[*].reg[z2] == 0x8f5c28f6
-//? post: cog[*].reg[z3] == 0x8f5c28f6
-//? post: cog[*].reg[z4] == 0x8f5c28f6
-//? post: cog[*].reg[z5] == 0x8f5c28f6
-//? post: cog[*].reg[z6] == 0x8f5c28f6
-//? post: cog[*].reg[z7] == 0x8f5c28f6
-//? run: "pll1-x2-phase3"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 3
-//? post: cog[*].reg[running] == 0x8091a2b4
-//? post: cog[*].reg[z0] == 0x8f5c28f6
-//? post: cog[*].reg[z1] == 0x8f5c28f6
-//? post: cog[*].reg[z2] == 0x8f5c28f6
-//? post: cog[*].reg[z3] == 0x8f5c28f6
-//? post: cog[*].reg[z4] == 0x8f5c28f6
-//? post: cog[*].reg[z5] == 0x8f5c28f6
-//? post: cog[*].reg[z6] == 0x8f5c28f6
-//? post: cog[*].reg[z7] == 0x8f5c28f6
-//? run: "pll1-x2-phase4"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 4
-//? post: cog[*].reg[running] == 0x8091a2b4
-//? post: cog[*].reg[z0] == 0x8f5c28f6
-//? post: cog[*].reg[z1] == 0x9e26af38
-//? post: cog[*].reg[z2] == 0x9e26af38
-//? post: cog[*].reg[z3] == 0x9e26af38
-//? post: cog[*].reg[z4] == 0x9e26af38
-//? post: cog[*].reg[z5] == 0x9e26af38
-//? post: cog[*].reg[z6] == 0x9e26af38
-//? post: cog[*].reg[z7] == 0x9e26af38
-//? run: "pll1-x2-phase5"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 5
-//? post: cog[*].reg[running] == 0x8091a2b4
-//? post: cog[*].reg[z0] == 0x8f5c28f6
-//? post: cog[*].reg[z1] == 0x9e26af38
-//? post: cog[*].reg[z2] == 0x9e26af38
-//? post: cog[*].reg[z3] == 0x9e26af38
-//? post: cog[*].reg[z4] == 0x9e26af38
-//? post: cog[*].reg[z5] == 0x9e26af38
-//? post: cog[*].reg[z6] == 0x9e26af38
-//? post: cog[*].reg[z7] == 0x9e26af38
-//? run: "pll1-x2-phase6"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 6
-//? post: cog[*].reg[running] == 0x8f5c28f6
-//? post: cog[*].reg[z0] == 0x9e26af38
-//? post: cog[*].reg[z1] == 0x9e26af38
-//? post: cog[*].reg[z2] == 0x9e26af38
-//? post: cog[*].reg[z3] == 0x9e26af38
-//? post: cog[*].reg[z4] == 0x9e26af38
-//? post: cog[*].reg[z5] == 0x9e26af38
-//? post: cog[*].reg[z6] == 0x9e26af38
-//? post: cog[*].reg[z7] == 0x9e26af38
-//? run: "pll1-x2-phase7"
-//? const: pll = 1
-//? const: x = 2
-//? const: phase = 7
-//? post: cog[*].reg[running] == 0x8f5c28f6
-//? post: cog[*].reg[z0] == 0x9e26af38
-//? post: cog[*].reg[z1] == 0x9e26af38
-//? post: cog[*].reg[z2] == 0x9e26af38
-//? post: cog[*].reg[z3] == 0x9e26af38
-//? post: cog[*].reg[z4] == 0x9e26af38
-//? post: cog[*].reg[z5] == 0x9e26af38
-//? post: cog[*].reg[z6] == 0x9e26af38
-//? post: cog[*].reg[z7] == 0x9e26af38
-//? run: "pll1-x3-phase0"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 0
-//? post: cog[*].reg[running] == 0xeca86420
-//? post: cog[*].reg[z0] == 0xfb72ea62
-//? post: cog[*].reg[z1] == 0x82d82d83
-//? post: cog[*].reg[z2] == 0x82d82d83
-//? post: cog[*].reg[z3] == 0x82d82d83
-//? post: cog[*].reg[z4] == 0x82d82d83
-//? post: cog[*].reg[z5] == 0x82d82d83
-//? post: cog[*].reg[z6] == 0x82d82d83
-//? post: cog[*].reg[z7] == 0x82d82d83
-//? run: "pll1-x3-phase1"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 1
-//? post: cog[*].reg[running] == 0xeca86420
-//? post: cog[*].reg[z0] == 0x82d82d83
-//? post: cog[*].reg[z1] == 0x82d82d83
-//? post: cog[*].reg[z2] == 0x82d82d83
-//? post: cog[*].reg[z3] == 0x82d82d83
-//? post: cog[*].reg[z4] == 0x82d82d83
-//? post: cog[*].reg[z5] == 0x82d82d83
-//? post: cog[*].reg[z6] == 0x82d82d83
-//? post: cog[*].reg[z7] == 0x82d82d83
-//? run: "pll1-x3-phase2"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 2
-//? post: cog[*].reg[running] == 0xfb72ea62
-//? post: cog[*].reg[z0] == 0x82d82d83
-//? post: cog[*].reg[z1] == 0x82d82d83
-//? post: cog[*].reg[z2] == 0x82d82d83
-//? post: cog[*].reg[z3] == 0x82d82d83
-//? post: cog[*].reg[z4] == 0x82d82d83
-//? post: cog[*].reg[z5] == 0x82d82d83
-//? post: cog[*].reg[z6] == 0x82d82d83
-//? post: cog[*].reg[z7] == 0x82d82d83
-//? run: "pll1-x3-phase3"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 3
-//? post: cog[*].reg[running] == 0xfb72ea62
-//? post: cog[*].reg[z0] == 0x82d82d83
-//? post: cog[*].reg[z1] == 0x82d82d83
-//? post: cog[*].reg[z2] == 0x82d82d83
-//? post: cog[*].reg[z3] == 0x82d82d83
-//? post: cog[*].reg[z4] == 0x82d82d83
-//? post: cog[*].reg[z5] == 0x82d82d83
-//? post: cog[*].reg[z6] == 0x82d82d83
-//? post: cog[*].reg[z7] == 0x82d82d83
-//? run: "pll1-x3-phase4"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 4
-//? post: cog[*].reg[running] == 0xfb72ea62
-//? post: cog[*].reg[z0] == 0x82d82d83
-//? post: cog[*].reg[z1] == 0x82d82d83
-//? post: cog[*].reg[z2] == 0x82d82d83
-//? post: cog[*].reg[z3] == 0x82d82d83
-//? post: cog[*].reg[z4] == 0x82d82d83
-//? post: cog[*].reg[z5] == 0x82d82d83
-//? post: cog[*].reg[z6] == 0x82d82d83
-//? post: cog[*].reg[z7] == 0x82d82d83
-//? run: "pll1-x3-phase5"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 5
-//? post: cog[*].reg[running] == 0x82d82d83
-//? post: cog[*].reg[z0] == 0x82d82d83
-//? post: cog[*].reg[z1] == 0x91a2b3c5
-//? post: cog[*].reg[z2] == 0x91a2b3c5
-//? post: cog[*].reg[z3] == 0x91a2b3c5
-//? post: cog[*].reg[z4] == 0x91a2b3c5
-//? post: cog[*].reg[z5] == 0x91a2b3c5
-//? post: cog[*].reg[z6] == 0x91a2b3c5
-//? post: cog[*].reg[z7] == 0x91a2b3c5
-//? run: "pll1-x3-phase6"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 6
-//? post: cog[*].reg[running] == 0x82d82d83
-//? post: cog[*].reg[z0] == 0x82d82d83
-//? post: cog[*].reg[z1] == 0x91a2b3c5
-//? post: cog[*].reg[z2] == 0x91a2b3c5
-//? post: cog[*].reg[z3] == 0x91a2b3c5
-//? post: cog[*].reg[z4] == 0x91a2b3c5
-//? post: cog[*].reg[z5] == 0x91a2b3c5
-//? post: cog[*].reg[z6] == 0x91a2b3c5
-//? post: cog[*].reg[z7] == 0x91a2b3c5
-//? run: "pll1-x3-phase7"
-//? const: pll = 1
-//? const: x = 3
-//? const: phase = 7
-//? post: cog[*].reg[running] == 0x82d82d83
-//? post: cog[*].reg[z0] == 0x91a2b3c5
-//? post: cog[*].reg[z1] == 0x91a2b3c5
-//? post: cog[*].reg[z2] == 0x91a2b3c5
-//? post: cog[*].reg[z3] == 0x91a2b3c5
-//? post: cog[*].reg[z4] == 0x91a2b3c5
-//? post: cog[*].reg[z5] == 0x91a2b3c5
-//? post: cog[*].reg[z6] == 0x91a2b3c5
-//? post: cog[*].reg[z7] == 0x91a2b3c5
-//? run: "pll1-x4-phase0"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 0
-//? post: cog[*].reg[running] == 0xb17e4b18
-//? post: cog[*].reg[z0] == 0xc048d15a
-//? post: cog[*].reg[z1] == 0xc048d15a
-//? post: cog[*].reg[z2] == 0xc048d15a
-//? post: cog[*].reg[z3] == 0xc048d15a
-//? post: cog[*].reg[z4] == 0xc048d15a
-//? post: cog[*].reg[z5] == 0xc048d15a
-//? post: cog[*].reg[z6] == 0xc048d15a
-//? post: cog[*].reg[z7] == 0xc048d15a
-//? run: "pll1-x4-phase1"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 1
-//? post: cog[*].reg[running] == 0xb17e4b18
-//? post: cog[*].reg[z0] == 0xc048d15a
-//? post: cog[*].reg[z1] == 0xc048d15a
-//? post: cog[*].reg[z2] == 0xc048d15a
-//? post: cog[*].reg[z3] == 0xc048d15a
-//? post: cog[*].reg[z4] == 0xc048d15a
-//? post: cog[*].reg[z5] == 0xc048d15a
-//? post: cog[*].reg[z6] == 0xc048d15a
-//? post: cog[*].reg[z7] == 0xc048d15a
-//? run: "pll1-x4-phase2"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 2
-//? post: cog[*].reg[running] == 0xc048d15a
-//? post: cog[*].reg[z0] == 0xc048d15a
-//? post: cog[*].reg[z1] == 0xc048d15a
-//? post: cog[*].reg[z2] == 0xc048d15a
-//? post: cog[*].reg[z3] == 0xc048d15a
-//? post: cog[*].reg[z4] == 0xc048d15a
-//? post: cog[*].reg[z5] == 0xc048d15a
-//? post: cog[*].reg[z6] == 0xc048d15a
-//? post: cog[*].reg[z7] == 0xc048d15a
-//? run: "pll1-x4-phase3"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 3
-//? post: cog[*].reg[running] == 0xc048d15a
-//? post: cog[*].reg[z0] == 0xc048d15a
-//? post: cog[*].reg[z1] == 0xc048d15a
-//? post: cog[*].reg[z2] == 0xc048d15a
-//? post: cog[*].reg[z3] == 0xc048d15a
-//? post: cog[*].reg[z4] == 0xc048d15a
-//? post: cog[*].reg[z5] == 0xc048d15a
-//? post: cog[*].reg[z6] == 0xc048d15a
-//? post: cog[*].reg[z7] == 0xc048d15a
-//? run: "pll1-x4-phase4"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 4
-//? post: cog[*].reg[running] == 0xc048d15a
-//? post: cog[*].reg[z0] == 0xc048d15a
-//? post: cog[*].reg[z1] == 0xcf13579c
-//? post: cog[*].reg[z2] == 0xcf13579c
-//? post: cog[*].reg[z3] == 0xcf13579c
-//? post: cog[*].reg[z4] == 0xcf13579c
-//? post: cog[*].reg[z5] == 0xcf13579c
-//? post: cog[*].reg[z6] == 0xcf13579c
-//? post: cog[*].reg[z7] == 0xcf13579c
-//? run: "pll1-x4-phase5"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 5
-//? post: cog[*].reg[running] == 0xc048d15a
-//? post: cog[*].reg[z0] == 0xc048d15a
-//? post: cog[*].reg[z1] == 0xcf13579c
-//? post: cog[*].reg[z2] == 0xcf13579c
-//? post: cog[*].reg[z3] == 0xcf13579c
-//? post: cog[*].reg[z4] == 0xcf13579c
-//? post: cog[*].reg[z5] == 0xcf13579c
-//? post: cog[*].reg[z6] == 0xcf13579c
-//? post: cog[*].reg[z7] == 0xcf13579c
-//? run: "pll1-x4-phase6"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 6
-//? post: cog[*].reg[running] == 0xc048d15a
-//? post: cog[*].reg[z0] == 0xcf13579c
-//? post: cog[*].reg[z1] == 0xcf13579c
-//? post: cog[*].reg[z2] == 0xcf13579c
-//? post: cog[*].reg[z3] == 0xcf13579c
-//? post: cog[*].reg[z4] == 0xcf13579c
-//? post: cog[*].reg[z5] == 0xcf13579c
-//? post: cog[*].reg[z6] == 0xcf13579c
-//? post: cog[*].reg[z7] == 0xcf13579c
-//? run: "pll1-x4-phase7"
-//? const: pll = 1
-//? const: x = 4
-//? const: phase = 7
-//? post: cog[*].reg[running] == 0xc048d15a
-//? post: cog[*].reg[z0] == 0xcf13579c
-//? post: cog[*].reg[z1] == 0xcf13579c
-//? post: cog[*].reg[z2] == 0xcf13579c
-//? post: cog[*].reg[z3] == 0xcf13579c
-//? post: cog[*].reg[z4] == 0xcf13579c
-//? post: cog[*].reg[z5] == 0xcf13579c
-//? post: cog[*].reg[z6] == 0xcf13579c
-//? post: cog[*].reg[z7] == 0xcf13579c
-//? run: "pll1-x5-phase0"
-//? const: pll = 1
-//? const: x = 5
-//? const: phase = 0
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0x93e93e94
-//? post: cog[*].reg[z1] == 0x93e93e94
-//? post: cog[*].reg[z2] == 0x93e93e94
-//? post: cog[*].reg[z3] == 0x93e93e94
-//? post: cog[*].reg[z4] == 0x93e93e94
-//? post: cog[*].reg[z5] == 0x93e93e94
-//? post: cog[*].reg[z6] == 0x93e93e94
-//? post: cog[*].reg[z7] == 0x93e93e94
-//? run: "pll1-x5-phase1"
-//? const: pll = 1
-//? const: x = 5
-//? const: phase = 1
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0x93e93e94
-//? post: cog[*].reg[z1] == 0x93e93e94
-//? post: cog[*].reg[z2] == 0x93e93e94
-//? post: cog[*].reg[z3] == 0x93e93e94
-//? post: cog[*].reg[z4] == 0x93e93e94
-//? post: cog[*].reg[z5] == 0x93e93e94
-//? post: cog[*].reg[z6] == 0x93e93e94
-//? post: cog[*].reg[z7] == 0x93e93e94
-//? run: "pll1-x5-phase2"
-//? const: pll = 1
-//? const: x = 5
-//? const: phase = 2
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0x93e93e94
-//? post: cog[*].reg[z1] == 0x93e93e94
-//? post: cog[*].reg[z2] == 0x93e93e94
-//? post: cog[*].reg[z3] == 0x93e93e94
-//? post: cog[*].reg[z4] == 0x93e93e94
-//? post: cog[*].reg[z5] == 0x93e93e94
-//? post: cog[*].reg[z6] == 0x93e93e94
-//? post: cog[*].reg[z7] == 0x93e93e94
-//? run: "pll1-x5-phase3"
-//? const: pll = 1
-//? const: x = 5
-//? const: phase = 3
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0x93e93e94
-//? post: cog[*].reg[z1] == 0xa2b3c4d6
-//? post: cog[*].reg[z2] == 0xa2b3c4d6
-//? post: cog[*].reg[z3] == 0xa2b3c4d6
-//? post: cog[*].reg[z4] == 0xa2b3c4d6
-//? post: cog[*].reg[z5] == 0xa2b3c4d6
-//? post: cog[*].reg[z6] == 0xa2b3c4d6
-//? post: cog[*].reg[z7] == 0xa2b3c4d6
-//? run: "pll1-x5-phase4"
-//? const: pll = 1
-//? const: x = 5
-//? const: phase = 4
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0x93e93e94
-//? post: cog[*].reg[z1] == 0xa2b3c4d6
-//? post: cog[*].reg[z2] == 0xa2b3c4d6
-//? post: cog[*].reg[z3] == 0xa2b3c4d6
-//? post: cog[*].reg[z4] == 0xa2b3c4d6
-//? post: cog[*].reg[z5] == 0xa2b3c4d6
-//? post: cog[*].reg[z6] == 0xa2b3c4d6
-//? post: cog[*].reg[z7] == 0xa2b3c4d6
-//? run: "pll1-x5-phase5"
-//? const: pll = 1
-//? const: x = 5
-//? const: phase = 5
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0xa2b3c4d6
-//? post: cog[*].reg[z1] == 0xa2b3c4d6
-//? post: cog[*].reg[z2] == 0xa2b3c4d6
-//? post: cog[*].reg[z3] == 0xa2b3c4d6
-//? post: cog[*].reg[z4] == 0xa2b3c4d6
-//? post: cog[*].reg[z5] == 0xa2b3c4d6
-//? post: cog[*].reg[z6] == 0xa2b3c4d6
-//? post: cog[*].reg[z7] == 0xa2b3c4d6
-//? run: "pll1-x5-phase6"
-//? const: pll = 1
-//? const: x = 5
-//? const: phase = 6
-//? post: cog[*].reg[running] == 0x93e93e94
-//? post: cog[*].reg[z0] == 0xa2b3c4d6
-//? post: cog[*].reg[z1] == 0xa2b3c4d6
-//? post: cog[*].reg[z2] == 0xa2b3c4d6
-//? post: cog[*].reg[z3] == 0xa2b3c4d6
-//? post: cog[*].reg[z4] == 0xa2b3c4d6
-//? post: cog[*].reg[z5] == 0xa2b3c4d6
-//? post: cog[*].reg[z6] == 0xa2b3c4d6
-//? post: cog[*].reg[z7] == 0xa2b3c4d6
-//? run: "pll1-x5-phase7"
-//? const: pll = 1
 //? const: x = 5
 //? const: phase = 7
 //? post: cog[*].reg[running] == 0x93e93e94
@@ -1042,13 +482,7 @@
 //? post: cog[*].reg[z6] == 0xa2b3c4d6
 //? post: cog[*].reg[z7] == 0xa2b3c4d6
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Read both the running NCO bus and its final retained value across DIR reset.
                 WRPIN   (6 << 1),           4

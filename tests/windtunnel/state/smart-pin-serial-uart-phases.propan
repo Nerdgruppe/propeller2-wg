@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-phase0"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 0
@@ -15,7 +14,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-phase1"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 1
@@ -28,7 +26,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-phase2"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 2
@@ -41,7 +38,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-phase3"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 3
@@ -54,7 +50,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-phase4"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 4
@@ -67,7 +62,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-phase5"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 5
@@ -80,7 +74,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-phase6"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 6
@@ -93,7 +86,6 @@
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
 //? run: "pll0-phase7"
-//? const: pll = 0
 //? const: bits = 8
 //? const: period = 491520
 //? const: phase = 7
@@ -105,118 +97,8 @@
 //? post: cog[*].reg[ready] == 0x00000001
 //? post: cog[*].reg[tx_result] == 0xf7c4d5e6
 //? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase0"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 0
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase1"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 1
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase2"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 2
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase3"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 3
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase4"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 4
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase5"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 5
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase6"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 6
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
-//? run: "pll1-phase7"
-//? const: pll = 1
-//? const: bits = 8
-//? const: period = 491520
-//? const: phase = 7
-//? post: cog[*].reg[wave0] == 0xcff3ffff
-//? post: cog[*].reg[wave1] == 0xffffffff
-//? post: cog[*].reg[wave2] == 0xffffffff
-//? post: cog[*].reg[result] == 0xef000000
-//? post: cog[*].reg[carry] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[tx_result] == 0xf7c4d5e6
-//? post: cog[*].reg[busy] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+                // Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
                 // Initialize a UART loopback through physical routed pads, without endpoint injection.
                 WRPIN   P_TT_01 | P_ASYNC_TX,           4
                 WRPIN   aug(0x70000000 | P_ASYNC_RX),   5

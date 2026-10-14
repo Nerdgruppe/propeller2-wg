@@ -1,26 +1,8 @@
-# Reproducible raw oracle output and exploratory work, at any depth.
-artifacts/
-captures/
-evidence/
-results/
+# Local scratch and capture output; assertion YAML remains tracked.
+__pycache__/
+*.pyc
 scratch/
-tmp/
-probes/
-
-# Analyzer sessions/exports, simulated traces and packed capture bundles.
 *.sal
 *.csv
 *.tar.gz
 *.zip
-
-# Regenerated bench reports outside the output directories above.
-/digital-smart-pins/external.json
-/wiring-check/interboard.json
-
-# Ad hoc probes and reporter frames outside the scratch directories.
-*-probe.propan
-*-frame.bin
-
-# Keep registered regression sources, README files and reviewed measurement
-# summaries (including measurements.json) visible to Git. Copies of generated
-# sources inside evidence bundles are local output; authoritative probes live outside them.

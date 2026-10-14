@@ -61,8 +61,8 @@ change their behavior. SMPS uses digital A/B voltage/current gates. X/Y writes
 acknowledge IN without resetting a running engine. Same-mode WRPIN preserves
 private state. Each engine defines its reset, result retention, saturation and
 carry behavior separately; state timing returns the previous input level in C.
-[Hardware probes, waveforms and limitations](../../data/timing-data/digital-smart-pins/README.md)
-provide the validation record.
+Measured engine behavior and limitations are recorded in
+[Accumulated Propeller 2 Knowledge](../accumulated.md#digital-smart-pins-measured-engine-and-return-bus-behavior).
 
 UART and USART use separate host-selected modes on each `SmartPin`:
 
@@ -122,9 +122,14 @@ produce no sink delivery. Virtual TX generates the protocol reset level (UART hi
 USART low); the ordinary SmartOut propagation, WRPIN output selection and electrical
 resolution still apply. Selecting virtual mode does not flush queued output transitions.
 
-Apply host mode changes between simulation clocks. Entering virtual mode aborts
-partial transfers and pending TX data. Returning from virtual starts fresh timed
-state. Host mode changes preserve completed RX Z/IN; subsequent timed reception retains its normal overwrite behavior. WRPIN
+Apply host mode changes between simulation clocks. Each virtual step resets the
+serial engine's timed receive/transmit state, abandoning partial words and pending
+timed TX data. Virtual TX delivers an enabled WYPIN to its sink on that clock, with
+no retained shifter; writes while DIR is low are ignored. Synchronous virtual engines
+keep their A/B samples current so a held-high B cannot invent an edge on return.
+Returning to timed operation starts from idle without a host transition handler.
+Virtual reception preserves unread RX Z/IN until acknowledgement; subsequent timed
+reception retains its normal overwrite behavior. WRPIN
 preserves host selections, and same-mode serial WRPIN preserves active logic.
 DIR reset aborts private transfers and clears IN while retaining Z; receivers also
 retain their sampled shift register. COGSTOP clears that cog's DIR contributions;
@@ -140,8 +145,9 @@ query does not override smart-pin X timing.
 P62/P63 only. It preserves cog execution, routing, command delays and explicit waits.
 Other pins keep their independently selected modes. Embedded users select the tagged
 unions directly; there is no global `IO.fast_io`. Fixtures can retain timed terminal
-behavior with `fast-io: off "reason"`. [Serial hardware validation](../../data/timing-data/serial-smart-pins/README.md)
-records the measured limits and reproducible checks.
+behavior with `fast-io: off "reason"`.
+[Serial hardware findings](../accumulated.md#serial-smart-pins-live-configuration-and-retained-state-2026-10-14)
+record the measured limits; regression fixtures live in `tests/windtunnel/`.
 
 ## Digital pads and timing
 
@@ -161,34 +167,49 @@ The shared return pipeline makes repository X-to-Z and acknowledgement observabl
 after four clocks, and the repository's IN indication after five. Repository Z
 survives DIR reset; X writes while held reset update X without changing Z.
 
-GPIO loopback timing depends on frequency. The model places drive changes four
-clocks after execution below 170 MHz, or five at higher frequencies. The first
-changed TESTP result is at instruction spacing eight/nine clocks respectively,
-and an INA/INB operand at nine/ten. The original sweep was stable through 167 MHz and from
-170 MHz. A later sweep with a different PLL divider and pad load crossed earlier
-at 166/167 MHz; 168/169 MHz also produced mixed samples. The frequency-only model
-retains 170 MHz as its deterministic boundary. It does not model electrical jitter
-or PLL-divider/load-dependent transitions within that intermediate band. The
-loopback measurements do not distinguish output propagation from input propagation.
-These timings, command collisions and per-cog output gating were measured on hardware. The 82 probes and
-eight phase captures are in `data/timing-data/smart-pin-{cases,results}.yaml`;
-the matching simulator/hardware checklist is `state/smart-pin-hardware.propan`.
-The [frequency sweep](../../data/timing-data/serial-boot/gpio-frequency.json)
-retains both boundary samples and probe sources. The current 82-probe captures
-use RCFAST; the earlier five-clock drive model was derived at 200 MHz.
+Hardware GPIO loopback timing depends on frequency, edge polarity and electrical drive.
+The simulator uses optimistic, fixed cycle timing: drive changes four clocks after
+execution, with first changed TESTP results at instruction spacing eight and
+INA/INB at nine. Clock frequency never selects a different propagation delay.
+Electrical slew, loading and threshold-crossing delays are outside this digital model.
+The former 170 MHz timing branch was an approximation, not a validated hardware threshold.
+Polarity-, pin- and current-dependent sampling changes support electrical pad slew,
+rather than an extra registered transport stage. Comparator searches also have their
+own settling and retention limits. The methods and conclusions are summarized in
+[Accumulated Propeller 2 Knowledge](../accumulated.md#gpio-loopback-sampling-crossover-2026-10-14).
+
+Command timing, command collisions and per-cog output gating are covered by the
+82 YAML probes and eight-phase captures in
+`data/timing-data/smart-pin-{cases,results}.yaml`; the matching simulator checklist
+is `tests/windtunnel/state/smart-pin-hardware.propan`.
+
 The selected SmartOut/OTHER signal crosses a common registered output pipeline
 in every mode. GPIO's SmartOut forwards the registered cog OUT bus; output-generating
 engines publish through their output register. Both registrations live in `SmartPin`,
 remain clocked across WRPIN changes, and feed the same I/O forwarding path. The model
 assigns two clocks to cog OUT transport, one to output-engine publication, and a
-common one/two-clock pad path below/at-or-above 170 MHz. This decomposition reproduces
-the measured instruction-visible boundaries; it does not identify exact physical
-register placement. DIR reaches the output gate separately.
+common one-clock pad path at every frequency. This fixed decomposition models the
+earlier instruction-visible boundary; it does not identify exact physical register
+placement. DIR reaches the output gate separately through a fixed three-clock queue
+after writeback; its absolute latency was not isolated by these probes.
 WRPIN changes selection without resetting or filling the pipeline, and virtual TX
 uses the same path. Immediate GPIO-to-UART and UART-to-GPIO selection boundaries
-were measured at RCFAST and 200 MHz; the retained `output-selection.propan` probe
-contains 36 cases and 144 silicon observations in `data/timing-data/serial-smart-pins`.
-Clocked output selection adds a further pipeline, which advances once per frame while selected.
+were measured at RCFAST and 200 MHz in 36 cases with 144 observations;
+[the measured boundaries](../accumulated.md#serial-smart-pins-live-configuration-and-retained-state-2026-10-14)
+include input sampling and do not establish exact physical register placement.
+Clocked output selection adds a fixed three-clock pipeline, which advances once per
+frame while selected and retains its history while deselected. HUBSET clock changes
+do not retap or flush either output pipeline. Smart-pin oracle fixtures use nominal
+20 MHz RCFAST, where the digital timing can be observed without the high-frequency
+electrical crossover. Other clock rates require a technical need, such as explicit
+high-speed behavior testing.
+These delay lines use `sim/pipeline.zig`'s allocation-free `Pipeline(T, max_len)`.
+`step(value)` returns the value delayed by the active number of steps, and `current()`
+reads that same output without advancing. A two-step delay initialized with zero
+returns `0, 0, A` for appends `A, B, C`. `resize()` immediately selects another delay
+from zero through `max_len`, retaining the full history; zero passes values through.
+`tap(0)` reads the latest append, while `pending()` exposes active queued values
+newest first and excludes the emitted output.
 Reconfiguration while DIR is low and settled is covered by regression. Active
 WRPIN switching of the clocked output mux can expose physical retained-latch
 glitches; their exact transient phase is not modeled. Selectable pin events sample

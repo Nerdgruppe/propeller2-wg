@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode4-variant0"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 0
 //? const: y = 0
@@ -21,7 +20,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode4-variant1"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 458759
 //? const: y = 3
@@ -40,7 +38,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode4-variant2"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -59,7 +56,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode5-variant0"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 0
 //? const: y = 0
@@ -78,7 +74,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode5-variant1"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 458759
 //? const: y = 3
@@ -97,7 +92,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode5-variant2"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -116,7 +110,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode6-variant0"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 0
 //? const: y = 0
@@ -135,7 +128,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode6-variant1"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 458759
 //? const: y = 3
@@ -154,7 +146,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode6-variant2"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -173,7 +164,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode7-variant0"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 0
 //? const: y = 0
@@ -192,7 +182,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode7-variant1"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 458759
 //? const: y = 3
@@ -211,7 +200,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode7-variant2"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -230,7 +218,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode8-variant0"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 0
 //? const: y = 0
@@ -249,7 +236,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode8-variant1"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458759
 //? const: y = 3
@@ -268,7 +254,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00030003
 //? run: "pll0-mode8-variant2"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -287,7 +272,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode9-variant0"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 0
 //? const: y = 0
@@ -306,7 +290,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode9-variant1"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458759
 //? const: y = 3
@@ -325,7 +308,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00030003
 //? run: "pll0-mode9-variant2"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -344,7 +326,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode10-variant0"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 0
 //? const: y = 0
@@ -363,7 +344,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode10-variant1"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458759
 //? const: y = 3
@@ -382,7 +362,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00030003
 //? run: "pll0-mode10-variant2"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -401,7 +380,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode11-variant0"
-//? const: pll = 0
 //? const: mode = 11
 //? const: x = 0
 //? const: y = 0
@@ -420,7 +398,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode11-variant1"
-//? const: pll = 0
 //? const: mode = 11
 //? const: x = 32
 //? const: y = 3
@@ -439,7 +416,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode11-variant2"
-//? const: pll = 0
 //? const: mode = 11
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -458,7 +434,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode12-variant0"
-//? const: pll = 0
 //? const: mode = 12
 //? const: x = 0
 //? const: y = 0
@@ -477,7 +452,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode12-variant1"
-//? const: pll = 0
 //? const: mode = 12
 //? const: x = 32
 //? const: y = 3
@@ -496,7 +470,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode12-variant2"
-//? const: pll = 0
 //? const: mode = 12
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -515,7 +488,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode13-variant0"
-//? const: pll = 0
 //? const: mode = 13
 //? const: x = 0
 //? const: y = 0
@@ -534,7 +506,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode13-variant1"
-//? const: pll = 0
 //? const: mode = 13
 //? const: x = 32
 //? const: y = 3
@@ -553,7 +524,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode13-variant2"
-//? const: pll = 0
 //? const: mode = 13
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -572,7 +542,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode14-variant0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: x = 0
 //? const: y = 0
@@ -591,7 +560,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode14-variant1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: x = 32
 //? const: y = 3
@@ -610,7 +578,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode14-variant2"
-//? const: pll = 0
 //? const: mode = 14
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -629,7 +596,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode15-variant0"
-//? const: pll = 0
 //? const: mode = 15
 //? const: x = 0
 //? const: y = 0
@@ -648,7 +614,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode15-variant1"
-//? const: pll = 0
 //? const: mode = 15
 //? const: x = 32
 //? const: y = 3
@@ -667,7 +632,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode15-variant2"
-//? const: pll = 0
 //? const: mode = 15
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -686,7 +650,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode16-variant0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: x = 0
 //? const: y = 0
@@ -705,7 +668,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode16-variant1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: x = 32
 //? const: y = 3
@@ -724,7 +686,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode16-variant2"
-//? const: pll = 0
 //? const: mode = 16
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -743,7 +704,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode17-variant0"
-//? const: pll = 0
 //? const: mode = 17
 //? const: x = 0
 //? const: y = 0
@@ -762,7 +722,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode17-variant1"
-//? const: pll = 0
 //? const: mode = 17
 //? const: x = 32
 //? const: y = 3
@@ -781,7 +740,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode17-variant2"
-//? const: pll = 0
 //? const: mode = 17
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -800,7 +758,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode18-variant0"
-//? const: pll = 0
 //? const: mode = 18
 //? const: x = 0
 //? const: y = 0
@@ -819,7 +776,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode18-variant1"
-//? const: pll = 0
 //? const: mode = 18
 //? const: x = 32
 //? const: y = 3
@@ -838,7 +794,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000010
 //? run: "pll0-mode18-variant2"
-//? const: pll = 0
 //? const: mode = 18
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -857,7 +812,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000001
 //? run: "pll0-mode19-variant0"
-//? const: pll = 0
 //? const: mode = 19
 //? const: x = 0
 //? const: y = 0
@@ -876,7 +830,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode19-variant1"
-//? const: pll = 0
 //? const: mode = 19
 //? const: x = 32
 //? const: y = 3
@@ -895,7 +848,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode19-variant2"
-//? const: pll = 0
 //? const: mode = 19
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -914,7 +866,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode20-variant0"
-//? const: pll = 0
 //? const: mode = 20
 //? const: x = 0
 //? const: y = 0
@@ -933,7 +884,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode20-variant1"
-//? const: pll = 0
 //? const: mode = 20
 //? const: x = 32
 //? const: y = 3
@@ -952,7 +902,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode20-variant2"
-//? const: pll = 0
 //? const: mode = 20
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -971,7 +920,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode21-variant0"
-//? const: pll = 0
 //? const: mode = 21
 //? const: x = 0
 //? const: y = 0
@@ -990,7 +938,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode21-variant1"
-//? const: pll = 0
 //? const: mode = 21
 //? const: x = 32
 //? const: y = 3
@@ -1009,7 +956,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode21-variant2"
-//? const: pll = 0
 //? const: mode = 21
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -1028,7 +974,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode22-variant0"
-//? const: pll = 0
 //? const: mode = 22
 //? const: x = 0
 //? const: y = 0
@@ -1047,7 +992,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode22-variant1"
-//? const: pll = 0
 //? const: mode = 22
 //? const: x = 32
 //? const: y = 3
@@ -1066,7 +1010,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode22-variant2"
-//? const: pll = 0
 //? const: mode = 22
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -1085,7 +1028,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode23-variant0"
-//? const: pll = 0
 //? const: mode = 23
 //? const: x = 0
 //? const: y = 0
@@ -1104,7 +1046,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode23-variant1"
-//? const: pll = 0
 //? const: mode = 23
 //? const: x = 32
 //? const: y = 3
@@ -1123,1147 +1064,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 //? run: "pll0-mode23-variant2"
-//? const: pll = 0
-//? const: mode = 23
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode4-variant0"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode4-variant1"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 458759
-//? const: y = 3
-//? const: nx = 196611
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000001
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode4-variant2"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode5-variant0"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode5-variant1"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 458759
-//? const: y = 3
-//? const: nx = 196611
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000001
-//? post: cog[*].reg[changed_x] == 0x00000001
-//? post: cog[*].reg[ack_ready] == 0x00000001
-//? post: cog[*].reg[reconfigured] == 0x00000001
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode5-variant2"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode6-variant0"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode6-variant1"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 458759
-//? const: y = 3
-//? const: nx = 196611
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode6-variant2"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode7-variant0"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode7-variant1"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 458759
-//? const: y = 3
-//? const: nx = 196611
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode7-variant2"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode8-variant0"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode8-variant1"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458759
-//? const: y = 3
-//? const: nx = 196611
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000001
-//? post: cog[*].reg[reconfigured] == 0x00030003
-//? post: cog[*].reg[reset] == 0x00030003
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00030003
-//? run: "pll1-mode8-variant2"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode9-variant0"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode9-variant1"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458759
-//? const: y = 3
-//? const: nx = 196611
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00030003
-//? run: "pll1-mode9-variant2"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode10-variant0"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode10-variant1"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458759
-//? const: y = 3
-//? const: nx = 196611
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00030003
-//? run: "pll1-mode10-variant2"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode11-variant0"
-//? const: pll = 1
-//? const: mode = 11
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000001
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000002
-//? post: cog[*].reg[changed_x] == 0x00000002
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000002
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode11-variant1"
-//? const: pll = 1
-//? const: mode = 11
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000002
-//? post: cog[*].reg[changed_x] == 0x00000002
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode11-variant2"
-//? const: pll = 1
-//? const: mode = 11
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode12-variant0"
-//? const: pll = 1
-//? const: mode = 12
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode12-variant1"
-//? const: pll = 1
-//? const: mode = 12
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode12-variant2"
-//? const: pll = 1
-//? const: mode = 12
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode13-variant0"
-//? const: pll = 1
-//? const: mode = 13
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0xffffffff
-//? post: cog[*].reg[initial_flag] == 0x00000001
-//? post: cog[*].reg[changed_y] == 0xffffffff
-//? post: cog[*].reg[changed_x] == 0xffffffff
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0xffffffff
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode13-variant1"
-//? const: pll = 1
-//? const: mode = 13
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0xffffffff
-//? post: cog[*].reg[changed_x] == 0xffffffff
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode13-variant2"
-//? const: pll = 1
-//? const: mode = 13
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode14-variant0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000001
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000001
-//? post: cog[*].reg[changed_x] == 0x00000001
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000001
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode14-variant1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode14-variant2"
-//? const: pll = 1
-//? const: mode = 14
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode15-variant0"
-//? const: pll = 1
-//? const: mode = 15
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000008
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000013
-//? post: cog[*].reg[changed_x] == 0x00000013
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000013
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode15-variant1"
-//? const: pll = 1
-//? const: mode = 15
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000008
-//? post: cog[*].reg[changed_x] == 0x00000008
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0xfffffffe
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode15-variant2"
-//? const: pll = 1
-//? const: mode = 15
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode16-variant0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x0000000b
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x0000000b
-//? post: cog[*].reg[changed_x] == 0x0000000b
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x0000003e
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode16-variant1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x0000000b
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x0000000b
-//? post: cog[*].reg[changed_x] == 0x0000000b
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x0000003e
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode16-variant2"
-//? const: pll = 1
-//? const: mode = 16
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x0000000b
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x0000000b
-//? post: cog[*].reg[changed_x] == 0x0000000b
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x0000003e
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode17-variant0"
-//? const: pll = 1
-//? const: mode = 17
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000001
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000001
-//? post: cog[*].reg[changed_x] == 0x00000001
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x0000003e
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode17-variant1"
-//? const: pll = 1
-//? const: mode = 17
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000001
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000001
-//? post: cog[*].reg[changed_x] == 0x00000001
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x0000003e
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode17-variant2"
-//? const: pll = 1
-//? const: mode = 17
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000001
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000001
-//? post: cog[*].reg[changed_x] == 0x00000001
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x0000003e
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode18-variant0"
-//? const: pll = 1
-//? const: mode = 18
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000001
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000001
-//? post: cog[*].reg[changed_x] == 0x00000001
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000001
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode18-variant1"
-//? const: pll = 1
-//? const: mode = 18
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000001
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000021
-//? post: cog[*].reg[changed_x] == 0x0000002e
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000054
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000010
-//? run: "pll1-mode18-variant2"
-//? const: pll = 1
-//? const: mode = 18
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000001
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000009
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000012
-//? post: cog[*].reg[changed_x] == 0x00000012
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000012
-//? post: cog[*].reg[reset] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000001
-//? run: "pll1-mode19-variant0"
-//? const: pll = 1
-//? const: mode = 19
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode19-variant1"
-//? const: pll = 1
-//? const: mode = 19
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode19-variant2"
-//? const: pll = 1
-//? const: mode = 19
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode20-variant0"
-//? const: pll = 1
-//? const: mode = 20
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode20-variant1"
-//? const: pll = 1
-//? const: mode = 20
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode20-variant2"
-//? const: pll = 1
-//? const: mode = 20
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode21-variant0"
-//? const: pll = 1
-//? const: mode = 21
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode21-variant1"
-//? const: pll = 1
-//? const: mode = 21
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode21-variant2"
-//? const: pll = 1
-//? const: mode = 21
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode22-variant0"
-//? const: pll = 1
-//? const: mode = 22
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode22-variant1"
-//? const: pll = 1
-//? const: mode = 22
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode22-variant2"
-//? const: pll = 1
-//? const: mode = 22
-//? const: x = 4294967295
-//? const: y = 4294967295
-//? const: nx = 2147483649
-//? const: ny = 2147483648
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode23-variant0"
-//? const: pll = 1
-//? const: mode = 23
-//? const: x = 0
-//? const: y = 0
-//? const: nx = 1
-//? const: ny = 1
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode23-variant1"
-//? const: pll = 1
-//? const: mode = 23
-//? const: x = 32
-//? const: y = 3
-//? const: nx = 2
-//? const: ny = 5
-//? post: cog[*].reg[held] == 0x00000000
-//? post: cog[*].reg[held_flag] == 0x00000000
-//? post: cog[*].reg[held_ready] == 0x00000000
-//? post: cog[*].reg[initial] == 0x00000000
-//? post: cog[*].reg[initial_flag] == 0x00000000
-//? post: cog[*].reg[changed_y] == 0x00000000
-//? post: cog[*].reg[changed_x] == 0x00000000
-//? post: cog[*].reg[ack_ready] == 0x00000000
-//? post: cog[*].reg[reconfigured] == 0x00000000
-//? post: cog[*].reg[reset] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[restarted] == 0x00000000
-//? run: "pll1-mode23-variant2"
-//? const: pll = 1
 //? const: mode = 23
 //? const: x = 4294967295
 //? const: y = 4294967295
@@ -2282,13 +1082,7 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[restarted] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Hold reset while establishing parameters; P3/P5 are independent GPIO inputs.
                 DRVL    3

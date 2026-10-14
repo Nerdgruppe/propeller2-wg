@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode14-logic0-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 0
 //? const: invert = 0
@@ -10,7 +9,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic0-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 0
 //? const: invert = 1
@@ -18,7 +16,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic1-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 1
 //? const: invert = 0
@@ -26,7 +23,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic1-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 1
 //? const: invert = 1
@@ -34,7 +30,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic2-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 2
 //? const: invert = 0
@@ -42,7 +37,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic2-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 2
 //? const: invert = 1
@@ -50,7 +44,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic3-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 3
 //? const: invert = 0
@@ -58,7 +51,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic3-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 3
 //? const: invert = 1
@@ -66,7 +58,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic4-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 4
 //? const: invert = 0
@@ -74,7 +65,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic4-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 4
 //? const: invert = 1
@@ -82,7 +72,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic5-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 5
 //? const: invert = 0
@@ -90,7 +79,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic5-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 5
 //? const: invert = 1
@@ -98,7 +86,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic6-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 6
 //? const: invert = 0
@@ -106,7 +93,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic6-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 6
 //? const: invert = 1
@@ -114,7 +100,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic7-invert0"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 7
 //? const: invert = 0
@@ -122,7 +107,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode14-logic7-invert1"
-//? const: pll = 0
 //? const: mode = 14
 //? const: logic = 7
 //? const: invert = 1
@@ -130,7 +114,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000000
 //? run: "pll0-mode16-logic0-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 0
 //? const: invert = 0
@@ -138,7 +121,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic0-invert1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 0
 //? const: invert = 1
@@ -146,7 +128,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic1-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 1
 //? const: invert = 0
@@ -154,7 +135,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic1-invert1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 1
 //? const: invert = 1
@@ -162,7 +142,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic2-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 2
 //? const: invert = 0
@@ -170,7 +149,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic2-invert1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 2
 //? const: invert = 1
@@ -178,7 +156,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic3-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 3
 //? const: invert = 0
@@ -186,7 +163,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic3-invert1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 3
 //? const: invert = 1
@@ -194,7 +170,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic4-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 4
 //? const: invert = 0
@@ -202,7 +177,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic4-invert1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 4
 //? const: invert = 1
@@ -210,7 +184,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic5-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 5
 //? const: invert = 0
@@ -218,7 +191,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic5-invert1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 5
 //? const: invert = 1
@@ -226,7 +198,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic6-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 6
 //? const: invert = 0
@@ -234,7 +205,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic6-invert1"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 6
 //? const: invert = 1
@@ -242,7 +212,6 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic7-invert0"
-//? const: pll = 0
 //? const: mode = 16
 //? const: logic = 7
 //? const: invert = 0
@@ -250,263 +219,6 @@
 //? post: cog[*].reg[flag] == 0x00000001
 //? post: cog[*].reg[ready] == 0x00000001
 //? run: "pll0-mode16-logic7-invert1"
-//? const: pll = 0
-//? const: mode = 16
-//? const: logic = 7
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode14-logic0-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 0
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic0-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 0
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic1-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 1
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic1-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 1
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic2-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 2
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic2-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 2
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic3-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 3
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000004
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic3-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 3
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000004
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic4-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 4
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic4-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 4
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic5-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 5
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic5-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 5
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic6-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 6
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic6-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 6
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic7-invert0"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 7
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode14-logic7-invert1"
-//? const: pll = 1
-//? const: mode = 14
-//? const: logic = 7
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000002
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? run: "pll1-mode16-logic0-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 0
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic0-invert1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 0
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic1-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 1
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000024
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic1-invert1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 1
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000024
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic2-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 2
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x0000006c
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic2-invert1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 2
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000024
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic3-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 3
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000024
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic3-invert1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 3
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000024
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic4-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 4
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic4-invert1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 4
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic5-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 5
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic5-invert1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 5
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic6-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 6
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic6-invert1"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 6
-//? const: invert = 1
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic7-invert0"
-//? const: pll = 1
-//? const: mode = 16
-//? const: logic = 7
-//? const: invert = 0
-//? post: cog[*].reg[result] == 0x00000048
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? run: "pll1-mode16-logic7-invert1"
-//? const: pll = 1
 //? const: mode = 16
 //? const: logic = 7
 //? const: invert = 1
@@ -514,13 +226,7 @@
 //? post: cog[*].reg[flag] == 0x00000000
 //? post: cog[*].reg[ready] == 0x00000001
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Configure all four unanimous histories with a one-clock sample interval.
                 HUBSET  aug(0x40000000)

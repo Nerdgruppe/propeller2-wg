@@ -2,6 +2,8 @@
 const std = @import("std");
 const Hub = @import("Hub.zig");
 const smart_pin = @import("smart_pin.zig");
+const pipeline = @import("pipeline.zig");
+const Pipeline = pipeline.Pipeline;
 pub const SmartPin = smart_pin.SmartPin;
 const p2 = @import("p2");
 const types = p2.types;
@@ -35,7 +37,7 @@ pub const FilterConfiguration = struct {
     tap: u5,
 
     /// Detect either transition of the sampled CT tap, half a period ahead of GETCT's phase.
-    /// CT-aligned silicon traces are retained in data/timing-data/digital-inputs.
+    /// CT-tap phase follows the silicon measurements summarized in docs/accumulated.md.
     fn samples(config: FilterConfiguration, clock: u64, previous: u64) bool {
         const phase = if (config.tap == 0) @as(u64, 0) else @as(u64, 1) << (config.tap - 1);
         const changed = (clock +% phase) ^ (previous +% phase);
@@ -46,17 +48,13 @@ pub const FilterConfiguration = struct {
 /// Each pin retains separate A/B histories and outputs across configuration and DIR changes.
 const InputFilter = struct {
     history: u8 = 0,
-    output: bool = false,
-    sampled_output: bool = false,
+    output_pipeline: Pipeline(bool, 2) = .init(false),
 
     /// Clock unanimity and its two output stages from the old history, then shift a CT-tap sample.
     fn step(filter: *InputFilter, input: Signal, mask: u8, sample: bool) Signal {
-        const output = filter.sampled_output;
-        filter.sampled_output = filter.output;
         const history = filter.history & mask;
-        if (history == 0 or history == mask) {
-            filter.output = history != 0;
-        }
+        const agreed = if (history == 0 or history == mask) history != 0 else filter.output_pipeline.tap(0);
+        const output = filter.output_pipeline.step(agreed);
         if (sample) {
             filter.history = (filter.history << 1) | @intFromBool(input.sample());
         }
@@ -73,7 +71,9 @@ pub const Pin = struct {
     /// Logic outputs published after every pin has advanced for the frame.
     outputs: smart_pin.Outputs = .{},
     /// Registered output-mux path, clocked in every mode without configuration-time resets.
-    output_pipeline: [3]Signal = @splat(.zero),
+    output_pipeline: Pipeline(Signal, 1) = .init(.zero),
+    /// Optional output synchronization retains its history while deselected.
+    sync_output_pipeline: Pipeline(Signal, 3) = .init(.zero),
     /// Selected OUT/OTHER/SmartOut after the common propagation delay.
     output: Signal = .zero,
     /// Host architectural edits deliver their engine strobes on the next complete hub edge.
@@ -183,7 +183,6 @@ pads: [64]Signal = @splat(.z),
 external: [64]Signal = @splat(.z),
 pad_reads: [64]Signal = @splat(.z),
 sync_out: [64]Signal = @splat(.zero),
-sync_output_pipeline: [3][64]Signal = @splat(@splat(.zero)),
 sync_in: [64]Signal = @splat(.z),
 directions: u64 = 0,
 physical_directions: u64 = 0,
@@ -374,10 +373,7 @@ pub fn step(io: *IO, hub: *Hub) void {
     // Delay the selected output in every mode, including GPIO and WRPIN mux changes.
     for (&io.pins, 0..) |*pin, i| {
         const mux_signal = io.selectedOutput(@enumFromInt(i));
-        const output = pin.output_pipeline[if (io.clock_frequency >= 170_000_000) 1 else 2];
-        pin.output_pipeline[0] = pin.output_pipeline[1];
-        pin.output_pipeline[1] = pin.output_pipeline[2];
-        pin.output_pipeline[2] = mux_signal;
+        const output = pin.output_pipeline.step(mux_signal);
         if (pin.output != output) {
             pin.output = output;
             io.dirty = true;
@@ -386,10 +382,8 @@ pub fn step(io: *IO, hub: *Hub) void {
     for (&io.sync_out, 0..) |*state, i| {
         if (!io.pins[i].configuration.synchronous)
             continue;
-        state.* = io.sync_output_pipeline[if (io.clock_frequency >= 170_000_000) 1 else 0][i];
-        io.sync_output_pipeline[0][i] = io.sync_output_pipeline[1][i];
-        io.sync_output_pipeline[1][i] = io.sync_output_pipeline[2][i];
-        io.sync_output_pipeline[2][i] = io.outputState(@enumFromInt(i));
+        const sync_pipeline = &io.pins[i].sync_output_pipeline;
+        state.* = sync_pipeline.step(io.outputState(@enumFromInt(i)));
     }
     if (io.dirty or dynamic_pads) {
         io.resolvePads();
@@ -453,9 +447,8 @@ fn updateDirections(io: *IO, hub: *Hub) void {
         io.directions = directions;
         io.outputs = outputs;
         io.drives = drives;
-        // DIR independently reaches the output gate in three/four clocks after writeback.
-        // ponytail: frequency-only propagation; add an electrical timing model for intermediate-band fidelity.
-        const delay: usize = if (io.clock_frequency >= 170_000_000) 4 else 3;
+        // Optimistic digital transport excludes electrical pad slew and threshold-crossing delays.
+        const delay = 3;
         io.direction_pipeline.directions[(io.direction_pipeline.head + delay) % io.direction_pipeline.directions.len] = directions;
     }
 }
@@ -798,23 +791,16 @@ test "hardware repository command timing and OR-combined mixed command buses" {
     try std.testing.expectEqual(@as(u32, 2), @as(u32, @bitCast(hub.io.pins[40].configuration)));
 }
 
-test "GPIO pad pipeline follows the measured low and high frequency timing bands" {
+test "GPIO pad pipeline has fixed cycle timing at every clock frequency" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    const TimingCase = struct { frequency: u64, delay: usize };
-    const cases = [_]TimingCase{
-        .{ .frequency = 20_000_000, .delay = 3 },
-        .{ .frequency = 167_000_000, .delay = 3 },
-        .{ .frequency = 170_000_000, .delay = 4 },
-        .{ .frequency = 200_000_000, .delay = 4 },
-    };
-    for (cases) |case| {
+    for ([_]u64{ 20_000_000, 167_000_000, 170_000_000, 200_000_000 }) |frequency| {
         hub.init();
-        hub.io.clock_frequency = case.frequency;
+        hub.io.clock_frequency = frequency;
         hub.cogs[0].registers.set(.DIRA, 1);
         hub.cogs[0].registers.set(.OUTA, 1);
-        for (0..case.delay) |_| {
+        for (0..3) |_| {
             hub.step();
             try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
         }
@@ -822,12 +808,72 @@ test "GPIO pad pipeline follows the measured low and high frequency timing bands
         try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
 
         hub.cogs[0].registers.set(.OUTA, 0);
-        for (0..case.delay) |_| {
+        for (0..3) |_| {
             hub.step();
             try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
         }
         hub.step();
         try std.testing.expectEqual(Signal.zero, hub.io.pads[0]);
+    }
+}
+
+test "frequency changes preserve in-flight GPIO timing and history" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    hub.cogs[0].registers.set(.DIRA, 1 << 4);
+    for (0..8) |_| {
+        hub.step();
+    }
+    // Clock changes on the publication edges must neither delay nor advance queued transitions.
+    const expected = [_]Signal{ .zero, .zero, .zero, .one, .one, .one, .one, .one, .zero, .zero };
+    for (expected, 0..) |level, clock| {
+        switch (clock) {
+            0 => hub.cogs[0].registers.set(.OUTA, 1 << 4),
+            3 => hub.io.clock_frequency = 200_000_000,
+            5 => hub.cogs[0].registers.set(.OUTA, 0),
+            8 => hub.io.clock_frequency = 20_000_000,
+            else => {},
+        }
+        hub.step();
+        try std.testing.expectEqual(level, hub.io.pads[4]);
+    }
+}
+
+test "synchronous output retains pending transitions while deselected across clock changes" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    hub.cogs[0].registers.set(.DIRA, 1 << 4);
+    for (0..8) |_| {
+        hub.step();
+    }
+    hub.io.editConfiguration(@enumFromInt(4), 1 << 16);
+    const pin = &hub.io.pins[4];
+    // The first high enters synchronization at clock 3; deselection pauses it until clock 7.
+    const expected = [_]Signal{ .zero, .zero, .zero, .zero, .one, .one, .one, .zero, .zero, .one, .zero };
+    var frozen = pin.sync_output_pipeline;
+    for (expected, 0..) |level, clock| {
+        switch (clock) {
+            0 => hub.cogs[0].registers.set(.OUTA, 1 << 4),
+            4 => {
+                frozen = pin.sync_output_pipeline;
+                hub.io.editConfiguration(@enumFromInt(4), 0);
+                hub.cogs[0].registers.set(.OUTA, 0);
+            },
+            7 => {
+                hub.io.clock_frequency = 200_000_000;
+                hub.io.editConfiguration(@enumFromInt(4), 1 << 16);
+            },
+            else => {},
+        }
+        hub.step();
+        try std.testing.expectEqual(level, hub.io.pads[4]);
+        if (clock >= 4 and clock < 7) {
+            try std.testing.expectEqualDeep(frozen, pin.sync_output_pipeline);
+        }
     }
 }
 
@@ -1156,7 +1202,7 @@ test "unanimous histories reject glitches and register agreement before publishi
             try std.testing.expectEqual(Signal.zero, filter.step(.one, mask, true));
         }
         _ = filter.step(.zero, mask, true);
-        try std.testing.expect(!filter.output);
+        try std.testing.expect(!filter.output_pipeline.tap(0));
         // History comparison and output sampling use the preceding edge's values.
         for (0..length) |_| {
             try std.testing.expectEqual(Signal.zero, filter.step(.one, mask, true));
@@ -1196,7 +1242,7 @@ test "all global filters independently sample selected inverted A and B on both 
     }
     for (io.pins[0..4]) |pin| {
         try std.testing.expectEqual(@as(u8, 0xff), pin.filter_a.history);
-        try std.testing.expect(!pin.filter_a.output);
+        try std.testing.expect(!pin.filter_a.output_pipeline.tap(0));
     }
     for (31..34) |clock| {
         io.last_clock = clock;

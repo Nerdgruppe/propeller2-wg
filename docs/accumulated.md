@@ -239,7 +239,7 @@ Inspectable fields in `Cordic.zig` are:
 | `Cordic.stage_layout[index]` | Decode, normalize, quadrant, iteration, scale correction, repeated hyperbolic step, or final packing |
 | `entry.cog`, `entry.operation`, `entry.tracked` | Result destination, arithmetic mode and whether the cog still tracks the request |
 | `entry.data` | Tagged operands, partial product, division remainder/quotient, square-root state, circular/hyperbolic X/Y/Z, or final words |
-| `hub.cordic.returns[0..3]` | Tagged result transport after leaving the arithmetic pipeline |
+| `hub.cordic.returns.pending()` | Tagged result transport after leaving the arithmetic pipeline |
 | `hub.cogs[id].cordic_result` | Cog-local result words and read status |
 
 Each edge advances old entries simultaneously by one stage. Stages 0, 1 and 2
@@ -747,8 +747,8 @@ Measured with the local P2AAS board. The six `xbyte-*.propan` fixtures in
 512 nine-bit mode values against every bytecode, for 131,072 dispatches, spread
 across all eight cogs. Its independently calculated digests include the selected
 LUT address and C/Z. Each dispatch also checks PA, PB and the GETBRK mode field.
-[Measurement summaries and replay instructions](../data/timing-data/xbyte/README.md)
-are retained with the fixtures.
+The simulator regression fixtures remain in `tests/windtunnel/state/`;
+the measured rules are summarized below.
 
 A hardware-stack RET or completed `_RET_` operation with the `$001FF` sentinel
 starts XBYTE and retains that stack entry. POP consumes the sentinel normally;
@@ -803,8 +803,8 @@ Measured through the local P2AAS board, using LOC for non-branching observations
 CALLD for saved return addresses, and timed CT1 interrupts for long instruction
 streams. Eleven registered `local-pc-*` fixtures provide 207 cases. Each case has
 two independent retained reporter captures and a third independent oracle
-comparison of its register signatures and CT differences. The captures and replay
-instructions are in [local-pc-overflow](../data/timing-data/local-pc-overflow/README.md).
+comparison of its register signatures and CT differences. Regression fixtures
+remain in `tests/windtunnel/state/local-pc-*.propan`.
 
 ### Logical PC and instruction source
 
@@ -959,9 +959,8 @@ measurement; see [STATE.md](../STATE.md).
 
 ## COGID, protected hub stacks, and digital input filters (2026-10-13)
 
-Measured using the local P2AAS board at `ws://localhost:12880/`. Probe sources,
-raw observation frames, and reproduction instructions are retained in
-[digital-inputs](../data/timing-data/digital-inputs/README.md).
+Measured using the local P2AAS board at `ws://localhost:12880/`. The findings are
+summarized below; input regressions remain in `tests/windtunnel/state/input-*.propan`.
 
 ### COGID
 
@@ -1051,7 +1050,7 @@ Tools were built with `zig-0.16.0`. Recheck with:
 
 ```sh
 zig-0.16.0 build test-windtunnel-unit -Doptimize=ReleaseFast -Dcoverage=false
-zig-out/bin/windtunnel-tests --oracle data/timing-data/hello-world-no-pll.propan
+zig-out/bin/windtunnel-tests --oracle tests/windtunnel/program/hello-world.propan
 ```
 
 During this refactor, `debug-context.propan` produced only its first expected
@@ -1060,8 +1059,7 @@ long followed by zeros on silicon. The same result occurred with its original
 RCFAST/2 Mbaud using explicit cog-completion polling. Thus the discrepancy
 predates the UART change; its exact debugger semantics remain unresolved. The
 fixture retains its simulator assertions and explicitly disables hardware
-comparison. [Both sources and measured byte streams](../data/timing-data/serial-boot/debug-context.json)
-are retained for follow-up.
+comparison; the measured discrepancy is summarized here for follow-up.
 
 The RCFAST conversion exposed two GPIO boundary expectations derived at 200 MHz:
 `OUTL; WAITX 4; TESTP` and `OUTL; WAITX 5; MOV INB` now observe the new low level.
@@ -1069,11 +1067,12 @@ Both were low across all eight phases and ten repeated uploads. A separate
 PLL sweep found both old high samples stable at 170, 180 and 200 MHz, and both
 new low samples stable at 40, 80, 100, 120, 140, 160, 165, 166 and 167 MHz.
 Samples at 168 and 169 MHz varied. These are loopback measurements; they do not
-separate physical output and input propagation. The simulator represents the
-stable bands with an effective GPIO drive edge at execution+4 below 170 MHz,
-or +5 at/above 170 MHz, and chooses the earlier deterministic edge in the marginal band.
-[Sources and all frequency-sweep samples](../data/timing-data/serial-boot/gpio-frequency.json)
-are retained; the 82 timing cases/results now use RCFAST expectations.
+separate physical output and input propagation. The simulator initially represented the
+stable bands with an effective GPIO drive edge at execution+4 below 170 MHz
+or +5 at/above 170 MHz. That approximation has since been removed: the optimistic
+digital model uses execution+4 at every frequency, excluding electrical pad delays.
+The 82 timing cases/results in `data/timing-data/smart-pin-{cases,results}.yaml`
+use RCFAST expectations.
 
 Final validation used `zig-0.16.0` ReleaseFast: all 2,564 registered fixture runs
 passed, with 309 unit tests passed and two skipped. Hardware comparisons passed
@@ -1090,15 +1089,14 @@ Parallax P2-EVAL with serial ID `PLX6ZJKWX`; all 256 byte patterns matched
 in both directions using 1.5 kOhm drive and a 150 kOhm receiver pulldown.
 The analyzer mapping matched three walking-one/walking-zero frames at
 500 kS/s. These establish slow digital connectivity, not high-speed signal
-integrity. [Probe sources and captured evidence](../data/timing-data/wiring-check/README.md)
-are retained for repeat checks.
+integrity; the mapping above records the verified connections.
 
 
 ## Digital smart pins: measured engine and return-bus behavior
 
 The 2026-10-13/14 two-board validation covers all twenty digital modes (4–23)
-at RCFAST and 200 MHz. [Sources and raw observations](../data/timing-data/digital-smart-pins/README.md)
-retain run constants, source/image hashes, register offsets and reporter frames.
+at RCFAST and 200 MHz. Simulator regressions live in
+`tests/windtunnel/state/smart-pin-*.propan`.
 The following details matter when separating a smart engine from its physical pad:
 
 - Pulse/transition base dividers include an extra startup clock. Y requests are
@@ -1133,7 +1131,7 @@ The following details matter when separating a smart engine from its physical pa
 The stable RCFAST/200 MHz acceptance bands do not establish exact electrical
 behavior at every PLL setting. With a 1 MHz PLL reference and the analyzer removed
 from P40, later GPIO sweeps already showed the longer path at 166/167 MHz. The
-frequency-only 170 MHz simulation boundary remains an approximation. Changing
+frequency-only 170 MHz simulation boundary was an approximation and has since been removed. Changing
 clocked output selection with DIR high can expose one-clock physical latch
 transients; exact transient phase is not modeled. Configure with DIR low and
 allow the pipelines to settle for deterministic comparisons.
@@ -1162,14 +1160,12 @@ offset still reads low. Returning to GPIO with OUT low first reads low after
 These are instruction-visible boundaries, including input sampling; they establish
 delayed selection in both directions without proving an exact physical pipeline
 topology. Filling an output queue with UART's idle level on WRPIN is not justified
-by these measurements. Sources, original images and snapshots are retained in
-`data/timing-data/serial-smart-pins/output-selection.propan` and
-`evidence/output-selection.{json,tar.gz}` in that directory.
+by these measurements. The electrical timing observations above remain distinct
+from the optimistic fixed-cycle simulator model.
 
 The UART/USART campaign uses primary P2AAS exclusively and the independently
-clocked secondary on the existing P8–P15 wiring. The retained sources, checksummed
-native register snapshots and analyzer captures are in
-[data/timing-data/serial-smart-pins](../data/timing-data/serial-smart-pins/README.md).
+clocked secondary on the existing P8–P15 wiring. Simulator regressions live in
+`tests/windtunnel/state/smart-pin-serial-*.propan`.
 These are measured properties, including undocumented behavior relevant to RMII:
 
 - Both RX engines compare the live X word-length field during reception. Extending
@@ -1223,3 +1219,103 @@ The independent-board checks cover all 1–32-bit UART/USART widths and a live
 samples, using independent GPIO markers to calibrate clock scale. Fast serial
 behavior is additionally checked on-chip rather than inferred from overloaded
 analyzer captures.
+
+### GPIO loopback sampling crossover, 2026-10-14
+
+Fresh hardware-only GPIO probes reject 170 MHz as a universal architectural timing
+edge. With fast drive on P40 and eight-clock OUT-to-TESTP instruction-start spacing,
+rising-edge samples were mixed already at 164–166 MHz; falling-edge samples were
+mixed at 168–169 MHz. At 167 MHz, every rising edge was missed and every falling edge
+observed in 1,024 trials per polarity and lead-in phase. Nine-clock spacing observed
+both polarities throughout the fast-drive sweep. The internal OUT-input selector
+showed no corresponding crossover. At fixed 120 MHz, 1.5 kΩ drive moved TESTP's first
+consistently changed sample from eight to ten clocks. These observations are
+consistent with electrical propagation crossing an input sampling boundary, not
+proof of an additional registered output stage. OUT-to-input loopback does not
+isolate DIR-gate delay. The simulator's former 170 MHz output/DIR branch was an
+approximation, rather than a measured hardware cutoff; it has been removed.
+The optimistic model retains fixed cycle delays (one clock for selected output,
+three for optional synchronization, three for DIR after writeback), without adding
+an electrical model. Nominal clock decoding and wall-time conversion remain.
+
+The original falling-edge-only sweep used `OUTL; WAITX 4; TESTP` and separately
+`OUTL; WAITX 5; MOV INB`: instruction-start spacings eight/nine, since WAITX takes
+its operand plus two clocks. Fresh GETCT checks confirmed this arithmetic, and a
+25 MS/s two-channel clone-analyzer capture independently confirmed the 13 main
+PLL settings within 0.018% of nominal. The analyzer did not resolve single-clock
+pad propagation. The campaign collected 1,720,320 timing samples from 169 hardware runs.
+
+A repeat on the second P2-EVAL (PLX6ZJKWX), using P0..P7 with only their stub traces
+attached and no analyzer, collected a further 3,686,400 samples in 360 direct-serial
+hardware runs. At eight-clock spacing, P6 observed exactly half the falling edges
+at nominal 160 MHz in both lead-in phases; P1..P5 and P7 observed all of them.
+At nominal 165 MHz, P0 rising-edge observations ranged 803–904/1,024, P1 was
+1,024/1,024, and P6 was 0/1,024. At nine-clock spacing every pin consistently
+observed both polarities throughout the 40–200 MHz fast-drive sweep. Internal OUT
+showed no corresponding crossover. These pin-dependent results further reject a
+universal 170 MHz threshold. Since chip, bank and PCB changed, cross-board timing
+differences cannot be attributed solely to loading. Second-board clock values are
+nominal PLL settings; the first board's analyzer check does not independently
+verify them.
+
+### Constant-current GPIO slew and loopback timing, 2026-10-14
+
+On unloaded P0..P7 of the second P2-EVAL PLX6ZJKWX, source and sink both set to
+1 mA (`WRPIN 0x2400`), 100 µA (`0x2d00`) or 10 µA (`0x3600`) produce sharply different
+instruction-visible GPIO timing. At nominal 200 MHz, first consistently changed
+OUT-to-TESTP instruction-start spacings were 14 rising/15 falling clocks at 1 mA
+on every pin; 66–68 rising/73–76 falling at 100 µA; and candidate boundaries
+593–622 rising/654–701 falling at 10 µA. The latter intervals include the final
+one/two-clock sampling resolution. Both polarities settled for 100 µs before
+being driven in the opposite direction. Pins were individually measured with
+no external wire or analyzer attached.
+
+Across nominal 40/120/200 MHz, the 144 final pin/current/polarity boundaries fit
+a shared approximately seven-clock base plus per-pin/current/polarity analog
+threshold delay (0.24-clock RMS residual). Fitted analog terms were approximately
+33/37 ns at 1 mA, 293–303/328–343 ns at 100 µA, and 2.93–3.07/3.24–3.47 µs at 10 µA
+(rising/falling). The roughly inverse-current scaling and unchanged six-clock
+internal OUT-input controls strongly support pad slew/threshold crossing, without
+requiring a frequency-triggered transport stage. This fit includes the complete
+loopback path; it does not isolate actual physical register placement, pad 10–90%
+rise time or DIR-gate latency. Current, threshold voltage and clock frequency
+were not independently calibrated on this board. 552 native direct-serial hardware
+runs produced 1,999,872 binary samples; all 5,256 GETCT spacing calibrations and
+native frame CRC checks passed.
+
+### DAC-comparator searches and retained pad charge, 2026-10-14
+
+On second-board P0..P7, the disabled adjacent pin can observe the DUT using
+`P_LEVEL_B_FBP | (code << 8)` while its DIR stays low. The DUT retains its selected
+drive strength. Using the comparator on the DUT itself would force 1.5 kΩ output
+drive. The reference is the comparator's internal R-2R DAC; nominal conversion is
+3.3 V × code/256, not an externally calibrated voltmeter.
+
+After `OUT; WAITX 4; TESTP`, direct threshold searches are limited by the comparator/
+reference path's own dynamic response. At nominal 120 MHz, ordinary fast-drive GPIO
+reads the new level on all eight pins while the comparator searches still return
+old-endpoint codes. Those codes therefore cannot be called instantaneous pad voltage.
+
+A separate pulse-and-hold experiment configures the inactive polarity to float,
+drives for eight clocks using two OUT commands separated by WAITX 4, then waits
+1 µs before searching the retained voltage. Common OUT transport cancels from the
+pulse length; this is a different time origin from the direct read. At 200 MHz,
+P0's nominal held estimates after a 40 ns pulse were approximately 3.25/0.08 V for
+fast drive, 2.04/1.28 V at 1 mA, and 0.19/3.13 V at 100 µA (rising/falling). At 40 MHz,
+the 200 ns pulse yielded approximately 1.01/2.32 V at 100 µA and 0.09/3.22 V at 10 µA.
+This current × time scaling strongly supports electrical charging/slew. An apparent
+capacitance of order 20 pF follows only if nominal currents and DAC scale are assumed.
+
+Hold-time controls at 1/10/100 µs moved by up to five codes (~65 mV); zero-pulse
+controls stayed at endpoints on all pins. Offset, charge injection, internal observer
+loading and retention prevent interpreting the 13 mV nominal code spacing as absolute
+accuracy. All 464 voltage cases passed cycle, settled-rail and native-frame CRC checks;
+2,784 searches collected 1,793,632 binary samples. Twenty independent code-neighbor
+reprobes disagreed near a boundary, reinforcing the finite-code uncertainty.
+The method and limitations are summarized above.
+
+The original constant-current timing campaign's nominal 40 MHz setting used a
+40 MHz VCO below the documented recommended range; its clock was not independently
+verified on this board. The later voltage experiment uses 160 MHz VCO divided by
+four for that clock. Earlier fixed-cycle-plus-nanosecond fits remain descriptive,
+rather than isolated calibrated transport measurements.

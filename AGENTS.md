@@ -198,6 +198,12 @@ Typical workflows in that folder:
 - `cue vet isa.cue`: Check the syntax of the schema for errors.
 - `cue vet -c isa.cue examples.yml`: Check the example file for errors.
 
+### Hardware Test Clock
+
+- Use nominal 20 MHz RCFAST for hardware measurements and oracle tests.
+- Use another clock rate only when technically necessary, such as testing high-speed behavior.
+- Smart-pin behavior tests use 20 MHz: slower operation makes signals easier to observe.
+
 ### Timing Data
 
 The timing data project is meant to collect timing data from a system-attached Propeller 2-Board.

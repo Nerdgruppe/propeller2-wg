@@ -643,8 +643,8 @@ for the reporter's hub address. Pipeline traces include both PC and physical sou
 Eleven fixtures cover 207 independently repeated hardware cases: LOC, absolute
 and relative CALLD, explicit/implicit returns, REP, SKIP/SKIPF/EXECF, CT1 entry and
 RETI1/RESI1, special registers, self-modification, higher carries and full rollover.
-See [the measured rules](../accumulated.md#local-pc-overflow-and-loc-2026-10-12) and
-[retained evidence](../../data/timing-data/local-pc-overflow/README.md).
+See [the measured rules](../accumulated.md#local-pc-overflow-and-loc-2026-10-12);
+regression fixtures remain in `tests/windtunnel/state/local-pc-*.propan`.
 
 ## XBYTE completion (2026-10-12)
 

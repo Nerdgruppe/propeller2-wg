@@ -542,6 +542,7 @@ const GUI = struct {
         defer zgui.end();
         zgui.textUnformatted("54 arithmetic cells: internal allocation is inferred, not published RTL.");
         const cordic = &gui.hub.cordic;
+        const pending_returns = cordic.returns.pending();
         if (zgui.beginTable("Cells", .{
             .column = 6,
             .flags = .{ .borders = .all, .scroll_x = true },
@@ -568,8 +569,8 @@ const GUI = struct {
                 if (entry) |item| {
                     zgui.textColored(.{ 0.4, 1, 0.6, 1 }, "Cog {} {t}", .{ @intFromEnum(item.cog), item.operation });
                     zgui.textUnformatted(if (item.tracked) "Tracked" else "Abandoned");
-                } else if (i >= 55 and cordic.returns[i - 55] != null) {
-                    const item = cordic.returns[i - 55].?;
+                } else if (i >= 55 and pending_returns[i - 55] != null) {
+                    const item = pending_returns[i - 55].?;
                     zgui.textColored(.{ 0.4, 1, 0.6, 1 }, "Cog {} {t}", .{ @intFromEnum(item.cog), item.operation });
                     zgui.textUnformatted(if (item.tracked) "Tracked" else "Abandoned");
                 } else {
@@ -584,7 +585,7 @@ const GUI = struct {
             show("Stage allocation", windtunnel.Cordic.stage_layout[selected - 1]);
             show("Arithmetic payload", cordic.pipeline[selected - 1]);
         } else {
-            show("Return payload", cordic.returns[selected - 55]);
+            show("Return payload", pending_returns[selected - 55]);
         }
     }
 

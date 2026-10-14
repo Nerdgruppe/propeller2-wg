@@ -123,7 +123,7 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
   complete rollover, interrupts, special registers and simultaneous RAM writes.
 - The retained crossing REP mismatch now matches silicon's one addition.
   LOC relative offsets were also corrected to use unscaled PC units.
-- [Measured rules and replay](data/timing-data/local-pc-overflow/README.md).
+- [Measured rules](docs/accumulated.md#local-pc-overflow-and-loc-2026-10-12).
 
 ### Known Bugs
 

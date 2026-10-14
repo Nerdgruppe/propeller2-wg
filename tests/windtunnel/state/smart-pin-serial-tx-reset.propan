@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode28-prime0"
-//? const: pll = 0
 //? const: mode = 28
 //? const: prime = 0
 //? post: cog[*].reg[initial_output] == 0x00000000
@@ -16,7 +15,6 @@
 //? post: cog[*].reg[restarted_busy] == 0x00000001
 //? post: cog[*].reg[count] == 0x00000000
 //? run: "pll0-mode28-prime1"
-//? const: pll = 0
 //? const: mode = 28
 //? const: prime = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -30,7 +28,6 @@
 //? post: cog[*].reg[restarted_busy] == 0x00000001
 //? post: cog[*].reg[count] == 0x00000000
 //? run: "pll0-mode30-prime0"
-//? const: pll = 0
 //? const: mode = 30
 //? const: prime = 0
 //? post: cog[*].reg[initial_output] == 0x00000000
@@ -44,63 +41,6 @@
 //? post: cog[*].reg[restarted_busy] == 0x00000000
 //? post: cog[*].reg[count] == 0x00000000
 //? run: "pll0-mode30-prime1"
-//? const: pll = 0
-//? const: mode = 30
-//? const: prime = 1
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[initial_busy] == 0x00000000
-//? post: cog[*].reg[initial_ready] == 0x00000000
-//? post: cog[*].reg[partial_output] == 0x00000001
-//? post: cog[*].reg[restarted_output] == 0x00000001
-//? post: cog[*].reg[restarted_ready] == 0x00000000
-//? post: cog[*].reg[restarted_result] == 0x00000000
-//? post: cog[*].reg[restarted_busy] == 0x00000000
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode28-prime0"
-//? const: pll = 1
-//? const: mode = 28
-//? const: prime = 0
-//? post: cog[*].reg[initial_output] == 0x00000000
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[initial_busy] == 0x00000000
-//? post: cog[*].reg[initial_ready] == 0x00000000
-//? post: cog[*].reg[partial_output] == 0x00000000
-//? post: cog[*].reg[restarted_output] == 0x00000001
-//? post: cog[*].reg[restarted_ready] == 0x00000000
-//? post: cog[*].reg[restarted_result] == 0xfe000001
-//? post: cog[*].reg[restarted_busy] == 0x00000001
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode28-prime1"
-//? const: pll = 1
-//? const: mode = 28
-//? const: prime = 1
-//? post: cog[*].reg[initial_output] == 0x00000001
-//? post: cog[*].reg[initial_result] == 0x00000000
-//? post: cog[*].reg[initial_busy] == 0x00000000
-//? post: cog[*].reg[initial_ready] == 0x00000000
-//? post: cog[*].reg[partial_output] == 0x00000000
-//? post: cog[*].reg[restarted_output] == 0x00000001
-//? post: cog[*].reg[restarted_ready] == 0x00000000
-//? post: cog[*].reg[restarted_result] == 0xfe000001
-//? post: cog[*].reg[restarted_busy] == 0x00000001
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode30-prime0"
-//? const: pll = 1
-//? const: mode = 30
-//? const: prime = 0
-//? post: cog[*].reg[initial_output] == 0x00000000
-//? post: cog[*].reg[initial_result] == 0x000000a5
-//? post: cog[*].reg[initial_busy] == 0x00000001
-//? post: cog[*].reg[initial_ready] == 0x00000001
-//? post: cog[*].reg[partial_output] == 0x00000001
-//? post: cog[*].reg[restarted_output] == 0x00000001
-//? post: cog[*].reg[restarted_ready] == 0x00000000
-//? post: cog[*].reg[restarted_result] == 0xc0000029
-//? post: cog[*].reg[restarted_busy] == 0x00000000
-//? post: cog[*].reg[count] == 0x00000000
-//? run: "pll1-mode30-prime1"
-//? const: pll = 1
 //? const: mode = 30
 //? const: prime = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -114,13 +54,7 @@
 //? post: cog[*].reg[restarted_busy] == 0x00000000
 //? post: cog[*].reg[count] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // Reset a partially transmitted word and inspect whether the old buffer primes a restart.
                 DRVH    3

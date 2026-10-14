@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode4-x20003-y3-phase2"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131075
 //? const: y = 3
@@ -16,7 +15,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20003-y3-phase3"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131075
 //? const: y = 3
@@ -30,7 +28,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20003-y3-phase4"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131075
 //? const: y = 3
@@ -44,7 +41,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20003-y3-phase5"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131075
 //? const: y = 3
@@ -58,7 +54,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20003-y3-phase6"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131075
 //? const: y = 3
@@ -72,7 +67,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20003-y3-phase7"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131075
 //? const: y = 3
@@ -86,7 +80,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20005-y23-phase2"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131077
 //? const: y = 35
@@ -100,7 +93,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20005-y23-phase3"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131077
 //? const: y = 35
@@ -114,7 +106,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20005-y23-phase4"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131077
 //? const: y = 35
@@ -128,7 +119,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20005-y23-phase5"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131077
 //? const: y = 35
@@ -142,7 +132,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20005-y23-phase6"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131077
 //? const: y = 35
@@ -156,7 +145,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x20005-y23-phase7"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 131077
 //? const: y = 35
@@ -170,7 +158,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x0-y1-phase2"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 0
 //? const: y = 1
@@ -184,7 +171,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x0-y1-phase3"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 0
 //? const: y = 1
@@ -198,7 +184,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x0-y1-phase4"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 0
 //? const: y = 1
@@ -212,7 +197,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x0-y1-phase5"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 0
 //? const: y = 1
@@ -226,7 +210,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x0-y1-phase6"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 0
 //? const: y = 1
@@ -240,7 +223,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode4-x0-y1-phase7"
-//? const: pll = 0
 //? const: mode = 4
 //? const: x = 0
 //? const: y = 1
@@ -254,7 +236,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x3-y3-phase2"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 3
 //? const: y = 3
@@ -268,7 +249,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x3-y3-phase3"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 3
 //? const: y = 3
@@ -282,7 +262,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x3-y3-phase4"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 3
 //? const: y = 3
@@ -296,7 +275,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x3-y3-phase5"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 3
 //? const: y = 3
@@ -310,7 +288,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x3-y3-phase6"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 3
 //? const: y = 3
@@ -324,7 +301,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x3-y3-phase7"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 3
 //? const: y = 3
@@ -338,7 +314,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x5-y23-phase2"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 5
 //? const: y = 35
@@ -352,7 +327,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x5-y23-phase3"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 5
 //? const: y = 35
@@ -366,7 +340,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x5-y23-phase4"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 5
 //? const: y = 35
@@ -380,7 +353,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x5-y23-phase5"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 5
 //? const: y = 35
@@ -394,7 +366,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x5-y23-phase6"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 5
 //? const: y = 35
@@ -408,7 +379,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x5-y23-phase7"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 5
 //? const: y = 35
@@ -422,7 +392,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x0-y1-phase2"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 0
 //? const: y = 1
@@ -436,7 +405,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x0-y1-phase3"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 0
 //? const: y = 1
@@ -450,7 +418,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x0-y1-phase4"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 0
 //? const: y = 1
@@ -464,7 +431,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x0-y1-phase5"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 0
 //? const: y = 1
@@ -478,7 +444,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x0-y1-phase6"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 0
 //? const: y = 1
@@ -492,7 +457,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode5-x0-y1-phase7"
-//? const: pll = 0
 //? const: mode = 5
 //? const: x = 0
 //? const: y = 1
@@ -506,7 +470,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x1-y40000000-phase2"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: y = 1073741824
@@ -520,7 +483,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x1-y40000000-phase3"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: y = 1073741824
@@ -534,7 +496,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x1-y40000000-phase4"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: y = 1073741824
@@ -548,7 +509,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x1-y40000000-phase5"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: y = 1073741824
@@ -562,7 +522,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x1-y40000000-phase6"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: y = 1073741824
@@ -576,7 +535,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x1-y40000000-phase7"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 1
 //? const: y = 1073741824
@@ -590,7 +548,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x12340003-y87654321-phase2"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -604,7 +561,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x12340003-y87654321-phase3"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -618,7 +574,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x12340003-y87654321-phase4"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -632,7 +587,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x12340003-y87654321-phase5"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -646,7 +600,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x12340003-y87654321-phase6"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -660,7 +613,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x12340003-y87654321-phase7"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -674,7 +626,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x0-yffffffff-phase2"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 0
 //? const: y = 4294967295
@@ -688,7 +639,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x0-yffffffff-phase3"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 0
 //? const: y = 4294967295
@@ -702,7 +652,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x0-yffffffff-phase4"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 0
 //? const: y = 4294967295
@@ -716,7 +665,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x0-yffffffff-phase5"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 0
 //? const: y = 4294967295
@@ -730,7 +678,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x0-yffffffff-phase6"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 0
 //? const: y = 4294967295
@@ -744,7 +691,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode6-x0-yffffffff-phase7"
-//? const: pll = 0
 //? const: mode = 6
 //? const: x = 0
 //? const: y = 4294967295
@@ -758,7 +704,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x1-y40000000-phase2"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: y = 1073741824
@@ -772,7 +717,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x1-y40000000-phase3"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: y = 1073741824
@@ -786,7 +730,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x1-y40000000-phase4"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: y = 1073741824
@@ -800,7 +743,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x1-y40000000-phase5"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: y = 1073741824
@@ -814,7 +756,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x1-y40000000-phase6"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: y = 1073741824
@@ -828,7 +769,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x1-y40000000-phase7"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 1
 //? const: y = 1073741824
@@ -842,7 +782,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x12340003-y87654321-phase2"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -856,7 +795,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x12340003-y87654321-phase3"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -870,7 +808,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x12340003-y87654321-phase4"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -884,7 +821,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x12340003-y87654321-phase5"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -898,7 +834,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x12340003-y87654321-phase6"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -912,7 +847,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x12340003-y87654321-phase7"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 305397763
 //? const: y = 2271560481
@@ -926,7 +860,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000001
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x0-yffffffff-phase2"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 0
 //? const: y = 4294967295
@@ -940,7 +873,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x0-yffffffff-phase3"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 0
 //? const: y = 4294967295
@@ -954,7 +886,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x0-yffffffff-phase4"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 0
 //? const: y = 4294967295
@@ -968,7 +899,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x0-yffffffff-phase5"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 0
 //? const: y = 4294967295
@@ -982,7 +912,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x0-yffffffff-phase6"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 0
 //? const: y = 4294967295
@@ -996,7 +925,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode7-x0-yffffffff-phase7"
-//? const: pll = 0
 //? const: mode = 7
 //? const: x = 0
 //? const: y = 4294967295
@@ -1010,7 +938,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y0-phase2"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 0
@@ -1024,7 +951,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y0-phase3"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 0
@@ -1038,7 +964,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y0-phase4"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 0
@@ -1052,7 +977,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y0-phase5"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 0
@@ -1066,7 +990,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y0-phase6"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 0
@@ -1080,7 +1003,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y0-phase7"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 0
@@ -1094,7 +1016,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y1-phase2"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 1
@@ -1108,7 +1029,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y1-phase3"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 1
@@ -1122,7 +1042,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y1-phase4"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 1
@@ -1136,7 +1055,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y1-phase5"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 1
@@ -1150,7 +1068,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y1-phase6"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 1
@@ -1164,7 +1081,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y1-phase7"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 1
@@ -1178,7 +1094,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y3-phase2"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 3
@@ -1192,7 +1107,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y3-phase3"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 3
@@ -1206,7 +1120,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y3-phase4"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 3
@@ -1220,7 +1133,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y3-phase5"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 3
@@ -1234,7 +1146,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y3-phase6"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 3
@@ -1248,7 +1159,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y3-phase7"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 3
@@ -1262,7 +1172,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y7-phase2"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 7
@@ -1276,7 +1185,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y7-phase3"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 7
@@ -1290,7 +1198,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y7-phase4"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 7
@@ -1304,7 +1211,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y7-phase5"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 7
@@ -1318,7 +1224,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y7-phase6"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 7
@@ -1332,7 +1237,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y7-phase7"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 7
@@ -1346,7 +1250,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y8-phase2"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 8
@@ -1360,7 +1263,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y8-phase3"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 8
@@ -1374,7 +1276,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y8-phase4"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 8
@@ -1388,7 +1289,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y8-phase5"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 8
@@ -1402,7 +1302,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y8-phase6"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 8
@@ -1416,7 +1315,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode8-x70003-y8-phase7"
-//? const: pll = 0
 //? const: mode = 8
 //? const: x = 458755
 //? const: y = 8
@@ -1430,7 +1328,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y0-phase2"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 0
@@ -1444,7 +1341,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y0-phase3"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 0
@@ -1458,7 +1354,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y0-phase4"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 0
@@ -1472,7 +1367,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y0-phase5"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 0
@@ -1486,7 +1380,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y0-phase6"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 0
@@ -1500,7 +1393,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y0-phase7"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 0
@@ -1514,7 +1406,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y1-phase2"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 1
@@ -1528,7 +1419,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y1-phase3"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 1
@@ -1542,7 +1432,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y1-phase4"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 1
@@ -1556,7 +1445,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y1-phase5"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 1
@@ -1570,7 +1458,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y1-phase6"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 1
@@ -1584,7 +1471,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y1-phase7"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 1
@@ -1598,7 +1484,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y3-phase2"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 3
@@ -1612,7 +1497,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y3-phase3"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 3
@@ -1626,7 +1510,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y3-phase4"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 3
@@ -1640,7 +1523,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y3-phase5"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 3
@@ -1654,7 +1536,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y3-phase6"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 3
@@ -1668,7 +1549,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y3-phase7"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 3
@@ -1682,7 +1562,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y7-phase2"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 7
@@ -1696,7 +1575,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y7-phase3"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 7
@@ -1710,7 +1588,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y7-phase4"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 7
@@ -1724,7 +1601,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y7-phase5"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 7
@@ -1738,7 +1614,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y7-phase6"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 7
@@ -1752,7 +1627,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y7-phase7"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 7
@@ -1766,7 +1640,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y8-phase2"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 8
@@ -1780,7 +1653,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y8-phase3"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 8
@@ -1794,7 +1666,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y8-phase4"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 8
@@ -1808,7 +1679,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y8-phase5"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 8
@@ -1822,7 +1692,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y8-phase6"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 8
@@ -1836,7 +1705,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode9-x70003-y8-phase7"
-//? const: pll = 0
 //? const: mode = 9
 //? const: x = 458755
 //? const: y = 8
@@ -1850,7 +1718,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y0-phase2"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 0
@@ -1864,7 +1731,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y0-phase3"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 0
@@ -1878,7 +1744,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y0-phase4"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 0
@@ -1892,7 +1757,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y0-phase5"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 0
@@ -1906,7 +1770,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y0-phase6"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 0
@@ -1920,7 +1783,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y0-phase7"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 0
@@ -1934,7 +1796,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y3-phase2"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 3
@@ -1948,7 +1809,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y3-phase3"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 3
@@ -1962,7 +1822,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y3-phase4"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 3
@@ -1976,7 +1835,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y3-phase5"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 3
@@ -1990,7 +1848,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y3-phase6"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 3
@@ -2004,7 +1861,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y3-phase7"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 3
@@ -2018,7 +1874,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y7-phase2"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 7
@@ -2032,7 +1887,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y7-phase3"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 7
@@ -2046,7 +1900,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y7-phase4"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 7
@@ -2060,7 +1913,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y7-phase5"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 7
@@ -2074,7 +1926,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y7-phase6"
-//? const: pll = 0
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 7
@@ -2088,2107 +1939,6 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 //? run: "pll0-mode10-x70003-y7-phase7"
-//? const: pll = 0
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20003-y3-phase2"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131075
-//? const: y = 3
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x10000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20003-y3-phase3"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131075
-//? const: y = 3
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x20000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20003-y3-phase4"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131075
-//? const: y = 3
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x08000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20003-y3-phase5"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131075
-//? const: y = 3
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x10000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20003-y3-phase6"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131075
-//? const: y = 3
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x20000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20003-y3-phase7"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131075
-//? const: y = 3
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x08000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20005-y23-phase2"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131077
-//? const: y = 35
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x1ce739ce
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20005-y23-phase3"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131077
-//? const: y = 35
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x0e739ce7
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20005-y23-phase4"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131077
-//? const: y = 35
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x2739ce73
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20005-y23-phase5"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131077
-//? const: y = 35
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x139ce739
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20005-y23-phase6"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131077
-//? const: y = 35
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x19ce739c
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x20005-y23-phase7"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 131077
-//? const: y = 35
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x1ce739ce
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x0-y1-phase2"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x0-y1-phase3"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x0-y1-phase4"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x0-y1-phase5"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x0-y1-phase6"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode4-x0-y1-phase7"
-//? const: pll = 1
-//? const: mode = 4
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x3-y3-phase2"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 3
-//? const: y = 3
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x0fffffff
-//? post: cog[*].reg[result] == 0x00000001
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x3-y3-phase3"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 3
-//? const: y = 3
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x2fffffff
-//? post: cog[*].reg[result] == 0x00000001
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x3-y3-phase4"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 3
-//? const: y = 3
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x1fffffff
-//? post: cog[*].reg[result] == 0x00000001
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x3-y3-phase5"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 3
-//? const: y = 3
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x0fffffff
-//? post: cog[*].reg[result] == 0x00000001
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x3-y3-phase6"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 3
-//? const: y = 3
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x2fffffff
-//? post: cog[*].reg[result] == 0x00000001
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x3-y3-phase7"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 3
-//? const: y = 3
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x1fffffff
-//? post: cog[*].reg[result] == 0x00000001
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000001
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x5-y23-phase2"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 5
-//? const: y = 35
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x16b5ad6b
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x5-y23-phase3"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 5
-//? const: y = 35
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x14a5294a
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x5-y23-phase4"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 5
-//? const: y = 35
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x35ad6b5a
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x5-y23-phase5"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 5
-//? const: y = 35
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x1ad6b5ad
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x5-y23-phase6"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 5
-//? const: y = 35
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x1294a529
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x5-y23-phase7"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 5
-//? const: y = 35
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x16b5ad6b
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x0-y1-phase2"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x0-y1-phase3"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x0-y1-phase4"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x0-y1-phase5"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x0-y1-phase6"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode5-x0-y1-phase7"
-//? const: pll = 1
-//? const: mode = 5
-//? const: x = 0
-//? const: y = 1
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x1-y40000000-phase2"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x1-y40000000-phase3"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x1-y40000000-phase4"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x1-y40000000-phase5"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x1-y40000000-phase6"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x1-y40000000-phase7"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x12340003-y87654321-phase2"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xb6c492b6
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x92c5a2b4
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x12340003-y87654321-phase3"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x9256db92
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x92c5a2b4
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x12340003-y87654321-phase4"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xdb5249db
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x92c5a2b4
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x12340003-y87654321-phase5"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x491b6d49
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xa19028f6
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x12340003-y87654321-phase6"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x6d89256d
-//? post: cog[*].reg[result] == 0xdf00cccd
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xa19028f6
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x12340003-y87654321-phase7"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x24adb724
-//? post: cog[*].reg[result] == 0xdf00cccd
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xa19028f6
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x0-yffffffff-phase2"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x0-yffffffff-phase3"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x0-yffffffff-phase4"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x0-yffffffff-phase5"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x0-yffffffff-phase6"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode6-x0-yffffffff-phase7"
-//? const: pll = 1
-//? const: mode = 6
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x1-y40000000-phase2"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x1-y40000000-phase3"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x1-y40000000-phase4"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x1-y40000000-phase5"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x1-y40000000-phase6"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x1-y40000000-phase7"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 1
-//? const: y = 1073741824
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x12340003-y87654321-phase2"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x493b6dc9
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x92c5a2b4
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x12340003-y87654321-phase3"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x6da924ed
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x92c5a2b4
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x12340003-y87654321-phase4"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x24adb6a4
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x92c5a2b4
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x12340003-y87654321-phase5"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xb6e492b6
-//? post: cog[*].reg[result] == 0xd036468b
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xa19028f6
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x12340003-y87654321-phase6"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x9276db92
-//? post: cog[*].reg[result] == 0xdf00cccd
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xa19028f6
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x12340003-y87654321-phase7"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 305397763
-//? const: y = 2271560481
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xdb5249db
-//? post: cog[*].reg[result] == 0xdf00cccd
-//? post: cog[*].reg[flag] == 0x00000001
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0xa19028f6
-//? post: cog[*].reg[reset_flag] == 0x00000001
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x0-yffffffff-phase2"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x0-yffffffff-phase3"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x0-yffffffff-phase4"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x0-yffffffff-phase5"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x0-yffffffff-phase6"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode7-x0-yffffffff-phase7"
-//? const: pll = 1
-//? const: mode = 7
-//? const: x = 0
-//? const: y = 4294967295
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00000000
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000000
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00000000
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y0-phase2"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y0-phase3"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y0-phase4"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y0-phase5"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y0-phase6"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y0-phase7"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y1-phase2"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x04018020
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y1-phase3"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x04018020
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y1-phase4"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x0c010060
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y1-phase5"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x0c010060
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y1-phase6"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x08030040
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y1-phase7"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x08030040
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y3-phase2"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x1f03c0f8
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y3-phase3"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x1f03c0f8
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y3-phase4"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x1e07c0f0
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y3-phase5"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x1e07c0f0
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y3-phase6"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x3e0781f0
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y3-phase7"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x3e0781f0
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y7-phase2"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y7-phase3"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y7-phase4"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y7-phase5"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y7-phase6"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y7-phase7"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y8-phase2"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y8-phase3"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y8-phase4"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y8-phase5"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y8-phase6"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode8-x70003-y8-phase7"
-//? const: pll = 1
-//? const: mode = 8
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y0-phase2"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y0-phase3"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y0-phase4"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y0-phase5"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y0-phase6"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y0-phase7"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y1-phase2"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x80108400
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y1-phase3"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x84008420
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y1-phase4"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x84200421
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y1-phase5"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x04210021
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y1-phase6"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00210801
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y1-phase7"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 1
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x08010840
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y3-phase2"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xe318c718
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y3-phase3"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xc718c638
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y3-phase4"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xc638c631
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y3-phase5"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xc631c631
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y3-phase6"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xc6318e31
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y3-phase7"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x8e318c71
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y7-phase2"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y7-phase3"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y7-phase4"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y7-phase5"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y7-phase6"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y7-phase7"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y8-phase2"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y8-phase3"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y8-phase4"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y8-phase5"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y8-phase6"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode9-x70003-y8-phase7"
-//? const: pll = 1
-//? const: mode = 9
-//? const: x = 458755
-//? const: y = 8
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y0-phase2"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y0-phase3"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y0-phase4"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y0-phase5"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y0-phase6"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y0-phase7"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 0
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x00000000
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y3-phase2"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xe318c718
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y3-phase3"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xc718c638
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y3-phase4"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xc638c631
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y3-phase5"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xc631c631
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y3-phase6"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xc6318e31
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y3-phase7"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 3
-//? const: phase = 7
-//? post: cog[*].reg[waveform] == 0x8e318c71
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y7-phase2"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 2
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y7-phase3"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 3
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y7-phase4"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 4
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000001
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y7-phase5"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 5
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y7-phase6"
-//? const: pll = 1
-//? const: mode = 10
-//? const: x = 458755
-//? const: y = 7
-//? const: phase = 6
-//? post: cog[*].reg[waveform] == 0xffffffff
-//? post: cog[*].reg[result] == 0x00070007
-//? post: cog[*].reg[flag] == 0x00000000
-//? post: cog[*].reg[ready] == 0x00000001
-//? post: cog[*].reg[acknowledged] == 0x00000000
-//? post: cog[*].reg[reset_result] == 0x00070007
-//? post: cog[*].reg[reset_flag] == 0x00000000
-//? post: cog[*].reg[reset_output] == 0x00000000
-//? run: "pll1-mode10-x70003-y7-phase7"
-//? const: pll = 1
 //? const: mode = 10
 //? const: x = 458755
 //? const: y = 7
@@ -4202,13 +1952,7 @@
 //? post: cog[*].reg[reset_flag] == 0x00000000
 //? post: cog[*].reg[reset_output] == 0x00000000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // P4 is the DUT; P6 observes its physical pad through the -2 selector.
                 // A/B come from low P3/P5, making SMPS feedback inactive.

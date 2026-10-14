@@ -2,7 +2,6 @@
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-phase0"
-//? const: pll = 0
 //? const: phase = 0
 //? post: cog[*].reg[ready] == 0x00001fff
 //? post: cog[*].reg[busy] == 0x0000e000
@@ -11,7 +10,6 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 //? run: "pll0-phase1"
-//? const: pll = 0
 //? const: phase = 1
 //? post: cog[*].reg[ready] == 0x00001fff
 //? post: cog[*].reg[busy] == 0x0000e000
@@ -20,7 +18,6 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 //? run: "pll0-phase2"
-//? const: pll = 0
 //? const: phase = 2
 //? post: cog[*].reg[ready] == 0x00001fff
 //? post: cog[*].reg[busy] == 0x0000e000
@@ -29,7 +26,6 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 //? run: "pll0-phase3"
-//? const: pll = 0
 //? const: phase = 3
 //? post: cog[*].reg[ready] == 0x00001fff
 //? post: cog[*].reg[busy] == 0x0000c000
@@ -38,7 +34,6 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 //? run: "pll0-phase4"
-//? const: pll = 0
 //? const: phase = 4
 //? post: cog[*].reg[ready] == 0x00003fff
 //? post: cog[*].reg[busy] == 0x0000c000
@@ -47,7 +42,6 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 //? run: "pll0-phase5"
-//? const: pll = 0
 //? const: phase = 5
 //? post: cog[*].reg[ready] == 0x00003fff
 //? post: cog[*].reg[busy] == 0x0000c000
@@ -56,7 +50,6 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 //? run: "pll0-phase6"
-//? const: pll = 0
 //? const: phase = 6
 //? post: cog[*].reg[ready] == 0x00003fff
 //? post: cog[*].reg[busy] == 0x0000c000
@@ -65,79 +58,6 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 //? run: "pll0-phase7"
-//? const: pll = 0
-//? const: phase = 7
-//? post: cog[*].reg[ready] == 0x00003fff
-//? post: cog[*].reg[busy] == 0x0000c000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase0"
-//? const: pll = 1
-//? const: phase = 0
-//? post: cog[*].reg[ready] == 0x00001fff
-//? post: cog[*].reg[busy] == 0x0000e000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase1"
-//? const: pll = 1
-//? const: phase = 1
-//? post: cog[*].reg[ready] == 0x00001fff
-//? post: cog[*].reg[busy] == 0x0000e000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase2"
-//? const: pll = 1
-//? const: phase = 2
-//? post: cog[*].reg[ready] == 0x00001fff
-//? post: cog[*].reg[busy] == 0x0000e000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase3"
-//? const: pll = 1
-//? const: phase = 3
-//? post: cog[*].reg[ready] == 0x00001fff
-//? post: cog[*].reg[busy] == 0x0000c000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase4"
-//? const: pll = 1
-//? const: phase = 4
-//? post: cog[*].reg[ready] == 0x00001fff
-//? post: cog[*].reg[busy] == 0x0000c000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase5"
-//? const: pll = 1
-//? const: phase = 5
-//? post: cog[*].reg[ready] == 0x00003fff
-//? post: cog[*].reg[busy] == 0x0000c000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase6"
-//? const: pll = 1
-//? const: phase = 6
-//? post: cog[*].reg[ready] == 0x00003fff
-//? post: cog[*].reg[busy] == 0x0000c000
-//? post: cog[*].reg[event] == 0x00002000
-//? post: cog[*].reg[result] == 0xa5000000
-//? post: cog[*].reg[ack] == 0x00000080
-//? post: cog[*].reg[sample] == 0xd2800000
-//? run: "pll1-phase7"
-//? const: pll = 1
 //? const: phase = 7
 //? post: cog[*].reg[ready] == 0x00003fff
 //? post: cog[*].reg[busy] == 0x0000c000
@@ -146,13 +66,7 @@
 //? post: cog[*].reg[ack] == 0x00000080
 //? post: cog[*].reg[sample] == 0xd2800000
 
-// Select the test clock while retaining the ROM-calibrated UART divider for reporting.
-.if pll
-                HUBSET  aug(0x010009f8)
-                WAITX   aug(200000)
-                HUBSET  aug(0x010009fb)
-                WAITX   64
-.endif
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
 
                 // The receiver and transmitter share routed pads but independent baud counters.
                 WRPIN   P_TT_01 | P_ASYNC_TX,           3
