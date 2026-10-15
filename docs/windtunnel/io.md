@@ -190,7 +190,8 @@ external sources and electrical snapshots. Firmware-triggered resets reuse the
 active system configuration. The configuration is separate from firmware HUBSET;
 firmware cannot select a different electrical model.
 
-The desktop Hub inspector shows active settings separately from an editable draft.
+The desktop Options → System Configuration window shows active settings separately
+from an editable draft.
 Ideal/Realistic buttons populate the draft; edited values display as Custom. Editing
 does not affect simulation. While paused, **Reinitialize with settings** validates
 the draft, restores the original loaded image, starts cog 0 and leaves execution

@@ -938,6 +938,11 @@ stack slot can retain a matching address, so inspecting these slots does not
 establish a call depth. GPIO pad output enable follows delayed physical DIR;
 smart modes use TT independently of the DIR-controlled engine enable.
 
+The model represents the hardware-stack top at `stack[0]`: PUSH shifts slots
+0–6 toward slot 7 and writes slot 0, discarding the old bottom. POP reads slot 0
+and shifts slots 1–7 toward slot 0 while retaining slot 7. These rules determine
+the GUI's top, next-POP and bottom labels.
+
 These are inspection rules derived from the existing model, not new hardware
 measurements. See [debugger.md](windtunnel/debugger.md) and the headless
 [regressions](../src/windtunnel/debugger_tests.zig).

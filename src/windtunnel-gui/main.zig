@@ -105,21 +105,16 @@ pub fn main(init: std.process.Init) !u8 {
 
         zgui.backend.newFrame(@intCast(size[0]), @intCast(size[1]));
 
-        // draw imgui here
-        try gui.controls();
+        const window_size = window.getSize();
+        gui.logWindowSize("Windtunnel", .{ @floatFromInt(window_size[0]), @floatFromInt(window_size[1]) });
+        gui.controls();
+        if (gui.exit_requested) {
+            window.setShouldClose(true);
+            break;
+        }
+        try gui.toolbar();
         gui.advance(&host_io);
         try gui.inspectors();
-
-        {
-            const visible = zgui.begin("GLFW", .{});
-            defer zgui.end();
-
-            if (visible) {
-                if (zgui.button("Quit", .{})) {
-                    window.setShouldClose(true);
-                }
-            }
-        }
 
         gl.viewport(0, 0, size[0], size[1]);
         gl.clearColor(0.08, 0.09, 0.12, 1.0);
@@ -133,6 +128,23 @@ pub fn main(init: std.process.Init) !u8 {
 const Debugger = windtunnel.Debugger;
 const inspect = windtunnel.inspect;
 
+const WindowSize = struct {
+    title_hash: u64,
+    size: [2]f32,
+};
+
+const PinDrive = struct {
+    mode: ?windtunnel.types.PinConfiguration.Drive,
+    level: windtunnel.IO.Signal,
+    driver: windtunnel.Pad.Driver,
+};
+
+const LocalViewOptions = struct {
+    show_tail_ram: bool = false,
+    show_disassembly: bool = true,
+    show_execute_word: bool = false,
+};
+
 const GUI = struct {
     hub: windtunnel.Hub,
     debugger: Debugger,
@@ -142,6 +154,12 @@ const GUI = struct {
     is_running: bool = false,
     step_requested: bool = false,
     frame: windtunnel.Frame = .{},
+    // Main window, six shared inspectors, eight cogs and sixty-four pins.
+    window_sizes: [1 + 6 + 8 + 64]?WindowSize = @splat(null),
+    hide_automatic_ui: bool = false,
+    exit_requested: bool = false,
+    breakpoints_visible: bool = false,
+    configuration_visible: bool = false,
     hub_visible: bool = true,
     io_visible: bool = true,
     memory_visible: bool = false,
@@ -152,13 +170,14 @@ const GUI = struct {
     jump_pending: bool = false,
     start_address: [8]u32 = @splat(0),
     start_ptra: [8]u32 = @splat(0),
-    start_load: [8]bool = @splat(true),
+    local_view_options: [8]LocalViewOptions = @splat(.{}),
     hubset: u32 = 0,
     seed: u32 = 0,
     sensor_config: [8][4]u32 = @splat(@splat(0)),
     pattern_mask: [8]u32 = @splat(0),
     pattern_value: [8]u32 = @splat(0),
     selected_cell: usize = 0,
+    selected_pin: u6 = 0,
     watch: Debugger.Watchpoint = .{
         .space = .hub,
         .cog = null,
@@ -173,52 +192,172 @@ const GUI = struct {
     execution_cog: u32 = 0,
     execution_pc: u32 = 0,
 
-    /// Collect host controls before simulation; inspectors always render the resulting complete edge.
-    fn controls(gui: *GUI) !void {
-        if (!new_window("Control", null))
+    /// Mark the entire generic inspector block with a magenta background.
+    fn show(gui: *GUI, label: [:0]const u8, value: anytype) void {
+        if (gui.hide_automatic_ui)
             return;
+
+        zgui.pushStrId(label);
+        defer zgui.popId();
+
+        const magenta = [4]f32{ 1, 0, 1, 1 };
+        zgui.pushStyleColor4f(.{ .idx = .header, .c = magenta });
+        zgui.pushStyleColor4f(.{ .idx = .header_hovered, .c = magenta });
+        zgui.pushStyleColor4f(.{ .idx = .header_active, .c = magenta });
+        defer zgui.popStyleColor(.{ .count = 3 });
+
+        if (!zgui.beginTable("##generic", .{ .column = 1, .flags = .{ .sizing = .stretch_same } }))
+            return;
+        defer zgui.endTable();
+
+        zgui.tableNextRow(.{});
+        _ = zgui.tableSetColumnIndex(0);
+        zgui.tableSetBgColor(.{ .target = .row_bg0, .color = 0xffff00ff });
+        showValue(label, value);
+    }
+
+    /// Open a closable inspector and report changes to its size in the host terminal.
+    fn newWindow(gui: *GUI, title: [:0]const u8, visible: ?*bool) bool {
+        zgui.setNextWindowSize(.{ .w = 700, .h = 540, .cond = .first_use_ever });
+        if (!zgui.begin(title, .{ .popen = visible })) {
+            zgui.end();
+            return false;
+        }
+        gui.logWindowSize(title, zgui.getWindowSize());
+        return true;
+    }
+
+    /// Remember initial dimensions silently, then log each change without retaining temporary title buffers.
+    fn logWindowSize(gui: *GUI, title: []const u8, size: [2]f32) void {
+        const title_hash = std.hash.Wyhash.hash(0, title);
+        for (&gui.window_sizes) |*entry| {
+            if (entry.*) |*previous| {
+                if (previous.title_hash != title_hash)
+                    continue;
+                if (!std.meta.eql(previous.size, size)) {
+                    std.log.info("Window \"{s}\": {d:.0} x {d:.0}", .{ title, size[0], size[1] });
+                    previous.size = size;
+                }
+                return;
+            }
+            entry.* = .{ .title_hash = title_hash, .size = size };
+            return;
+        }
+    }
+
+    /// Collect application actions and window toggles in the main menu before advancing simulation.
+    fn controls(gui: *GUI) void {
+        if (!zgui.beginMainMenuBar())
+            return;
+        defer zgui.endMainMenuBar();
+
+        if (zgui.beginMenu("File", true)) {
+            defer zgui.endMenu();
+
+            _ = zgui.menuItem("Load image (coming soon)", .{ .enabled = false });
+            _ = zgui.menuItem("Export VCD (coming soon)", .{ .enabled = false });
+            zgui.separator();
+            if (zgui.menuItem("Exit", .{})) {
+                gui.exit_requested = true;
+            }
+        }
+        if (zgui.beginMenu("Windows", true)) {
+            defer zgui.endMenu();
+
+            _ = zgui.menuItemPtr("Hub", .{ .selected = &gui.hub_visible });
+            _ = zgui.menuItemPtr("I/O", .{ .selected = &gui.io_visible });
+            _ = zgui.menuItemPtr("Memory", .{ .selected = &gui.memory_visible });
+            _ = zgui.menuItemPtr("CORDIC", .{ .selected = &gui.cordic_visible });
+            _ = zgui.menuItemPtr("Breakpoints", .{ .selected = &gui.breakpoints_visible });
+            if (zgui.beginMenu("Cogs", true)) {
+                defer zgui.endMenu();
+
+                for (&gui.cogs_visible, 0..) |*visible, i| {
+                    var buffer: [32]u8 = undefined;
+                    const title = std.fmt.bufPrintSentinel(&buffer, "Cog {}", .{i}, 0) catch unreachable;
+                    _ = zgui.menuItemPtr(title, .{ .selected = visible });
+                }
+            }
+            if (zgui.beginMenu("Pins", true)) {
+                defer zgui.endMenu();
+
+                // Eight groups of eight minimize the largest menu: max(64 / 8, 8) = 8.
+                for (0..8) |group| {
+                    const first = group * 8;
+                    var buffer: [32]u8 = undefined;
+                    const title = std.fmt.bufPrintSentinel(&buffer, "Pins {}-{}", .{ first, first + 7 }, 0) catch unreachable;
+                    if (zgui.beginMenu(title, true)) {
+                        defer zgui.endMenu();
+
+                        for (first..first + 8) |i| {
+                            var pin_buffer: [32]u8 = undefined;
+                            const pin_title = std.fmt.bufPrintSentinel(&pin_buffer, "Pin {}", .{i}, 0) catch unreachable;
+                            _ = zgui.menuItemPtr(pin_title, .{ .selected = &gui.pins_visible[i] });
+                        }
+                    }
+                }
+            }
+        }
+        if (zgui.beginMenu("Options", true)) {
+            defer zgui.endMenu();
+
+            _ = zgui.menuItemPtr("System Configuration", .{ .selected = &gui.configuration_visible });
+            _ = zgui.menuItemPtr("Hide automatic UI", .{ .selected = &gui.hide_automatic_ui });
+        }
+    }
+
+    /// Keep execution actions in a fixed toolbar below the application menu.
+    fn toolbar(gui: *GUI) !void {
+        const viewport = zgui.getMainViewport();
+        const pos = viewport.getPos();
+        const size = viewport.getSize();
+        const height = zgui.getFrameHeight() + 2 * zgui.getStyle().window_padding[1];
+        zgui.setNextWindowPos(.{ .x = pos[0], .y = pos[1] + zgui.getFrameHeight() });
+        zgui.setNextWindowSize(.{ .w = size[0], .h = height });
+        const visible = zgui.begin("##Execution toolbar", .{ .flags = .{
+            .no_title_bar = true,
+            .no_resize = true,
+            .no_move = true,
+            .no_collapse = true,
+            .no_scrollbar = true,
+            .no_saved_settings = true,
+            .no_focus_on_appearing = true,
+        } });
         defer zgui.end();
 
-        if (zgui.button("Step", .{})) {
-            gui.debugger.acknowledge(&gui.hub);
-            gui.is_running = false;
-            gui.step_requested = true;
+        if (!visible)
+            return;
+
+        if (zgui.button("Reboot", .{})) {
+            try gui.initializeChip(gui.hub.system_configuration);
         }
         zgui.sameLine(.{});
-        if (zgui.button(if (gui.is_running) "Pause" else "Continue", .{})) {
+        if (zgui.button("Reset", .{})) {
+            gui.configuration_draft = gui.hub.system_configuration;
+            try gui.reinitialize();
+        }
+        zgui.sameLine(.{});
+        if (zgui.button(if (gui.is_running) "Stop" else "Run", .{})) {
             gui.is_running = !gui.is_running;
             if (gui.is_running) {
                 gui.debugger.acknowledge(&gui.hub);
             }
         }
-        if (header("Windows", .{ .default_open = true })) {
-            _ = zgui.checkbox("Hub", .{ .v = &gui.hub_visible });
-            zgui.sameLine(.{});
-            _ = zgui.checkbox("I/O", .{ .v = &gui.io_visible });
-            zgui.sameLine(.{});
-            _ = zgui.checkbox("Memory", .{ .v = &gui.memory_visible });
-            zgui.sameLine(.{});
-            _ = zgui.checkbox("CORDIC", .{ .v = &gui.cordic_visible });
-            for (&gui.cogs_visible, 0..) |*visible, i| {
-                var buffer: [32]u8 = undefined;
-                const title = std.fmt.bufPrintSentinel(&buffer, "Cog {}", .{i}, 0) catch unreachable;
-                if (i != 0) {
-                    zgui.sameLine(.{});
-                }
-                _ = zgui.checkbox(title, .{ .v = visible });
-            }
-            if (header("Pins", .{})) {
-                for (&gui.pins_visible, 0..) |*visible, i| {
-                    var buffer: [32]u8 = undefined;
-                    const title = std.fmt.bufPrintSentinel(&buffer, "Pin {}", .{i}, 0) catch unreachable;
-                    if (i % 8 != 0) {
-                        zgui.sameLine(.{});
-                    }
-                    _ = zgui.checkbox(title, .{ .v = visible });
-                }
-            }
+        zgui.sameLine(.{});
+        if (zgui.button("Step", .{})) {
+            gui.debugger.acknowledge(&gui.hub);
+            gui.is_running = false;
+            gui.step_requested = true;
         }
-        if (header("Execution breakpoints", .{})) {
+    }
+
+    /// Edit host breakpoints/watchpoints and inspect the matches responsible for the current stop.
+    fn breakpointsWindow(gui: *GUI) !void {
+        if (!gui.newWindow("Breakpoints", &gui.breakpoints_visible))
+            return;
+        defer zgui.end();
+
+        if (header("Execution breakpoints", .{ .default_open = true })) {
             _ = zgui.inputScalar("Cog##execution", u32, .{ .v = &gui.execution_cog });
             gui.execution.cog = @intCast(@min(gui.execution_cog, 7));
             if (zgui.button(@tagName(gui.execution.domain), .{})) {
@@ -228,7 +367,7 @@ const GUI = struct {
                     .hub => .cog,
                 };
             }
-            _ = hexInput("PC (local includes $200 LUT base)", &gui.execution_pc, false);
+            _ = hexInput("PC (local includes 0x200 LUT base)", &gui.execution_pc, false);
             gui.execution.pc = @truncate(gui.execution_pc);
             if (zgui.button("Toggle breakpoint", .{})) {
                 try gui.debugger.toggleExecution(gui.execution);
@@ -237,7 +376,7 @@ const GUI = struct {
             while (i < gui.debugger.executions.items.len) {
                 const item = gui.debugger.executions.items[i];
                 zgui.pushIntId(@intCast(i));
-                zgui.text("Cog {} {t} ${X:0>5}", .{ item.cog, item.domain, item.pc });
+                zgui.text("Cog {} {t} 0x{X:0>5}", .{ item.cog, item.domain, item.pc });
                 zgui.sameLine(.{});
                 const remove = zgui.button("Remove", .{});
                 zgui.popId();
@@ -248,39 +387,64 @@ const GUI = struct {
                 }
             }
         }
-        if (header("Data watchpoints", .{})) {
+        if (header("Data watchpoints", .{ .default_open = true })) {
             try gui.watchEditor();
         }
-    }
-
-    /// Render the latest completed frame and structured stop after advancement.
-    fn status(gui: *GUI) void {
-        if (!new_window("Execution", null))
-            return;
-        defer zgui.end();
-
-        zgui.text("{s} | stop: {t} | {} clocks | {d:.3} ms simulation/frame", .{
-            if (gui.is_running) "Running" else "Paused",
-            gui.debugger.stop,
-            gui.frame.clocks,
-            @as(f64, @floatFromInt(gui.frame.nanoseconds)) / 1_000_000.0,
-        });
+        zgui.separator();
+        zgui.text("Stop: {t}", .{gui.debugger.stop});
         for (gui.debugger.encounters.items) |encounter| {
-            zgui.text("Cog {} {t} PC ${X:0>5} before clock {}", .{
+            zgui.text("Cog {} {t} PC 0x{X:0>5} before clock {}", .{
                 encounter.cog, encounter.domain, encounter.pc, gui.hub.counter,
             });
         }
         if (gui.hub.fault) |fault| {
-            show("Fault", fault);
+            gui.show("Fault", fault);
         }
         if (header("Data stop matches", .{})) {
             for (gui.debugger.hits.items, 0..) |hit, i| {
                 zgui.pushIntId(@intCast(i));
                 defer zgui.popId();
-                zgui.text("Clock {} {t}/{t} {t} ${X} = ${X} ({t})", .{
+                zgui.text("Clock {} {t}/{t} {t} 0x{X:0>8} = 0x{X:0>8} ({t})", .{
                     hit.clock, hit.space, hit.storage, hit.access, hit.address, hit.value, hit.class,
                 });
-                show("Provenance", hit.provenance);
+                gui.show("Provenance", hit.provenance);
+            }
+        }
+    }
+
+    /// Show completed-frame execution state in a fixed, single-row bottom status bar.
+    fn status(gui: *GUI) void {
+        const viewport = zgui.getMainViewport();
+        const pos = viewport.getPos();
+        const size = viewport.getSize();
+        const height = zgui.getFrameHeight();
+        zgui.setNextWindowPos(.{ .x = pos[0], .y = pos[1] + size[1] - height });
+        zgui.setNextWindowSize(.{ .w = size[0], .h = height });
+        const visible = zgui.begin("##Execution status", .{ .flags = .{
+            .no_title_bar = true,
+            .no_resize = true,
+            .no_move = true,
+            .no_scrollbar = true,
+            .no_saved_settings = true,
+            .no_focus_on_appearing = true,
+            .menu_bar = true,
+        } });
+        defer zgui.end();
+
+        if (visible and zgui.beginMenuBar()) {
+            defer zgui.endMenuBar();
+
+            zgui.text("{s} | stop: {t} | {} clocks | {d:.3} ms simulation/frame", .{
+                if (gui.is_running) "Running" else "Paused",
+                gui.debugger.stop,
+                gui.frame.clocks,
+                @as(f64, @floatFromInt(gui.frame.nanoseconds)) / 1_000_000.0,
+            });
+            if (gui.hub.fault != null) {
+                zgui.textColored(.{ 1, 0.3, 0.25, 1 }, "Fault", .{});
+            }
+            if (zgui.menuItem("Stop details", .{})) {
+                gui.breakpoints_visible = true;
             }
         }
     }
@@ -323,8 +487,8 @@ const GUI = struct {
         while (i < gui.debugger.watches.items.len) {
             const item = gui.debugger.watches.items[i];
             zgui.pushIntId(@intCast(i));
-            zgui.text("{t} ${X}..${X} {t} {t}", .{ item.space, item.start, item.end, item.access, item.scope });
-            show("Filters", .{ .cog = item.cog, .issuer = item.issuer });
+            zgui.text("{t} 0x{X:0>8}..0x{X:0>8} {t} {t}", .{ item.space, item.start, item.end, item.access, item.scope });
+            gui.show("Filters", .{ .cog = item.cog, .issuer = item.issuer });
             const remove = zgui.button("Remove watch", .{});
             zgui.popId();
             if (remove) {
@@ -351,9 +515,8 @@ const GUI = struct {
 
     /// Render independent inspectors without advancing simulator state.
     fn inspectors(gui: *GUI) !void {
-        gui.status();
         if (gui.hub_visible) {
-            try gui.hubWindow();
+            gui.hubWindow();
         }
         if (gui.io_visible) {
             gui.ioWindow();
@@ -374,23 +537,53 @@ const GUI = struct {
                 gui.pinWindow(@intCast(id));
             }
         }
+        if (gui.breakpoints_visible) {
+            try gui.breakpointsWindow();
+        }
+        if (gui.configuration_visible) {
+            gui.systemConfiguration();
+        }
+        gui.status();
     }
 
     /// Inspect shared resources and edit architectural hub settings only while paused.
-    fn hubWindow(gui: *GUI) !void {
-        if (!new_window("Hub", &gui.hub_visible))
-            return;
+    fn hubWindow(gui: *GUI) void {
+        zgui.setNextWindowSize(.{ .w = 320, .h = 340, .cond = .first_use_ever });
+        const visible = zgui.begin("Hub", .{ .popen = &gui.hub_visible });
         defer zgui.end();
+
+        if (!visible)
+            return;
+
+        gui.logWindowSize("Hub", zgui.getWindowSize());
         const hub = &gui.hub;
-        zgui.text("CT {} | clock ${X:0>8} | {} Hz", .{ hub.counter, hub.io.clock_mode, hub.io.clock_frequency });
-        show("Random generator", hub.random);
-        show("Debug configuration", hub.debug);
-        show("Pending starts", hub.pending_starts);
-        show("Fault", hub.fault);
-        show("Active system configuration (SI units)", hub.system_configuration);
+        zgui.text("CT {} | clock 0x{X:0>8} | {} Hz", .{ hub.counter, hub.io.clock_mode, hub.io.clock_frequency });
+        if (header("Random generator", .{})) {
+            if (zgui.beginTable("Random generator", .{
+                .column = 2,
+                .flags = .{ .borders = .all, .row_bg = true, .sizing = .fixed_fit },
+            })) {
+                defer zgui.endTable();
+
+                zgui.tableSetupColumn("Register", .{});
+                zgui.tableSetupColumn("Value", .{});
+                zgui.tableHeadersRow();
+                const labels = [_][:0]const u8{ "S0", "S1", "Multiply5", "Output" };
+                const values = [_]u64{ hub.random.s0, hub.random.s1, hub.random.multiply5, hub.random.output };
+                for (labels, values) |label, value| {
+                    zgui.tableNextRow(.{});
+                    _ = zgui.tableSetColumnIndex(0);
+                    zgui.textUnformatted(label);
+                    _ = zgui.tableSetColumnIndex(1);
+                    zgui.text("0x{X:0>16}", .{value});
+                }
+            }
+        }
+        gui.show("Debug configuration", hub.debug);
+        gui.show("Pending starts", hub.pending_starts);
+        gui.show("Fault", hub.fault);
         zgui.beginDisabled(.{ .disabled = gui.is_running });
         defer zgui.endDisabled();
-        gui.systemConfiguration();
         _ = hexInput("HUBSET clock/debug", &gui.hubset, false);
         if (zgui.button("Apply HUBSET", .{})) {
             hub.configure(gui.hubset);
@@ -406,57 +599,49 @@ const GUI = struct {
             hub.configure(gui.seed | 0x80000000);
         }
         if (header("Locks", .{ .default_open = true })) {
-            for (&hub.locks, 0..) |*lock, i| {
-                zgui.pushIntId(@intCast(i));
-                defer zgui.popId();
-                zgui.text("Lock {}", .{i});
-                zgui.sameLine(.{});
-                _ = zgui.checkbox("Allocated", .{ .v = &lock.allocated });
-                zgui.sameLine(.{});
-                var taken = lock.taken;
-                if (zgui.checkbox("Taken", .{ .v = &taken })) {
-                    lock.taken = taken;
-                    hub.signal_lock(lock.id, taken);
+            if (zgui.beginTable("Locks", .{ .column = 4, .flags = .{ .borders = .all, .row_bg = true } })) {
+                defer zgui.endTable();
+
+                for ([_][:0]const u8{ "ID", "Allocated", "Taken", "Owner" }) |label| {
+                    zgui.tableSetupColumn(label, .{});
                 }
-                var owner: u32 = lock.owner;
-                if (zgui.inputScalar("Owner", u32, .{ .v = &owner })) {
-                    lock.owner = @intCast(@min(owner, 7));
-                }
-            }
-        }
-        if (header("Start/stop cogs", .{})) {
-            for (&hub.cogs, 0..) |*cog, i| {
-                zgui.pushIntId(@intCast(i));
-                defer zgui.popId();
-                zgui.text("Cog {}: {t}", .{ i, cog.exec_mode });
-                _ = hexInput("Address", &gui.start_address[i], false);
-                _ = hexInput("PTRA", &gui.start_ptra[i], false);
-                _ = zgui.checkbox("Load image", .{ .v = &gui.start_load[i] });
-                if (zgui.button("Start cog", .{})) {
-                    try hub.start_cog(@intCast(i), .{
-                        .hub_address = gui.start_address[i],
-                        .ptra = gui.start_ptra[i],
-                        .load_image = gui.start_load[i],
-                    });
-                }
-                zgui.sameLine(.{});
-                if (zgui.button("Stop cog", .{})) {
-                    cog.reset();
+                zgui.tableHeadersRow();
+                for (&hub.locks) |*lock| {
+                    zgui.pushIntId(lock.id);
+                    defer zgui.popId();
+
+                    zgui.tableNextRow(.{});
+                    _ = zgui.tableSetColumnIndex(0);
+                    zgui.text("{}", .{lock.id});
+                    _ = zgui.tableSetColumnIndex(1);
+                    _ = zgui.checkbox("##allocated", .{ .v = &lock.allocated });
+                    _ = zgui.tableSetColumnIndex(2);
+                    var taken = lock.taken;
+                    if (zgui.checkbox("##taken", .{ .v = &taken })) {
+                        lock.taken = taken;
+                        hub.signal_lock(lock.id, taken);
+                    }
+                    _ = zgui.tableSetColumnIndex(3);
+                    var owner: i32 = lock.owner;
+                    zgui.setNextItemWidth(-1);
+                    if (zgui.dragInt("##owner", .{
+                        .v = &owner,
+                        .min = 0,
+                        .max = 7,
+                        .flags = .{ .always_clamp = true },
+                    })) {
+                        lock.owner = @intCast(std.math.clamp(owner, 0, 7));
+                    }
                 }
             }
         }
     }
 
-    /// Reinitialize with validated draft parameters, restoring only the original image and host debugger definitions.
-    fn reinitialize(gui: *GUI) !void {
-        try gui.hub.init(gui.configuration_draft);
+    /// Reset the chip with validated settings and pause while retaining host debugger definitions.
+    fn initializeChip(gui: *GUI, configuration: windtunnel.SystemConfiguration) !void {
+        try gui.hub.init(configuration);
         gui.debugger.acknowledge(&gui.hub);
         gui.hub.debugger = &gui.debugger;
-        if (gui.initial_image) |image| {
-            @memcpy(gui.hub.memory[0..image.len], image);
-            try gui.hub.start_cog(0, .{});
-            gui.cogs_visible[0] = true;
-        }
         gui.is_running = false;
         gui.step_requested = false;
         gui.jump_pending = false;
@@ -464,10 +649,26 @@ const GUI = struct {
         gui.configuration_error = null;
     }
 
+    /// Apply draft settings and restore the original image, starting cog zero when an image was loaded.
+    fn reinitialize(gui: *GUI) !void {
+        try gui.initializeChip(gui.configuration_draft);
+        if (gui.initial_image) |image| {
+            @memcpy(gui.hub.memory[0..image.len], image);
+            try gui.hub.start_cog(0, .{});
+            gui.cogs_visible[0] = true;
+        }
+    }
+
     /// Edit a host-only draft; the active chip changes only when explicitly reinitialized.
     fn systemConfiguration(gui: *GUI) void {
-        if (!header("System Configuration", .{}))
+        if (!gui.newWindow("System Configuration", &gui.configuration_visible))
             return;
+        defer zgui.end();
+
+        gui.show("Active system configuration (SI units)", gui.hub.system_configuration);
+        zgui.beginDisabled(.{ .disabled = gui.is_running });
+        defer zgui.endDisabled();
+
         const draft = &gui.configuration_draft;
         zgui.text("Active: {s} | Draft: {s}", .{ gui.hub.system_configuration.name(), draft.name() });
         if (zgui.button("Ideal", .{})) {
@@ -538,77 +739,127 @@ const GUI = struct {
         }
     }
 
-    /// Show digital pad samples, electrical snapshots and independent external source controls.
+    /// Show physical pad levels in a compact matrix, with controls for the selected pin below it.
     fn ioWindow(gui: *GUI) void {
-        if (!new_window("I/O", &gui.io_visible))
-            return;
+        zgui.setNextWindowSize(.{ .w = 260, .h = 290, .cond = .first_use_ever });
+        const visible = zgui.begin("I/O", .{ .popen = &gui.io_visible });
         defer zgui.end();
-        if (!zgui.beginTable("Pads", .{ .column = 8, .flags = .{ .borders = .all } }))
+
+        if (!visible)
             return;
-        defer zgui.endTable();
-        for (0..64) |i| {
-            if (i % 8 == 0) {
-                zgui.tableNextRow(.{});
-            }
-            _ = zgui.tableSetColumnIndex(@intCast(i % 8));
-            zgui.pushIntId(@intCast(i));
-            defer zgui.popId();
-            const io = &gui.hub.io;
-            const enabled = io.outputEnabled(@enumFromInt(i));
-            zgui.text("P{}", .{i});
-            signalText("Pad", io.pads[i]);
-            zgui.text("OE {}", .{enabled});
-            const source = io.external[i];
-            zgui.text("Ext: {s}", .{if (source.drive_enabled) "driven" else "float"});
-            if (io.getExternal(@enumFromInt(i))) |state| {
-                zgui.text("{d:.3} V | {d:.3} mA", .{ state.voltage, state.current * 1e3 });
-                if (state.violations.any()) {
-                    zgui.textColored(.{ 1, 0.3, 0.25, 1 }, "RATING EXCEEDED", .{});
+
+        gui.logWindowSize("I/O", zgui.getWindowSize());
+        const io = &gui.hub.io;
+        if (zgui.beginTable("Pads", .{ .column = 8, .flags = .{ .borders = .all } })) {
+            defer zgui.endTable();
+
+            for (0..64) |i| {
+                if (i % 8 == 0) {
+                    zgui.tableNextRow(.{});
                 }
-            }
-            signalText("Sample", io.pad_reads[i]);
-            if (zgui.button("Inspect", .{})) {
-                gui.pins_visible[i] = true;
-            }
-            const sources = [_]windtunnel.Pad.Source{ .low, .high, .float };
-            const labels = [_][:0]const u8{ "Low", "High", "Float" };
-            for (sources, labels, 0..) |preset, label, preset_index| {
-                if (zgui.button(label, .{})) {
-                    io.setExternal(@enumFromInt(i), preset) catch unreachable; // Validated constant presets.
+                _ = zgui.tableSetColumnIndex(@intCast(i % 8));
+                zgui.pushIntId(@intCast(i));
+                defer zgui.popId();
+
+                const color: [4]f32 = switch (io.pads[i]) {
+                    .low => .{ 0.65, 0.08, 0.08, 1 },
+                    .high => .{ 0.05, 0.55, 0.15, 1 },
+                };
+                const highlight: [4]f32 = switch (io.pads[i]) {
+                    .low => .{ 0.95, 0.25, 0.25, 1 },
+                    .high => .{ 0.1, 0.85, 0.25, 1 },
+                };
+                zgui.pushStyleColor4f(.{ .idx = .text, .c = .{ 1, 1, 1, 1 } });
+                zgui.pushStyleColor4f(.{ .idx = .header, .c = highlight });
+                zgui.pushStyleColor4f(.{ .idx = .header_hovered, .c = highlight });
+                zgui.pushStyleColor4f(.{ .idx = .header_active, .c = highlight });
+                defer zgui.popStyleColor(.{ .count = 4 });
+
+                var buffer: [8]u8 = undefined;
+                const label = std.fmt.bufPrintSentinel(&buffer, "{}", .{i}, 0) catch unreachable;
+                const selected = gui.selected_pin == i;
+                if (zgui.selectable(label, .{ .selected = selected, .h = zgui.getFrameHeight() })) {
+                    gui.selected_pin = @intCast(i);
                 }
-                if (preset_index != sources.len - 1) {
-                    zgui.sameLine(.{});
-                }
+                zgui.tableSetBgColor(.{ .target = .cell_bg, .color = zgui.colorConvertFloat4ToU32(color) });
             }
+        }
+        zgui.separator();
+        zgui.text("Pin {}", .{gui.selected_pin});
+        const level: []const u8 = switch (io.pads[gui.selected_pin]) {
+            .low => "low",
+            .high => "high",
+        };
+        if (io.getExternal(@enumFromInt(gui.selected_pin))) |state| {
+            zgui.text("Voltage: {d:.2} V ({s})", .{ state.voltage, level });
+        } else {
+            zgui.text("Voltage: pending first clock ({s})", .{level});
+        }
+        zgui.textUnformatted("Drive:");
+        const sources = [_]windtunnel.Pad.Source{ .low, .high, .float };
+        const labels = [_][:0]const u8{ "L", "H", "Z" };
+        for (sources, labels) |preset, label| {
+            zgui.sameLine(.{});
+            if (zgui.button(label, .{})) {
+                io.setExternal(@enumFromInt(gui.selected_pin), preset) catch unreachable; // Validated presets.
+            }
+        }
+        zgui.sameLine(.{});
+        if (zgui.button("Inspect", .{})) {
+            gui.pins_visible[gui.selected_pin] = true;
         }
     }
 
     /// Inspect backing RAM directly, clipping rows and never calling watched access paths.
     fn memoryWindow(gui: *GUI) !void {
-        if (!new_window("Memory", &gui.memory_visible))
-            return;
+        zgui.setNextWindowSize(.{ .w = 565, .h = 435, .cond = .first_use_ever });
+        const visible = zgui.begin("Memory", .{ .popen = &gui.memory_visible, .flags = .{ .menu_bar = true } });
         defer zgui.end();
-        zgui.text("512 KiB backing RAM | debug protection: {}", .{gui.hub.debug.protected});
-        zgui.textUnformatted("$FC000..$FFFFF mirrors $7C000..$7FFFF; $80000..$FBFFF is a hole.");
-        _ = hexInput("Jump to byte", &gui.jump, false);
-        if (zgui.button("Jump", .{})) {
-            gui.jump = @min(gui.jump, 0x7ffff);
-            gui.jump_pending = true;
-        }
-        if (header("Watch selected byte range", .{})) {
-            try gui.watchEditor();
+
+        if (!visible)
+            return;
+
+        gui.logWindowSize("Memory", zgui.getWindowSize());
+        if (zgui.beginMenuBar()) {
+            defer zgui.endMenuBar();
+
+            if (zgui.beginMenu("Jump", true)) {
+                defer zgui.endMenu();
+
+                _ = hexInput("Byte address", &gui.jump, false);
+                if (zgui.menuItem("Go", .{})) {
+                    gui.jump = @min(gui.jump, 0x7ffff);
+                    gui.jump_pending = true;
+                }
+            }
         }
         if (!zgui.beginTable("RAM", .{
             .column = 3,
-            .outer_size = .{ 0, 400 },
-            .flags = .{ .scroll_y = true, .row_bg = true, .borders = .all },
+            .outer_size = zgui.getContentRegionAvail(),
+            .flags = .{
+                .scroll_y = true,
+                .scroll_x = true,
+                .resizable = true,
+                .sizing = .fixed_fit,
+                .row_bg = true,
+                .borders = .all,
+            },
         }))
             return;
         defer zgui.endTable();
         zgui.tableSetupScrollFreeze(0, 1);
-        zgui.tableSetupColumn("Address (select range start)", .{});
-        zgui.tableSetupColumn("Bytes", .{});
-        zgui.tableSetupColumn("ASCII", .{});
+        zgui.tableSetupColumn("Address", .{
+            .flags = .{ .width_fixed = true },
+            .init_width_or_height = zgui.calcTextSize("0x7FFFF", .{})[0],
+        });
+        zgui.tableSetupColumn("Bytes", .{
+            .flags = .{ .width_fixed = true },
+            .init_width_or_height = zgui.calcTextSize("FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF", .{})[0],
+        });
+        zgui.tableSetupColumn("ASCII", .{
+            .flags = .{ .width_fixed = true },
+            .init_width_or_height = zgui.calcTextSize("WWWWWWWWWWWWWWWW", .{})[0],
+        });
         zgui.tableHeadersRow();
         var clipper = zgui.ListClipper.init();
         clipper.begin(32768, null);
@@ -626,7 +877,7 @@ const GUI = struct {
                 zgui.tableNextRow(.{});
                 _ = zgui.tableSetColumnIndex(0);
                 var label: [32]u8 = undefined;
-                const name = std.fmt.bufPrintSentinel(&label, "${X:0>5}", .{address}, 0) catch unreachable;
+                const name = std.fmt.bufPrintSentinel(&label, "0x{X:0>5}", .{address}, 0) catch unreachable;
                 if (zgui.selectable(name, .{ .selected = address >= gui.watch.start and address < gui.watch.end })) {
                     gui.watch.space = .hub;
                     gui.watch.start = @intCast(address);
@@ -637,11 +888,14 @@ const GUI = struct {
                     gui.jump_pending = false;
                 }
                 _ = zgui.tableSetColumnIndex(1);
-                var bytes: [49]u8 = undefined;
+                var bytes: [47]u8 = undefined;
                 var writer = std.Io.Writer.fixed(&bytes);
                 var ascii: [16]u8 = undefined;
                 for (gui.hub.memory[address..][0..16], 0..) |byte, i| {
-                    writer.print("{X:0>2} ", .{byte}) catch unreachable;
+                    if (i != 0) {
+                        writer.writeByte(' ') catch unreachable;
+                    }
+                    writer.print("{X:0>2}", .{byte}) catch unreachable;
                     ascii[i] = if (byte >= 32 and byte < 127) byte else '.';
                 }
                 zgui.textUnformatted(writer.buffered());
@@ -653,7 +907,7 @@ const GUI = struct {
 
     /// Display the inferred arithmetic allocation and select any input, arithmetic or return cell.
     fn cordicWindow(gui: *GUI) void {
-        if (!new_window("CORDIC", &gui.cordic_visible))
+        if (!gui.newWindow("CORDIC", &gui.cordic_visible))
             return;
         defer zgui.end();
         zgui.textUnformatted("54 arithmetic cells: internal allocation is inferred, not published RTL.");
@@ -696,12 +950,135 @@ const GUI = struct {
         }
         const selected = gui.selected_cell;
         if (selected == 0) {
-            show("Input latch", cordic.input);
+            gui.show("Input latch", cordic.input);
         } else if (selected <= 54) {
-            show("Stage allocation", windtunnel.Cordic.stage_layout[selected - 1]);
-            show("Arithmetic payload", cordic.pipeline[selected - 1]);
+            gui.show("Stage allocation", windtunnel.Cordic.stage_layout[selected - 1]);
+            gui.show("Arithmetic payload", cordic.pipeline[selected - 1]);
         } else {
-            show("Return payload", pending_returns[selected - 55]);
+            gui.show("Return payload", pending_returns[selected - 55]);
+        }
+    }
+
+    /// Summarize execution, primed augmentations and interrupt state without hiding editable flags.
+    fn cogStatus(gui: *GUI, cog: *windtunnel.Cog) void {
+        if (!zgui.beginTable("Status", .{ .column = 9, .flags = .{ .borders = .all, .sizing = .fixed_fit } }))
+            return;
+        defer zgui.endTable();
+
+        for ([_][:0]const u8{ "Mode", "PC", "C", "Z", "AUGD", "AUGS", "INT1", "INT2", "INT3" }) |label| {
+            zgui.tableSetupColumn(label, .{});
+        }
+        zgui.tableHeadersRow();
+        zgui.tableNextRow(.{});
+        _ = zgui.tableSetColumnIndex(0);
+        const mode = switch (cog.exec_mode) {
+            .stopped => "Halt",
+            .hub => "hub exec",
+            .cog => "cog exec",
+        };
+        zgui.textUnformatted(mode);
+        _ = zgui.tableSetColumnIndex(1);
+        zgui.text("0x{X:0>5}", .{cog.pc});
+        zgui.beginDisabled(.{ .disabled = gui.is_running });
+        _ = zgui.tableSetColumnIndex(2);
+        _ = zgui.checkbox("##carry", .{ .v = &cog.c });
+        _ = zgui.tableSetColumnIndex(3);
+        _ = zgui.checkbox("##zero", .{ .v = &cog.z });
+        zgui.endDisabled();
+        _ = zgui.tableSetColumnIndex(4);
+        if (cog.augd_pending) {
+            zgui.text("0x{X:0>8}", .{cog.augd});
+        } else {
+            zgui.textUnformatted("-");
+        }
+        _ = zgui.tableSetColumnIndex(5);
+        if (cog.augs_pending) {
+            zgui.text("0x{X:0>8}", .{cog.augs});
+        } else {
+            zgui.textUnformatted("-");
+        }
+        for (cog.interrupts.levels.values, 0..) |level, i| {
+            _ = zgui.tableSetColumnIndex(@intCast(6 + i));
+            const state = if (level.state == .active)
+                "ACT"
+            else if (cog.interrupts.stalled or (level.source == null and level.state != .pending))
+                "-"
+            else
+                "ENA";
+            zgui.textUnformatted(state);
+        }
+    }
+
+    /// Arrange latched events in architectural order, with decoded selectable-event sources on hover.
+    fn cogEvents(gui: *GUI, cog: *windtunnel.Cog) void {
+        if (!zgui.beginTable("Events", .{ .column = 4, .flags = .{ .borders = .all } }))
+            return;
+        defer zgui.endTable();
+
+        for (std.enums.values(windtunnel.types.EventId), 0..) |event, i| {
+            if (i % 4 == 0) {
+                zgui.tableNextRow(.{});
+            }
+            _ = zgui.tableSetColumnIndex(@intCast(i % 4));
+            var active = cog.events.contains(event);
+            zgui.beginDisabled(.{ .disabled = gui.is_running });
+            if (zgui.checkbox(@tagName(event), .{ .v = &active })) {
+                if (active) {
+                    cog.signal_event(event);
+                } else {
+                    cog.events.remove(event);
+                }
+            }
+            zgui.endDisabled();
+            switch (event) {
+                .SE1, .SE2, .SE3, .SE4 => {
+                    if (zgui.isItemHovered(.{ .for_tooltip = true, .allow_when_disabled = true }) and zgui.beginTooltip()) {
+                        defer zgui.endTooltip();
+
+                        const index = @intFromEnum(event) - @intFromEnum(windtunnel.types.EventId.SE1);
+                        if (cog.selectable_events[index]) |selection| {
+                            switch (selection) {
+                                .pin => |pin| {
+                                    const condition = switch (pin.mode) {
+                                        .rising => "rising edge",
+                                        .falling => "falling edge",
+                                        .change => "either edge",
+                                        .low => "low level",
+                                        .high => "high level",
+                                    };
+                                    zgui.text("Pin {}: {s}", .{ @intFromEnum(pin.index), condition });
+                                },
+                                .lut_lock => |source| {
+                                    if (source < 0x10) {
+                                        const owner = if (source & 8 != 0)
+                                            cog.id ^ 1
+                                        else
+                                            cog.id;
+                                        const access = if (source & 4 != 0)
+                                            "writes"
+                                        else
+                                            "reads";
+                                        zgui.text("Cog {} {s} LUT address 0x{X:0>3}", .{
+                                            owner, access, @as(u9, 0x1fc) | (source & 3),
+                                        });
+                                    } else {
+                                        const condition = switch (@as(u2, @truncate(source >> 4))) {
+                                            1 => "rising (taken)",
+                                            2 => "falling (released)",
+                                            3 => "any change",
+                                            0 => unreachable,
+                                        };
+                                        zgui.text("Hub lock {}: {s}", .{ source & 0xf, condition });
+                                    }
+                                },
+                            }
+                        } else {
+                            zgui.textUnformatted("No event selected");
+                        }
+                    }
+                },
+                else => {},
+            }
         }
     }
 
@@ -709,15 +1086,74 @@ const GUI = struct {
     fn cogWindow(gui: *GUI, id: u3) !void {
         var buffer: [32]u8 = undefined;
         const title = std.fmt.bufPrintSentinel(&buffer, "Cog {}", .{id}, 0) catch unreachable;
-        if (!new_window(title, &gui.cogs_visible[id]))
-            return;
+        zgui.setNextWindowSize(.{ .w = 400, .h = 500, .cond = .first_use_ever });
+        const visible = zgui.begin(title, .{ .popen = &gui.cogs_visible[id], .flags = .{ .menu_bar = true } });
         defer zgui.end();
+
+        if (!visible)
+            return;
+
+        gui.logWindowSize(title, zgui.getWindowSize());
         const cog = &gui.hub.cogs[id];
-        zgui.text("Execution {t} | PC ${X:0>5} (read only)", .{ cog.exec_mode, cog.pc });
+        if (zgui.beginMenuBar()) {
+            defer zgui.endMenuBar();
+
+            if (zgui.beginMenu("Start", true)) {
+                defer zgui.endMenu();
+
+                _ = hexInput("Start address", &gui.start_address[id], false);
+                _ = hexInput("PTRA", &gui.start_ptra[id], false);
+                zgui.separator();
+                for ([_]bool{ true, false }, [_][:0]const u8{ "Start", "Start without load" }) |load, label| {
+                    if (zgui.menuItem(label, .{})) {
+                        try gui.hub.start_cog(id, .{
+                            .hub_address = gui.start_address[id],
+                            .ptra = gui.start_ptra[id],
+                            .load_image = load,
+                        });
+                    }
+                }
+            }
+            const stoppable = cog.exec_mode != .stopped or gui.hub.pending_starts[id] != null;
+            if (zgui.menuItem("Stop", .{ .enabled = stoppable })) {
+                cog.reset();
+            }
+            if (zgui.beginMenu("Options", true)) {
+                defer zgui.endMenu();
+
+                const options = &gui.local_view_options[id];
+                _ = zgui.menuItemPtr("Show Tail Ram", .{ .selected = &options.show_tail_ram });
+                _ = zgui.menuItemPtr("Show disassembly", .{ .selected = &options.show_disassembly });
+                _ = zgui.menuItemPtr("Show execute word", .{ .selected = &options.show_execute_word });
+            }
+        }
+        gui.cogStatus(cog);
+        zgui.textUnformatted("Raw edits retain captured operands and pending writes.");
+        if (header("Registers", .{ .default_open = true })) {
+            try gui.localTable(cog, .cog);
+        }
+        if (header("LUT", .{})) {
+            try gui.localTable(cog, .lut);
+        }
+        if (header("Stack", .{})) {
+            for (&cog.stack, 0..) |*value, i| {
+                zgui.pushIntId(@intCast(i));
+                defer zgui.popId();
+
+                var label_buffer: [32]u8 = undefined;
+                const label = switch (i) {
+                    0 => "0: Top (PUSH / POP)",
+                    1 => "1: Next after POP",
+                    7 => "7: Bottom (discarded by PUSH)",
+                    else => std.fmt.bufPrintSentinel(&label_buffer, "Slot {}", .{i}, 0) catch unreachable,
+                };
+                _ = hexInput(label, value, gui.is_running);
+            }
+        }
+        if (header("Events", .{})) {
+            gui.cogEvents(cog);
+        }
         zgui.beginDisabled(.{ .disabled = gui.is_running });
-        _ = zgui.checkbox("C", .{ .v = &cog.c });
-        zgui.sameLine(.{});
-        _ = zgui.checkbox("Z", .{ .v = &cog.z });
         if (header("Architectural configuration / prefixes", .{})) {
             var xbyte_mode: u32 = @intFromEnum(cog.xbyte_mode);
             if (hexInput("XBYTE mode", &xbyte_mode, false)) {
@@ -771,72 +1207,44 @@ const GUI = struct {
             }
         }
         zgui.endDisabled();
-        zgui.textUnformatted("Raw edits retain captured operands and pending writes. Stack entries may be sticky; depth is unknown.");
-        if (header("Registers", .{ .default_open = true })) {
-            try gui.localTable(cog, .cog);
-        }
-        if (header("LUT", .{})) {
-            try gui.localTable(cog, .lut);
-        }
-        if (header("Stack (all physical slots)", .{})) {
-            for (&cog.stack, 0..) |*value, i| {
-                zgui.pushIntId(@intCast(i));
-                defer zgui.popId();
-                _ = hexInput("Slot", value, gui.is_running);
-            }
-        }
-        if (header("Events", .{})) {
-            for (std.enums.values(windtunnel.types.EventId)) |event| {
-                var active = cog.events.contains(event);
-                zgui.beginDisabled(.{ .disabled = gui.is_running });
-                if (zgui.checkbox(@tagName(event), .{ .v = &active })) {
-                    if (active) {
-                        cog.signal_event(event);
-                    } else {
-                        cog.events.remove(event);
-                    }
-                }
-                zgui.endDisabled();
-            }
-        }
-        show("Counter sensors", cog.ct_targets);
-        show("Pending events", cog.pending_events);
-        show("Selectable sensors", cog.selectable_events);
-        show("Pattern sensor", cog.pattern);
-        show("Interrupt controller", cog.interrupts);
-        show("Debug controller", cog.debug);
-        show("Repeat", cog.repeat);
-        show("Skip", cog.skip);
-        show("XBYTE mode", cog.xbyte_mode);
-        show("XBYTE default mode", cog.xbyte_default_mode);
-        show("XBYTE phase", cog.xbyte);
-        show("FIFO", cog.fifo_state);
+        gui.show("Counter sensors", cog.ct_targets);
+        gui.show("Pending events", cog.pending_events);
+        gui.show("Selectable sensors", cog.selectable_events);
+        gui.show("Pattern sensor", cog.pattern);
+        gui.show("Interrupt controller", cog.interrupts);
+        gui.show("Debug controller", cog.debug);
+        gui.show("Repeat", cog.repeat);
+        gui.show("Skip", cog.skip);
+        gui.show("XBYTE mode", cog.xbyte_mode);
+        gui.show("XBYTE default mode", cog.xbyte_default_mode);
+        gui.show("XBYTE phase", cog.xbyte);
+        gui.show("FIFO", cog.fifo_state);
         if (header("DAC outputs", .{ .default_open = true })) {
             for (cog.dacs, 0..) |value, index| {
-                zgui.text("DAC{d}: {d} (0x{x:0>2})", .{ index, value, value });
+                zgui.text("DAC{d}: {d} (0x{X:0>2})", .{ index, value, value });
             }
         }
-        show("Raw DAC inputs", cog.raw_dacs);
-        show("Color converter", cog.converter);
-        show("Streamer", cog.streamer);
-        show("Memory transfer", cog.memory_transfer);
-        show("Startup", cog.startup);
-        show("Read bus", cog.read_bus);
-        show("CORDIC result ports", cog.cordic_result);
-        show("RAM collision", cog.ram_collision);
-        show("LUT collision", cog.lut_collision);
-        show("Pending writeback", cog.writeback);
-        show("Pending hub write", cog.hub_writeback);
-        show("Wait deadline", cog.wait_until);
-        show("Retired instruction", cog.retired);
+        gui.show("Raw DAC inputs", cog.raw_dacs);
+        gui.show("Color converter", cog.converter);
+        gui.show("Streamer", cog.streamer);
+        gui.show("Memory transfer", cog.memory_transfer);
+        gui.show("Startup", cog.startup);
+        gui.show("Read bus", cog.read_bus);
+        gui.show("CORDIC result ports", cog.cordic_result);
+        gui.show("RAM collision", cog.ram_collision);
+        gui.show("LUT collision", cog.lut_collision);
+        gui.show("Pending writeback", cog.writeback);
+        gui.show("Pending hub write", cog.hub_writeback);
+        gui.show("Wait deadline", cog.wait_until);
+        gui.show("Retired instruction", cog.retired);
         if (header("Pipeline (fetch/read/latch/execute/store)", .{ .default_open = true })) {
             for (cog.pipeline, 0..) |slot, i| {
                 zgui.pushIntId(@intCast(i));
                 defer zgui.popId();
                 if (slot) |state| {
-                    zgui.text("Slot {}: PC ${X:0>5}, instruction ${X:0>8}", .{ i, state.pc, state.instr });
+                    zgui.text("Slot {}: PC 0x{X:0>5}, instruction 0x{X:0>8}", .{ i, state.pc, state.instr });
                     disassemblyText(state.instr);
-                    show("Captured state / timing", state);
+                    gui.show("Captured state / timing", state);
                 } else {
                     zgui.text("Slot {}: empty", .{i});
                 }
@@ -844,21 +1252,59 @@ const GUI = struct {
         }
     }
 
-    /// Clip local rows and show data, independent disassembly, all references and persistent breakpoints together.
+    /// Clip local rows, show references on hover, and retain direct data and breakpoint editing.
     fn localTable(gui: *GUI, cog: *windtunnel.Cog, domain: Debugger.Domain) !void {
         zgui.pushIntId(@intFromEnum(domain));
         defer zgui.popId();
         if (!zgui.beginTable("Local RAM", .{
-            .column = 8,
+            .column = 7,
             .outer_size = .{ 0, 330 },
-            .flags = .{ .scroll_y = true, .scroll_x = true, .row_bg = true, .borders = .all, .resizable = true },
+            .flags = .{
+                .scroll_y = true,
+                .scroll_x = true,
+                .sizing = .fixed_fit,
+                .row_bg = true,
+                .borders = .all,
+                .resizable = true,
+                .hideable = true,
+            },
         }))
             return;
         defer zgui.endTable();
         zgui.tableSetupScrollFreeze(0, 1);
-        for ([_][:0]const u8{ "Address", "Role", "Hex data", "Tail RAM", "Execute word", "Disassembly", "Annotations", "Break / watch" }) |label| {
-            zgui.tableSetupColumn(label, .{});
-        }
+        zgui.tableSetupColumn("BP", .{
+            .flags = .{ .width_fixed = true, .no_resize = true },
+            .init_width_or_height = zgui.getFrameHeight(),
+        });
+        zgui.tableSetupColumn("Address", .{
+            .flags = .{ .width_fixed = true },
+            .init_width_or_height = zgui.calcTextSize("Address", .{})[0],
+        });
+        const role_sample = if (domain == .lut)
+            "LUT RAM"
+        else
+            "IJMP1";
+        zgui.tableSetupColumn("Role", .{
+            .flags = .{ .width_fixed = true },
+            .init_width_or_height = zgui.calcTextSize(role_sample, .{})[0],
+        });
+        const word_width = zgui.calcTextSize("0x00000000", .{})[0] + 2 * zgui.getStyle().frame_padding[0];
+        zgui.tableSetupColumn("Hex data", .{ .flags = .{ .width_fixed = true }, .init_width_or_height = word_width });
+        const options = gui.local_view_options[cog.id];
+        zgui.tableSetupColumn("Tail RAM", .{
+            .flags = .{ .width_fixed = true, .default_hide = !options.show_tail_ram },
+            .init_width_or_height = word_width,
+        });
+        zgui.tableSetupColumn("Execute word", .{
+            .flags = .{ .width_fixed = true, .default_hide = !options.show_execute_word },
+            .init_width_or_height = zgui.calcTextSize("Execute word", .{})[0],
+        });
+        zgui.tableSetupColumn("Disassembly", .{
+            .flags = .{ .width_stretch = true, .default_hide = !options.show_disassembly },
+        });
+        zgui.tableSetColumnEnabled(4, options.show_tail_ram);
+        zgui.tableSetColumnEnabled(5, options.show_execute_word);
+        zgui.tableSetColumnEnabled(6, options.show_disassembly);
         zgui.tableHeadersRow();
         var clipper = zgui.ListClipper.init();
         clipper.begin(512, null);
@@ -877,15 +1323,45 @@ const GUI = struct {
                     zgui.tableSetBgColor(.{ .target = .row_bg0, .color = 0x553aa7e8 });
                 }
                 _ = zgui.tableSetColumnIndex(0);
-                zgui.text("${X:0>3}", .{index});
+                const execution: Debugger.Execution = .{
+                    .cog = cog.id,
+                    .domain = domain,
+                    .pc = @as(u20, index) + @as(u20, if (domain == .lut) 0x200 else 0),
+                };
+                var breakpoint = gui.debugger.hasExecution(execution);
+                if (zgui.checkbox("##execution-breakpoint", .{ .v = &breakpoint })) {
+                    try gui.debugger.toggleExecution(execution);
+                }
                 _ = zgui.tableSetColumnIndex(1);
+                var label_buffer: [16]u8 = undefined;
+                const label = std.fmt.bufPrintSentinel(&label_buffer, "0x{X:0>3}", .{index}, 0) catch unreachable;
+                _ = zgui.selectable(label, .{
+                    .h = zgui.getFrameHeight(),
+                    .flags = .{ .span_all_columns = true, .allow_overlap = true },
+                });
+                if (badges.any() and zgui.isItemHovered(.{
+                    .for_tooltip = true,
+                    .allow_when_overlapped_by_item = true,
+                }) and zgui.beginTooltip()) {
+                    defer zgui.endTooltip();
+
+                    var buffer: [512]u8 = undefined;
+                    var writer = std.Io.Writer.fixed(&buffer);
+                    try badges.write(&writer);
+                    zgui.pushTextWrapPos(zgui.getFontSize() * 40);
+                    defer zgui.popTextWrapPos();
+
+                    zgui.textUnformatted(writer.buffered());
+                }
+                _ = zgui.tableSetColumnIndex(2);
                 if (domain == .cog and index >= 0x1f0) {
                     zgui.text("{t}", .{reg});
                 } else {
-                    zgui.textUnformatted(if (domain == .lut) "LUT RAM" else "Cog RAM");
+                    zgui.textUnformatted(if (domain == .lut) "LUT RAM" else "GP");
                 }
-                _ = zgui.tableSetColumnIndex(2);
+                _ = zgui.tableSetColumnIndex(3);
                 var value = if (domain == .cog) inspect.register(cog, index) else cog.lut[index];
+                zgui.setNextItemWidth(zgui.getContentRegionAvail()[0]);
                 if (hexInput("##data", &value, gui.is_running or (domain == .cog and index >= 0x1fe and !badges.debug_overlay))) {
                     if (domain == .cog) {
                         cog.write_reg(reg, value);
@@ -893,61 +1369,165 @@ const GUI = struct {
                         cog.lut[index] = value;
                     }
                 }
-                _ = zgui.tableSetColumnIndex(3);
-                if (domain == .cog and index >= 504) {
+                if (options.show_tail_ram and zgui.tableSetColumnIndex(4) and domain == .cog and index >= 504) {
+                    zgui.setNextItemWidth(zgui.getContentRegionAvail()[0]);
                     _ = hexInput("##tail", &cog.ram_tail[index - 504], gui.is_running);
                 }
                 const word = if (domain == .cog and index >= 504) windtunnel.Cog.debug_rom[index - 504] else value;
-                _ = zgui.tableSetColumnIndex(4);
-                zgui.text("${X:0>8}", .{word});
-                _ = zgui.tableSetColumnIndex(5);
-                disassemblyText(word);
-                _ = zgui.tableSetColumnIndex(6);
-                var buffer: [512]u8 = undefined;
-                var writer = std.Io.Writer.fixed(&buffer);
-                try badges.write(&writer);
-                zgui.textUnformatted(writer.buffered());
-                _ = zgui.tableSetColumnIndex(7);
-                const execution: Debugger.Execution = .{
-                    .cog = cog.id,
-                    .domain = domain,
-                    .pc = @as(u20, index) + @as(u20, if (domain == .lut) 0x200 else 0),
-                };
-                var breakpoint = gui.debugger.hasExecution(execution);
-                if (zgui.checkbox("Exec", .{ .v = &breakpoint })) {
-                    try gui.debugger.toggleExecution(execution);
+                if (options.show_execute_word and zgui.tableSetColumnIndex(5)) {
+                    zgui.text("0x{X:0>8}", .{word});
                 }
-                zgui.sameLine(.{});
-                if (zgui.button("Watch", .{})) {
-                    gui.watch.space = if (domain == .lut) .lut else .registers;
-                    gui.watch.cog = cog.id;
-                    gui.watch_cog = cog.id;
-                    gui.watch.start = index;
-                    gui.watch.end = @as(u32, index) + 1;
+                if (options.show_disassembly and zgui.tableSetColumnIndex(6)) {
+                    disassemblyText(word);
                 }
             }
         }
     }
 
-    /// Inspect full routing first, then the active smart-engine payload and all delayed work.
-    fn pinWindow(gui: *GUI, id: u6) void {
-        var buffer: [32]u8 = undefined;
-        const title = std.fmt.bufPrintSentinel(&buffer, "Pin {}", .{id}, 0) catch unreachable;
-        if (!new_window(title, &gui.pins_visible[id]))
-            return;
-        defer zgui.end();
+    /// Decode the cached driver that produced the last electrical snapshot, including delayed output selection.
+    fn pinDrive(gui: *const GUI, id: u6) PinDrive {
+        const key = @intFromEnum(gui.hub.io.last_driver_keys[id]);
+        if (key == 0) {
+            return .{ .mode = null, .level = .low, .driver = .float };
+        }
+        const encoded = key - 1;
+        const mode: windtunnel.types.PinConfiguration.Drive = @enumFromInt(encoded >> 1);
+        const level = windtunnel.IO.Signal.from(encoded & 1 != 0);
+        return .{
+            .mode = mode,
+            .level = level,
+            .driver = windtunnel.Pad.internalDriver(
+                &gui.hub.system_configuration,
+                .{ .low_drive = mode, .high_drive = mode },
+                level,
+                true,
+            ),
+        };
+    }
+
+    /// Summarize the physical pad, then compare external and internal electrical sources side by side.
+    fn pinPad(gui: *GUI, id: u6) void {
+        const io = &gui.hub.io;
+        const snapshot = io.getExternal(@enumFromInt(id));
+        const drive = gui.pinDrive(id);
+        if (zgui.beginTable("Pad status", .{ .column = 7, .flags = .{ .borders = .all, .sizing = .fixed_fit } })) {
+            defer zgui.endTable();
+
+            for ([_][:0]const u8{ "Voltage", "Current", "Level", "Drive", "UV", "OV", "OC" }) |label| {
+                zgui.tableSetupColumn(label, .{});
+            }
+            zgui.tableHeadersRow();
+            zgui.tableNextRow(.{});
+            _ = zgui.tableSetColumnIndex(0);
+            if (snapshot) |state| {
+                zgui.text("{d:.2} V", .{state.voltage});
+            } else {
+                zgui.textUnformatted("-");
+            }
+            _ = zgui.tableSetColumnIndex(1);
+            if (snapshot) |state| {
+                zgui.text("{d:.3} mA", .{state.pin_current * 1e3});
+            } else {
+                zgui.textUnformatted("-");
+            }
+            _ = zgui.tableSetColumnIndex(2);
+            const level = switch (io.pads[id]) {
+                .low => "low",
+                .high => "high",
+            };
+            zgui.textUnformatted(level);
+            _ = zgui.tableSetColumnIndex(3);
+            pinDriveText(drive);
+            if (snapshot) |state| {
+                const violations = state.violations;
+                for ([_]bool{ violations.undervoltage, violations.overvoltage, violations.overcurrent }, 0..) |flag, i| {
+                    _ = zgui.tableSetColumnIndex(@intCast(4 + i));
+                    const color: [4]f32 = if (flag)
+                        .{ 1, 0.2, 0.2, 1 }
+                    else
+                        .{ 0.7, 0.7, 0.7, 1 };
+                    const text = if (flag)
+                        "YES"
+                    else
+                        "-";
+                    zgui.textColored(color, "{s}", .{text});
+                }
+            } else {
+                for (4..7) |i| {
+                    _ = zgui.tableSetColumnIndex(@intCast(i));
+                    zgui.textUnformatted("-");
+                }
+            }
+        }
+        if (zgui.beginTable("Sources", .{ .column = 2, .flags = .{ .borders = .all } })) {
+            defer zgui.endTable();
+
+            zgui.tableSetupColumn("External source", .{});
+            zgui.tableSetupColumn("Pad source", .{});
+            zgui.tableHeadersRow();
+            zgui.tableNextRow(.{});
+            _ = zgui.tableSetColumnIndex(0);
+            const external_current = if (snapshot) |state|
+                state.current
+            else
+                null;
+            pinSourceTable("External", io.external[id], external_current, false);
+            _ = zgui.tableSetColumnIndex(1);
+            const system = &gui.hub.system_configuration;
+            const source: windtunnel.Pad.Source = switch (drive.driver) {
+                .linear => |linear| blk: {
+                    var source = linear;
+                    source.capacitance = system.pad_capacitance;
+                    break :blk source;
+                },
+                .fast => |level| .{
+                    .voltage = if (level == .high)
+                        system.vio_voltage
+                    else
+                        0,
+                    .resistance = if (level == .high)
+                        system.fast_high_resistance
+                    else
+                        system.fast_low_resistance,
+                    .capacitance = system.pad_capacitance,
+                },
+            };
+            const internal_current = if (snapshot) |state|
+                state.internal_current
+            else
+                null;
+            pinSourceTable("Internal", source, internal_current, drive.driver == .fast);
+        }
+    }
+
+    /// Summarize routed logic inputs, output paths and physical drive gating before the engine details.
+    fn pinLogic(gui: *GUI, id: u6) void {
         const io = &gui.hub.io;
         const pin = &io.pins[id];
-        var configuration: u32 = @bitCast(pin.configuration);
-        if (hexInput("WRPIN", &configuration, gui.is_running)) {
-            io.editConfiguration(@enumFromInt(id), configuration);
-        }
-        show("Decoded routing / pad fields", pin.configuration);
-        if (!windtunnel.IO.supported(configuration & ~@as(u32, 1))) {
-            zgui.textColored(.{ 1, 0.4, 0.2, 1 }, "Unsupported pad configuration", .{});
+        if (zgui.beginTable("Logic status", .{ .column = 7, .flags = .{ .borders = .all, .sizing = .fixed_fit } })) {
+            defer zgui.endTable();
+
+            for ([_][:0]const u8{ "A", "B", "IN", "OUT", "DIR", "Smart out", "Drive enable" }) |label| {
+                zgui.tableSetupColumn(label, .{});
+            }
+            zgui.tableHeadersRow();
+            zgui.tableNextRow(.{});
+            const levels = [_]windtunnel.IO.Signal{
+                io.smart_a[id],
+                io.smart_b[id],
+                windtunnel.IO.Signal.from(pin.outputs.in != 0),
+                windtunnel.IO.Signal.from((io.outputs >> id) & 1 != 0),
+                windtunnel.IO.Signal.from((io.directions >> id) & 1 != 0),
+                pin.outputs.smart_out,
+                windtunnel.IO.Signal.from(io.outputEnabled(@enumFromInt(id))),
+            };
+            for (levels, 0..) |level, i| {
+                _ = zgui.tableSetColumnIndex(@intCast(i));
+                zgui.textUnformatted(signalName(level));
+            }
         }
         const mode = std.meta.activeTag(pin.smart.logic);
-        zgui.text("Smart mode {t} | physical output enable {}", .{ mode, io.outputEnabled(@enumFromInt(id)) });
+        zgui.text("Smart mode: {t}", .{mode});
         switch (mode) {
             .gpio, .repository, .uart_tx, .uart_rx, .sync_tx, .sync_rx => {},
             else => zgui.textColored(.{ 1, 0.4, 0.2, 1 }, "Unsupported smart engine", .{}),
@@ -960,17 +1540,11 @@ const GUI = struct {
         if (hexInput("Y", &y, gui.is_running)) {
             io.editSmartRegister(@enumFromInt(id), .y, y);
         }
-        show("Host edit delivery", pin.edits);
-        show("Result / enable / ready / endpoints", pin.smart.registers);
-        show("Active mode payload", pin.smart.logic);
-        show("Outputs", pin.outputs);
-        show("External source (SI units)", io.external[id]);
-        show("Electrical state (SI units)", io.getExternal(@enumFromInt(id)));
-        signalText("Physical pad", io.pads[id]);
-        signalText("Sampled input", io.pad_reads[id]);
-        signalText("SmartA", io.smart_a[id]);
-        signalText("SmartB", io.smart_b[id]);
-        show("Command owner", io.owners[id]);
+        gui.show("Host edit delivery", pin.edits);
+        gui.show("Result / enable / ready / endpoints", pin.smart.registers);
+        gui.show("Active mode payload", pin.smart.logic);
+        gui.show("Outputs", pin.outputs);
+        gui.show("Command owner", io.owners[id]);
         if (header("Delayed commands", .{})) {
             for (io.commands.slots, 0..) |slot, delay| {
                 for (slot) |command| {
@@ -980,7 +1554,7 @@ const GUI = struct {
                             defer zgui.popId();
                             zgui.pushIntId(item.cog);
                             defer zgui.popId();
-                            show("Command", item);
+                            gui.show("Command", item);
                         }
                     }
                 }
@@ -988,28 +1562,138 @@ const GUI = struct {
         }
         if (header("Delayed samples", .{})) {
             for (0..4) |i| {
-                zgui.text("Sample {} pad {s} IN {} result ${X:0>8} flag {}", .{
+                zgui.text("Sample {} pad {s} IN {} result 0x{X:0>8} flag {}", .{
                     i,                                signalName(io.samples.pads[i][id]),
                     (io.samples.inputs[i] >> id) & 1, io.samples.results[i][id].value,
                     io.samples.results[i][id].flag,
                 });
             }
-            show("DIR delivery", io.direction_pipeline);
+            gui.show("DIR delivery", io.direction_pipeline);
             signalText("Synchronous OUT", io.sync_out[id]);
             signalText("Synchronous IN", io.sync_in[id]);
         }
         if (io.failure) |failure| {
             if (@intFromEnum(failure.pin) == id) {
-                show("Failure", failure);
+                gui.show("Failure", failure);
             }
         }
         if (io.collision) |collision| {
             if (@intFromEnum(collision.pin) == id) {
-                show("Command collision", collision);
+                gui.show("Command collision", collision);
             }
         }
     }
+
+    /// Separate electrical pad state from smart logic, with WRPIN configuration in the local menu.
+    fn pinWindow(gui: *GUI, id: u6) void {
+        var buffer: [32]u8 = undefined;
+        const title = std.fmt.bufPrintSentinel(&buffer, "Pin {}", .{id}, 0) catch unreachable;
+        zgui.setNextWindowSize(.{ .w = 700, .h = 540, .cond = .first_use_ever });
+        const visible = zgui.begin(title, .{ .popen = &gui.pins_visible[id], .flags = .{ .menu_bar = true } });
+        defer zgui.end();
+
+        if (!visible)
+            return;
+
+        gui.logWindowSize(title, zgui.getWindowSize());
+        const pin = &gui.hub.io.pins[id];
+        if (zgui.beginMenuBar()) {
+            defer zgui.endMenuBar();
+
+            if (zgui.beginMenu("Configure", true)) {
+                defer zgui.endMenu();
+
+                var configuration: u32 = @bitCast(pin.configuration);
+                if (hexInput("WRPIN", &configuration, gui.is_running)) {
+                    gui.hub.io.editConfiguration(@enumFromInt(id), configuration);
+                }
+                gui.show("Decoded routing / pad fields", pin.configuration);
+            }
+        }
+        if (header("Pad", .{ .default_open = true })) {
+            if (!windtunnel.IO.supported(@as(u32, @bitCast(pin.configuration)) & ~@as(u32, 1))) {
+                zgui.textColored(.{ 1, 0.4, 0.2, 1 }, "Unsupported pad configuration", .{});
+            }
+            gui.pinPad(id);
+        }
+        if (header("Logic", .{ .default_open = true })) {
+            gui.pinLogic(id);
+        }
+    }
 };
+
+/// Name the resolved internal drive and its rail without confusing it with the pad's sampled level.
+fn pinDriveText(drive: PinDrive) void {
+    if (drive.mode) |mode| {
+        const name = switch (mode) {
+            .fast => "fast",
+            .resistor_1k5 => "1.5k",
+            .resistor_15k => "15k",
+            .resistor_150k => "150k",
+            .current_1ma => "1mA",
+            .current_100ua => "100uA",
+            .current_10ua => "10uA",
+            .float => "float",
+        };
+        const level = switch (drive.level) {
+            .low => "low",
+            .high => "high",
+        };
+        zgui.text("{s} {s}", .{ name, level });
+    } else {
+        zgui.textUnformatted("float");
+    }
+}
+
+/// Display source parameters in engineering units and signed current into the pad, without generic reflection.
+fn pinSourceTable(label: [:0]const u8, source: windtunnel.Pad.Source, current: ?f64, piecewise: bool) void {
+    if (!zgui.beginTable(label, .{ .column = 2, .flags = .{ .borders = .all, .sizing = .fixed_fit } }))
+        return;
+    defer zgui.endTable();
+
+    const labels = [_][:0]const u8{ "Drive", "Voltage", "Resistance", "Current limit", "Capacitance", "Current" };
+    for (labels, 0..) |name, row| {
+        zgui.tableNextRow(.{});
+        _ = zgui.tableSetColumnIndex(0);
+        zgui.textUnformatted(name);
+        _ = zgui.tableSetColumnIndex(1);
+        switch (row) {
+            0 => {
+                const state = if (source.drive_enabled)
+                    "enabled"
+                else
+                    "float";
+                zgui.textUnformatted(state);
+            },
+            1 => zgui.text("{d:.2} V", .{source.voltage}),
+            2 => {
+                if (!source.drive_enabled) {
+                    zgui.textUnformatted("-");
+                } else if (piecewise) {
+                    zgui.textUnformatted("piecewise");
+                } else {
+                    zgui.text("{d:.3} ohm", .{source.resistance});
+                }
+            },
+            3 => {
+                if (std.math.isFinite(source.max_current)) {
+                    zgui.text("{d:.3} mA", .{source.max_current * 1e3});
+                } else {
+                    zgui.textUnformatted("Unlimited");
+                }
+            },
+            4 => zgui.text("{d:.3} pF", .{source.capacitance * 1e12}),
+            5 => {
+                if (current) |value| {
+                    zgui.text("{d:.3} mA", .{value * 1e3});
+                } else {
+                    zgui.textUnformatted("-");
+                }
+            },
+            else => unreachable,
+        }
+    }
+}
 
 /// Read the host's monotonic awake clock in nanoseconds.
 fn monotonic(context: *anyopaque) i96 {
@@ -1026,25 +1710,30 @@ fn header(label: [:0]const u8, flags: zgui.TreeNodeFlags) bool {
     return zgui.collapsingHeader(label, options);
 }
 
-/// Open a closable independent inspector, balancing Begin/End even when collapsed.
-fn new_window(title: [:0]const u8, visible: ?*bool) bool {
-    zgui.setNextWindowSize(.{ .w = 700, .h = 540, .cond = .first_use_ever });
-    if (!zgui.begin(title, .{ .popen = visible })) {
-        zgui.end();
-        return false;
-    }
-    return true;
-}
-
-/// Edit a hexadecimal architectural word; read-only inputs cannot mutate the source.
+/// Edit a prefixed hexadecimal word, parsing digits separately from the display prefix.
 fn hexInput(label: [:0]const u8, value: *u32, read_only: bool) bool {
     zgui.beginDisabled(.{ .disabled = read_only });
     defer zgui.endDisabled();
-    return zgui.inputScalar(label, u32, .{
-        .v = value,
-        .cfmt = "%08X",
-        .flags = .{ .chars_hexadecimal = true, .read_only = read_only },
-    });
+
+    var buffer: [16:0]u8 = @splat(0);
+    _ = std.fmt.bufPrintSentinel(&buffer, "0x{X:0>8}", .{value.*}, 0) catch unreachable;
+    if (!zgui.inputText(label, .{
+        .buf = &buffer,
+        .flags = .{ .chars_hexadecimal = true, .auto_select_all = true, .read_only = read_only },
+    }))
+        return false;
+
+    const text = std.mem.sliceTo(&buffer, 0);
+    const digits = if (std.mem.startsWith(u8, text, "0x") or std.mem.startsWith(u8, text, "0X"))
+        text[2..]
+    else
+        text;
+    const parsed = std.fmt.parseInt(u32, digits, 16) catch return false;
+    if (parsed == value.*)
+        return false;
+
+    value.* = parsed;
+    return true;
 }
 
 /// Format disassembly only when the corresponding visible row/slot is rendered.
@@ -1083,28 +1772,33 @@ fn signalText(label: []const u8, signal: windtunnel.IO.Signal) void {
     zgui.textColored(color, "{s}: {s}", .{ label, signalName(signal) });
 }
 
-/// Render nested simulator latches without invoking semantic helpers or dereferencing attached endpoints.
-fn show(label: [:0]const u8, value: anytype) void {
+/// Render nested latches without executing semantics or dereferencing attached endpoints.
+fn showValue(label: [:0]const u8, value: anytype) void {
     const T = @TypeOf(value);
     zgui.pushStrId(label);
     defer zgui.popId();
     switch (@typeInfo(T)) {
         .bool => zgui.text("{s}: {}", .{ label, value }),
-        .int, .comptime_int => zgui.text("{s}: {} (${X})", .{ label, value, value }),
+        .int => {
+            const Word = std.meta.Int(.unsigned, @bitSizeOf(T));
+            const format = comptime std.fmt.comptimePrint("{{s}}: {{}} (0x{{X:0>{d}}})", .{(@bitSizeOf(T) + 3) / 4});
+            zgui.text(format, .{ label, value, @as(Word, @bitCast(value)) });
+        },
+        .comptime_int => showValue(label, @as(i64, value)),
         .float, .comptime_float => zgui.text("{s}: {d}", .{ label, value }),
         .@"enum" => |info| {
             if (comptime info.fields.len == 0) {
-                zgui.text("{s}: {} (${X})", .{ label, @intFromEnum(value), @intFromEnum(value) });
+                showValue(label, @intFromEnum(value));
             } else if (std.enums.tagName(T, value)) |name| {
                 zgui.text("{s}: {s}", .{ label, name });
             } else {
-                zgui.text("{s}: {} (${X})", .{ label, @intFromEnum(value), @intFromEnum(value) });
+                showValue(label, @intFromEnum(value));
             }
         },
         .error_set => zgui.text("{s}: {t}", .{ label, value }),
         .optional => {
             if (value) |present| {
-                show(label, present);
+                showValue(label, present);
             } else {
                 zgui.text("{s}: none", .{label});
             }
@@ -1116,7 +1810,7 @@ fn show(label: [:0]const u8, value: anytype) void {
                     if (comptime std.mem.eql(u8, field.name, "writes")) {
                         for (value.writes[0..value.count], 0..) |item, i| {
                             zgui.pushIntId(@intCast(i));
-                            show("write", item);
+                            showValue("write", item);
                             zgui.popId();
                         }
                     } else if (comptime std.mem.eql(u8, field.name, "write_bytes") or std.mem.eql(u8, field.name, "words")) {
@@ -1126,11 +1820,13 @@ fn show(label: [:0]const u8, value: anytype) void {
                             const storage = @field(value, field.name);
                             for (0..count) |i| {
                                 const slot = (head + i) % storage.len;
-                                zgui.text("[{}]: ${X}", .{ slot, storage[slot] });
+                                var buffer: [32]u8 = undefined;
+                                const title = std.fmt.bufPrintSentinel(&buffer, "[{}]", .{slot}, 0) catch unreachable;
+                                showValue(title, storage[slot]);
                             }
                         }
                     } else {
-                        show(field.name, @field(value, field.name));
+                        showValue(field.name, @field(value, field.name));
                     }
                 }
             }
@@ -1138,7 +1834,7 @@ fn show(label: [:0]const u8, value: anytype) void {
         .@"union" => {
             if (header(label, .{})) {
                 switch (value) {
-                    inline else => |payload, tag| show(@tagName(tag), payload),
+                    inline else => |payload, tag| showValue(@tagName(tag), payload),
                 }
             }
         },
@@ -1149,7 +1845,7 @@ fn show(label: [:0]const u8, value: anytype) void {
                     defer zgui.popId();
                     var buffer: [32]u8 = undefined;
                     const title = std.fmt.bufPrintSentinel(&buffer, "[{}]", .{i}, 0) catch unreachable;
-                    show(title, item);
+                    showValue(title, item);
                 }
             }
         },
@@ -1176,6 +1872,8 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     gui.configuration_draft = .realistic;
     gui.cogs_visible = @splat(true);
     gui.pins_visible = @splat(true);
+    gui.breakpoints_visible = true;
+    gui.configuration_visible = true;
     gui.memory_visible = true;
     gui.cordic_visible = true;
     gui.jump = 0x7fff0;
@@ -1224,6 +1922,7 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     gui.hub.cordic.submit(@enumFromInt(0), .mul, 3, 7, 0);
     _ = gui.hub.cordic.step();
     gui.selected_cell = 1;
+    gui.selected_pin = 63;
     const cordic = gui.hub.cordic;
     const streamer = gui.hub.cogs[0].streamer;
     const dacs = gui.hub.cogs[0].dacs;
@@ -1236,12 +1935,16 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
         if (frame == 1) {
             gui.cogs_visible = @splat(false);
             gui.pins_visible = @splat(false);
+            gui.breakpoints_visible = false;
+            gui.configuration_visible = false;
         } else {
             gui.cogs_visible = @splat(true);
             gui.pins_visible = @splat(true);
+            gui.breakpoints_visible = true;
+            gui.configuration_visible = true;
         }
         zgui.newFrame();
-        try gui.controls();
+        gui.controls();
         try gui.inspectors();
         zgui.render();
     }
@@ -1257,6 +1960,7 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     try std.testing.expectEqual(@as(usize, 0), gui.debugger.hits.items.len);
     try std.testing.expect(gui.debugger.hasExecution(execution));
     try std.testing.expectEqual(@as(u32, 0x7fff0), gui.jump);
+    try std.testing.expectEqual(@as(u6, 63), gui.selected_pin);
     try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.ideal, gui.hub.system_configuration);
     try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.realistic, gui.configuration_draft);
 }
