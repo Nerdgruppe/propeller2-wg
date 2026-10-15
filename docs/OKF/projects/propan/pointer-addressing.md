@@ -27,7 +27,7 @@ Both pointer registers support the same forms:
 | `++PTRA[n]`, `--PTRA[n]`, and PTRB equivalents | pre-update with explicit magnitude | `1...16` |
 | `PTRA++[n]`, `PTRA--[n]`, and PTRB equivalents | post-update with explicit magnitude | `1...16` |
 
-For an updating form, the explicit index is a **positive magnitude**. The `++` or `--` operator selects the direction. Therefore an updating form with `[0]`, a negative explicit magnitude, or a magnitude greater than 16 is rejected by the current encoder.
+For **non-augmented** updating forms, the index is a positive magnitude `1...16`, with `++`/`--` selecting direction. Augmented pointer indices permit wider, mode-dependent ranges as described below.
 
 The current parser permits one optional index operation after an identifier/postfix-update expression. Prefix updates recurse into the value expression, so both forms such as `++PTRA[4]` and `PTRA++[4]` reach the pointer-expression model.
 
@@ -51,6 +51,24 @@ The current encoder uses:
 For updating forms, omitting `[n]` supplies magnitude `1`. Magnitude `16` uses the P2 encoding's special/wrapped representation rather than being rejected.
 
 When an actual pointer-expression value is emitted into a `{#}S/P` operand, the instruction's immediate/source-selector bit is set as required by the P2 pointer encoding.
+
+### Augmented pointer indices
+
+Use `aug(...)` *inside the index*, not around the whole pointer expression:
+
+```propan
+RDLONG PA, PTRA[aug(0x10000)]
+RDLONG PA, PTRA++[aug(0x100)]
+RDLONG PA, --PTRB[aug(0x12345)]
+```
+
+| Form | Augmented index/magnitude |
+|---|---|
+| without update | `-0x80000...0xFFFFF` |
+| pre/post increment | `1...0x7FFFF` |
+| pre/post decrement | `1...0x80000` |
+
+`aug(PTRA[...])` is rejected with `err_augmentation_requires_pointer_index`; direct numeric augmented pointer immediates instead use unsigned `0...0xFFFFF`. Evidence: `encode_ptr_expr` in `src/propan/sema.zig`, `tests/propan/sema/aug-pointer-update.propan`, and the `aug-whole-pointer` / `aug-pointer-index-out-of-range` diagnostic fixtures.
 
 ## Bare PTRA/PTRB versus ordinary register use
 
@@ -149,7 +167,9 @@ CALLD PA/PB/PTRA/PTRB, #{\}A
 
 A source line beginning with PA, PB, PTRA, or PTRB can potentially satisfy the ordinary register destination of the first form as well as the special `pointer_reg` destination of the second form. Some second operands can likewise satisfy both generic type checks.
 
-The selector is intended to prefer a matching `pointer_reg` variant over a regular-register variant. The implementation contains a known copy/paste defect in the ambiguity guard around that preference; see [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
+The merged selector now checks `pointer_reg` use in **both** variants and applies `select_calld_ambiguous_encoding` to the ordinary/special `CALLD` overlap. The former copy/paste defect is fixed.
+
+Explicit absolute addressing (`nrel(...)`) or `.pic avoid` favors the special address form. A source augmentation favors the ordinary form. Otherwise the policy considers execution domain and whether a signed 9-bit relative displacement is reachable. This is current **selection logic**, not a promise of correctness for every possible operand combination.
 
 Current equivalence material demonstrates both regular CALLD forms and special address forms, including:
 
@@ -162,9 +182,9 @@ CALLD PTRA, address
 CALLD PTRA, nrel(address)
 ```
 
-A separate ambiguity-focused equivalence fixture leaves several label/numeric special-destination cases commented out while exercising explicit `nrel(...)` cases. Those comments are evidence of incomplete coverage/current uncertainty, not proof that every commented spelling is invalid.
+`tests/propan/sema/pointer-variant-order.propan` checks PA, PB, PTRA, PTRB special destinations; `tests/propan/equivalence/ambigious.propan` now contains numeric/label and `nrel` cases. Remaining selection combinations should still be verified before assuming complete coverage.
 
-Until the ambiguity guard is corrected and the overlap cases receive focused regression coverage, code that depends on this family should be checked against the equivalence tests rather than assuming every type-overlap case is hardened.
+The general ambiguity handler emits `err_ambigious_instruction_selection_for`. A residual defensive panic exists only if two candidate variants **both** use pointer-register operand categories; this is separate from the corrected comparison typo.
 
 ## Relation to PASM2 spelling
 

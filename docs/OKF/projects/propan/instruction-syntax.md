@@ -73,21 +73,12 @@ For flag equality/inequality, the accepted forms are `C == Z`, `Z == C`, `C != Z
 
 The comparison shorthands inside `if(...)` are condition syntax, not general comparison expressions with omitted operands. They map directly to the condition codes shown above.
 
-### `NOP` condition special case
+### NOP and explicit conditions
 
-The generated P2 table records `NOP` as the all-zero word:
+The P2 all-zero word represents unconditioned `NOP`. **Current semantic selection rejects an explicit condition on `NOP`**, including `if(C) NOP` and `return NOP`, using `err_nop_cannot_have_condition`. The parser can represent these lines, but the assembler does not accept them as valid source.
 
-```text
-0000 0000000 000 000000000 000000000
-```
+An older implementation allowed explicit conditions to change the top nibble of the zero word, accidentally producing a zero-field `ROR` form. That is **historical pre-merge behavior**. `tests/propan/sema/diagnostics/conditional-nop.propan` checks rejected spellings; `sema/nop-encoding.propan` distinguishes `NOP` from `ROR` encodings.
 
-Emission therefore special-cases a source `NOP` with no explicit condition to condition code `0000`; otherwise the ordinary instruction path would replace its top condition field. The implementation contains a TODO to represent this special behavior in instruction metadata instead.
-
-An explicitly conditioned `NOP` currently bypasses that protection. For example `if(Z) NOP` writes the requested nonzero condition code into the high four bits while leaving the lower 28 bits zero.
-
-That resulting word is **not a NOP encoding**. The canonical/generated `ROR D,{#}S` instruction uses the same zero lower opcode bits (`EEEE 0000000 CZI DDDDDDDDD SSSSSSSSS`). With C/Z/I, D, and S all zero, a nonzero condition field therefore represents a conditionally executed `ROR r0, r0`-form word rather than the special all-zero NOP.
-
-Do not use conditions on `NOP` in current Propan source. Parser acceptance is an implementation defect/encoding hazard, not supported conditional-NOP semantics. The finding is tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
 
 ## Effects
 
@@ -134,7 +125,7 @@ Generated instruction variants describe operands using semantic categories deriv
 | `pointer_reg` | PA, PB, PTRA, or PTRB selector | accepts only those four special registers |
 | `enumeration` | named finite operand choice | requires a `#name` enumerator present in that operand's generated lookup table |
 
-Strings cannot satisfy encoded instruction operands.
+String and sequence payloads cannot satisfy encoded instruction operands; they belong to compile-time data emission.
 
 ### Literal versus register usage
 
@@ -179,7 +170,9 @@ For a non-label numeric value, the encoder infers a target execution domain from
 
 `nrel(value)` forces absolute addressing and must be the root expression.
 
-For a relative `address` operand, the current encoder calculates a signed HUB-byte displacement from the PC after the instruction and any augmentation prefixes. The displacement must fit the encoded address field.
+The current `A` address encoder distinguishes `LOC`, whose relative displacement uses execution-PC units, from ordinary branch addresses, which encode byte displacements. For local execution, numeric COG/LUT destination indices are converted to byte deltas for non-LOC instructions. COG and LUT share a local relative-address domain where supported.
+
+The running `.pic default`/`prefer`/`avoid`/`force` policy affects relative/absolute selection when the encoding supports both forms. `avoid` favors absolute; `prefer`/`force` favor relative, while `force` diagnoses an explicitly absolute operand (`nrel(...)`) in a forced-relative context. See `tests/propan/sema/pic-modes.propan` and `src/propan/sema.zig` (`emit_code` and `select_calld_ambiguous_encoding`). The policy does not make `S**` relative immediates absolute.
 
 Some generated register-or-immediate operands have separate PC-relative metadata and use `compute_rel()` rather than the `address` path. CALLD/PC-relative details are documented in [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md).
 
@@ -193,7 +186,9 @@ During layout, each top-level augmented operand increases the encoded instructio
 - an S-slot augmentation emits an AUGS prefix;
 - the high 23 bits are placed in the augmentation instruction and the low operand bits remain in the main instruction.
 
-Attempting to augment an operand whose generated slot is not D or S is diagnosed.
+Attempting to augment an operand whose generated slot is not D or S is diagnosed. Prefixes inherit the instruction's condition, and PC-relative variants may reverse AUGS/AUGD order; see `tests/propan/sema/conditional-augmentation.propan`.
+
+The special augmented pointer-index form is `PTRA[aug(index)]` or an updating variant with an augmented index. `aug(PTRA[index])` attempts to augment a **whole pointer expression** and is rejected. See the pointer reference.
 
 PC-relative register-or-immediate operands have additional augmentation ordering and displacement behavior documented with pointer/branch selection.
 
@@ -209,7 +204,7 @@ For a recognized generated mnemonic, semantic analysis currently selects an enco
 
 When the selected operand category is `pointer_expr`, a bare PTRA/PTRB register value is converted to the corresponding no-update pointer expression under the default analyzer option.
 
-The current pointer-register ambiguity preference contains a known copy/paste defect that can panic instead of reliably resolving competing variants. See [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
+The pre-merge pointer-register comparison typo is fixed: current selection inspects **both** competing variants. `CALLD` overlap uses `select_calld_ambiguous_encoding`, considering PIC mode, explicit absolute hints, augmentation and relative reachability. Ordinary unresolved ambiguities produce source diagnostics; the defensive path for two simultaneously matching pointer-register variants still contains a panic. See the pointer reference and the implementation-findings register.
 
 ## Conditions/effects on assembler directives
 

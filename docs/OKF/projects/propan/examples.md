@@ -69,7 +69,7 @@ hub_data:
 
 COG local addressing starts at `0`, LUT local addressing starts at `0x200`, and HUB addressing uses the HUB byte address directly. Each `NOP` or `LONG` is four emitted bytes, so it advances a COG/LUT local address by one.
 
-`var` only marks the current address; the following `LONG` creates the storage and advances both HUB and local cursors. Current Propan has no implemented non-emitting `.RES`/`.reserve` equivalent. See the complete address table in [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
+`var` only marks the current address; the following `LONG` creates storage and advances the HUB/local cursors. Non-emitting register reservation is **now implemented** as `RES` (without a leading dot) in COG/register-space modes; it is not interchangeable with an initialized `LONG`.
 
 ## Pointer memory access
 
@@ -114,7 +114,7 @@ if(C == Z) ADD DIRA, 1
 if(>=) ADD DIRA, 1
 ```
 
-Do not use an explicitly conditioned `NOP`. The current assembler accepts it syntactically but the nonzero condition field transforms the special all-zero NOP word into a zero-field ROR-form instruction rather than a NOP.
+Do not use an explicitly conditioned `NOP`. The parser recognizes it, but the merged semantic analyzer **rejects** `if(...) NOP` and `return NOP` with `err_nop_cannot_have_condition`. The conditional-ROR encoding described by the September reference is historical.
 
 Whether a particular effect is legal is determined by the selected generated instruction variant. A recognized effect token is not automatically valid on every instruction.
 
@@ -133,9 +133,10 @@ Repository examples also use `REP @label, count`; this is the current Propan cou
 
 ## Data layout and alignment
 
-The following form is directly represented by the semantic alignment fixture:
+The following example uses `.data` to give `.align` byte-oriented HUB semantics:
 
 ```propan
+.data 0
     BYTE 0
 .align 4
 aligned:
@@ -143,9 +144,7 @@ aligned:
     LONG 0
 ```
 
-After one byte is emitted, `.align 4` advances the HUB cursor to the next address divisible by four. The label therefore has HUB address four, which the assertion checks explicitly.
-
-`BYTE`, `WORD`, and `LONG` emit little-endian integer data. Gaps introduced inside a module by `.align` are filled with `0xFF` during segment emission; the final multi-module flat-output gap behavior is separately controlled by `--fill-byte` as described in [/projects/propan/tooling.md](/projects/propan/tooling.md).
+In `.data`/HUB mode, `.align 4` advances the HUB byte cursor to address four. In COG/LUT modes `.align` instead aligns local **long/register indices**. Data emission and padding use the configured `--fill-byte` (default `0x00`), not a fixed `0xFF`.
 
 ## Address-domain contrast
 
@@ -162,6 +161,24 @@ entry:
 
 For this COG-exec label, `hubaddr(entry)` denotes its HUB emission address, while `cogaddr(entry)` and `localaddr(entry)` denote its local COG address. This distinction is central to Propan's address model and should be made explicit in stored tables or interfaces rather than relying on contextual conversion.
 
+## Imports and non-emitting register reservation
+
+Source files can be combined as **one module** via `.import "file.propan"`, with optional `.import once` inside imported files. Repeating `-I directory` supplies search paths; the CLI rejects multiple independent root paths.
+
+```propan
+.regspace
+var first: RES 2
+var second: RES 1
+.fit 3
+
+.cogexec 0x100
+MOV first, second
+```
+
+Register-space labels have local register indices but no HUB storage; `RES` reserves non-emitting register positions. See `tests/propan/sema/res-labels.propan`.
+
+In `tests/propan/cases.zig`, `examples/propio-client.propan` and `examples/sumloop.propan` are in the active example fixture group. `examples/rgbx.propan` is a supporting file rather than an active example fixture, so its complete assembly/runtime behavior is not established by that list.
+
 ## Migration reminders
 
 When adapting PASM2/Spin2 assembly into these examples:
@@ -170,6 +187,6 @@ When adapting PASM2/Spin2 assembly into these examples:
 - rewrite condition prefixes into `if(...)` or `return` forms;
 - rewrite flag effects as `:wc`, `:wz`, `:wcz`, or the supported TEST-family forms;
 - use `&`, `*`, `hubaddr()`, `cogaddr()`, `lutaddr()`, `localaddr()`, `nrel()`, and `aug()` where the intended address/encoding interpretation must be explicit;
-- use the currently implemented `.hubexec`, `.cogexec`, `.lutexec`, `.align`, `.assert`, `BYTE`, `WORD`, and `LONG` directives rather than assuming Spin/PASM origin/reservation directives are available.
+- use the implemented `.hubexec`, `.cogexec`, `.lutexec`, `.regspace`, `.data`, `.org`, `RES`, `.fit`, `.align`, `.assert`, `BYTE`, `WORD`, and `LONG` with their documented operand/mode restrictions.
 
 See [/projects/propan/pasm2-differences.md](/projects/propan/pasm2-differences.md) for the compact migration table.
