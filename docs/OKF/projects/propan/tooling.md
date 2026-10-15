@@ -65,7 +65,7 @@ The `spin2` emitter attempts readable PASM2 instruction spellings where the sour
 
 The semantic analyzer produces segments; the CLI copies their bytes into one flat output image using their absolute HUB offsets. It grows the buffer to accommodate the last emitted address, fills newly allocated gaps with `--fill-byte`, and copies each segment in order. Default fill is `0x00`; `-F` is the short option.
 
-The image-composition code does not currently enforce non-overlap: later segment writes can overwrite existing ranges. This is a **single-module segment overlap risk**, not a multi-positional-file overlay feature. Padding during segment emission also uses the configured fill byte (see `src/propan/sema.zig` and the `fill-byte.propan` regression).
+The merged semantic emitter now **checks all pairs of nonempty emitted segments for HUB-range overlap**, reporting `err_segments_and_overlap_at_hub_address_0x_x_0_5` for a positive-length intersection. Semantic errors stop successful assembly before output. The later flat-copy loop remains mechanical, but overlapping segments are no longer silently accepted. Padding uses the configured fill byte.
 
 ### JSON metadata
 
@@ -102,6 +102,6 @@ Parser, import and semantic errors normally cause exit status `1`. CLI usage err
 
 - **Implemented:** single-root CLI validation, recursive imports/import-once, option parsing, single-module image assembly, and `spin2` selection.
 - **Tested:** rejection of multiple roots; import path precedence, identity, source metadata; fill-byte behavior; selected Spin2 readability and configured FlexSpin round-trip coverage.
-- **Open:** this page does not claim every generated Spin2 construct round-trips under every external assembler or that overlapping segments are valid by design.
+- **Open:** Spin2 round-trips are not guaranteed for all external assemblers. Overlap checks apply to nonempty emitted segments; linking/relocation rules and edge cases outside those ranges are separate concerns.
 
 For syntax and data directives, see [/projects/propan/directives-and-data.md](/projects/propan/directives-and-data.md). For evidence/test roles, see [/references/propan-coverage.md](/references/propan-coverage.md).

@@ -92,7 +92,7 @@ Instruction selection distinguishes HUB/local domains, native address units, and
 
 A warning may be emitted for jumps between HUB and local execution domains. This is **not** a proof of complete cross-segment safety: the address-conversion code still needs careful same-segment validation for some constructs.
 
-The flat-image composer copies each segment at its HUB offset and does not enforce cross-segment non-overlap. A later segment can overwrite earlier emitted bytes. This must not be interpreted as a supported linker/relocation design.
+The semantic emitter **rejects positive-length overlaps between nonempty emitted HUB segments**. `src/propan/sema.zig` (`emit_code`) compares each pair of segment ranges and emits a semantic error for intersections before successful flat output. Separate register-only regions may have no emitted HUB bytes. This is not a general object linker or relocation model.
 
 ## Evidence and remaining verification
 

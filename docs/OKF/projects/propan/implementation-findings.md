@@ -20,7 +20,13 @@ This register was written against the September code. **Entries under "September
 - **Constant resolution:** `resolve_constant` recursively evaluates dependencies and detects cycles; the former blanket prohibition on forward user-constant references is obsolete.
 - **Source/segment model:** `.org`, `RES`, `.regspace` and `.data` are implemented. An older assumption that all non-emitting reservations are unsupported no longer applies.
 
-The remaining findings, including overlapping emission ranges and subtle addressing/selection behavior, require a fresh code/test audit before promoting them to current issues.
+**Additional verified upstream corrections:**
+
+- **Overlap validation is now active:** `emit_code` compares each pair of emitted HUB ranges and emits `err_segments_and_overlap_at_hub_address_0x_x_0_5` for positive-length overlap. The historical "disabled overlap validation" item below is superseded for nonempty segments.
+- **CALLD pointer-register selection:** the current ambiguity guard checks `pointer_reg` operands in **both** competing variants and uses `select_calld_ambiguous_encoding`. The September copy/paste defect is fixed, although a defensive panic still exists for two simultaneously matching pointer-register variants.
+- **Relative `@`:** current evaluation checks execution-domain compatibility and emits `warn_relative_address_crosses_segments` for cross-segment displacement. This is not the unguarded HUB-byte subtraction described by the old finding.
+
+Other historical findings still require verification against the merged source and fixtures before being reported as current defects.
 
 ## September findings (historical; unrevalidated after merge)
 

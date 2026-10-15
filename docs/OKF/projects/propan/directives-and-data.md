@@ -82,7 +82,7 @@ An omitted HUB origin continues at the current HUB cursor. An omitted local orig
 
 `.regspace` creates register-tagged addresses with **no HUB storage address**; emitted data/code inside it is rejected. `.data` creates HUB-addressed data labels without an executable PC; encoded instructions inside it are rejected. These are distinct from `var`, which labels the current address but does not reserve any storage.
 
-Changing mode creates a new segment. Cross-segment overlap is not rejected automatically at final flat-image composition; see [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
+Changing mode creates a new segment. The merged semantic emitter **rejects overlaps between nonempty emitted HUB segments**; see [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
 
 ## .org and RES
 
@@ -121,4 +121,4 @@ Parser-level conditions/effects can appear on directive-shaped lines, but these 
 
 - **Implemented:** all names in the table appear in the live semantic dispatch; mode, origin, reservation, data expansion and emission paths were checked.
 - **Tested:** `test_suite.zig` and `tests/propan/sema/` contain cases for packing, origin limits, reservation diagnostics, embedded files, data/UTF sequences, and fit/assert behavior. Not every option or edge case has been rerun for this documentation edit.
-- **Open:** incomplete cross-segment safety and accidental image overlaps; exact user-intent semantics of every PIC policy and conditional source form should be checked with focused tests, not inferred from this overview.
+- **Open:** instruction-specific cross-domain address checks need more coverage; PIC and conditional-source selection edge cases should be tested. The separate nonempty emitted-segment overlap check is now implemented.
