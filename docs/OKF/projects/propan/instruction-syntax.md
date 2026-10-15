@@ -210,7 +210,11 @@ The pre-merge pointer-register comparison typo is fixed: current selection inspe
 
 Assembler directives are parsed using the same instruction-shaped syntax, so source such as `if(C) BYTE 1` or `.assert 1 :wc` can reach the directive semantic path.
 
-Current directive processing does not validate or apply the parsed condition/effect fields. They are effectively ignored for directives. This is an implementation limitation; conditions and effects should be treated as meaningful syntax only for generated P2 instructions until the assembler rejects or defines directive modifiers explicitly.
+For **ordinary data/layout directives** such as `BYTE`, `.align`, and `.assert`, current semantic handling does not apply the parsed instruction condition or effect, even though the parser can attach one. Treat forms such as `if(C) BYTE 1` or `.assert 1 :wc` as **potential silent no-ops**, not as conditional emission or flag-changing operations. This is a source-level limitation requiring a targeted acceptance test and an intended-language decision.
+
+**Exceptions:** `.if`/`.elif`/`.else`/`.endif` are *conditional compilation directives*, processed in `ConditionalFilter` before normal semantic analysis. They explicitly reject `if(C)`/`return` or `:effect` modifiers on their own control lines. `NOP` is an encoded instruction with a separate explicit-condition rejection rule. Thus it is incorrect to say every directive silently ignores modifiers.
+
+The P2 instruction condition `if(C) MOV ...` is different from compile-time `.if FEATURE`. See [/projects/propan/lexical-and-source-grammar.md](/projects/propan/lexical-and-source-grammar.md) for the source-filter phase and [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md) for the unresolved modifier policy.
 
 ## Instruction-reference generation policy
 

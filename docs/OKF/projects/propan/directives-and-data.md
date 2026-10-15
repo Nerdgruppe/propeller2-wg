@@ -115,7 +115,7 @@ The required address growth in emitting modes produces padding with the configur
 
 Mode origins, `.org`, `.align`, `RES` and sizes of sequence expressions are decided during **location assignment**. Ordinary constant dependencies may resolve recursively, but constants that need a label address that is still being assigned cannot necessarily be used in those positions. This is a layout-phase restriction, not a blanket prohibition on user-defined constants.
 
-Parser-level conditions/effects can appear on directive-shaped lines, but these are not defined as conditional emission or side-effect modifiers for the directives. Do not rely on them for layout control. Conditional-source directives (`.if` / `.elif` / `.else` / `.endif`) belong to the earlier filter stage and require separate reference coverage.
+The parser may accept instruction-style `if(C)`/`return` and `:effect` on data/layout directives, but normal directive encoding does **not** make these conditional data emission or flag changes. Do not depend on such modifiers. In contrast, `.if`/`.elif`/`.else`/`.endif` are compile-time **source-filter controls** handled earlier and explicitly reject instruction-style conditions/effects on their own lines. See [/projects/propan/lexical-and-source-grammar.md](/projects/propan/lexical-and-source-grammar.md) and [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
 
 ## Evidence and limits
 

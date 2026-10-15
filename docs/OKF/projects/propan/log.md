@@ -37,6 +37,10 @@ source_confidence: "high"
 - Reclassified `sumloop.propan` and `propio-client.propan` as registered assembler fixtures and `rgbx.propan` as a support-only example needing a dedicated compilation review; removed historical claims about missing directives and a now-absent `segment_management.propan` file.
 - Reconciled the source inventory, coverage reference and historical TODO text. Ran static root-relative link, heading, frontmatter and fence checks across all 27 OKF Markdown files; no issues in those categories. Did not run Zig unit, formatter or example compilation tests.
 
+## 2026-10-15 — directive modifier clarification
+
+- Clarified that instruction-style conditions/effects on ordinary data/layout directives are not evaluated as conditional data emission, while the `.if`/`.elif`/`.else`/`.endif` source-filter directives explicitly reject such modifiers. Linked the language reference to the current findings register. No new compiler test run is claimed.
+
 ## 2026-09-30
 
 - Established the Propan documentation scope and current-state source precedence.
