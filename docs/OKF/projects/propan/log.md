@@ -17,39 +17,13 @@ source_confidence: "high"
 - Revalidated and rewrote the directive/data and address/segment references for `.org`, `RES`, `.regspace`, `.data`, `.fit`, `.pack`, `.pic`, `FILE`, expanded origin options, and string/sequence emission.
 - Corrected the PASM2 migration summary for source imports and reservation/origin syntax. Explicitly archived pre-merge implementation findings and discrepancy classifications where upstream code superseded them.
 
-## 2026-10-15 — expression and stdlib follow-up
+## 2026-10-15 — post-merge continuation
 
-- Rechecked expression payloads and arithmetic against the merged parser/evaluator; documented sequence literals, flattening and repetition, current-location `---
-type: "Change Log"
-title: "Propan documentation log"
-description: "Maintenance notes for curated Propan documentation."
-tags: ["log", "propan", "maintenance"]
-status: "draft"
-source_confidence: "high"
----
-# Log
-
-## 2026-10-15
-
-- Began post-merge revalidation after `main` was merged into `rework-documentation`. The earlier first-pass audit is explicitly limited to its pre-merge code baseline.
-- Replaced the obsolete multi-positional-file overlay reference with the actual single-root CLI contract, recursive `.import`/`.import once`, include search paths, preserved imported source locations, `spin2` output, and current CLI options.
-- Updated symbol reference for scoped leading-dot labels, import-aware rebinding, recursive forward constant resolution and cycle detection.
-- Updated source inventory and coverage entries for the newly verified behavior, and opened explicit follow-up work for the other changed language areas.
-- Revalidated and rewrote the directive/data and address/segment references for `.org`, `RES`, `.regspace`, `.data`, `.fit`, `.pack`, `.pic`, `FILE`, expanded origin options, and string/sequence emission.
-- Corrected the PASM2 migration summary for source imports and reservation/origin syntax. Explicitly archived pre-merge implementation findings and discrepancy classifications where upstream code superseded them.
-
-, UTF conversion and 9 current semantic address/encoding helpers.
-- Rechecked conditional source filtering, including early constant availability, import expansion, nested/inactive branches, and diagnostic boundaries.
-- Updated the P2 standard library for generic 32-bit integer/float functions, register conversion, ALTI helpers and corrected `#false` boolean enumeration.
-- Replaced pre-merge panic/unsupported-function statements with diagnostics and implementation-backed behavior; updated coverage and the post-merge TODO.
-
-## 2026-10-15 — instruction, pointer and overlap follow-up
-
-- Revalidated explicit conditioned-NOP rejection, PIC/LOC relative selection, conditional augmentation, and CALLD pointer-register disambiguation against semantic code and active tests.
-- Documented augmented pointer-index syntax and mode-specific 20-bit range checks, distinguishing index augmentation from disallowed whole-pointer augmentation.
-- Corrected the earlier post-merge assumption about cross-segment HUB overlap: the semantic emitter diagnoses intersections between nonempty emitted ranges.
-- Updated worked examples for RES/register-space allocation, HUB versus local alignment, actual padding configuration, and example test registration.
-- Refreshed the test coverage map and retained historical findings separately from confirmed current behavior.
+- Revalidated expression values and the active P2 standard-library namespace: sequence literals and repetition, Unicode helpers, conditional source directives, `$` current-PC semantics, address conversion helpers, register/ALTI functions and 32-bit numeric/binary32 helpers.
+- Replaced obsolete pre-merge claims about binary-operation panics and unsupported stdlib functions; documented the corrected generic `#false` boolean enumerator.
+- Verified that explicitly conditioned NOP is now rejected, CALLD compares both pointer-register variant candidates, PIC/LOC relative rules have been extended, and indexed pointer augmentation has separate 20-bit limits.
+- Corrected the previously claimed absence of emitted-segment overlap validation: the semantic emitter diagnoses overlapping nonempty HUB ranges.
+- Updated worked examples, source/fixture distinctions, source coverage and future audit tasks. Full test execution and formatter audit remain pending.
 
 ## 2026-09-30
 
