@@ -20,6 +20,7 @@ pub const ColorConverter = @import("sim/ColorConverter.zig");
 pub const Hub = @import("sim/Hub.zig");
 pub const Cog = @import("sim/Cog.zig");
 pub const IO = @import("sim/IO.zig");
+pub const Pad = @import("sim/Pad.zig");
 
 pub const SmartPin = smart_pin.SmartPin;
 

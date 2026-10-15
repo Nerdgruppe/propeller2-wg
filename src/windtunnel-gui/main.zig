@@ -435,7 +435,7 @@ const GUI = struct {
         }
     }
 
-    /// Show every physical pad, with distinct four-state signals and independently addressable pin windows.
+    /// Show digital pad samples, electrical snapshots and independent external source controls.
     fn ioWindow(gui: *GUI) void {
         if (!new_window("I/O", &gui.io_visible))
             return;
@@ -455,21 +455,25 @@ const GUI = struct {
             zgui.text("P{}", .{i});
             signalText("Pad", io.pads[i]);
             zgui.text("OE {}", .{enabled});
-            signalText("Ext", io.external[i]);
+            const source = io.external[i];
+            zgui.text("Ext: {s}", .{if (source.drive_enabled) "driven" else "float"});
+            if (io.getExternal(@enumFromInt(i))) |state| {
+                zgui.text("{d:.3} V | {d:.3} mA", .{ state.voltage, state.current * 1e3 });
+            }
             signalText("Sample", io.pad_reads[i]);
             if (zgui.button("Inspect", .{})) {
                 gui.pins_visible[i] = true;
             }
-            zgui.beginDisabled(.{ .disabled = enabled });
-            for ([_]windtunnel.IO.Signal{ .zero, .one, .z }) |state| {
-                if (zgui.button(signalName(state), .{})) {
-                    io.setExternal(@enumFromInt(i), if (io.external[i] == state) .z else state);
+            const sources = [_]windtunnel.Pad.Source{ .low, .high, .float };
+            const labels = [_][:0]const u8{ "Low", "High", "Float" };
+            for (sources, labels, 0..) |preset, label, preset_index| {
+                if (zgui.button(label, .{})) {
+                    io.setExternal(@enumFromInt(i), preset) catch unreachable; // Validated constant presets.
                 }
-                if (state != .z) {
+                if (preset_index != sources.len - 1) {
                     zgui.sameLine(.{});
                 }
             }
-            zgui.endDisabled();
         }
     }
 
@@ -854,6 +858,8 @@ const GUI = struct {
         show("Result / enable / ready / endpoints", pin.smart.registers);
         show("Active mode payload", pin.smart.logic);
         show("Outputs", pin.outputs);
+        show("External source (SI units)", io.external[id]);
+        show("Electrical state (SI units)", io.getExternal(@enumFromInt(id)));
         signalText("Physical pad", io.pads[id]);
         signalText("Sampled input", io.pad_reads[id]);
         signalText("SmartA", io.smart_a[id]);
@@ -946,23 +952,19 @@ fn disassemblyText(word: u32) void {
     zgui.textUnformatted(writer.buffered());
 }
 
-/// Give all four digital states explicit, distinct labels.
+/// Give both digital levels explicit labels.
 fn signalName(signal: windtunnel.IO.Signal) [:0]const u8 {
     return switch (signal) {
-        .zero => "0",
-        .one => "1",
-        .x => "X",
-        .z => "Z",
+        .low => "0",
+        .high => "1",
     };
 }
 
-/// Color four-state signals consistently across pad and pin inspectors.
+/// Color digital levels consistently across pad and pin inspectors.
 fn signalText(label: []const u8, signal: windtunnel.IO.Signal) void {
     const color: [4]f32 = switch (signal) {
-        .zero => .{ 0.4, 0.65, 1, 1 },
-        .one => .{ 0.4, 1, 0.5, 1 },
-        .x => .{ 1, 0.3, 0.25, 1 },
-        .z => .{ 0.8, 0.7, 0.9, 1 },
+        .low => .{ 0.4, 0.65, 1, 1 },
+        .high => .{ 0.4, 1, 0.5, 1 },
     };
     zgui.textColored(color, "{s}: {s}", .{ label, signalName(signal) });
 }
@@ -975,6 +977,7 @@ fn show(label: [:0]const u8, value: anytype) void {
     switch (@typeInfo(T)) {
         .bool => zgui.text("{s}: {}", .{ label, value }),
         .int, .comptime_int => zgui.text("{s}: {} (${X})", .{ label, value, value }),
+        .float, .comptime_float => zgui.text("{s}: {d}", .{ label, value }),
         .@"enum" => |info| {
             if (comptime info.fields.len == 0) {
                 zgui.text("{s}: {} (${X})", .{ label, @intFromEnum(value), @intFromEnum(value) });

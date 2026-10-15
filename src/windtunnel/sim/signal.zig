@@ -1,4 +1,4 @@
-//! Four-state digital levels shared by pad routing and smart engines.
+//! Binary digital levels shared by pad routing and smart engines; drive enable is separate.
 pub const InputLogic = enum(u2) {
     a = 0,
     a_and_b = 1,
@@ -7,61 +7,34 @@ pub const InputLogic = enum(u2) {
 };
 
 pub const Signal = enum {
-    zero,
-    one,
-    x,
-    z,
+    low,
+    high,
 
     /// Convert a Boolean level to a driven digital signal.
     pub fn from(value: bool) Signal {
         return if (value)
-            .one
+            .high
         else
-            .zero;
+            .low;
     }
     /// Read a driven high signal as true.
     pub fn sample(value: Signal) bool {
-        return value == .one;
+        return value == .high;
     }
-    /// Invert a known level and propagate unknown or floating input.
+    /// Invert a binary digital level.
     pub fn invert(value: Signal) Signal {
         return switch (value) {
-            .zero => .one,
-            .one => .zero,
-            .x, .z => .x,
+            .low => .high,
+            .high => .low,
         };
-    }
-    /// Resolve two drivers, including floating and conflicting states.
-    pub fn resolve(a: Signal, b: Signal) Signal {
-        if (a == .z)
-            return b;
-        if (b == .z)
-            return a;
-        return if (a == b)
-            a
-        else
-            .x;
     }
     /// Apply the selected two-input digital logic mode.
     pub fn logic(a: Signal, b: Signal, operation: InputLogic) Signal {
         return switch (operation) {
             .a => a,
-            .a_and_b => if (a == .zero or b == .zero)
-                .zero
-            else if (a == .one and b == .one)
-                .one
-            else
-                .x,
-            .a_or_b => if (a == .one or b == .one)
-                .one
-            else if (a == .zero and b == .zero)
-                .zero
-            else
-                .x,
-            .a_xor_b => if ((a == .zero or a == .one) and (b == .zero or b == .one))
-                from(a != b)
-            else
-                .x,
+            .a_and_b => from(a.sample() and b.sample()),
+            .a_or_b => from(a.sample() or b.sample()),
+            .a_xor_b => from(a != b),
         };
     }
 };

@@ -18,9 +18,9 @@ commands due on that edge, and prepares SmartA/SmartB from delayed pad samples.
 It calls every pin's `step()` exactly once with fixed inputs, publishes all
 returned outputs together, resolves pads, and updates the input/result pipelines.
 The cogs then execute and queue commands for future frames, followed by VCD
-capture and counter advancement. Pad feedback may require multiple settling
-iterations, but these only read the published outputs and never advance smart
-logic. Commands queued outside `Hub.step()` use the same delivery delay; external
+capture and counter advancement. Pad feedback reads the previous completed digital
+snapshot, and each RC pad advances exactly once per frame. Commands queued outside
+`Hub.step()` use the same delivery delay; external
 driver changes are staged until the next frame.
 Unimplemented modes use `DummyMode`, whose step fails with
 `UnsupportedSmartPinMode`; IO records a simulation fault with the issuing pin,
@@ -149,18 +149,80 @@ behavior with `fast-io: off "reason"`.
 [Serial hardware findings](../accumulated.md#serial-smart-pins-live-configuration-and-retained-state-2026-10-14)
 record the measured limits; regression fixtures live in `tests/windtunnel/`.
 
-## Digital pads and timing
+## RC pads and digital sampling
 
-`io.setExternal(pad_index, signal)` supplies an external drive (`zero`, `one`, `x` or
-`z`). Pads resolve internal and external drives, including floating drive modes
-and contention. A/B selectors route local/relative pads or the gated OUT bit;
-inversion, digital A/B logic, feedback and optional synchronization are modelled.
-Digital and Schmitt modes use digital levels. The 2/3/5/8-sample unanimous input
-filters and their selectable clock taps feed both GPIO and smart engines. SETDACS,
-the [digital streamer](streamer.md), and the [color converter](converter.md) expose
-per-cog DAC bytes without feeding them into pads. Analog behavior, scope instructions, ADC and USB smart
-modes remain unsupported.
-Boolean IN samples `x` and `z` as zero.
+`sim/Pad.zig` models each physical pad as two current-limited voltage sources
+(the internal P2 driver and at most one external source) feeding a capacitor to
+ground. Pads have no external electrical connections to one another. IO retains
+its existing digital output transport, input routing and sampling pipelines.
+
+```zig
+const pad: windtunnel.IO.PadIndex = @enumFromInt(10);
+try hub.io.setExternal(pad, .low);
+try hub.io.setExternal(pad, .{
+    .voltage = 3.3,          // volts
+    .resistance = 1_500,     // ohms, strictly positive
+    .max_current = 1e-3,     // amperes, unlimited by default
+    .drive_enabled = true,   // true by default
+    .capacitance = 100e-12,  // farads, zero by default
+});
+const result = hub.step(); // Handle normal/breakpoint/reset/trap in the runner.
+if (hub.io.getExternal(pad)) |state| {
+    // state.voltage, state.current and state.internal_current are concrete f64 values.
+}
+const digital = hub.io.pads[10]; // Signal.low or Signal.high
+try hub.io.setExternal(pad, .float); // Release drive; capacitor charge persists.
+```
+
+`setExternal()` validates before replacing the descriptor, and changes take effect
+on the next completed hub clock. Nonfinite voltage, nonpositive/nonfinite resistance,
+negative/NaN current limits and negative/nonfinite capacitance return `InvalidSource`.
+Positive infinity is accepted for an unlimited current. Validation also applies to
+disabled sources. `.high` and `.low` use 3.3 V and 0 V respectively, with 1-ohm
+resistance, unlimited current and no added capacitance. `.float` disables drive.
+Source replacement preserves voltage; changing capacitance does not simulate
+charge redistribution. External capacitance remains connected while drive is disabled.
+
+`getExternal()` returns the most recent completed snapshot. Only the snapshot itself
+is optional: it is null before the first completed clock following initialization
+or reset. Every pad then has a defined voltage and currents, even with no active cogs
+or drivers. `current` is positive from the external source into the pad;
+`internal_current` is positive from the P2 driver into the pad. Both are instantaneous
+currents at the end of the clock. Their sum charges the capacitor, so they need not
+cancel during a transient. Reads and staging a source do not advance the model.
+Full hub reset clears external descriptors and snapshots and initializes voltage to zero.
+
+Provisional, uncalibrated constants are 3.3 V supply, 1.65 V digital threshold,
+5 pF internal pad capacitance and 30-ohm fast drive. High and low WRPIN drive modes
+are mapped independently to 30 ohms, 1.5/15/150 kilohms, or a 30-ohm rail source
+limited to 1 mA, 100 microamps or 10 microamps. Floating modes and physical output
+disable disconnect that driver. Each enabled source follows
+`I = clamp((Vs - Vpad) / R, -Imax, +Imax)`.
+
+Once per system clock, the module solves the piecewise-linear backward-Euler equation
+`Ctotal * (Vnew - Vold) / dt = Iinternal(Vnew) + Iexternal(Vnew)`, where
+`dt = 1 / clock_frequency`. Transients continue with unchanged digital outputs;
+already-settled pads skip redundant solves. This is stable for short RC constants,
+but coarse clocks distort the continuous-time settling curve. There is no inductance,
+leakage, rail protection, electrical noise or hardware calibration.
+
+Digital reads are low below 1.65 V and high at or above it. Contention produces a
+resolved voltage, not an unknown digital value. Undriven pads retain charge without
+leakage and still produce a digital read. `Signal` contains only `low` and `high`;
+float belongs to the source's drive enable. Feedback drive selections use the previous
+completed digital pad snapshot; all pads then advance together, without iterative
+settling or multiple analog steps in one clock. Existing relative-pin routing is
+logical routing, not an electrical connection between pads.
+
+A/B selectors, inversion, digital logic, optional synchronization, and the
+2/3/5/8-sample unanimous filters remain digital. Schmitt configurations still use the
+same midpoint threshold; no hysteresis or comparator behavior is added. SETDACS,
+the [digital streamer](streamer.md), and the [color converter](converter.md) retain
+per-cog DAC bytes without driving analog pads. DAC internal sources remain disconnected.
+The existing host-supplied raw ADC density stays independent of pad voltage; ADC
+smart engines, scope and USB remain unsupported.
+
+## Command and transport timing
 
 Commands distinguish configuration, X/Y writes and acknowledgement. Commands
 from all cogs commit together after two clocks. Same-edge commands OR
@@ -170,10 +232,11 @@ after four clocks, and the repository's IN indication after five. Repository Z
 survives DIR reset; X writes while held reset update X without changing Z.
 
 Hardware GPIO loopback timing depends on frequency, edge polarity and electrical drive.
-The simulator uses optimistic, fixed cycle timing: drive changes four clocks after
-execution, with first changed TESTP results at instruction spacing eight and
-INA/INB at nine. Clock frequency never selects a different propagation delay.
-Electrical slew, loading and threshold-crossing delays are outside this digital model.
+The simulator retains optimistic, fixed digital transport: drive changes four clocks
+after execution, with unloaded fast-drive TESTP changes at instruction spacing eight
+and INA/INB at nine. Clock frequency never selects a different transport pipeline.
+The provisional RC model adds load- and clock-dependent voltage settling and threshold
+crossings; these assumptions do not reproduce measured electrical behavior.
 The former 170 MHz timing branch was an approximation, not a validated hardware threshold.
 Polarity-, pin- and current-dependent sampling changes support electrical pad slew,
 rather than an extra registered transport stage. Comparator searches also have their
@@ -236,8 +299,8 @@ before closing the Writer. Keep the exporter alive while attached. Export
 failures stop the simulator.
 
 Traces contain CT, each cog's OUTA/B, DIRA/B and INA/B, combined I/O registers,
-and physical P0–P63 with `0`, `1`, `x` and `z`. Combined OUT is the raw OR of cog
-OUT registers; the pads show the direction-gated drive. Initial values and
+and physical P0–P63 digitized as `0` or `1`. Combined OUT is the raw OR of cog
+OUT registers; the pads show thresholded RC voltages, including floating retained charge. Initial values and
 subsequent changes are emitted after each settled edge. Timestamps remain
 monotonic across CT rollover. One synthetic VCD nanosecond means
 one simulated system clock, independent of HUBSET frequency or wall time.

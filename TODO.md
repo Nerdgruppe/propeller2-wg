@@ -176,6 +176,12 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Implement Streamer FIFO bypass erratum
 - Extend test runner to store/print the time per test fixture and test run to find outliers.
 
+### Analog Subsystem
+
+- Add controllable drift/noise to analog subsystem
+  - Consider how to handle floating pins.
+  - Ingest actual P2 characteristics like voltage leaking, ...
+
 #### Clock Configuration
 
 - **Status: partial; analog oscillator/PLL fidelity is deferred.**

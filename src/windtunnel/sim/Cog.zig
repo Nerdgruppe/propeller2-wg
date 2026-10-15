@@ -2949,7 +2949,13 @@ test "pattern comparison reads architectural INA or INB and retains the SETPAT f
                 const cog = &hub.cogs[0];
                 hub.io.samples.active = true;
                 // Pads and unsampled routing deliberately disagree with the architectural register.
-                hub.io.pads = @splat(.x);
+                for (&hub.io.pads, 0..) |*level, pin| {
+                    const bit: u5 = @truncate(pin);
+                    level.* = if (case.input & (@as(u32, 1) << bit) == 0)
+                        .high
+                    else
+                        .low;
+                }
                 hub.io.routed_inputs = ~@as(u64, case.input);
                 hub.io.samples.input_registers = if (port_b)
                     (@as(u64, case.input) << 32) | ~case.input

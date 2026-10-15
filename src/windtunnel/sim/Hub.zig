@@ -952,7 +952,7 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     hub.counter = 123;
     hub.debug = .{ .enables = 0xff, .protected = true, .locked = true };
     hub.random.seed(0x87654321);
-    hub.io.setExternal(@enumFromInt(0), .one);
+    try hub.io.setExternal(@enumFromInt(0), .high);
     hub.io.pins[0].smart.registers.x = 99;
     hub.locks[0].allocated = true;
     hub.locks[0].taken = true;
@@ -980,7 +980,8 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     try std.testing.expectEqual(@as(u8, 0), hub.debug.enables);
     try std.testing.expect(!hub.debug.protected and !hub.debug.locked);
     try std.testing.expectEqualDeep(Random{}, hub.random);
-    try std.testing.expectEqual(IO.Signal.z, hub.io.external[0]);
+    try std.testing.expectEqualDeep(IO.Pad.Source.float, hub.io.external[0]);
+    try std.testing.expect(hub.io.getExternal(@enumFromInt(0)) == null);
     try std.testing.expectEqual(@as(u32, 0), hub.io.pins[0].smart.registers.x);
     try std.testing.expect(!hub.locks[0].allocated and !hub.locks[0].taken);
     try std.testing.expect(hub.debugger == null and hub.trace_writer == null and hub.vcd == null);

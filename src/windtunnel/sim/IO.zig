@@ -2,6 +2,7 @@
 const std = @import("std");
 const Hub = @import("Hub.zig");
 const smart_pin = @import("smart_pin.zig");
+pub const Pad = @import("Pad.zig");
 const pipeline = @import("pipeline.zig");
 const Pipeline = pipeline.Pipeline;
 pub const SmartPin = smart_pin.SmartPin;
@@ -87,11 +88,11 @@ pub const Pin = struct {
     /// Logic outputs published after every pin has advanced for the frame.
     outputs: smart_pin.Outputs = .{},
     /// Registered output-mux path, clocked in every mode without configuration-time resets.
-    output_pipeline: Pipeline(Signal, 1) = .init(.zero),
+    output_pipeline: Pipeline(Signal, 1) = .init(.low),
     /// Optional output synchronization retains its history while deselected.
-    sync_output_pipeline: Pipeline(Signal, 3) = .init(.zero),
+    sync_output_pipeline: Pipeline(Signal, 3) = .init(.low),
     /// Selected OUT/OTHER/SmartOut after the common propagation delay.
-    output: Signal = .zero,
+    output: Signal = .low,
     /// Host architectural edits deliver their engine strobes on the next complete hub edge.
     edits: struct { x: ?u32 = null, y: ?u32 = null } = .{},
     filter_a: InputFilter = .{},
@@ -173,7 +174,7 @@ const CommandPipeline = struct {
 
 /// Pad, OUT, input, and smart-result samples from the same four-clock window.
 const Samples = struct {
-    pads: [4][64]Signal = @splat(@splat(.z)),
+    pads: [4][64]Signal = @splat(@splat(.low)),
     /// OUT selectors cross the same two input sampling stages as physical pad reads.
     out: [4]u64 = @splat(0),
     directions: [4]u64 = @splat(0),
@@ -195,13 +196,14 @@ filters: [4]FilterConfiguration = .{
     .{ .length = .five, .tap = 19 },
     .{ .length = .eight, .tap = 22 },
 },
-smart_a: [64]Signal = @splat(.z),
-smart_b: [64]Signal = @splat(.z),
-pads: [64]Signal = @splat(.z),
-external: [64]Signal = @splat(.z),
-pad_reads: [64]Signal = @splat(.z),
-sync_out: [64]Signal = @splat(.zero),
-sync_in: [64]Signal = @splat(.z),
+smart_a: [64]Signal = @splat(.low),
+smart_b: [64]Signal = @splat(.low),
+pads: [64]Signal = @splat(.low),
+external: [64]Pad.Source = @splat(.float),
+analog_pads: [64]Pad = @splat(.{}),
+pad_reads: [64]Signal = @splat(.low),
+sync_out: [64]Signal = @splat(.low),
+sync_in: [64]Signal = @splat(.low),
 directions: u64 = 0,
 physical_directions: u64 = 0,
 direction_pipeline: DirectionPipeline = .{},
@@ -209,7 +211,6 @@ samples: Samples = .{},
 routed_inputs: u64 = 0,
 outputs: u64 = 0,
 drives: u64 = 0,
-dirty: bool = true,
 clock_mode: u32 = 0,
 clock_frequency: u64 = 20_000_000,
 crystal_frequency: u64 = 20_000_000,
@@ -278,7 +279,6 @@ fn apply(io: *IO, index: PinIndex, command: Command, inputs: *smart_pin.Inputs) 
             const configuration: PinConfiguration = @bitCast(command.value);
             io.pins[i].configure(configuration);
             inputs.ack = true;
-            io.dirty = true;
         },
         .write_x => inputs.new_x = command.value,
         .write_y => inputs.new_y = command.value,
@@ -306,7 +306,6 @@ pub fn step(io: *IO, hub: *Hub) void {
     if (io.direction_pipeline.directions[io.direction_pipeline.head]) |directions| {
         io.physical_directions = directions;
         io.direction_pipeline.directions[io.direction_pipeline.head] = null;
-        io.dirty = true;
     }
     const inputs = &io.frame_inputs;
     for (inputs, 0..) |*sample, i| {
@@ -375,28 +374,16 @@ pub fn step(io: *IO, hub: *Hub) void {
         };
     }
     io.routed_inputs = 0;
-    var dynamic_pads = false;
     for (&io.pins, next, 0..) |*pin, next_state, i| {
         const state = next_state;
-        const before = pin.outputs;
-        const configuration = pin.configuration;
         io.routed_inputs |= @as(u64, state.in) << @intCast(i);
-        if (state.smart_out != before.smart_out) {
-            io.dirty = true;
-        }
-        if (configuration.synchronous or configuration.output_source == .other or configuration.pad_mode != .logic) {
-            dynamic_pads = true;
-        }
         pin.outputs = state;
     }
     // Delay the selected output in every mode, including GPIO and WRPIN mux changes.
     for (&io.pins, 0..) |*pin, i| {
         const mux_signal = io.selectedOutput(@enumFromInt(i));
         const output = pin.output_pipeline.step(mux_signal);
-        if (pin.output != output) {
-            pin.output = output;
-            io.dirty = true;
-        }
+        pin.output = output;
     }
     for (&io.sync_out, 0..) |*state, i| {
         const configuration = io.pins[i].configuration;
@@ -405,9 +392,7 @@ pub fn step(io: *IO, hub: *Hub) void {
         const sync_pipeline = &io.pins[i].sync_output_pipeline;
         state.* = sync_pipeline.step(io.outputState(@enumFromInt(i)));
     }
-    if (io.dirty or dynamic_pads) {
-        io.resolvePads();
-    }
+    io.resolvePads();
     io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
     io.samples.out[hub.counter % io.samples.out.len] = io.drives;
     io.samples.directions[hub.counter % io.samples.directions.len] = io.directions;
@@ -482,7 +467,6 @@ pub fn outputEnabled(io: *const IO, index: PadIndex) bool {
 /// Apply a host WRPIN edit through the same configuration decoder as delayed commands.
 pub fn editConfiguration(io: *IO, index: PinIndex, value: u32) void {
     io.pins[@intFromEnum(index)].configure(@bitCast(value));
-    io.dirty = true;
 }
 
 pub const SmartRegister = enum { x, y };
@@ -502,13 +486,17 @@ pub fn editSmartRegister(io: *IO, index: PinIndex, register: SmartRegister, valu
         },
     }
     pin.smart.registers.ready = false;
-    io.dirty = true;
 }
 
-/// Stage an external physical pad driver for resolution during the next frame.
-pub fn setExternal(io: *IO, index: PadIndex, state: Signal) void {
-    io.external[@intFromEnum(index)] = state;
-    io.dirty = true;
+/// Validate and stage an external source; replacing it preserves the capacitor voltage.
+pub fn setExternal(io: *IO, index: PadIndex, source: Pad.Source) error{InvalidSource}!void {
+    try source.validate();
+    io.external[@intFromEnum(index)] = source;
+}
+
+/// Return the last completed electrical snapshot, or null before the first clock after reset.
+pub fn getExternal(io: *const IO, index: PadIndex) ?Pad.State {
+    return io.analog_pads[@intFromEnum(index)].state;
 }
 
 /// Set a normalized ADC bit density, retaining modulator phase for continuously changing input.
@@ -570,34 +558,16 @@ fn outputState(io: *const IO, index: PadIndex) Signal {
     return state;
 }
 
-/// Apply WRPIN output enable and the physical high/low drive configuration.
-fn drive(io: *const IO, index: PadIndex) Signal {
+/// Translate the registered logical driver into electrical characteristics without advancing it.
+fn drive(io: *const IO, index: PadIndex) Pad.Source {
     const i = @intFromEnum(index);
     const configuration = io.pins[i].configuration;
-    // DAC pad levels have no digital driver representation; only the cog's four DAC bytes are modeled.
-    if (configuration.isDac() or !io.outputEnabled(index))
-        return .z;
     // ADC source/gain selection reuses the GPIO synchronization bit; OUT remains asynchronous.
     const state = if (!configuration.isAdc() and configuration.synchronous)
         io.sync_out[i]
     else
         io.outputState(index);
-    const high_float = configuration.high_drive == .float;
-    const low_float = configuration.low_drive == .float;
-    return switch (state) {
-        .one => if (high_float)
-            .z
-        else
-            .one,
-        .zero => if (low_float)
-            .z
-        else
-            .zero,
-        else => if (high_float and low_float)
-            .z
-        else
-            .x,
-    };
+    return Pad.internalSource(configuration, state, io.outputEnabled(index));
 }
 
 /// Select a relative physical pad or the cog OUT bit for one smart input.
@@ -627,41 +597,15 @@ fn selected(io: *const IO, index: PinIndex, selector: PinConfiguration.Selector)
         state;
 }
 
-/// Settle the physical drive network from published outputs without advancing smart logic.
+/// Advance independent RC pads once, with all feedback drivers selected from the previous snapshot.
 fn resolvePads(io: *IO) void {
-    io.dirty = false;
-    const previous = io.pads;
-    // Settle digital feedback together. Oscillating networks have unknown pad levels.
-    var settled = false;
-    for (0..65) |_| {
-        var next: [64]Signal = undefined;
-        for (&next, 0..) |*state, i| {
-            state.* = Signal.resolve(io.drive(@enumFromInt(i)), io.external[i]);
-        }
-        if (std.mem.eql(Signal, &next, &io.pads)) {
-            settled = true;
-            break;
-        }
-        io.pads = next;
+    const dt = 1 / @as(f64, @floatFromInt(io.clock_frequency));
+    var next: [64]Signal = undefined;
+    for (&io.analog_pads, &next, 0..) |*pad, *state, i| {
+        state.* = pad.step(io.drive(@enumFromInt(i)), io.external[i], dt).digital();
     }
-    if (!settled)
-        for (&io.pads, 0..) |*state, i| {
-            switch (io.pins[i].configuration.pad_mode) {
-                .logic_feedback, .logic_adjacent_feedback, .schmitt_feedback, .schmitt_adjacent_feedback => state.* = .x,
-                else => {},
-            }
-        };
-    for (0..64) |i| {
-        const internal = io.drive(@enumFromInt(i));
-        const conflict = (internal == .one and
-            io.external[i] == .zero) or
-            (internal == .zero and
-                io.external[i] == .one);
-        if (conflict and previous[i] != .x) {
-            std.log.warn("digital contention on pin {d} at clock {d}", .{ i, io.last_clock });
-        }
-    }
-    io.sync_in = io.pads;
+    io.pads = next;
+    io.sync_in = next;
 }
 
 /// Compute SmartA/SmartB from the previous pad samples without advancing smart logic.
@@ -683,7 +627,7 @@ fn routeInputs(io: *IO) void {
             // In plain DAC mode TT=00/01 selects OUT as ADC enable; TT=10/11 selects bit-DAC instead.
             if (configuration.isDac() and (configuration.output_source == .other or
                 io.outputs & (@as(u64, 1) << @intCast(i)) == 0))
-                break :blk Signal.zero;
+                break :blk Signal.low;
             break :blk Signal.from(io.adc_inputs[i].step());
         } else if (configuration.synchronous)
             io.sync_in[source]
@@ -747,6 +691,76 @@ fn testCommand(hub: *Hub, index: PinIndex, kind: CommandKind, value: u32) void {
     for (0..command_delay + 1) |_| {
         _ = hub.step();
     }
+}
+
+test "external RC snapshots are staged, clocked and sampled through the existing input pipeline" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    const pad: PadIndex = @enumFromInt(10);
+    try std.testing.expect(hub.io.getExternal(pad) == null);
+    const source: Pad.Source = .{ .voltage = 3.3, .resistance = 1_000, .capacitance = 95e-12 };
+    try hub.io.setExternal(pad, source);
+    try std.testing.expect(hub.io.getExternal(pad) == null);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[10]);
+    try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
+    const first = hub.io.getExternal(pad).?;
+    try std.testing.expectApproxEqAbs(@as(f64, 1.1), first.voltage, 1e-12);
+    try std.testing.expect(first.current > 0 and first.internal_current == 0);
+    for (0..64) |index| {
+        try std.testing.expect(hub.io.getExternal(@enumFromInt(index)) != null);
+    }
+    hub.io.clock_frequency = 10_000_000;
+    _ = hub.step();
+    const second = hub.io.getExternal(pad).?;
+    try std.testing.expectApproxEqAbs(@as(f64, 2.2), second.voltage, 1e-12);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[10]);
+    try std.testing.expect(hub.io.get_in() & (1 << 10) == 0);
+    try hub.io.setExternal(pad, .float);
+    try std.testing.expectEqualDeep(second, hub.io.getExternal(pad).?);
+    for (0..6) |_| {
+        _ = hub.step();
+    }
+    const held = hub.io.getExternal(pad).?;
+    try std.testing.expectEqual(second.voltage, held.voltage);
+    try std.testing.expectEqual(@as(f64, 0), held.current);
+    try std.testing.expect(hub.io.get_in() & (1 << 10) != 0);
+    try std.testing.expectError(error.InvalidSource, hub.io.setExternal(pad, .{ .voltage = 0, .resistance = 0 }));
+    try std.testing.expectEqualDeep(Pad.Source.float, hub.io.external[10]);
+    try std.testing.expectEqualDeep(held, hub.io.getExternal(pad).?);
+    hub.init();
+    try std.testing.expect(hub.io.getExternal(pad) == null);
+    _ = hub.step();
+    try std.testing.expectEqualDeep(Pad.State{ .voltage = 0, .current = 0, .internal_current = 0 }, hub.io.getExternal(pad).?);
+}
+
+test "adjacent feedback uses the previous complete snapshot and advances each pad once" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    try hub.io.setExternal(@enumFromInt(0), .high);
+    _ = hub.step();
+    try hub.io.setExternal(@enumFromInt(0), .float);
+    hub.io.editConfiguration(@enumFromInt(0), 0x40000);
+    hub.io.editConfiguration(@enumFromInt(1), 0x40000);
+    hub.cogs[0].write_reg(.DIRA, 3);
+    for (0..3) |_| {
+        _ = hub.step();
+        try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
+        try std.testing.expectEqual(Signal.low, hub.io.pads[1]);
+    }
+    _ = hub.step();
+    try std.testing.expectEqual(Signal.low, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[1]);
+    const falling = hub.io.getExternal(@enumFromInt(0)).?;
+    const rising = hub.io.getExternal(@enumFromInt(1)).?;
+    try std.testing.expect(falling.voltage > 0.009 and falling.voltage < 0.01);
+    try std.testing.expect(rising.voltage > 3.29 and rising.voltage < 3.3);
+    _ = hub.step();
+    try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[1]);
 }
 
 test "clock fields and reader-backed UART input are independent of terminal pin numbers" {
@@ -839,18 +853,18 @@ test "GPIO pad pipeline has fixed cycle timing at every clock frequency" {
         hub.cogs[0].registers.set(.OUTA, 1);
         for (0..3) |_| {
             _ = hub.step();
-            try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
+            try std.testing.expectEqual(Signal.low, hub.io.pads[0]);
         }
         _ = hub.step();
-        try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
+        try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
 
         hub.cogs[0].registers.set(.OUTA, 0);
         for (0..3) |_| {
             _ = hub.step();
-            try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
+            try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
         }
         _ = hub.step();
-        try std.testing.expectEqual(Signal.zero, hub.io.pads[0]);
+        try std.testing.expectEqual(Signal.low, hub.io.pads[0]);
     }
 }
 
@@ -864,7 +878,7 @@ test "frequency changes preserve in-flight GPIO timing and history" {
         _ = hub.step();
     }
     // Clock changes on the publication edges must neither delay nor advance queued transitions.
-    const expected = [_]Signal{ .zero, .zero, .zero, .one, .one, .one, .one, .one, .zero, .zero };
+    const expected = [_]Signal{ .low, .low, .low, .high, .high, .high, .high, .high, .low, .low };
     for (expected, 0..) |level, clock| {
         switch (clock) {
             0 => hub.cogs[0].registers.set(.OUTA, 1 << 4),
@@ -890,7 +904,7 @@ test "synchronous output retains pending transitions while deselected across clo
     hub.io.editConfiguration(@enumFromInt(4), 1 << 16);
     const pin = &hub.io.pins[4];
     // The first high enters synchronization at clock 3; deselection pauses it until clock 7.
-    const expected = [_]Signal{ .zero, .zero, .zero, .zero, .one, .one, .one, .zero, .zero, .one, .zero };
+    const expected = [_]Signal{ .low, .low, .low, .low, .high, .high, .high, .low, .low, .high, .low };
     var frozen = pin.sync_output_pipeline;
     for (expected, 0..) |level, clock| {
         switch (clock) {
@@ -924,27 +938,31 @@ test "GPIO cog OR, A/B routing, float, feedback and contention remain separate f
     for (0..9) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.zero, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[0]);
     hub.cogs[1].write_reg(.DIRA, 1);
     for (0..9) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
     try std.testing.expectEqual(@as(u64, 1), hub.io.get_in());
-    hub.io.setExternal(@enumFromInt(0), .zero);
+    try hub.io.setExternal(@enumFromInt(0), .low);
     for (0..5) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.x, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[0]);
+    const contested = hub.io.getExternal(@enumFromInt(0)).?;
+    try std.testing.expectApproxEqAbs(@as(f64, 3.3 / 31.0), contested.voltage, 1e-10);
+    try std.testing.expect(contested.internal_current > 0 and contested.current < 0);
     try std.testing.expectEqual(@as(u64, 0), hub.io.get_in());
-    hub.io.setExternal(@enumFromInt(0), .z);
+    try hub.io.setExternal(@enumFromInt(0), .float);
     hub.cogs[0].write_reg(.DIRA, 0);
     hub.cogs[1].write_reg(.DIRA, 0);
     for (0..9) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
-    hub.io.setExternal(@enumFromInt(63), .one);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
+    try std.testing.expect(!hub.io.outputEnabled(@enumFromInt(0)));
+    try hub.io.setExternal(@enumFromInt(63), .high);
     testCommand(hub, @enumFromInt(0), .configure, 0x70000000); // A = relative -1, wrapping all 64 pins.
     try std.testing.expect(hub.io.smart_a[0].sample());
     testCommand(hub, @enumFromInt(0), .configure, 0xf0000000);
@@ -955,18 +973,19 @@ test "GPIO cog OR, A/B routing, float, feedback and contention remain separate f
     for (0..5) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
+    try std.testing.expectEqual(@as(f64, 0), hub.io.getExternal(@enumFromInt(0)).?.internal_current);
     // Adjacent-pin feedback drives pin 0 from externally driven pin 1.
-    hub.io.setExternal(@enumFromInt(1), .one);
+    try hub.io.setExternal(@enumFromInt(1), .high);
     testCommand(hub, @enumFromInt(0), .configure, 0x40000);
-    try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
     testCommand(hub, @enumFromInt(2), .configure, 2);
     hub.cogs[0].write_reg(.DIRA, 5);
     testCommand(hub, @enumFromInt(2), .write_x, 0);
     for (0..3) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.z, hub.io.pads[2]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[2]);
     try std.testing.expect(hub.io.get_in() & 4 != 0);
 }
 
@@ -1108,7 +1127,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
     hub.cogs[0].write_reg(.DIRA, std.math.maxInt(u32));
     hub.cogs[0].write_reg(.DIRB, std.math.maxInt(u32));
     hub.io.enqueue(hub, .{ .mask = std.math.maxInt(u64), .kind = .configure, .value = 58, .cog = 0, .pc = 0, .instruction = 0 });
-    hub.io.setExternal(@enumFromInt(0), .one);
+    try hub.io.setExternal(@enumFromInt(0), .high);
     try std.testing.expectEqual(@as(usize, 0), device.calls);
     try std.testing.expect(hub.io.pins[0].smart.logic == .gpio);
     for (0..command_delay) |_| {
@@ -1137,7 +1156,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
     try std.testing.expect(hub.fault == null);
     try std.testing.expectEqual(@as(usize, 128), device.calls);
     // External updates and command queueing cannot invoke a pin between frames.
-    hub.io.setExternal(@enumFromInt(0), .zero);
+    try hub.io.setExternal(@enumFromInt(0), .low);
     hub.io.enqueue(hub, .{ .mask = 1, .kind = .write_x, .value = 7, .cog = 0, .pc = 0, .instruction = 0 });
     try std.testing.expectEqual(@as(usize, 128), device.calls);
     try std.testing.expectEqual(@as(u32, 0), hub.io.pins[0].smart.registers.x);
@@ -1185,7 +1204,7 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     for (0..5) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.one, hub.io.pads[0]);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
     const pin = &hub.io.pins[1];
     var reader = std.Io.Reader.fixed("x");
     var source: DataSource = .{ .reader = &reader };
@@ -1196,19 +1215,20 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     for (0..2) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.one, pin.outputs.smart_out);
-    try std.testing.expectEqual(Signal.one, hub.io.pads[1]);
+    try std.testing.expectEqual(Signal.high, pin.outputs.smart_out);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[1]);
     hub.cogs[0].write_reg(.DIRA, 3);
     for (0..9) |_| {
         _ = hub.step();
     }
     try std.testing.expectEqual(@as(usize, 1), reader.bufferedLen());
     testCommand(hub, @enumFromInt(1), .configure, 0xfc); // SMART overrides OTHER in UART TX.
-    try std.testing.expectEqual(Signal.one, hub.io.pads[1]);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[1]);
     testCommand(hub, @enumFromInt(1), .configure, 0xbc); // TT disables output despite DIR high.
     try std.testing.expect(pin.smart.registers.enabled);
-    try std.testing.expectEqual(Signal.one, pin.outputs.smart_out);
-    try std.testing.expectEqual(Signal.z, hub.io.pads[1]);
+    try std.testing.expectEqual(Signal.high, pin.outputs.smart_out);
+    try std.testing.expectEqual(Signal.high, hub.io.pads[1]);
+    try std.testing.expect(!hub.io.outputEnabled(@enumFromInt(1)));
     // RX leaves the output mux to OTHER, independent of the receiver's DIR reset.
     pin.smart.rx_mode = .exact;
     hub.cogs[0].write_reg(.DIRA, 1);
@@ -1217,17 +1237,17 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     for (0..2) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.zero, hub.io.pads[1]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[1]);
     testCommand(hub, @enumFromInt(1), .configure, 0xc0); // Normal mode uses DIR regardless of TT.
     for (0..2) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.z, hub.io.pads[1]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[1]);
     hub.cogs[0].write_reg(.DIRA, 3);
     for (0..5) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.zero, hub.io.pads[1]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[1]);
 }
 
 test "unanimous histories reject glitches and register agreement before publishing" {
@@ -1236,25 +1256,25 @@ test "unanimous histories reject glitches and register agreement before publishi
         const mask: u8 = @intCast((@as(u16, 1) << length) - 1);
         var filter: InputFilter = .{};
         for (0..length - 1) |_| {
-            try std.testing.expectEqual(Signal.zero, filter.step(.one, mask, true));
+            try std.testing.expectEqual(Signal.low, filter.step(.high, mask, true));
         }
-        _ = filter.step(.zero, mask, true);
+        _ = filter.step(.low, mask, true);
         try std.testing.expect(!filter.output_pipeline.tap(0));
         // History comparison and output sampling use the preceding edge's values.
         for (0..length) |_| {
-            try std.testing.expectEqual(Signal.zero, filter.step(.one, mask, true));
+            try std.testing.expectEqual(Signal.low, filter.step(.high, mask, true));
         }
-        try std.testing.expectEqual(Signal.zero, filter.step(.zero, mask, false));
-        try std.testing.expectEqual(Signal.zero, filter.step(.zero, mask, false));
-        try std.testing.expectEqual(Signal.one, filter.step(.zero, mask, false));
+        try std.testing.expectEqual(Signal.low, filter.step(.low, mask, false));
+        try std.testing.expectEqual(Signal.low, filter.step(.low, mask, false));
+        try std.testing.expectEqual(Signal.high, filter.step(.low, mask, false));
         for (0..length - 1) |_| {
-            try std.testing.expectEqual(Signal.one, filter.step(.zero, mask, true));
+            try std.testing.expectEqual(Signal.high, filter.step(.low, mask, true));
         }
-        try std.testing.expectEqual(Signal.one, filter.step(.z, mask, true));
-        try std.testing.expectEqual(Signal.one, filter.step(.x, mask, false));
-        try std.testing.expectEqual(Signal.one, filter.step(.x, mask, false));
-        try std.testing.expectEqual(Signal.zero, filter.step(.x, mask, false));
-        try std.testing.expectEqual(Signal.zero, filter.step(.x, mask, true));
+        try std.testing.expectEqual(Signal.high, filter.step(.low, mask, true));
+        try std.testing.expectEqual(Signal.high, filter.step(.low, mask, false));
+        try std.testing.expectEqual(Signal.high, filter.step(.low, mask, false));
+        try std.testing.expectEqual(Signal.low, filter.step(.low, mask, false));
+        try std.testing.expectEqual(Signal.low, filter.step(.low, mask, true));
     }
 }
 
@@ -1269,7 +1289,7 @@ test "all global filters independently sample selected inverted A and B on both 
         });
     }
     // Every selected A is high and each inverted B is low.
-    io.pads = @splat(.one);
+    io.pads = @splat(.high);
     for (0..31) |clock| {
         io.last_clock = clock;
         io.routeInputs();
@@ -1286,15 +1306,15 @@ test "all global filters independently sample selected inverted A and B on both 
         io.routeInputs();
     }
     for (0..4) |i| {
-        try std.testing.expectEqual(Signal.one, io.smart_a[i]);
-        try std.testing.expectEqual(Signal.zero, io.smart_b[i]);
+        try std.testing.expectEqual(Signal.high, io.smart_a[i]);
+        try std.testing.expectEqual(Signal.low, io.smart_b[i]);
     }
     // Reconfiguration must use the retained history even without a new sample.
     io.configureFilter(0x4000_001f);
     io.pins[0].filter_a.history = 3;
     io.last_clock = 34;
     io.routeInputs();
-    try std.testing.expectEqual(Signal.one, io.smart_a[0]);
+    try std.testing.expectEqual(Signal.high, io.smart_a[0]);
     // The sampled CT tap is half a period ahead: test both transitions and rollover.
     io.pins[0].filter_a.history = 0;
     io.input_clock = (@as(u64, 1) << 30) - 1;
@@ -1313,8 +1333,8 @@ test "all global filters independently sample selected inverted A and B on both 
 
 test "adjacent pad input precedes inversion and selectors even with output disabled" {
     var io: IO = .{};
-    io.pads[0] = .one;
-    io.pads[1] = .zero;
+    io.pads[0] = .high;
+    io.pads[1] = .low;
     io.sync_in = io.pads;
     for ([_]PinConfiguration.PadMode{ .logic_adjacent_feedback, .schmitt_adjacent_feedback }) |mode| {
         for ([_]bool{ false, true }) |synchronous| {
@@ -1332,10 +1352,10 @@ test "adjacent pad input precedes inversion and selectors even with output disab
     }
 }
 
-test "Boolean routing changes A only and preserves four-state B" {
+test "Boolean routing changes A only and preserves B" {
     var io: IO = .{};
-    for ([_]Signal{ .zero, .one, .x, .z }) |a| {
-        for ([_]Signal{ .zero, .one, .x, .z }) |b| {
+    for ([_]Signal{ .low, .high }) |a| {
+        for ([_]Signal{ .low, .high }) |b| {
             io.pads[0] = a;
             io.pads[1] = b;
             inline for ([_]PinConfiguration.InputLogic{ .a, .a_and_b, .a_or_b, .a_xor_b }) |logic| {
@@ -1358,8 +1378,8 @@ test "GPIO and smart modes receive filtered A and B through the common frame rou
         try std.testing.expectEqual(@as(u5, 5), hub.io.filters[1].tap);
         try std.testing.expectEqual(@as(u5, 19), hub.io.filters[2].tap);
         try std.testing.expectEqual(@as(u5, 22), hub.io.filters[3].tap);
-        hub.io.setExternal(@enumFromInt(0), .one);
-        hub.io.setExternal(@enumFromInt(1), .zero);
+        try hub.io.setExternal(@enumFromInt(0), .high);
+        try hub.io.setExternal(@enumFromInt(1), .low);
         hub.io.pins[2].configure(.{
             .mode = mode,
             .input_logic = .filter0,
@@ -1371,8 +1391,8 @@ test "GPIO and smart modes receive filtered A and B through the common frame rou
             _ = hub.step();
         }
         const inputs = hub.io.pinInputs(@enumFromInt(2));
-        try std.testing.expectEqual(Signal.one, inputs.a);
-        try std.testing.expectEqual(Signal.zero, inputs.b);
+        try std.testing.expectEqual(Signal.high, inputs.a);
+        try std.testing.expectEqual(Signal.low, inputs.b);
         // GPIO publishes A; a smart mode publishes its own completion flag instead.
         try std.testing.expectEqual(if (mode == .gpio) @as(u64, 4) else 0, hub.io.get_in() & 4);
     }
@@ -1391,18 +1411,18 @@ test "switching to virtual TX preserves the ordinary output propagation delay" {
     for (0..5) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(Signal.zero, hub.io.pads[4]);
+    try std.testing.expectEqual(Signal.low, hub.io.pads[4]);
     const discard: DataSink = .discard;
     pin.smart.tx_mode = .{ .virtual = &discard };
     for (0..2) |clock| {
         _ = hub.step();
-        try std.testing.expectEqual(Signal.zero, hub.io.pads[4]);
-        try std.testing.expectEqual(if (clock == 0) Signal.zero else Signal.one, pin.outputs.smart_out);
+        try std.testing.expectEqual(Signal.low, hub.io.pads[4]);
+        try std.testing.expectEqual(if (clock == 0) Signal.low else Signal.high, pin.outputs.smart_out);
     }
     for (0..20) |_| {
         _ = hub.step();
-        try std.testing.expectEqual(Signal.one, hub.io.pads[4]);
-        try std.testing.expectEqual(Signal.one, pin.outputs.smart_out);
+        try std.testing.expectEqual(Signal.high, hub.io.pads[4]);
+        try std.testing.expectEqual(Signal.high, pin.outputs.smart_out);
     }
 }
 
@@ -1443,19 +1463,24 @@ test "raw ADC retains GPIO drive enable inversion and float legs without a synch
                             high_drive
                         else
                             low_drive;
-                        const expected = if (drive_mode == .float)
-                            Signal.z
-                        else
-                            Signal.from(level);
-                        try std.testing.expectEqual(expected, hub.io.pads[0]);
+                        if (drive_mode == .float) {
+                            try std.testing.expectEqual(
+                                @as(f64, 0),
+                                hub.io.getExternal(@enumFromInt(0)).?.internal_current,
+                            );
+                        } else {
+                            try std.testing.expectEqual(Signal.from(level), hub.io.pads[0]);
+                        }
                         // The host-supplied ADC stream stays independent of the driven pad level.
                         try std.testing.expect(hub.io.get_in() & 1 != 0);
                     }
+                    const retained = hub.io.pads[0];
                     hub.cogs[0].write_reg(.DIRA, 0);
                     for (0..6) |_| {
                         _ = hub.step();
                     }
-                    try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
+                    try std.testing.expectEqual(retained, hub.io.pads[0]);
+                    try std.testing.expect(!hub.io.outputEnabled(@enumFromInt(0)));
                 }
             }
         }
@@ -1488,7 +1513,7 @@ test "DAC pad modes gate the independent raw ADC stream with OUT and TT instead 
                     else
                         0;
                     try std.testing.expectEqual(expected, count);
-                    try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
+                    try std.testing.expectEqual(Signal.low, hub.io.pads[0]);
                     try std.testing.expectEqualSlices(u8, &.{ 0, 0, 0, 0 }, &hub.cogs[0].dacs);
                 }
             }

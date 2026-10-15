@@ -94,9 +94,9 @@ pub const Inputs = struct {
     /// OR of the cogs' OUT bits, before the physical pad's drive gating and delays.
     out: u1 = 0,
     /// SmartA after input selection, inversion, A/B logic and applicable sampling delays.
-    a: Signal = .z,
+    a: Signal = .low,
     /// SmartB after input selection, inversion and applicable sampling delays.
-    b: Signal = .z,
+    b: Signal = .low,
     /// WXPIN value delivered this frame; null means no write, including no implicit ACK.
     /// SmartPin.step stores a present value in Registers.x before running the logic.
     new_x: ?u32 = null,
@@ -119,7 +119,7 @@ pub const Inputs = struct {
 pub const Outputs = struct {
     /// Logic drive before pad routing, inversion and electrical resolution.
     /// Emulated serial transmitters generate this level; virtual transmitters hold their reset level.
-    smart_out: Signal = .zero,
+    smart_out: Signal = .low,
     /// Signal sent toward the cog IN registers: routed SmartA for GPIO, ready for smart modes.
     in: u1 = 0,
     /// Current result (Z) returned through RDPIN/RQPIN, distinct from the WYPIN register.
@@ -224,7 +224,7 @@ pub const UartTx = struct {
     shift: u32 = 0,
     position: u6 = 0,
     timer: BaudTimer = .{},
-    line: Signal = .one,
+    line: Signal = .high,
     a: Pipeline(bool, 1) = .init(false),
 
     /// Buffer writes, serialize start/data/stop, and deliver completed words to the current sink.
@@ -232,7 +232,7 @@ pub const UartTx = struct {
         if (mode == .virtual) {
             logic.* = .{};
             var state = try transmitImmediate(regs, inputs, mode.virtual);
-            state.smart_out = .one;
+            state.smart_out = .high;
             state.flag = false;
             if (regs.enabled and inputs.new_y != null) {
                 state.y = regs.y;
@@ -243,7 +243,7 @@ pub const UartTx = struct {
         const a = logic.a.step(inputs.a.sample());
         if (!regs.enabled) {
             logic.* = .{};
-            state.smart_out = .one;
+            state.smart_out = .high;
             state.flag = false;
             return state;
         }
@@ -259,7 +259,7 @@ pub const UartTx = struct {
                     state.y = logic.shift;
                     try mode.emulated.write(word & wordMask(regs.x));
                     logic.shifter = null;
-                    logic.line = .one;
+                    logic.line = .high;
                 } else {
                     if (logic.position != 0) {
                         logic.shift = (logic.shift >> 1) | (@as(u32, @intFromBool(a)) << 31);
@@ -269,7 +269,7 @@ pub const UartTx = struct {
                         logic.position += 1;
                     }
                     logic.line = if (logic.position == SerialTiming.init(regs.x).bits + 1)
-                        .one
+                        .high
                     else
                         Signal.from(logic.shift & 1 != 0);
                 }
@@ -284,7 +284,7 @@ pub const UartTx = struct {
                 if (!active) {
                     logic.timer.start(regs.x, false);
                 }
-                logic.line = .zero;
+                logic.line = .low;
                 state.y = word;
                 state.in = 1;
             }
@@ -302,7 +302,7 @@ pub const UsartTx = struct {
     shift: u32 = 0,
     count: u5 = 0,
     b: bool = false,
-    line: Signal = .zero,
+    line: Signal = .low,
     a: Pipeline(bool, 1) = .init(false),
     primed: bool = false,
 
@@ -311,7 +311,7 @@ pub const UsartTx = struct {
         if (mode == .virtual) {
             logic.* = .{ .a = .init(inputs.a.sample()), .b = inputs.b.sample() };
             var state = try transmitImmediate(regs, inputs, mode.virtual);
-            state.smart_out = .zero;
+            state.smart_out = .low;
             return state;
         }
         var state = outputs(regs, inputs);
@@ -330,7 +330,7 @@ pub const UsartTx = struct {
             logic.shift = regs.y;
             logic.count = 0;
             logic.primed = true;
-            state.smart_out = .zero;
+            state.smart_out = .low;
             return state;
         }
         if (logic.primed) {
@@ -593,7 +593,7 @@ pub const Pulse = struct {
     /// Start pulse trains at a base boundary and signal their finite completion.
     fn step(logic: *Pulse, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
         var state = outputs(regs, inputs);
-        state.smart_out = .zero;
+        state.smart_out = .low;
         if (!regs.enabled) {
             logic.divider.reset(regs.x);
             logic.remaining = 0;
@@ -627,7 +627,7 @@ pub const Transition = struct {
     /// Toggle at free-running base boundaries and hold the final state until reset.
     fn step(logic: *Transition, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
         var state = outputs(regs, inputs);
-        state.smart_out = .zero;
+        state.smart_out = .low;
         if (!regs.enabled) {
             logic.divider.reset(regs.x);
             logic.remaining = 0;
@@ -721,7 +721,7 @@ pub fn Pwm(comptime mode: Mode) type {
         fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
             var state = outputs(regs, inputs);
             const frame = if (regs.x >> 16 == 0) @as(u32, 65536) else regs.x >> 16;
-            state.smart_out = .zero;
+            state.smart_out = .low;
             state.flag = false;
             if (!regs.enabled) {
                 logic.divider.reset(regs.x);
@@ -1028,7 +1028,7 @@ pub const SmartPin = struct {
     /// Cog OUT transport remains clocked while an engine overrides the output.
     out_pipeline: Pipeline(u1, 2) = .init(0),
     /// Output engines publish through a register; GPIO passes the registered cog OUT bus through.
-    output_register: Pipeline(Signal, 1) = .init(.zero),
+    output_register: Pipeline(Signal, 1) = .init(.low),
 
     pub const Logic = union(Mode) {
         gpio: Normal,
@@ -1193,7 +1193,7 @@ test "virtual serial modes acknowledge RX and deliver TX writes immediately with
         _ = try pin.step(.{});
         for (0..32) |i| {
             const state = try pin.step(.{ .dir = 1, .new_x = 31, .new_y = @as(u32, 0x80000000) + @as(u32, @intCast(i)) });
-            try std.testing.expectEqual(if (mode == .uart_tx) Signal.one else Signal.zero, state.smart_out);
+            try std.testing.expectEqual(if (mode == .uart_tx) Signal.high else Signal.low, state.smart_out);
             try std.testing.expectEqual(i + 1, device.writes);
         }
         _ = try pin.step(.{ .dir = 1 });
@@ -1223,7 +1223,7 @@ test "virtual reception discards partial words and returns to a complete fresh t
             }
         } else {
             for (0..4) |_| {
-                _ = try pin.step(.{ .dir = 1, .b = .one });
+                _ = try pin.step(.{ .dir = 1, .b = .high });
                 _ = try pin.step(.{ .dir = 1 });
             }
         }
@@ -1231,12 +1231,12 @@ test "virtual reception discards partial words and returns to a complete fresh t
         try std.testing.expect(!pin.registers.ready);
         pin.rx_mode = .{ .virtual = &source };
         for (0..8) |clock| {
-            _ = try pin.step(.{ .dir = 1, .a = .one, .b = Signal.from(clock % 2 != 0) });
+            _ = try pin.step(.{ .dir = 1, .a = .high, .b = Signal.from(clock % 2 != 0) });
         }
         try std.testing.expectEqual(@as(usize, 2), device.reads);
         try std.testing.expectEqual(@as(u32, 0x55000000), pin.registers.result);
         pin.rx_mode = .{ .emulated = &source };
-        _ = try pin.step(.{ .dir = 1, .ack = true, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .ack = true, .b = .high });
         if (mode == .uart_rx) {
             // A complete new UART frame must elapse; the discarded prefix cannot shorten it.
             for (0..70) |_| {
@@ -1251,7 +1251,7 @@ test "virtual reception discards partial words and returns to a complete fresh t
             try std.testing.expectEqual(@as(usize, 2), device.reads);
             for (0..8) |bit| {
                 _ = try pin.step(.{ .dir = 1 });
-                _ = try pin.step(.{ .dir = 1, .b = .one });
+                _ = try pin.step(.{ .dir = 1, .b = .high });
                 try std.testing.expectEqual(bit == 7, pin.registers.ready);
             }
         }
@@ -1270,21 +1270,21 @@ test "virtual transmission abandons timed state and leaves no word to resume" {
         _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 39, .new_y = 0xff });
         for (0..3) |_| {
             _ = try pin.step(.{ .dir = 1 });
-            _ = try pin.step(.{ .dir = 1, .b = .one });
+            _ = try pin.step(.{ .dir = 1, .b = .high });
         }
         pin.tx_mode = .{ .virtual = &sink };
-        _ = try pin.step(.{ .dir = 1, .new_y = 0xa5, .a = .one, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .new_y = 0xa5, .a = .high, .b = .high });
         try std.testing.expectEqual(@as(usize, 1), device.writes);
         try std.testing.expectEqual(@as(u32, 0xa5), device.written[0]);
         for (0..20) |_| {
-            _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+            _ = try pin.step(.{ .dir = 1, .a = .high, .b = .high });
         }
         pin.tx_mode = .{ .emulated = &sink };
         for (0..100) |_| {
-            _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+            _ = try pin.step(.{ .dir = 1, .a = .high, .b = .high });
         }
         try std.testing.expectEqual(@as(usize, 1), device.writes);
-        _ = try pin.step(.{ .dir = 1, .new_y = 0x3c, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .new_y = 0x3c, .b = .high });
         if (mode == .uart_tx) {
             for (0..100) |_| {
                 _ = try pin.step(.{ .dir = 1 });
@@ -1292,7 +1292,7 @@ test "virtual transmission abandons timed state and leaves no word to resume" {
         } else {
             for (0..8) |_| {
                 _ = try pin.step(.{ .dir = 1 });
-                _ = try pin.step(.{ .dir = 1, .b = .one });
+                _ = try pin.step(.{ .dir = 1, .b = .high });
             }
         }
         try std.testing.expectEqual(@as(usize, 2), device.writes);
@@ -1314,10 +1314,10 @@ test "USART exact and emulated receivers agree for every width and retain old sh
         _ = try emulated.step(.{ .new_x = x });
         for (0..width * 2) |bit| {
             const a = Signal.from(word >> @as(u5, @intCast(bit % width)) & 1 != 0);
-            const low: Inputs = .{ .dir = 1, .a = a, .b = .zero, .ack = true };
+            const low: Inputs = .{ .dir = 1, .a = a, .b = .low, .ack = true };
             _ = try exact.step(low);
             _ = try emulated.step(low);
-            const high: Inputs = .{ .dir = 1, .a = a, .b = .one };
+            const high: Inputs = .{ .dir = 1, .a = a, .b = .high };
             try std.testing.expectEqualDeep(try exact.step(high), try emulated.step(high));
             try std.testing.expectEqual((bit + 1) % width == 0, exact.registers.ready);
         }
@@ -1329,11 +1329,11 @@ test "USART exact and emulated receivers agree for every width and retain old sh
 test "USART sample selection, live length changes, and handoff align the whole source word" {
     var pin: SmartPin = .{};
     pin.configure(.sync_rx);
-    _ = try pin.step(.{ .dir = 1, .new_x = 7, .a = .zero });
-    _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+    _ = try pin.step(.{ .dir = 1, .new_x = 7, .a = .low });
+    _ = try pin.step(.{ .dir = 1, .a = .high, .b = .high });
     try std.testing.expectEqual(@as(u32, 0), pin.logic.sync_rx.shift);
-    _ = try pin.step(.{ .dir = 1, .a = .one, .b = .zero, .new_x = 39 });
-    _ = try pin.step(.{ .dir = 1, .a = .zero, .b = .one });
+    _ = try pin.step(.{ .dir = 1, .a = .high, .b = .low, .new_x = 39 });
+    _ = try pin.step(.{ .dir = 1, .a = .low, .b = .high });
     try std.testing.expectEqual(@as(u32, 0), pin.logic.sync_rx.shift);
 
     var device: SerialDevice = .{ .values = &.{0x89abcdef} };
@@ -1341,9 +1341,9 @@ test "USART sample selection, live length changes, and handoff align the whole s
     pin.rx_mode = .{ .emulated = &source };
     // Two physical zero bits are retained; the source supplies bits 2 through 31.
     for (2..32) |bit| {
-        const input: Inputs = .{ .dir = 1, .b = .zero, .new_x = if (bit == 4) 31 else null };
+        const input: Inputs = .{ .dir = 1, .b = .low, .new_x = if (bit == 4) 31 else null };
         _ = try pin.step(input);
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0x89abcdec), pin.registers.result);
     try std.testing.expectEqual(@as(usize, 1), device.reads);
@@ -1360,15 +1360,15 @@ test "UART receivers validate starts and agree with emulated data across all wor
         exact.configure(.uart_rx);
         emulated.configure(.uart_rx);
         const x: u32 = (8 << 16) | @as(u32, @intCast(width - 1));
-        _ = try exact.step(.{ .new_x = x, .a = .one });
+        _ = try exact.step(.{ .new_x = x, .a = .high });
         _ = try emulated.step(.{ .new_x = x });
         for (0..(width + 2) * 8) |clock| {
             const data_bit = if (clock >= 9 and clock < (width + 1) * 8 + 1)
                 Signal.from(word >> @as(u5, @intCast((clock - 9) / 8)) & 1 != 0)
             else if (clock >= 1 and clock < 9)
-                Signal.zero
+                Signal.low
             else
-                Signal.one;
+                Signal.high;
             const actual = try exact.step(.{ .dir = 1, .a = data_bit });
             const synthesized = try emulated.step(.{ .dir = 1 });
             try std.testing.expectEqualDeep(actual, synthesized);
@@ -1378,10 +1378,10 @@ test "UART receivers validate starts and agree with emulated data across all wor
     }
     var pin: SmartPin = .{};
     pin.configure(.uart_rx);
-    _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 7, .a = .one });
-    _ = try pin.step(.{ .dir = 1, .a = .zero });
+    _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 7, .a = .high });
+    _ = try pin.step(.{ .dir = 1, .a = .low });
     for (0..100) |_| {
-        _ = try pin.step(.{ .dir = 1, .a = .one });
+        _ = try pin.step(.{ .dir = 1, .a = .high });
     }
     try std.testing.expect(!pin.registers.ready);
 }
@@ -1400,7 +1400,7 @@ test "entering virtual aborts partial RX and TX but retains completed RX until a
         try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
         try std.testing.expectEqual(@as(usize, 0), device.reads);
         pin.rx_mode = .exact;
-        _ = try pin.step(.{ .dir = 1, .a = .one });
+        _ = try pin.step(.{ .dir = 1, .a = .high });
         try std.testing.expect(pin.registers.ready);
     }
     for ([_]Mode{ .sync_tx, .uart_tx }) |mode| {
@@ -1427,13 +1427,13 @@ test "emulated TX generates full UART waveforms and completes into the current s
     for (0..81) |clock| {
         const state = try pin.step(.{ .dir = 1 });
         const expected = if (clock == 0)
-            Signal.one
+            Signal.high
         else if (clock < 9)
-            Signal.zero
+            Signal.low
         else if (clock < 73)
             Signal.from(@as(u32, 0xa5) >> @as(u5, @intCast((clock - 9) / 8)) & 1 != 0)
         else
-            Signal.one;
+            Signal.high;
         try std.testing.expectEqual(expected, state.smart_out);
         if (clock == 40) {
             pin.tx_mode = .{ .emulated = &second_sink };
@@ -1460,9 +1460,9 @@ test "UART in-flight handoffs retain staged 32-bit data, timing and physical pre
         const a = if (clock >= 9 and clock < 265)
             Signal.from(word >> @as(u5, @intCast((clock - 9) / 8)) & 1 != 0)
         else if (clock >= 1 and clock < 9)
-            Signal.zero
+            Signal.low
         else
-            Signal.one;
+            Signal.high;
         _ = try pin.step(.{
             .dir = 1,
             .a = a,
@@ -1479,16 +1479,16 @@ test "shortened USART words stall past 64 edges and reset recovers without clear
     pin.configure(.sync_rx);
     pin.registers.result = 0x12345678;
     for (0..80) |bit| {
-        _ = try pin.step(.{ .dir = 1, .a = .one, .new_x = if (bit == 0) 7 else if (bit == 5) 1 else null });
-        _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .a = .high, .new_x = if (bit == 0) 7 else if (bit == 5) 1 else null });
+        _ = try pin.step(.{ .dir = 1, .a = .high, .b = .high });
     }
     try std.testing.expect(!pin.registers.ready);
     try std.testing.expectEqual(@as(u32, 0x12345678), pin.registers.result);
-    _ = try pin.step(.{ .a = .one });
+    _ = try pin.step(.{ .a = .high });
     try std.testing.expectEqual(@as(u32, 0x12345678), pin.registers.result);
     for (0..2) |_| {
-        _ = try pin.step(.{ .dir = 1, .a = .one });
-        _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .a = .high });
+        _ = try pin.step(.{ .dir = 1, .a = .high, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0xffffffff), pin.registers.result);
     try std.testing.expect(pin.registers.ready);
@@ -1506,7 +1506,7 @@ test "emulated USART clocks, source starvation and endpoint replacement preserve
     _ = try pin.step(.{ .dir = 1, .new_x = 31 });
     for (0..8) |_| {
         _ = try pin.step(.{ .dir = 1 });
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u6, 0), pin.logic.sync_rx.count);
     try std.testing.expect(!pin.registers.ready);
@@ -1516,7 +1516,7 @@ test "emulated USART clocks, source starvation and endpoint replacement preserve
             pin.rx_mode = .{ .emulated = &later_source };
         }
         _ = try pin.step(.{ .dir = 1 });
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
     try std.testing.expectEqual(@as(usize, 1), available.reads);
@@ -1524,7 +1524,7 @@ test "emulated USART clocks, source starvation and endpoint replacement preserve
     // Timed reception overwrites unread Z. Virtual reception retains it until acknowledgement.
     for (0..32) |_| {
         _ = try pin.step(.{ .dir = 1 });
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0xffffffff), pin.registers.result);
     pin.rx_mode = .{ .virtual = &available_source };
@@ -1541,19 +1541,19 @@ test "USART TX start-stop buffers after the first edge and reports completed wor
     pin.configure(.sync_tx);
     _ = try pin.step(.{ .new_x = 35, .new_y = 0x12345678 });
     var state = try pin.step(.{ .dir = 1, .new_y = 0x89abcdef });
-    try std.testing.expectEqual(Signal.zero, state.smart_out);
-    state = try pin.step(.{ .dir = 1, .b = .one });
-    try std.testing.expectEqual(Signal.one, state.smart_out);
+    try std.testing.expectEqual(Signal.low, state.smart_out);
+    state = try pin.step(.{ .dir = 1, .b = .high });
+    try std.testing.expectEqual(Signal.high, state.smart_out);
     _ = try pin.step(.{ .dir = 1, .new_y = 0x76543210, .ack = true });
     for (0..3) |_| {
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .b = .high });
         _ = try pin.step(.{ .dir = 1 });
     }
     try std.testing.expectEqual(@as(usize, 1), device.writes);
     try std.testing.expectEqual(@as(u32, 15), device.written[0]);
     try std.testing.expect(pin.registers.ready);
     for (0..4) |_| {
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .b = .high });
         state = try pin.step(.{ .dir = 1 });
     }
     try std.testing.expectEqual(@as(usize, 2), device.writes);
@@ -1581,7 +1581,7 @@ test "WRPIN retains host modes and endpoint errors propagate through all serial 
     try std.testing.expectError(error.TestSourceFailure, pin.step(.{ .dir = 1, .new_x = (8 << 16) | 7 }));
     pin.configure(.sync_rx);
     _ = try pin.step(.{ .dir = 1 });
-    try std.testing.expectError(error.TestSourceFailure, pin.step(.{ .dir = 1, .b = .one }));
+    try std.testing.expectError(error.TestSourceFailure, pin.step(.{ .dir = 1, .b = .high }));
     try std.testing.expect(pin.rx_mode.emulated == &source);
     for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
         pin.configure(mode);
@@ -1611,22 +1611,22 @@ test "returning from virtual USART waits for a new B edge" {
     var source = device.source();
     var pin: SmartPin = .{ .rx_mode = .{ .virtual = &source } };
     pin.configure(.sync_rx);
-    _ = try pin.step(.{ .dir = 1, .new_x = 7, .b = .one });
+    _ = try pin.step(.{ .dir = 1, .new_x = 7, .b = .high });
     pin.rx_mode = .{ .emulated = &source };
     for (0..8) |_| {
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = try pin.step(.{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(usize, 1), device.reads);
     try std.testing.expectEqual(@as(u6, 0), pin.logic.sync_rx.count);
-    _ = try pin.step(.{ .dir = 1, .b = .zero });
-    _ = try pin.step(.{ .dir = 1, .b = .one });
+    _ = try pin.step(.{ .dir = 1, .b = .low });
+    _ = try pin.step(.{ .dir = 1, .b = .high });
     try std.testing.expectEqual(@as(usize, 2), device.reads);
     try std.testing.expectEqual(@as(u6, 1), pin.logic.sync_rx.count);
     // A real low-to-high transition on the first timed step must not be suppressed either.
     pin.rx_mode = .{ .virtual = &source };
-    _ = try pin.step(.{ .dir = 1, .a = .one });
+    _ = try pin.step(.{ .dir = 1, .a = .high });
     pin.rx_mode = .exact;
-    _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+    _ = try pin.step(.{ .dir = 1, .a = .high, .b = .high });
     try std.testing.expectEqual(@as(u6, 1), pin.logic.sync_rx.count);
     try std.testing.expectEqual(@as(u32, 0x80000000), pin.logic.sync_rx.shift);
 }
@@ -1713,19 +1713,19 @@ test "step updates shared registers and latches repository outputs" {
 
 test "configuration replaces only logic and unsupported logic fails through step" {
     var pin: SmartPin = .{};
-    _ = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .new_x = 12, .new_y = 34 });
+    _ = try pin.step(.{ .dir = 1, .out = 1, .a = .high, .new_x = 12, .new_y = 34 });
     const registers = pin.registers;
     pin.configure(.usb_pair);
     try std.testing.expectEqualDeep(registers, pin.registers);
     try std.testing.expectError(error.UnsupportedSmartPinMode, pin.step(.{ .dir = 1, .clock = 1 }));
     pin.configure(.gpio);
-    const state = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .clock = 2 });
-    try std.testing.expectEqual(Signal.one, state.smart_out);
+    const state = try pin.step(.{ .dir = 1, .out = 1, .a = .high, .clock = 2 });
+    try std.testing.expectEqual(Signal.high, state.smart_out);
     try std.testing.expectEqual(@as(u1, 1), state.in);
-    const registered = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .clock = 3 });
-    try std.testing.expectEqual(Signal.zero, registered.smart_out);
-    const settled = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .clock = 4 });
-    try std.testing.expectEqual(Signal.one, settled.smart_out);
+    const registered = try pin.step(.{ .dir = 1, .out = 1, .a = .high, .clock = 3 });
+    try std.testing.expectEqual(Signal.low, registered.smart_out);
+    const settled = try pin.step(.{ .dir = 1, .out = 1, .a = .high, .clock = 4 });
+    try std.testing.expectEqual(Signal.high, settled.smart_out);
 }
 
 test "digital engines ignore fast serial mode and absolute clock rollover" {
@@ -1754,19 +1754,19 @@ test "digital engines ignore fast serial mode and absolute clock rollover" {
     }
 }
 
-test "continuous count wraps and unknown external levels do not invent rising edges" {
+test "continuous count wraps and held low inputs do not invent rising edges" {
     var pin: SmartPin = .{};
     pin.configure(.count_rises);
     _ = try pin.step(.{});
     pin.logic.count_rises.accumulator = 0xffffffff;
-    var state = try pin.step(.{ .dir = 1, .a = .one });
+    var state = try pin.step(.{ .dir = 1, .a = .high });
     try std.testing.expectEqual(@as(u32, 0xffffffff), state.y);
     try std.testing.expect(state.flag);
-    state = try pin.step(.{ .dir = 1, .a = .one });
+    state = try pin.step(.{ .dir = 1, .a = .high });
     try std.testing.expectEqual(@as(u32, 0), state.y);
     try std.testing.expect(!state.flag);
-    _ = try pin.step(.{ .dir = 1, .a = .x });
-    state = try pin.step(.{ .dir = 1, .a = .z });
+    _ = try pin.step(.{ .dir = 1, .a = .low });
+    state = try pin.step(.{ .dir = 1, .a = .low });
     try std.testing.expectEqual(@as(u32, 0), state.y);
 }
 
@@ -1775,9 +1775,9 @@ test "duration saturation preserves the previous-state carry instead of Z's sign
     pin.configure(.state_ticks);
     pin.registers.enabled = true;
     pin.logic.state_ticks.ticks = 0x7fffffff;
-    _ = try pin.step(.{ .dir = 1, .a = .zero });
-    _ = try pin.step(.{ .dir = 1, .a = .zero });
-    const state = try pin.step(.{ .dir = 1, .a = .one });
+    _ = try pin.step(.{ .dir = 1, .a = .low });
+    _ = try pin.step(.{ .dir = 1, .a = .low });
+    const state = try pin.step(.{ .dir = 1, .a = .high });
     try std.testing.expectEqual(@as(u32, 0x80000000), state.y);
     try std.testing.expect(!state.flag);
     try std.testing.expectEqual(@as(u1, 1), state.in);
@@ -1793,7 +1793,7 @@ test "zero minimum window and fixed-period count encode the full 32-bit range" {
         .elapsed = 0xffffffff,
         .accumulated = 0x7fffffff,
     };
-    var state = try pin.step(.{ .dir = 1, .b = .one });
+    var state = try pin.step(.{ .dir = 1, .b = .high });
     try std.testing.expectEqual(@as(u32, 0x80000000), state.y);
     try std.testing.expectEqual(@as(u1, 1), state.in);
     pin.configure(.periods_ticks);
@@ -1803,7 +1803,7 @@ test "zero minimum window and fixed-period count encode the full 32-bit range" {
         .periods = 0xffffffff,
         .accumulated = 123,
     };
-    state = try pin.step(.{ .dir = 1, .b = .one });
+    state = try pin.step(.{ .dir = 1, .b = .high });
     try std.testing.expectEqual(@as(u32, 124), state.y);
     try std.testing.expectEqual(@as(u1, 1), state.in);
 }

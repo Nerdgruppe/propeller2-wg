@@ -105,10 +105,8 @@ pub fn capture(vcd: *Vcd, hub: *const Hub) !void {
     }
     for (current.pads, 0..) |value, pin| {
         const bit: u8 = switch (value) {
-            .zero => '0',
-            .one => '1',
-            .x => 'x',
-            .z => 'z',
+            .low => '0',
+            .high => '1',
         };
         if (previous == null or value != previous.?.pads[pin]) {
             try vcd.writer.print("{c}p{d}\n", .{ bit, pin });
@@ -137,7 +135,7 @@ test "initial declarations, pad changes, sparse clocks and CT rollover" {
     var vcd: Vcd = .{ .writer = &output.writer };
     hub.counter = std.math.maxInt(u64) - 1;
     try vcd.capture(hub);
-    hub.io.setExternal(@enumFromInt(63), .one);
+    try hub.io.setExternal(@enumFromInt(63), .high);
     hub.counter = 0;
     _ = hub.step();
     try vcd.capture(hub);
@@ -146,7 +144,7 @@ test "initial declarations, pad changes, sparse clocks and CT rollover" {
     const text = output.written();
     try std.testing.expect(std.mem.indexOf(u8, text, "$scope module cog7 $end") != null);
     try std.testing.expect(std.mem.indexOf(u8, text, "$var wire 1 p63 P63 $end") != null);
-    try std.testing.expect(std.mem.indexOf(u8, text, "zp63\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, text, "0p63\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, text, "#3\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, text, "1p63\n") != null);
     try std.testing.expectEqual(@as(u128, 3), vcd.elapsed);
