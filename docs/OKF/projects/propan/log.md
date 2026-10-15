@@ -17,6 +17,32 @@ source_confidence: "high"
 - Revalidated and rewrote the directive/data and address/segment references for `.org`, `RES`, `.regspace`, `.data`, `.fit`, `.pack`, `.pic`, `FILE`, expanded origin options, and string/sequence emission.
 - Corrected the PASM2 migration summary for source imports and reservation/origin syntax. Explicitly archived pre-merge implementation findings and discrepancy classifications where upstream code superseded them.
 
+## 2026-10-15 — expression and stdlib follow-up
+
+- Rechecked expression payloads and arithmetic against the merged parser/evaluator; documented sequence literals, flattening and repetition, current-location `---
+type: "Change Log"
+title: "Propan documentation log"
+description: "Maintenance notes for curated Propan documentation."
+tags: ["log", "propan", "maintenance"]
+status: "draft"
+source_confidence: "high"
+---
+# Log
+
+## 2026-10-15
+
+- Began post-merge revalidation after `main` was merged into `rework-documentation`. The earlier first-pass audit is explicitly limited to its pre-merge code baseline.
+- Replaced the obsolete multi-positional-file overlay reference with the actual single-root CLI contract, recursive `.import`/`.import once`, include search paths, preserved imported source locations, `spin2` output, and current CLI options.
+- Updated symbol reference for scoped leading-dot labels, import-aware rebinding, recursive forward constant resolution and cycle detection.
+- Updated source inventory and coverage entries for the newly verified behavior, and opened explicit follow-up work for the other changed language areas.
+- Revalidated and rewrote the directive/data and address/segment references for `.org`, `RES`, `.regspace`, `.data`, `.fit`, `.pack`, `.pic`, `FILE`, expanded origin options, and string/sequence emission.
+- Corrected the PASM2 migration summary for source imports and reservation/origin syntax. Explicitly archived pre-merge implementation findings and discrepancy classifications where upstream code superseded them.
+
+, UTF conversion and 9 current semantic address/encoding helpers.
+- Rechecked conditional source filtering, including early constant availability, import expansion, nested/inactive branches, and diagnostic boundaries.
+- Updated the P2 standard library for generic 32-bit integer/float functions, register conversion, ALTI helpers and corrected `#false` boolean enumeration.
+- Replaced pre-merge panic/unsupported-function statements with diagnostics and implementation-backed behavior; updated coverage and the post-merge TODO.
+
 ## 2026-09-30
 
 - Established the Propan documentation scope and current-state source precedence.

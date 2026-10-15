@@ -9,8 +9,8 @@ The checklist below was completed or triaged against the **September 2026** impl
 - [x] Update `tooling.md` for **one** CLI root, recursive `.import`/`.import once`, repeatable `-I`, and `--format spin2`; reconcile coverage/source inventory.
 - [x] Update symbol documentation for scoped leading-dot labels and dependency-resolved forward constants.
 - [x] Reaudit core directive/address-mode behavior in `directives-and-data.md` and `addresses-and-segments.md` against `.org`, `RES`, `.fit`, `.regspace`, `.data`, `.pack`, `.pic`, `FILE`, expanded origins and string/sequence emission; remaining instruction-specific address helper cases are separately open.
-- [ ] Reaudit `expressions.md`, `stdlib.md` and `lexical-and-source-grammar.md` for sequence, repetition, encoding helpers, conditional compilation and formatter changes.
-- [ ] Reaudit `instruction-syntax.md`, `pointer-addressing.md`, `examples.md`, and the implementation/discrepancy registers against newly added diagnostics, instruction selection and equivalence tests (including conditioned NOP rejection).
+- [x] Reaudit expression/stdlib/lexical **language behavior** for sequence, repetition, current PC, address helpers, conditional compilation and new library functions; formatter implementation and rendered-output regressions remain to be checked.
+- [ ] Reaudit `instruction-syntax.md`, `pointer-addressing.md`, `examples.md`, and the remaining implementation/discrepancy register entries against new diagnostics and equivalence tests (including conditioned NOP rejection); do not treat retained September findings as current defects.
 - [ ] Audit all remaining checked boxes and example classifications below against the merged code; remove or reclassify superseded TODOs and defects, rather than assuming they persist.
 - [ ] Run automated docs checks and executable examples once their current coverage is established.
 

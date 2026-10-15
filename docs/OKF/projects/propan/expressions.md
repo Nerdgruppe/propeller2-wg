@@ -1,155 +1,106 @@
 ---
 type: "Reference"
 title: "Propan expressions and values"
-description: "Current semantic behavior of Propan expressions and value categories."
-tags: ["propan", "expressions", "operators", "values", "semantics"]
+description: "Merged Propan semantic values, expression operators, sequence/repetition behavior and address helpers."
+tags: ["propan", "expressions", "operators", "values", "sequences", "semantics"]
 status: "draft"
 source_confidence: "high"
 ---
 # Propan expressions and values
 
-Parser-level token syntax and lexical precedence are documented in [/projects/propan/lexical-and-source-grammar.md](/projects/propan/lexical-and-source-grammar.md).
+Verified for the 2026-10-15 merged implementation using `src/propan/frontend/parser.zig`, `src/propan/sema.zig`, `src/propan/stdlib/eval.zig`, and current `tests/propan/sema/` fixtures. Source grammar, conditions and numeric literal syntax are covered in [/projects/propan/lexical-and-source-grammar.md](/projects/propan/lexical-and-source-grammar.md).
 
-## Runtime/semantic value categories
+## Semantic value types
 
-Semantic analysis evaluates expressions into one of these internal value categories:
-
-| Category | Meaning |
+| Payload | Meaning |
 |---|---|
-| `int` | signed 64-bit integer value |
-| `string` | byte string produced by a string literal |
-| `address` | tagged code/data address carrying HUB address, segment identity, and execution-local address |
+| `int` | signed 64-bit integer |
+| `string` | UTF-8/source-escaped byte sequence |
+| `sequence` | ordered sequence of signed 64-bit integer elements |
+| `address` | segment-tagged local and/or HUB address |
 | `register` | P2 register index |
-| `enumerator` | symbolic `#name` value, resolved by the consuming instruction/function context |
-| `pointer_expr` | encoded PTRA/PTRB pointer expression with optional update/index information |
+| `enumerator` | `#name`, resolved by a receiving instruction/function's enum domain |
+| `pointer_expr` | encoded PTRA/PTRB memory addressing with optional update/index |
 
-Values also carry flags that are separate from the payload: usage as a literal or register, an augmentation request, and an addressing mode (`auto`, `absolute`, or `relative`). These flags influence instruction selection/encoding rather than changing the underlying integer/address value.
+Value flags independently record literal/register usage, augmentation and absolute/relative/automatic selection. They are not separate payloads. Boolean operators produce integer 0 or 1; there is no separate user-visible boolean type.
 
-There is no separate semantic boolean type. Boolean-producing operators return integer `0` or `1`.
+## Integers and arithmetic
 
-## Integer model
+Unsigned literal magnitude is limited to `u63`; unary minus is applied during semantic evaluation. Integer operators generally use signed `i64` values:
 
-Integer literals are initially parsed as non-negative values fitting in `u63`, then semantic evaluation uses signed `i64` values. Unary `-` is therefore an operator rather than part of the literal token.
+- `+`, `-`, `*`: wrapping arithmetic (including unary minus);
+- `/`: floor division (`@divFloor`), not truncation toward zero; division by zero and the `minInt(i64) / -1` overflow case are errors;
+- `%`: `@mod` rather than truncating signed remainder; division by zero is an error;
+- `<<`/`>>`: shift count must fit `u6`, 0–63;
+- logical/comparison results: 0 or 1, except `<=>` returning -1, 0, or 1.
 
-Current integer arithmetic behavior:
+These are **current implementation facts**; whether floor/mod semantics for negative operands should remain the language contract is still an open design decision. Width narrowing during field/data encoding can warn.
 
-- `+`, `-`, and `*` use wrapping signed 64-bit arithmetic;
-- `/` uses floor division and reports division by zero;
-- `%` uses modulo and reports division by zero;
-- `<<` and `>>` require the shift count to fit in `u6` (`0...63`), otherwise evaluation reports overflow;
-- bitwise operators operate directly on the `i64` bit pattern;
-- comparison/boolean operators return `0` or `1`.
+## Operator precedence
 
-When a value is later emitted into a narrower instruction/data field, truncation can occur and the assembler emits a warning when the truncated value differs from the original.
+The current parser groups left-associative binary operators as follows, from lowest to highest:
 
-## Binary operator precedence and associativity
+| Level | Operators |
+|---:|---|
+| 0 | `and`, `or`, `xor` |
+| 1 | `==`, `!=`, `<=>`, `<`, `>`, `<=`, `>=` |
+| 2 | `+`, `-`, `|`, `^` |
+| 3 | `&`, `*`, `/`, `%` |
+| 4 | `<<`, `>>` |
 
-All currently implemented binary operator groups are left-associative. From lowest to highest precedence:
+Unary `+`, `-`, `!` and `~` operate on integers. Unary `*`/`&` change address usage to register/literal. `++`/`--` are pointer-update operations, not general integer increment/decrement. Parentheses override precedence. There is no implemented ternary `?:` production in this parser.
 
-| Precedence | Operators | Current integer behavior |
-|---:|---|---|
-| 0 | `and`, `or`, `xor` | logical combination; operands are true when nonzero; result `0` or `1` |
-| 1 | `==`, `!=`, `<=>`, `<`, `>`, `<=`, `>=` | signed comparisons; `<=>` returns `-1`, `0`, or `1` |
-| 2 | `+`, `-`, `|`, `^` | wrapping add/subtract, bitwise OR/XOR |
-| 3 | `&`, `*`, `/`, `%` | bitwise AND, wrapping multiply, floor divide, modulo |
-| 4 | `>>`, `<<` | signed-value shifts with a `0...63` shift count |
+## Sequences, strings and repetition
 
-Parentheses override precedence.
+Bracket literals are **data sequences**, not pointer indexing:
 
-The current semantic tests explicitly exercise left associativity for subtraction, division, and shifts.
-
-### Ternary syntax conflict
-
-The tokenizer contains `?` and `:` tokens and the root `README.md` advertises a ternary `? :` expression. The current Zig parser has no ternary-expression production. Ternary expressions are therefore **not current implemented syntax** despite that external documentation.
-
-See [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md).
-
-## Unary operators
-
-### `+value`
-
-Requires an integer and returns it unchanged.
-
-### `-value`
-
-Requires an integer and returns its signed negation.
-
-### `!value`
-
-Requires an integer. Returns `1` when the operand is zero and `0` otherwise.
-
-### `~value`
-
-Requires an integer and performs bitwise complement.
-
-### `*address`
-
-Changes an address value's usage hint to **register**. This is how a code label can be requested in register/local-address form when an instruction expects that interpretation.
-
-Applying `*` to a data label already carrying register usage emits a warning that the operator has no effect.
-
-### `&address`
-
-Changes an address value's usage hint to **literal**. This is how a data label can be requested in literal/address form when an instruction expects that interpretation.
-
-Applying `&` to a code label already carrying literal usage emits a warning that the operator has no effect.
-
-### `@address`
-
-Computes a relative longword displacement using the current expression location and the target's HUB address:
-
-```text
-(target_hub_address - current_hub_address) / 4
+```propan
+const WORDS = [1, 2, 3]
+const COPIES = WORDS * 2
+const TEXT = "Hi"
+BYTE "NaN" * 2
+WORD utf16("A")
+LONG utf32("A")
 ```
 
-The difference must be divisible by four. `@` requires a current location, so it cannot be evaluated in location-independent scopes such as ordinary constants.
+In a bracket sequence, each integer is appended, each string expands to its constituent **bytes**, nested sequences flatten, and an address element is converted in the active data/segment context. Register, pointer and enumerator elements are not unrestricted sequence values and are diagnosed where invalid. `[]` is an empty sequence. A resulting sequence is a semantic value and can be stored in a user constant.
 
-**Current limitation:** the implementation contains a TODO to verify that current and target addresses belong to the same segment. It currently performs the HUB-address subtraction without that segment-identity validation.
+The multiplication operator has an additional **repetition** meaning only where one operand is a string or sequence and the other an integer, in either order. A negative count is invalid, zero counts warn, and expanded sizes are bounded. All other binary operations on string/sequence payloads are diagnosed rather than treated as concatenation, comparison, or general vector arithmetic.
 
-### `++` / `--`
+These values are chiefly useful in `BYTE`, `WORD`, `LONG` data declarations, which emit **one element per string byte or integer sequence element** at the selected width. `WORD "AB"` therefore emits two 16-bit values rather than packing two bytes into one word. The length must be known when the assembler lays out data; deferred unexpected lengths produce diagnostics.
 
-Prefix and postfix increment/decrement operators are not general integer increment/decrement operators. They construct PTRA/PTRB pointer-expression update modes and reject ordinary non-pointer values.
+P2 library functions `utf16(text)` and `utf32(text)` decode UTF-8 into Unicode code-unit integer sequences. `utf16` emits a surrogate pair for a non-BMP code point; `utf32` emits the code point once. Invalid UTF-8 is an error. See `tests/propan/sema/array-emission.propan`, `array-constants.propan` and `string-emission.propan`.
 
-See [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md) for encoded ranges and pre/post-update behavior.
+This syntax is distinct from `PTRA[index]`: postfix indexing on PTRA/PTRB constructs an encoded pointer operand; it does not index sequence contents. See [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md).
 
-## Indexing
+## Current location and address usage
 
-`value[index]` is currently a pointer-expression operation, not a general array operator.
+A standalone `$` is the **current location** expression: COG/LUT mode yields the local long/PC index; HUB/data yields a HUB byte offset. Register-only mode has no execution location for `$` and diagnoses its use. Ordinary constant declarations are location-independent.
 
-- the left side must evaluate to PTRA/PTRB (register or existing pointer expression);
-- the index must be an integer;
-- applying a second index to a pointer expression is diagnosed.
+`*label` requests register-oriented usage, while `&label` requests literal-oriented usage. Neither changes the label's tagged address. Applying an already-effective hint can warn.
 
-The exact legal encoded range is checked later during pointer encoding and documented in [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md).
+`@label` produces a displacement in longs from the **following/current evaluation PC** to the destination within an execution domain. The merged evaluator checks compatible native address domains, aligned 4-byte displacement and presence of execution PCs; crossing different segments emits a warning. It is no longer accurate to describe it as unconditionally subtracting two HUB addresses without any segment check. Register-only and data-only labels cannot provide an execution PC.
 
-## Address conversion and encoding-control functions
+### Semantic address and encoding helpers
 
-These functions are implemented directly by semantic analysis:
-
-| Function | Current behavior |
+| Function | Implemented meaning/limitation |
 |---|---|
-| `hubaddr(value)` | address → absolute HUB byte address; integers pass through with a warning; other value categories are errors |
-| `cogaddr(value)` | COG-tagged address → local COG address; wrong address domain is an error |
-| `lutaddr(value)` | LUT-tagged address → local LUT address; wrong address domain is an error |
-| `localaddr(value)` | address → its execution-local address without requiring a specific COG/LUT/HUB domain |
-| `aug(value)` | requests operand augmentation; must be the root expression |
-| `nrel(value)` | forces absolute rather than automatically relative addressing; must be the root expression |
+| `hubaddr(x)` | HUB byte address, requires a tagged address with HUB storage; integer input passes through with a warning |
+| `cogaddr(x)` | COG/regspace local register address; rejects a LUT/HUB/data address |
+| `lutaddr(x)` | LUT-local address; rejects register values or wrong address domains |
+| `localaddr(x)` | native data/local address; register input is permitted **inside COG-exec scope only** and warns that a register was supplied rather than an offset |
+| `pcaddr(x)` | executable PC representation; rejects addresses with no execution PC (including data/regspace); HUB addresses at or below `0x400` are diagnosed as unreachable for this helper; COG-scope register inputs are permitted with a warning |
+| `byteoffset(x)` | sub-register byte offset (0–3) of COG/LUT/regspace tagged address; rejects HUB/data and non-address payloads |
+| `wordoffset(x)` | sub-register word offset (0–1) of COG/LUT/regspace tagged address; requires an even byte offset |
+| `aug(x)` | request immediate augmentation in the appropriate instruction operand position; only permitted at root and with suitable operand values |
+| `nrel(x)` | prefer absolute rather than automatically relative address selection; root-only, meaningful for operand forms supporting this choice |
 
-`cogaddr()`/`localaddr()` also contain register-handling paths. `lutaddr()` rejects register values. The current `localaddr(register)` path always emits an error saying it is only valid for registers in COG-exec scope; an implementation TODO suggests intended COG-scope handling that is not currently implemented. The current behavior and open intent are tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
+Sub-register offsets depend on layout and `.pack`. Address functions never magically allocate/register or relocate storage. When using `localaddr(register)` outside COG-exec, the evaluator emits an error; this is not an unconditional failure in every mode.
 
-The complete active callable namespace is documented in [/projects/propan/stdlib.md](/projects/propan/stdlib.md). The six address/encoding helpers above are semantic builtins; the remaining currently loaded callable functions are the P2 definitions described there. The current analyzer does not expose a separate generic Spin-style `abs`/rotate/floating-helper family.
+The generated instruction selector and operand class decide which address flags have an encoding effect; `nrel` does not make a P2 `S**` immediate absolute.
 
-## Type checking and failure behavior
+## Diagnostics and evidence
 
-Most invalid operator/value combinations produce source diagnostics. Examples include applying arithmetic unary operators to strings/addresses, using pointer operators on ordinary integers, or combining mismatched binary operand types.
+Invalid combinations of two addresses, two strings, or two sequences in ordinary binary operators now result in **source diagnostics** (`err_operator_invalid_operand_type`), not the pre-merge `@panic` paths. Mixed operand types likewise have dedicated diagnostics. Tests in `tests/propan/sema/diagnostics/unsupported-binary-types.propan` cover representative string/address cases.
 
-Two important exceptions exist in the current implementation:
-
-- a binary operator applied to two `address` values reaches an `@panic` placeholder;
-- a binary operator applied to two `string` values reaches an `@panic` placeholder.
-
-These are assembler defects/limitations, not intentional language semantics. They are tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
-
-## External syntax tables
-
-The root README includes a useful PASM-to-Propan operator comparison, but it should not be treated as the current semantic authority. In particular, PASM/Spin spellings shown there do not become accepted Propan operators merely by appearing in the comparison table. The current Zig parser and evaluator define accepted behavior.
+Some instruction-specific address constraints and the intended negative division policy remain open; do not extrapolate from this general expression reference into hardware encoding guarantees. For callable P2 arithmetic/bit-pattern functions, see [/projects/propan/stdlib.md](/projects/propan/stdlib.md).

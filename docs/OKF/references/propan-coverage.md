@@ -23,8 +23,33 @@ A parser fixture alone is never sufficient evidence that a feature is a current 
 
 | Area | Current OKF reference | Principal implementation/evidence | Current validation examples | Coverage note |
 |---|---|---|---|---|
-| lexical/source grammar | `/projects/propan/lexical-and-source-grammar.md` | frontend tokenizer/parser | `parser/comments.propan`, `parser/escape_sequences.propan`, `parser/labels.propan`, `parser/values.propan` | grammar well covered; exact invalid-escape recovery is additionally established by direct parser control flow, though no focused regression locks it down |
-| expressions/value model | `/projects/propan/expressions.md` | semantic evaluator/value types | `parser/expressions.propan`, `sema/operators.propan`, `sema/operator-associativity.propan`, `sema/unary-plus.propan`, `sema/value-hint-converter.propan` | core operators covered; intended negative `/` and `%` semantics remain a design question |
+| lexical/source grammar | `/projects/propan/lexical-and-source-grammar.md` | frontend parser and `sema.zig` conditional filter | `parser/values.propan`, `sema/conditional-compilation.propan`, `parser/diagnostics/inactive-conditional-syntax.propan`, `sema/diagnostics/conditional-*.propan` | **Refreshed 2026-10-15:** bracket sequences, `---
+type: "Reference"
+title: "Propan documentation and validation coverage"
+description: "Map from documented Propan language/tooling areas to implementation evidence and current parser, semantic, equivalence, and regression tests."
+tags: ["propan", "coverage", "tests", "verification", "documentation"]
+status: "draft"
+source_confidence: "high"
+---
+# Propan documentation and validation coverage
+
+This page maps the OKF Propan reference to implementation and test evidence. **Coverage rows not explicitly refreshed after the 2026-10-15 upstream merge still reflect the September baseline and must be revalidated.** It is a maintenance aid, not a claim that every documented edge case has a dedicated regression test.
+
+Test roles differ:
+
+- `tests/propan/parser/` demonstrates frontend acceptance/grammar and may include parser-only forms that are not semantically supported.
+- `tests/propan/sema/` exercises semantic evaluation, instruction selection, values, addresses, and selected output metadata.
+- `tests/propan/equivalence/` compares Propan encodings against paired Spin2/PASM2 reference material and is especially important for generated P2 instructions, pointer forms, branches, effects, and augmentation.
+- `tests/propan/regressions/` contains focused end-to-end regressions for previously observed failures/tool behavior.
+
+A parser fixture alone is never sufficient evidence that a feature is a current semantic language feature.
+
+## Coverage map
+
+| Area | Current OKF reference | Principal implementation/evidence | Current validation examples | Coverage note |
+|---|---|---|---|---|
+, conditional source selection and phase limits; formatter still needs its own audit |
+| expressions/value model | `/projects/propan/expressions.md` | parser + `sema.zig` evaluator, `stdlib/eval.zig` payload types | `sema/array-emission.propan`, `array-constants.propan`, `string-emission.propan`, `diagnostics/unsupported-binary-types.propan` | **Refreshed 2026-10-15:** sequences/repetition, current PC, new address helpers and diagnostics; desired negative `/`/`%` policy remains open |
 | function-call grammar | lexical reference + `/projects/propan/stdlib.md` | parser + generated function wrapper metadata | `parser/fncalls.propan`, `sema/stdlib.propan` | active P2 callable namespace documented; generated metadata remains exhaustive source |
 | symbols/constants/labels/vars | `/projects/propan/symbols-and-declarations.md` | semantic symbol declaration/evaluation, recursive constant resolver, local scope rebinding | `sema/local-labels.propan`, `sema/diagnostics/constant-cycle.propan`, `test_suite.zig` listing/JSON tests | **Refreshed 2026-10-15:** leading-dot local scope and forward constants supported; label-dependent layout values need separate treatment |
 | address model | `/projects/propan/addresses-and-segments.md` | tagged addresses + semantic conversion/encoding | `sema/addressing-modes.propan`, `sema/basic-label-addressing.propan`, `equivalence/absrel_sample.propan`, `equivalence/branching.propan` | current HUB/COG/LUT model and allocation/emission relationship documented; intended `localaddr(register)` policy remains open |
@@ -36,7 +61,7 @@ A parser fixture alone is never sufficient evidence that a feature is a current 
 | augmentation | instruction/address references | semantic AUGD/AUGS emission | `equivalence/aug.propan` | direct equivalence evidence |
 | branching/relative addressing | `/projects/propan/pointer-addressing.md`, address/instruction refs | semantic relative selection and generated PC-relative metadata | `equivalence/branching.propan`, `equivalence/absrel_sample.propan` | current A vs S** distinction documented; CALLD overlap defect remains open |
 | pointer addressing | `/projects/propan/pointer-addressing.md` | pointer-expression encoder + canonical P2 data | `equivalence/memory-ptr.propan` | direct/index/update encoding coverage; focused CALLD pointer-overlap regression still needed after fix |
-| standard library | `/projects/propan/stdlib.md` | `src/propan/stdlib/` metadata/implementations | `sema/stdlib.propan`, equivalence `hubset.propan` for related configuration use | namespace/signatures documented; hardware-facing helper correctness is not universally revalidated by this map |
+| standard library | `/projects/propan/stdlib.md` | active P2 functions + direct semantic helpers | `sema/builtin-functions.propan`, `alti-*.propan`, `array-emission.propan`, `stdlib.propan` | **Refreshed 2026-10-15:** 32-bit numeric, ALTI, Unicode and register helpers; hardware-facing configuration correctness is not universally revalidated |
 | PASM2 migration | `/projects/propan/pasm2-differences.md` | generated mapping + current grammar | equivalence suite broadly | source-form translation summarized; repository examples have been separately classified for current/legacy/unverified status |
 | worked examples | `/projects/propan/examples.md` | current references + parser/sema/equivalence fixtures | forms drawn from pointer, branch, condition/effect, alignment, and addressing fixtures | examples are evidence-grounded but not yet extracted into a dedicated automated doc-example test |
 | single-root/imports | `/projects/propan/tooling.md` | `src/propan/propan.zig` + `frontend/imports.zig` | `test_suite.zig` root rejection, include precedence, import-once identity and imported source metadata | **Refreshed 2026-10-15:** multi-root input is rejected; imports expand into a single module |

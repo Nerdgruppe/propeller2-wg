@@ -21,9 +21,9 @@ Current semantic analysis loads, in order:
 
 The repository also contains P1 constant/function files, but the current `analyze()` path does not load them. They are therefore implementation material, not active P2-language symbols.
 
-The common function source currently contains only commented sketches. The six core helpers `hubaddr`, `cogaddr`, `lutaddr`, `localaddr`, `aug`, and `nrel` are registered directly by semantic analysis rather than through the generated standard-library function namespace. Their address/encoding semantics are documented in [/projects/propan/expressions.md](/projects/propan/expressions.md) and [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
+The common function source is not an independently loaded P2 callable namespace. The **nine** semantic helpers `hubaddr`, `cogaddr`, `lutaddr`, `localaddr`, `pcaddr`, `byteoffset`, `wordoffset`, `aug`, and `nrel` are registered by `src/propan/sema.zig`. They are documented in [/projects/propan/expressions.md](/projects/propan/expressions.md).
 
-There are no additional current builtins named `abs`, generic shifts/rotates, floating-point helpers, or similar Spin-style expression functions. The active callable set is the six semantic helpers plus the P2 functions listed below.
+**The active P2 library now also includes general 32-bit numeric/bit operations, binary32 operations, Unicode sequence conversion, register creation, and ALTI helpers.** The old statement that there is no `abs`, rotate, or floating-point builtin is obsolete. The namespace table below should be read together with the exhaustive generated `--render-stdlib-docs` output.
 
 ## Calls, parameters, defaults, and diagnostics
 
@@ -35,7 +35,7 @@ Invalid calls can fail as an argument-count error, type mismatch, invalid argume
 
 Enumerator arguments use Propan enumerator values such as `#nearest`, `#pll`, or `#15pF`; they are not global integer constants. Enumerator acceptance is specific to the parameter's implementation enum.
 
-Boolean parameters accept integer values and the boolean enumerator spellings recognized by the conversion layer. Current accepted enumerator spellings are `#true`, `#yes`, `#on`, `#1`, `#no`, `#off`, and `#0`. The conversion table also contains `false ` with a trailing space rather than `false`; consequently `#false` is not currently accepted by this generic conversion path. This is an implementation quirk, not recommended syntax.
+Boolean parameters accept integer values and the boolean enumerator spellings recognized by the conversion layer. The generic boolean conversion table currently accepts `#true`, `#false`, `#yes`, `#no`, `#on`, `#off`, `#1`, and `#0`. The old trailing-space `false ` typo was corrected in `src/propan/stdlib/define.zig`.
 
 ## Common predefined constants
 
@@ -159,14 +159,49 @@ EVENT_SE1 EVENT_SE2 EVENT_SE3 EVENT_SE4
 EVENT_PAT EVENT_FBW EVENT_XMT EVENT_XFI EVENT_XRO EVENT_XRL EVENT_ATN EVENT_QMT
 ```
 
+## Additional current P2 expression functions
+
+These names are defined by `src/propan/stdlib/p2/functions.zig` (not by the instruction encoding table). The integer/float word helpers accept values representable as a 32-bit signed or unsigned bit pattern; signed operations reinterpret the same bits as `i32`, and floating-point helpers interpret/return binary32 **bit patterns** in integer semantic values.
+
+| Unary function(s) | Meaning |
+|---|---|
+| `abs`, `fabs` | signed 32-bit absolute (including wrap at minimum signed value); clear binary32 sign bit |
+| `encod`, `decod`, `bmask` | highest set-bit index; one-hot decode; low-bit mask |
+| `clz`, `ctz`, `clo`, `cto`, `popcnt` | leading/trailing zero/one counts; population count |
+| `sqrt`, `fsqrt` | unsigned integer-root via binary32 path; binary32 square root |
+| `qlog`, `qexp` | integer/fixed-point binary logarithm and exponent conversion |
+
+| Binary function(s) | Meaning |
+|---|---|
+| `min`, `max`, `smin`, `smax` | unsigned/signed minima and maxima |
+| `sar`, `ror`, `rol`, `rev` | arithmetic shift; rotations; reverse selected low bits |
+| `zerox`, `signx` | zero/sign extension from a selected bit index |
+| `sca`, `scas`, `frac` | unsigned high multiply; signed scaled multiply; unsigned fractional quotient |
+| `fmul`, `fdiv`, `fadd`, `fsub` | binary32 arithmetic on bit patterns |
+| `flt`, `fle`, `fgt`, `fge` | binary32 comparisons returning `-1` or `0` |
+
+The binary helpers take `a` and `b`; the unary helpers take `v`. Shift/bit selection functions use the low five bits of the second operand. `frac` diagnoses a zero divisor; `qlog(0)` is invalid. Distinguish these **library functions** from the language's general 64-bit arithmetic operators. Exact edge cases are covered in `tests/propan/sema/builtin-functions.propan`.
+
+| Function | Parameters | Result |
+|---|---|---|
+| `register(value)` | integer index 0–511 or existing register | register-valued semantic result |
+| `utf16(text)` | UTF-8 string | sequence of UTF-16 code units, including surrogate pairs |
+| `utf32(text)` | UTF-8 string | sequence of Unicode scalar values |
+| `alti.config(...)` | `s_inc`, `d_inc`, `s_fwd`, `d_fwd`, `r_inc`, `r_fwd`, optional `s_ring`/`d_ring`/`r_ring` | packed ALTI configuration word |
+| `alti.state(s, d, r)` | integer source/destination/result fields or COG/regspace addresses | packed ALTI state; cross-segment address fields can warn |
+
+`alti.config` accepts enumerated increment/forwarding/ring-mode fields; `alti.state` accepts S/D 9-bit fields and R 14-bit fields, checking domains/widths. See `tests/propan/sema/alti-*.propan` and the generated function metadata for accepted enumerator names and defaults.
+
+The UTF helpers decode valid UTF-8 and reject malformed input. Examples and actual emitted bytes are in `tests/propan/sema/array-emission.propan`.
+
 ## P2 standard-library functions
 
 The following table is the current callable namespace loaded from `src/propan/stdlib/p2/functions.zig`. Integer types below describe the implementation width/range; `enum(...)` lists the accepted enumerator domain.
 
 | Function | Parameters | Result / behavior |
 |---|---|---|
-| `regoffset` | `reg: register`, `offset: i10` | register; wraps the register index using the current implementation arithmetic |
-| `bitrange` | `low: u5`, `high: u5` | `u10` packed bit-field; rejects `high < low` |
+| `regoffset` | `base: register`, `offset: i10` | register; wraps the register index using the current implementation arithmetic |
+| `bitrange` | `low: u5`, `high: u5`, `wrap=#unset` | `u10` packed bit-field; wrapped range warns by default, rejects only with explicit false |
 | `pinrange` | `start: u6`, `end: u6`, `wrap=#unset` | `u11` packed pin field; pins must be in one 32-pin group; wrapping can warn, be accepted, or be rejected |
 | `ticks` | `clk: u32`, `s=0`, `ms=0`, `us=0`, `ns=0`, `waitx=false`, `round=#nearest` | `u32` clock count; rounding is `#floor`, `#ceil`, or `#nearest`; `waitx` subtracts two clocks and may warn for very short delays |
 | `Hub.reboot` | none | `0x10000000` HUBSET reset word |
