@@ -1,0 +1,24 @@
+//? WINDTUNNEL CHECK LIST
+//? oracle: off "DAC output state has no digital silicon readback"
+//? post: cog[*].dacs == u8 [0 55 88 121]
+//? post: cog[*].reg[status] == 0x00400000
+
+                // Leave the converter running after a finite streamer command restores background DACs.
+                MOV     coefficient,                            aug(0x80000001)
+                SETCY   coefficient
+                SETCI   aug(0x00800002)
+                SETCQ   aug(0x00008003)
+                SETCMOD 0x120
+                SETDACS aug(0x78563412)
+                SETXFRQ aug(0x80000000)
+                XINIT   aug(X_IMM_1X32_4DAC8 | (15 << 24) | 4), aug(0xefcdab89)
+                WAITXFI
+                // Background SETDACS continues through conversion while the instruction pipeline waits.
+                WAITX   20
+                GETBRK  status                                                  :wcz
+                AND     status,                                 aug(3 << 21)
+                JMP     nrel(_end)
+var coefficient:
+                LONG    0
+var status:     LONG    0
+

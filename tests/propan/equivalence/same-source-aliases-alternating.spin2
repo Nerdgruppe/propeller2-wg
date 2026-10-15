@@ -1,0 +1,38 @@
+DAT
+    NOT dst, dst
+    NOT dst
+
+    ABS dst, dst WC
+    ABS dst WC
+
+    NEG dst, dst WZ
+    NEG dst WZ
+
+    NEGC dst, dst WCZ
+    NEGC dst WCZ
+
+    NEGNC dst, dst
+    NEGNC dst
+
+    NEGZ dst, dst WC
+    NEGZ dst WC
+
+    NEGNZ dst, dst WZ
+    NEGNZ dst WZ
+
+    ENCOD dst, dst WCZ
+    ENCOD dst WCZ
+
+    ONES dst, dst
+    ONES dst
+
+    TEST dst, dst WC
+    TEST dst WC
+
+    DECOD dst, dst
+    DECOD dst
+
+    BMASK dst, dst
+    BMASK dst
+
+dst LONG 1

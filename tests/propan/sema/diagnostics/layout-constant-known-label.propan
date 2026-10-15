@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? err: err_requires_an_integer_known_during_layout line 7
+
+target:
+LONG 0
+const ORIGIN = hubaddr(target) + 4
+.org ORIGIN

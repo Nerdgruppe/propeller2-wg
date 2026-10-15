@@ -1,0 +1,400 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 3000
+                //? run: "mode0-pattern0-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x6
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 0
+                //? const: pattern = 0
+                //? run: "mode0-pattern0-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x6
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 0
+                //? const: pattern = 0
+                //? run: "mode0-pattern1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 0
+                //? const: pattern = 1
+                //? run: "mode0-pattern1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 0
+                //? const: pattern = 1
+                //? run: "mode0-pattern2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x4
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 0
+                //? const: pattern = 2
+                //? run: "mode0-pattern2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x4
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 0
+                //? const: pattern = 2
+                //? run: "mode0-pattern3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 0
+                //? const: pattern = 3
+                //? run: "mode0-pattern3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 0
+                //? const: pattern = 3
+                //? run: "mode0-pattern6-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: mode = 0
+                //? const: pattern = 6
+                //? run: "mode0-pattern6-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: mode = 0
+                //? const: pattern = 6
+                //? run: "mode0-pattern14-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: mode = 0
+                //? const: pattern = 14
+                //? run: "mode0-pattern14-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: mode = 0
+                //? const: pattern = 14
+                //? run: "mode1-pattern0-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x6
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 1
+                //? const: pattern = 0
+                //? run: "mode1-pattern0-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x6
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 1
+                //? const: pattern = 0
+                //? run: "mode1-pattern1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 1
+                //? const: pattern = 1
+                //? run: "mode1-pattern1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 1
+                //? const: pattern = 1
+                //? run: "mode1-pattern2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x4
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 1
+                //? const: pattern = 2
+                //? run: "mode1-pattern2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x4
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 1
+                //? const: pattern = 2
+                //? run: "mode1-pattern3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 1
+                //? const: pattern = 3
+                //? run: "mode1-pattern3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 1
+                //? const: pattern = 3
+                //? run: "mode1-pattern6-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 1
+                //? const: pattern = 6
+                //? run: "mode1-pattern6-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 1
+                //? const: pattern = 6
+                //? run: "mode1-pattern14-cog0"
+                //? post: cog[*].reg[link] == 0x0
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x0
+                //? cog: 0
+                //? const: mode = 1
+                //? const: pattern = 14
+                //? run: "mode1-pattern14-cog7"
+                //? post: cog[*].reg[link] == 0x0
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x0
+                //? cog: 7
+                //? const: mode = 1
+                //? const: pattern = 14
+                //? run: "mode2-pattern0-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x6
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 2
+                //? const: pattern = 0
+                //? run: "mode2-pattern0-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x6
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 2
+                //? const: pattern = 0
+                //? run: "mode2-pattern1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 2
+                //? const: pattern = 1
+                //? run: "mode2-pattern1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 2
+                //? const: pattern = 1
+                //? run: "mode2-pattern2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x4
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 2
+                //? const: pattern = 2
+                //? run: "mode2-pattern2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x4
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 2
+                //? const: pattern = 2
+                //? run: "mode2-pattern3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 0
+                //? const: mode = 2
+                //? const: pattern = 3
+                //? run: "mode2-pattern3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x3
+                //? cog: 7
+                //? const: mode = 2
+                //? const: pattern = 3
+                //? run: "mode2-pattern6-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: mode = 2
+                //? const: pattern = 6
+                //? run: "mode2-pattern6-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: mode = 2
+                //? const: pattern = 6
+                //? run: "mode2-pattern14-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: mode = 2
+                //? const: pattern = 14
+                //? run: "mode2-pattern14-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: mode = 2
+                //? const: pattern = 14
+                // Cross the boundary with SKIP, SKIPF and EXECF using a defined return stack and code-marked targets.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(508)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(509)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(511)
+                PUSH    register(cogaddr(target))
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+hit1:
+                MOV     landed, 1
+                JMP     nrel(done)
+hit2:
+                MOV     landed, 2
+                JMP     nrel(done)
+hit3:
+                MOV     landed, 3
+                JMP     nrel(done)
+hit4:
+                MOV     landed, 4
+                JMP     nrel(done)
+hit5:
+                MOV     landed, 5
+                JMP     nrel(done)
+hit6:
+                MOV     landed, 6
+                JMP     nrel(done)
+var control:    LONG    (pattern << 10) | 0x3fd
+var landed:     LONG    0
+// These return-ROR encodings also hold the numeric CALLD target addresses.
+// A canceled CALLD can fetch them as instructions through its S port.
+target1:
+    return      ROR     register(0),    register(pcaddr(hit1))
+target2:
+    return      ROR     register(0),    register(pcaddr(hit2))
+target3:
+    return      ROR     register(0),    register(pcaddr(hit3))
+target4:
+    return      ROR     register(0),    register(pcaddr(hit4))
+target5:
+    return      ROR     register(0),    register(pcaddr(hit5))
+target6:
+    return      ROR     register(0),    register(pcaddr(hit6))
+var link:       LONG    0
+target:
+    return      ROR     register(0),    register(pcaddr(done))
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:
+                // These words are loaded into the physical cog instruction slots above.
+                CALLD   link,   register(cogaddr(target))
+                CALLD   link,   register(cogaddr(target1))
+                CALLD   link,   register(cogaddr(target2))
+                CALLD   link,   register(cogaddr(target3))
+                CALLD   link,   register(cogaddr(target4))
+                CALLD   link,   register(cogaddr(target5))
+                CALLD   link,   register(cogaddr(target6))
+.lutexec    0x3100, 0x3fc
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+.if mode == 0
+                SKIPF   pattern
+.elif   mode == 1
+                SKIP    pattern
+.else
+                EXECF   control
+.endif
+                ADD     hits,   1
+                ADD     hits,   2
+                ADD     hits,   3
+

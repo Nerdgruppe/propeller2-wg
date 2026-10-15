@@ -1,0 +1,5 @@
+.lutexec 0x100
+LONG 0, 0, 0, 0
+lut_label:
+LONG 1
+.assert lutaddr(lut_label) == 0x004

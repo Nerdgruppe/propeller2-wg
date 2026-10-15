@@ -1,0 +1,12 @@
+//? PROPAN CHECK LIST
+//? sym: start code:0:0
+//? sym: value data:8:2
+//? sym: other code:12:3
+const answer = 40 + 2
+const wide = utf16(text="Hi")
+.cogexec
+start: MOV value, answer :wcz
+.loop: JMP .loop
+var value: LONG answer
+other: JMP start
+.loop: JMP .loop

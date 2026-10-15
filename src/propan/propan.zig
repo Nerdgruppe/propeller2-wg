@@ -1,13 +1,17 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const frontend = @import("frontend.zig");
-const sema = @import("sema.zig");
+pub const frontend = @import("frontend.zig");
+pub const sema = @import("sema.zig");
 const emit = @import("emit.zig");
 const listfile = @import("listfile.zig");
-const diagnostics = @import("diagnostics.zig");
-const stdlib = @import("stdlib/stdlib.zig");
-const Module = @import("Module.zig");
+const check_list = @import("check_list.zig");
+pub const diagnostics = @import("diagnostics.zig");
+pub const stdlib = @import("stdlib/stdlib.zig");
+pub const mode_directive = @import("mode_directive.zig");
+pub const eval = @import("stdlib/eval.zig");
+pub const Module = @import("Module.zig");
+pub const SourceFile = @import("SourceFile.zig");
 
 const args_parser = @import("args");
 
@@ -17,22 +21,71 @@ pub const std_options: std.Options = .{
     .logFn = writeLog,
 };
 
-const TestMode = enum {
+/// Assembled image and source metadata, owned by the caller.
+pub const AssemblyResult = struct {
+    module: Module,
+    image: []u8,
+    allocator: std.mem.Allocator,
+
+    pub fn deinit(result: *AssemblyResult) void {
+        result.module.deinit();
+        result.allocator.free(result.image);
+    }
+};
+
+pub fn assemble(allocator: std.mem.Allocator, io: std.Io, path: []const u8, text: []const u8, errors: *std.Io.Writer) !AssemblyResult {
+    var arena: std.heap.ArenaAllocator = .init(allocator);
+    defer arena.deinit();
+    var collection: diagnostics.Collection = .init(allocator);
+    defer collection.deinit();
+    defer collection.render(errors, .{ .include_warnings = false, .include_infos = false }) catch {};
+    var source = try SourceFile.init(arena.allocator(), path, text);
+    source.relative_path = std.fs.path.basename(path);
+    try collection.register_source_file(&source);
+    var dir = try std.Io.Dir.cwd().openDir(io, std.fs.path.dirname(path) orelse ".", .{});
+    defer dir.close(io);
+    var dirs = [_]std.Io.Dir{dir};
+    var expander = frontend.imports.Expander.init(arena.allocator(), io, &collection, &dirs, &.{});
+    defer expander.deinit();
+    const ast = expander.expand(&source) catch return error.AssemblyFailed;
+    if (collection.has_errors()) return error.AssemblyFailed;
+    var module = sema.analyze(allocator, ast, .{
+        .io = io,
+        .blank_pointer_expr = .as_ptr_epxr,
+        .rebind_scopes = expander.did_import,
+    }, &collection) catch |err| switch (err) {
+        error.SemanticErrors => return error.AssemblyFailed,
+        else => return err,
+    };
+    errdefer module.deinit();
+    if (collection.has_errors()) return error.AssemblyFailed;
+    var size: usize = 0;
+    for (module.segments) |segment| size = @max(size, segment.hub_offset + segment.data.len);
+    const image = try allocator.alloc(u8, size);
+    @memset(image, 0);
+    for (module.segments) |segment| @memcpy(image[segment.hub_offset..][0..segment.data.len], segment.data);
+    return .{ .module = module, .image = image, .allocator = allocator };
+}
+
+pub const TestMode = enum {
     parser,
     sema,
     compare,
 };
 
-const CliArgs = struct {
+pub const Options = struct {
     help: bool = false,
     output: []const u8 = "",
     @"test-mode": ?TestMode = null,
     @"compare-to": []const u8 = "",
     verbose: bool = false,
+    @"no-warnings": bool = false,
     format: emit.BinaryFormat = .flat,
     @"fill-byte": u8 = 0x00,
     @"list-file": []const u8 = "",
+    @"include-path": []const u8 = "",
     @"render-stdlib-docs": []const u8 = "",
+    @"pretty-print": []const u8 = "",
 
     pub const shorthands = .{
         .h = "help",
@@ -40,10 +93,11 @@ const CliArgs = struct {
         .v = "verbose",
         .f = "format",
         .F = "fill-byte",
+        .I = "include-path",
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-o <output>] <sources...>",
+        .usage_summary = "[-h] [-I <path>] [-o <output>] <source> | --pretty-print <path>",
 
         .full_text =
         \\Propan is an assembler for the Propeller 2 architecture.
@@ -53,10 +107,13 @@ const CliArgs = struct {
             .help = "Prints this help text",
             .output = "Sets the path of the output file.",
             .verbose = "Enables debug logging",
+            .@"no-warnings" = "Suppresses warning diagnostics on the command line",
             .format = "Selects the binary format to use",
             .@"fill-byte" = "The byte value which is used to fill empty/undefined space in the binary. Defaults to 0x00.",
             .@"list-file" = "Writes a list file to the given path. Use '-' to write to stdout.",
+            .@"include-path" = "Adds an import search path. May be specified more than once.",
             .@"render-stdlib-docs" = "Renders the standard library documentation as an HTML file",
+            .@"pretty-print" = "Pretty-prints a Propan source file to stdout. Use '-' for stdin.",
             .@"test-mode" = "<internal use only>",
             .@"compare-to" = "<internal use only>",
         },
@@ -64,134 +121,183 @@ const CliArgs = struct {
 };
 
 pub fn main(init: std.process.Init) !u8 {
+    var cli = args_parser.parseForCurrentProcess(Options, init, .print) catch return 1;
+    defer cli.deinit();
+    var stdin_buffer: [8192]u8 = undefined;
+    var stdin = std.Io.File.stdin().reader(init.io, &stdin_buffer);
+    var stdout_buffer: [8192]u8 = undefined;
+    var stdout = std.Io.File.stdout().writer(init.io, &stdout_buffer);
+    var stderr_buffer: [4096]u8 = undefined;
+    var stderr = std.Io.File.stderr().writer(init.io, &stderr_buffer);
+    return run(.{
+        .io = init.io,
+        .gpa = init.gpa,
+        .arena = init.arena,
+        .stdin = &stdin.interface,
+        .stdout = &stdout.interface,
+        .stderr = &stderr.interface,
+        .include_paths = try collect_include_paths(init),
+        .executable_name = cli.executable_name orelse "propan",
+    }, cli.options, cli.positionals);
+}
+
+pub const RunContext = struct {
+    io: std.Io,
+    gpa: std.mem.Allocator,
+    arena: *std.heap.ArenaAllocator,
+    stdin: *std.Io.Reader,
+    stdout: *std.Io.Writer,
+    stderr: *std.Io.Writer,
+    include_paths: []const []const u8 = &.{},
+    executable_name: []const u8 = "propan",
+    /// Gives in-memory input its original path for relative imports and FILE.
+    source_path: ?[]const u8 = null,
+    comparison: ?[]const u8 = null,
+};
+
+/// Executes Propan with already parsed options. The caller owns the arena and streams.
+pub fn run(init: RunContext, options: Options, input_paths: []const []const u8) !u8 {
     const allocator = init.gpa;
+    const previous_log_level = global_log_level;
+    defer global_log_level = previous_log_level;
 
     var diagnostics_collection: diagnostics.Collection = .init(allocator);
     defer diagnostics_collection.deinit();
 
     var diagnostic_render_options: diagnostics.RenderOptions = .{};
     defer {
-        var buffer: [4096]u8 = undefined;
-        var stderr_writer = std.Io.File.stderr().writer(init.io, &buffer);
-        diagnostics_collection.render(&stderr_writer.interface, diagnostic_render_options) catch {};
-        stderr_writer.interface.flush() catch {};
+        diagnostics_collection.render(init.stderr, diagnostic_render_options) catch {};
+        init.stderr.flush() catch {};
     }
 
-    var cli = args_parser.parseForCurrentProcess(CliArgs, init, .print) catch return 1;
-    defer cli.deinit();
+    diagnostic_render_options.include_warnings = !options.@"no-warnings";
 
-    if (cli.options.@"render-stdlib-docs".len > 0) {
-        var file = if (std.mem.eql(u8, cli.options.@"render-stdlib-docs", "-"))
-            std.Io.File.stdout()
-        else
-            try std.Io.Dir.cwd().createFile(init.io, cli.options.@"render-stdlib-docs", .{});
-        defer file.close(init.io);
-
-        var buffer: [8192]u8 = undefined;
-        var fileWriter = file.writer(init.io, &buffer);
-
-        try stdlib.render.write_html(
-            &fileWriter.interface,
-            stdlib.p2.constants,
-            stdlib.p2.functions,
-        );
-
-        try fileWriter.interface.flush();
+    if (options.@"render-stdlib-docs".len > 0) {
+        if (std.mem.eql(u8, options.@"render-stdlib-docs", "-")) {
+            try stdlib.render.write_html(init.stdout, stdlib.p2.constants, stdlib.p2.functions);
+            try init.stdout.flush();
+        } else {
+            var file = try std.Io.Dir.cwd().createFile(init.io, options.@"render-stdlib-docs", .{});
+            defer file.close(init.io);
+            var buffer: [8192]u8 = undefined;
+            var writer = file.writer(init.io, &buffer);
+            try stdlib.render.write_html(&writer.interface, stdlib.p2.constants, stdlib.p2.functions);
+            try writer.interface.flush();
+        }
         return 0;
     }
 
-    if (cli.options.@"test-mode" != null) {
+    if (options.@"test-mode" != null) {
         global_log_level = .err; // mute warnings in test mode
         diagnostic_render_options.include_warnings = false;
         diagnostic_render_options.include_infos = false;
     }
-    if (cli.options.verbose) {
+    if (options.verbose) {
         global_log_level = .debug;
     }
 
-    if (cli.options.help) {
-        var buffer: [4096]u8 = undefined;
-        var stdout = std.Io.File.stdout().writer(init.io, &buffer);
+    if (options.help) {
         try args_parser.printHelp(
-            CliArgs,
-            cli.executable_name orelse "propan",
-            &stdout.interface,
+            Options,
+            init.executable_name,
+            init.stdout,
         );
-        try stdout.interface.flush();
+        try init.stdout.flush();
         return 0;
     }
 
-    const output_format = cli.options.format;
-    if (output_format.is_binary() and cli.options.output.len == 0) {
-        return try usage_mistake(&diagnostics_collection, "Cannot emit {s} to stdio. Use \"-o -\" to force emission to stdout.", .{@tagName(output_format)});
+    if (options.@"pretty-print".len > 0) {
+        if (input_paths.len != 0)
+            return try usage_mistake(&diagnostics_collection, .err_multiple_input_files_are_not_supported);
+
+        const path = options.@"pretty-print";
+        const source = if (std.mem.eql(u8, path, "-")) blk: {
+            var contents: std.Io.Writer.Allocating = .init(init.arena.allocator());
+            _ = try init.stdin.streamRemaining(&contents.writer);
+            break :blk try contents.toOwnedSlice();
+        } else try std.Io.Dir.cwd().readFileAlloc(init.io, path, init.arena.allocator(), .limited(1 << 20));
+
+        const source_file: SourceFile = try .init(init.arena.allocator(), path, source);
+        var parser: frontend.Parser = .init(&source_file, &diagnostics_collection);
+        var parsed = parser.parse(init.arena.allocator()) catch |err| switch (err) {
+            error.OutOfMemory => return err,
+            else => return 1,
+        };
+        defer parsed.deinit();
+
+        try frontend.render.pretty_print(init.stdout, parsed.file);
+        try init.stdout.flush();
+        return 0;
     }
 
-    if (cli.positionals.len == 0) {
-        return try usage_mistake(&diagnostics_collection, "missing input files.", .{});
+    const output_format = options.format;
+    if (output_format.is_binary() and options.output.len == 0) {
+        return try usage_mistake(&diagnostics_collection, .{
+            .err_usage_cannot_emit_to_stdio = .{
+                .format = output_format,
+            },
+        });
     }
 
-    const source_files = try init.arena.allocator().alloc([]const u8, cli.positionals.len);
-    for (source_files, cli.positionals) |*buffer, input_path| {
+    if (input_paths.len == 0) {
+        return try usage_mistake(&diagnostics_collection, .err_usage_missing_input_files);
+    }
+    if (input_paths.len > 1) {
+        return try usage_mistake(&diagnostics_collection, .err_multiple_input_files_are_not_supported);
+    }
+
+    const include_paths = init.include_paths;
+    const input_path = input_paths[0];
+    // Index zero is the source directory; include paths follow in CLI order.
+    const dirs = try init.arena.allocator().alloc(std.Io.Dir, include_paths.len + 1);
+    dirs[0] = try std.Io.Dir.cwd().openDir(init.io, std.fs.path.dirname(init.source_path orelse input_path) orelse ".", .{});
+    var opened_dirs: usize = 1;
+    defer for (dirs[0..opened_dirs]) |dir| dir.close(init.io);
+    for (include_paths, 1..) |path, index| {
+        dirs[index] = std.Io.Dir.cwd().openDir(init.io, path, .{}) catch |err| {
+            try diagnostics_collection.emit_diag(null, .{ .err_cannot_open_include_path = .{ .path = path, .reason = err } });
+            return 1;
+        };
+        opened_dirs += 1;
+    }
+
+    const source_file = try init.arena.allocator().create(SourceFile);
+    const source_path = try init.arena.allocator().dupe(u8, init.source_path orelse input_path);
+    const source_text = blk: {
         if (std.mem.eql(u8, input_path, "-")) {
             std.log.debug("loading stdin...", .{});
-            var buf: [8192]u8 = undefined;
-
-            var reader = std.Io.File.stdin().reader(init.io, &buf);
-
             var writer: std.Io.Writer.Allocating = .init(init.arena.allocator());
             defer writer.deinit();
 
-            _ = try reader.interface.streamRemaining(&writer.writer);
+            _ = try init.stdin.streamRemaining(&writer.writer);
 
-            buffer.* = try writer.toOwnedSlice();
+            break :blk try writer.toOwnedSlice();
         } else {
             std.log.debug("loading {s}...", .{input_path});
 
-            buffer.* = try std.Io.Dir.cwd().readFileAlloc(init.io, input_path, init.arena.allocator(), .limited(1 << 20));
+            break :blk try dirs[0].readFileAlloc(init.io, std.fs.path.basename(source_path), init.arena.allocator(), .limited(1 << 20));
         }
+    };
+    source_file.* = try .init(init.arena.allocator(), source_path, source_text);
+    source_file.relative_path = std.fs.path.basename(source_file.path);
+    try diagnostics_collection.register_source_file(source_file);
 
-        try diagnostics_collection.register_source(input_path, buffer.*);
-    }
+    var check_list_value: ?check_list.List = if (options.@"test-mode" != null)
+        try check_list.parse(allocator, source_file.path, source_file.text, &diagnostics_collection)
+    else
+        null;
+    defer if (check_list_value) |*list| list.deinit();
+    if (diagnostics_collection.has_errors()) return 1;
+    const diagnostic_start = diagnostics_collection.diagnostics.items.len;
 
-    const loaded_files = try init.arena.allocator().alloc(frontend.ParsedFile, cli.positionals.len);
-    for (cli.positionals, loaded_files, source_files, 0..) |input_path, *parsed_file, source_code, i| {
-        errdefer for (loaded_files[0..i]) |*file|
-            file.deinit();
-        std.log.debug("parsing {s}...", .{input_path});
-
-        var parser: frontend.Parser = .init(source_code, input_path, &diagnostics_collection);
-
-        parsed_file.* = parser.parse(allocator) catch |err| switch (err) {
-            error.Overflow,
-            error.InvalidUtf8,
-            error.Utf8CannotEncodeSurrogateHalf,
-            error.CodepointTooLarge,
-            error.UnexpectedToken,
-            error.UnexpectedCharacter,
-            error.UnexpectedEndOfFile,
-            error.SyntaxError,
-            error.InvalidCharacter,
-            error.InvalidFlag,
-            => return 1,
-
-            error.OutOfMemory => |e| return e,
-        };
-    }
-    defer for (loaded_files) |*file|
-        file.deinit();
-
-    // Stop after having each file parsed successfully:
-    if (cli.options.@"test-mode" == .parser)
-        return 0;
-
-    // try frontend.render.pretty_print(
-    //     std.io.getStdOut().writer(),
-    //     parsed_file.file,
-    // );
-    // try frontend.dump_ast(
-    //     std.io.getStdOut().writer(),
-    //     parsed_file.file,
-    // );
+    var expander = frontend.imports.Expander.init(init.arena.allocator(), init.io, &diagnostics_collection, dirs, include_paths);
+    defer expander.deinit();
+    const ast_file = expander.expand(source_file) catch |err| switch (err) {
+        error.OutOfMemory => return err,
+        else => return try diagnostic_status(&diagnostics_collection, check_list_value, diagnostic_start),
+    };
+    if (options.@"test-mode" == .parser or diagnostics_collection.has_errors())
+        return try diagnostic_status(&diagnostics_collection, check_list_value, diagnostic_start);
 
     var output: std.ArrayListUnmanaged(u8) = .empty;
     defer output.deinit(allocator);
@@ -199,91 +305,85 @@ pub fn main(init: std.process.Init) !u8 {
     // this compile without exit code 1!
     // TODO: ADDCT1 tmp, ticks(CLK, us=15000)
 
-    const modules = try init.arena.allocator().alloc(Module, loaded_files.len);
-    var module_count: usize = 0;
-    defer for (modules[0..module_count]) |*module|
-        module.deinit();
+    std.log.debug("analyzing {s}...", .{input_path});
+    var module = sema.analyze(allocator, ast_file, .{
+        .blank_pointer_expr = .as_ptr_epxr,
+        .fill_byte = options.@"fill-byte",
+        .io = init.io,
+        .rebind_scopes = expander.did_import,
+    }, &diagnostics_collection) catch |err| switch (err) {
+        error.SemanticErrors => return try diagnostic_status(&diagnostics_collection, check_list_value, diagnostic_start),
+        else => |e| return e,
+    };
+    defer module.deinit();
 
-    var last_module: ?*Module = null;
-    for (cli.positionals, loaded_files) |input_path, parsed_file| {
-        std.log.debug("analyzing {s}...", .{input_path});
+    for (module.segments) |segment| {
+        const previous_end = output.items.len;
+        try output.resize(allocator, @max(output.items.len, segment.hub_offset + segment.data.len));
+        std.debug.assert(output.items.len >= segment.hub_offset + segment.data.len);
 
-        const module = sema.analyze(allocator, parsed_file.file, .{
-            .blank_pointer_expr = .as_ptr_epxr,
-        }, &diagnostics_collection) catch |err| switch (err) {
-            error.SemanticErrors => return 1,
-            else => |e| return e,
-        };
+        // fill newly created data with the user-defined fill byte:
+        @memset(output.items[previous_end..], options.@"fill-byte");
 
-        modules[module_count] = module;
-        last_module = &modules[module_count];
-        module_count += 1;
-
-        for (module.segments) |segment| {
-            const previous_end = output.items.len;
-            try output.resize(allocator, @max(output.items.len, segment.hub_offset + segment.data.len));
-            std.debug.assert(output.items.len >= segment.hub_offset + segment.data.len);
-
-            // fill newly created data with the user-defined fill byte:
-            @memset(output.items[previous_end..], cli.options.@"fill-byte");
-
-            // then insert the segments data:
-            @memcpy(output.items[segment.hub_offset..][0..segment.data.len], segment.data);
-        }
-
-        std.log.debug("sema yielded {} segments:", .{module.segments.len});
-
-        for (module.segments, 0..) |seg, seg_i| {
-            std.log.debug("  [{}]: offset 0x{X:0>6}, length {} bytes", .{ seg_i, seg.hub_offset, seg.data.len });
-
-            var i: usize = 0;
-            const chunk_size = 16;
-            while (i < seg.data.len) : (i += chunk_size) {
-                const rest = seg.data[i..];
-                const segment = rest[0..@min(chunk_size, rest.len)];
-
-                var chunk_buffer: [4 * chunk_size]u8 = undefined;
-
-                var fbs: std.Io.Writer = .fixed(&chunk_buffer);
-                for (segment, 0..) |byte, off| {
-                    if (off > 0) {
-                        try fbs.writeAll(" ");
-                        if ((off % 4) == 0) {
-                            try fbs.writeAll(" ");
-                        }
-                    }
-                    try fbs.print("{X:0>2}", .{byte});
-                }
-
-                std.log.debug("    0x{X:0>5}: {s}", .{ seg.hub_offset + i, fbs.buffered() });
-            }
-        }
+        // then insert the segments data:
+        @memcpy(output.items[segment.hub_offset..][0..segment.data.len], segment.data);
     }
 
-    if (cli.options.@"list-file".len > 0) {
-        const list_inputs = try init.arena.allocator().alloc(listfile.Input, module_count);
-        for (list_inputs, cli.positionals, source_files, loaded_files, modules[0..module_count]) |*input, path, source, parsed_file, module| {
-            input.* = .{
-                .path = path,
-                .source = source,
-                .ast_file = parsed_file.file,
-                .module = module,
-            };
+    std.log.debug("sema yielded {} segments:", .{module.segments.len});
+
+    for (module.segments, 0..) |seg, seg_i| {
+        std.log.debug("  [{}]: offset 0x{X:0>6}, length {} bytes", .{ seg_i, seg.hub_offset, seg.data.len });
+
+        var i: usize = 0;
+        const chunk_size = 16;
+        while (i < seg.data.len) : (i += chunk_size) {
+            const rest = seg.data[i..];
+            const segment = rest[0..@min(chunk_size, rest.len)];
+
+            var chunk_buffer: [4 * chunk_size]u8 = undefined;
+
+            var fbs: std.Io.Writer = .fixed(&chunk_buffer);
+            for (segment, 0..) |byte, off| {
+                if (off > 0) {
+                    try fbs.writeAll(" ");
+                    if ((off % 4) == 0) {
+                        try fbs.writeAll(" ");
+                    }
+                }
+                try fbs.print("{X:0>2}", .{byte});
+            }
+
+            std.log.debug("    0x{X:0>5}: {s}", .{ seg.hub_offset + i, fbs.buffered() });
         }
+    }
+    if (diagnostics_collection.has_errors())
+        return try diagnostic_status(&diagnostics_collection, check_list_value, diagnostic_start);
 
-        if (std.mem.eql(u8, cli.options.@"list-file", "-")) {
-            var buffer: [4096]u8 = undefined;
-            var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
+    if (check_list_value) |list| {
+        try list.evaluate(module, output.items, &diagnostics_collection);
+        const check_failed = diagnostics_collection.has_errors();
+        const status = try diagnostic_status(&diagnostics_collection, list, diagnostic_start);
+        if (check_failed or status != 0) return status;
+    }
 
-            try listfile.render(&stdout_writer.interface, list_inputs);
-            try stdout_writer.interface.flush();
+    if (options.@"list-file".len > 0) {
+        const list_inputs: [1]listfile.Input = .{.{
+            .source_file = source_file,
+            .sources = &diagnostics_collection,
+            .ast_file = ast_file,
+            .module = module,
+        }};
+
+        if (std.mem.eql(u8, options.@"list-file", "-")) {
+            try listfile.render(init.stdout, &list_inputs);
+            try init.stdout.flush();
         } else {
             var buffer: [4096]u8 = undefined;
-            var file = try std.Io.Dir.cwd().createFileAtomic(init.io, cli.options.@"list-file", .{ .replace = true });
+            var file = try std.Io.Dir.cwd().createFileAtomic(init.io, options.@"list-file", .{ .replace = true });
             defer file.deinit(init.io);
             var file_writer = file.file.writer(init.io, &buffer);
 
-            try listfile.render(&file_writer.interface, list_inputs);
+            try listfile.render(&file_writer.interface, &list_inputs);
             try file_writer.flush();
 
             try file.replace(init.io);
@@ -291,25 +391,22 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     // Stop after having each file parsed successfully:
-    if (cli.options.@"test-mode" == .sema)
+    if (options.@"test-mode" == .sema)
         return 0;
 
     // Stop after having each file parsed successfully:
-    if (cli.options.@"test-mode" == .compare) {
-        const ref = try std.Io.Dir.cwd().readFileAlloc(init.io, cli.options.@"compare-to", init.arena.allocator(), .limited(512 * 1024));
+    if (options.@"test-mode" == .compare) {
+        const ref = init.comparison orelse try std.Io.Dir.cwd().readFileAlloc(init.io, options.@"compare-to", init.arena.allocator(), .limited(512 * 1024));
 
         if (std.mem.eql(u8, ref, output.items)) {
             // boring case: our files are identical
             return 0;
         }
 
-        var buffer: [4096]u8 = undefined;
-        var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
-
-        const writer = &stdout_writer.interface;
+        const writer = init.stdout;
 
         try writer.print("OUTPUT DOES NOT MATCH '{s}'.\n", .{
-            cli.options.@"compare-to",
+            options.@"compare-to",
         });
 
         if (ref.len == output.items.len) {
@@ -328,7 +425,7 @@ pub fn main(init: std.process.Init) !u8 {
             writer,
             ref,
             output.items,
-            last_module.?.*,
+            module,
         );
         try writer.print("</diff>\n", .{});
 
@@ -340,29 +437,73 @@ pub fn main(init: std.process.Init) !u8 {
     if (output_format == .none)
         return 0;
 
-    if (cli.options.output.len > 0 and !std.mem.eql(u8, cli.options.output, "-")) {
-        var file = try std.Io.Dir.cwd().createFileAtomic(init.io, cli.options.output, .{ .replace = true });
+    if (options.output.len > 0 and !std.mem.eql(u8, options.output, "-")) {
+        var file = try std.Io.Dir.cwd().createFileAtomic(init.io, options.output, .{ .replace = true });
         defer file.deinit(init.io);
 
-        try emit.emit(init.io, allocator, file.file, modules[0..module_count], output.items, output_format);
+        try emit.emit(init.io, allocator, file.file, &.{module}, output.items, output_format);
 
         try file.replace(init.io);
     } else {
-        try emit.emit(init.io, allocator, std.Io.File.stdout(), modules[0..module_count], output.items, output_format);
+        try emit.write(allocator, init.stdout, &.{module}, output.items, output_format);
+        try init.stdout.flush();
     }
 
     return 0;
 }
 
-fn usage_mistake(diagnostics_collection: *diagnostics.Collection, comptime fmt: []const u8, args: anytype) !u8 {
-    try diagnostics_collection.emit_error(null, "usage error: " ++ fmt, args);
+fn collect_include_paths(init: std.process.Init) ![]const []const u8 {
+    const allocator = init.arena.allocator();
+    var args = try init.minimal.args.iterateAllocator(allocator);
+    defer args.deinit();
+    _ = args.next(); // executable name
+
+    var paths: std.ArrayListUnmanaged([]const u8) = .empty;
+    while (args.next()) |arg| {
+        if (std.mem.eql(u8, arg, "--")) break;
+        if (std.mem.eql(u8, arg, "-I") or std.mem.eql(u8, arg, "--include-path") or
+            (arg.len > 2 and arg[0] == '-' and arg[1] != '-' and arg[arg.len - 1] == 'I'))
+        {
+            try paths.append(allocator, try allocator.dupe(u8, args.next().?));
+        } else if (std.mem.startsWith(u8, arg, "--include-path=")) {
+            try paths.append(allocator, try allocator.dupe(u8, arg["--include-path=".len..]));
+        } else if (cli_option_requires_value(arg)) {
+            _ = args.next();
+        }
+    }
+    return try paths.toOwnedSlice(allocator);
+}
+
+fn cli_option_requires_value(arg: []const u8) bool {
+    if (std.mem.startsWith(u8, arg, "--") and std.mem.indexOfScalar(u8, arg, '=') == null) {
+        inline for (std.meta.fields(Options)) |field| {
+            if (field.type != bool and std.mem.eql(u8, arg[2..], field.name)) return true;
+        }
+    } else if (arg.len > 1 and arg[0] == '-' and arg[1] != '-') {
+        inline for (std.meta.fields(@TypeOf(Options.shorthands))) |field| {
+            if (arg[arg.len - 1] == field.name[0] and @FieldType(Options, @field(Options.shorthands, field.name)) != bool) return true;
+        }
+    }
+    return false;
+}
+
+fn usage_mistake(diagnostics_collection: *diagnostics.Collection, diagnostic: diagnostics.Kind) !u8 {
+    try diagnostics_collection.emit_diag(null, diagnostic);
     return 1;
+}
+
+fn diagnostic_status(diagnostics_collection: *diagnostics.Collection, list: ?check_list.List, start: usize) !u8 {
+    if (list) |checks| {
+        if (checks.hasDiagnosticChecks()) _ = try checks.evaluateDiagnostics(diagnostics_collection, start);
+    }
+    return if (diagnostics_collection.has_errors()) 1 else 0;
 }
 
 test {
     _ = frontend;
     _ = sema;
     _ = listfile;
+    _ = check_list;
     _ = diagnostics;
 }
 
@@ -398,9 +539,12 @@ fn render_bin_diff(writer: *std.Io.Writer, expected_data: []const u8, actual_dat
 }
 
 fn read_diff_word(data: []const u8, offset: usize) u32 {
-    if (offset + @sizeOf(u32) > data.len)
-        return 0;
-    return std.mem.readInt(u32, data[offset..][0..@sizeOf(u32)], .little);
+    var bytes: [4]u8 = @splat(0);
+    if (offset < data.len) {
+        const length = @min(bytes.len, data.len - offset);
+        @memcpy(bytes[0..length], data[offset..][0..length]);
+    }
+    return std.mem.readInt(u32, &bytes, .little);
 }
 
 fn bitdiff(comptime T: type, comp: T, ref: T, comptime groups: []const u32) [@bitSizeOf(T) + groups.len]u8 {
@@ -464,7 +608,7 @@ fn disasm(buffer: []u8, encoded: u32) ![]const u8 {
     var writer: std.Io.Writer = .fixed(buffer);
 
     for (stdlib.p2.instructions) |instr| {
-        var ignore_mask: u32 = 0xF000_0000; // we mask the condition by default
+        var ignore_mask: u32 = if (std.ascii.eqlIgnoreCase(instr.mnemonic, "NOP")) 0 else 0xF000_0000;
 
         for (instr.operands) |op| {
             ignore_mask |= op.slot.mask();
@@ -540,4 +684,12 @@ fn condition_str(cond: frontend.ast.Condition.Code) []const u8 {
         .if_c_or_z => "if(C | Z)  ",
         .always => "           ",
     };
+}
+
+test {
+    _ = @import("metadata_tests.zig");
+}
+
+test {
+    _ = @import("test_suite.zig");
 }

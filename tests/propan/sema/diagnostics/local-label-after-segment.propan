@@ -1,0 +1,22 @@
+//? PROPAN CHECK LIST
+//? err: err_undefined_reference_to_symbol_at line 10 name==".one"
+//? err: err_undefined_reference_to_symbol_at line 13 name==".two"
+//? err: err_undefined_reference_to_symbol_at line 16 name==".three"
+//? err: err_undefined_reference_to_symbol_at line 19 name==".four"
+//? err: err_undefined_reference_to_symbol_at line 22 name==".five"
+foo:
+.one:
+.cogexec
+LONG .one
+.two:
+.lutexec
+LONG .two
+.three:
+.hubexec
+LONG .three
+.four:
+.regspace
+LONG .four
+.five:
+.data
+LONG .five

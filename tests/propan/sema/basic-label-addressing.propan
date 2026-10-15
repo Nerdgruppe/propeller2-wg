@@ -1,4 +1,11 @@
-
+//? PROPAN CHECK LIST
+//? sym: _start code:0:0
+//? sym: data   code:8:2
+//? mem: 0x00000 == hex [
+//?     00 00 00 00 00 00 00 00
+//?     00 00 00 00
+//?     02 00 00 00 02 00 00 00 08 00 00 00
+//? ]
 
 _start:
     LONG 0

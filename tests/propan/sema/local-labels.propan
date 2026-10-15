@@ -1,0 +1,41 @@
+//? PROPAN CHECK LIST
+//? sym: .loop      code:0:0
+//? sym: foo        code:4:1
+//? sym: foo:loop   code:8:2
+//? sym: foo.loop   code:12:3
+//? sym: bar:loop   code:20:5
+//? sym: bar:temp   data:24:6
+//? sym: storage:slot data:28:7
+
+.loop:
+LONG 0
+.assert hubaddr(.loop) == 0
+
+foo:
+.assert hubaddr(foo) == 4
+LONG .loop // forward reference within foo
+.loop:
+LONG 0
+.assert hubaddr(.loop) == 8
+.assert hubaddr(.loop) != hubaddr(foo.loop)
+
+foo.loop: // literal non-local name, distinct from foo's .loop
+LONG 0
+.assert hubaddr(foo.loop) == 12
+
+bar:
+.assert hubaddr(bar) == 16
+LONG .loop // forward reference within bar
+.loop:
+LONG 0
+.assert hubaddr(.loop) == 20
+.assert hubaddr(foo.loop) == 12
+var .temp:
+LONG 0
+.assert hubaddr(.temp) == 24
+
+var storage:
+.assert hubaddr(storage) == 28
+var .slot:
+LONG 0
+.assert hubaddr(.slot) == 28

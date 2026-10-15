@@ -1,0 +1,130 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "mode2-pin8-sync0-invert0"
+//? const: mode = 2
+//? const: pin = 8
+//? const: sync = 0
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode2-pin8-sync0-invert1"
+//? const: mode = 2
+//? const: pin = 8
+//? const: sync = 0
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+//? run: "mode2-pin8-sync1-invert0"
+//? const: mode = 2
+//? const: pin = 8
+//? const: sync = 1
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode2-pin8-sync1-invert1"
+//? const: mode = 2
+//? const: pin = 8
+//? const: sync = 1
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+//? run: "mode2-pin9-sync0-invert0"
+//? const: mode = 2
+//? const: pin = 9
+//? const: sync = 0
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode2-pin9-sync0-invert1"
+//? const: mode = 2
+//? const: pin = 9
+//? const: sync = 0
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+//? run: "mode2-pin9-sync1-invert0"
+//? const: mode = 2
+//? const: pin = 9
+//? const: sync = 1
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode2-pin9-sync1-invert1"
+//? const: mode = 2
+//? const: pin = 9
+//? const: sync = 1
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+//? run: "mode5-pin8-sync0-invert0"
+//? const: mode = 5
+//? const: pin = 8
+//? const: sync = 0
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode5-pin8-sync0-invert1"
+//? const: mode = 5
+//? const: pin = 8
+//? const: sync = 0
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+//? run: "mode5-pin8-sync1-invert0"
+//? const: mode = 5
+//? const: pin = 8
+//? const: sync = 1
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode5-pin8-sync1-invert1"
+//? const: mode = 5
+//? const: pin = 8
+//? const: sync = 1
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+//? run: "mode5-pin9-sync0-invert0"
+//? const: mode = 5
+//? const: pin = 9
+//? const: sync = 0
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode5-pin9-sync0-invert1"
+//? const: mode = 5
+//? const: pin = 9
+//? const: sync = 0
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+//? run: "mode5-pin9-sync1-invert0"
+//? const: mode = 5
+//? const: pin = 9
+//? const: sync = 1
+//? const: invert = 0
+//? post: cog[*].reg[local] == 0
+//? post: cog[*].reg[relative] == 0
+//? run: "mode5-pin9-sync1-invert1"
+//? const: mode = 5
+//? const: pin = 9
+//? const: sync = 1
+//? const: invert = 1
+//? post: cog[*].reg[local] == 1
+//? post: cog[*].reg[relative] == 1
+
+                // Drive the paired pad low and invert feedback output, making the local pad high.
+                // Reading low therefore proves that pad-mode input selection precedes A/B selection.
+                DRVL    (pin ^ 1)
+                WRPIN   aug((mode << 17) | (sync << 16) | (invert << 15) | (1 << 14)),  pin
+                DIRH    pin
+                WRPIN   aug(0x60000000),                                                (pin + 2)
+                WAITX   64
+                TESTP   pin                                                                         :wc
+                WRC     local
+                TESTP   (pin + 2)                                                                   :wc
+                WRC     relative
+                JMP     nrel(_end)
+var local:      LONG    0
+var relative:   LONG    0
+

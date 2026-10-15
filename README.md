@@ -10,7 +10,7 @@ Install [Zig 0.16](https://ziglang.org/download/#release-0.16.0), then build the
 [user@machine propeller2-wg]$ zig build -Doptimize=ReleaseSafe
 [user@machine propeller2-wg]$
 [user@machine propeller2-wg]$ ls ./zig-out/bin/
-propan  turboprop  windtunnel
+propan  propan-lsp  turboprop  windtunnel  windtunnel-gui
 [user@machine propeller2-wg]$ ./zig-out/bin/propan --help
 Usage: ./zig-out/bin/propan [-h] [-o <output>] <sources...>
 
@@ -27,6 +27,63 @@ Options:
       --list-file    Writes a list file to the given path. Use '-' to write to stdout.
 [user@machine propeller2-wg]$ 
 ```
+
+The build also installs [propan-lsp](src/propan-lsp/), a stdio language server.
+The [VS Code extension](vscode-extension/) launches it in desktop hosts.
+
+To format a Propan source file, run `./zig-out/bin/propan --pretty-print source.propan`.
+Formatted source is written to stdout; use `--pretty-print -` to read from stdin.
+
+Run `zig-0.16.0 build test` from the repository root to execute the Propan unit tests
+and fixture suites, plus the Windtunnel checklist suite. Add `-Dwith-flexspin` to include Spin2
+round-trip and assembler equivalence tests; those two categories are skipped otherwise.
+If `kcov` is installed, the build captures coverage in `.coverage/propan-tests/`.
+The installed `zig-out/bin/propan-tests` executable can also be run directly from
+the repository root without coverage collection.
+
+Run `zig-0.16.0 build install test-windtunnel` for Windtunnel alone. Its
+[`//? WINDTUNNEL CHECK LIST`](docs/windtunnel/check-list.md) annotations support
+multiple isolated runs per file, shared and per-run conditions, symbol-based image
+preseeding, and exact UART stdin/stdout. Hardware
+oracle runs use the native Zig WebSocket client and require a P2AAS endpoint:
+
+```sh
+P2AAS_ENDPOINT='ws://localhost:12880/' \
+  zig-0.16.0 build install test-windtunnel -Dwith-p2aas
+```
+
+Local runs report hardware skips. Add `-Dcoverage=false` to disable Propan's
+optional kcov collection.
+
+Use `zig-0.16.0 build install test-windtunnel -Dfast-io=true` to accelerate serial
+endpoints, or run selected fixtures with `zig-out/bin/windtunnel-tests --fast-io FILE.propan`.
+The simulator also accepts `windtunnel --fast-io --image program.bin` and
+`windtunnel --serve --fast-io`. UART baud delays become single-clock word transfers;
+USART endpoints already transfer one word per pin update. Fast RX holds unread
+words until acknowledgement. CPU clocks and explicit `WAITX` warmups still run
+normally. Fixtures requiring serial frame timing can opt out with
+`//? fast-io: off "reason"`; ordinary runs retain clocked UART timing.
+
+See [Windtunnel core coverage](docs/windtunnel/core.md) for implemented operations
+and the remaining functional and timing limitations.
+
+The `windtunnel-gui` desktop starter uses zig-gamedev's GLFW/OpenGL packages and
+zgui (Dear ImGui), with pinned dependencies managed by Zig's package manager.
+Run `zig-0.16.0 build run-windtunnel-gui`, or install just the GUI with
+`zig-0.16.0 build build-windtunnel-gui` and launch `zig-out/bin/windtunnel-gui`.
+It provides editable image-path, cog, step-size and fast-I/O controls; these are
+not yet connected to the simulator. A desktop session with OpenGL 3.3 is required.
+
+`zig-out/bin/windtunnel --serve` exposes a compatible P2AAS endpoint at
+`ws://127.0.0.1:21591/`. See [the server documentation](docs/windtunnel/p2aas.md)
+for protocol behavior, client interchangeability, and hardware comparisons.
+
+Run `zig-0.16.0 build test --fuzz` to start Zig's native fuzzer, or use
+`--fuzz=10K` for a bounded run. Fuzz-test discovery uses Zig's test-server protocol.
+Alongside tokenizer and parser fuzzing, two targets run the full assembler through
+flat binary emission: arbitrary source may succeed or report assembly errors;
+generated valid programs must succeed. The generator covers cog, LUT, and hub
+execution, operands, augmentation, pointers, labels, expressions, data, and alignment.
 
 If you want to also have the tools [loadp2](https://github.com/totalspectrum/loadp2) and [flexspin](https://github.com/totalspectrum/flexprop), you can use `-Dwith-flexspin` on the `zig build` invocation:
 
@@ -199,6 +256,8 @@ const MY_CONSTANT = 10
 
 ### Unary Operators
 
+Builtin functions accept 32-bit words (−2³¹ through 2³²−1). Signed functions interpret the word as `i32`; floating-point functions interpret and return IEEE 754 binary32 bit patterns.
+
 | Propan      | PASM                    | Description                                        |
 |-------------|-------------------------|----------------------------------------------------|
 | `!`         | `!!`                    | Boolean: NOT (0 => TRUE, else => FALSE)            |
@@ -213,6 +272,10 @@ const MY_CONSTANT = 10
 | `fabs()`    | `FABS`                  | Floating-point absolute value (clears MSB)         |
 | `encod()`   | `ENCOD`                 | Encode MSB, 0..31                                  |
 | `decod()`   | `DECOD`                 | Decode, 1 << (x & $1F)                             |
+| `clz()`     | *n.a.*                  | Count leading zero bits, 0..32                     |
+| `ctz()`     | *n.a.*                  | Count trailing zero bits, 0..32                    |
+| `clo()`     | *n.a.*                  | Count leading one bits, 0..32                      |
+| `cto()`     | *n.a.*                  | Count trailing one bits, 0..32                     |
 | `bmask()`   | `BMASK`                 | Bitmask, (2 << (x & $1F)) - 1                      |
 | `popcnt()`  | `ONES`                  | Sum all '1' bits, 0..32                            |
 | `sqrt()`    | `SQRT`                  | Square root of unsigned value                      |
@@ -250,8 +313,10 @@ const MY_CONSTANT = 10
 | 3                | *n.a.*       | `+/`      | Divide and return quotient (unsigned)                  |
 | 3                | *n.a.*       | `//`      | Divide and return remainder (signed)                   |
 | 3                | `%`          | `+//`     | Divide and return remainder (unsigned)                 |
-| -                | `smin()`     | `#>`      | Limit minimum (signed)                                 |
-| -                | `smax()`     | `<#`      | Limit maximum (signed)                                 |
+| -                | `min()`      | `FLE`     | Unsigned minimum                                       |
+| -                | `max()`      | `FGE`     | Unsigned maximum                                       |
+| -                | `smin()`     | `<#`      | Signed minimum                                         |
+| -                | `smax()`     | `#>`      | Signed maximum                                         |
 | -                | `sar()`      | `SAR`     | Shift x right by y bits, insert MSB's                  |
 | -                | `ror()`      | `ROR`     | Rotate x right by y bits                               |
 | -                | `rol()`      | `ROL`     | Rotate x left by y bits                                |
@@ -271,8 +336,8 @@ const MY_CONSTANT = 10
 | -                | `fle()`      | `<=.`     | Floating-point less than or equal (returns 0 or -1)    |
 | -                | `==`         | `==.`     | Floating-point equal (returns 0 or -1)                 |
 | -                | `!=`         | `<>.`     | Floating-point not equal (returns 0 or -1)             |
-| -                | `fgt()`      | `>=.`     | Floating-point greater than or equal (returns 0 or -1) |
-| -                | `fge()`      | `>.`      | Floating-point greater than (returns 0 or -1)          |
+| -                | `fgt()`      | `>.`      | Floating-point greater than (returns 0 or -1)          |
+| -                | `fge()`      | `>=.`     | Floating-point greater than or equal (returns 0 or -1) |
 
 ### Ternary Operators
 

@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: warn_zero_repetition line 5
+//? mem: 0 == hex [01 02]
+BYTE 1
+LONG 0 * [99]
+BYTE 2

@@ -1,0 +1,71 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0"
+//? cog: 0
+//? run: "cog7"
+//? cog: 7
+
+                // Zero length, masked length and a full-width repeat count must use captured operands.
+                REP     0,          0
+                ADD     value,      1
+                REP     aug(512),   aug(0xffffffff)
+                ADD     value,      1
+                REP     length,     iterations
+                ADD     value,      1
+                CMP     value,      aug(515)        :wz
+    if(!Z)      ADD     failures,   1
+
+                // Canceled REP instructions leave the current execution stream alone.
+                MODCZ   _CLR,       _CLR            :wcz
+    if(C)       REP     1,          3
+                ADD     cancelled,  1
+                SKIP    1
+                REP     1,          3
+                ADD     cancelled,  1
+                CMP     cancelled,  2               :wz
+    if(!Z)      ADD     failures,   1
+
+                // A wait and a conditionally canceled slot each count once per iteration.
+                GETCT   start
+                REP     3,          3
+                WAITX   5
+    if(C)       ADD     waited,     100
+                ADD     waited,     1
+                GETCT   finish
+                SUB     finish,     start
+                CMP     waited,     3               :wz
+    if(!Z)      ADD     failures,   1
+                CMP     finish,     37              :wz
+    if(!Z)      ADD     failures,   1
+
+                // A taken branch in the middle of an infinite repeat is a plain break.
+                REP     4,          0
+                ADD     broken,     1
+                JMP     nrel(done)
+                ADD     broken,     100
+                ADD     broken,     100
+done:
+                CMP     broken,     1   :wz
+    if(!Z)      ADD     failures,   1
+
+                // A new REP replaces the previous context; no outer loop is restored afterward.
+                REP     4,          3
+                REP     1,          2
+                ADD     replaced,   1
+                ADD     replaced,   10
+                ADD     replaced,   100
+                CMP     replaced,   112 :wz
+    if(!Z)      ADD     failures,   1
+                JMP     nrel(_end)
+var length:     LONG    1
+var iterations: LONG    513
+var value:      LONG    0
+var cancelled:  LONG    0
+var waited:     LONG    0
+var broken:     LONG    0
+var replaced:   LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var failures:   LONG    0
+

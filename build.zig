@@ -1,4 +1,7 @@
 const std = @import("std");
+const cases = @import("tests/propan/cases.zig");
+
+const windtunnel_cases = @import("tests/windtunnel/cases.zig");
 
 const FastBuild = struct {
     b: *std.Build,
@@ -13,17 +16,45 @@ const FastBuild = struct {
     }
 };
 
-pub fn build(b: *std.Build) void {
+/// Runs a Windtunnel artifact with optional kcov collection in the named report directory.
+fn addRunArtifactWithCoverage(b: *std.Build, kcov_path: ?[]const u8, artifact: *std.Build.Step.Compile, name: []const u8) *std.Build.Step.Run {
+    const run = if (kcov_path) |kcov| blk: {
+        const run = b.addSystemCommand(&.{
+            kcov,
+            "--clean",
+            b.fmt("--include-path={s},{s}", .{ b.pathFromRoot("src/windtunnel/sim"), b.pathFromRoot("src/libp2/alu.zig") }),
+            b.fmt(".coverage/{s}", .{name}),
+        });
+        run.addArtifactArg(artifact);
+        break :blk run;
+    } else b.addRunArtifact(artifact);
+    run.has_side_effects = kcov_path != null;
+    return run;
+}
+
+pub fn build(b: *std.Build) !void {
     // Steps:
     const run_step = b.step("run", "Runs propan");
     const test_step = b.step("test", "Runs the test suite");
+    const windtunnel_test_step = b.step("test-windtunnel", "Runs Windtunnel checklist fixtures and harness tests");
+    const libp2_test_step = b.step("test-libp2", "Runs the libp2 test suite.");
 
     // Options:
-    const with_flexspin = b.option(bool, "with-flexspin", "Includes the flexspin dependency required for running the testsuite.") orelse false;
+    const with_flexspin = b.option(bool, "with-flexspin", "Includes FlexSpin for Spin2 round-trip and assembler equivalence tests.") orelse false;
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
+    const no_gui = b.option(bool, "no-gui", "Skip the Windtunnel graphical interface and its tests") orelse false;
+    const coverage = b.option(bool, "coverage", "Collect Propan and Windtunnel coverage with kcov when available") orelse true;
+    const with_p2aas = b.option(bool, "with-p2aas", "Run Windtunnel hardware oracle tests through P2AAS_ENDPOINT") orelse false;
+    const fast_io = b.option(bool, "fast-io", "Use single-clock serial endpoint throughput in Windtunnel fixtures") orelse false;
+    const windtunnel_jobs = b.option(usize, "windtunnel-jobs", "Windtunnel fixture workers (0 uses all cores)") orelse 0;
+    const windtunnel_timing_report = b.option([]const u8, "windtunnel-timing-report", "Write Windtunnel timings to a Markdown file");
+    const windtunnel_include = b.option([]const u8, "windtunnel-include", "Include Windtunnel files by comma-separated path substrings");
+    const windtunnel_exclude = b.option([]const u8, "windtunnel-exclude", "Exclude Windtunnel files by comma-separated path substrings");
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const kcov_path = if (coverage) b.findProgram(&.{"kcov"}, &.{}) catch null else null;
+    if (coverage and kcov_path == null) std.log.warn("could not find kcov, not generating coverage", .{});
 
     // Dependencies:
     const serial_dep = b.dependency("serial", .{});
@@ -34,6 +65,7 @@ pub fn build(b: *std.Build) void {
     const serial_mod = serial_dep.module("serial");
     const ptk_mod = ptk_dep.module("parser-toolkit");
     const args_mod = args_dep.module("args");
+    const lsp_mod = b.dependency("lsp_kit", .{ .target = target, .optimize = optimize }).module("lsp");
 
     const fb: FastBuild = .{
         .b = b,
@@ -41,6 +73,12 @@ pub fn build(b: *std.Build) void {
     };
 
     // Build:
+
+    const mod_p2 = b.createModule(.{
+        .root_source_file = b.path("src/libp2/propeller2.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
 
     const turboprop_mod = b.addModule("turboprop", .{
         .root_source_file = b.path("src/turboprop/turboprop.zig"),
@@ -57,6 +95,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
             .{ .name = "ptk", .module = ptk_mod },
             .{ .name = "args", .module = args_mod },
         },
@@ -67,9 +106,24 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
             .{ .name = "args", .module = args_mod },
         },
     });
+
+    const boot_rom = b.createModule(.{ .root_source_file = b.path("docs/p2/bootrom/device-rom.bin") });
+    windtunnel_mod.addImport("boot-rom", boot_rom);
+
+    const propan_lsp_mod = b.createModule(.{
+        .root_source_file = b.path("src/propan-lsp/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "propan", .module = propan_mod },
+            .{ .name = "lsp", .module = lsp_mod },
+        },
+    });
+    fb.installArtifact(b.addExecutable(.{ .name = "propan-lsp", .root_module = propan_lsp_mod }));
 
     {
         const exe = b.addExecutable(.{
@@ -83,6 +137,7 @@ pub fn build(b: *std.Build) void {
         const exe = b.addExecutable(.{
             .name = "propan",
             .root_module = propan_mod,
+            .use_llvm = true,
         });
 
         fb.installArtifact(exe);
@@ -101,7 +156,153 @@ pub fn build(b: *std.Build) void {
         break :blk exe;
     };
 
-    _ = windtunnel_exe;
+    if (!no_gui) {
+        const zglfw = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
+        const zopengl = b.dependency("zopengl", .{ .target = target });
+        const zgui = b.dependency("zgui", .{
+            .target = target,
+            .optimize = optimize,
+            .backend = .glfw_opengl3,
+        });
+        const gui_mod = b.createModule(.{
+            .root_source_file = b.path("src/windtunnel-gui/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zglfw", .module = zglfw.module("root") },
+                .{ .name = "zopengl", .module = zopengl.module("root") },
+                .{ .name = "zgui", .module = zgui.module("root") },
+                .{ .name = "windtunnel", .module = windtunnel_mod },
+                .{ .name = "args", .module = args_mod },
+            },
+        });
+        gui_mod.linkLibrary(zglfw.artifact("glfw"));
+        gui_mod.linkLibrary(zgui.artifact("imgui"));
+
+        const exe = b.addExecutable(.{
+            .name = "windtunnel-gui",
+            .root_module = gui_mod,
+            .use_llvm = true,
+        });
+        fb.installArtifact(exe);
+
+        const gui_step = b.step("build-windtunnel-gui", "Builds Windtunnel's graphical interface");
+        if (no_emit_bin) {
+            gui_step.dependOn(&exe.step);
+        } else {
+            gui_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+        }
+
+        const gui_tests = b.addTest(.{ .name = "windtunnel-gui-tests", .root_module = gui_mod, .use_llvm = true });
+        const gui_test_run = b.addRunArtifact(gui_tests);
+        const gui_test_step = b.step("test-windtunnel-gui", "Render all Windtunnel inspectors headlessly");
+        gui_test_step.dependOn(&gui_test_run.step);
+        windtunnel_test_step.dependOn(&gui_test_run.step);
+
+        const run_gui = b.addRunArtifact(exe);
+        if (b.args) |args| {
+            run_gui.addArgs(args);
+        }
+        const run_gui_step = b.step("run-windtunnel-gui", "Runs Windtunnel's graphical interface");
+        run_gui_step.dependOn(&run_gui.step);
+    }
+
+    const windtunnel_suite = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel/test_suite.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "p2", .module = mod_p2 },
+            .{ .name = "args", .module = args_mod },
+            .{ .name = "propan", .module = propan_mod },
+            .{ .name = "oracle-template", .module = b.createModule(.{ .root_source_file = b.path(windtunnel_cases.oracle_template) }) },
+        },
+    });
+    windtunnel_suite.addImport("boot-rom", boot_rom);
+    const windtunnel_tests = b.addExecutable(.{
+        .name = "windtunnel-tests",
+        .root_module = windtunnel_suite,
+        .use_llvm = if (kcov_path != null) true else null,
+    });
+    fb.installArtifact(windtunnel_tests);
+    const build_windtunnel_tests = b.step("build-windtunnel-tests", "Build and install the Windtunnel fixture runner");
+    if (no_emit_bin) {
+        build_windtunnel_tests.dependOn(&windtunnel_tests.step);
+    } else {
+        build_windtunnel_tests.dependOn(&b.addInstallArtifact(windtunnel_tests, .{}).step);
+    }
+    const build_windtunnel = b.step("build-windtunnel", "Build and install the Windtunnel simulator");
+    if (no_emit_bin) {
+        build_windtunnel.dependOn(&windtunnel_exe.step);
+    } else {
+        build_windtunnel.dependOn(&b.addInstallArtifact(windtunnel_exe, .{}).step);
+    }
+    const debugger_module = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel/debugger_tests.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{.{ .name = "p2", .module = mod_p2 }},
+    });
+    debugger_module.addImport("boot-rom", boot_rom);
+    const debugger_tests = b.addTest(.{ .name = "windtunnel-debugger-tests", .root_module = debugger_module });
+    const debugger_run = b.addRunArtifact(debugger_tests);
+    const debugger_step = b.step("test-windtunnel-debugger", "Run headless debugger and simulator regressions");
+    debugger_step.dependOn(&debugger_run.step);
+    windtunnel_test_step.dependOn(&debugger_run.step);
+
+    const harness_tests = b.addTest(.{
+        .name = "windtunnel-harness-tests",
+        .root_module = windtunnel_suite,
+        .use_llvm = if (kcov_path != null) true else null,
+    });
+    if (kcov_path) |kcov| {
+        harness_tests.setExecCmd(&.{
+            kcov,
+            "--clean",
+            b.fmt("--include-path={s},{s}", .{ b.pathFromRoot("src/windtunnel/sim"), b.pathFromRoot("src/libp2/alu.zig") }),
+            ".coverage/windtunnel-unit",
+            null,
+        });
+    }
+    const harness_run = b.addRunArtifact(harness_tests);
+    harness_run.setCwd(b.path("."));
+    harness_run.has_side_effects = kcov_path != null;
+    windtunnel_test_step.dependOn(&harness_run.step);
+    const windtunnel_unit_step = b.step("test-windtunnel-unit", "Run Windtunnel harness and simulator unit tests");
+    windtunnel_unit_step.dependOn(&harness_run.step);
+    const fixture_run = addRunArtifactWithCoverage(b, kcov_path, windtunnel_tests, "windtunnel-fixtures");
+    fixture_run.setCwd(b.path("."));
+    fixture_run.expectExitCode(0); // Capture stdio so Zig forwards progress updates.
+    fixture_run.addArgs(&.{ "-j", b.fmt("{d}", .{windtunnel_jobs}) });
+    if (windtunnel_include) |filter| {
+        fixture_run.addArgs(&.{ "--include", filter });
+    }
+    if (windtunnel_exclude) |filter| {
+        fixture_run.addArgs(&.{ "--exclude", filter });
+    }
+    if (windtunnel_timing_report) |path| {
+        fixture_run.addArgs(&.{ "--timing-report", path });
+        fixture_run.has_side_effects = true;
+    }
+    if (fast_io) {
+        fixture_run.addArg("--fast-io");
+    }
+    if (with_p2aas) {
+        fixture_run.addArg("--oracle");
+        fixture_run.has_side_effects = true;
+    }
+    fixture_run.addFileInput(b.path(windtunnel_cases.oracle_template));
+    fixture_run.addArgs(&windtunnel_cases.fixtures);
+    for (windtunnel_cases.fixtures) |path| fixture_run.addFileInput(b.path(path));
+    windtunnel_test_step.dependOn(&fixture_run.step);
+    if (kcov_path) |kcov| {
+        const merge = b.addSystemCommand(&.{ kcov, "--merge", ".coverage/windtunnel", ".coverage/windtunnel-fixtures", ".coverage/windtunnel-unit" });
+        merge.setCwd(b.path("."));
+        merge.step.dependOn(&fixture_run.step);
+        merge.step.dependOn(&harness_run.step);
+        windtunnel_test_step.dependOn(&merge.step);
+    }
+    test_step.dependOn(windtunnel_test_step);
 
     // "zig build run"
     {
@@ -116,7 +317,18 @@ pub fn build(b: *std.Build) void {
         run_step.dependOn(&run_cmd.step);
     }
 
-    // Propan Unit Tests
+    {
+        const libp2_tests = b.addTest(.{
+            .root_module = mod_p2,
+        });
+
+        const run_cmd = b.addRunArtifact(libp2_tests);
+
+        libp2_test_step.dependOn(&run_cmd.step);
+        run_step.dependOn(libp2_test_step);
+    }
+
+    // One process runs unit tests and all fixture categories.
     {
         const fuzz_corpus_files = b.addWriteFiles();
 
@@ -128,7 +340,7 @@ pub fn build(b: *std.Build) void {
             \\
         ) catch @panic("oom");
 
-        for (parser_accept_tests) |path| {
+        for (cases.parser_accept_tests) |path| {
             const filename = std.fs.path.basename(path);
 
             _ = fuzz_corpus_files.addCopyFile(b.path(path), filename);
@@ -152,239 +364,50 @@ pub fn build(b: *std.Build) void {
 
         propan_mod.addImport("fuzz-corpus", fuzz_corpus_mod);
 
-        const propan_tests = b.addTest(.{
-            .root_module = propan_mod,
-        });
-
-        const run_tests_step = b.addRunArtifact(propan_tests);
-
-        test_step.dependOn(&run_tests_step.step);
-    }
-
-    const flat_checker = b.addExecutable(.{
-        .name = "check-flat-output",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tests/propan/regressions/check-flat-output.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-
-    // Flat output must preserve the configured byte in segment gaps.
-    {
-        const expected_files = b.addWriteFiles();
-        const expected = expected_files.add("fill-byte.bin", &.{ 0x7E, 0x7E, 0x7E, 0x7E, 0xAA });
-
-        const run = b.addRunArtifact(propan_exe);
-        run.addArg("--format=flat");
-        run.addArg("--fill-byte=126");
-        const actual = run.addPrefixedOutputFileArg("--output=", "fill-byte.bin");
-        run.addFileArg(b.path("tests/propan/regressions/fill-byte.propan"));
-
-        const compare = b.addRunArtifact(flat_checker);
-        compare.addFileArg(expected);
-        compare.addFileArg(actual);
-        test_step.dependOn(&compare.step);
-    }
-
-    // Later source files overwrite only the bytes they emit.
-    {
-        const expected_files = b.addWriteFiles();
-        const expected = expected_files.add("multi-file.bin", &.{ 3, 2 });
-
-        const run = b.addRunArtifact(propan_exe);
-        run.addArg("--format=flat");
-        const actual = run.addPrefixedOutputFileArg("--output=", "multi-file.bin");
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-second.propan"));
-
-        const compare = b.addRunArtifact(flat_checker);
-        compare.addFileArg(expected);
-        compare.addFileArg(actual);
-        test_step.dependOn(&compare.step);
-    }
-
-    // JSON metadata includes every input module with distinct segment IDs.
-    {
-        const run = b.addRunArtifact(propan_exe);
-        run.addArg("--format=json");
-        const actual = run.addPrefixedOutputFileArg("--output=", "multi-file.json");
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-first.propan"));
-        run.addFileArg(b.path("tests/propan/regressions/multi-file-second.propan"));
-
-        const checker = b.addExecutable(.{
-            .name = "check-multi-file-json",
-            .root_module = b.createModule(.{
-                .root_source_file = b.path("tests/propan/regressions/check-multi-file-json.zig"),
-                .target = target,
-                .optimize = optimize,
-            }),
-        });
-        const check = b.addRunArtifact(checker);
-        check.addFileArg(actual);
-        test_step.dependOn(&check.step);
-    }
-
-    // Exports:
-
-    if (with_flexspin) blk: {
-        const p2dev_dep = b.lazyDependency("p2devsuite", .{}) orelse break :blk;
-
-        const flexspin = p2dev_dep.artifact("flexspin");
-        fb.installArtifact(flexspin);
-
-        const loadp2_exe = p2dev_dep.artifact("loadp2");
-        fb.installArtifact(loadp2_exe);
-
-        // Propan Behaviour Tests
-        {
-            const parser_tests = make_sequencing_step(b, "parser tests");
-            test_step.dependOn(parser_tests);
-
-            for (parser_accept_tests) |accept_file| {
-                const run = b.addRunArtifact(propan_exe);
-                run.addArg("--format=none");
-                run.addArg("--test-mode=parser");
-                run.addFileArg(b.path(accept_file));
-                run.has_side_effects = true;
-                parser_tests.dependOn(&run.step);
-            }
-
-            const sema_tests = make_sequencing_step(b, "parser tests");
-            sema_tests.dependOn(parser_tests);
-            test_step.dependOn(sema_tests);
-
-            for (sema_accept_tests) |accept_file| {
-                const run = b.addRunArtifact(propan_exe);
-                run.addArg("--format=none");
-                run.addArg("--test-mode=sema");
-                run.addFileArg(b.path(accept_file));
-                run.has_side_effects = true;
-                sema_tests.dependOn(&run.step);
-            }
-
-            const equivalence_tests = make_sequencing_step(b, "parser tests");
-            equivalence_tests.dependOn(sema_tests);
-            test_step.dependOn(equivalence_tests);
-
-            for (emit_compare_tests) |accept_file| {
-                const suffix = std.fs.path.extension(accept_file);
-
-                const spin2_file = b.fmt("{s}.spin2", .{accept_file[0 .. accept_file.len - suffix.len]});
-
-                const convert = b.addRunArtifact(flexspin);
-                convert.addArg("-2");
-                convert.addArg("-o");
-
-                const ref_file = convert.addOutputFileArg(b.fmt("{s}.bin", .{
-                    std.fs.path.basename(accept_file),
-                }));
-
-                convert.addFileArg(b.path(spin2_file));
-
-                const run = b.addRunArtifact(propan_exe);
-                run.addArg("--format=none");
-                run.addArg("--test-mode=compare");
-                run.addPrefixedFileArg("--compare-to=", ref_file);
-                run.addFileArg(b.path(accept_file));
-                run.has_side_effects = true;
-                equivalence_tests.dependOn(&run.step);
-            }
+        propan_mod.addImport("test-cases", b.createModule(.{ .root_source_file = b.path("tests/propan/cases.zig") }));
+        const options = b.addOptions();
+        if (with_flexspin) {
+            const dep = b.lazyDependency("p2devsuite", .{}) orelse return;
+            const flexspin = dep.artifact("flexspin");
+            fb.installArtifact(flexspin);
+            fb.installArtifact(dep.artifact("loadp2"));
+            options.addOptionPath("flexspin", flexspin.getEmittedBin());
+        } else {
+            options.addOption(?[]const u8, "flexspin", null);
         }
-    } else {
-        const fail_step = b.addFail("Cannot run test suite without flexspin! Use -Dwith-flexspin to enable it.");
-        test_step.dependOn(&fail_step.step);
+        propan_mod.addOptions("test-options", options);
+        const tests = b.addTest(.{
+            .name = "propan-tests",
+            .root_module = propan_mod,
+            .use_llvm = true,
+        });
+        const install = b.addInstallArtifact(tests, .{});
+        test_step.dependOn(&install.step);
+        if (kcov_path) |kcov| {
+            tests.setExecCmd(&.{
+                kcov,
+                "--clean",
+                b.fmt("--include-path={s}", .{b.pathFromRoot("src")}),
+                ".coverage",
+                null, // addRunArtifact inserts the test executable here.
+            });
+        }
+        // The native runner reports fuzz-test discovery through Zig's server protocol.
+        const run = b.addRunArtifact(tests);
+        run.step.name = "run Propan test suite";
+        // Coverage writes a report outside Zig's cache.
+        run.has_side_effects = kcov_path != null;
+        // Include imported sources, FILE payloads, and Spin2 references read at runtime.
+        for ([_][]const []const u8{
+            cases.parser_accept_tests,
+            cases.sema_accept_tests,
+            cases.parser_diagnostic_tests,
+            cases.sema_diagnostic_tests,
+            cases.compare_diagnostic_tests,
+            cases.support_files,
+        }) |paths| for (paths) |path| run.addFileInput(b.path(path));
+        for (cases.formatter_tests) |fixture| run.addFileInput(b.path(fixture.input));
+        run.setCwd(b.path("."));
+        test_step.dependOn(&run.step);
     }
-
-    // // Windtunnel behaviour tests
-    // {
-    //     for (windtunnel_behaviour_tests) |test_file| {
-    //         const assemble = b.addRunArtifact(propan_exe);
-    //         assemble.addArg("--format=flat");
-    //         assemble.addFileArg(b.path(test_file));
-    //         const bin_file = assemble.addPrefixedOutputFileArg("--output=", "app.bin");
-
-    //         const run = b.addRunArtifact(windtunnel_exe);
-    //         run.addPrefixedFileArg("--image=", bin_file);
-    //         run.addPrefixedFileArg("--tests=", b.path(test_file));
-    //         run.has_side_effects = true;
-    //         test_step.dependOn(&run.step);
-    //     }
-    // }
 }
-
-fn make_sequencing_step(b: *std.Build, name: []const u8) *std.Build.Step {
-    const step = b.allocator.create(std.Build.Step) catch @panic("OOM");
-    step.* = .init(.{
-        .id = .custom,
-        .name = b.fmt("{s}", .{name}),
-        .owner = b,
-    });
-    return step;
-}
-
-const examples: []const []const u8 = &[_][]const u8{
-    "examples/propio-client.propan",
-    // "examples/sumloop.propan",
-};
-
-const parser_accept_tests: []const []const u8 = sema_accept_tests ++ &[_][]const u8{
-    "./tests/propan/parser/labels.propan",
-    "./tests/propan/parser/conditions.propan",
-    "./tests/propan/parser/effects.propan",
-    "./tests/propan/parser/values.propan",
-    "./tests/propan/parser/escape_sequences.propan",
-    "./tests/propan/parser/basic_instruction_layout.propan",
-    "./tests/propan/parser/directives.propan",
-    "./tests/propan/parser/fncalls.propan",
-    "./tests/propan/parser/expressions.propan",
-    "./tests/propan/parser/comments.propan",
-    "./tests/propan/parser/amiguity.propan",
-};
-
-const regression_tests: []const []const u8 = &[_][]const u8{
-    // TODO: Implement "failing tests" "tests/propan/regressions/null-in-assert.propan",
-};
-
-const sema_accept_tests: []const []const u8 = examples ++ emit_compare_tests ++ regression_tests ++ &[_][]const u8{
-    "tests/propan/sema/basic-constants.propan",
-    "tests/propan/sema/basic-instruction-selection.propan",
-    "tests/propan/sema/addressing-modes.propan",
-    "tests/propan/sema/ambigious-selection.propan",
-    "tests/propan/sema/basic-label-addressing.propan",
-    "tests/propan/sema/operators.propan",
-    "tests/propan/sema/unary-plus.propan",
-    "tests/propan/sema/operator-associativity.propan",
-    "tests/propan/sema/value-hint-converter.propan",
-    "tests/propan/sema/stdlib.propan",
-    "tests/propan/sema/char-literals.propan",
-    "tests/propan/sema/align.propan",
-};
-
-const emit_compare_tests: []const []const u8 = &[_][]const u8{
-    "tests/propan/equivalence/absrel_sample.propan",
-    "tests/propan/equivalence/ambigious.propan",
-    "tests/propan/equivalence/argless.propan",
-    "tests/propan/equivalence/arithmetic1.propan",
-    "tests/propan/equivalence/arithmetic2.propan",
-    "tests/propan/equivalence/aug.propan",
-    "tests/propan/equivalence/auxilary.propan",
-    "tests/propan/equivalence/branching.propan",
-    "tests/propan/equivalence/cordic.propan",
-    "tests/propan/equivalence/cursed.propan",
-    "tests/propan/equivalence/flags.propan",
-    "tests/propan/equivalence/io.propan",
-    "tests/propan/equivalence/memory-ptr.propan",
-    "tests/propan/equivalence/memory.propan",
-    "tests/propan/equivalence/metaprogramming.propan",
-    "tests/propan/equivalence/rdlong-selection-bug.propan",
-    "tests/propan/equivalence/special_effects.propan",
-    "tests/propan/equivalence/three_ops.propan",
-    "tests/propan/equivalence/hubset.propan",
-};
-
-const windtunnel_behaviour_tests: []const []const u8 = &[_][]const u8{
-    "tests/windtunnel/behaviour/cogstop.propan",
-    "tests/windtunnel/behaviour/output.propan",
-    "tests/windtunnel/behaviour/augs.propan",
-};

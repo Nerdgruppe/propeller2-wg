@@ -1,0 +1,17 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[bits] == 1
+//? post: cog[0].reg[pins] == 1
+
+                // SETQ2 selects LUT block transfers and does not override bit or pin spans.
+                SETQ2   3
+                BITH    bits,   0
+                SETQ2   3
+                DIRH    0
+                MOV     pins,   DIRA
+                DIRL    0
+                SETQ    0
+                JMP     nrel(_end)
+var bits:       LONG    0
+var pins:       LONG    0
+

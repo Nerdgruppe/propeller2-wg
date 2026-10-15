@@ -1,7 +1,53 @@
 .venv/
 __pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
 .vscode/
 zig-out/
 .zig-cache/
+zig-cache/
 .codex
 zig-pkg/
+.tmp/
+# Local scratch work and transient tool output.
+.scratch/
+*.tmp
+*.log
+*.log.*
+*.vcd
+windtunnel-artifacts/
+.coverage/
+.coverage
+htmlcov/
+coverage/
+bin/
+obj/
+
+# Compiled programs, assembler listings and native build intermediates.
+*.bin
+*.elf
+*.o
+*.obj
+*.a
+*.lst
+# The device ROM is a simulator input, not a local build product.
+!/docs/p2/bootrom/device-rom.bin
+
+# JavaScript dependencies and incremental compiler/linter caches.
+node_modules/
+*.tsbuildinfo
+.eslintcache
+
+# Editor and operating-system scratch files.
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Agent Memory:
+.memory/

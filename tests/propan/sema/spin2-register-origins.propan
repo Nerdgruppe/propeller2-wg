@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? mem: 0x40 <- u32 [0xF6042A01, 0]
+//? mem: 0x80 <- u32 [0xF6040202, 0]
+.cogexec 0x40, 20
+MOV first_slot, 1
+var first_slot:
+LONG 0
+.cogexec 0x80, 0
+MOV second_slot, 2
+var second_slot:
+LONG 0

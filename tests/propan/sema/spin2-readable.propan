@@ -1,0 +1,7 @@
+const VALUE = 7
+MOV dst, VALUE
+MOV dst, popcnt(7)
+MOV dst, &dst
+MOV register(10), register(32)
+ADD register(12), 0xA
+var dst: LONG 0

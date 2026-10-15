@@ -1,0 +1,65 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0"
+//? cog: 0
+//? run: "cog1"
+//? cog: 1
+//? run: "cog2"
+//? cog: 2
+//? run: "cog3"
+//? cog: 3
+//? run: "cog4"
+//? cog: 4
+//? run: "cog5"
+//? cog: 5
+//? run: "cog6"
+//? cog: 6
+//? run: "cog7"
+//? cog: 7
+
+                // CT1 expires during a block read. The entire transfer must finish before ISR entry.
+                MOV     IJMP1,              vector
+                GETCT   target
+                ADD     target,             32
+                ADDCT1  target,             0
+                SETINT1 1
+                SETQ    63
+                RDLONG  register(0x100),    aug(hubaddr(block))
+                GETCT   finished
+resume:
+                NOP
+                NOP
+                NOP
+                SUB     stamp,          finished
+                CMP     stamp,          6               :wz
+    if(!Z)      ADD     failures,       1
+                CMP     at_entry,       63              :wz
+    if(!Z)      ADD     failures,       1
+                CMP     saved_return,   pcaddr(resume)  :wz
+    if(!Z)      ADD     failures,       1
+                CMP     count,          1               :wz
+    if(!Z)      ADD     failures,       1
+                STALLI
+                SETQ    0
+                MODCZ   _CLR,           _CLR            :wcz
+                JMP     nrel(_end)
+isr:
+                GETCT   stamp
+                SETINT1 0
+                MOV     at_entry,       register(0x13f)
+                MOV     saved_return,   IRET1
+                ADD     count,          1
+                RETI1
+var vector:     LONG    pcaddr(isr)
+var target:     LONG    0
+var finished:   LONG    0
+var stamp:      LONG    0
+var at_entry:   LONG    0
+var saved_return:
+                LONG    0
+var count:      LONG    0
+var failures:   LONG    0
+.data   0x6000
+block:          LONG    [63] * 64
+

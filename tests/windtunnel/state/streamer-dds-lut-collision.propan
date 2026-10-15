@@ -1,0 +1,129 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "address0 shift0 sinc0"
+//? const: address = 0
+//? const: shift = 0
+//? const: sinc = 0
+//? post: cog[0].reg[r2] == 110
+//? post: cog[0].reg[r3] == 70
+//? post: cog[0].reg[r4] == 110
+//? post: cog[0].reg[r5] == 70
+//? run: "address0 shift0 sinc1"
+//? const: address = 0
+//? const: shift = 0
+//? const: sinc = 1
+//? post: cog[0].reg[r2] == 935
+//? post: cog[0].reg[r3] == 595
+//? post: cog[0].reg[r4] == 2035
+//? post: cog[0].reg[r5] == 1295
+//? run: "address0 shift1 sinc0"
+//? const: address = 0
+//? const: shift = 1
+//? const: sinc = 0
+//? post: cog[0].reg[r2] == 110
+//? post: cog[0].reg[r3] == 70
+//? post: cog[0].reg[r4] == 110
+//? post: cog[0].reg[r5] == 70
+//? run: "address0 shift1 sinc1"
+//? const: address = 0
+//? const: shift = 1
+//? const: sinc = 1
+//? post: cog[0].reg[r2] == 935
+//? post: cog[0].reg[r3] == 595
+//? post: cog[0].reg[r4] == 2035
+//? post: cog[0].reg[r5] == 1295
+//? run: "address100 shift0 sinc0"
+//? const: address = 100
+//? const: shift = 0
+//? const: sinc = 0
+//? post: cog[0].reg[r2] == 30
+//? post: cog[0].reg[r3] == 50
+//? post: cog[0].reg[r4] == 30
+//? post: cog[0].reg[r5] == 50
+//? run: "address100 shift0 sinc1"
+//? const: address = 100
+//? const: shift = 0
+//? const: sinc = 1
+//? post: cog[0].reg[r2] == 255
+//? post: cog[0].reg[r3] == 425
+//? post: cog[0].reg[r4] == 555
+//? post: cog[0].reg[r5] == 925
+//? run: "address100 shift1 sinc0"
+//? const: address = 100
+//? const: shift = 1
+//? const: sinc = 0
+//? post: cog[0].reg[r2] == 30
+//? post: cog[0].reg[r3] == 50
+//? post: cog[0].reg[r4] == 30
+//? post: cog[0].reg[r5] == 50
+//? run: "address100 shift1 sinc1"
+//? const: address = 100
+//? const: shift = 1
+//? const: sinc = 1
+//? post: cog[0].reg[r2] == 255
+//? post: cog[0].reg[r3] == 425
+//? post: cog[0].reg[r4] == 555
+//? post: cog[0].reg[r5] == 925
+
+                // The first capture can vary across identical physical uploads; later captures are stable.
+                // Synchronize a paired LUT writer with DDS at a slow DUT clock; inputs remain digital.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                SETLUTS 1
+                WRLUT   aug(0x05030000),                0
+                DRVH    0
+                MOV     PTRA,                           aug(hubaddr(mailbox))
+                MOV     image,                          aug(hubaddr(writer))
+                SETQ    PTRA
+                COGINIT 1,                              image
+                SETXFRQ 0
+                GETCT   timer
+                ADD     timer,                          aug(2048)
+                ANDN    timer,                          7
+                WRLONG  timer,                          PTRA
+                ADDCT1  timer,                          0
+                WAITCT1
+                WAITX   shift
+                XINIT   aug(0xf007ffff | (sinc << 23)), aug(0x1000)
+                WAITX   4
+                GETXACC r0
+                MOV     r1,                             0
+                WAITX   4
+                GETXACC r2
+                MOV     r3,                             0
+                WAITX   4
+                GETXACC r4
+                MOV     r5,                             0
+                XSTOP
+                DIRL    0
+                COGSTOP 1
+                SETLUTS 0
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                JMP     nrel(_end)
+var image:      LONG    0
+var timer:      LONG    0
+var r0:         LONG    0
+var r1:         LONG    0
+var r2:         LONG    0
+var r3:         LONG    0
+var r4:         LONG    0
+var r5:         LONG    0
+
+.data
+.align  4
+var mailbox:    LONG    0
+.cogexec    0x4000, 0
+writer:
+                MOV     register(301),  aug(0x070b0000)
+wait:
+                RDLONG  register(300),  PTRA
+                TJZ     register(300),  wait
+                ADDCT1  register(300),  0
+                WAITCT1
+                REP     1,              128
+                WRLUT   register(301),  address
+                COGSTOP 1
+                LONG    [0] * 480
+.data
+

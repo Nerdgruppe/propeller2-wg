@@ -1,0 +1,197 @@
+//? WINDTUNNEL CHECK LIST
+//? max-cycles: 3000000
+//? run: "freq80000000 sinc0 count1"
+//? const: frequency = 2147483648
+//? const: control = 4026990593
+//? post: cog[0].reg[x] == 0
+//? post: cog[0].reg[y] == 0
+//? run: "freq80000000 sinc0 count2"
+//? const: frequency = 2147483648
+//? const: control = 4026990594
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq80000000 sinc0 count7"
+//? const: frequency = 2147483648
+//? const: control = 4026990599
+//? post: cog[0].reg[x] == 4294964992
+//? post: cog[0].reg[y] == 2286
+//? run: "freq80000000 sinc0 count65534"
+//? const: frequency = 2147483648
+//? const: control = 4027056126
+//? post: cog[0].reg[x] == 4269802624
+//? post: cog[0].reg[y] == 24968073
+//? run: "freq80000000 sinc1 count1"
+//? const: frequency = 2147483648
+//? const: control = 4035379201
+//? post: cog[0].reg[x] == 0
+//? post: cog[0].reg[y] == 0
+//? run: "freq80000000 sinc1 count2"
+//? const: frequency = 2147483648
+//? const: control = 4035379202
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq80000000 sinc1 count7"
+//? const: frequency = 2147483648
+//? const: control = 4035379207
+//? post: cog[0].reg[x] == 4294959232
+//? post: cog[0].reg[y] == 8001
+//? run: "freq80000000 sinc1 count65534"
+//? const: frequency = 2147483648
+//? const: control = 4035444734
+//? post: cog[0].reg[x] == 62913408
+//? post: cog[0].reg[y] == 2085061751
+//? run: "freq40000000 sinc0 count1"
+//? const: frequency = 1073741824
+//? const: control = 4026990593
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq40000000 sinc0 count2"
+//? const: frequency = 1073741824
+//? const: control = 4026990594
+//? post: cog[0].reg[x] == 4294966144
+//? post: cog[0].reg[y] == 1143
+//? run: "freq40000000 sinc0 count7"
+//? const: frequency = 1073741824
+//? const: control = 4026990599
+//? post: cog[0].reg[x] == 4294962304
+//? post: cog[0].reg[y] == 4953
+//? run: "freq40000000 sinc0 count65534"
+//? const: frequency = 1073741824
+//? const: control = 4027056126
+//? post: cog[0].reg[x] == 4244637568
+//? post: cog[0].reg[y] == 49936527
+//? run: "freq40000000 sinc1 count1"
+//? const: frequency = 1073741824
+//? const: control = 4035379201
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq40000000 sinc1 count2"
+//? const: frequency = 1073741824
+//? const: control = 4035379202
+//? post: cog[0].reg[x] == 4294964992
+//? post: cog[0].reg[y] == 2286
+//? run: "freq40000000 sinc1 count7"
+//? const: frequency = 1073741824
+//? const: control = 4035379207
+//? post: cog[0].reg[x] == 4294932352
+//? post: cog[0].reg[y] == 34671
+//? run: "freq40000000 sinc1 count65534"
+//? const: frequency = 1073741824
+//? const: control = 4035444734
+//? post: cog[0].reg[x] == 226488576
+//? post: cog[0].reg[y] == 4070248162
+//? run: "freq7fffffff sinc0 count1"
+//? const: frequency = 2147483647
+//? const: control = 4026990593
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq7fffffff sinc0 count2"
+//? const: frequency = 2147483647
+//? const: control = 4026990594
+//? post: cog[0].reg[x] == 4294966528
+//? post: cog[0].reg[y] == 762
+//? run: "freq7fffffff sinc0 count7"
+//? const: frequency = 2147483647
+//? const: control = 4026990599
+//? post: cog[0].reg[x] == 4294964608
+//? post: cog[0].reg[y] == 2667
+//? run: "freq7fffffff sinc0 count65534"
+//? const: frequency = 2147483647
+//? const: control = 4027056126
+//? post: cog[0].reg[x] == 4269802240
+//? post: cog[0].reg[y] == 24968454
+//? run: "freq7fffffff sinc1 count1"
+//? const: frequency = 2147483647
+//? const: control = 4035379201
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq7fffffff sinc1 count2"
+//? const: frequency = 2147483647
+//? const: control = 4035379202
+//? post: cog[0].reg[x] == 4294966144
+//? post: cog[0].reg[y] == 1143
+//? run: "freq7fffffff sinc1 count7"
+//? const: frequency = 2147483647
+//? const: control = 4035379207
+//? post: cog[0].reg[x] == 4294956544
+//? post: cog[0].reg[y] == 10668
+//? run: "freq7fffffff sinc1 count65534"
+//? const: frequency = 2147483647
+//? const: control = 4035444734
+//? post: cog[0].reg[x] == 37748352
+//? post: cog[0].reg[y] == 2110030205
+//? run: "freq87654321 sinc0 count1"
+//? const: frequency = 2271560481
+//? const: control = 4026990593
+//? post: cog[0].reg[x] == 0
+//? post: cog[0].reg[y] == 0
+//? run: "freq87654321 sinc0 count2"
+//? const: frequency = 2271560481
+//? const: control = 4026990594
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq87654321 sinc0 count7"
+//? const: frequency = 2271560481
+//? const: control = 4026990599
+//? post: cog[0].reg[x] == 4294964992
+//? post: cog[0].reg[y] == 2286
+//? run: "freq87654321 sinc0 count65534"
+//? const: frequency = 2271560481
+//? const: control = 4027056126
+//? post: cog[0].reg[x] == 4268259712
+//? post: cog[0].reg[y] == 26498931
+//? run: "freq87654321 sinc1 count1"
+//? const: frequency = 2271560481
+//? const: control = 4035379201
+//? post: cog[0].reg[x] == 0
+//? post: cog[0].reg[y] == 0
+//? run: "freq87654321 sinc1 count2"
+//? const: frequency = 2271560481
+//? const: control = 4035379202
+//? post: cog[0].reg[x] == 4294966912
+//? post: cog[0].reg[y] == 381
+//? run: "freq87654321 sinc1 count7"
+//? const: frequency = 2271560481
+//? const: control = 4035379207
+//? post: cog[0].reg[x] == 4294959232
+//? post: cog[0].reg[y] == 8001
+//? run: "freq87654321 sinc1 count65534"
+//? const: frequency = 2271560481
+//? const: control = 4035444734
+//? post: cog[0].reg[x] == 3224962048
+//? post: cog[0].reg[y] == 2403823112
+//? run: "freqffffffff sinc0 count1"
+//? const: frequency = 4294967295
+//? const: control = 4026990593
+//? post: cog[0].reg[x] == 0
+//? post: cog[0].reg[y] == 0
+//? run: "freqffffffff sinc1 count1"
+//? const: frequency = 4294967295
+//? const: control = 4035379201
+//? post: cog[0].reg[x] == 0
+//? post: cog[0].reg[y] == 0
+
+                // The one-MHz region includes finite duration, signed extremes, and SINC2 wraparound.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                DRVH    aug(0 | (2 << 6))
+                MOV     index,  0
+fill_table:
+                WRLUT   aug(0x7f800000),    index
+                ADD     index,              1
+                CMP     index,              aug(512)    :wz
+    if(!Z)      JMP     fill_table
+                SETQ    aug(frequency)
+                XINIT   aug(control),       aug(0x7000)
+                WAITXFI
+                GETXACC x
+                MOV     y,                  0
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                MOV     DIRA,               0
+                JMP     nrel(_end)
+var index:      LONG    0
+var x:          LONG    0
+var y:          LONG    0
+

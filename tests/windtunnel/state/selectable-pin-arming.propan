@@ -1,0 +1,602 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 100000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-pin0-se1"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog0-pin0-se2"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog0-pin0-se3"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog0-pin0-se4"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog0-pin32-se1"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog0-pin32-se2"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog0-pin32-se3"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog0-pin32-se4"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog1-pin0-se1"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog1-pin0-se2"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog1-pin0-se3"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog1-pin0-se4"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog1-pin32-se1"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog1-pin32-se2"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog1-pin32-se3"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog1-pin32-se4"
+//? cog: 1
+//? const: probe_writer = 0
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog2-pin0-se1"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog2-pin0-se2"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog2-pin0-se3"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog2-pin0-se4"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog2-pin32-se1"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog2-pin32-se2"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog2-pin32-se3"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog2-pin32-se4"
+//? cog: 2
+//? const: probe_writer = 3
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog3-pin0-se1"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog3-pin0-se2"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog3-pin0-se3"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog3-pin0-se4"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog3-pin32-se1"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog3-pin32-se2"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog3-pin32-se3"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog3-pin32-se4"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog4-pin0-se1"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog4-pin0-se2"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog4-pin0-se3"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog4-pin0-se4"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog4-pin32-se1"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog4-pin32-se2"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog4-pin32-se3"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog4-pin32-se4"
+//? cog: 4
+//? const: probe_writer = 5
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog5-pin0-se1"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog5-pin0-se2"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog5-pin0-se3"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog5-pin0-se4"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog5-pin32-se1"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog5-pin32-se2"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog5-pin32-se3"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog5-pin32-se4"
+//? cog: 5
+//? const: probe_writer = 4
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog6-pin0-se1"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog6-pin0-se2"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog6-pin0-se3"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog6-pin0-se4"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog6-pin32-se1"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog6-pin32-se2"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog6-pin32-se3"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog6-pin32-se4"
+//? cog: 6
+//? const: probe_writer = 7
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog7-pin0-se1"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog7-pin0-se2"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog7-pin0-se3"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog7-pin0-se4"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog7-pin32-se1"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog7-pin32-se2"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog7-pin32-se3"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog7-pin32-se4"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+
+                // Hold two opposite input levels with a companion cog. Only sensor arming timing is measured.
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                MOV     PTRB,           PTRA
+                ADD     PTRB,           4
+                MOV     image,          aug(hubaddr(writer))
+                SETQ    PTRA
+                COGINIT probe_writer,   image
+                SETSE1  0
+                SETSE2  0
+                SETSE3  0
+                SETSE4  0
+                MOV     command,        2
+level_loop:
+                WRLONG  command,    PTRA
+                CALL    await_ack
+// Clear inherited/previous notifications before starting from a quiet LUT source.
+.if probe_tracker == 1
+                SETSE1  0
+.endif
+.if probe_tracker == 2
+                SETSE2  0
+.endif
+.if probe_tracker == 3
+                SETSE3  0
+.endif
+.if probe_tracker == 4
+                SETSE4  0
+.endif
+                WAITX   64
+.if probe_tracker == 1
+                POLLSE1
+.endif
+.if probe_tracker == 2
+                POLLSE2
+.endif
+.if probe_tracker == 3
+                POLLSE3
+.endif
+.if probe_tracker == 4
+                POLLSE4
+.endif
+                MOV     selector,   (0x100 | probe_pin)
+                TEST    command,    1                           :wz
+    if(!Z)      OR      selector,   0x80
+// Configuring a matching level does not satisfy the immediately following poll.
+.if probe_tracker == 1
+                SETSE1  selector
+.endif
+.if probe_tracker == 2
+                SETSE2  selector
+.endif
+.if probe_tracker == 3
+                SETSE3  selector
+.endif
+.if probe_tracker == 4
+                SETSE4  selector
+.endif
+.if probe_tracker == 1
+                POLLSE1                                         :wcz
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wcz
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wcz
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wcz
+.endif
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+                // Once the sensor notification arrives, held levels reassert after consumption.
+                WAITX   64
+.if probe_tracker == 1
+                POLLSE1                                         :wcz
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wcz
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wcz
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wcz
+.endif
+    if(!C)      ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+.if probe_tracker == 1
+                POLLSE1                                         :wcz
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wcz
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wcz
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wcz
+.endif
+    if(!C)      ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+                // Switching away from an asserted level clears the latch, but an old sample still arrives.
+                MOV     selector,   (0x40 | probe_pin)
+                TEST    command,    1                           :wz
+    if(!Z)      MOV     selector,   (0x80 | probe_pin)
+.if probe_tracker == 1
+                SETSE1  selector
+.endif
+.if probe_tracker == 2
+                SETSE2  selector
+.endif
+.if probe_tracker == 3
+                SETSE3  selector
+.endif
+.if probe_tracker == 4
+                SETSE4  selector
+.endif
+                WAITX   64
+.if probe_tracker == 1
+                POLLSE1                                         :wcz
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wcz
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wcz
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wcz
+.endif
+    if(!C)      ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+.if probe_tracker == 1
+                POLLSE1                                         :wcz
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wcz
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wcz
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wcz
+.endif
+    if(C)       ADD     failures,   1
+    if(Z)       ADD     failures,   1
+// Rearming an edge or selecting another stable input must not invent a transition.
+.if probe_tracker == 1
+                SETSE1  selector
+.endif
+.if probe_tracker == 2
+                SETSE2  selector
+.endif
+.if probe_tracker == 3
+                SETSE3  selector
+.endif
+.if probe_tracker == 4
+                SETSE4  selector
+.endif
+                WAITX   64
+.if probe_tracker == 1
+                POLLSE1                                         :wc
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wc
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wc
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wc
+.endif
+    if(C)       ADD     failures,   1
+                MOV     selector,   (0x40 | (probe_pin + 1))
+.if probe_tracker == 1
+                SETSE1  selector
+.endif
+.if probe_tracker == 2
+                SETSE2  selector
+.endif
+.if probe_tracker == 3
+                SETSE3  selector
+.endif
+.if probe_tracker == 4
+                SETSE4  selector
+.endif
+                WAITX   64
+.if probe_tracker == 1
+                POLLSE1                                         :wc
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wc
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wc
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wc
+.endif
+    if(C)       ADD     failures,   1
+                MOV     selector,   (0x80 | (probe_pin + 1))
+.if probe_tracker == 1
+                SETSE1  selector
+.endif
+.if probe_tracker == 2
+                SETSE2  selector
+.endif
+.if probe_tracker == 3
+                SETSE3  selector
+.endif
+.if probe_tracker == 4
+                SETSE4  selector
+.endif
+                WAITX   64
+.if probe_tracker == 1
+                POLLSE1                                         :wc
+.endif
+.if probe_tracker == 2
+                POLLSE2                                         :wc
+.endif
+.if probe_tracker == 3
+                POLLSE3                                         :wc
+.endif
+.if probe_tracker == 4
+                POLLSE4                                         :wc
+.endif
+    if(C)       ADD     failures,   1
+
+                ADD     command,    1
+                CMP     command,    4                           :wz
+    if(!Z)      JMP     level_loop
+                // Stop the helper after both input levels have been tested.
+                WRLONG  command,    PTRA
+                CALL    await_ack
+                SETQ    0
+                MODCZ   _CLR,       _CLR                        :wcz
+                JMP     nrel(_end)
+// Wait until the writer acknowledges that both input bits have settled.
+await_ack:
+                RDLONG  ack,    PTRB
+                CMP     ack,    command :wz
+    if(!Z)      JMP     await_ack
+                RET
+var image:      LONG    0
+var command:    LONG    0
+var ack:        LONG    0
+var selector:   LONG    0
+var failures:   LONG    0
+.data
+mailbox:        LONG    [0, 0]
+.cogexec    0x4000, 0
+writer:
+                MOV     register(402),  PTRA
+                ADD     register(402),  4
+                MOV     register(401),  0
+writer_wait:
+                RDLONG  register(400),  PTRA
+                CMP     register(400),  register(401)   :wz
+    if(Z)       JMP     writer_wait
+                MOV     register(401),  register(400)
+                CMP     register(400),  4               :wz
+    if(Z)       JMP     writer_stop
+                // Selected and neighboring inputs are held opposite; neither changes during reconfiguration.
+                TEST    register(400),  1               :wz
+    if(Z)       DRVL    probe_pin
+    if(Z)       DRVH    (probe_pin + 1)
+    if(!Z)      DRVH    probe_pin
+    if(!Z)      DRVL    (probe_pin + 1)
+                WAITX   64
+                WRLONG  register(400),  register(402)
+                JMP     writer_wait
+writer_stop:
+                FLTL    probe_pin
+                FLTL    (probe_pin + 1)
+                WRLONG  register(400),  register(402)
+                COGSTOP probe_writer
+

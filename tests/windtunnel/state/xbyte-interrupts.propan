@@ -1,0 +1,475 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? run: "cog0-phase4"
+//? cog: 0
+//? const: phase = 4
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 6
+//? post: cog[*].reg[saved] == 21
+//? post: cog[*].reg[isr_pa] == 170
+//? post: cog[*].reg[isr_pb] == 187
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase18"
+//? cog: 7
+//? const: phase = 18
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 20
+//? post: cog[*].reg[saved] == 25
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase30"
+//? cog: 7
+//? const: phase = 30
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 2
+//? post: cog[*].reg[stamp] == 32
+//? post: cog[*].reg[saved] == 24
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase18"
+//? cog: 0
+//? const: phase = 18
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 20
+//? post: cog[*].reg[saved] == 25
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase8"
+//? cog: 7
+//? const: phase = 8
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase32"
+//? cog: 7
+//? const: phase = 32
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 2
+//? post: cog[*].reg[stamp] == 34
+//? post: cog[*].reg[saved] == 25
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase16"
+//? cog: 0
+//? const: phase = 16
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 18
+//? post: cog[*].reg[saved] == 24
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase14"
+//? cog: 7
+//? const: phase = 14
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 16
+//? post: cog[*].reg[saved] == 23
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase24"
+//? cog: 0
+//? const: phase = 24
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase32"
+//? cog: 0
+//? const: phase = 32
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 2
+//? post: cog[*].reg[stamp] == 34
+//? post: cog[*].reg[saved] == 25
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase4"
+//? cog: 7
+//? const: phase = 4
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 6
+//? post: cog[*].reg[saved] == 21
+//? post: cog[*].reg[isr_pa] == 170
+//? post: cog[*].reg[isr_pb] == 187
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase20"
+//? cog: 0
+//? const: phase = 20
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase30"
+//? cog: 0
+//? const: phase = 30
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 2
+//? post: cog[*].reg[stamp] == 32
+//? post: cog[*].reg[saved] == 24
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase26"
+//? cog: 0
+//? const: phase = 26
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase12"
+//? cog: 0
+//? const: phase = 12
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase16"
+//? cog: 7
+//? const: phase = 16
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 18
+//? post: cog[*].reg[saved] == 24
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase2"
+//? cog: 0
+//? const: phase = 2
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 6
+//? post: cog[*].reg[saved] == 21
+//? post: cog[*].reg[isr_pa] == 170
+//? post: cog[*].reg[isr_pb] == 187
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase20"
+//? cog: 7
+//? const: phase = 20
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase12"
+//? cog: 7
+//? const: phase = 12
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase22"
+//? cog: 0
+//? const: phase = 22
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase0"
+//? cog: 7
+//? const: phase = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 6
+//? post: cog[*].reg[saved] == 21
+//? post: cog[*].reg[isr_pa] == 170
+//? post: cog[*].reg[isr_pb] == 187
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase28"
+//? cog: 0
+//? const: phase = 28
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 2
+//? post: cog[*].reg[stamp] == 30
+//? post: cog[*].reg[saved] == 23
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase14"
+//? cog: 0
+//? const: phase = 14
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 16
+//? post: cog[*].reg[saved] == 23
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase10"
+//? cog: 0
+//? const: phase = 10
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase28"
+//? cog: 7
+//? const: phase = 28
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 2
+//? post: cog[*].reg[stamp] == 30
+//? post: cog[*].reg[saved] == 23
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase2"
+//? cog: 7
+//? const: phase = 2
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 6
+//? post: cog[*].reg[saved] == 21
+//? post: cog[*].reg[isr_pa] == 170
+//? post: cog[*].reg[isr_pb] == 187
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase26"
+//? cog: 7
+//? const: phase = 26
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase0"
+//? cog: 0
+//? const: phase = 0
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 6
+//? post: cog[*].reg[saved] == 21
+//? post: cog[*].reg[isr_pa] == 170
+//? post: cog[*].reg[isr_pb] == 187
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase8"
+//? cog: 0
+//? const: phase = 8
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase24"
+//? cog: 7
+//? const: phase = 24
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase10"
+//? cog: 7
+//? const: phase = 10
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog0-phase6"
+//? cog: 0
+//? const: phase = 6
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase6"
+//? cog: 7
+//? const: phase = 6
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 0
+//? post: cog[*].reg[stamp] == 14
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16385
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+//? run: "cog7-phase22"
+//? cog: 7
+//? const: phase = 22
+//? post: cog[*].reg[count] == 3
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[stamp] == 28
+//? post: cog[*].reg[saved] == 22
+//? post: cog[*].reg[isr_pa] == 0
+//? post: cog[*].reg[isr_pb] == 16386
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[elapsed] == 80
+//? post: cog[*].reg[stack_out] == 511
+
+                // Move CT1 through the initial phantom dispatch and three single-instruction handlers.
+                STALLI
+                MOV     IJMP1,          vector
+                SETINT1 0
+                WRLUT   nrel(handler),  0
+                WRLUT   nrel(finish),   1
+                RDFAST  0,              aug(hubaddr(bytecodes))
+                PUSH    0x1ff
+                MOV     PA,             0xaa
+                MOV     PB,             0xbb
+                GETCT   timer
+                ADD     timer,          128
+                ADDCT2  timer,          0
+                ADD     timer,          phase
+                ADDCT1  timer,          0
+                SETINT1 EVENT_CT1
+                NIXINT1
+                WAITCT2
+                ALLOWI
+                GETCT   start
+    return      SETQ    0
+handler:
+                ADD     count,  1
+                NOP
+                NOP
+    return      MOV     marker, 1
+finish:
+                GETCT   elapsed
+                STALLI
+                SETINT1 0
+                POP     stack_out
+                SUB     elapsed,    start
+                SUB     stamp,      start
+                AND     saved,      aug(0xfffff)
+                AND     status,     aug(0xffff0000)
+                JMP     nrel(_end)
+isr:
+                GETCT   stamp
+                GETCT   future
+                ADD     future,     aug(4096)
+                ADDCT1  future,     0
+                MOV     saved,      IRET1
+                MOV     observed,   count
+                MOV     isr_pa,     PA
+                MOV     isr_pb,     PB
+                GETBRK  status                  :wc
+                RETI1
+var future:     LONG    0
+var marker:     LONG    0
+var vector:     LONG    pcaddr(isr)
+var timer:      LONG    0
+var start:      LONG    0
+var count:      LONG    0
+var observed:   LONG    0
+var stamp:      LONG    0
+var saved:      LONG    0
+var isr_pa:     LONG    0
+var isr_pb:     LONG    0
+var status:     LONG    0
+var elapsed:    LONG    0
+var stack_out:  LONG    0
+.hubexec    0x4000
+bytecodes:      BYTE    0,  0,  0,  1
+

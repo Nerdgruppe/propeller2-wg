@@ -1,0 +1,284 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode6-x1-gap0"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 0
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap1"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap2"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap3"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 3
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap4"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap5"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 5
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap6"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 6
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap7"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 7
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x1-gap8"
+//? const: mode = 6
+//? const: x = 1
+//? const: gap = 8
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap0"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 0
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap1"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap2"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap3"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 3
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap4"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap5"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 5
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap6"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 6
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap7"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 7
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode6-x3-gap8"
+//? const: mode = 6
+//? const: x = 3
+//? const: gap = 8
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap0"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 0
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap1"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap2"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap3"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 3
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap4"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap5"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 5
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap6"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 6
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap7"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 7
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x1-gap8"
+//? const: mode = 7
+//? const: x = 1
+//? const: gap = 8
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap0"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 0
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap1"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap2"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap3"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 3
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap4"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap5"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 5
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap6"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 6
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap7"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 7
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-mode7-x3-gap8"
+//? const: mode = 7
+//? const: x = 3
+//? const: gap = 8
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? post: cog[*].reg[held] == 0x00000000
+
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
+
+                // Unit increment exposes exact start and return-bus delays without phase aliasing.
+                WRPIN   aug(mode << 1), 4
+                WXPIN   x,              4
+                WYPIN   1,              4
+                WAITX   16
+                DIRH    4
+                WYPIN   1,              4
+.if gap
+                WAITX   gap
+.endif
+                RQPIN   first,          4
+                WAITX   5
+                RQPIN   second,         4
+                DIRL    4
+                WAITX   16
+                RQPIN   held,           4
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var first:      LONG    0
+var second:     LONG    0
+var held:       LONG    0
+

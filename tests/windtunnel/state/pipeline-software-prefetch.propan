@@ -1,0 +1,28 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[reloaded] == 0x77
+//? post: hub[copied] == u8 [ 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 ]
+
+// Check buffered software-FIFO data and explicit RDFAST reload.
+// Overwrite hub RAM after RDFAST: the existing FIFO keeps old bytes, while restarting RDFAST observes the change.
+
+                MOV     address,    aug(hubaddr(bytes))
+                MOV     PTRA,       aug(hubaddr(copied))
+                RDFAST  0,          address
+                WRBYTE  0x77,       address
+                MOV     count,      64
+copy_loop:
+                RFBYTE  loaded
+                WRBYTE  loaded, PTRA++
+                DJNZ    count,  copy_loop
+                RDFAST  0,      address
+                RFBYTE  reloaded
+                JMP     nrel(_end)
+var address:    LONG    0
+var count:      LONG    0
+var loaded:     LONG    0
+var reloaded:   LONG    0
+.data
+.align  32
+bytes:          BYTE    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63
+copied:         BYTE    [0] * 64
+

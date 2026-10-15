@@ -1,0 +1,65 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "capture c000"
+//? const: mode = 0xc000
+//? const: count = 8
+//? post: hub[buffer] == u8 [0xff]
+//? run: "capture d000"
+//? const: mode = 0xd000
+//? const: count = 4
+//? post: hub[buffer] == u8 [0x55]
+//? run: "capture d002"
+//? const: mode = 0xd002
+//? const: count = 4
+//? post: hub[buffer] == u8 [0x55]
+//? run: "capture e000"
+//? const: mode = 0xe000
+//? const: count = 2
+//? post: hub[buffer] == u8 [0x11]
+//? run: "capture e002"
+//? const: mode = 0xe002
+//? const: count = 2
+//? post: hub[buffer] == u8 [0x11]
+//? run: "capture e004"
+//? const: mode = 0xe004
+//? const: count = 2
+//? post: hub[buffer] == u8 [0x11]
+//? run: "capture e006"
+//? const: mode = 0xe006
+//? const: count = 1
+//? post: hub[buffer] == u8 [0x21]
+//? run: "capture e007"
+//? const: mode = 0xe007
+//? const: count = 1
+//? post: hub[buffer] == u8 [0x21]
+//? run: "capture e00e"
+//? const: mode = 0xe00e
+//? const: count = 1
+//? post: hub[buffer] == u8 [0x21]
+//? run: "capture e00f"
+//? const: mode = 0xe00f
+//? const: count = 1
+//? post: hub[buffer] == u8 [0x21 0x43]
+//? run: "capture f000"
+//? const: mode = 0xf000
+//? const: count = 1
+//? post: hub[buffer] == u8 [0x21 0x43]
+//? run: "capture f001"
+//? const: mode = 0xf001
+//? const: count = 1
+//? post: hub[buffer] == u8 [0x21 0x43 0x65 0x87]
+
+                // Record stable digital pin samples, then let the shared FIFO drain.
+                MOV     OUTA,                                   aug(0x87654321)
+                MOV     DIRA,                                   aug(0xffffffff)
+                WAITX   20
+                WRFAST  0,                                      aug(hubaddr(buffer))
+                SETXFRQ aug(0x10000000)
+                XINIT   aug((mode << 16) | X_WRITE_ON | count), 0
+                WAITXFI
+                WAITX   100
+                MOV     DIRA,                                   0
+                JMP     nrel(_end)
+.data
+.align  4
+var buffer:     BYTE    [0xcc] * 16
+

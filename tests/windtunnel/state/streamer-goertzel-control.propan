@@ -1,0 +1,173 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "sinc0 delay0"
+//? const: sinc = 0
+//? const: delay = 0
+//? post: cog[0].reg[r0] == 0
+//? post: cog[0].reg[r1] == 0
+//? post: cog[0].reg[r2] == 9
+//? post: cog[0].reg[r3] == 15
+//? post: cog[0].reg[r4] == 30
+//? post: cog[0].reg[r5] == 50
+//? post: cog[0].reg[r6] == 36
+//? post: cog[0].reg[r7] == 60
+//? post: cog[0].reg[r8] == 135
+//? post: cog[0].reg[r9] == 225
+//? post: cog[0].reg[r10] == 69
+//? post: cog[0].reg[r11] == 115
+//? run: "sinc0 delay1"
+//? const: sinc = 0
+//? const: delay = 1
+//? post: cog[0].reg[r0] == 0
+//? post: cog[0].reg[r1] == 0
+//? post: cog[0].reg[r2] == 12
+//? post: cog[0].reg[r3] == 20
+//? post: cog[0].reg[r4] == 30
+//? post: cog[0].reg[r5] == 50
+//? post: cog[0].reg[r6] == 36
+//? post: cog[0].reg[r7] == 60
+//? post: cog[0].reg[r8] == 99
+//? post: cog[0].reg[r9] == 165
+//? post: cog[0].reg[r10] == 57
+//? post: cog[0].reg[r11] == 95
+//? run: "sinc0 delay4"
+//? const: sinc = 0
+//? const: delay = 4
+//? post: cog[0].reg[r0] == 9
+//? post: cog[0].reg[r1] == 15
+//? post: cog[0].reg[r2] == 12
+//? post: cog[0].reg[r3] == 20
+//? post: cog[0].reg[r4] == 30
+//? post: cog[0].reg[r5] == 50
+//? post: cog[0].reg[r6] == 27
+//? post: cog[0].reg[r7] == 45
+//? post: cog[0].reg[r8] == 99
+//? post: cog[0].reg[r9] == 165
+//? post: cog[0].reg[r10] == 57
+//? post: cog[0].reg[r11] == 95
+//? run: "sinc0 delay16"
+//? const: sinc = 0
+//? const: delay = 16
+//? post: cog[0].reg[r0] == 45
+//? post: cog[0].reg[r1] == 75
+//? post: cog[0].reg[r2] == 12
+//? post: cog[0].reg[r3] == 20
+//? post: cog[0].reg[r4] == 30
+//? post: cog[0].reg[r5] == 50
+//? post: cog[0].reg[r6] == 36
+//? post: cog[0].reg[r7] == 60
+//? post: cog[0].reg[r8] == 135
+//? post: cog[0].reg[r9] == 225
+//? post: cog[0].reg[r10] == 69
+//? post: cog[0].reg[r11] == 115
+//? run: "sinc1 delay0"
+//? const: sinc = 1
+//? const: delay = 0
+//? post: cog[0].reg[r0] == 0
+//? post: cog[0].reg[r1] == 0
+//? post: cog[0].reg[r2] == 18
+//? post: cog[0].reg[r3] == 30
+//? post: cog[0].reg[r4] == 255
+//? post: cog[0].reg[r5] == 425
+//? post: cog[0].reg[r6] == 144
+//? post: cog[0].reg[r7] == 240
+//? post: cog[0].reg[r8] == 18
+//? post: cog[0].reg[r9] == 30
+//? post: cog[0].reg[r10] == 6
+//? post: cog[0].reg[r11] == 10
+//? run: "sinc1 delay1"
+//? const: sinc = 1
+//? const: delay = 1
+//? post: cog[0].reg[r0] == 0
+//? post: cog[0].reg[r1] == 0
+//? post: cog[0].reg[r2] == 30
+//? post: cog[0].reg[r3] == 50
+//? post: cog[0].reg[r4] == 285
+//? post: cog[0].reg[r5] == 475
+//? post: cog[0].reg[r6] == 588
+//? post: cog[0].reg[r7] == 980
+//? post: cog[0].reg[r8] == 18
+//? post: cog[0].reg[r9] == 30
+//? post: cog[0].reg[r10] == 6
+//? post: cog[0].reg[r11] == 10
+//? run: "sinc1 delay4"
+//? const: sinc = 1
+//? const: delay = 4
+//? post: cog[0].reg[r0] == 18
+//? post: cog[0].reg[r1] == 30
+//? post: cog[0].reg[r2] == 66
+//? post: cog[0].reg[r3] == 110
+//? post: cog[0].reg[r4] == 375
+//? post: cog[0].reg[r5] == 625
+//? post: cog[0].reg[r6] == 444
+//? post: cog[0].reg[r7] == 740
+//? post: cog[0].reg[r8] == 18
+//? post: cog[0].reg[r9] == 30
+//? post: cog[0].reg[r10] == 6
+//? post: cog[0].reg[r11] == 10
+//? run: "sinc1 delay16"
+//? const: sinc = 1
+//? const: delay = 16
+//? post: cog[0].reg[r0] == 360
+//? post: cog[0].reg[r1] == 600
+//? post: cog[0].reg[r2] == 210
+//? post: cog[0].reg[r3] == 350
+//? post: cog[0].reg[r4] == 735
+//? post: cog[0].reg[r5] == 1225
+//? post: cog[0].reg[r6] == 288
+//? post: cog[0].reg[r7] == 480
+//? post: cog[0].reg[r8] == 18
+//? post: cog[0].reg[r9] == 30
+//? post: cog[0].reg[r10] == 6
+//? post: cog[0].reg[r11] == 10
+
+                // Set a stable digital input and constant sine/cosine table at a 1 MHz DUT clock.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                DRVH    0
+                MOV     index,  0
+fill_table:
+                WRLUT   aug(0x05030000),                        index
+                ADD     index,                                  1
+                CMP     index,                                  aug(512)    :wz
+    if(!Z)      JMP     fill_table
+                SETQ    aug(0x10000000)
+                XINIT   aug(0xf007ffff | (sinc << 23)),         aug(0x1000)
+                WAITX   delay
+                // Capture repeatedly while active; the following instruction consumes the full sine value.
+                GETXACC r0
+                MOV     r1,                                     0
+                GETXACC r2
+                MOV     r3,                                     0
+                // Queue a command with new SINC selection and verify captures across its activation.
+                XCONT   aug(0xf007ffff | ((1 - sinc) << 23)),   aug(0x1000)
+                GETXACC r4
+                MOV     r5,                                     0
+                WAITXMT
+                GETXACC r6
+                MOV     r7,                                     0
+                // Explicit stop and a zero-count command retain stopped arithmetic registers.
+                XSTOP
+                GETXACC r8
+                MOV     r9,                                     0
+                XINIT   0,                                      0
+                GETXACC r10
+                MOV     r11,                                    0
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                DIRL    0
+                JMP     nrel(_end)
+var index:      LONG    0
+var r0:         LONG    0
+var r1:         LONG    0
+var r2:         LONG    0
+var r3:         LONG    0
+var r4:         LONG    0
+var r5:         LONG    0
+var r6:         LONG    0
+var r7:         LONG    0
+var r8:         LONG    0
+var r9:         LONG    0
+var r10:        LONG    0
+var r11:        LONG    0
+

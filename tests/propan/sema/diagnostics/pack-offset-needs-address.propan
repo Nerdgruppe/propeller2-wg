@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: err_expected_value_type line 3 subject=="byteoffset" expected==address actual==int
+.assert byteoffset(1) == 0

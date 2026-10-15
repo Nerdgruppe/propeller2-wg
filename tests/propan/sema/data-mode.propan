@@ -1,0 +1,8 @@
+//? PROPAN CHECK LIST
+//? sym: table code:0x20:-
+//? seg: 0x20 1 data
+//? mem: 0x20 <- hex [01]
+.data 0x20
+table:
+BYTE 1
+.assert hubaddr(table) == 0x20

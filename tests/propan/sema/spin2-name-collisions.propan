@@ -1,0 +1,46 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [
+//?     0xF607EC01, 0xF607EE02, 0xF107EC03, 0xF107EC04,
+//?     0xF107EE05, 0xF607EE06, 0xF603EC07, 0,
+//?     1, 2, 3, 0xF603EC08, 0xF603EE09, 0xF603EC0A,
+//?     0xFCDC0201, 0xF603EC10, 0, 0xFCDC0201, 0xF603EE13, 0,
+//?     0xFCDC0201, 0xF603EC16, 0
+//? ]
+const a.b = 1
+const a_b = 2
+const a_b_p20 = 3
+const _propan0_c0_a_b = 4
+const _propan1_c0_a_b = 5
+const mixed.name = 6
+MOV PA, a.b
+MOV PB, a_b
+ADD PA, a_b_p20
+ADD PA, _propan0_c0_a_b
+ADD PB, _propan1_c0_a_b
+MOV PB, mixed.name
+MOV PA, mixed_name
+var mixed_name:
+LONG 0
+var g.x:
+LONG 1
+var g_x:
+LONG 2
+var g_x_p21:
+LONG 3
+MOV PA, g.x
+MOV PB, g_x
+MOV PA, g_x_p21
+scope:
+.assert cogaddr(scope) == 14
+REP @.l.x, 1
+MOV PA, *.l.x
+.l.x:
+NOP
+REP @.l_x, 1
+MOV PB, *.l_x
+.l_x:
+NOP
+REP @.l_x_p25, 1
+MOV PA, *.l_x_p25
+.l_x_p25:
+NOP

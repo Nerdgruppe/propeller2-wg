@@ -19,6 +19,10 @@ pub const Value = struct {
         return .init(.{ .string = value }, .literal);
     }
 
+    pub fn sequence(value: []const i64) Value {
+        return .init(.{ .sequence = value }, .literal);
+    }
+
     pub fn address(value: TaggedAddress, usage: UsageHint) Value {
         return .init(.{ .address = value }, usage);
     }
@@ -70,6 +74,7 @@ pub const Value = struct {
     pub const Type = enum {
         int,
         string,
+        sequence,
         address,
         register,
         enumerator,
@@ -79,6 +84,7 @@ pub const Value = struct {
     pub const Payload = union(Type) {
         int: i64,
         string: []const u8,
+        sequence: []const i64,
         address: TaggedAddress,
         register: Register,
         enumerator: []const u8,
@@ -109,12 +115,13 @@ pub const Value = struct {
         switch (val.value) {
             .int => |v| try writer.print("{d}", .{v}),
             .string => |v| try writer.print("\"{f}\"", .{std.zig.fmtString(v)}),
+            .sequence => |v| try writer.print("{any}", .{v}),
             .address => |v| try writer.print("{f}", .{v}),
             .register => |v| try writer.print("{f}", .{v}),
             .enumerator => |v| try writer.print("#{s}", .{v}),
             .pointer_expr => |v| try writer.print("{f}", .{v}),
         }
-        try writer.print(", {s})", .{@tagName(val.flags.usage)});
+        try writer.print(", {t})", .{val.flags.usage});
         // }
     }
 };
@@ -135,7 +142,7 @@ pub const PointerExpression = struct {
     },
     index: ?i64,
 
-    pub fn format(ptr_expr: PointerExpression, writer: anytype) !void {
+    pub fn format(ptr_expr: PointerExpression, writer: *std.Io.Writer) !void {
         switch (ptr_expr.increment) {
             .none => {},
             .pre_increment => try writer.writeAll("++"),
@@ -144,7 +151,7 @@ pub const PointerExpression = struct {
             .post_decrement => {},
         }
 
-        try writer.print("{s}", .{@tagName(ptr_expr.pointer)});
+        try writer.print("{t}", .{ptr_expr.pointer});
 
         switch (ptr_expr.increment) {
             .none => {},
@@ -163,7 +170,7 @@ pub const PointerExpression = struct {
 pub const Register = enum(u9) {
     _,
 
-    pub fn format(reg: Register, writer: anytype) !void {
+    pub fn format(reg: Register, writer: *std.Io.Writer) !void {
         try writer.print("r{}", .{@intFromEnum(reg)});
     }
 };
@@ -172,14 +179,19 @@ pub const ExecMode = enum {
     hub,
     cog,
     lut,
+    regspace,
+    data,
 };
 
 pub const Segment_ID = enum(u32) { _ };
 
 pub const TaggedAddress = struct {
-    hub_address: u20,
+    pub const AddrSpace = enum { pc, data };
+    hub_address: ?u20,
     segment_id: Segment_ID,
     local: Local,
+    /// Byte position within a cog/LUT register; hub offsets use hub_address instead.
+    subreg_byte: u2 = 0,
 
     pub const Local = union(ExecMode) {
         /// The offset points into hub memory
@@ -190,36 +202,50 @@ pub const TaggedAddress = struct {
 
         /// The offset points into lut memory
         lut: u9,
+
+        /// Uninitialized cog registers have no hub address.
+        regspace: u9,
+
+        /// Hub data has no execution address.
+        data,
     };
 
-    pub fn get_local(offset: TaggedAddress) u20 {
+    pub fn get_local(offset: TaggedAddress, address_space: AddrSpace) ?u32 {
         return switch (offset.local) {
-            .cog, .lut => |val| val,
-            .hub => offset.hub_address,
+            .cog, .regspace => |val| val,
+            .lut => |val| @as(u32, val) + if (address_space == .pc) @as(u32, 0x200) else 0,
+            .hub => if (offset.hub_address) |hub| @as(u32, hub) else null,
+            .data => null,
         };
     }
 
-    pub fn init(segment: Segment_ID, hub: u20, local: Local) TaggedAddress {
-        return .{ .segment_id = segment, .hub = hub, .local = local };
+    pub fn init(segment: Segment_ID, hub: ?u20, local: Local) TaggedAddress {
+        return .{ .segment_id = segment, .hub_address = hub, .local = local };
     }
 
     pub fn init_hub(segment: Segment_ID, hub: u20) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .hub };
     }
 
-    pub fn init_cog(segment: Segment_ID, hub: u20, cog: u9) TaggedAddress {
+    pub fn init_cog(segment: Segment_ID, hub: ?u20, cog: u9) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .{ .cog = cog } };
     }
 
-    pub fn init_lut(segment: Segment_ID, hub: u20, lut: u9) TaggedAddress {
+    pub fn with_subreg_byte(address: TaggedAddress, byte: u2) TaggedAddress {
+        var result = address;
+        result.subreg_byte = byte;
+        return result;
+    }
+
+    pub fn init_lut(segment: Segment_ID, hub: ?u20, lut: u9) TaggedAddress {
         return .{ .segment_id = segment, .hub_address = hub, .local = .{ .lut = lut } };
     }
 
     pub fn format(offset: TaggedAddress, writer: *std.Io.Writer) !void {
         switch (offset.local) {
-            .cog => |cog| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, cog=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, cog }),
-            .lut => |lut| try writer.print("Address(segment=#{}, hub=0x{X:0>5}, lut=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, lut }),
-            .hub => try writer.print("Address(segment=#{}, hub=0x{X:0>5})", .{ @intFromEnum(offset.segment_id), offset.hub_address }),
+            .cog, .regspace => |pc| try writer.print("Address(segment=#{}, hub={?}, {t}=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, offset.local, pc }),
+            .lut => |index| try writer.print("Address(segment=#{}, hub={?}, lut=0x{X:0>3})", .{ @intFromEnum(offset.segment_id), offset.hub_address, index }),
+            .hub, .data => try writer.print("Address(segment=#{}, hub={?}, mode={t})", .{ @intFromEnum(offset.segment_id), offset.hub_address, offset.local }),
         }
     }
 };

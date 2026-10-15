@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+.assert ticks(1000, ms=3, waitx=#false) == 3
+.assert ticks(1000, ms=3, waitx=#no) == 3
+.assert ticks(1000, ms=3, waitx=#off) == 3
+.assert ticks(1000, ms=3, waitx=#true) == 1
+.assert ticks(1000, ms=3, waitx=#yes) == 1
+.assert ticks(1000, ms=3, waitx=#on) == 1

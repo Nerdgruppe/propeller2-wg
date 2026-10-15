@@ -1,0 +1,66 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[copied0] == 11
+//? post: cog[*].reg[copied1] == 2
+//? post: cog[*].reg[copied2] == 3
+//? post: cog[*].reg[copied3] == 4
+//? post: cog[*].reg[lut_value] == 17
+//? run: "cog=0 lut=0 aug=0"
+//? cog: 0
+//? const: lut_prefix = 0
+//? const: canceled_aug = 0
+//? run: "cog=0 lut=0 aug=1"
+//? cog: 0
+//? const: lut_prefix = 0
+//? const: canceled_aug = 1
+//? run: "cog=0 lut=1 aug=0"
+//? cog: 0
+//? const: lut_prefix = 1
+//? const: canceled_aug = 0
+//? run: "cog=0 lut=1 aug=1"
+//? cog: 0
+//? const: lut_prefix = 1
+//? const: canceled_aug = 1
+//? run: "cog=2 lut=0 aug=0"
+//? cog: 2
+//? const: lut_prefix = 0
+//? const: canceled_aug = 0
+//? run: "cog=2 lut=0 aug=1"
+//? cog: 2
+//? const: lut_prefix = 0
+//? const: canceled_aug = 1
+//? run: "cog=2 lut=1 aug=0"
+//? cog: 2
+//? const: lut_prefix = 1
+//? const: canceled_aug = 0
+//? run: "cog=2 lut=1 aug=1"
+//? cog: 2
+//? const: lut_prefix = 1
+//? const: canceled_aug = 1
+
+                // A canceled instruction consumes either block-transfer prefix.
+                MODCZ   _CLR,           _CLR                    :wcz
+                WRLUT   17,             100
+.if lut_prefix == 0
+                SETQ    3
+.else
+                SETQ2   3
+.endif
+.if canceled_aug == 0
+    if(C)       MOV     scratch,        0
+.else
+    if(C)       AUGS    0
+.endif
+                RDLONG  register(100),  aug(hubaddr(source))
+                RDLUT   lut_value,      100
+                SETQ    0
+                JMP     nrel(_end)
+var scratch:    LONG    0
+var lut_value:  LONG    0
+.org    100
+var copied0:    LONG    1
+var copied1:    LONG    2
+var copied2:    LONG    3
+var copied3:    LONG    4
+.data
+source:         LONG    11, 22, 33, 44
+

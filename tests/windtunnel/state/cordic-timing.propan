@@ -1,0 +1,128 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? const: operation = 0
+//? run: "qmul cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? run: "qmul cog 1"
+//? cog: 1
+//? const: probe_cog = 1
+//? run: "qmul cog 2"
+//? cog: 2
+//? const: probe_cog = 2
+//? run: "qmul cog 3"
+//? cog: 3
+//? const: probe_cog = 3
+//? run: "qmul cog 4"
+//? cog: 4
+//? const: probe_cog = 4
+//? run: "qmul cog 5"
+//? cog: 5
+//? const: probe_cog = 5
+//? run: "qmul cog 6"
+//? cog: 6
+//? const: probe_cog = 6
+//? run: "qmul cog 7"
+//? cog: 7
+//? const: probe_cog = 7
+//? run: "qdiv cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: operation = 1
+//? run: "qfrac cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: operation = 2
+//? run: "qsqrt cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: operation = 3
+//? run: "qrotate cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: operation = 4
+//? run: "qvector cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: operation = 5
+//? run: "qlog cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: operation = 6
+//? run: "qexp cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: operation = 7
+
+                // Sweep all hub phases and 0..64 clocks of independent work before reading a result.
+                // Hardware: grant slot CT[2:0] = cog ID, command delta = 4 + wait, usable result = grant + 58.
+                MOV     phase,  0
+phase_loop:
+                MOV     delay,  0
+delay_loop:
+                GETCT   timer
+                ADD     timer,      aug(256)
+                ANDN    timer,      7
+                ADD     timer,      phase
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+.if operation == 0
+                QMUL    1,          2
+.elif   operation == 1
+                QDIV    1,          2
+.elif   operation == 2
+                QFRAC   1,          2
+.elif   operation == 3
+                QSQRT   1,          2
+.elif   operation == 4
+                QROTATE 1,          2
+.elif   operation == 5
+                QVECTOR 1,          2
+.elif   operation == 6
+                QLOG    1
+.elif   operation == 7
+                QEXP    1
+.endif
+                GETCT   scheduled
+                SUB     scheduled,  start
+                WAITX   delay
+                GETCT   before_read
+                GETQX   result
+                GETCT   after_read
+                SUB     after_read, before_read
+                GETQY   result
+
+                // Verify the command slot and the precise stall-to-ready transition.
+                MOV     expected,   probe_cog
+                SUB     expected,   start
+                SUB     expected,   2
+                AND     expected,   7
+                ADD     expected,   4
+                CMP     expected,   scheduled   :wz
+    if(!Z)      ADD     failures,   1
+                MOV     expected,   52
+                SUB     expected,   delay
+                FGES    expected,   4
+                CMP     expected,   after_read  :wz
+    if(!Z)      ADD     failures,   1
+                ADD     delay,      1
+                CMP     delay,      65          :wz
+    if(!Z)      JMP     delay_loop
+                ADD     phase,      1
+                CMP     phase,      8           :wz
+    if(!Z)      JMP     phase_loop
+                SETQ    0
+                JMP     nrel(_end)
+var phase:      LONG    0
+var delay:      LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var scheduled:  LONG    0
+var before_read:
+                LONG    0
+var after_read: LONG    0
+var expected:   LONG    0
+var result:     LONG    0
+var failures:   LONG    0
+

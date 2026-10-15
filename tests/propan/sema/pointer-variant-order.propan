@@ -1,0 +1,8 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [ 0xfb27ec03, 0xfb27ee02, 0xfb27f001, 0xfb27f200, 0x0 ]
+CALLD PA, target
+CALLD PB, target
+CALLD PTRA, target
+CALLD PTRB, target
+target:
+NOP

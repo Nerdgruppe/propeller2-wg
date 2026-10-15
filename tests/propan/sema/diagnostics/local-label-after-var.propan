@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_undefined_reference_to_symbol_at line 6 name==".loop"
+foo:
+.loop:
+var storage:
+LONG .loop

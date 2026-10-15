@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_address_has_no_execution_pc line 6
+.data
+label:
+BYTE 1
+LONG localaddr(label)

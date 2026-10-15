@@ -1,0 +1,63 @@
+//? PROPAN CHECK LIST
+//? mem: 0x0000 <- u32 [0xFE900001, 0, 0]
+//? mem: 0x1000 <- u32 [0, 0xFE9FFFFE, 0xFEB0000D, 0xFED001FC, 0xFEE00100, 0xFE802000]
+//? mem: 0x1100 <- u32 [0, 0xFE9FFFFE, 0xFEB0000D, 0xFEC00100, 0xFEE00280, 0xFE810400]
+//? mem: 0x1200 <- u32 [0xFE90008F, 0xFEA00280]
+//? mem: 0x1300 <- u32 [0xFE800002, 0xFEBFFFFE]
+//? mem: 0x2000 <- u32 [0, 0xFE9FFFF8, 0xFEB00014, 0xFEC00100, 0xFEE02000, 0xFE9000E8]
+
+// LOC adds A in execution-PC units: longs locally, bytes in hub execution.
+.cogexec    0
+                LOC     PA, forward
+                NOP
+forward:
+                NOP
+
+// Local label and numeric operands must ignore the hub storage origin.
+.cogexec    0x1000, 0x100
+cog_origin:
+                NOP
+                LOC     PA,     cog_origin
+                LOC     PB,     0x110
+                LOC     PTRA,   0x300
+                LOC     PTRB,   nrel(cog_origin)
+                LOC     PA,     hub_target
+
+// LUT uses the same long-addressed PC, including absolute large targets.
+.lutexec    0x1100, 0x280
+lut_origin:
+                NOP
+                LOC     PA,     lut_origin
+                LOC     PB,     0x290
+                LOC     PTRA,   cog_origin
+                LOC     PTRB,   nrel(lut_origin)
+                LOC     PA,     0x10400
+
+// Numeric cog/LUT targets share a relative domain; labels in other local segments use absolute addresses.
+.cogexec    0x1200, 0x1f0
+                LOC     PA, 0x280
+                LOC     PB, lut_origin
+
+// PIC policy still selects absolute or relative addressing as requested.
+.cogexec    0x1300
+.pic    avoid
+                LOC     PA, pic_target
+.pic    force
+                LOC     PB, 0
+pic_target:
+                NOP
+.pic    default
+
+// Hub execution keeps byte displacements; local targets use absolute addresses.
+.hubexec    0x2000
+hub_target:
+                NOP
+                LOC     PA,     hub_target
+                LOC     PB,     0x2020
+                LOC     PTRA,   cog_origin
+                LOC     PTRB,   nrel(hub_target)
+                LOC     PA,     hub_other
+.hubexec    0x2100
+hub_other:
+                NOP
+

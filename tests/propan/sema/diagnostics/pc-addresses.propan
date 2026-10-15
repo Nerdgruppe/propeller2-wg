@@ -1,0 +1,25 @@
+//? PROPAN CHECK LIST
+//? err: warn_address_function_expected_offset line 25 function==pcaddr value_type==register
+//? err: warn_address_function_expected_offset line 25 function==pcaddr value_type==int
+//? err: err_pcaddr_is_only_valid_for_registers_in_a_cogexec_scope line 16
+//? err: warn_hubexec_pc_below_branch_range line 11
+//? err: err_pcaddr_hub_address_not_reachable line 13 value==0x3FC
+//? err: err_pcaddr_hub_address_not_reachable line 15 value==0x400
+//? err: err_address_has_no_execution_pc line 19
+//? err: err_address_has_no_execution_pc line 22
+//? err: err_address_function_invalid_operand_type line 24 function==pcaddr value_type==string
+.hubexec 0x3FC
+low:
+LONG pcaddr(low)
+boundary:
+LONG pcaddr(boundary)
+.assert pcaddr(PA) == 0
+.data
+bytes:
+LONG pcaddr(bytes)
+.regspace
+var reg:
+.assert pcaddr(reg) == 0
+.cogexec
+MOV PA, pcaddr("label")
+LONG pcaddr(PA), pcaddr(42)

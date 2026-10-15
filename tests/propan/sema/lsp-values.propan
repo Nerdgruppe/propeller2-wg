@@ -1,0 +1,34 @@
+//? PROPAN CHECK LIST
+//? sym: entry code:0:0
+//? sym: packed data:4:1
+//? sym: second data:5:1
+//? sym: lut_entry code:12:0
+//? sym: hub_entry code:16
+//? sym: reserved data:-:0
+
+const positive = 42
+const negative = -1
+const minimum = -9223372036854775807 - 1
+const large = 0x123456789ABCDEF
+const text = "quote:\" slash:\\ newline:\n tab:\t nul:\x00 emoji:😀 ```"
+const binary = "\xFF\x00"
+const items = [1, -2, 42]
+const empty_items = []
+const empty_text = ""
+const ordinary = register(7)
+const zero_register = register(0)
+const special = register(504)
+const flag = #on
+.cogexec
+entry: NOP
+var packed: BYTE 0
+var second: BYTE 0
+RDBYTE PA, PTRA++[2]
+.lutexec
+lut_entry: NOP
+.hubexec
+hub_entry: NOP
+.data
+var payload: BYTE 1
+.regspace
+var reserved: RES 1

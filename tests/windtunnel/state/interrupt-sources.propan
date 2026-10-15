@@ -1,0 +1,102 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0"
+//? cog: 0
+//? const: probe_cog = 0
+//? run: "cog3"
+//? cog: 3
+//? const: probe_cog = 3
+//? run: "cog7"
+//? cog: 7
+//? const: probe_cog = 7
+
+                MOV     IJMP1,          vector
+                // ATN reaches an enabled interrupt, and its event flag remains independently pollable.
+                POLLATN
+                SETINT1 14
+                COGATN  (1 << probe_cog)
+                CALL    settle
+                CMP     count,          1               :wz
+    if(!Z)      ADD     failures,       1
+                POLLATN                                 :wc
+    if(!C)      ADD     failures,       1
+                // Both LUT and lock selectable sensors feed the same interrupt request path.
+                SETSE1  4
+                SETINT1 4
+                WRLUT   0,              aug(0x1fc)
+                CALL    settle
+                CMP     count,          2               :wz
+    if(!Z)      ADD     failures,       1
+                POLLSE1                                 :wc
+    if(!C)      ADD     failures,       1
+                LOCKNEW lock_id
+                MOV     sensor,         lock_id
+                OR      sensor,         0x10
+                SETSE2  sensor
+                SETINT1 5
+                LOCKTRY lock_id
+                CALL    settle
+                CMP     count,          3               :wz
+    if(!Z)      ADD     failures,       1
+                POLLSE2                                 :wc
+    if(!C)      ADD     failures,       1
+                LOCKREL lock_id
+                LOCKRET lock_id
+                // An empty CORDIC read signals QMT; normal completed-result reads do not.
+                SETINT1 15
+                GETQX   result
+                CALL    settle
+                CMP     count,          4               :wz
+    if(!Z)      ADD     failures,       1
+                POLLQMT                                 :wc
+    if(!C)      ADD     failures,       1
+                // Counter requests arriving during WAITX must remain pending until it completes.
+                GETCT   target
+                ADD     target,         64
+                ADDCT2  target,         0
+                SETINT1 2
+                CALL    settle
+                CMP     count,          5               :wz
+    if(!Z)      ADD     failures,       1
+                // Use a settled architectural INA pattern; no propagation-delay assertion is made.
+                DRVL    24
+                WAITX   64
+                MODCZ   _CLR,           _SET            :wcz
+                SETPAT  aug(1 << 24),   aug(1 << 24)
+                SETINT1 8
+                DRVH    24
+                CALL    settle
+                CMP     count,          6               :wz
+    if(!Z)      ADD     failures,       1
+                POLLPAT                                 :wc
+    if(!C)      ADD     failures,       1
+                FLTL    24
+                // INT itself remains a generic poll/wait/branch event consumer.
+                POLLINT                                 :wc
+    if(!C)      ADD     failures,       1
+                JNINT   cleared
+                ADD     failures,       1
+cleared:
+                STALLI
+                SETQ    0
+                MODCZ   _CLR,   _CLR    :wcz
+                JMP     nrel(_end)
+settle:
+                WAITX   128
+                NOP
+                NOP
+                NOP
+                RET
+isr:
+                SETINT1 0
+                ADD     count,  1
+                RETI1
+var vector:     LONG    pcaddr(isr)
+var count:      LONG    0
+var lock_id:    LONG    0
+var sensor:     LONG    0
+var target:     LONG    0
+var result:     LONG    0
+var failures:   LONG    0
+

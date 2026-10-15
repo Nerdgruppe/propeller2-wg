@@ -5,6 +5,22 @@
     .minimum_zig_version = "0.16.0",
 
     .dependencies = .{
+        .zgui = .{
+            .url = "git+https://github.com/zig-gamedev/zgui.git#a25eb0434a3e032e44e2e40238cd9a390aeec028",
+            .hash = "zgui-0.6.0-dev--L6sZMdHbgDGyf0mWBzn0LjGig6LuanLqohxml6sZiPG",
+        },
+        .zglfw = .{
+            .url = "https://github.com/zig-gamedev/zglfw/archive/0dd29d8073487c9fe1e45e6b729b3aac271d5a71.tar.gz",
+            .hash = "zglfw-0.10.0-dev-zgVDNIG4IQBWN_sfMD-xfC9bJS2hbBN2W7jNlDLovcdC",
+        },
+        .zopengl = .{
+            .url = "git+https://github.com/zig-gamedev/zopengl.git#29908b1ba2d91baf91e348f6cd192630488d77b6",
+            .hash = "zopengl-0.6.0-dev-5-tnz32mDgB82moljuLD0fmbj1mU3NSCXjzttpmoV2iP",
+        },
+        .lsp_kit = .{
+            .url = "git+https://github.com/zigtools/lsp-kit.git#0.16.x",
+            .hash = "lsp_kit-0.1.0-bi_PL84xDAB33s_-DZPmYwprEqgi-dEjp1qAs36F96TA",
+        },
         .ptk = .{
             .url = "git+https://github.com/ikskuh/parser-toolkit.git#62e0a3dca3632bb361df59407b2d7805280ab1b9",
             .hash = "parser_toolkit-0.1.0-baYGPUVCEwBaVmu09ORh0lLlVjRaJ489TdSIdTa_8VWg",
@@ -30,5 +46,7 @@
         "src",
         "tests",
         "examples",
+        "docs/p2/bootrom/device-rom.bin",
+        "vendor/lsp-kit",
     },
 }

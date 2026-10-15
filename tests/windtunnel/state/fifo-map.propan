@@ -1,0 +1,66 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 10000
+//? max-cycles: 4000000
+//? post: cog[0].reg[failures] == 0
+
+                // Buffered accesses use the ordinary 20-bit map, including the hole, mirror and address rollover.
+                WRLONG  value,      aug(0x7fffc)
+                WRLONG  other,      0
+                RDFAST  0,          aug(0x17fffc)
+                RFLONG  loaded
+                CMP     loaded,     value                   :wz
+    if(!Z)      ADD     failures,   1
+                RFLONG  loaded
+                CMP     loaded,     0                       :wz
+    if(!Z)      ADD     failures,   1
+                RDFAST  0,          aug(0x1ffffc)
+                RFLONG  loaded
+                CMP     loaded,     value                   :wz
+    if(!Z)      ADD     failures,   1
+                RFLONG  loaded
+                CMP     loaded,     other                   :wz
+    if(!Z)      ADD     failures,   1
+                GETPTR  pointer
+                CMP     pointer,    4                       :wz
+    if(!Z)      ADD     failures,   1
+                WRFAST  0,          aug(0xffffe)
+                WFLONG  aug(0xabcd1234)
+                WAITX   100
+                RDLONG  loaded,     aug(0x7fffc)
+                CMP     loaded,     aug(0x12343344)         :wz
+    if(!Z)      ADD     failures,   1
+                RDLONG  loaded,     0
+                CMP     loaded,     aug(0x5566abcd)         :wz
+    if(!Z)      ADD     failures,   1
+                WRFAST  0,          aug(0x80000)
+                WFLONG  value
+                WAITX   100
+                RDLONG  loaded,     aug(0x80000)
+                CMP     loaded,     0                       :wz
+    if(!Z)      ADD     failures,   1
+
+                // A zero block count means 262144 longs; read-ahead wraps once through the entire 1MiB map.
+                RDFAST  0,          aug(hubaddr(payload))
+                MOV     count,      aug(0x40000)
+consume:
+                RFLONG  loaded
+                DJNZ    count,      consume
+                GETPTR  pointer
+                CMP     pointer,    aug(hubaddr(payload))   :wz
+    if(!Z)      ADD     failures,   1
+                POLLFBW                                     :wc
+    if(!C)      ADD     failures,   1
+                RFLONG  loaded
+                CMP     loaded,     value                   :wz
+    if(!Z)      ADD     failures,   1
+                JMP     nrel(_end)
+var value:      LONG    0x11223344
+var other:      LONG    0x55667788
+var loaded:     LONG    0
+var pointer:    LONG    0
+var count:      LONG    0
+var failures:   LONG    0
+.data
+.align  32
+payload:        LONG    [0x11223344] * 32
+

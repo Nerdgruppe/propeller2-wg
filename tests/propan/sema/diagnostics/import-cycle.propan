@@ -1,0 +1,3 @@
+//? PROPAN CHECK LIST
+//? err: err_import_cycle line 1
+.import "../fixtures/import-cycle-a.propan"

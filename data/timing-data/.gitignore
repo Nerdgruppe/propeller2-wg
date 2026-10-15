@@ -1,0 +1,8 @@
+# Local scratch and capture output; assertion YAML remains tracked.
+__pycache__/
+*.pyc
+scratch/
+*.sal
+*.csv
+*.tar.gz
+*.zip

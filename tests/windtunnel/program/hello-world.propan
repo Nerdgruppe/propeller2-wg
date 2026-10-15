@@ -1,0 +1,11 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: .halt
+//? stdout: "Hello world!\r\n"
+//? max-cycles: 200_000
+//? timeout-ms: 1000
+
+// Run the shared RCFAST hello-world example and compare its complete UART output.
+// Import the example rather than duplicate it, so example and simulator coverage stay in sync.
+
+.import "../../../examples/hello-world-no-pll.propan"

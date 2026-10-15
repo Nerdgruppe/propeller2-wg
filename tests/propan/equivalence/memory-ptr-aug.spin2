@@ -1,0 +1,17 @@
+DAT 
+    RDLONG dst, PTRA
+    RDLONG dst, ##$100
+    RDLONG dst, ##$1FF
+    RDLONG dst, ##$200
+    RDLONG dst, ##$12345
+    RDLONG dst, ##$FFFFF
+    RDLONG dst, PTRA[##$100]
+    RDLONG dst, PTRA[##$1FF]
+    RDLONG dst, PTRA[##$200]
+    RDLONG dst, PTRA[##$12345]
+    RDLONG dst, PTRA[##$FFFFF]
+    RDWORD dst, PTRB[##$200]
+    RDLONG dst, PTRB[##$FFFFF]
+
+after_aug LONG $12345678
+dst LONG 1

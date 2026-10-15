@@ -1,0 +1,84 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "kind0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? run: "kind0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? run: "kind1-cog0"
+//? cog: 0
+//? const: kind = 1
+//? run: "kind1-cog7"
+//? cog: 7
+//? const: kind = 1
+//? run: "kind2-cog0"
+//? cog: 0
+//? const: kind = 2
+//? run: "kind2-cog7"
+//? cog: 7
+//? const: kind = 2
+//? run: "kind3-cog0"
+//? cog: 0
+//? const: kind = 3
+//? run: "kind3-cog7"
+//? cog: 7
+//? const: kind = 3
+//? run: "kind4-cog0"
+//? cog: 0
+//? const: kind = 4
+//? run: "kind4-cog7"
+//? cog: 7
+//? const: kind = 4
+
+                // Probe control and state visibility immediately following TRGINT1.
+                MOV     IJMP1,      vector
+                TRGINT1
+.if kind == 0
+                GETBRK  before              :wcz
+.elif   kind == 1
+                POLLINT                     :wc
+.elif   kind == 2
+                STALLI
+.elif   kind == 3
+                NIXINT1
+.else
+                SETINT1 0
+.endif
+                WRC     poll_flag
+                NOP
+                NOP
+                NOP
+                GETBRK  after               :wcz
+                STALLI
+                // GETBRK before the synthetic CALLD sees pending, and POLLINT sees no entry yet.
+                CMP     poll_flag,  0       :wz
+    if(!Z)      ADD     failures,   1
+.if kind == 2
+                CMP     count,      0       :wz
+    if(!Z)      ADD     failures,   1
+                CMP     after,      10      :wz
+.else
+                CMP     count,      1       :wz
+    if(!Z)      ADD     failures,   1
+                CMP     after,      0       :wz
+.endif
+    if(!Z)      ADD     failures,   1
+.if kind == 0
+                CMP     before,     8       :wz
+    if(!Z)      ADD     failures,   1
+.endif
+                SETQ    0
+                MODCZ   _CLR,       _CLR    :wcz
+                JMP     nrel(_end)
+isr:
+                ADD     count,  1
+                RETI1
+var vector:     LONG    pcaddr(isr)
+var before:     LONG    0
+var after:      LONG    0
+var count:      LONG    0
+var poll_flag:  LONG    0
+var failures:   LONG    0
+

@@ -1,0 +1,6 @@
+//? PROPAN CHECK LIST
+//? err: err_address_space_mismatch line 6 subject=="@"
+.regspace
+var target:
+.cogexec
+LONG @target

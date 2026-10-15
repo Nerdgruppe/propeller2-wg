@@ -1,0 +1,31 @@
+DAT
+    SETNIB src
+    SETNIB #src
+    GETNIB dst
+    ROLNIB dst
+    SETBYTE src
+    SETBYTE #src
+    GETBYTE dst
+    ROLBYTE dst
+    SETWORD src
+    SETWORD #src
+    GETWORD dst
+    ROLWORD dst
+    ALTSN dst
+    ALTGN dst
+    ALTSB dst
+    ALTGB dst
+    ALTSW dst
+    ALTGW dst
+    ALTR dst
+    ALTD dst
+    ALTS dst
+    ALTB dst
+    ALTI dst
+    ' FlexSpin adds AUGS for the flag-only spelling; use the documented words.
+    LONG $FD74001B ' GETRND WC
+    LONG $FD6C001B ' GETRND WZ
+    LONG $FD7C001B ' GETRND WCZ
+    
+dst LONG 1
+src LONG 2

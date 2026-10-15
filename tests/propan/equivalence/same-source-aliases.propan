@@ -1,0 +1,53 @@
+// Each one-operand alias encodes D in both the D and S fields.
+NOT dst
+NOT dst :wc
+NOT dst :wz
+NOT dst :wcz
+
+ABS dst
+ABS dst :wc
+ABS dst :wz
+ABS dst :wcz
+
+NEG dst
+NEG dst :wc
+NEG dst :wz
+NEG dst :wcz
+
+NEGC dst
+NEGC dst :wc
+NEGC dst :wz
+NEGC dst :wcz
+
+NEGNC dst
+NEGNC dst :wc
+NEGNC dst :wz
+NEGNC dst :wcz
+
+NEGZ dst
+NEGZ dst :wc
+NEGZ dst :wz
+NEGZ dst :wcz
+
+NEGNZ dst
+NEGNZ dst :wc
+NEGNZ dst :wz
+NEGNZ dst :wcz
+
+ENCOD dst
+ENCOD dst :wc
+ENCOD dst :wz
+ENCOD dst :wcz
+
+ONES dst
+ONES dst :wc
+ONES dst :wz
+ONES dst :wcz
+
+TEST dst :wc
+TEST dst :wz
+TEST dst :wcz
+
+DECOD dst
+BMASK dst
+var dst: LONG 1

@@ -1,0 +1,24 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[before] == 0
+//? post: cog[*].reg[after] == 1
+
+                // A partial high history cannot satisfy length eight; shortening it must re-evaluate retained bits.
+                DIRH    8
+                OUTL    8
+                HUBSET  aug(0x40000063)
+                WRPIN   aug(0x40800000),    8
+                WAITX   128
+                OUTH    8
+                WAITX   8
+                HUBSET  aug(0x4000007f)
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     before
+                HUBSET  aug(0x4000001f)
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     after
+                JMP     nrel(_end)
+var before:     LONG    0
+var after:      LONG    0
+

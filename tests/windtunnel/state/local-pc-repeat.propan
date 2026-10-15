@@ -1,0 +1,748 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 3000
+                //? run: "length0-count1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 0
+                //? const: count = 1
+                //? run: "length0-count1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 0
+                //? const: count = 1
+                //? run: "length0-count2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 0
+                //? const: count = 2
+                //? run: "length0-count2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 0
+                //? const: count = 2
+                //? run: "length0-count3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 0
+                //? const: count = 3
+                //? run: "length0-count3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 0
+                //? const: count = 3
+                //? run: "length1-count1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 1
+                //? const: count = 1
+                //? run: "length1-count1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 1
+                //? const: count = 1
+                //? run: "length1-count2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 1
+                //? const: count = 2
+                //? run: "length1-count2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 1
+                //? const: count = 2
+                //? run: "length1-count3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 1
+                //? const: count = 3
+                //? run: "length1-count3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 1
+                //? const: count = 3
+                //? run: "length2-count1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 2
+                //? const: count = 1
+                //? run: "length2-count1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 2
+                //? const: count = 1
+                //? run: "length2-count2-cog0"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 2
+                //? const: count = 2
+                //? run: "length2-count2-cog7"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 2
+                //? const: count = 2
+                //? run: "length2-count3-cog0"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 2
+                //? const: count = 3
+                //? run: "length2-count3-cog7"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 2
+                //? const: count = 3
+                //? run: "length3-count1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 3
+                //? const: count = 1
+                //? run: "length3-count1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 3
+                //? const: count = 1
+                //? run: "length3-count2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 3
+                //? const: count = 2
+                //? run: "length3-count2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 3
+                //? const: count = 2
+                //? run: "length3-count3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 3
+                //? const: count = 3
+                //? run: "length3-count3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 3
+                //? const: count = 3
+                //? run: "length4-count1-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 4
+                //? const: count = 1
+                //? run: "length4-count1-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 4
+                //? const: count = 1
+                //? run: "length4-count2-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 4
+                //? const: count = 2
+                //? run: "length4-count2-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 4
+                //? const: count = 2
+                //? run: "length4-count3-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 0
+                //? const: length = 4
+                //? const: count = 3
+                //? run: "length4-count3-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 0
+                //? const: length = 4
+                //? const: count = 3
+                //? run: "via-zero-length0-count1-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 0
+                //? const: count = 1
+                //? run: "via-zero-length0-count1-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 0
+                //? const: count = 1
+                //? run: "via-zero-length0-count2-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 0
+                //? const: count = 2
+                //? run: "via-zero-length0-count2-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 0
+                //? const: count = 2
+                //? run: "via-zero-length0-count3-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 0
+                //? const: count = 3
+                //? run: "via-zero-length0-count3-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 0
+                //? const: count = 3
+                //? run: "via-zero-length1-count1-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 1
+                //? const: count = 1
+                //? run: "via-zero-length1-count1-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 1
+                //? const: count = 1
+                //? run: "via-zero-length1-count2-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 1
+                //? const: count = 2
+                //? run: "via-zero-length1-count2-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x18
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 1
+                //? const: count = 2
+                //? run: "via-zero-length1-count3-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 1
+                //? const: count = 3
+                //? run: "via-zero-length1-count3-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 1
+                //? const: count = 3
+                //? run: "via-zero-length2-count1-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 2
+                //? const: count = 1
+                //? run: "via-zero-length2-count1-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 2
+                //? const: count = 1
+                //? run: "via-zero-length2-count2-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 2
+                //? const: count = 2
+                //? run: "via-zero-length2-count2-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x1a
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 2
+                //? const: count = 2
+                //? run: "via-zero-length2-count3-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x1e
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 2
+                //? const: count = 3
+                //? run: "via-zero-length2-count3-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x1e
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 2
+                //? const: count = 3
+                //? run: "via-zero-length3-count1-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 3
+                //? const: count = 1
+                //? run: "via-zero-length3-count1-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 3
+                //? const: count = 1
+                //? run: "via-zero-length3-count2-cog0"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 3
+                //? const: count = 2
+                //? run: "via-zero-length3-count2-cog7"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 3
+                //? const: count = 2
+                //? run: "via-zero-length3-count3-cog0"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 3
+                //? const: count = 3
+                //? run: "via-zero-length3-count3-cog7"
+                //? post: cog[*].reg[link] == 0x3ff
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 3
+                //? const: count = 3
+                //? run: "via-zero-length4-count1-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 4
+                //? const: count = 1
+                //? run: "via-zero-length4-count1-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 4
+                //? const: count = 1
+                //? run: "via-zero-length4-count2-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 4
+                //? const: count = 2
+                //? run: "via-zero-length4-count2-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 4
+                //? const: count = 2
+                //? run: "via-zero-length4-count3-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: kind = 1
+                //? const: length = 4
+                //? const: count = 3
+                //? run: "via-zero-length4-count3-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[hits] == 0x0
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[stamp_b] == 0x400
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: kind = 1
+                //? const: length = 4
+                //? const: count = 3
+                // Use two S-selected paths to observe LOC fallthrough and CALLD return addresses inside REP.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   loc_word,       aug(511)
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+hit1:
+                MOV     landed, 1
+                JMP     nrel(done)
+hit2:
+                MOV     landed, 2
+                JMP     nrel(done)
+hit3:
+                MOV     landed, 3
+                JMP     nrel(done)
+hit4:
+                MOV     landed, 4
+                JMP     nrel(done)
+hit5:
+                MOV     landed, 5
+                JMP     nrel(done)
+hit6:
+                MOV     landed, 6
+                JMP     nrel(done)
+var loc_word:   LONG    0xfeb00000 | (4 * (kind == 0))
+var landed:     LONG    0
+var target1:    LONG    pcaddr(hit1)
+var target2:    LONG    pcaddr(hit2)
+var target3:    LONG    pcaddr(hit3)
+var target4:    LONG    pcaddr(hit4)
+var target5:    LONG    pcaddr(hit5)
+var target6:    LONG    pcaddr(hit6)
+var link:       LONG    0
+var target:     LONG    pcaddr(done)
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:   LONG    0xfe900004
+                CALLD   link,   target1
+                CALLD   link,   target2
+                CALLD   link,   target3
+                CALLD   link,   target4
+                CALLD   link,   target5
+                CALLD   link,   target6
+.lutexec    0x3100, 0x3fe
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+                REP     length, count
+                NOP
+

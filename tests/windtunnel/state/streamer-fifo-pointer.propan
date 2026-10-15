@@ -1,0 +1,41 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[amount] == 256
+//? run: "read full rate"
+//? const: write = 0
+//? const: freq = 0x80000000
+//? run: "read slow"
+//? const: write = 0
+//? const: freq = 0x10000000
+//? run: "write full rate"
+//? const: write = 1
+//? const: freq = 0x80000000
+//? run: "write slow"
+//? const: write = 1
+//? const: freq = 0x10000000
+
+                // Inspect consumed/enqueued bytes separately from physical FIFO grants.
+                MOV     OUTA,                                       0
+                MOV     DIRA,                                       aug(0xffffffff)
+                WAITX   20
+.if write
+                WRFAST  0,                                          aug(hubaddr(buffer))
+.else
+                RDFAST  0,                                          aug(hubaddr(buffer))
+.endif
+                SETXFRQ aug(freq)
+.if write
+                XINIT   aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 64),  0
+.else
+                XINIT   aug(X_RFLONG_32P_4DAC8 | 64),               0
+.endif
+                WAITXFI
+                GETPTR  amount
+                SUB     amount,                                     aug(hubaddr(buffer))
+                WAITX   aug(1000)
+                MOV     DIRA,                                       0
+                JMP     nrel(_end)
+var amount:     LONG    0
+.data
+.align  4
+var buffer:     LONG    [0] * 128
+

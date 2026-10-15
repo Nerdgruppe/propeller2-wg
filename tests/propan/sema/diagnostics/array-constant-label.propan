@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed line 5 reason==constant_needs_label_during_layout
+
+const ITEMS = [hubaddr(target)]
+LONG ITEMS
+target:
+LONG 0

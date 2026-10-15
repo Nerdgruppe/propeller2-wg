@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+BYTE aug(1)
+WORD aug(2)
+LONG aug(3)
+.assert aug(1)
+.fit aug(512)

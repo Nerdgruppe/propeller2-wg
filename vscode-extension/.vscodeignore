@@ -1,6 +1,7 @@
 .vscode/**
 .vscode-test-web/**
 src/**
+tests/**
 out/**
 node_modules/**
 dist/**/test/**

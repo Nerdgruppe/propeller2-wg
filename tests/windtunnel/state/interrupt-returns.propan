@@ -1,0 +1,193 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "int1-cog0"
+//? cog: 0
+//? const: irq_level = 1
+//? run: "int1-cog3"
+//? cog: 3
+//? const: irq_level = 1
+//? run: "int1-cog7"
+//? cog: 7
+//? const: irq_level = 1
+//? run: "int2-cog0"
+//? cog: 0
+//? const: irq_level = 2
+//? run: "int2-cog3"
+//? cog: 3
+//? const: irq_level = 2
+//? run: "int2-cog7"
+//? cog: 7
+//? const: irq_level = 2
+//? run: "int3-cog0"
+//? cog: 0
+//? const: irq_level = 3
+//? run: "int3-cog3"
+//? cog: 3
+//? const: irq_level = 3
+//? run: "int3-cog7"
+//? cog: 7
+//? const: irq_level = 3
+
+const vector_reg = register(0x1f6 - 2 * irq_level)
+const return_reg = register(0x1f7 - 2 * irq_level)
+
+                // The injected CALLD loads vector C/Z and saves the interrupted flags in IRET.
+                MOV     vector_reg,     flags_vector
+                MODCZ   _CLR,           _SET                    :wcz
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                NOP
+                NOP
+                NOP
+                WRC     main_c
+                WRZ     main_z
+                CMP     main_c,         0                       :wz
+    if(!Z)      ADD     failures,       1
+                CMP     main_z,         1                       :wz
+    if(!Z)      ADD     failures,       1
+                CMP     handler_c,      1                       :wz
+    if(!Z)      ADD     failures,       1
+                CMP     handler_z,      0                       :wz
+    if(!Z)      ADD     failures,       1
+                AND     saved_flags,    aug(0xc0000000)
+                CMP     saved_flags,    aug(0x40000000)         :wz
+    if(!Z)      ADD     failures,       1
+                // RESIx advances the vector to its continuation; a later entry resumes there.
+                MOV     vector_reg,     resume_vector
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                NOP
+                NOP
+                NOP
+                MOV     saved_vector,   vector_reg
+                AND     saved_vector,   aug(0xfffff)
+                CMP     saved_vector,   pcaddr(continuation)    :wz
+    if(!Z)      ADD     failures,       1
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                NOP
+                NOP
+                NOP
+                CMP     resumed,        3                       :wz
+    if(!Z)      ADD     failures,       1
+                // Any D is valid for the WCZ/IRET-source completion side effect.
+                MOV     vector_reg,     alternate_vector
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                NOP
+                NOP
+                NOP
+                GETBRK  status                                  :wcz
+                CMP     status,         0                       :wz
+    if(!Z)      ADD     failures,       1
+                // A partial flag modifier jumps back but leaves the active state in place.
+                MOV     vector_reg,     partial_vector
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                NOP
+                NOP
+                NOP
+                GETBRK  status                                  :wcz
+                CMP     status,         (3 << (2 * irq_level))  :wz
+    if(!Z)      ADD     failures,       1
+.if irq_level == 1
+                NIXINT1
+.elif   irq_level == 2
+                NIXINT2
+.else
+                NIXINT3
+.endif
+                STALLI
+                SETQ    0
+                MODCZ   _CLR,           _CLR                    :wcz
+                JMP     nrel(_end)
+flags_handler:
+                WRC     handler_c
+                WRZ     handler_z
+                MOV     saved_flags,    return_reg
+                MODCZ   _CLR,           _CLR        :wcz
+.if irq_level == 1
+                RETI1
+.elif   irq_level == 2
+                RETI2
+.else
+                RETI3
+.endif
+resume_handler:
+                ADD     resumed,    1
+.if irq_level == 1
+                RESI1
+.elif   irq_level == 2
+                RESI2
+.else
+                RESI3
+.endif
+continuation:
+                ADD     resumed,    2
+.if irq_level == 1
+                RETI1
+.elif   irq_level == 2
+                RETI2
+.else
+                RETI3
+.endif
+alternate_handler:
+                // A canceled CALLD must leave the active state intact.
+                MODCZ   _CLR,       _CLR                    :wcz
+    if(C)       CALLD   scratch,    return_reg              :wcz
+                GETBRK  status                              :wcz
+                CMP     status,     (3 << (2 * irq_level))  :wz
+    if(!Z)      ADD     failures,   1
+                // ALTS changes the effective source to IRETx before recognition.
+                ALTS    selector,   0
+                CALLD   scratch,    scratch                 :wcz
+partial_handler:
+                CALLD   scratch,    return_reg  :wc
+var flags_vector:
+                LONG    (0x80000000 | pcaddr(flags_handler))
+var resume_vector:
+                LONG    pcaddr(resume_handler)
+var alternate_vector:
+                LONG    pcaddr(alternate_handler)
+var partial_vector:
+                LONG    pcaddr(partial_handler)
+var selector:   LONG    (0x1f7 - 2 * irq_level)
+var main_c:     LONG    0
+var main_z:     LONG    0
+var handler_c:  LONG    0
+var handler_z:  LONG    0
+var saved_flags:
+                LONG    0
+var saved_vector:
+                LONG    0
+var resumed:    LONG    0
+var status:     LONG    0
+var scratch:    LONG    0
+var failures:   LONG    0
+

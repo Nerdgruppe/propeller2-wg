@@ -1,0 +1,243 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 3000
+                //? run: "domain0-delta4-cog0"
+                //? post: cog[*].reg[link] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x12
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: domain = 0
+                //? const: delta = 4
+                //? run: "domain0-delta4-cog7"
+                //? post: cog[*].reg[link] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0x5
+                //? post: cog[*].reg[elapsed] == 0x12
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: domain = 0
+                //? const: delta = 4
+                //? run: "domain0-delta516-cog0"
+                //? post: cog[*].reg[link] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0x205
+                //? post: cog[*].reg[elapsed] == 0x12
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: domain = 0
+                //? const: delta = 516
+                //? run: "domain0-delta516-cog7"
+                //? post: cog[*].reg[link] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0x205
+                //? post: cog[*].reg[elapsed] == 0x12
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: domain = 0
+                //? const: delta = 516
+                //? run: "domain0-delta1048068-cog0"
+                //? post: cog[*].reg[link] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0xffe05
+                //? post: cog[*].reg[elapsed] == 0x12
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: domain = 0
+                //? const: delta = 1048068
+                //? run: "domain0-delta1048068-cog7"
+                //? post: cog[*].reg[link] == 0x2
+                //? post: cog[*].reg[stamp_a] == 0xffe05
+                //? post: cog[*].reg[elapsed] == 0x12
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: domain = 0
+                //? const: delta = 1048068
+                //? run: "domain1-delta4-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[stamp_a] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: domain = 1
+                //? const: delta = 4
+                //? run: "domain1-delta4-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[stamp_a] == 0x404
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: domain = 1
+                //? const: delta = 4
+                //? run: "domain1-delta516-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[stamp_a] == 0x604
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: domain = 1
+                //? const: delta = 516
+                //? run: "domain1-delta516-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[stamp_a] == 0x604
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: domain = 1
+                //? const: delta = 516
+                //? run: "domain1-delta1048068-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[stamp_a] == 0x204
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: domain = 1
+                //? const: delta = 1048068
+                //? run: "domain1-delta1048068-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[stamp_a] == 0x204
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: domain = 1
+                //? const: delta = 1048068
+                //? run: "domain2-delta4-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: domain = 2
+                //? const: delta = 4
+                //? run: "domain2-delta4-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[stamp_a] == 0x405
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: domain = 2
+                //? const: delta = 4
+                //? run: "domain2-delta516-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[stamp_a] == 0x605
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: domain = 2
+                //? const: delta = 516
+                //? run: "domain2-delta516-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[stamp_a] == 0x605
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: domain = 2
+                //? const: delta = 516
+                //? run: "domain2-delta1048068-cog0"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[stamp_a] == 0x205
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 0
+                //? const: domain = 2
+                //? const: delta = 1048068
+                //? run: "domain2-delta1048068-cog7"
+                //? post: cog[*].reg[link] == 0x402
+                //? post: cog[*].reg[stamp_a] == 0x205
+                //? post: cog[*].reg[elapsed] == 0x16
+                //? post: cog[*].reg[landed] == 0x4
+                //? cog: 7
+                //? const: domain = 2
+                //? const: delta = 1048068
+                // Patch raw LOC A fields into code slots to measure their displacement units in three PC domains.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+.if domain == 1
+                WRLUT   loc_word,       aug(511)
+.else
+                WRLUT   word,           aug(511)
+.endif
+                MOV     register(0),    loc_word
+                GETCT   start
+.if domain == 0
+                JMP     nrel(0)
+.else
+                JMP     nrel(tail_template)
+.endif
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+hit1:
+                MOV     landed, 1
+                JMP     nrel(done)
+hit2:
+                MOV     landed, 2
+                JMP     nrel(done)
+hit3:
+                MOV     landed, 3
+                JMP     nrel(done)
+hit4:
+                MOV     landed, 4
+                JMP     nrel(done)
+hit5:
+                MOV     landed, 5
+                JMP     nrel(done)
+hit6:
+                MOV     landed, 6
+                JMP     nrel(done)
+var loc_word:   LONG    0xfe900000 | delta
+var landed:     LONG    0
+var target1:    LONG    pcaddr(hit1)
+var target2:    LONG    pcaddr(hit2)
+var target3:    LONG    pcaddr(hit3)
+var target4:    LONG    pcaddr(hit4)
+var target5:    LONG    pcaddr(hit5)
+var target6:    LONG    pcaddr(hit6)
+var link:       LONG    0
+var target:     LONG    pcaddr(done)
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:
+                // These words are loaded into the physical cog instruction slots above.
+                NOP
+                CALLD   link,   target1
+                CALLD   link,   target2
+                CALLD   link,   target3
+                CALLD   link,   target4
+                CALLD   link,   target5
+                CALLD   link,   target6
+.lutexec    0x3100, 0x3fe
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+                NOP
+                NOP
+

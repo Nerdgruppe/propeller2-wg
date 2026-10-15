@@ -16,19 +16,19 @@ DAT
     CALLD dst, #src WZ
     CALLD dst, #src WCZ
 
-    ' CALLD PA, #src
-    ' CALLD PB, #src
-    ' CALLD PTRA, #src
-    ' CALLD PTRB, #src
+    CALLD PA, #src
+    CALLD PB, #src
+    CALLD PTRA, #src
+    CALLD PTRB, #src
     
     CALLD PA, #\src
     CALLD PB, #\src
     CALLD PTRA, #\src
     CALLD PTRB, #\src
 
-    ' CALLD PA, #src
-    ' CALLD PA, #1
-    ' CALLD PA, #1000
+    CALLD PA, #src
+    CALLD PA, #1
+    CALLD PA, #1000
     CALLD PA, #\1000
     CALLD PA, #10000
     CALLD PA, #\10000

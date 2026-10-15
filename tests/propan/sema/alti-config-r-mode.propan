@@ -1,0 +1,10 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [ 0b000_000_000_111_000_000 ]
+.assert alti.config(#keep, #keep, #none, #none, #keep, #none) == 0b000_000_000_000_000_000
+.assert alti.config(#keep, #keep, #none, #none, #keep, #drop) == 0b000_000_000_001_000_000
+.assert alti.config(#keep, #keep, #none, #none, #dec, #none) == 0b000_000_000_010_000_000
+.assert alti.config(#keep, #keep, #none, #none, #inc, #none) == 0b000_000_000_011_000_000
+.assert alti.config(#keep, #keep, #none, #none, #keep, #subst) == 0b000_000_000_100_000_000
+.assert alti.config(#keep, #keep, #none, #none, #keep, #instr) == 0b000_000_000_101_000_000
+.assert alti.config(#keep, #keep, #none, #none, #dec, #subst) == 0b000_000_000_110_000_000
+LONG alti.config(#keep, #keep, #none, #none, #inc, #subst)

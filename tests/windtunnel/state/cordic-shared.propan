@@ -1,0 +1,163 @@
+//? WINDTUNNEL CHECK LIST
+//? post: hub[shared_results] == u32 [ 257 0 514 0 771 0 1028 0 1285 0 1542 0 1799 0 2056 0 513 0 1026 0 1539 0 2052 0 2565 0 3078 0 3591 0 4104 0 769 0 1538 0 2307 0 3076 0 3845 0 4614 0 5383 0 6152 0 1025 0 2050 0 3075 0 4100 0 5125 0 6150 0 7175 0 8200 0 1281 0 2562 0 3843 0 5124 0 6405 0 7686 0 8967 0 10248 0 1537 0 3074 0 4611 0 6148 0 7685 0 9222 0 10759 0 12296 0 1793 0 3586 0 5379 0 7172 0 8965 0 10758 0 12551 0 14344 0 2049 0 4098 0 6147 0 8196 0 10245 0 12294 0 14343 0 16392 0 ]
+
+                // All eight cogs fill the shared solver together with eight commands apiece.
+                // Encode cog ID in the high bits and command number in the low bits of every distinct result.
+                MOV     PTRA,   aug(hubaddr(shared_start))
+                MOV     image,  aug(hubaddr(worker))
+                MOV     target, 1
+launch_loop:
+                SETQ    PTRA
+                COGINIT target,     image
+                ADD     target,     1
+                CMP     target,     8                               :wz
+    if(!Z)      JMP     launch_loop
+                GETCT   timer
+                ADD     timer,      aug(8192)
+                ANDN    timer,      7
+                WRLONG  timer,      PTRA
+                ADDCT1  timer,      0
+                WAITCT1
+                // Submit eight requests before fetching any result.
+                QMUL    257,        1
+                QMUL    257,        2
+                QMUL    257,        3
+                QMUL    257,        4
+                QMUL    257,        5
+                QMUL    257,        6
+                QMUL    257,        7
+                QMUL    257,        8
+                GETQX   main_x1
+                GETQY   main_y1
+                GETQX   main_x2
+                GETQY   main_y2
+                GETQX   main_x3
+                GETQY   main_y3
+                GETQX   main_x4
+                GETQY   main_y4
+                GETQX   main_x5
+                GETQY   main_y5
+                GETQX   main_x6
+                GETQY   main_y6
+                GETQX   main_x7
+                GETQY   main_y7
+                GETQX   main_x8
+                GETQY   main_y8
+                // Record cog 0's pairs and wait for the other seven cogs to publish and stop.
+                MOV     PTRB,       aug(hubaddr(shared_results))
+                SETQ    15
+                WRLONG  main_x1,    PTRB
+                MOV     target,     1
+                MOV     flag_ptr,   aug(hubaddr(shared_done) + 4)
+join_loop:
+                RDLONG  flag,       flag_ptr
+                CMP     flag,       1           :wz
+    if(!Z)      JMP     join_loop
+                ADD     flag_ptr,   4
+                ADD     target,     1
+                CMP     target,     8           :wz
+    if(!Z)      JMP     join_loop
+                WAITX   128
+                SETQ    0
+                JMP     nrel(_end)
+var image:      LONG    0
+var target:     LONG    0
+var timer:      LONG    0
+var flag_ptr:   LONG    0
+var flag:       LONG    0
+var main_x1:    LONG    0
+var main_y1:    LONG    0
+var main_x2:    LONG    0
+var main_y2:    LONG    0
+var main_x3:    LONG    0
+var main_y3:    LONG    0
+var main_x4:    LONG    0
+var main_y4:    LONG    0
+var main_x5:    LONG    0
+var main_y5:    LONG    0
+var main_x6:    LONG    0
+var main_y6:    LONG    0
+var main_x7:    LONG    0
+var main_y7:    LONG    0
+var main_x8:    LONG    0
+var main_y8:    LONG    0
+.data
+shared_start:   LONG    0
+shared_results: LONG    [0] * 128
+shared_done:    LONG    [0] * 8
+.cogexec    0x4000, 0
+worker:
+                COGID   worker_id
+                MOV     worker_factor,  worker_id
+                ADD     worker_factor,  1
+                SHL     worker_factor,  8
+                OR      worker_factor,  1
+worker_wait:
+                RDLONG  worker_timer,       PTRA
+                CMP     worker_timer,       0                               :wz
+    if(Z)       JMP     worker_wait
+                ADDCT1  worker_timer,       0
+                WAITCT1
+                // Adjacent cog slots interleave all eight request streams through the same pipeline.
+                QMUL    worker_factor,      1
+                QMUL    worker_factor,      2
+                QMUL    worker_factor,      3
+                QMUL    worker_factor,      4
+                QMUL    worker_factor,      5
+                QMUL    worker_factor,      6
+                QMUL    worker_factor,      7
+                QMUL    worker_factor,      8
+                GETQX   worker_x1
+                GETQY   worker_y1
+                GETQX   worker_x2
+                GETQY   worker_y2
+                GETQX   worker_x3
+                GETQY   worker_y3
+                GETQX   worker_x4
+                GETQY   worker_y4
+                GETQX   worker_x5
+                GETQY   worker_y5
+                GETQX   worker_x6
+                GETQY   worker_y6
+                GETQX   worker_x7
+                GETQY   worker_y7
+                GETQX   worker_x8
+                GETQY   worker_y8
+                // Each cog owns one 16-long output block and a separate completion flag.
+                MOV     worker_destination, worker_id
+                SHL     worker_destination, 6
+                ADD     worker_destination, aug(hubaddr(shared_results))
+                SETQ    15
+                WRLONG  worker_x1,          worker_destination
+                MOV     worker_destination, worker_id
+                SHL     worker_destination, 2
+                ADD     worker_destination, aug(hubaddr(shared_done))
+                WRLONG  1,                  worker_destination
+                COGSTOP worker_id
+var worker_id:  LONG    0
+var worker_factor:
+                LONG    0
+var worker_timer:
+                LONG    0
+var worker_destination:
+                LONG    0
+var worker_x1:  LONG    0
+var worker_y1:  LONG    0
+var worker_x2:  LONG    0
+var worker_y2:  LONG    0
+var worker_x3:  LONG    0
+var worker_y3:  LONG    0
+var worker_x4:  LONG    0
+var worker_y4:  LONG    0
+var worker_x5:  LONG    0
+var worker_y5:  LONG    0
+var worker_x6:  LONG    0
+var worker_y6:  LONG    0
+var worker_x7:  LONG    0
+var worker_y7:  LONG    0
+var worker_x8:  LONG    0
+var worker_y8:  LONG    0
+// Complete the 504-long startup image.
+worker_end:     LONG    [0] * (504 - cogaddr(worker_end))
+.data
+

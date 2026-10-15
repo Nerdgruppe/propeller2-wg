@@ -1,0 +1,15 @@
+//? PROPAN CHECK LIST
+//? mem: 0 <- u32 [1, 2, 1, 2, 1, 2, 1, 2]
+//? mem: 32 <- u16 [65, 66]
+//? mem: 36 <- hex [41 42]
+
+const ITEMS = BASE
+const BASE = [1, 2]
+const COUNT = NEXT + 1
+const NEXT = 1
+const TEXT = "AB"
+const WIDE = utf16(TEXT)
+
+LONG ITEMS, ITEMS * COUNT, [ITEMS]
+WORD WIDE
+BYTE TEXT

@@ -1,0 +1,63 @@
+// On the tested P2, falling through LUT $3FF runs cog address $000.
+// Output: 1 = cog-$000 trap ran; 0 = it did not.
+// The LUT-$200 trap writes 3 instead, so the paths are distinguishable.
+// Run: python3 utility/p2aas-run.py data/validations/lut-pc-overflow.propan
+
+const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART_CFG = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+const TX_PIN = 62
+
+.cogexec 0
+        HUBSET aug(CLOCK_MODE)
+        WRPIN P_TT_01 | P_ASYNC_TX, TX_PIN
+        WXPIN aug(UART_CFG), TX_PIN
+        DIRH TX_PIN
+        WAITX aug(20_000_000)
+
+        COGINIT 1, hubaddr(worker)
+        WAITX aug(1_000_000)
+        RDLONG observed, hubaddr(shared)
+        MOV PA, '0'
+        CMP observed, 4 :wz
+if(Z)   MOV PA, '1'
+        CALL write_byte
+.halt:  JMP .halt
+
+write_byte:
+        WYPIN PA, TX_PIN
+        WAITX 1
+.wait:  TESTP TX_PIN :wc
+if(!C)  JMP .wait
+        RET
+
+var observed: LONG 0
+var shared: LONG 0
+
+// COGINIT places this at cog 1 address $000.
+.cogexec
+worker:
+        TJNZ marker, cog_wrap
+        MOV marker, 1
+        WRLONG marker, hubaddr(shared)
+        SETQ2 2
+        RDLONG *lut_zero, aug(hubaddr(lut_zero))
+        SETQ2 0
+        RDLONG *lut_end, aug(hubaddr(lut_end))
+        MOV marker, 2
+        JMP nrel(lut_end)
+        COGSTOP 1
+cog_wrap:
+        MOV marker, 4
+        WRLONG marker, hubaddr(shared)
+        COGSTOP 1
+var marker: LONG 0
+
+.lutexec $, 0x200
+lut_zero:
+        MOV marker, 3
+        WRLONG marker, hubaddr(shared)
+        COGSTOP 1
+
+.lutexec $, 0x3FF
+lut_end:
+        WRLONG marker, hubaddr(shared)

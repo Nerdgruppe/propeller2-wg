@@ -1,0 +1,55 @@
+//? PROPAN CHECK LIST
+//? sym: root code:0:0
+//? sym: root:local code:8:2
+//? mem: 0 <- hex [11 00 00 00 22 00 00 00]
+
+const FEATURE = 1
+const CHOICE = 0
+const SELECTED = FEATURE + 1
+
+root:
+.if FEATURE
+    LONG 0x11
+.elif unknown_condition
+    LONG 0xFF
+.else
+    LONG 0xFF
+.endif
+
+.if CHOICE
+    UNKNOWN_MNEMONIC missing_symbol
+.elif SELECTED == 2
+    .if 1
+        LONG 0x22
+    .else
+        LONG 0xFF
+    .endif
+.else
+    LONG 0xFF
+.endif
+
+.if 0
+hidden:
+const FEATURE = 2
+const BROKEN = 1 / 0
+    .data 0x100
+    FILE "missing-file.bin"
+    .assert 0
+    .if another_missing_condition
+        LONG 0xFF
+    .else
+        LONG 0xFF
+    .endif
+.endif
+
+.local:
+    JMP .local
+.assert hubaddr(.local) == 8
+.if 0
+    UNKNOWN_MNEMONIC
+.else
+    LONG 0x33
+.endif
+after_else:
+.assert hubaddr(root) == 0
+.assert hubaddr(after_else) == 16

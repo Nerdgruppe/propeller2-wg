@@ -1,0 +1,86 @@
+//? PROPAN CHECK LIST
+//? mem: 0x0000 <- u32 [0xFD9FFFFC, 0xFD9007F4]
+//? mem: 0x1000 <- u32 [0xFD9FFFFC, 0xFD9FFFF8, 0xFD800100]
+//? mem: 0x1028 <- u32 [0xFD9FFFFC, 0xFD9FFFF8, 0xFD9FF7F4]
+//? mem: 0x2000 <- u32 [0xFD9FFFFC, 0xFD800200, 0xFD802000]
+//? mem: 0x2100 <- u32 [0xFD9FFFFC, 0xFBCC01FE, 0xFBCC01FD, 0xFBC801F6]
+//? mem: 0x2200 <- u32 [0xFD9FFFFC, 0xFBCC01FE, 0xFBCC01FD, 0xFBC801F6]
+//? mem: 0x2300 <- u32 [0xFD9FFFFC, 0xFBCC01FE, 0xFBCC01FD, 0xFBC801F6]
+
+// Relative A fields are byte offsets; absolute cog/LUT targets remain longs.
+// Numeric targets use the execution PC independently of the hub origin.
+.cogexec 0
+    JMP 0
+    JMP 0x1FF
+    JMP 0x200
+    JMP 0x3FF
+    JMP 0x400
+    JMP nrel(0x3FF)
+    CALL 0x200
+    CALLA 0x200
+    CALLB 0x200
+    CALLD PA, 1000
+    CALLD PB, 1000
+    CALLD PTRA, 1000
+    CALLD PTRB, 1000
+    CALLD PA, nrel(1000)
+
+.cogexec 0x1000, 0x100
+cog_target:
+    JMP 0x100
+    JMP cog_target
+    JMP nrel(0x100)
+    CALL 0x200
+    CALLA 0x200
+    CALLB 0x200
+    CALLD PA, 1000
+    CALLD PB, 1000
+    CALLD PTRA, 1000
+    CALLD PTRB, 1000
+
+.lutexec $
+lut_target:
+    JMP 0x200
+    JMP lut_target
+    JMP 0
+    JMP 0x3FF
+    JMP 0x400
+    JMP nrel(0x200)
+    CALL 0
+    CALLA 0
+    CALLB 0
+    CALLD PA, 0
+    CALLD PB, 0
+    CALLD PTRA, 0
+    CALLD PTRB, 0
+
+.hubexec 0x2000
+    JMP 0x2000
+    JMP 0x200
+    JMP nrel(0x2000)
+    CALL 0x2100
+    CALLA 0x2100
+    CALLB 0x2100
+
+// JINT's immediate S field counts instructions, while JMP's A field counts bytes.
+// Register S operands are unchanged.
+.cogexec 0x2100, 0x100
+event_cog:
+    JMP 0x100
+    JINT 0x100
+    JINT &event_cog
+    JINT PA
+
+.lutexec 0x2200, 0x280
+event_lut:
+    JMP 0x280
+    JINT 0x280
+    JINT &event_lut
+    JINT PA
+
+.hubexec 0x2300
+event_hub:
+    JMP 0x2300
+    JINT 0x2300
+    JINT &event_hub
+    JINT PA

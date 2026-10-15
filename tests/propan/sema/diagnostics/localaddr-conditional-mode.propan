@@ -1,0 +1,12 @@
+//? PROPAN CHECK LIST
+//? err: err_localaddr_is_only_valid_for_registers_in_a_cogexec_scope
+.if 0
+    .cogexec
+.endif
+.hubexec
+.if 0
+    .cogexec
+.endif
+.if localaddr(PA) == 502
+    LONG 1
+.endif

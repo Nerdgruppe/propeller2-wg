@@ -1,0 +1,65 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[observed] == 1
+//? run: "cog 0 event 10"
+//? cog: 0
+//? const: source = 10
+//? run: "cog 0 event 11"
+//? cog: 0
+//? const: source = 11
+//? run: "cog 0 event 12"
+//? cog: 0
+//? const: source = 12
+//? run: "cog 0 event 13"
+//? cog: 0
+//? const: source = 13
+//? run: "cog 7 event 10"
+//? cog: 7
+//? const: source = 10
+//? run: "cog 7 event 11"
+//? cog: 7
+//? const: source = 11
+//? run: "cog 7 event 12"
+//? cog: 7
+//? const: source = 12
+//? run: "cog 7 event 13"
+//? cog: 7
+//? const: source = 13
+
+                // Every streamer event can drive the ordinary interrupt controller.
+                STALLI
+                MOV     IJMP1,                                      vector
+                SETINT1 source
+                ALLOWI
+                SETXFRQ aug(0x08000000)
+.if source == 13
+                SETXFRQ 0
+                WRLUT   0,                                          aug(0x1ff)
+                XINIT   aug(X_IMM_4X8_LUT | (15 << 16) | 0xffff),   31
+.elif   source == 10
+                XINIT   aug(X_IMM_1X32_4DAC8 | 4),                  0
+                XCONT   aug(X_IMM_1X32_4DAC8 | 16),                 0
+.else
+                XINIT   aug(X_IMM_1X32_4DAC8 | 1),                  0
+.endif
+                WAITX   aug(400)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                STALLI
+                SETINT1 0
+                XSTOP
+                MODCZ   _CLR,                                       _CLR        :wcz
+                JMP     nrel(_end)
+isr:
+                ADD     observed,   1
+                // The streamer continues clocking during this interrupt handler.
+                WAITX   20
+                RETI1
+var vector:     LONG    pcaddr(isr)
+var observed:   LONG    0
+

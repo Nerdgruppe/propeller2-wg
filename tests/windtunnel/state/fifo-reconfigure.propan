@@ -1,0 +1,111 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 5000
+//? max-cycles: 2000000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0"
+//? cog: 0
+//? const: probe_cog = 0
+//? run: "cog1"
+//? cog: 1
+//? const: probe_cog = 1
+//? run: "cog2"
+//? cog: 2
+//? const: probe_cog = 2
+//? run: "cog3"
+//? cog: 3
+//? const: probe_cog = 3
+//? run: "cog4"
+//? cog: 4
+//? const: probe_cog = 4
+//? run: "cog5"
+//? cog: 5
+//? const: probe_cog = 5
+//? run: "cog6"
+//? cog: 6
+//? const: probe_cog = 6
+//? run: "cog7"
+//? cog: 7
+//? const: probe_cog = 7
+
+                // Change the upcoming descriptor while a nonblocking configuration is still waiting on prior writes.
+                MOV     old_address,    aug(hubaddr(old_payload))
+                MOV     first_address,  aug(hubaddr(first_payload))
+                MOV     next_address,   aug(hubaddr(next_payload))
+                MOV     bank,           0
+bank_loop:
+                MOV     phase,  0
+phase_loop:
+                WRFAST  0,          old_address
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      phase
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                WFLONG  old_value
+                RDFAST  no_wait,    first_address
+                FBLOCK  1,          next_address
+                WAITX   100
+                GETPTR  actual
+                CMP     actual,     first_address   :wz
+    if(!Z)      ADD     failures,   1
+                // Pending setup has not captured its descriptor until the previous write finishes.
+                MOV     expected,   bank
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                SUB     expected,   4
+                AND     expected,   7
+                CMP     expected,   2               :wcz
+                MOV     expected,   first_value
+    if(>)       MOV     expected,   next_value
+                MOV     count,      16
+first_loop:
+                RFLONG  loaded
+                CMP     loaded,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                DJNZ    count,      first_loop
+                MOV     count,      24
+next_loop:
+                RFLONG  loaded
+                CMP     loaded,         next_value  :wz
+    if(!Z)      ADD     failures,       1
+                DJNZ    count,          next_loop
+                RDLONG  loaded,         old_address
+                CMP     loaded,         old_value   :wz
+    if(!Z)      ADD     failures,       1
+                ADD     phase,          1
+                CMP     phase,          8           :wz
+    if(!Z)      JMP     phase_loop
+                ADD     old_address,    4
+                ADD     bank,           1
+                CMP     bank,           8           :wz
+    if(!Z)      JMP     bank_loop
+                JMP     nrel(_end)
+var old_address:
+                LONG    0
+var first_address:
+                LONG    0
+var next_address:
+                LONG    0
+var bank:       LONG    0
+var phase:      LONG    0
+var timer:      LONG    0
+var count:      LONG    0
+var loaded:     LONG    0
+var start:      LONG    0
+var expected:   LONG    0
+var actual:     LONG    0
+var failures:   LONG    0
+var no_wait:    LONG    0x80000001
+var old_value:  LONG    0x34343434
+var first_value:
+                LONG    0x12121212
+var next_value: LONG    0x56565656
+.data
+.align  32
+old_payload:    LONG    [0] * 32
+first_payload:  LONG    [0x12121212] * 16
+padding:        LONG    [0] * 32
+next_payload:   LONG    [0x56565656] * 16
+

@@ -1,0 +1,126 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[out_x0] == 1
+//? post: cog[0].reg[out_y0] == 1073741824
+//? post: cog[0].reg[out_rx0] == 4294967295
+//? post: cog[0].reg[out_ry0] == 1
+//? post: cog[0].reg[out_x1] == 1
+//? post: cog[0].reg[out_y1] == 0
+//? post: cog[0].reg[out_rx1] == 1
+//? post: cog[0].reg[out_ry1] == 1
+//? post: cog[0].reg[out_x2] == 2484201813
+//? post: cog[0].reg[out_y2] == 955833449
+//? post: cog[0].reg[out_rx2] == 1267749345
+//? post: cog[0].reg[out_ry2] == 4051403124
+//? post: cog[0].reg[out_x3] == 3037000499
+//? post: cog[0].reg[out_y3] == 3758096384
+//? post: cog[0].reg[out_rx3] == 3027217951
+//? post: cog[0].reg[out_ry3] == 243564171
+//? post: cog[0].reg[out_x4] == 2484201813
+//? post: cog[0].reg[out_y4] == 3339133846
+//? post: cog[0].reg[out_rx4] == 243564171
+//? post: cog[0].reg[out_ry4] == 1267749345
+//? post: cog[0].reg[out_x5] == 3037000499
+//? post: cog[0].reg[out_y5] == 1610612736
+//? post: cog[0].reg[out_rx5] == 243564172
+//? post: cog[0].reg[out_ry5] == 1267749345
+//? post: cog[0].reg[out_x6] == 0
+//? post: cog[0].reg[out_y6] == 0
+//? post: cog[0].reg[out_rx6] == 0
+//? post: cog[0].reg[out_ry6] == 0
+//? post: cog[0].reg[out_x7] == 0
+//? post: cog[0].reg[out_y7] == 0
+//? post: cog[0].reg[out_rx7] == 0
+//? post: cog[0].reg[out_ry7] == 0
+
+                // Hardware measurements of the signed-minimum coordinate normalization/negation erratum.
+                // The minimum value can disappear during normalization or survive with a wrapping negation.
+                QVECTOR aug(2147483648),    aug(1)
+                GETQX   out_x0
+                GETQY   out_y0
+                SETQ    aug(1)
+                QROTATE aug(2147483648),    aug(0x23456789)
+                GETQX   out_rx0
+                GETQY   out_ry0
+                QVECTOR aug(1),             aug(2147483648)
+                GETQX   out_x1
+                GETQY   out_y1
+                SETQ    aug(2147483648)
+                QROTATE aug(1),             aug(0x23456789)
+                GETQX   out_rx1
+                GETQY   out_ry1
+                QVECTOR aug(2147483648),    aug(2147483647)
+                GETQX   out_x2
+                GETQY   out_y2
+                SETQ    aug(2147483647)
+                QROTATE aug(2147483648),    aug(0x23456789)
+                GETQX   out_rx2
+                GETQY   out_ry2
+                QVECTOR aug(2147483647),    aug(2147483648)
+                GETQX   out_x3
+                GETQY   out_y3
+                SETQ    aug(2147483648)
+                QROTATE aug(2147483647),    aug(0x23456789)
+                GETQX   out_rx3
+                GETQY   out_ry3
+                QVECTOR aug(2147483648),    aug(2147483649)
+                GETQX   out_x4
+                GETQY   out_y4
+                SETQ    aug(2147483649)
+                QROTATE aug(2147483648),    aug(0x23456789)
+                GETQX   out_rx4
+                GETQY   out_ry4
+                QVECTOR aug(2147483649),    aug(2147483648)
+                GETQX   out_x5
+                GETQY   out_y5
+                SETQ    aug(2147483648)
+                QROTATE aug(2147483649),    aug(0x23456789)
+                GETQX   out_rx5
+                GETQY   out_ry5
+                QVECTOR aug(0),             aug(2147483648)
+                GETQX   out_x6
+                GETQY   out_y6
+                SETQ    aug(2147483648)
+                QROTATE aug(0),             aug(0x23456789)
+                GETQX   out_rx6
+                GETQY   out_ry6
+                QVECTOR aug(2147483648),    aug(0)
+                GETQX   out_x7
+                GETQY   out_y7
+                SETQ    aug(0)
+                QROTATE aug(2147483648),    aug(0x23456789)
+                GETQX   out_rx7
+                GETQY   out_ry7
+                JMP     nrel(_end)
+var out_x0:     LONG    0
+var out_y0:     LONG    0
+var out_rx0:    LONG    0
+var out_ry0:    LONG    0
+var out_x1:     LONG    0
+var out_y1:     LONG    0
+var out_rx1:    LONG    0
+var out_ry1:    LONG    0
+var out_x2:     LONG    0
+var out_y2:     LONG    0
+var out_rx2:    LONG    0
+var out_ry2:    LONG    0
+var out_x3:     LONG    0
+var out_y3:     LONG    0
+var out_rx3:    LONG    0
+var out_ry3:    LONG    0
+var out_x4:     LONG    0
+var out_y4:     LONG    0
+var out_rx4:    LONG    0
+var out_ry4:    LONG    0
+var out_x5:     LONG    0
+var out_y5:     LONG    0
+var out_rx5:    LONG    0
+var out_ry5:    LONG    0
+var out_x6:     LONG    0
+var out_y6:     LONG    0
+var out_rx6:    LONG    0
+var out_ry6:    LONG    0
+var out_x7:     LONG    0
+var out_y7:     LONG    0
+var out_rx7:    LONG    0
+var out_ry7:    LONG    0
+

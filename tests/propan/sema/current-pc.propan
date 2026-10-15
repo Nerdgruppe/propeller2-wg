@@ -1,0 +1,27 @@
+//? PROPAN CHECK LIST
+//? mem: 0x40 <- u32 [0, 1, 0, 0, 0, 5]
+//? mem: 0x58 <- u32 [0xFF000000, 0xF607EC06]
+//? mem: 0x80 <- u32 [0x200, 0x201]
+//? mem: 0x100 <- u32 [0x100, 0x101]
+//? mem: 0x180 <- u32 [0x180, 0x181]
+
+.cogexec 0x40
+.assert $ == 0
+LONG $, $ + 1
+.org $ + 3
+.assert $ == 5
+LONG $
+MOV PA, aug($)
+.assert $ == 8
+
+.lutexec 0x80
+.assert $ == 0x200
+LONG $, $ + 1
+
+.hubexec 0x100
+.assert $ == 0x100
+LONG $, $ + 1
+
+.data 0x180
+.assert $ == 0x180
+LONG $, $ + 1

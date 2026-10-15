@@ -1,0 +1,71 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[touched] == 42
+//? post: cog[0].reg[hole] == 0
+//? post: cog[0].reg[ignored_write] == 99
+//? post: cog[0].reg[mirror_ok] == 1
+//? run: "physical boundary"
+//? const: entry_pc = 0x7fffc
+//? post: cog[0].reg[result] == 0
+//? run: "20-bit boundary"
+//? const: entry_pc = 0xffffc
+//? post: cog[0].reg[result] == 7
+
+// Distinguish the physical RAM boundary from the full 20-bit hub-execution wrap.
+// The RAM hole executes zero words; a rescue cog restarts the DUT instead of expecting an automatic switch to cogexec.
+
+                // The upper unmapped region must neither alias nor modify physical hub address zero.
+                WRLONG  99,             0
+                RDLONG  hole,           aug(0x80000)
+                WRLONG  42,             aug(0x80000)
+                RDLONG  ignored_write,  0
+                MOV     register(0),    aug(0xfd800000 | pcaddr(done))
+                MOV     PTRA,           aug(hubaddr(template))
+                RDLONG  instruction,    PTRA++
+                WRLONG  instruction,    aug(0x7fffc)
+                RDLONG  mirror,         aug(0xffffc)
+                CMP     mirror,         instruction                     :wz
+    if(Z)       MOV     mirror_ok,      1
+                RDLONG  instruction,    PTRA++
+                WRLONG  instruction,    0
+                RDLONG  instruction,    PTRA++
+                WRLONG  instruction,    4
+.if entry_pc == 0x7fffc
+                // Physical-end fall-through stays in the RAM hole, so another cog supplies the exit.
+                SETQ    cogaddr(recovered)
+                COGINIT 1,              aug(hubaddr(rescue))
+.endif
+                JMP     entry_address
+done:
+                MOV     result, 9
+                WAITX   aug(4096)
+                JMP     nrel(_end)
+recovered:
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+var instruction:
+                LONG    0
+var entry_address:
+                LONG    entry_pc
+var result:     LONG    0
+var touched:    LONG    0
+var hole:       LONG    0
+var ignored_write:
+                LONG    0
+var mirror:     LONG    0
+var mirror_ok:  LONG    0
+.cogexec    0x4000, 0
+rescue:
+                WAITX   aug(2048)
+                COGINIT 0x20,   PTRA
+                COGSTOP 1
+                // Pad the startup image to the complete 504-long cog load.
+                LONG    [0] * 500
+.hubexec    0x6000
+// This code is copied to the boundary and hub zero, rather than executed at its assembled location.
+template:
+                MOV     touched,    42
+                MOV     result,     7
+                JMP     nrel(_end)
+.data
+

@@ -1,0 +1,20 @@
+//? PROPAN CHECK LIST
+//? mem: 0 <- u32 [ 0x1EF, 0x3FF, 0x404 ]
+
+cog_zero:
+.assert pcaddr(cog_zero) == 0
+const lut_pc = pcaddr(lut_label)
+LONG pcaddr(cog_label), lut_pc, pcaddr(hub_label)
+.cogexec $, 0x1EF
+cog_label:
+.assert pcaddr(cog_label) == localaddr(cog_label)
+.lutexec $, 0x3FF
+lut_label:
+.assert pcaddr(addr=lut_label) == 0x3FF
+.lutexec $
+lut_zero:
+.assert pcaddr(lut_zero) == 0x200
+.assert localaddr(lut_label) == 0x1FF
+.hubexec 0x404
+hub_label:
+.assert pcaddr(hub_label) == 0x404

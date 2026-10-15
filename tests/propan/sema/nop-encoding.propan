@@ -1,0 +1,14 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [
+//?     0, 0xF0000000, 0xC0000000, 0xF0000001, 0xF0000200,
+//?     0xF0080000, 0xF0100000, 0xF0180000, 0
+//? ]
+NOP
+ROR register(0), register(0)
+if(C) ROR register(0), register(0)
+ROR register(0), register(1)
+ROR register(1), register(0)
+ROR register(0), register(0) :wz
+ROR register(0), register(0) :wc
+ROR register(0), register(0) :wcz
+return ROR register(0), register(0)

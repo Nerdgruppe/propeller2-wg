@@ -1,0 +1,128 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 10000
+//? max-cycles: 10000000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-modes0-63"
+//? cog: 0
+//? const: first_mode = 0
+//? post: cog[*].reg[digest] == 399201617
+//? run: "cog1-modes64-127"
+//? cog: 1
+//? const: first_mode = 64
+//? post: cog[*].reg[digest] == 1387079512
+//? run: "cog2-modes128-191"
+//? cog: 2
+//? const: first_mode = 128
+//? post: cog[*].reg[digest] == 1791361469
+//? run: "cog3-modes192-255"
+//? cog: 3
+//? const: first_mode = 192
+//? post: cog[*].reg[digest] == 2551307265
+//? run: "cog4-modes256-319"
+//? cog: 4
+//? const: first_mode = 256
+//? post: cog[*].reg[digest] == 2791802819
+//? run: "cog5-modes320-383"
+//? cog: 5
+//? const: first_mode = 320
+//? post: cog[*].reg[digest] == 2358945971
+//? run: "cog6-modes384-447"
+//? cog: 6
+//? const: first_mode = 384
+//? post: cog[*].reg[digest] == 2071484277
+//? run: "cog7-modes448-511"
+//? cog: 7
+//? const: first_mode = 448
+//? post: cog[*].reg[digest] == 3699343965
+
+                // Tag all 512 LUT entries with their address above thirteen initially clear skip bits.
+                MOV     index,  0
+fill:
+                MOV     entry,      index
+                SHL     entry,      23
+                OR      entry,      nrel(handler)
+                WRLUT   entry,      index
+                ADD     index,      1
+                CMP     index,      aug(512)        :wz
+    if(!Z)      JMP     fill
+                MOV     mode_value, first_mode
+                MOV     modes_left, 64
+                PUSH    0x1ff
+next_mode:
+                RDFAST  0,                  aug(hubaddr(bytecodes))
+                MOV     expected_byte,      0
+                MOV     expected_pointer,   aug(hubaddr(bytecodes) + 1)
+                MOV     flags,              0
+                MODCZ   _CLR,               _CLR                        :wcz
+    return      SETQ    mode_value
+handler:
+                // Capture C/Z before GETBRK WZ changes Z; its fourth instruction sees address << 9.
+                MOV     observed_byte,      PA
+                MUXC    flags,              1
+                MUXZ    flags,              2
+                GETBRK  entry                                   :wz
+                SKIPF   0
+                SHR     entry,              9
+                MOV     temporary,          flags
+                SHL     temporary,          9
+                OR      entry,              temporary
+                ROL     digest,             7
+                ADD     digest,             entry
+                MOV     temporary,          digest
+                SHR     temporary,          13
+                XOR     digest,             temporary
+                // PA, PB and GETBRK mode must describe this dispatch for every byte.
+                CMP     observed_byte,      expected_byte       :wz
+    if(!Z)      ADD     failures,           1
+                CMP     PB,                 expected_pointer    :wz
+    if(!Z)      ADD     failures,           1
+                GETBRK  status                                  :wc
+                SHR     status,             16
+                AND     status,             511
+                CMP     status,             mode_value          :wz
+    if(!Z)      ADD     failures,           1
+                ADD     expected_pointer,   1
+                ADD     expected_byte,      1
+                CMP     expected_byte,      aug(256)            :wz
+    if(Z)       JMP     finish_mode
+                MOV     flags,              0
+    return      MODCZ   _CLR,               _CLR                :wcz
+finish_mode:
+                ADD     mode_value, 1
+                DJNZ    modes_left, next_mode
+                POP     discarded
+                JMP     nrel(_end)
+var index:      LONG    0
+var entry:      LONG    0
+var mode_value: LONG    0
+var modes_left: LONG    0
+var flags:      LONG    0
+var observed_byte:
+                LONG    0
+var expected_byte:
+                LONG    0
+var expected_pointer:
+                LONG    0
+var temporary:  LONG    0
+var status:     LONG    0
+var digest:     LONG    0
+var failures:   LONG    0
+var discarded:  LONG    0
+.hubexec    0x4000
+bytecodes:      BYTE    0,      1,      2,      3,      4,      5,      6,      7,      8,      9,      10,     11,     12,     13,     14,     15
+                BYTE    16,     17,     18,     19,     20,     21,     22,     23,     24,     25,     26,     27,     28,     29,     30,     31
+                BYTE    32,     33,     34,     35,     36,     37,     38,     39,     40,     41,     42,     43,     44,     45,     46,     47
+                BYTE    48,     49,     50,     51,     52,     53,     54,     55,     56,     57,     58,     59,     60,     61,     62,     63
+                BYTE    64,     65,     66,     67,     68,     69,     70,     71,     72,     73,     74,     75,     76,     77,     78,     79
+                BYTE    80,     81,     82,     83,     84,     85,     86,     87,     88,     89,     90,     91,     92,     93,     94,     95
+                BYTE    96,     97,     98,     99,     100,    101,    102,    103,    104,    105,    106,    107,    108,    109,    110,    111
+                BYTE    112,    113,    114,    115,    116,    117,    118,    119,    120,    121,    122,    123,    124,    125,    126,    127
+                BYTE    128,    129,    130,    131,    132,    133,    134,    135,    136,    137,    138,    139,    140,    141,    142,    143
+                BYTE    144,    145,    146,    147,    148,    149,    150,    151,    152,    153,    154,    155,    156,    157,    158,    159
+                BYTE    160,    161,    162,    163,    164,    165,    166,    167,    168,    169,    170,    171,    172,    173,    174,    175
+                BYTE    176,    177,    178,    179,    180,    181,    182,    183,    184,    185,    186,    187,    188,    189,    190,    191
+                BYTE    192,    193,    194,    195,    196,    197,    198,    199,    200,    201,    202,    203,    204,    205,    206,    207
+                BYTE    208,    209,    210,    211,    212,    213,    214,    215,    216,    217,    218,    219,    220,    221,    222,    223
+                BYTE    224,    225,    226,    227,    228,    229,    230,    231,    232,    233,    234,    235,    236,    237,    238,    239
+                BYTE    240,    241,    242,    243,    244,    245,    246,    247,    248,    249,    250,    251,    252,    253,    254,    255
+

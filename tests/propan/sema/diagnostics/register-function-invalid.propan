@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? err: err_expression_evaluation_failed line 5 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 6 context==expression reason==overflow
+//? err: err_expression_evaluation_failed line 7 context==expression reason==type_mismatch
+LONG register(-1)
+LONG register(512)
+LONG register("0")

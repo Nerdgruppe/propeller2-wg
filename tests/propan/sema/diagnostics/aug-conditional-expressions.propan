@@ -1,0 +1,10 @@
+//? PROPAN CHECK LIST
+//? err: err_augmentation_requires_instruction_operand
+//? err: err_augmentation_requires_instruction_operand
+.if aug(1)
+    LONG 1
+.endif
+const big = aug(0x12345678)
+.if big
+    MOV PA, big
+.endif

@@ -1,0 +1,3 @@
+.assert '\x41' == 65
+.assert '\xFF' == 255
+.assert '\x41' + '\x42' == 131

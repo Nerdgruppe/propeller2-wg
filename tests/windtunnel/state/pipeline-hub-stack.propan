@@ -1,0 +1,112 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "0"
+//? cog: 0
+//? const: probe_cog = 0
+//? run: "1"
+//? cog: 1
+//? const: probe_cog = 1
+//? run: "2"
+//? cog: 2
+//? const: probe_cog = 2
+//? run: "3"
+//? cog: 3
+//? const: probe_cog = 3
+//? run: "4"
+//? cog: 4
+//? const: probe_cog = 4
+//? run: "5"
+//? cog: 5
+//? const: probe_cog = 5
+//? run: "6"
+//? cog: 6
+//? const: probe_cog = 6
+//? run: "7"
+//? cog: 7
+//? const: probe_cog = 7
+
+// Measure CALLA/RETA hub-stack access and local branch refill together.
+// Restore PTRA before each sample and check it afterward, so timing and stack balance are both verified.
+// CALLA/RETA raw deltas use bases 7/13 plus crossing and (bank + 4 - start_CT - cog) & 7.
+// The target measures the push/branch edge before separately timing the return read and refill.
+
+                MOV     address,    aug(hubaddr(stack_space))
+                MOV     bank,       0
+bank_loop:
+                MOV     alignment,  0
+alignment_loop:
+                MOV     crossing,   0
+                CMP     alignment,  0   :wz
+    if(!Z)      MOV     crossing,   1
+                MOV     offset,     0
+phase_loop:
+                MOV     PTRA,       address
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                CALLA   call_target
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   bank
+                ADD     expected,   4
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   13
+                ADD     expected,   crossing
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                CMP     PTRA,       address     :wz
+    if(!Z)      ADD     failures,   1
+                ADD     offset,     1
+                CMP     offset,     8           :wz
+    if(!Z)      JMP     phase_loop
+                ADD     address,    1
+                ADD     alignment,  1
+                CMP     alignment,  4           :wz
+    if(!Z)      JMP     alignment_loop
+                ADD     bank,       1
+                CMP     bank,       8           :wz
+    if(!Z)      JMP     bank_loop
+                JMP     nrel(_end)
+call_target:
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+                MOV     expected,   bank
+                ADD     expected,   4
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                AND     expected,   7
+                ADD     expected,   7
+                ADD     expected,   crossing
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      offset
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                RETA
+var address:    LONG    0
+var bank:       LONG    0
+var alignment:  LONG    0
+var crossing:   LONG    0
+var offset:     LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var timer:      LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+.data
+.align  32
+stack_space:    LONG    [0] * 9
+

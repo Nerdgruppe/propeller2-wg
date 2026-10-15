@@ -32,5 +32,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-zig-pkg-
 
-      - name: Build and Test
-        run: zig build -Dwith-flexspin install test
+      - name: Build
+        run: zig build -Dno-gui -Dwith-flexspin install
+        
+      - name: Test
+        run: zig build -Dno-gui -Dwith-flexspin install test -Doptimize=ReleaseSafe

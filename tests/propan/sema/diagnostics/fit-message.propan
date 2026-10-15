@@ -1,0 +1,3 @@
+.cogexec
+NOP
+.fit 0, "code exceeds size"

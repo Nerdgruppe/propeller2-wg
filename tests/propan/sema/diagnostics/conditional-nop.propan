@@ -1,0 +1,18 @@
+//? PROPAN CHECK LIST
+//? err: err_nop_cannot_have_condition line 8
+//? err: err_nop_cannot_have_condition line 9
+//? err: err_nop_cannot_have_condition line 10
+//? err: err_nop_cannot_have_condition line 11
+//? err: err_nop_cannot_have_condition line 12
+
+if(C) NOP
+if(!Z) nop
+if(C | !Z) NoP
+return NOP
+if(C == Z) NOP
+
+// Inactive source is still skipped by conditional compilation.
+.if 0
+    if(C) NOP
+.endif
+NOP

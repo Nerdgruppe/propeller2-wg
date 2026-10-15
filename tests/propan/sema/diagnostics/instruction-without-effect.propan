@@ -1,0 +1,35 @@
+//? PROPAN CHECK LIST
+//? err: warn_instruction_without_effect line 14
+//? err: warn_instruction_without_effect line 15
+//? err: warn_instruction_without_effect line 16
+//? err: warn_instruction_without_effect line 17
+//? err: warn_instruction_without_effect line 18
+//? err: warn_instruction_without_effect line 19
+//? err: warn_instruction_without_effect line 20
+//? err: warn_instruction_without_effect line 21
+//? err: warn_instruction_without_effect line 22
+//? err: warn_instruction_without_effect line 23
+//? err: warn_instruction_without_effect line 24
+//? err: warn_instruction_without_effect line 25
+CMP PA, 0
+CMPX PA, 0
+CMPS PA, 0
+CMPSX PA, 0
+CMPR PA, 0
+CMPM PA, 0
+TEST PA, 0
+TEST PA
+TESTN PA, 0
+MODC #SET
+MODZ #CLR
+MODCZ #SET, #CLR
+CMP PA, 0 :wc
+TEST PA, 0 :wz
+TEST PA :wcz
+TESTN PA, 0 :wcz
+MODC #SET :wc
+MODZ #CLR :wz
+MODCZ #SET, #CLR :wcz
+// CMPSUB modifies D even without an effect.
+CMPSUB PA, 0
+MOV PA, 0

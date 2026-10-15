@@ -1,0 +1,30 @@
+//? PROPAN CHECK LIST
+//? sym: first data:-:0
+//? sym: second data:-:2
+//? sym: second:tail data:-:3
+//? sym: cog data:-:1
+//? sym: after data:-:3
+//? seg: 0 0 regspace
+//? seg: 0x100 4 cogexec
+//? seg: 0x200 4 hubexec
+//? mem: 0x100 <- hex [00 00 00 00]
+
+.regspace
+var first:      RES     2
+var second:     RES     1
+var .tail:      RES     1
+.assert localaddr(.tail) == 3
+.fit    4
+
+.cogexec    0x100
+                NOP
+                RES     0
+var cog:        RES     2
+var after:      RES     1
+.assert cogaddr(cog) == 1
+.assert cogaddr(after) == 3
+.fit    4
+
+.hubexec    0x200
+                MOV     first,  second
+

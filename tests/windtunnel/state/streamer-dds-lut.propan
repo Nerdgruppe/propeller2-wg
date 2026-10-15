@@ -1,0 +1,478 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "dds-lut 0"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1000
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffc00
+//? post: cog[0].reg[y] == 0xfffffc10
+//? post: cog[0].reg[again] == 0xfffffc00
+//? post: cog[0].reg[qval] == 0xfffffc10
+//? run: "dds-lut 1"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1001
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffc1f
+//? post: cog[0].reg[y] == 0xfffffc2f
+//? post: cog[0].reg[again] == 0xfffffc1f
+//? post: cog[0].reg[qval] == 0xfffffc2f
+//? run: "dds-lut 2"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1003
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffc5d
+//? post: cog[0].reg[y] == 0xfffffc6d
+//? post: cog[0].reg[again] == 0xfffffc5d
+//? post: cog[0].reg[qval] == 0xfffffc6d
+//? run: "dds-lut 3"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1055
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffe4b
+//? post: cog[0].reg[y] == 0xfffffe5b
+//? post: cog[0].reg[again] == 0xfffffe4b
+//? post: cog[0].reg[qval] == 0xfffffe5b
+//? run: "dds-lut 4"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x11ff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x3e1
+//? post: cog[0].reg[y] == 0xfffffff0
+//? post: cog[0].reg[again] == 0x3e1
+//? post: cog[0].reg[qval] == 0xfffffff0
+//? run: "dds-lut 5"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1200
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffe00
+//? post: cog[0].reg[y] == 0xfffffe00
+//? post: cog[0].reg[again] == 0xfffffe00
+//? post: cog[0].reg[qval] == 0xfffffe00
+//? run: "dds-lut 6"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1201
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffe1f
+//? post: cog[0].reg[y] == 0xfffffe1f
+//? post: cog[0].reg[again] == 0xfffffe1f
+//? post: cog[0].reg[qval] == 0xfffffe1f
+//? run: "dds-lut 7"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1203
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffe5d
+//? post: cog[0].reg[y] == 0xfffffe5d
+//? post: cog[0].reg[again] == 0xfffffe5d
+//? post: cog[0].reg[qval] == 0xfffffe5d
+//? run: "dds-lut 8"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1255
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x4b
+//? post: cog[0].reg[y] == 0x4b
+//? post: cog[0].reg[again] == 0x4b
+//? post: cog[0].reg[qval] == 0x4b
+//? run: "dds-lut 9"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x13ff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x1e1
+//? post: cog[0].reg[y] == 0xfffffe00
+//? post: cog[0].reg[again] == 0x1e1
+//? post: cog[0].reg[qval] == 0xfffffe00
+//? run: "dds-lut 10"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1400
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x700
+//? post: cog[0].reg[y] == 0x700
+//? post: cog[0].reg[again] == 0x700
+//? post: cog[0].reg[qval] == 0x700
+//? run: "dds-lut 11"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1401
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x71f
+//? post: cog[0].reg[y] == 0x71f
+//? post: cog[0].reg[again] == 0x71f
+//? post: cog[0].reg[qval] == 0x71f
+//? run: "dds-lut 12"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1403
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x75d
+//? post: cog[0].reg[y] == 0x75d
+//? post: cog[0].reg[again] == 0x75d
+//? post: cog[0].reg[qval] == 0x75d
+//? run: "dds-lut 13"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1455
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x74b
+//? post: cog[0].reg[y] == 0x74b
+//? post: cog[0].reg[again] == 0x74b
+//? post: cog[0].reg[qval] == 0x74b
+//? run: "dds-lut 14"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x15ff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffff8e1
+//? post: cog[0].reg[y] == 0xfffff900
+//? post: cog[0].reg[again] == 0xfffff8e1
+//? post: cog[0].reg[qval] == 0xfffff900
+//? run: "dds-lut 15"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1600
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x380
+//? post: cog[0].reg[y] == 0x380
+//? post: cog[0].reg[again] == 0x380
+//? post: cog[0].reg[qval] == 0x380
+//? run: "dds-lut 16"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1601
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x39f
+//? post: cog[0].reg[y] == 0x39f
+//? post: cog[0].reg[again] == 0x39f
+//? post: cog[0].reg[qval] == 0x39f
+//? run: "dds-lut 17"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1603
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x3dd
+//? post: cog[0].reg[y] == 0x3dd
+//? post: cog[0].reg[again] == 0x3dd
+//? post: cog[0].reg[qval] == 0x3dd
+//? run: "dds-lut 18"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1655
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xbcb
+//? post: cog[0].reg[y] == 0xbcb
+//? post: cog[0].reg[again] == 0xbcb
+//? post: cog[0].reg[qval] == 0xbcb
+//? run: "dds-lut 19"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x17ff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffc61
+//? post: cog[0].reg[y] == 0xfffffc80
+//? post: cog[0].reg[again] == 0xfffffc61
+//? post: cog[0].reg[qval] == 0xfffffc80
+//? run: "dds-lut 20"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1800
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x1c0
+//? post: cog[0].reg[y] == 0x1c0
+//? post: cog[0].reg[again] == 0x1c0
+//? post: cog[0].reg[qval] == 0x1c0
+//? run: "dds-lut 21"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1801
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x1df
+//? post: cog[0].reg[y] == 0x1df
+//? post: cog[0].reg[again] == 0x1df
+//? post: cog[0].reg[qval] == 0x1df
+//? run: "dds-lut 22"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1803
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x21d
+//? post: cog[0].reg[y] == 0x21d
+//? post: cog[0].reg[again] == 0x21d
+//? post: cog[0].reg[qval] == 0x21d
+//? run: "dds-lut 23"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1855
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x98b
+//? post: cog[0].reg[y] == 0x98b
+//? post: cog[0].reg[again] == 0x98b
+//? post: cog[0].reg[qval] == 0x98b
+//? run: "dds-lut 24"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x19ff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfffffe21
+//? post: cog[0].reg[y] == 0xfffffe40
+//? post: cog[0].reg[again] == 0xfffffe21
+//? post: cog[0].reg[qval] == 0xfffffe40
+//? run: "dds-lut 25"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1a00
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xe0
+//? post: cog[0].reg[y] == 0xe0
+//? post: cog[0].reg[again] == 0xe0
+//? post: cog[0].reg[qval] == 0xe0
+//? run: "dds-lut 26"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1a01
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xff
+//? post: cog[0].reg[y] == 0xff
+//? post: cog[0].reg[again] == 0xff
+//? post: cog[0].reg[qval] == 0xff
+//? run: "dds-lut 27"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1a03
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xfd
+//? post: cog[0].reg[y] == 0xfd
+//? post: cog[0].reg[again] == 0xfd
+//? post: cog[0].reg[qval] == 0xfd
+//? run: "dds-lut 28"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1a55
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xaab
+//? post: cog[0].reg[y] == 0xaab
+//? post: cog[0].reg[again] == 0xaab
+//? post: cog[0].reg[qval] == 0xaab
+//? run: "dds-lut 29"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1bff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xffffff01
+//? post: cog[0].reg[y] == 0xffffff20
+//? post: cog[0].reg[again] == 0xffffff01
+//? post: cog[0].reg[qval] == 0xffffff20
+//? run: "dds-lut 30"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1c00
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x70
+//? post: cog[0].reg[y] == 0x70
+//? post: cog[0].reg[again] == 0x70
+//? post: cog[0].reg[qval] == 0x70
+//? run: "dds-lut 31"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1c01
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x6f
+//? post: cog[0].reg[y] == 0x6f
+//? post: cog[0].reg[again] == 0x6f
+//? post: cog[0].reg[qval] == 0x6f
+//? run: "dds-lut 32"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1c03
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x6d
+//? post: cog[0].reg[y] == 0x6d
+//? post: cog[0].reg[again] == 0x6d
+//? post: cog[0].reg[qval] == 0x6d
+//? run: "dds-lut 33"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1c55
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xa1b
+//? post: cog[0].reg[y] == 0xa1b
+//? post: cog[0].reg[again] == 0xa1b
+//? post: cog[0].reg[qval] == 0xa1b
+//? run: "dds-lut 34"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1dff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xffffff71
+//? post: cog[0].reg[y] == 0xffffff90
+//? post: cog[0].reg[again] == 0xffffff71
+//? post: cog[0].reg[qval] == 0xffffff90
+//? run: "dds-lut 35"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1e00
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x30
+//? post: cog[0].reg[y] == 0x30
+//? post: cog[0].reg[again] == 0x30
+//? post: cog[0].reg[qval] == 0x30
+//? run: "dds-lut 36"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1e01
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x2f
+//? post: cog[0].reg[y] == 0x2f
+//? post: cog[0].reg[again] == 0x2f
+//? post: cog[0].reg[qval] == 0x2f
+//? run: "dds-lut 37"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1e03
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0x2d
+//? post: cog[0].reg[y] == 0x2d
+//? post: cog[0].reg[again] == 0x2d
+//? post: cog[0].reg[qval] == 0x2d
+//? run: "dds-lut 38"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1e55
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xa5b
+//? post: cog[0].reg[y] == 0xa5b
+//? post: cog[0].reg[again] == 0xa5b
+//? post: cog[0].reg[qval] == 0xa5b
+//? run: "dds-lut 39"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1fff
+//? const: lut = 0x0
+//? const: increment = 0x1010000
+//? const: pins = 0xf
+//? post: cog[0].reg[x] == 0xffffffb1
+//? post: cog[0].reg[y] == 0xffffffd0
+//? post: cog[0].reg[again] == 0xffffffb1
+//? post: cog[0].reg[qval] == 0xffffffd0
+
+                // Drive known digital input bits; no electrical ADC model participates in these vectors.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                MOV     OUTA,   aug(pins)
+                DIRH    aug(0 | (3 << 6))
+                WAITX   20
+                // Fill the whole LUT so phase, table base, offset and signed byte overflow are observable.
+                MOV     index,  0
+                MOV     value,  aug(lut)
+fill_table:
+                WRLUT   value,          index
+                ADD     value,          aug(increment)
+                ADD     index,          1
+                CMP     index,          aug(512)        :wz
+    if(!Z)      JMP     fill_table
+                // A fresh finite command freezes its final integration state when it ends.
+                SETQ    aug(frequency)
+                XINIT   aug(control),   aug(config)
+                WAITXFI
+                GETXACC x
+                MOV     y,              0
+                GETXACC again
+                MOV     qval,           0
+                // Restore the oracle's terminal clock before returning its register snapshot.
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                MOV     DIRA,           0
+                JMP     nrel(_end)
+var index:      LONG    0
+var value:      LONG    0
+var x:          LONG    0
+var y:          LONG    0
+var again:      LONG    0
+var qval:       LONG    0
+

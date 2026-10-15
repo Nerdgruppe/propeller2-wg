@@ -1,0 +1,99 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[priority_log] == 0x123
+//? post: cog[*].reg[nesting_log] == 0x32145
+//? post: cog[*].reg[pending_status] == 0xaa
+//? post: cog[*].reg[nested_status] == 0xfc
+//? post: cog[*].reg[done_status] == 0
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0"
+//? cog: 0
+//? run: "cog3"
+//? cog: 3
+//? run: "cog7"
+//? cog: 7
+
+                // Queue all priorities under the entry mask, then drain in priority order.
+                MOV     IJMP1,          vector1
+                MOV     IJMP2,          vector2
+                MOV     IJMP3,          vector3
+                STALLI
+                TRGINT3
+                TRGINT2
+                TRGINT1
+                GETBRK  pending_status          :wcz
+                ALLOWI
+                WAITX   64
+                NOP
+                NOP
+                NOP
+                MOV     priority_log,   log
+                MOV     log,            0
+                // Now build a three-deep chain. Each return must release only its own level.
+                MOV     nested,         1
+                TRGINT3
+                WAITX   64
+                NOP
+                NOP
+                NOP
+                MOV     nesting_log,    log
+                GETBRK  done_status             :wcz
+                STALLI
+                POLLINT                         :wc
+    if(!C)      ADD     failures,       1
+                POLLINT                         :wc
+    if(C)       ADD     failures,       1
+                SETQ    0
+                MODCZ   _CLR,           _CLR    :wcz
+                JMP     nrel(_end)
+isr1:
+                SHL     log,    4
+                OR      log,    1
+                // Repeated triggers at an active level must not schedule another entry.
+                TRGINT1
+                CMP     nested, 1       :wz
+    if(Z)       GETBRK  nested_status   :wcz
+                RETI1
+isr2:
+                SHL     log,    4
+                OR      log,    2
+                CMP     nested, 1   :wz
+    if(!Z)      JMP     return2
+                TRGINT1
+                WAITX   32
+                NOP
+                NOP
+                SHL     log,    4
+                OR      log,    4
+return2:
+                RETI2
+isr3:
+                SHL     log,    4
+                OR      log,    3
+                CMP     nested, 1   :wz
+    if(!Z)      JMP     return3
+                TRGINT2
+                WAITX   32
+                NOP
+                NOP
+                SHL     log,    4
+                OR      log,    5
+return3:
+                RETI3
+var vector1:    LONG    pcaddr(isr1)
+var vector2:    LONG    pcaddr(isr2)
+var vector3:    LONG    pcaddr(isr3)
+var log:        LONG    0
+var nested:     LONG    0
+var priority_log:
+                LONG    0
+var nesting_log:
+                LONG    0
+var pending_status:
+                LONG    0
+var nested_status:
+                LONG    0
+var done_status:
+                LONG    0
+var failures:   LONG    0
+

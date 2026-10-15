@@ -1,0 +1,186 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "int1-cog0"
+//? cog: 0
+//? const: irq_level = 1
+//? const: probe_cog = 0
+//? run: "int1-cog3"
+//? cog: 3
+//? const: irq_level = 1
+//? const: probe_cog = 3
+//? run: "int1-cog7"
+//? cog: 7
+//? const: irq_level = 1
+//? const: probe_cog = 7
+//? run: "int2-cog0"
+//? cog: 0
+//? const: irq_level = 2
+//? const: probe_cog = 0
+//? run: "int2-cog3"
+//? cog: 3
+//? const: irq_level = 2
+//? const: probe_cog = 3
+//? run: "int2-cog7"
+//? cog: 7
+//? const: irq_level = 2
+//? const: probe_cog = 7
+//? run: "int3-cog0"
+//? cog: 0
+//? const: irq_level = 3
+//? const: probe_cog = 0
+//? run: "int3-cog3"
+//? cog: 3
+//? const: irq_level = 3
+//? const: probe_cog = 3
+//? run: "int3-cog7"
+//? cog: 7
+//? const: irq_level = 3
+//? const: probe_cog = 7
+
+const source_bits  = 14 << (4 + 4 * irq_level)
+const pending_bits = 2 << (2 * irq_level)
+const active_bits  = 3 << (2 * irq_level)
+
+                // Distinguish sampled source events, latched requests and software state overrides.
+                MOV     register(0x1f6 - 2 * irq_level),    vector
+                STALLI
+                COGATN  (1 << probe_cog)
+                WAITX   64
+.if irq_level == 1
+                SETINT1 14
+.elif   irq_level == 2
+                SETINT2 14
+.else
+                SETINT3 14
+.endif
+                WAITX   64
+                GETBRK  enable_latched                                                          :wcz
+                POLLATN
+                GETBRK  after_poll                                                              :wcz
+.if irq_level == 1
+                NIXINT1
+.elif   irq_level == 2
+                NIXINT2
+.else
+                NIXINT3
+.endif
+                GETBRK  after_nix                                                               :wcz
+                COGATN  (1 << probe_cog)
+                WAITX   64
+                GETBRK  new_event                                                               :wcz
+                POLLATN
+                GETBRK  new_poll                                                                :wcz
+.if irq_level == 1
+                SETINT1 0
+.elif   irq_level == 2
+                SETINT2 0
+.else
+                SETINT3 0
+.endif
+                GETBRK  disabled_pending                                                        :wcz
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                GETBRK  force_disabled                                                          :wcz
+.if irq_level == 1
+                SETINT1 14
+.elif   irq_level == 2
+                SETINT2 14
+.else
+                SETINT3 14
+.endif
+                GETBRK  force_reconfigured                                                      :wcz
+                ALLOWI
+                WAITX   64
+                NOP
+                NOP
+                NOP
+                GETBRK  after_return                                                            :wcz
+                STALLI
+.if irq_level == 1
+                SETINT1 0
+.elif   irq_level == 2
+                SETINT2 0
+.else
+                SETINT3 0
+.endif
+                // Requests survive polling, source changes and duplicate triggers.
+                CMP     enable_latched,                     aug(source_bits | 2)                :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     after_poll,                         aug(source_bits | 2)                :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     after_nix,                          aug(source_bits | 2)                :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     new_event,                          aug(source_bits | pending_bits | 2) :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     new_poll,                           aug(source_bits | pending_bits | 2) :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     disabled_pending,                   aug(pending_bits | 2)               :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     force_disabled,                     aug(pending_bits | 2)               :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     force_reconfigured,                 aug(source_bits | pending_bits | 2) :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     nix_active,                         aug(source_bits | 2)                :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     count,                              aug(1)                              :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     after_return,                       aug(source_bits | 2)                :wz
+    if(!Z)      ADD     failures,                           1
+                CMP     force_active,                       aug(source_bits | active_bits | 2)  :wz
+    if(!Z)      ADD     failures,                           1
+                SETQ    0
+                MODCZ   _CLR,                               _CLR                                :wcz
+                JMP     nrel(_end)
+isr:
+                ADD     count,  1
+                STALLI
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                GETBRK  force_active    :wcz
+.if irq_level == 1
+                NIXINT1
+.elif   irq_level == 2
+                NIXINT2
+.else
+                NIXINT3
+.endif
+                GETBRK  nix_active      :wcz
+.if irq_level == 1
+                RETI1
+.elif   irq_level == 2
+                RETI2
+.else
+                RETI3
+.endif
+var vector:     LONG    pcaddr(isr)
+var enable_latched:
+                LONG    0
+var after_poll: LONG    0
+var after_nix:  LONG    0
+var new_event:  LONG    0
+var new_poll:   LONG    0
+var disabled_pending:
+                LONG    0
+var force_disabled:
+                LONG    0
+var force_reconfigured:
+                LONG    0
+var nix_active: LONG    0
+var count:      LONG    0
+var after_return:
+                LONG    0
+var force_active:
+                LONG    0
+var failures:   LONG    0
+

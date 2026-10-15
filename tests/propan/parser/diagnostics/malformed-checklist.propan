@@ -1,0 +1,10 @@
+//? PROPAN CHECK LIST
+//? sym: x
+//? mem: 0 <- hex
+//? mem: nope <- hex [ ]
+//? mem: 0 !! hex [ ]
+//? mem: 0 <- bogus [ ]
+//? mem: 0 <- hex [ 0G ]
+//? mem: 0 <- hex [ AA ] extra
+//? mem: 0 <- hex [ [ ]
+BYTE 1

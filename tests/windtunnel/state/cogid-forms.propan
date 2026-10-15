@@ -1,0 +1,106 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[immediate] == 0x12345678
+//? post: cog[*].reg[augmented] == 0x12345678
+//? post: cog[*].reg[carry] == 1
+//? post: cog[*].reg[zero] == 1
+//? post: cog[*].reg[id] == 8
+//? post: cog[*].reg[reg_status] == 0
+//? post: cog[*].reg[aug_status] == 0
+//? post: cog[*].reg[cancelled] == 0x87654321
+//? run: "cog 0"
+//? cog: 0
+//? post: cog[*].reg[normal] == 0
+//? post: cog[*].reg[statuses] == 32768
+//? run: "cog 1"
+//? cog: 1
+//? post: cog[*].reg[normal] == 1
+//? post: cog[*].reg[statuses] == 16384
+//? run: "cog 2"
+//? cog: 2
+//? post: cog[*].reg[normal] == 2
+//? post: cog[*].reg[statuses] == 8192
+//? run: "cog 3"
+//? cog: 3
+//? post: cog[*].reg[normal] == 3
+//? post: cog[*].reg[statuses] == 4096
+//? run: "cog 4"
+//? cog: 4
+//? post: cog[*].reg[normal] == 4
+//? post: cog[*].reg[statuses] == 2048
+//? run: "cog 5"
+//? cog: 5
+//? post: cog[*].reg[normal] == 5
+//? post: cog[*].reg[statuses] == 1024
+//? run: "cog 6"
+//? cog: 6
+//? post: cog[*].reg[normal] == 6
+//? post: cog[*].reg[statuses] == 512
+//? run: "cog 7"
+//? cog: 7
+//? post: cog[*].reg[normal] == 7
+//? post: cog[*].reg[statuses] == 256
+
+                // Observe raw immediate COGID, including whether its encoded D register changes.
+                COGID   normal
+                MOV     register(0x180),    aug(0x12345678)
+                MODCZ   _SET,               _SET            :wcz
+                COGID   384
+                MOV     immediate,          register(0x180)
+                WRC     carry
+                WRZ     zero
+                AUGD    0x2468
+                COGID   384
+                MOV     augmented,          register(0x180)
+                // Status queries cover all four ID bits, immediate and register forms.
+                COGID   0                                   :wc
+                RCL     statuses,           1
+                COGID   1                                   :wc
+                RCL     statuses,           1
+                COGID   2                                   :wc
+                RCL     statuses,           1
+                COGID   3                                   :wc
+                RCL     statuses,           1
+                COGID   4                                   :wc
+                RCL     statuses,           1
+                COGID   5                                   :wc
+                RCL     statuses,           1
+                COGID   6                                   :wc
+                RCL     statuses,           1
+                COGID   7                                   :wc
+                RCL     statuses,           1
+                COGID   8                                   :wc
+                RCL     statuses,           1
+                COGID   9                                   :wc
+                RCL     statuses,           1
+                COGID   10                                  :wc
+                RCL     statuses,           1
+                COGID   11                                  :wc
+                RCL     statuses,           1
+                COGID   12                                  :wc
+                RCL     statuses,           1
+                COGID   13                                  :wc
+                RCL     statuses,           1
+                COGID   14                                  :wc
+                RCL     statuses,           1
+                COGID   15                                  :wc
+                RCL     statuses,           1
+                MOV     id,                 8
+                COGID   id                                  :wc
+                WRC     reg_status
+                COGID   aug(0x10008)                        :wc
+                WRC     aug_status
+                MOV     cancelled,          aug(0x87654321)
+    if(C)       COGID   cancelled
+                JMP     nrel(_end)
+var normal:     LONG    0xffffffff
+var immediate:  LONG    0
+var augmented:  LONG    0
+var carry:      LONG    0
+var zero:       LONG    0
+var statuses:   LONG    0
+var id:         LONG    0
+var reg_status: LONG    0
+var aug_status: LONG    0
+var cancelled:  LONG    0
+

@@ -1,0 +1,41 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [
+//?     0xF607EC01, 0xF607EE02, 0xF607EC03, 0xF6040001,
+//?     0, 0xF603EC04, 1, 2, 0xF603EC06, 0xF603EE07,
+//?     0xFCDC0201, 0xF603EC0C, 0, 0xFCDC0201, 0xF603EE0F, 0,
+//?     0xFCDC0201, 0xF603EC12, 0, 0xF607ED2C
+//? ]
+const Foo = 1
+const foo = 2
+const Altered = 3
+const Item = 300
+MOV PA, Foo
+MOV PB, foo
+MOV PA, Altered
+MOV altered, 1
+var item:
+LONG 0
+MOV PA, item
+var Slot:
+LONG 1
+var slot:
+LONG 2
+MOV PA, Slot
+MOV PB, slot
+Scope:
+.assert cogaddr(Scope) == 10
+REP @.Tail, 1
+MOV PA, *.Tail
+.Tail:
+NOP
+REP @.tail, 1
+MOV PB, *.tail
+.tail:
+NOP
+scope:
+.assert cogaddr(scope) == 16
+REP @.Tail, 1
+MOV PA, *.Tail
+.Tail:
+NOP
+MOV PA, Item

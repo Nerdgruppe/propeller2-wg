@@ -1,0 +1,11 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [ 0, 31, 992, 1022, 522, 991 ]
+
+LONG bitrange(0, 0), bitrange(31, 31), bitrange(0, 31)
+LONG bitrange(30, 29, wrap=#true), bitrange(10, 26), bitrange(31, 29, #true)
+.assert bitrange(30, 29, #true) == (30 | (31 << 5))
+.assert bitrange(31, 0, #true) == 63
+.assert bitrange(10, 9, #true) == 1002
+.assert bitrange(2, 7, #false) == 162
+
+.assert (bitrange(30, 29, #true) >> 5) == (pinrange(30, 29, #true) >> 6)

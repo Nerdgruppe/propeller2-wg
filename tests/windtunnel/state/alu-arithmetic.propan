@@ -1,0 +1,47 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[sum] == 0
+//? post: cog[0].reg[carry] == 1
+//? post: cog[0].reg[zero] == 1
+//? post: cog[0].reg[extended] == 1
+//? post: cog[0].reg[signed_result] == 0x7fffffff
+//? post: cog[0].reg[sign] == 1
+//? post: cog[0].reg[compared] == 0x12345678
+//? post: cog[0].reg[equal] == 1
+//? post: cog[0].reg[bits] == 0x40000000
+//? post: cog[0].reg[wrapped] == 0x80000001
+//? post: cog[0].reg[flags_c] == 1
+//? post: cog[0].reg[flags_z] == 0
+
+// Exercise carry, zero, signed overflow, comparisons and ranged bit operations.
+// Boundary values distinguish carry from signed overflow; flag snapshots precede later flag-changing operations.
+
+                ADD     sum,            1           :wcz
+                WRC     carry
+                WRZ     zero
+                ADDX    extended,       0           :wcz
+                SUBS    signed_result,  1           :wcz
+                WRC     sign
+                CMP     compared,       compared    :wcz
+                WRZ     equal
+                BITH    bits,           63          :wcz
+                MOV     wrapped,        bits
+                SETQ    2
+                BITNOT  bits,           30
+                MODCZ   _SET,           _CLR        :wcz
+                WRC     flags_c
+                WRZ     flags_z
+                JMP     nrel(_end)
+var sum:        LONG    0xffffffff
+var carry:      LONG    0
+var zero:       LONG    0
+var extended:   LONG    0
+var signed_result:
+                LONG    0x80000000
+var sign:       LONG    0
+var compared:   LONG    0x12345678
+var equal:      LONG    0
+var bits:       LONG    0
+var wrapped:    LONG    0
+var flags_c:    LONG    0
+var flags_z:    LONG    0
+

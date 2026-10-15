@@ -1,0 +1,32 @@
+//? WINDTUNNEL CHECK LIST
+//? post: hub[copied] == u32 [0x12345678 0x89abcdef]
+//? post: hub[filled] == u32 [7 7]
+//? run: "immediate LUT address"
+//? const: source_kind = 0
+//? run: "register LUT address"
+//? const: source_kind = 1
+//? run: "augmented immediate LUT address"
+//? const: source_kind = 2
+
+                // SETQ2 always sources LUT words using the encoded D field.
+                WRLUT   aug(0x12345678),    7
+                WRLUT   aug(0x89abcdef),    8
+                SETQ2   1
+.if source_kind == 0
+                WRLONG  7,                  aug(hubaddr(copied))
+.endif
+.if source_kind == 1
+                WRLONG  register(7),        aug(hubaddr(copied))
+.endif
+.if source_kind == 2
+                WRLONG  aug(0x80000007),    aug(hubaddr(copied))
+.endif
+                // SETQ retains immediate filling with the same destination field.
+                SETQ    1
+                WRLONG  7,                  aug(hubaddr(filled))
+                SETQ    0
+                JMP     nrel(_end)
+.data
+copied:         LONG    0,  0
+filled:         LONG    0,  0
+

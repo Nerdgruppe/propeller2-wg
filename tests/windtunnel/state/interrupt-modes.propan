@@ -1,0 +1,1264 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 2000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-0-0-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog0-0-1-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog0-0-2-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog0-0-2-align1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog0-0-2-align2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog0-0-2-align3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog0-1-0-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog0-1-1-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog0-1-2-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog0-1-2-align1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog0-1-2-align2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog0-1-2-align3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog0-2-0-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog0-2-0-align1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog0-2-0-align2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog0-2-0-align3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog0-2-1-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog0-2-1-align1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog0-2-1-align2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog0-2-1-align3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog0-2-2-align0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog0-2-2-align1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog0-2-2-align2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog0-2-2-align3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog1-0-0-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog1-0-1-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog1-0-2-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog1-0-2-align1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog1-0-2-align2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog1-0-2-align3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog1-1-0-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog1-1-1-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog1-1-2-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog1-1-2-align1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog1-1-2-align2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog1-1-2-align3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog1-2-0-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog1-2-0-align1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog1-2-0-align2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog1-2-0-align3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog1-2-1-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog1-2-1-align1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog1-2-1-align2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog1-2-1-align3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog1-2-2-align0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog1-2-2-align1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog1-2-2-align2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog1-2-2-align3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog2-0-0-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog2-0-1-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog2-0-2-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog2-0-2-align1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog2-0-2-align2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog2-0-2-align3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog2-1-0-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog2-1-1-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog2-1-2-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog2-1-2-align1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog2-1-2-align2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog2-1-2-align3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog2-2-0-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog2-2-0-align1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog2-2-0-align2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog2-2-0-align3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog2-2-1-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog2-2-1-align1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog2-2-1-align2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog2-2-1-align3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog2-2-2-align0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog2-2-2-align1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog2-2-2-align2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog2-2-2-align3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog3-0-0-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog3-0-1-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog3-0-2-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog3-0-2-align1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog3-0-2-align2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog3-0-2-align3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog3-1-0-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog3-1-1-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog3-1-2-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog3-1-2-align1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog3-1-2-align2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog3-1-2-align3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog3-2-0-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog3-2-0-align1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog3-2-0-align2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog3-2-0-align3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog3-2-1-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog3-2-1-align1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog3-2-1-align2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog3-2-1-align3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog3-2-2-align0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog3-2-2-align1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog3-2-2-align2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog3-2-2-align3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog4-0-0-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog4-0-1-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog4-0-2-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog4-0-2-align1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog4-0-2-align2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog4-0-2-align3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog4-1-0-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog4-1-1-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog4-1-2-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog4-1-2-align1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog4-1-2-align2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog4-1-2-align3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog4-2-0-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog4-2-0-align1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog4-2-0-align2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog4-2-0-align3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog4-2-1-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog4-2-1-align1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog4-2-1-align2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog4-2-1-align3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog4-2-2-align0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog4-2-2-align1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog4-2-2-align2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog4-2-2-align3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog5-0-0-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog5-0-1-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog5-0-2-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog5-0-2-align1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog5-0-2-align2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog5-0-2-align3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog5-1-0-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog5-1-1-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog5-1-2-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog5-1-2-align1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog5-1-2-align2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog5-1-2-align3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog5-2-0-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog5-2-0-align1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog5-2-0-align2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog5-2-0-align3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog5-2-1-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog5-2-1-align1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog5-2-1-align2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog5-2-1-align3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog5-2-2-align0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog5-2-2-align1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog5-2-2-align2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog5-2-2-align3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog6-0-0-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog6-0-1-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog6-0-2-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog6-0-2-align1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog6-0-2-align2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog6-0-2-align3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog6-1-0-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog6-1-1-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog6-1-2-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog6-1-2-align1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog6-1-2-align2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog6-1-2-align3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog6-2-0-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog6-2-0-align1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog6-2-0-align2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog6-2-0-align3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog6-2-1-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog6-2-1-align1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog6-2-1-align2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog6-2-1-align3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog6-2-2-align0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog6-2-2-align1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog6-2-2-align2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog6-2-2-align3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog7-0-0-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 0
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog7-0-1-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 0
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog7-0-2-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog7-0-2-align1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog7-0-2-align2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog7-0-2-align3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 0
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog7-1-0-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 1
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog7-1-1-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 1
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog7-1-2-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog7-1-2-align1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog7-1-2-align2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog7-1-2-align3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 1
+//? const: handler_mode = 2
+//? const: alignment = 3
+//? run: "cog7-2-0-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 0
+//? run: "cog7-2-0-align1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 1
+//? run: "cog7-2-0-align2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 2
+//? run: "cog7-2-0-align3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 0
+//? const: alignment = 3
+//? run: "cog7-2-1-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 0
+//? run: "cog7-2-1-align1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 1
+//? run: "cog7-2-1-align2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 2
+//? run: "cog7-2-1-align3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 1
+//? const: alignment = 3
+//? run: "cog7-2-2-align0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 0
+//? run: "cog7-2-2-align1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 1
+//? run: "cog7-2-2-align2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 2
+//? run: "cog7-2-2-align3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: caller_mode = 2
+//? const: handler_mode = 2
+//? const: alignment = 3
+
+                // Compare entry and return against the hardware CALLD refill formula in every execution-mode pair.
+                // Hub paths cover all byte alignments; the phase loop changes the bank arbitration edge.
+                SETQ2   127
+                RDLONG  register(0),    aug(hubaddr(lut_block))
+                MOV     IJMP1,          vector
+phase_loop:
+                MOV     sequence,   0
+                MOV     stamp,      0
+                GETCT   target
+                ADD     target,     128
+                ANDN    target,     7
+                ADD     target,     phase
+                ADDCT1  target,     0
+                WAITCT1
+                JMP     caller
+checked:
+                // TRGINT executes at start+2; its injected CALLD executes at start+6.
+                MOV     expected,       10
+.if handler_mode == 2
+                MOV     expected,       (hubaddr(isr) >> 2) & 7
+                SUB     expected,       start
+                SUB     expected,       probe_cog
+                ADD     expected,       5
+                AND     expected,       7
+                ADD     expected,       19
+.endif
+                SUB     stamp,          start
+                CMP     stamp,          expected                    :wz
+    if(!Z)      ADD     failures,       1
+                // RETIx uses the same target refill as an ordinary CALLD.
+                MOV     expected,       6
+.if caller_mode == 2
+                MOV     expected,       (hubaddr(resume) >> 2) & 7
+                SUB     expected,       retstart
+                SUB     expected,       probe_cog
+                ADD     expected,       1
+                AND     expected,       7
+                ADD     expected,       15
+.endif
+                SUB     returned,       retstart
+                CMP     returned,       expected                    :wz
+    if(!Z)      ADD     failures,       1
+                CMP     observed,       1                           :wz
+    if(!Z)      ADD     failures,       1
+                CMP     saved_return,   aug(pcaddr(resume))         :wz
+    if(!Z)      ADD     failures,       1
+                CMP     sequence,       5                           :wz
+    if(!Z)      ADD     failures,       1
+                ADD     phase,          1
+                CMP     phase,          8                           :wz
+    if(!Z)      JMP     phase_loop
+                STALLI
+                SETQ    0
+                MODCZ   _CLR,           _CLR                        :wcz
+                JMP     nrel(_end)
+var vector:     LONG    pcaddr(isr)
+var start:      LONG    0
+var stamp:      LONG    0
+var retstart:   LONG    0
+var returned:   LONG    0
+var observed:   LONG    0
+var saved_return:
+                LONG    0
+var sequence:   LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+var phase:      LONG    0
+var target:     LONG    0
+
+// Reserve the entire shared LUT image, including speculative reads after both routines.
+.lutexec    0x3000, 0x200
+lut_block:
+.if caller_mode == 0
+.cogexec    0x440, 0x100
+.elif   caller_mode == 1
+.lutexec    0x3000, 0x200
+.else
+.pack   byte
+.hubexec    0x4000 + alignment
+.endif
+caller:
+                GETCT   start
+                TRGINT1
+                MOV     sequence,   1
+resume:
+                GETCT   returned
+                MOV     sequence,   2
+                MOV     sequence,   3
+                MOV     sequence,   4
+                MOV     sequence,   5
+                JMP     nrel(checked)
+                NOP
+.if handler_mode == 0
+.cogexec    0x540, 0x140
+.elif   handler_mode == 1
+.lutexec    0x3100, 0x240
+.else
+.pack   byte
+.hubexec    0x5000 + alignment
+.endif
+isr:
+                GETCT   stamp
+                MOV     observed,       sequence
+                MOV     saved_return,   IRET1
+                GETCT   retstart
+                RETI1
+                NOP
+

@@ -1,0 +1,16 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? pre: cog[0].c = true
+//? pre: cog[0].z = false
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].c == false
+//? post: cog[0].z == true
+
+// Check MOV of zero with both carry and zero write effects.
+// An all-ones destination makes the write observable; zero must set Z and clear C.
+
+_start:
+                MOV     result, 0   :wcz
+                JMP     nrel(_end)
+var result:     LONG    0xffff_ffff
+

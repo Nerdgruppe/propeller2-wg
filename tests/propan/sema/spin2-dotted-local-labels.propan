@@ -1,0 +1,12 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [0xFCDC0201, 0xF603EC02, 0, 0xFCDC0201, 0xF603EE05, 0]
+start:
+.assert hubaddr(start) == 0
+REP @.one.two, 1
+MOV PA, *.one.two
+.one.two:
+NOP
+REP @.one_two, 1
+MOV PB, *.one_two
+.one_two:
+NOP

@@ -1,0 +1,25 @@
+//? PROPAN CHECK LIST
+//? mem: 0x00000 == u32 [
+//?     0xFD9FFFFC, 0xFD800000, 0xFD800002, 0xFD900000,
+//?     0xFD9FFFFC, 0xFD800002, 0xFD9FFFF4, 0xFD800002
+//? ]
+
+.cogexec
+target:
+    JMP target
+.pic avoid
+    JMP target
+
+.cogexec
+    JMP local
+.PIC PREFER
+    JMP local
+local:
+.pic default
+    JMP local
+.pic prefer
+    JMP nrel(local)
+.pic force
+    JMP local
+.pic avoid
+    JMP local

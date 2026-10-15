@@ -1673,6 +1673,35 @@
         "setq": null
     },
     {
+        "id": "not-d",
+        "name": "NOT",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0110001 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "not",
+        "copy_d_to_s": true,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "!S[31]",
+        "zval": "Result == 0",
+        "opc_main": 49,
+        "opc_s": 0,
+        "shortdesc": "Bitwise NOT",
+        "setq": null
+    },
+    {
         "id": "abs",
         "name": "ABS",
         "extra": null,
@@ -1690,6 +1719,35 @@
         "category": "alu",
         "enctext": "EEEE 0110010 CZI DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "S[31]",
+        "zval": "Result == 0",
+        "opc_main": 50,
+        "opc_s": 0,
+        "shortdesc": "Absolute value",
+        "setq": null
+    },
+    {
+        "id": "abs-d",
+        "name": "ABS",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0110010 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "abs",
+        "copy_d_to_s": true,
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -1731,6 +1789,35 @@
         "setq": null
     },
     {
+        "id": "neg-d",
+        "name": "NEG",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0110011 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "neg",
+        "copy_d_to_s": true,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "MSB of result",
+        "zval": "Result == 0",
+        "opc_main": 51,
+        "opc_s": 0,
+        "shortdesc": "Negate value",
+        "setq": null
+    },
+    {
         "id": "negc",
         "name": "NEGC",
         "extra": null,
@@ -1748,6 +1835,35 @@
         "category": "alu",
         "enctext": "EEEE 0110100 CZI DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "MSB of result",
+        "zval": "Result == 0",
+        "opc_main": 52,
+        "opc_s": 0,
+        "shortdesc": "Negate if C",
+        "setq": null
+    },
+    {
+        "id": "negc-d",
+        "name": "NEGC",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0110100 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "negc",
+        "copy_d_to_s": true,
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -1789,6 +1905,35 @@
         "setq": null
     },
     {
+        "id": "negnc-d",
+        "name": "NEGNC",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0110101 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "negnc",
+        "copy_d_to_s": true,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "MSB of result",
+        "zval": "Result == 0",
+        "opc_main": 53,
+        "opc_s": 0,
+        "shortdesc": "Negate if !C",
+        "setq": null
+    },
+    {
         "id": "negz",
         "name": "NEGZ",
         "extra": null,
@@ -1818,6 +1963,35 @@
         "setq": null
     },
     {
+        "id": "negz-d",
+        "name": "NEGZ",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0110110 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "negz",
+        "copy_d_to_s": true,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "MSB of result",
+        "zval": "Result == 0",
+        "opc_main": 54,
+        "opc_s": 0,
+        "shortdesc": "Negate if Z",
+        "setq": null
+    },
+    {
         "id": "negnz",
         "name": "NEGNZ",
         "extra": null,
@@ -1835,6 +2009,35 @@
         "category": "alu",
         "enctext": "EEEE 0110111 CZI DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "MSB of result",
+        "zval": "Result == 0",
+        "opc_main": 55,
+        "opc_s": 0,
+        "shortdesc": "Negate if !Z",
+        "setq": null
+    },
+    {
+        "id": "negnz-d",
+        "name": "NEGNZ",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0110111 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "negnz",
+        "copy_d_to_s": true,
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -1992,6 +2195,35 @@
         "setq": null
     },
     {
+        "id": "encod-d",
+        "name": "ENCOD",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0111100 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "encod",
+        "copy_d_to_s": true,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "(S != 0)",
+        "zval": "Result == 0",
+        "opc_main": 60,
+        "opc_s": 0,
+        "shortdesc": "Find highest set bit",
+        "setq": null
+    },
+    {
         "id": "ones",
         "name": "ONES",
         "extra": null,
@@ -2021,6 +2253,35 @@
         "setq": null
     },
     {
+        "id": "ones-d",
+        "name": "ONES",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0111101 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "ones",
+        "copy_d_to_s": true,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "LSB of result",
+        "zval": "Result == 0",
+        "opc_main": 61,
+        "opc_s": 0,
+        "shortdesc": "Population count",
+        "setq": null
+    },
+    {
         "id": "test",
         "name": "TEST",
         "extra": null,
@@ -2038,6 +2299,35 @@
         "category": "alu",
         "enctext": "EEEE 0111110 CZI DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "none",
+        "cval": "parity of (D & S)",
+        "zval": "((D & S) == 0)",
+        "opc_main": 62,
+        "opc_s": 0,
+        "shortdesc": "Test bit pattern",
+        "setq": null
+    },
+    {
+        "id": "test-d",
+        "name": "TEST",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none",
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 0111110 CZ0 DDDDDDDDD SSSSSSSSS",
+        "alias": "test",
+        "copy_d_to_s": true,
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -2106,6 +2396,31 @@
         "setq": null
     },
     {
+        "id": "setnib-implicit",
+        "name": "SETNIB",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "src_either"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1000000 00I 000000000 SSSSSSSSS",
+        "alias": "setnib",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 64,
+        "opc_s": 0,
+        "shortdesc": "Set Nth nibble",
+        "setq": null
+    },
+    {
         "id": "getnib",
         "name": "GETNIB",
         "extra": null,
@@ -2129,6 +2444,31 @@
         "zval": "---",
         "opc_main": null,
         "opc_s": null,
+        "shortdesc": "Get Nth nibble",
+        "setq": null
+    },
+    {
+        "id": "getnib-implicit",
+        "name": "GETNIB",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1000010 000 DDDDDDDDD 000000000",
+        "alias": "getnib",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 66,
+        "opc_s": 0,
         "shortdesc": "Get Nth nibble",
         "setq": null
     },
@@ -2160,6 +2500,31 @@
         "setq": null
     },
     {
+        "id": "rolnib-implicit",
+        "name": "ROLNIB",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1000100 000 DDDDDDDDD 000000000",
+        "alias": "rolnib",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 68,
+        "opc_s": 0,
+        "shortdesc": "Shift in Nth nibble",
+        "setq": null
+    },
+    {
         "id": "setbyte",
         "name": "SETBYTE",
         "extra": null,
@@ -2175,6 +2540,31 @@
         "category": "alu",
         "enctext": "EEEE 1000110 NNI DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 70,
+        "opc_s": 0,
+        "shortdesc": "Set Nth byte",
+        "setq": null
+    },
+    {
+        "id": "setbyte-implicit",
+        "name": "SETBYTE",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "src_either"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1000110 00I 000000000 SSSSSSSSS",
+        "alias": "setbyte",
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -2214,6 +2604,31 @@
         "setq": null
     },
     {
+        "id": "getbyte-implicit",
+        "name": "GETBYTE",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1000111 000 DDDDDDDDD 000000000",
+        "alias": "getbyte",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 71,
+        "opc_s": 0,
+        "shortdesc": "Get Nth byte",
+        "setq": null
+    },
+    {
         "id": "rolbyte",
         "name": "ROLBYTE",
         "extra": null,
@@ -2229,6 +2644,31 @@
         "category": "alu",
         "enctext": "EEEE 1001000 NNI DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 72,
+        "opc_s": 0,
+        "shortdesc": "Shift in Nth byte",
+        "setq": null
+    },
+    {
+        "id": "rolbyte-implicit",
+        "name": "ROLBYTE",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1001000 000 DDDDDDDDD 000000000",
+        "alias": "rolbyte",
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -2268,6 +2708,31 @@
         "setq": null
     },
     {
+        "id": "setword-implicit",
+        "name": "SETWORD",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "src_either"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1001001 00I 000000000 SSSSSSSSS",
+        "alias": "setword",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 73,
+        "opc_s": 0,
+        "shortdesc": "Set Nth word",
+        "setq": null
+    },
+    {
         "id": "getword",
         "name": "GETWORD",
         "extra": null,
@@ -2283,6 +2748,31 @@
         "category": "alu",
         "enctext": "EEEE 1001001 1NI DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 73,
+        "opc_s": 0,
+        "shortdesc": "Get Nth word",
+        "setq": null
+    },
+    {
+        "id": "getword-implicit",
+        "name": "GETWORD",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1001001 100 DDDDDDDDD 000000000",
+        "alias": "getword",
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -2322,6 +2812,31 @@
         "setq": null
     },
     {
+        "id": "rolword-implicit",
+        "name": "ROLWORD",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1001010 000 DDDDDDDDD 000000000",
+        "alias": "rolword",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 74,
+        "opc_s": 0,
+        "shortdesc": "Shift in Nth word",
+        "setq": null
+    },
+    {
         "id": "altsn",
         "name": "ALTSN",
         "extra": null,
@@ -2336,6 +2851,31 @@
         "category": "indir",
         "enctext": "EEEE 1001010 10I DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 74,
+        "opc_s": 0,
+        "shortdesc": "Indirect SETNIB",
+        "setq": null
+    },
+    {
+        "id": "altsn-implicit",
+        "name": "ALTSN",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001010 101 DDDDDDDDD 000000000",
+        "alias": "altsn",
         "time_cog": "2",
         "time_hub": "2",
         "shield": true,
@@ -2374,6 +2914,31 @@
         "setq": null
     },
     {
+        "id": "altgn-implicit",
+        "name": "ALTGN",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001010 111 DDDDDDDDD 000000000",
+        "alias": "altgn",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 74,
+        "opc_s": 0,
+        "shortdesc": "Indirect GETNIB/ROLNIB",
+        "setq": null
+    },
+    {
         "id": "altsb",
         "name": "ALTSB",
         "extra": null,
@@ -2388,6 +2953,31 @@
         "category": "indir",
         "enctext": "EEEE 1001011 00I DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 75,
+        "opc_s": 0,
+        "shortdesc": "Indirect SETBYTE",
+        "setq": null
+    },
+    {
+        "id": "altsb-implicit",
+        "name": "ALTSB",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001011 001 DDDDDDDDD 000000000",
+        "alias": "altsb",
         "time_cog": "2",
         "time_hub": "2",
         "shield": true,
@@ -2426,6 +3016,31 @@
         "setq": null
     },
     {
+        "id": "altgb-implicit",
+        "name": "ALTGB",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001011 011 DDDDDDDDD 000000000",
+        "alias": "altgb",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 75,
+        "opc_s": 0,
+        "shortdesc": "Indirect GETBYTE/ROLBYTE",
+        "setq": null
+    },
+    {
         "id": "altsw",
         "name": "ALTSW",
         "extra": null,
@@ -2440,6 +3055,31 @@
         "category": "indir",
         "enctext": "EEEE 1001011 10I DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 75,
+        "opc_s": 0,
+        "shortdesc": "Indirect SETWORD",
+        "setq": null
+    },
+    {
+        "id": "altsw-implicit",
+        "name": "ALTSW",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001011 101 DDDDDDDDD 000000000",
+        "alias": "altsw",
         "time_cog": "2",
         "time_hub": "2",
         "shield": true,
@@ -2478,6 +3118,31 @@
         "setq": null
     },
     {
+        "id": "altgw-implicit",
+        "name": "ALTGW",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001011 111 DDDDDDDDD 000000000",
+        "alias": "altgw",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 75,
+        "opc_s": 0,
+        "shortdesc": "Indirect GETWORD/ROLWORD",
+        "setq": null
+    },
+    {
         "id": "altr",
         "name": "ALTR",
         "extra": null,
@@ -2492,6 +3157,31 @@
         "category": "indir",
         "enctext": "EEEE 1001100 00I DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 76,
+        "opc_s": 0,
+        "shortdesc": "Indirect result",
+        "setq": null
+    },
+    {
+        "id": "altr-implicit",
+        "name": "ALTR",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001100 001 DDDDDDDDD 000000000",
+        "alias": "altr",
         "time_cog": "2",
         "time_hub": "2",
         "shield": true,
@@ -2530,6 +3220,31 @@
         "setq": null
     },
     {
+        "id": "altd-implicit",
+        "name": "ALTD",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001100 011 DDDDDDDDD 000000000",
+        "alias": "altd",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 76,
+        "opc_s": 0,
+        "shortdesc": "Indirect destination",
+        "setq": null
+    },
+    {
         "id": "alts",
         "name": "ALTS",
         "extra": null,
@@ -2544,6 +3259,31 @@
         "category": "indir",
         "enctext": "EEEE 1001100 10I DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 76,
+        "opc_s": 0,
+        "shortdesc": "Indirect source",
+        "setq": null
+    },
+    {
+        "id": "alts-implicit",
+        "name": "ALTS",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001100 101 DDDDDDDDD 000000000",
+        "alias": "alts",
         "time_cog": "2",
         "time_hub": "2",
         "shield": true,
@@ -2582,6 +3322,31 @@
         "setq": null
     },
     {
+        "id": "altb-implicit",
+        "name": "ALTB",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001100 111 DDDDDDDDD 000000000",
+        "alias": "altb",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 76,
+        "opc_s": 0,
+        "shortdesc": "Indirect bit",
+        "setq": null
+    },
+    {
         "id": "alti",
         "name": "ALTI",
         "extra": null,
@@ -2604,6 +3369,31 @@
         "zval": "---",
         "opc_main": 77,
         "opc_s": 0,
+        "shortdesc": "Complex indirect",
+        "setq": null
+    },
+    {
+        "id": "alti-implicit",
+        "name": "ALTI",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "indir",
+        "enctext": "EEEE 1001101 001 DDDDDDDDD 101100100",
+        "alias": "alti",
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": true,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 77,
+        "opc_s": 356,
         "shortdesc": "Complex indirect",
         "setq": null
     },
@@ -2712,6 +3502,32 @@
         "setq": null
     },
     {
+        "id": "decod-d",
+        "name": "DECOD",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1001110 000 DDDDDDDDD SSSSSSSSS",
+        "alias": "decod",
+        "copy_d_to_s": true,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 78,
+        "opc_s": 0,
+        "shortdesc": "Get Nth power of 2",
+        "setq": null
+    },
+    {
         "id": "bmask",
         "name": "BMASK",
         "extra": null,
@@ -2726,6 +3542,32 @@
         "category": "alu",
         "enctext": "EEEE 1001110 01I DDDDDDDDD SSSSSSSSS",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "---",
+        "zval": "---",
+        "opc_main": 78,
+        "opc_s": 0,
+        "shortdesc": "Get mask of lower N bits",
+        "setq": null
+    },
+    {
+        "id": "bmask-d",
+        "name": "BMASK",
+        "extra": null,
+        "search_prefer": null,
+        "args": [
+            "dest_reg"
+        ],
+        "flags": [
+            "none"
+        ],
+        "category": "alu",
+        "enctext": "EEEE 1001110 010 DDDDDDDDD SSSSSSSSS",
+        "alias": "bmask",
+        "copy_d_to_s": true,
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,
@@ -6104,6 +6946,31 @@
         "category": "misc",
         "enctext": "EEEE 1101011 CZ0 DDDDDDDDD 000011011",
         "alias": null,
+        "time_cog": "2",
+        "time_hub": "2",
+        "shield": false,
+        "regwr": "D",
+        "cval": "RND[31]",
+        "zval": "RND[30], unique per cog",
+        "opc_main": 107,
+        "opc_s": 27,
+        "shortdesc": "Get random number",
+        "setq": null
+    },
+    {
+        "id": "getrnd-implicit",
+        "name": "GETRND",
+        "extra": null,
+        "search_prefer": null,
+        "args": [],
+        "flags": [
+            "WC",
+            "WZ",
+            "WCZ"
+        ],
+        "category": "misc",
+        "enctext": "EEEE 1101011 CZ1 000000000 000011011",
+        "alias": "getrnd",
         "time_cog": "2",
         "time_hub": "2",
         "shield": false,

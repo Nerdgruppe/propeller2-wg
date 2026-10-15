@@ -1,0 +1,3 @@
+.import once
+.import "import-once-self-first.propan"
+LONG 10

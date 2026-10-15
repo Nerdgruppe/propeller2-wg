@@ -216,6 +216,7 @@ class Instruction:
     encoding: Encoding
     operands: list[OpType]
     alias_name: str | None
+    copy_d_to_s: bool = False
 
     iid: int | None = ds_field(default=None)
     group: str | None = ds_field(default=None)
@@ -268,6 +269,7 @@ def decode_json(path: Path) -> list[Instruction]:
         flags: set[Flag] = {Flag(v) for v in j_instr["flags"]}
         encoding: Encoding = Encoding(j_instr["enctext"])
         operands: list[OpType] = [OpType(v) for v in j_instr["args"]]
+        copy_d_to_s = j_instr.get("copy_d_to_s", False)
 
         if name == "<empty>":
             # skip instructions that cannot be properly encoded
@@ -301,6 +303,20 @@ def decode_json(path: Path) -> list[Instruction]:
             if mapping.imm is not None:
                 test_field(mapping.imm)
 
+        if copy_d_to_s:
+            if (
+                alias_name is None
+                or operands != [OpType.DEST_REG]
+                or BitField.IMMEDIATE_S in encoding.fields
+                or encoding.binary & (1 << 18)
+                or BitField.DEST not in encoding.fields
+                or BitField.SOURCE not in encoding.fields
+                or encoding.fields[BitField.DEST].length
+                != encoding.fields[BitField.SOURCE].length
+            ):
+                raise ValueError(f"invalid D-to-S alias: {instr_id}")
+            test_field(BitField.SOURCE)
+
         if fields_used != set(encoding.fields.keys()):
             print("  ", sorted(fields_used))
             print("  ", sorted(encoding.fields.keys()))
@@ -316,6 +332,7 @@ def decode_json(path: Path) -> list[Instruction]:
                 encoding=encoding,
                 operands=operands,
                 alias_name=alias_name,
+                copy_d_to_s=copy_d_to_s,
             )
         )
 

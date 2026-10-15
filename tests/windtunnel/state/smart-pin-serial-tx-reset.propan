@@ -1,0 +1,146 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode28-prime0"
+//? const: mode = 28
+//? const: prime = 0
+//? post: cog[*].reg[initial_output] == 0x00000000
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[initial_busy] == 0x00000000
+//? post: cog[*].reg[initial_ready] == 0x00000000
+//? post: cog[*].reg[partial_output] == 0x00000000
+//? post: cog[*].reg[restarted_output] == 0x00000001
+//? post: cog[*].reg[restarted_ready] == 0x00000000
+//? post: cog[*].reg[restarted_result] == 0xfe000001
+//? post: cog[*].reg[restarted_busy] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode28-prime1"
+//? const: mode = 28
+//? const: prime = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[initial_busy] == 0x00000000
+//? post: cog[*].reg[initial_ready] == 0x00000000
+//? post: cog[*].reg[partial_output] == 0x00000000
+//? post: cog[*].reg[restarted_output] == 0x00000001
+//? post: cog[*].reg[restarted_ready] == 0x00000000
+//? post: cog[*].reg[restarted_result] == 0xfe000001
+//? post: cog[*].reg[restarted_busy] == 0x00000001
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode30-prime0"
+//? const: mode = 30
+//? const: prime = 0
+//? post: cog[*].reg[initial_output] == 0x00000000
+//? post: cog[*].reg[initial_result] == 0x000000a5
+//? post: cog[*].reg[initial_busy] == 0x00000001
+//? post: cog[*].reg[initial_ready] == 0x00000001
+//? post: cog[*].reg[partial_output] == 0x00000001
+//? post: cog[*].reg[restarted_output] == 0x00000001
+//? post: cog[*].reg[restarted_ready] == 0x00000000
+//? post: cog[*].reg[restarted_result] == 0xc0000029
+//? post: cog[*].reg[restarted_busy] == 0x00000000
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode30-prime1"
+//? const: mode = 30
+//? const: prime = 1
+//? post: cog[*].reg[initial_output] == 0x00000001
+//? post: cog[*].reg[initial_result] == 0x00000000
+//? post: cog[*].reg[initial_busy] == 0x00000000
+//? post: cog[*].reg[initial_ready] == 0x00000000
+//? post: cog[*].reg[partial_output] == 0x00000001
+//? post: cog[*].reg[restarted_output] == 0x00000001
+//? post: cog[*].reg[restarted_ready] == 0x00000000
+//? post: cog[*].reg[restarted_result] == 0x00000000
+//? post: cog[*].reg[restarted_busy] == 0x00000000
+//? post: cog[*].reg[count] == 0x00000000
+
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
+
+                // Reset a partially transmitted word and inspect whether the old buffer primes a restart.
+                DRVH    3
+                DRVL    5
+                WRPIN   aug(0x71000000 | P_TT_01 | (mode << 1)),    4
+                WRPIN   aug(0x60000000),                            6
+                WXPIN   aug((32 << 16) | 7),                        4
+.if prime
+                WYPIN   0xa5,                                       4
+.endif
+                DIRH    4
+.if prime == 0
+                WYPIN   0xa5,                                       4
+.endif
+                WAITX   32
+                TESTP   6                                               :wc
+                WRC     initial_output
+                RQPIN   initial_result,                             4   :wc
+                WRC     initial_busy
+                TESTP   4                                               :wc
+                WRC     initial_ready
+.if mode == 28
+                MOV     count,                                      3
+clocks:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,  clocks
+.else
+                WAITX   64
+.endif
+                TESTP   6                   :wc
+                WRC     partial_output
+                DIRL    4
+                WAITX   32
+                DIRH    4
+                WAITX   32
+                TESTP   6                   :wc
+                WRC     restarted_output
+                TESTP   4                   :wc
+                WRC     restarted_ready
+// The restarted synchronous word is clocked to completion without another WYPIN.
+.if mode == 28
+                MOV     count,  8
+finish:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,              finish
+.else
+                WAITX   400
+.endif
+                RQPIN   restarted_result,   4                   :wc
+                WRC     restarted_busy
+                DIRL    3
+                DIRL    4
+                DIRL    5
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                  aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var initial_output:
+                LONG    0
+var initial_result:
+                LONG    0
+var initial_busy:
+                LONG    0
+var initial_ready:
+                LONG    0
+var partial_output:
+                LONG    0
+var restarted_output:
+                LONG    0
+var restarted_ready:
+                LONG    0
+var restarted_result:
+                LONG    0
+var restarted_busy:
+                LONG    0
+var count:      LONG    0
+

@@ -1,0 +1,20 @@
+//? PROPAN CHECK LIST
+//? sym: next data:40:-
+//? mem: 0 <- u32 [15, 15, 15, 10, 20, 30, 10, 20, 30, 6, 40, 40]
+//? mem: 0x80 <- hex [4E 61 4E 4E 61 4E 4E 61 4E 4E 61 4E 4E 61 4E 20 42 61 74 6D 61 6E 21 5A 5A]
+//? mem: 0x100 <- u16 [65, 66, 0xD83D, 0xDCA9]
+//? mem: 0x108 <- u32 [0x1F4A9, 65, 66]
+//? mem: 0x114 <- hex [58 00 59 58 00 59]
+
+.data 0
+LONG 3 * [15], [10, 20, 30] * 2, 2 * 3
+var next:
+LONG [next] * 2
+
+.data 0x80
+BYTE 5 * "NaN", " Batman!", "Z" * 2
+
+.data 0x100
+WORD "AB", utf16("💩")
+LONG utf32("💩"), ["AB"]
+BYTE ["X", 0, ["Y"]] * 2, []

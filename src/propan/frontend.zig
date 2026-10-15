@@ -1,6 +1,7 @@
 const dump = @import("frontend/dump.zig");
 
 pub const parser = @import("frontend/parser.zig");
+pub const imports = @import("frontend/imports.zig");
 pub const ast = @import("frontend/ast.zig");
 pub const render = @import("frontend/render.zig");
 

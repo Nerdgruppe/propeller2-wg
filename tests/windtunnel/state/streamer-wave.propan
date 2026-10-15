@@ -1,0 +1,78 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "raw 7001"
+//? const: mode = 0x7001
+//? const: data = 0xff
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0xff
+//? post: cog[*].reg[s4] == 0xff
+//? post: cog[*].reg[s5] == 0xff
+//? post: cog[*].reg[s6] == 0xff
+//? post: cog[*].reg[s7] == 0xff
+//? post: cog[*].reg[s8] == 0xff
+//? post: cog[*].reg[s9] == 0xff
+//? post: cog[*].reg[s10] == 0xff
+//? post: cog[*].reg[s11] == 0xff
+//? run: "raw 4000"
+//? const: mode = 0x4000
+//? const: data = 0xaaaaaaab
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x1
+//? post: cog[*].reg[s4] == 0x1
+//? post: cog[*].reg[s5] == 0x1
+//? post: cog[*].reg[s6] == 0x1
+//? post: cog[*].reg[s7] == 0x1
+//? post: cog[*].reg[s8] == 0x0
+//? post: cog[*].reg[s9] == 0x0
+//? post: cog[*].reg[s10] == 0x1
+//? post: cog[*].reg[s11] == 0x1
+
+                // Sample the serialized differential pairs at two-clock instruction intervals.
+                MOV     DIRA,                               255
+                SETCMOD 0
+                SETXFRQ aug(0x0ccccccd)
+                XINIT   aug((mode << 16) | X_PINS_ON | 32), aug(data)
+                MOV     s0,                                 INA
+                AND     s0,                                 255
+                MOV     s1,                                 INA
+                AND     s1,                                 255
+                MOV     s2,                                 INA
+                AND     s2,                                 255
+                MOV     s3,                                 INA
+                AND     s3,                                 255
+                MOV     s4,                                 INA
+                AND     s4,                                 255
+                MOV     s5,                                 INA
+                AND     s5,                                 255
+                MOV     s6,                                 INA
+                AND     s6,                                 255
+                MOV     s7,                                 INA
+                AND     s7,                                 255
+                MOV     s8,                                 INA
+                AND     s8,                                 255
+                MOV     s9,                                 INA
+                AND     s9,                                 255
+                MOV     s10,                                INA
+                AND     s10,                                255
+                MOV     s11,                                INA
+                AND     s11,                                255
+                XSTOP
+                MOV     DIRA,                               0
+                SETCMOD 0
+                JMP     nrel(_end)
+var s0:         LONG    0
+var s1:         LONG    0
+var s2:         LONG    0
+var s3:         LONG    0
+var s4:         LONG    0
+var s5:         LONG    0
+var s6:         LONG    0
+var s7:         LONG    0
+var s8:         LONG    0
+var s9:         LONG    0
+var s10:        LONG    0
+var s11:        LONG    0
+

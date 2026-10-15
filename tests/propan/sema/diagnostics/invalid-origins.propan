@@ -1,0 +1,16 @@
+//? PROPAN CHECK LIST
+//? err: err_address_outside_space line 7 subject==origin actual==0xffffffff space==hub max_exclusive==0x80001
+//? err: err_address_outside_space line 9 subject==origin actual==0xffffffff space==hub max_exclusive==0x80001
+//? err: err_address_outside_space line 11 subject==origin actual==0xffffffff space==hub max_exclusive==0x80001
+//? err: err_address_outside_space line 13 subject==origin actual==0xffffffff space==hub max_exclusive==0x80001
+//? err: err_address_outside_space line 15 subject==origin actual==0xffffffff space==hub max_exclusive==0x80001
+.hubexec 4294967295
+BYTE 1
+.cogexec 4294967295
+NOP
+.lutexec 4294967295
+NOP
+.data 4294967295
+BYTE 1
+.hubexec 4294967295
+.align 4

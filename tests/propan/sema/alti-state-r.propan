@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? mem: 0 == u32 [ 0b11111111111111_000000000_000000000, 0 ]
+.assert alti.state(0, 0, 0) == 0b00000000000000_000000000_000000000
+LONG alti.state(0, 0, 0x3fff)
+result:
+LONG 0
+.assert alti.state(0, 0, result) == 0b00000000000001_000000000_000000000

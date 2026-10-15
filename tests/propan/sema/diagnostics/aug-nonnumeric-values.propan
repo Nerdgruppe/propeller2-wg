@@ -1,0 +1,7 @@
+//? PROPAN CHECK LIST
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+//? err: err_augmentation_requires_immediate
+MOV PA, aug("text")
+MOV PA, aug([1, 2])
+MODCZ aug(#set), #clr :wcz

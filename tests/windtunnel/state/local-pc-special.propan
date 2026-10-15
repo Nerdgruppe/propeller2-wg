@@ -1,0 +1,233 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 3000
+                //? run: "source495-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1ef
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 495
+                //? run: "source495-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1ef
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 495
+                //? run: "source496-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 496
+                //? run: "source496-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f0
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 496
+                //? run: "source503-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f7
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 503
+                //? run: "source503-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f7
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 503
+                //? run: "source504-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f8
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 504
+                //? run: "source504-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f8
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 504
+                //? run: "source505-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f9
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 505
+                //? run: "source505-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1f9
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 505
+                //? run: "source506-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fa
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 506
+                //? run: "source506-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fa
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 506
+                //? run: "source507-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fb
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 507
+                //? run: "source507-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fb
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 507
+                //? run: "source508-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fc
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 508
+                //? run: "source508-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fc
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 508
+                //? run: "source509-cog0"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fd
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 0
+                //? const: source = 509
+                //? run: "source509-cog7"
+                //? post: cog[*].reg[link] == 0x401
+                //? post: cog[*].reg[hits] == 0x1fd
+                //? post: cog[*].reg[elapsed] == 0x14
+                //? post: cog[*].reg[landed] == 0x1
+                //? cog: 7
+                //? const: source = 509
+                // Select architectural special-register instructions while underlying tail RAM holds a different branch.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),        aug(hubaddr(cog_template))
+                MOV     PTRA,               aug(hubaddr(tail_template))
+                RDLONG  word,               PTRA++
+                WRLUT   word,               aug(510)
+                RDLONG  word,               PTRA++
+                WRLUT   word,               aug(511)
+                // Put a branch in both underlying RAM and the corresponding architectural register.
+                SETQ    7
+                RDLONG  register(504),      aug(hubaddr(special_template))
+                MOV     register(source),   branch_word
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+hit1:
+                MOV     landed, 1
+                JMP     nrel(done)
+hit2:
+                MOV     landed, 2
+                JMP     nrel(done)
+hit3:
+                MOV     landed, 3
+                JMP     nrel(done)
+hit4:
+                MOV     landed, 4
+                JMP     nrel(done)
+hit5:
+                MOV     landed, 5
+                JMP     nrel(done)
+hit6:
+                MOV     landed, 6
+                JMP     nrel(done)
+var branch_word:
+                LONG    0xfb200000 | (cogaddr(link) << 9) | cogaddr(target1)
+var landed:     LONG    0
+var target1:    LONG    pcaddr(hit1)
+var target2:    LONG    pcaddr(hit2)
+var target3:    LONG    pcaddr(hit3)
+var target4:    LONG    pcaddr(hit4)
+var target5:    LONG    pcaddr(hit5)
+var target6:    LONG    pcaddr(hit6)
+var link:       LONG    0
+var target:     LONG    pcaddr(done)
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:
+                // These words are loaded into the physical cog instruction slots above.
+                ADD     hits,   1
+                CALLD   link,   target1
+                CALLD   link,   target2
+                CALLD   link,   target3
+                CALLD   link,   target4
+                CALLD   link,   target5
+                CALLD   link,   target6
+.lutexec    0x3100, 0x3fe
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+                NOP
+                ADD     hits,   source
+
+
+.cogexec    0x3200, 504
+special_template:
+                CALLD   link,   target2
+.data   0x3204
+                LONG    [0xfb200000 | (cogaddr(link) << 9) | cogaddr(target2)] * 7
+.cogexec    0x3300, 495
+                CALLD   link,   target1
+                CALLD   link,   target1
+.cogexec    0x3400, 503
+                CALLD   link,   target1
+

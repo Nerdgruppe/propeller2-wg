@@ -1,0 +1,448 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-mode0-kind0"
+//? cog: 0
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog0-mode0-kind1"
+//? cog: 0
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog0-mode0-kind2"
+//? cog: 0
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog0-mode0-kind3"
+//? cog: 0
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog0-mode1-kind0"
+//? cog: 0
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog0-mode1-kind1"
+//? cog: 0
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog0-mode1-kind2"
+//? cog: 0
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog0-mode1-kind3"
+//? cog: 0
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog0-mode2-kind1"
+//? cog: 0
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog0-mode2-kind2"
+//? cog: 0
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog0-mode2-kind3"
+//? cog: 0
+//? const: mode = 2
+//? const: kind = 3
+//? run: "cog1-mode0-kind0"
+//? cog: 1
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog1-mode0-kind1"
+//? cog: 1
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog1-mode0-kind2"
+//? cog: 1
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog1-mode0-kind3"
+//? cog: 1
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog1-mode1-kind0"
+//? cog: 1
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog1-mode1-kind1"
+//? cog: 1
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog1-mode1-kind2"
+//? cog: 1
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog1-mode1-kind3"
+//? cog: 1
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog1-mode2-kind1"
+//? cog: 1
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog1-mode2-kind2"
+//? cog: 1
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog1-mode2-kind3"
+//? cog: 1
+//? const: mode = 2
+//? const: kind = 3
+//? run: "cog2-mode0-kind0"
+//? cog: 2
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog2-mode0-kind1"
+//? cog: 2
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog2-mode0-kind2"
+//? cog: 2
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog2-mode0-kind3"
+//? cog: 2
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog2-mode1-kind0"
+//? cog: 2
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog2-mode1-kind1"
+//? cog: 2
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog2-mode1-kind2"
+//? cog: 2
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog2-mode1-kind3"
+//? cog: 2
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog2-mode2-kind1"
+//? cog: 2
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog2-mode2-kind2"
+//? cog: 2
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog2-mode2-kind3"
+//? cog: 2
+//? const: mode = 2
+//? const: kind = 3
+//? run: "cog3-mode0-kind0"
+//? cog: 3
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog3-mode0-kind1"
+//? cog: 3
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog3-mode0-kind2"
+//? cog: 3
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog3-mode0-kind3"
+//? cog: 3
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog3-mode1-kind0"
+//? cog: 3
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog3-mode1-kind1"
+//? cog: 3
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog3-mode1-kind2"
+//? cog: 3
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog3-mode1-kind3"
+//? cog: 3
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog3-mode2-kind1"
+//? cog: 3
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog3-mode2-kind2"
+//? cog: 3
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog3-mode2-kind3"
+//? cog: 3
+//? const: mode = 2
+//? const: kind = 3
+//? run: "cog4-mode0-kind0"
+//? cog: 4
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog4-mode0-kind1"
+//? cog: 4
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog4-mode0-kind2"
+//? cog: 4
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog4-mode0-kind3"
+//? cog: 4
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog4-mode1-kind0"
+//? cog: 4
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog4-mode1-kind1"
+//? cog: 4
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog4-mode1-kind2"
+//? cog: 4
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog4-mode1-kind3"
+//? cog: 4
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog4-mode2-kind1"
+//? cog: 4
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog4-mode2-kind2"
+//? cog: 4
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog4-mode2-kind3"
+//? cog: 4
+//? const: mode = 2
+//? const: kind = 3
+//? run: "cog5-mode0-kind0"
+//? cog: 5
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog5-mode0-kind1"
+//? cog: 5
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog5-mode0-kind2"
+//? cog: 5
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog5-mode0-kind3"
+//? cog: 5
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog5-mode1-kind0"
+//? cog: 5
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog5-mode1-kind1"
+//? cog: 5
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog5-mode1-kind2"
+//? cog: 5
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog5-mode1-kind3"
+//? cog: 5
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog5-mode2-kind1"
+//? cog: 5
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog5-mode2-kind2"
+//? cog: 5
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog5-mode2-kind3"
+//? cog: 5
+//? const: mode = 2
+//? const: kind = 3
+//? run: "cog6-mode0-kind0"
+//? cog: 6
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog6-mode0-kind1"
+//? cog: 6
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog6-mode0-kind2"
+//? cog: 6
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog6-mode0-kind3"
+//? cog: 6
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog6-mode1-kind0"
+//? cog: 6
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog6-mode1-kind1"
+//? cog: 6
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog6-mode1-kind2"
+//? cog: 6
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog6-mode1-kind3"
+//? cog: 6
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog6-mode2-kind1"
+//? cog: 6
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog6-mode2-kind2"
+//? cog: 6
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog6-mode2-kind3"
+//? cog: 6
+//? const: mode = 2
+//? const: kind = 3
+//? run: "cog7-mode0-kind0"
+//? cog: 7
+//? const: mode = 0
+//? const: kind = 0
+//? run: "cog7-mode0-kind1"
+//? cog: 7
+//? const: mode = 0
+//? const: kind = 1
+//? run: "cog7-mode0-kind2"
+//? cog: 7
+//? const: mode = 0
+//? const: kind = 2
+//? run: "cog7-mode0-kind3"
+//? cog: 7
+//? const: mode = 0
+//? const: kind = 3
+//? run: "cog7-mode1-kind0"
+//? cog: 7
+//? const: mode = 1
+//? const: kind = 0
+//? run: "cog7-mode1-kind1"
+//? cog: 7
+//? const: mode = 1
+//? const: kind = 1
+//? run: "cog7-mode1-kind2"
+//? cog: 7
+//? const: mode = 1
+//? const: kind = 2
+//? run: "cog7-mode1-kind3"
+//? cog: 7
+//? const: mode = 1
+//? const: kind = 3
+//? run: "cog7-mode2-kind1"
+//? cog: 7
+//? const: mode = 2
+//? const: kind = 1
+//? run: "cog7-mode2-kind2"
+//? cog: 7
+//? const: mode = 2
+//? const: kind = 2
+//? run: "cog7-mode2-kind3"
+//? cog: 7
+//? const: mode = 2
+//? const: kind = 3
+
+                // Compare instruction timing in each execution domain, including EXECF from hub to LUT.
+                SETQ2   127
+                RDLONG  register(0),    aug(hubaddr(lut_block))
+                JMP     target
+checked:
+                SUB     finish,     start
+.if kind == 0
+                CMP     value,      6       :wz
+    if(!Z)      ADD     failures,   1
+                CMP     finish,     16      :wz
+.elif   kind == 1
+                CMP     value,      2       :wz
+    if(!Z)      ADD     failures,   1
+                CMP     finish,     24      :wz
+.elif   kind == 2
+                CMP     value,      2       :wz
+    if(!Z)      ADD     failures,   1
+.if mode == 2
+                CMP     finish,     24      :wz
+.else
+                CMP     finish,     10      :wz
+.endif
+.else
+                CMP     value,      2       :wz
+    if(!Z)      ADD     failures,   1
+                CMP     finish,     12      :wz
+.endif
+    if(!Z)      ADD     failures,   1
+                JMP     nrel(_end)
+var target:     LONG    pcaddr(probe)
+var exec_target:
+                LONG    pcaddr(payload) | (255 << 10)
+var start:      LONG    0
+var finish:     LONG    0
+var value:      LONG    0
+var failures:   LONG    0
+
+.lutexec    0x3000, 0x200
+lut_block:
+.if mode == 0
+.cogexec    0x440, 0x100
+.elif   mode == 1
+.lutexec    0x3000, 0x200
+.else
+.hubexec    0x4000
+.endif
+probe:
+                GETCT   start
+.if kind == 0
+                REP     2,      3
+                ADD     value,  1
+                ADD     value,  1
+.elif   kind == 1
+                SKIP    255
+.else
+.if kind == 2
+                SKIPF   255
+.else
+                EXECF   exec_target
+.endif
+.endif
+.if kind != 0
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+.endif
+                GETCT   finish
+                JMP     nrel(checked)
+                NOP
+.lutexec    0x3100, 0x240
+payload:
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                ADD     value,  1
+                GETCT   finish
+                JMP     nrel(checked)
+                NOP
+

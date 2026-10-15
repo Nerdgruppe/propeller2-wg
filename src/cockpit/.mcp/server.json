@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "description": "Assemble and run Propeller 2 code and look up instructions",
+  "name": "io.github.nerdgruppe/propeller2-cockpit",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "nuget",
+      "identifier": "Nerdgruppe.Propeller2.Cockpit",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [],
+      "environmentVariables": []
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/Nerdgruppe/propeller2-wg",
+    "source": "github"
+  }
+}

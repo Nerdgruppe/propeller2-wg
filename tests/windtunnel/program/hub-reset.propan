@@ -1,0 +1,19 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? oracle: off "HUBSET reset intentionally closes simulation; physical hardware reboots without a reporter"
+//? max-cycles: 10000
+//? timeout-ms: 1000
+//? run: "reset-selector"
+//? const: reset_mode = 0x10000000
+//? run: "reset-ignored-bits"
+//? const: reset_mode = 0x1fffffff
+
+.cogexec    0
+                // Dirty both architectural registers and shared RAM before requesting the full reset.
+                MOV     DIRA,               1
+                WRLONG  aug(0x12345678),    aug(0x1000)
+                HUBSET  aug(reset_mode)
+
+// Reset must stop execution; reaching this loop would exhaust the cycle limit.
+.unreachable:   JMP     .unreachable
+

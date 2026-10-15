@@ -1,0 +1,117 @@
+// An interrupt can turn local PC overflow into hub execution.
+// Run from cog PC zero with this image in hub RAM. On success PA holds the
+// saved return PC ($404), PB becomes 1, and execution halts in the hub loop.
+.cogexec
+                // Overflow fetches cog register zero after the NOP at LUT $3FF.
+                // Replace the already executed STALLI with NOP to keep that stream local.
+                CALL    setup
+                MOV     register(0),                    0
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+
+                CALLPA  aug(hubaddr(message_start)),    write_str
+
+                // Start at a known counter phase; CT1 interrupts the local stream at $404.
+                GETCT   .timer
+                ADD     .timer,                         128
+                ADDCT2  .timer,                         0
+                ADD     .timer,                         20
+                ADDCT1  .timer,                         0
+                SETINT1 EVENT_CT1
+                WAITCT2
+                ALLOWI
+                NOP
+                JMP     nrel(0x3fe)
+
+var .timer:     LONG    0
+
+setup:
+                // Setup clock and serial port:
+                HUBSET  aug(CLOCK_MODE)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   TX_PIN
+                WXPIN   aug(UART_CFG),          TX_PIN
+                DIRH    TX_PIN
+                WAITX   aug(20_000_000)
+
+                // Setup ISR handler:
+                MOV     IJMP1,                  pcaddr(isr)
+
+                // Prime LUT with two "NOP"s at the end:
+                WRLUT   0,                      aug(510)
+                WRLUT   0,                      aug(511)
+                RET
+
+// IRET1 preserves the numeric PC, but not the old execution mode.
+isr:
+                SETINT1 0
+                CALLPA  aug(hubaddr(message_isr)),  write_str
+                CALLPB  IRET1,                      write_hex
+                CALLPA  ']',                        write_byte
+                RETI1
+
+
+// Loads string at hub address "PA" and writes
+// it to UART TX at TX_PIN
+write_str:
+                RDFAST  0,  PA
+.next:          RFBYTE  PA          :wz
+    if(!Z)      CALL    write_byte
+    return      TJNZ    PA, .next
+
+// Writes "PB" to UART TX as "AABBCCDD<LF>"
+write_hex:
+                MOV     .cnt,   8
+.loop:          GETNIB  .chr,   PB, 7
+                SHL     PB,     4
+                CMP     .chr,   10          :wc
+    if(C)       ADD     .chr,   '0'
+    if(!C)      ADD     .chr,   'A' - 10
+                CALLPA  .chr,   write_byte
+                DJNZ    .cnt,   .loop
+                RET
+
+var .cnt:       LONG    0
+var .chr:       LONG    0
+
+// Writes "PA" to UART TX at TX_PIN
+write_byte:
+                WYPIN   PA, TX_PIN
+                WAITX   1
+.wait:          TESTP   TX_PIN      :wc
+    if(!C)      JMP     .wait
+                RET
+
+
+.hubexec    0x404
+                // RETI1 reaches this hub address instead of continuing the local NOP stream.
+                CALLPA  aug(hubaddr(message_hub)),  write_str
+
+.halt:          JMP     .halt
+
+.data
+
+message_start:  BYTE    "system start...\r\n",  0
+message_hub:    BYTE    "Hello from Hub!\r\n",  0
+message_isr:    BYTE    "[ISR:",    0
+
+const TX_PIN     = 62
+const UART_CFG   = SmartPin.UartTx.config(
+                       baud=115_200,
+                       bits=8,
+                       clk=200_000_000,
+                   )
+const CLOCK_MODE = Hub.clockMode(
+                       pll=#on,
+                       in_div=1,
+                       mul=10,
+                       out_div=1,
+                       xi=#15pF,
+                       sysclk=#pll,
+                   )
+
+
+                LONG    0
+

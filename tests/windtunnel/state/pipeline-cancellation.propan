@@ -1,0 +1,80 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[0].reg[failures] == 0
+//? post: cog[0].reg[augmented] == 0x402
+//? post: cog[0].reg[ordinary] == 2
+//? post: cog[0].reg[redirected_cancelled] == 0
+//? post: cog[0].reg[victim] == 7
+//? post: cog[0].reg[loaded] == 19
+
+// Check timing and side-effect cancellation of conditional resource instructions and prefixes.
+// A canceled maximum WAITX must finish promptly; AUGS is preserved but an ALTR slot is consumed by cancellation.
+
+                MODCZ   _CLR,       _CLR    :wcz
+                GETCT   start
+    if(C)       WAITX   aug(0xffffffff)
+                GETCT   finish
+                SUB     finish,     start
+                CMP     finish,     6       :wz
+    if(!Z)      ADD     failures,   1
+                GETCT   start
+    if(C)       RDLONG  loaded,     address
+                GETCT   finish
+                SUB     finish,     start
+                CMP     finish,     4       :wz
+    if(!Z)      ADD     failures,   1
+                GETCT   start
+    if(C)       CALLA   target
+                GETCT   finish
+                SUB     finish,     start
+                CMP     finish,     4       :wz
+    if(!Z)      ADD     failures,   1
+                GETCT   start
+    if(C)       ADDPIX  loaded,     99
+                GETCT   finish
+                SUB     finish,     start
+                CMP     finish,     4       :wz
+    if(!Z)      ADD     failures,   1
+                GETCT   start
+    if(C)       RDLUT   loaded,     0
+                GETCT   finish
+                SUB     finish,     start
+                CMP     finish,     4       :wz
+    if(!Z)      ADD     failures,   1
+                GETCT   start
+    if(C)       COGINIT 1,          address
+                GETCT   finish
+                SUB     finish,     start
+                CMP     finish,     4       :wz
+    if(!Z)      ADD     failures,   1
+                GETCT   start
+    if(C)       LOCKNEW loaded              :wc
+                GETCT   finish
+                SUB     finish,     start
+                CMP     finish,     4       :wz
+    if(!Z)      ADD     failures,   1
+                AUGS    0x400
+    if(C)       MOV     augmented,  1
+                MOV     augmented,  2
+    if(C)       AUGS    0x400
+                MOV     ordinary,   2
+                ALTR    selector,   0
+    if(C)       MOV     victim,     9
+                MOV     victim,     7
+                // Clear block/timeout prefix state before the shared snapshot reporter executes.
+                SETQ    0
+                JMP     nrel(_end)
+target:
+                ADD     failures,   1
+                RETA
+var address:    LONG    0x1000
+var selector:   LONG    cogaddr(redirected_cancelled)
+var loaded:     LONG    19
+var augmented:  LONG    0
+var ordinary:   LONG    0
+var redirected_cancelled:
+                LONG    0
+var victim:     LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var failures:   LONG    0
+

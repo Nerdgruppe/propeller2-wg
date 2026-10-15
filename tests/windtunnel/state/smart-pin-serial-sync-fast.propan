@@ -1,0 +1,209 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-bits8-sample0-divider1"
+//? const: bits = 8
+//? const: sample = 0
+//? const: divider = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits8-sample0-divider2"
+//? const: bits = 8
+//? const: sample = 0
+//? const: divider = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits8-sample0-divider4"
+//? const: bits = 8
+//? const: sample = 0
+//? const: divider = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits8-sample1-divider1"
+//? const: bits = 8
+//? const: sample = 1
+//? const: divider = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits8-sample1-divider2"
+//? const: bits = 8
+//? const: sample = 1
+//? const: divider = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits8-sample1-divider4"
+//? const: bits = 8
+//? const: sample = 1
+//? const: divider = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits16-sample0-divider1"
+//? const: bits = 16
+//? const: sample = 0
+//? const: divider = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits16-sample0-divider2"
+//? const: bits = 16
+//? const: sample = 0
+//? const: divider = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits16-sample0-divider4"
+//? const: bits = 16
+//? const: sample = 0
+//? const: divider = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits16-sample1-divider1"
+//? const: bits = 16
+//? const: sample = 1
+//? const: divider = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits16-sample1-divider2"
+//? const: bits = 16
+//? const: sample = 1
+//? const: divider = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits16-sample1-divider4"
+//? const: bits = 16
+//? const: sample = 1
+//? const: divider = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits32-sample0-divider1"
+//? const: bits = 32
+//? const: sample = 0
+//? const: divider = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits32-sample0-divider2"
+//? const: bits = 32
+//? const: sample = 0
+//? const: divider = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits32-sample0-divider4"
+//? const: bits = 32
+//? const: sample = 0
+//? const: divider = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits32-sample1-divider1"
+//? const: bits = 32
+//? const: sample = 1
+//? const: divider = 1
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits32-sample1-divider2"
+//? const: bits = 32
+//? const: sample = 1
+//? const: divider = 2
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+//? run: "pll0-bits32-sample1-divider4"
+//? const: bits = 32
+//? const: sample = 1
+//? const: divider = 4
+//? post: cog[*].reg[first] == 0x00000000
+//? post: cog[*].reg[carry] == 0x00000000
+//? post: cog[*].reg[ready] == 0x00000000
+//? post: cog[*].reg[tx_result] == 0x00000000
+//? post: cog[*].reg[second] == 0x00000000
+
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
+
+                // P5 generates the fastest deterministic B clock; P3 sends data and P4 receives it.
+                WRPIN   aug(0x02000000 | P_TT_01 | P_SYNC_TX),  3
+                WRPIN   aug(0x71000000 | P_SYNC_RX),            4
+                WRPIN   P_TT_01 | P_NCO_FREQ,                   5
+                WXPIN   bits - 1,                               3
+                WXPIN   aug((bits - 1) | (sample << 5)),        4
+                WXPIN   divider,                                5
+                WYPIN   aug(0x89abcdef),                        3
+                WYPIN   aug(0xffffffff),                        5
+                DIRH    3
+                DIRH    4
+                WAITX   32
+                DIRH    5
+                // Bound both observation windows; never wait indefinitely for a receiver indication.
+                WAITX   400
+                RQPIN   first,                                  4                   :wc
+                WRC     carry
+                TESTP   4                                                           :wc
+                WRC     ready
+                RDPIN   tx_result,                              3
+                WAITX   400
+                RQPIN   second,                                 4
+                DIRL    3
+                DIRL    4
+                DIRL    5
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                                      aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var first:      LONG    0
+var carry:      LONG    0
+var ready:      LONG    0
+var tx_result:  LONG    0
+var second:     LONG    0
+

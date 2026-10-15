@@ -1,0 +1,30 @@
+// Read the boot ROM's hub RAM copy without writing to it.
+// UART output: exactly 16,384 bytes from 0xFC000 through 0xFFFFF.
+const CLOCK_MODE = Hub.clockMode(pll=#on, in_div=1, mul=10, out_div=1, xi=#15pF, sysclk=#pll)
+const UART_CFG = SmartPin.UartTx.config(baud=115_200, bits=8, clk=200_000_000)
+const TX_PIN = 62
+
+.cogexec 0
+        HUBSET aug(CLOCK_MODE)
+        WRPIN P_TT_01 | P_ASYNC_TX, TX_PIN
+        WXPIN aug(UART_CFG), TX_PIN
+        DIRH TX_PIN
+        WAITX aug(20_000_000)
+
+        MOV PTRA, aug(0xFC000)
+        MOV remaining, aug(0x4000)
+.dump:  RDBYTE PA, PTRA++
+        CALL write_byte
+        DJNZ remaining, .dump
+        COGID PA
+        COGSTOP PA
+
+write_byte:
+        WYPIN PA, TX_PIN
+        WAITX 1
+.wait:  RDPIN tx_status, TX_PIN :wc
+if(C)   JMP .wait
+        RET
+
+var remaining: LONG 0
+var tx_status: LONG 0

@@ -1,0 +1,5 @@
+//? PROPAN CHECK LIST
+//? err: err_assertion_failed line 5 message=="expression returned 0"
+.cogexec
+NOP
+.fit 0
