@@ -10,8 +10,10 @@ The checklist below was completed or triaged against the **September 2026** impl
 - [x] Update symbol documentation for scoped leading-dot labels and dependency-resolved forward constants.
 - [x] Reaudit core directive/address-mode behavior in `directives-and-data.md` and `addresses-and-segments.md` against `.org`, `RES`, `.fit`, `.regspace`, `.data`, `.pack`, `.pic`, `FILE`, expanded origins and string/sequence emission; remaining instruction-specific address helper cases are separately open.
 - [x] Reaudit expression/stdlib/lexical **language behavior** for sequence, repetition, current PC, address helpers, conditional compilation and new library functions; formatter implementation and rendered-output regressions remain to be checked.
-- [ ] Reaudit `instruction-syntax.md`, `pointer-addressing.md`, `examples.md`, and the remaining implementation/discrepancy register entries against new diagnostics and equivalence tests (including conditioned NOP rejection); do not treat retained September findings as current defects.
-- [ ] Audit all remaining checked boxes and example classifications below against the merged code; remove or reclassify superseded TODOs and defects, rather than assuming they persist.
+- [x] Reaudit central `instruction-syntax.md`, `pointer-addressing.md`, and `examples.md` for conditioned NOP rejection, PIC/CALLD preference, augmented pointer-index limits, and RES/register-space support.
+- [x] Correct the post-merge semantic overlap-error behavior in the tooling, address, and directive references.
+- [ ] Recheck residual instruction selection/address-domain edge cases and non-fixture examples; audit all remaining September implementation/discrepancy register entries individually.
+- [ ] Audit remaining historical checkboxes/example classifications below against the merged code, especially `examples/rgbx.propan`, and retire or reclassify superseded TODOs and defects.
 - [ ] Run automated docs checks and executable examples once their current coverage is established.
 
 ## 1. Establish the authoritative language contract

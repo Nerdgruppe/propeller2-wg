@@ -43,6 +43,14 @@ source_confidence: "high"
 - Updated the P2 standard library for generic 32-bit integer/float functions, register conversion, ALTI helpers and corrected `#false` boolean enumeration.
 - Replaced pre-merge panic/unsupported-function statements with diagnostics and implementation-backed behavior; updated coverage and the post-merge TODO.
 
+## 2026-10-15 — instruction, pointer and overlap follow-up
+
+- Revalidated explicit conditioned-NOP rejection, PIC/LOC relative selection, conditional augmentation, and CALLD pointer-register disambiguation against semantic code and active tests.
+- Documented augmented pointer-index syntax and mode-specific 20-bit range checks, distinguishing index augmentation from disallowed whole-pointer augmentation.
+- Corrected the earlier post-merge assumption about cross-segment HUB overlap: the semantic emitter diagnoses intersections between nonempty emitted ranges.
+- Updated worked examples for RES/register-space allocation, HUB versus local alignment, actual padding configuration, and example test registration.
+- Refreshed the test coverage map and retained historical findings separately from confirmed current behavior.
+
 ## 2026-09-30
 
 - Established the Propan documentation scope and current-state source precedence.
