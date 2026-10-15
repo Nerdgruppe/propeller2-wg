@@ -17,10 +17,10 @@ Each simulation frame commits cog writebacks and aggregates OUT/DIR, combines
 commands due on that edge, and prepares SmartA/SmartB from delayed pad samples.
 It calls every pin's `step()` exactly once with fixed inputs, publishes all
 returned outputs together, resolves pads, and updates the input/result pipelines.
-The cogs then execute and queue commands for future frames, followed by VCD
-capture and counter advancement. Pad feedback reads the previous completed digital
-snapshot, and each RC pad advances exactly once per frame. Commands queued outside
-`Hub.step()` use the same delivery delay; external
+The cogs then execute and queue commands for future frames, followed by counter
+advancement and VCD capture of the completed clock. Pad feedback reads the previous
+completed digital snapshot, and each RC pad advances through the configured analog
+substeps per frame. Commands queued outside `Hub.step()` use the same delivery delay; external
 driver changes are staged until the next frame.
 Unimplemented modes use `DummyMode`, whose step fails with
 `UnsupportedSmartPinMode`; IO records a simulation fault with the issuing pin,
@@ -156,10 +156,13 @@ The CLI selects a profile for image runs or all fresh server sessions:
 ```sh
 zig-out/bin/windtunnel --sim ideal --image program.bin
 zig-out/bin/windtunnel --sim realistic --image program.bin
-zig-out/bin/windtunnel --sim realistic --serve
+zig-out/bin/windtunnel --sim realistic --oversample 8 --serve
 ```
 
 `--sim` accepts only `ideal` or `realistic` and defaults to `ideal`.
+`--oversample N` selects a positive integer number of analog samples per system
+clock and defaults to 1. It applies to image runs and every fresh server session,
+with or without VCD recording.
 
 Every Hub is initialized with an explicit host-side configuration:
 
@@ -170,14 +173,16 @@ try hub.init(.realistic); // Datasheet-based fast outputs and approximate leakag
 var configuration: windtunnel.SystemConfiguration = .realistic;
 configuration.vio_voltage = 3.2;
 configuration.pad_capacitance = 8e-12;
+configuration.oversample = 8;
 try hub.init(configuration);
 ```
 
 `SystemConfiguration.zig` defines both presets and validates all parameters before
 replacing Hub state. Nonfinite quantities, nonpositive capacitance/resistances/current
 limits, threshold ratios outside `[0, 1]`, unordered/nonpositive curve points and
-inconsistent rating bounds return `InvalidConfiguration`. Inactive model parameters
-are validated too. Failed initialization leaves an existing Hub unchanged.
+inconsistent rating bounds return `InvalidConfiguration`. A zero oversampling factor
+is also invalid. Inactive model parameters are validated too. Failed initialization
+leaves an existing Hub unchanged.
 
 The Hub owns a copy in `system_configuration`; treat it as read-only. There is no
 runtime setter: changes require initialization, which clears runtime RAM, cogs,
@@ -192,11 +197,13 @@ the draft, restores the original loaded image, starts cog 0 and leaves execution
 paused. Without an image, all cogs remain stopped. Runtime RAM edits and external
 stimuli are discarded, while debugger breakpoint/watchpoint definitions are retained.
 All effective electrical parameters are editable in engineering units; no rebuild or
-configuration file is needed.
+configuration file is needed. **Analog samples per clock** edits the oversampling
+draft and displays the active factor separately. Applying it uses the same
+reinitialization workflow; firmware resets retain the selected factor.
 
 ## RC pads and digital sampling
 
-`sim/Pad.zig` models each physical pad as two current-limited voltage sources
+`sim/Pads.zig` models the 64 physical pads as a SIMD bank, with two current-limited voltage sources per pad
 (the internal P2 driver and at most one external source) feeding a capacitor to
 ground. Pads have no external electrical connections to one another. IO retains
 its existing digital output transport, input routing and sampling pipelines.
@@ -270,9 +277,9 @@ is an explicit approximation, not a measurement. With 5 pF and no external load,
 its RC time constant is 165 microseconds. Ideal mode disables leakage and retains
 floating charge indefinitely. Configured leakage remains active with output disabled.
 
-Once per system clock, the module solves the piecewise-linear backward-Euler equation
+For each analog substep, the module solves the piecewise-linear backward-Euler equation
 `Ctotal * (Vnew - Vold) / dt = Iinternal(Vnew) + Iexternal(Vnew) - Ileakage(Vnew)`,
-where `dt = 1 / clock_frequency`. Linear branches follow
+where `dt = 1 / clock_frequency / oversample`. Linear branches follow
 `I = clamp((Vs - Vpad) / R, -Imax, +Imax)`; piecewise fast branches use the configured
 curves. Transients continue with unchanged digital outputs; settled pads skip redundant
 solves. This is stable for short RC constants, but coarse clocks distort the continuous
@@ -285,6 +292,80 @@ not an unknown digital value. `Signal` contains only `low` and `high`; float bel
 to the source's drive enable. Feedback uses the previous completed digital snapshot;
 all pads then advance together without iterative settling. Relative-pin routing is
 logical routing, not an electrical connection between pads.
+
+### Analog oversampling
+
+```sh
+zig-out/bin/windtunnel --image program.bin --sim realistic --oversample 8 --vcd pads.vcd
+```
+
+Each completed hub clock selects its internal drivers once and holds them through
+N analog substeps. Digital pad observations and sampling pipelines receive only
+the final result. Cogs, smart pins, CT, registered outputs, selectable events and
+feedback routing retain their system-clock cadence. Feedback uses the previous
+completed snapshot throughout all substeps; no intra-clock feedback settling is
+introduced. The analog factor is an initialization-time system setting independent
+of tracing, and the default 1 preserves existing integration behavior.
+
+Smaller backward-Euler steps improve the transient approximation and change the
+final voltage slightly. Threshold crossings can consequently move between system
+clocks. At 20 MHz, 8x samples are 6.25 ns apart; a fast unloaded 30-ohm/5-pF pad's
+0.15-ns time constant still needs much finer sampling to resolve its edge. Settled
+pads retain their cache fast path. Reported currents and violations describe the
+last substep's endpoint; they are not averages over the hub clock.
+
+### SIMD electrical integration
+
+Electrical fields live in separate `@Vector(64, f64)` planes, with packed boolean
+masks for connectivity, diagnostics and settled lanes. `Pad.Source` and `Pad.State`
+remain scalar host-facing descriptors and snapshots. Staging a source prepares its
+numeric data without publishing a new reading. Hub initialization prepares the
+immutable low/high curve coefficients.
+
+The solver represents each branch as affine segments `I = b - g*V`. Mirrored fast
+curves need five regions; a current-limited external source needs three. It tests
+at most fifteen region pairs using vector arithmetic and masks, without sorting
+breakpoints or searching until convergence. A bank-wide direct-linear shortcut
+handles active unlimited linear/floating branches. Ideal remains a straight-line
+model with its configured resistance; using a common piecewise representation
+never substitutes Realistic curves for it.
+
+Exactly settled lanes retain their completed state until a driver, source or
+timestep changes. An entirely settled bank skips solving. Other banks perform
+bounded whole-bank work and mask inactive lanes. This bounds numerical iteration;
+it does not promise constant wall-clock latency. Strict f64 arithmetic preserves
+accuracy but permits scalar/SIMD rounding differences. Region selection prefers
+strictly valid candidates; a closest-boundary fallback allows at most
+`32 * epsilon * max(1, abs(V))` interval error, preventing gaps at exact breakpoints.
+
+Build and run the repeatable benchmark with ReleaseSafe and coverage disabled:
+
+```sh
+zig-0.16.0 build build-windtunnel-pads-benchmark -Doptimize=ReleaseSafe -Dcoverage=false -Dno-gui
+# Or build and run one measurement directly:
+zig-0.16.0 build bench-windtunnel-pads -Doptimize=ReleaseSafe -Dcoverage=false -Dno-gui -- ideal many simd 100000
+```
+
+For example:
+
+```sh
+zig-out/bin/windtunnel-pads-benchmark realistic many hub 100000
+zig-out/bin/windtunnel-pads-benchmark realistic many scalar 100000
+zig-out/bin/windtunnel-pads-benchmark realistic many scalar_small_sort 100000
+zig-out/bin/windtunnel-pads-benchmark realistic many simd 100000
+zig-out/bin/windtunnel-pads-benchmark realistic many simd_uniform 100000
+```
+
+The kernel modes time only electrical integration plus driver collection, with
+outputs toggling every eight clocks. `hub` instead times real GPIO instruction
+loops and all Hub work, so its denominator is different. All modes exclude setup,
+5000 warmup clocks and printing. Workloads are `idle`, `one`, `many`, `eight`,
+`rc`, `limited` and `mixed`; profiles are `ideal` and `realistic`. The `eight`
+workload starts eight cogs in Hub mode; kernel modes always process one pad bank.
+Output is CSV: profile, workload, kernel, clocks, elapsed nanoseconds, nanoseconds
+per clock. Compare sequential paired runs with coverage disabled; CPU affinity
+is optional. The scalar reference exists only in tests and this benchmark.
+See the [measured SIMD performance](pads-performance.md) for paired full-step results.
 
 ### Currents and absolute-rating diagnostics
 
@@ -388,18 +469,69 @@ Serial mode timing is functional and has no physical waveform equivalence claim.
 ## VCD
 
 ```sh
-zig-out/bin/windtunnel --image program.bin --vcd pins.vcd
+zig-out/bin/windtunnel --image program.bin --sim realistic --vcd pins.vcd
 ```
 
 The CLI supports VCD for image runs. For embedded use, create `sim/Vcd.zig` with
 a `*std.Io.Writer`, call `hub.attachVcd(&vcd)` before stepping, and `vcd.finish()`
-before closing the Writer. Keep the exporter alive while attached. Export
-failures stop the simulator.
+before closing the writer. Keep the exporter alive while attached. Export
+failures stop the simulator. Firmware reset detaches the exporter; attach a fresh
+exporter for a new trace. Finishing only flushes output and adds no clock edges.
 
-Traces contain CT, each cog's OUTA/B, DIRA/B and INA/B, combined I/O registers,
-and physical P0–P63 digitized as `0` or `1`. Combined OUT is the raw OR of cog
-OUT registers; the pads show thresholded RC voltages, including floating retained charge. Initial values and
-subsequent changes are emitted after each settled edge. Timestamps remain
-monotonic across CT rollover. One synthetic VCD nanosecond means
-one simulated system clock, independent of HUBSET frequency or wall time.
-Tracing does not change execution timing.
+Signals use this hierarchy (waveform viewers may display `/` as `.`):
+
+| Path | Meaning |
+|---|---|
+| `windtunnel/CT` | 64-bit completed-clock counter |
+| `windtunnel/clk` | System clock, initially high, with a 50% duty cycle |
+| `windtunnel/cog0/alive` | Cog is running, starting, or waiting; false when stopped |
+| `windtunnel/cog0/starting` | Cog startup sequence is still in progress |
+| `windtunnel/cog0/DIRA` | Complete 32-bit direction register |
+| `windtunnel/cog0/DIRA/DIRA[10]` | Independently selectable direction bit 10 |
+| `windtunnel/io/DIRA` | Combined direction vector |
+| `windtunnel/io/DIRA/DIRA[10]` | Independently selectable combined direction bit |
+| `windtunnel/io/pads/p1/state` | Thresholded driven state: `0`, `1`, or disconnected `z` |
+| `windtunnel/io/pads/p1/voltage` | VCD real value in volts, including retained charge |
+
+Cog scopes run from `cog0` through `cog7`; pad scopes run from `p0` through `p63`.
+Both vectors and individual bits are available for OUTA/B, DIRA/B and INA/B in
+every cog scope and the combined I/O scope. Bit numbers are local to the
+register: DIRB bit 0 controls P32. Combined OUT is the raw OR of cog OUT registers.
+Pending cog starts do not set `alive` until delivered. Debugger pause and waits
+do not stop a cog or change its liveness.
+
+Pad `state` uses the drivers committed for its completed clock or analog substep, including
+WRPIN drive settings and physical output enable. It becomes `z` only when both
+internal and external drive are disconnected; a zero-current source also counts
+as disconnected. Capacitance and leakage alone do not constitute drive. A
+floating pad may retain a voltage or decay through leakage while its trace state
+remains `z`. Binary simulator reads still threshold that voltage normally. Before
+the first clock, pads are recorded as `z` and 0 V. Staging an external source does
+not change the trace until the next clock begins integrating it.
+
+Voltage is emitted independently of digital transitions, with round-trip precision.
+Nominal levels are 0–3.3 V, but values are **not clipped**: custom supplies,
+external overvoltage and negative voltages remain visible.
+
+Timestamps represent physical simulation time at a 1 fs resolution, independent
+of wall time. Each completed clock emits a falling midpoint and a rising boundary,
+then the completed snapshot at that rising boundary. With oversampling enabled,
+pad voltage and state changes also appear at `k/N` of the period. CT, cog liveness
+and register signals are emitted only at the completed-clock boundary. Odd factors
+still place the falling edge at exactly half a period, between neighboring samples.
+Unchanged pad samples add no redundant records. The first boundary has CT=1
+when starting from reset. The period uses exactly the frequency consumed by that
+clock's pad integration, including HUBSET changes. Fractional femtoseconds are
+carried across steps and frequency changes; timestamp quantization is below 1 fs
+at supported P2 frequencies and time remains monotonic across CT rollover.
+Tracing does not change execution timing or pad integration. Intermediate records
+stream without allocating buffers proportional to the oversampling factor. Export
+errors during a substep are reported when that hub clock completes.
+
+Hub performs full and intermediate captures automatically when attached with
+`attachVcd`. Direct callers of
+`vcd.capture(hub, clock_frequency)` must supply every consecutive completed clock
+and the frequency used for that clock. Skipping clocks returns
+`error.NonConsecutiveClock`; repeating an unchanged snapshot emits nothing.
+Host-only changes at the same counter are emitted at the existing timestamp
+without clock transitions. There are no fabricated transitions while paused.

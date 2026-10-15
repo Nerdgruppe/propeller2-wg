@@ -59,3 +59,12 @@ eval-pasm:
     mkdir -p .tmp
     flexspin -Wall -2 -o .tmp/test.bin -l .tmp/test.spin2
     cat .tmp/test.lst
+
+
+test-esim:
+    ./zig-out/bin/propan -o /tmp/image.bin examples/electric-demo.propan
+    ./zig-out/bin/windtunnel \
+        --image /tmp/image.bin \
+        --vcd /tmp/run.vcd \
+        --sim realistic \
+        --oversample 256

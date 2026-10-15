@@ -95,6 +95,7 @@ pub fn init(hub: *Hub, configuration: SystemConfiguration) error{InvalidConfigur
         .io = .{},
         .system_configuration = configuration,
     };
+    hub.io.analog_pads.init(&hub.system_configuration);
     @memcpy(hub.memory[0x7c000..], boot_rom);
     for (&hub.locks, 0..) |*lock, i| {
         lock.* = .{ .id = @intCast(i) };
@@ -124,7 +125,7 @@ pub fn configure(hub: *Hub, mode: u32) void {
 
 /// Attach a caller-owned trace writer and capture the initial state.
 pub fn attachVcd(hub: *Hub, vcd: *Vcd) !void {
-    try vcd.capture(hub);
+    try vcd.capture(hub, hub.io.clock_frequency);
     hub.vcd = vcd;
 }
 
@@ -333,6 +334,7 @@ pub fn step(hub: *Hub) StepResult {
         cog.streamer.step(cog);
         cog.dacs = cog.converter.step(cog.raw_dacs);
     }
+    const io_clock_frequency = hub.io.clock_frequency;
     hub.io.step(hub);
     if (hub.fault == null) {
         for (&hub.cogs) |*cog| {
@@ -351,13 +353,14 @@ pub fn step(hub: *Hub) StepResult {
     }
     hub.io.advance_delays();
 
-    if (hub.vcd) |vcd|
-        vcd.capture(hub) catch |err| {
+    hub.random.step();
+    hub.counter +%= 1;
+    if (hub.vcd) |vcd| {
+        vcd.capture(hub, io_clock_frequency) catch |err| {
             std.log.err("VCD export failed: {t}", .{err});
             hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
         };
-    hub.random.step();
-    hub.counter +%= 1;
+    }
     if (hub.debugger) |debugger| {
         debugger.afterClock(hub);
         if (debugger.stop == .allocation_failure)
@@ -1033,6 +1036,7 @@ test "system configuration initializes atomically and survives firmware reset" {
     defer std.testing.allocator.destroy(hub);
 
     var configuration: SystemConfiguration = .realistic;
+    configuration.oversample = 8;
     configuration.vio_voltage = 2.5;
     configuration.threshold_ratio = 0.25;
     try hub.init(configuration);

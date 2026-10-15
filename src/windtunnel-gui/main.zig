@@ -479,6 +479,9 @@ const GUI = struct {
             draft.* = .realistic;
             gui.configuration_error = null;
         }
+        zgui.text("Active analog oversampling: {d}x", .{gui.hub.system_configuration.oversample});
+        _ = zgui.inputScalar("Analog samples per clock (>= 1)", u32, .{ .v = &draft.oversample });
+        zgui.textUnformatted("Analog substeps only; cogs and smart pins keep the system clock.");
         quantityInput("VIO (V)", &draft.vio_voltage, 1);
         quantityInput("Digital threshold / VIO", &draft.threshold_ratio, 1);
         quantityInput("Internal pad capacitance (pF)", &draft.pad_capacitance, 1e12);
@@ -1294,8 +1297,14 @@ test "GUI configuration drafts are isolated and reinitialization restores the im
     try std.testing.expectEqual(@as(u64, 1), gui.hub.counter);
     try std.testing.expect(gui.is_running and gui.step_requested);
     gui.configuration_draft = .realistic;
+    gui.configuration_draft.oversample = 0;
+    try std.testing.expectError(error.InvalidConfiguration, gui.reinitialize());
+    try std.testing.expectEqual(@as(u32, 1), gui.hub.system_configuration.oversample);
+    gui.configuration_draft.oversample = 8;
+    try std.testing.expectEqual(@as(u32, 1), gui.hub.system_configuration.oversample);
     try gui.reinitialize();
-    try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.realistic, gui.hub.system_configuration);
+    try std.testing.expectEqualDeep(gui.configuration_draft, gui.hub.system_configuration);
+    try std.testing.expectEqual(@as(u32, 8), gui.hub.system_configuration.oversample);
     try std.testing.expectEqualSlices(u8, &image, gui.hub.memory[0..image.len]);
     try std.testing.expectEqual(@as(u8, 0), gui.hub.memory[4096]);
     try std.testing.expectEqual(@as(u64, 0), gui.hub.counter);

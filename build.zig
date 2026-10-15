@@ -149,6 +149,7 @@ pub fn build(b: *std.Build) !void {
         const exe = b.addExecutable(.{
             .name = "windtunnel",
             .root_module = windtunnel_mod,
+            .use_llvm = true,
         });
 
         fb.installArtifact(exe);
@@ -222,7 +223,7 @@ pub fn build(b: *std.Build) !void {
     const windtunnel_tests = b.addExecutable(.{
         .name = "windtunnel-tests",
         .root_module = windtunnel_suite,
-        .use_llvm = if (kcov_path != null) true else null,
+        .use_llvm = true,
     });
     fb.installArtifact(windtunnel_tests);
     const build_windtunnel_tests = b.step("build-windtunnel-tests", "Build and install the Windtunnel fixture runner");
@@ -237,6 +238,27 @@ pub fn build(b: *std.Build) !void {
     } else {
         build_windtunnel.dependOn(&b.addInstallArtifact(windtunnel_exe, .{}).step);
     }
+    const pads_benchmark_module = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel/pads_benchmark.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{.{ .name = "p2", .module = mod_p2 }},
+    });
+    pads_benchmark_module.addImport("boot-rom", boot_rom);
+    const pads_benchmark = b.addExecutable(.{
+        .name = "windtunnel-pads-benchmark",
+        .root_module = pads_benchmark_module,
+        .use_llvm = true,
+    });
+    const benchmark_step = b.step("bench-windtunnel-pads", "Benchmark electrical kernels or complete Hub clocks");
+    const benchmark_run = b.addRunArtifact(pads_benchmark);
+    if (b.args) |args| {
+        benchmark_run.addArgs(args);
+    }
+    benchmark_step.dependOn(&benchmark_run.step);
+    const build_benchmark_step = b.step("build-windtunnel-pads-benchmark", "Build the standalone pad benchmark");
+    build_benchmark_step.dependOn(&b.addInstallArtifact(pads_benchmark, .{}).step);
+
     const debugger_module = b.createModule(.{
         .root_source_file = b.path("src/windtunnel/debugger_tests.zig"),
         .target = target,
@@ -244,7 +266,7 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{.{ .name = "p2", .module = mod_p2 }},
     });
     debugger_module.addImport("boot-rom", boot_rom);
-    const debugger_tests = b.addTest(.{ .name = "windtunnel-debugger-tests", .root_module = debugger_module });
+    const debugger_tests = b.addTest(.{ .name = "windtunnel-debugger-tests", .root_module = debugger_module, .use_llvm = true });
     const debugger_run = b.addRunArtifact(debugger_tests);
     const debugger_step = b.step("test-windtunnel-debugger", "Run headless debugger and simulator regressions");
     debugger_step.dependOn(&debugger_run.step);
@@ -253,7 +275,7 @@ pub fn build(b: *std.Build) !void {
     const harness_tests = b.addTest(.{
         .name = "windtunnel-harness-tests",
         .root_module = windtunnel_suite,
-        .use_llvm = if (kcov_path != null) true else null,
+        .use_llvm = true,
     });
     if (kcov_path) |kcov| {
         harness_tests.setExecCmd(&.{

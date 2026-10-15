@@ -9,6 +9,9 @@ pub const CurvePoint = struct {
     high_drop: f64,
 };
 
+/// Number of analog integration substeps per completed system clock; fixed at initialization.
+oversample: u32,
+
 // All electrical quantities use SI units. Curve drops are measured from the selected rail.
 vio_voltage: f64,
 threshold_ratio: f64,
@@ -31,6 +34,7 @@ max_pad_voltage_margin: f64,
 max_pin_current: f64,
 
 pub const ideal: SystemConfiguration = .{
+    .oversample = 1,
     .vio_voltage = 3.3,
     .threshold_ratio = 0.5,
     .pad_capacitance = 5e-12,
@@ -66,6 +70,8 @@ pub const realistic: SystemConfiguration = blk: {
 
 /// Reject invalid parameters before replacing a simulation, including currently inactive settings.
 pub fn validate(configuration: SystemConfiguration) error{InvalidConfiguration}!void {
+    if (configuration.oversample == 0)
+        return error.InvalidConfiguration;
     inline for (std.meta.fields(SystemConfiguration)) |field| {
         if (field.type == f64) {
             if (!std.math.isFinite(@field(configuration, field.name)))
@@ -144,6 +150,12 @@ test "presets and every configurable quantity are validated" {
     try std.testing.expectError(error.InvalidConfiguration, configuration.validate());
     try std.testing.expectEqualStrings("Ideal", ideal.name());
     try std.testing.expectEqualStrings("Realistic", realistic.name());
+    configuration = ideal;
+    configuration.oversample = 0;
+    try std.testing.expectError(error.InvalidConfiguration, configuration.validate());
+    configuration.oversample = 8;
+    try configuration.validate();
+    try std.testing.expectEqualStrings("Custom", configuration.name());
     configuration = ideal;
     configuration.vio_voltage = 3.2;
     try std.testing.expectEqualStrings("Custom", configuration.name());
