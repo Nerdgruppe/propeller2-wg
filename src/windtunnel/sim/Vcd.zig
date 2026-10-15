@@ -128,7 +128,7 @@ test "initial declarations, pad changes, sparse clocks and CT rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
@@ -157,8 +157,8 @@ test "tracing does not change shared command timing" {
     const traced = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(traced);
 
-    plain.init();
-    traced.init();
+    try plain.init(.ideal);
+    try traced.init(.ideal);
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 

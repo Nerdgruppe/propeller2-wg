@@ -14,7 +14,9 @@ a root path, and the `ws` scheme. An explicitly supplied URL without a port uses
 `--serve` cannot be combined with `--image`. Regular logs, including instruction logs, are printed
 in server mode; `--verbose` also enables debug logging.
 `--trace-pipeline` records up to 10000 stage events per request. Diagnostics go to stderr.
-Add `--fast-io` for single-clock serial endpoint throughput in every fresh session;
+Add `--sim realistic` to initialize every fresh session with datasheet-based pad
+characteristics; the default is `--sim ideal`. The selected configuration survives
+firmware resets. Add `--fast-io` for single-clock serial endpoint throughput in every fresh session;
 normal sessions retain UART baud timing. See [serial endpoint behavior](io.md#smart-modes-and-endpoints).
 The server uses Zig's standard library and requires no external service, interpreter or package.
 

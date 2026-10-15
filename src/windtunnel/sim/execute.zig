@@ -4932,7 +4932,7 @@ test "HUBSET delegates shared configuration and completes unsupported values" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     const args: encoding.Only_Dimm = .{ ._mask1 = 0, .d = @enumFromInt(24), .d_imm = false, ._mask2 = 0, .cond = .IF_ALWAYS };
 
@@ -4959,7 +4959,7 @@ test "local relative JMP and CALL use nonlinear fallthrough and cancel without s
 
     for ([_]bool{ false, true }) |is_call| {
         for ([_]i20{ -11, -9, 1, 3, 5, 7 }) |delta| {
-            hub.init();
+            try hub.init(.ideal);
             const cog = &hub.cogs[0];
             cog.exec_mode = .cog;
             cog.pc = 0x130;
@@ -4979,7 +4979,7 @@ test "local relative JMP and CALL use nonlinear fallthrough and cancel without s
                 try std.testing.expectEqual(@as(u32, 0x8000_0120), cog.stack[0]);
             }
 
-            hub.init();
+            try hub.init(.ideal);
             const canceled = &hub.cogs[0];
             canceled.exec_mode = .cog;
             canceled.pc = 0x130;
@@ -5117,7 +5117,7 @@ test "random consumers share the current cog word and wait samples only once" {
     const hub = try std.testing.allocator.create(hub_module);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     for (&hub.cogs) |*cog| {
         for (0..8) |phase| {
             _ = hub.step();
@@ -5198,7 +5198,7 @@ test "all event polls and waits consume only their selected latch and honor flag
             for (0..4) |flags| {
                 for (0..4) |seed| {
                     for ([_]bool{ false, true }) |active| {
-                        hub.init();
+                        try hub.init(.ideal);
                         const cog = &hub.cogs[0];
                         cog.events = .full;
                         cog.events.setPresent(event, active);
@@ -5255,7 +5255,7 @@ test "all event branch polarities consume the latch with immediate and register 
         for ([_]bool{ false, true }) |positive| {
             for ([_]bool{ false, true }) |active| {
                 for ([_]bool{ false, true }) |immediate| {
-                    hub.init();
+                    try hub.init(.ideal);
                     const cog = &hub.cogs[0];
                     cog.exec_mode = .cog;
                     cog.pc = 7;
@@ -5302,7 +5302,7 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
     const events = std.enums.values(EventId);
     for (events[0 .. events.len - 1]) |event| {
         for (std.enums.values(Scenario)) |scenario| {
-            hub.init();
+            try hub.init(.ideal);
             const start = std.math.maxInt(u64) - 3;
             hub.counter = start;
             const cog = &hub.cogs[0];
@@ -5375,7 +5375,7 @@ test "forwarded source stays with a waiting instruction" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.write_reg(@enumFromInt(24), 0x8000);
@@ -5403,7 +5403,7 @@ test "unaligned hub memory wraps, extended pointer indices are unscaled, and zer
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.write_memory(0xffff_ffff, 0x1122_3344, 4, false);
     try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.read_memory(0xfffff, 4));
     try std.testing.expectEqual(@as(u8, 0x33), hub.memory[0]);
@@ -5431,7 +5431,7 @@ test "block transfers bypass special registers and wrap register addresses" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.write_reg(.PTRA, 0x1000);
     cog.q = 9;
@@ -5483,7 +5483,7 @@ fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime fun
         for (0..4) |effects| {
             for ([_]bool{ false, true }) |immediate| {
                 for ([_]bool{ false, true }) |altered| {
-                    hub.init();
+                    try hub.init(.ideal);
                     const cog = &hub.cogs[0];
                     cog.c = flags & 2 != 0;
                     cog.z = flags & 1 != 0;
@@ -5600,7 +5600,7 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     hub.memory[0] = 0xaa;
@@ -5633,7 +5633,7 @@ test "hub stack transfers retain their issue-time privilege through stalls and w
 
     for ([_]Cog.Register{ .PTRA, .PTRB }) |pointer| {
         for ([_]bool{ false, true }) |debug| {
-            hub.init();
+            try hub.init(.ideal);
             hub.debug.protected = true;
             const previous_value = hub.read_memory(0xff800, 4);
             const cog = &hub.cogs[0];

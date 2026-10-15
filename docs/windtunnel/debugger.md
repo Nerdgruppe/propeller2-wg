@@ -17,8 +17,15 @@ captured pipeline operands and pending writes; a later commit can overwrite an
 edit. The PC, CT and scheduler/pipeline latches are read-only. Pin X/Y edits
 update the visible register and deliver the corresponding engine write strobe
 on the next edge. A simulated pin command on that edge takes priority.
-External pad drive buttons work while running, gated by the same physical
-output-enable helper used in pad resolution (delayed GPIO DIR, or smart TT).
+External pad drive buttons work while running, including when the chip drives
+the pad; contention is resolved electrically. Pin inspectors show voltage,
+branch currents, chip-pin current and absolute-rating violations.
+
+The Hub inspector has editable ideal/realistic system-configuration drafts.
+Draft edits never affect an initialized simulation. Reinitialize with settings
+applies the validated draft, restores the original image and pauses, preserving
+debugger definitions while discarding runtime RAM edits and external stimuli.
+See [system configuration](io.md#initialization-time-system-configuration).
 
 Local tables show architectural data, underlying tail RAM and execute-only ROM
 separately. Disassembly is independent per word, without folding augmentations.

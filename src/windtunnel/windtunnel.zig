@@ -21,6 +21,7 @@ pub const Hub = @import("sim/Hub.zig");
 pub const Cog = @import("sim/Cog.zig");
 pub const IO = @import("sim/IO.zig");
 pub const Pad = @import("sim/Pad.zig");
+pub const SystemConfiguration = @import("sim/SystemConfiguration.zig");
 
 pub const SmartPin = smart_pin.SmartPin;
 
@@ -35,10 +36,13 @@ pub const std_options: std.Options = .{
     .logFn = writeLog,
 };
 
+const SimulationProfile = enum { ideal, realistic };
+
 const CliArgs = struct {
     help: bool = false,
     verbose: bool = false,
     serve: bool = false,
+    sim: SimulationProfile = .ideal,
     url: []const u8 = "ws://127.0.0.1:21591/",
     @"trace-pipeline": bool = false,
     @"fast-io": bool = false,
@@ -52,7 +56,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--fast-io] [--trace-pipeline] [--vcd PATH] [-i IMAGE | --serve [--url URL]]",
+        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--fast-io] [--trace-pipeline] [--vcd PATH] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -62,6 +66,7 @@ const CliArgs = struct {
             .help = "Prints this help text",
             .verbose = "Enables debug logging",
             .serve = "Serve the P2AAS upload and terminal protocol",
+            .sim = "Select the initialization-time electrical model: ideal (default) or realistic",
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
             .@"fast-io" = "Use virtual serial transfers on terminal pins P62/P63",
@@ -108,6 +113,11 @@ pub fn main(init: std.process.Init) !u8 {
         return 1;
     }
 
+    const system_configuration: SystemConfiguration = switch (cli.options.sim) {
+        .ideal => .ideal,
+        .realistic => .realistic,
+    };
+
     if (cli.options.serve) {
         if (cli.options.image.len != 0) {
             std.log.err("--serve cannot be combined with --image", .{});
@@ -116,6 +126,7 @@ pub fn main(init: std.process.Init) !u8 {
         p2aas_server.serve(init.gpa, init.io, cli.options.url, .{
             .trace = cli.options.@"trace-pipeline",
             .fast_io = cli.options.@"fast-io",
+            .system_configuration = system_configuration,
         }) catch |err| {
             std.log.err("P2AAS server failed: {t}", .{err});
             return 1;
@@ -128,7 +139,7 @@ pub fn main(init: std.process.Init) !u8 {
     defer stdout.interface.flush() catch {};
 
     var hub: Hub = undefined;
-    hub.init();
+    try hub.init(system_configuration);
     serial_boot.prepare(&hub);
 
     var terminal_sink: smart_pin.DataSink = .{ .live_writer = &stdout.interface };

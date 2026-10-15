@@ -392,7 +392,7 @@ pub fn step(io: *IO, hub: *Hub) void {
         const sync_pipeline = &io.pins[i].sync_output_pipeline;
         state.* = sync_pipeline.step(io.outputState(@enumFromInt(i)));
     }
-    io.resolvePads();
+    io.resolvePads(&hub.system_configuration);
     io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
     io.samples.out[hub.counter % io.samples.out.len] = io.drives;
     io.samples.directions[hub.counter % io.samples.directions.len] = io.directions;
@@ -559,7 +559,7 @@ fn outputState(io: *const IO, index: PadIndex) Signal {
 }
 
 /// Translate the registered logical driver into electrical characteristics without advancing it.
-fn drive(io: *const IO, index: PadIndex) Pad.Source {
+fn drive(io: *const IO, index: PadIndex, system: *const Hub.SystemConfiguration) Pad.Driver {
     const i = @intFromEnum(index);
     const configuration = io.pins[i].configuration;
     // ADC source/gain selection reuses the GPIO synchronization bit; OUT remains asynchronous.
@@ -567,7 +567,7 @@ fn drive(io: *const IO, index: PadIndex) Pad.Source {
         io.sync_out[i]
     else
         io.outputState(index);
-    return Pad.internalSource(configuration, state, io.outputEnabled(index));
+    return Pad.internalDriver(system, configuration, state, io.outputEnabled(index));
 }
 
 /// Select a relative physical pad or the cog OUT bit for one smart input.
@@ -598,11 +598,11 @@ fn selected(io: *const IO, index: PinIndex, selector: PinConfiguration.Selector)
 }
 
 /// Advance independent RC pads once, with all feedback drivers selected from the previous snapshot.
-fn resolvePads(io: *IO) void {
+fn resolvePads(io: *IO, system: *const Hub.SystemConfiguration) void {
     const dt = 1 / @as(f64, @floatFromInt(io.clock_frequency));
     var next: [64]Signal = undefined;
     for (&io.analog_pads, &next, 0..) |*pad, *state, i| {
-        state.* = pad.step(io.drive(@enumFromInt(i)), io.external[i], dt).digital();
+        state.* = pad.step(system, io.drive(@enumFromInt(i), system), io.external[i], dt).digital(system);
     }
     io.pads = next;
     io.sync_in = next;
@@ -697,7 +697,7 @@ test "external RC snapshots are staged, clocked and sampled through the existing
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const pad: PadIndex = @enumFromInt(10);
     try std.testing.expect(hub.io.getExternal(pad) == null);
     const source: Pad.Source = .{ .voltage = 3.3, .resistance = 1_000, .capacitance = 95e-12 };
@@ -729,17 +729,23 @@ test "external RC snapshots are staged, clocked and sampled through the existing
     try std.testing.expectError(error.InvalidSource, hub.io.setExternal(pad, .{ .voltage = 0, .resistance = 0 }));
     try std.testing.expectEqualDeep(Pad.Source.float, hub.io.external[10]);
     try std.testing.expectEqualDeep(held, hub.io.getExternal(pad).?);
-    hub.init();
+    try hub.init(.ideal);
     try std.testing.expect(hub.io.getExternal(pad) == null);
     _ = hub.step();
-    try std.testing.expectEqualDeep(Pad.State{ .voltage = 0, .current = 0, .internal_current = 0 }, hub.io.getExternal(pad).?);
+    try std.testing.expectEqualDeep(Pad.State{
+        .voltage = 0,
+        .current = 0,
+        .internal_current = 0,
+        .pin_current = 0,
+        .violations = .{ .undervoltage = false, .overvoltage = false, .overcurrent = false },
+    }, hub.io.getExternal(pad).?);
 }
 
 test "adjacent feedback uses the previous complete snapshot and advances each pad once" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     try hub.io.setExternal(@enumFromInt(0), .high);
     _ = hub.step();
     try hub.io.setExternal(@enumFromInt(0), .float);
@@ -767,7 +773,7 @@ test "clock fields and reader-backed UART input are independent of terminal pin 
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const io = &hub.io;
     try std.testing.expect(io.setClock(0x0100_09fb));
     try std.testing.expectEqual(@as(u64, 200_000_000), io.clock_frequency);
@@ -805,7 +811,7 @@ test "hardware repository command timing and OR-combined mixed command buses" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.cogs[0].write_reg(.DIRB, 1 << 8);
     const pin = &hub.io.pins[40].smart;
     testCommand(hub, @enumFromInt(40), .configure, 2);
@@ -847,7 +853,7 @@ test "GPIO pad pipeline has fixed cycle timing at every clock frequency" {
     defer std.testing.allocator.destroy(hub);
 
     for ([_]u64{ 20_000_000, 167_000_000, 170_000_000, 200_000_000 }) |frequency| {
-        hub.init();
+        try hub.init(.ideal);
         hub.io.clock_frequency = frequency;
         hub.cogs[0].registers.set(.DIRA, 1);
         hub.cogs[0].registers.set(.OUTA, 1);
@@ -872,7 +878,7 @@ test "frequency changes preserve in-flight GPIO timing and history" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.cogs[0].registers.set(.DIRA, 1 << 4);
     for (0..8) |_| {
         _ = hub.step();
@@ -896,7 +902,7 @@ test "synchronous output retains pending transitions while deselected across clo
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.cogs[0].registers.set(.DIRA, 1 << 4);
     for (0..8) |_| {
         _ = hub.step();
@@ -932,7 +938,7 @@ test "GPIO cog OR, A/B routing, float, feedback and contention remain separate f
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.cogs[0].write_reg(.DIRA, 1);
     hub.cogs[1].write_reg(.OUTA, 1);
     for (0..9) |_| {
@@ -993,7 +999,7 @@ test "independent UART pins and endpoint errors identify their pin and issuing c
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
@@ -1034,7 +1040,7 @@ test "a primed USART exposes its first bit on enable and waits for B clocks" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     testCommand(hub, @enumFromInt(8), .configure, 56);
     testCommand(hub, @enumFromInt(8), .write_y, 123);
     try std.testing.expect(hub.io.pins[8].smart.logic.sync_tx.buffer != null);
@@ -1051,7 +1057,7 @@ test "digital repository aliases select the repository engine while preserving W
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.cogs[0].write_reg(.DIRA, 1 << 8);
     for ([_]u32{ 2, 4, 6 }) |configuration| {
         testCommand(hub, @enumFromInt(8), .configure, configuration);
@@ -1074,7 +1080,7 @@ test "dummy smart modes fault at command delivery with DIR low and retain issuin
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const index: PinIndex = @enumFromInt(9);
     hub.io.enqueue(hub, .{
         .mask = @as(u64, 1) << @intFromEnum(index),
@@ -1103,7 +1109,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const Device = struct {
         hub: *Hub,
         calls: usize = 0,
@@ -1166,7 +1172,7 @@ test "reused frame inputs do not replay writes or acknowledgements" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     var bytes: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer bytes.deinit();
 
@@ -1197,7 +1203,7 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     // Pin 0 drives high, so the odd pin's OTHER input is low.
     hub.cogs[0].write_reg(.DIRA, 1);
     hub.cogs[0].write_reg(.OUTA, 1);
@@ -1373,7 +1379,7 @@ test "GPIO and smart modes receive filtered A and B through the common frame rou
     defer std.testing.allocator.destroy(hub);
 
     for ([_]smart_pin.Mode{ .gpio, .repository }) |mode| {
-        hub.init();
+        try hub.init(.ideal);
         try std.testing.expectEqual(@as(u5, 0), hub.io.filters[0].tap);
         try std.testing.expectEqual(@as(u5, 5), hub.io.filters[1].tap);
         try std.testing.expectEqual(@as(u5, 19), hub.io.filters[2].tap);
@@ -1402,7 +1408,7 @@ test "switching to virtual TX preserves the ordinary output propagation delay" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const pin = &hub.io.pins[4];
     testCommand(hub, @enumFromInt(4), .configure, 0x7c);
     testCommand(hub, @enumFromInt(4), .write_x, (8 << 16) | 7);
@@ -1434,7 +1440,7 @@ test "raw ADC retains GPIO drive enable inversion and float legs without a synch
         for ([_]bool{ false, true }) |inverted| {
             for ([_]PinConfiguration.Drive{ .fast, .resistor_1k5, .float }) |high_drive| {
                 for ([_]PinConfiguration.Drive{ .fast, .resistor_1k5, .float }) |low_drive| {
-                    hub.init();
+                    try hub.init(.ideal);
                     const mode = @as(u32, 0x0010_0000) | (@as(u32, @intCast(source)) << 15);
                     var adc: PinConfiguration = @bitCast(mode);
                     adc.invert_output = inverted;
@@ -1494,7 +1500,7 @@ test "DAC pad modes gate the independent raw ADC stream with OUT and TT instead 
     for ([_]u32{ 0x0014_0000, 0x0015_0000, 0x0016_0000, 0x0017_0000 }) |mode| {
         for (0..4) |tt| {
             for ([_]bool{ false, true }) |dir| {
-                hub.init();
+                try hub.init(.ideal);
                 hub.io.editConfiguration(@enumFromInt(0), mode | 0x8800 | (@as(u32, @intCast(tt)) << 6));
                 try hub.io.setAdcDensity(@enumFromInt(0), 0.25);
                 hub.cogs[0].write_reg(.DIRA, @intFromBool(dir));
@@ -1525,7 +1531,7 @@ test "raw ADC densities emit bounded digital streams and reject nonfinite inputs
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const io = &hub.io;
     const configurations = [_]u32{ 0x0010_0000, 0x0010_8000, 0x0011_0000, 0x0011_8000, 0x0012_0000 };
     for ([_]f64{ 0, 0.125, 0.5, 0.875, 1 }, 0..) |density, i| {
@@ -1546,6 +1552,6 @@ test "raw ADC densities emit bounded digital streams and reject nonfinite inputs
     try std.testing.expectEqual(@as(f64, 0), io.adc_inputs[0].density);
     try std.testing.expect(supported(0x0010_0000));
     try std.testing.expect(!supported(0x0010_0030));
-    hub.init();
+    try hub.init(.ideal);
     try std.testing.expectEqualDeep(DeltaSigma{}, hub.io.adc_inputs[0]);
 }

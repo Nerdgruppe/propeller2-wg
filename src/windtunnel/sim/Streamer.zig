@@ -786,7 +786,7 @@ test "immediate data repeats its last sample, restores background, and resets pe
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.streamer.apply(cog, .{ .dacs = 0x78563412 });
     const command = try Command.init(0x6f0e0006, 0x04030201, null, .immediate, .{});
@@ -809,7 +809,7 @@ test "LUT address wraps, raises XRL and selectable sensors, and shared writes wi
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.lut[0x1ff] = 0x12345678;
     cog.lut[0] = 0xabcdef01;
@@ -843,7 +843,7 @@ test "raw ADC density feeds Goertzel without analog DAC feedback" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.io.editConfiguration(@enumFromInt(0), 0x0011_8000);
     try hub.io.setAdcDensity(@enumFromInt(0), 0.75);
     for (0..32) |_| {
@@ -870,7 +870,7 @@ test "DDS publishes the physically checked four-entry DAC waveform every clock" 
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     @memcpy(cog.lut[0..4], &[_]u32{ 0x7f00_c080, 0x807f_00c0, 0xc080_7f00, 0x00c0_807f });
     const command = try Command.init(0xff07_ffff, 7 << 9, 0x2000_0000, .immediate, .{});

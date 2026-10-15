@@ -328,6 +328,7 @@ const Event = union(enum) { peer: Close, receive_error: anyerror, execution_erro
 pub const SimulationOptions = struct {
     trace: bool,
     fast_io: bool,
+    system_configuration: Hub.SystemConfiguration,
 };
 
 const Connection = struct {
@@ -574,7 +575,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
         return;
     };
     const hub = try arena.allocator().create(Hub);
-    hub.init();
+    try hub.init(connection.simulation.system_configuration);
     const options = Options.parse(request.head.target, &hub.memory) catch |err| {
         try request.respond(queryReason(err), .{
             .status = .bad_request,
@@ -815,6 +816,7 @@ pub fn handleConnection(
 
 /// Bind a ws:// listener. Sessions are sequential, matching the physical service's one-board ownership.
 pub fn serve(allocator: std.mem.Allocator, io: std.Io, address: []const u8, simulation: SimulationOptions) !void {
+    try simulation.system_configuration.validate();
     var arena: std.heap.ArenaAllocator = .init(allocator);
     defer arena.deinit();
 

@@ -906,7 +906,7 @@ fn runOne(
             .stop_reason = "hardware characterization; simulator not executed",
         });
     const hub = try allocator.create(Hub);
-    hub.init();
+    try hub.init(.ideal);
     serial_boot.prepare(hub);
     const virtual_terminal = ctx.options.@"fast-io" and list.fast_io_off == null;
     @memcpy(hub.memory[0..compiled.image.len], compiled.image);
@@ -1586,7 +1586,7 @@ test "fast I/O supports program input and output while timing fixtures retain cl
 }
 
 /// Serve a bounded number of actual TCP connections so session cleanup is checked without a subprocess.
-fn serveTestConnections(listener: *std.Io.net.Server, count: usize) !void {
+fn serveTestConnections(listener: *std.Io.net.Server, count: usize, configuration: Hub.SystemConfiguration) !void {
     for (0..count) |_| {
         const stream = try listener.accept(std.testing.io);
         defer stream.close(std.testing.io);
@@ -1594,6 +1594,7 @@ fn serveTestConnections(listener: *std.Io.net.Server, count: usize) !void {
         try p2aas_server.handleConnection(std.testing.allocator, std.testing.io, stream, .{
             .trace = false,
             .fast_io = false,
+            .system_configuration = configuration,
         });
     }
 }
@@ -1616,7 +1617,7 @@ test "RCFAST hello world preserves inherited ROM baud timing and drains UART wit
 
     // Model serial ROM handoff at three RCFAST rates, including a fractional divider.
     for ([_]u32{ 0x000a_0007, 0x000b_8007, 0x000f_0007 }) |divider| {
-        hub.init();
+        try hub.init(.ideal);
         serial_boot.prepare(hub);
         try std.testing.expectEqual(@as(u32, 0x000a_0007), hub.io.pins[63].smart.registers.x);
         @memcpy(hub.memory[0..compiled.image.len], compiled.image);
@@ -1657,80 +1658,82 @@ test "native P2AAS client uses the simulator server and subsequent sessions star
     var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, source, &errors.writer);
     defer compiled.deinit();
 
-    const ip = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
-    var listener = try ip.listen(std.testing.io, .{});
-    defer listener.deinit(std.testing.io);
+    for ([_]Hub.SystemConfiguration{ .ideal, .realistic }) |configuration| {
+        const ip = try std.Io.net.IpAddress.parse("127.0.0.1", 0);
+        var listener = try ip.listen(std.testing.io, .{});
+        defer listener.deinit(std.testing.io);
 
-    const endpoint = try std.fmt.allocPrint(std.testing.allocator, "ws://127.0.0.1:{d}/", .{listener.socket.address.getPort()});
-    defer std.testing.allocator.free(endpoint);
+        const endpoint = try std.fmt.allocPrint(std.testing.allocator, "ws://127.0.0.1:{d}/", .{listener.socket.address.getPort()});
+        defer std.testing.allocator.free(endpoint);
 
-    var server = try std.Io.concurrent(std.testing.io, serveTestConnections, .{ &listener, 4 });
-    defer server.cancel(std.testing.io) catch {};
+        var server = try std.Io.concurrent(std.testing.io, serveTestConnections, .{ &listener, 4, configuration });
+        defer server.cancel(std.testing.io) catch {};
 
-    for ([_][]const u8{ "\x00\x80\xff", "ABC" }) |packet| {
+        for ([_][]const u8{ "\x00\x80\xff", "ABC" }) |packet| {
+            var output: std.ArrayList(u8) = .empty;
+            defer output.deinit(std.testing.allocator);
+
+            try p2aas.run(std.testing.allocator, std.testing.io, endpoint, .{
+                .image = compiled.image,
+                .stdin = packet,
+                .ready = "!",
+                .baudrate = serial_boot.baudrate,
+                // Debug builds share CPU with the fixture suite; allow clocked I/O to finish.
+                .timeout_ms = 3000,
+            }, &output, &errors.writer);
+            try std.testing.expectEqual(@as(usize, 4), output.items.len);
+            try std.testing.expectEqualSlices(u8, packet, output.items[1..]);
+        }
+        var tmp = std.testing.tmpDir(.{});
+        defer tmp.cleanup();
+
+        // HUBSET reset must close normally instead of waiting for the runtime quota.
+        {
+            const reset_source = ".cogexec\nHUBSET aug(0x10000000)\n";
+            try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "reset.propan", .data = reset_source });
+            const reset_path = try tmp.dir.realPathFileAlloc(std.testing.io, "reset.propan", std.testing.allocator);
+            defer std.testing.allocator.free(reset_path);
+
+            var reset = try propan.assemble(std.testing.allocator, std.testing.io, reset_path, reset_source, &errors.writer);
+            defer reset.deinit();
+
+            var reset_output: std.ArrayList(u8) = .empty;
+            defer reset_output.deinit(std.testing.allocator);
+
+            const before_reset = errors.written().len;
+            try p2aas.run(std.testing.allocator, std.testing.io, endpoint, .{
+                .image = reset.image,
+                .stdin = "",
+                .ready = "",
+                .baudrate = serial_boot.baudrate,
+                .timeout_ms = 1000,
+            }, &reset_output, &errors.writer);
+            try std.testing.expectEqual(@as(usize, 0), reset_output.items.len);
+            try std.testing.expect(std.mem.find(u8, errors.written()[before_reset..], "P2AAS close 1000:") != null);
+        }
+        // A simulator fault must finish the close handshake and release the board just like a transport failure.
+
+        const illegal_source = ".cogexec\nJMP hub_entry\n.hubexec 0x1000\nhub_entry:\nRFBYTE PA\n";
+        try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "illegal.propan", .data = illegal_source });
+        const illegal_path = try tmp.dir.realPathFileAlloc(std.testing.io, "illegal.propan", std.testing.allocator);
+        defer std.testing.allocator.free(illegal_path);
+
+        var illegal = try propan.assemble(std.testing.allocator, std.testing.io, illegal_path, illegal_source, &errors.writer);
+        defer illegal.deinit();
+
         var output: std.ArrayList(u8) = .empty;
         defer output.deinit(std.testing.allocator);
 
-        try p2aas.run(std.testing.allocator, std.testing.io, endpoint, .{
-            .image = compiled.image,
-            .stdin = packet,
-            .ready = "!",
-            .baudrate = serial_boot.baudrate,
-            // Debug builds share CPU with the fixture suite; allow clocked I/O to finish.
-            .timeout_ms = 3000,
-        }, &output, &errors.writer);
-        try std.testing.expectEqual(@as(usize, 4), output.items.len);
-        try std.testing.expectEqualSlices(u8, packet, output.items[1..]);
-    }
-    var tmp = std.testing.tmpDir(.{});
-    defer tmp.cleanup();
-
-    // HUBSET reset must close normally instead of waiting for the runtime quota.
-    {
-        const reset_source = ".cogexec\nHUBSET aug(0x10000000)\n";
-        try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "reset.propan", .data = reset_source });
-        const reset_path = try tmp.dir.realPathFileAlloc(std.testing.io, "reset.propan", std.testing.allocator);
-        defer std.testing.allocator.free(reset_path);
-
-        var reset = try propan.assemble(std.testing.allocator, std.testing.io, reset_path, reset_source, &errors.writer);
-        defer reset.deinit();
-
-        var reset_output: std.ArrayList(u8) = .empty;
-        defer reset_output.deinit(std.testing.allocator);
-
-        const before_reset = errors.written().len;
-        try p2aas.run(std.testing.allocator, std.testing.io, endpoint, .{
-            .image = reset.image,
+        try std.testing.expectError(error.HardwareClosed, p2aas.run(std.testing.allocator, std.testing.io, endpoint, .{
+            .image = illegal.image,
             .stdin = "",
             .ready = "",
-            .baudrate = serial_boot.baudrate,
+            .baudrate = 115200,
             .timeout_ms = 1000,
-        }, &reset_output, &errors.writer);
-        try std.testing.expectEqual(@as(usize, 0), reset_output.items.len);
-        try std.testing.expect(std.mem.find(u8, errors.written()[before_reset..], "P2AAS close 1000:") != null);
+        }, &output, &errors.writer));
+        try std.testing.expect(std.mem.find(u8, errors.written(), "P2AAS close 1011:") != null);
+        try server.await(std.testing.io);
     }
-    // A simulator fault must finish the close handshake and release the board just like a transport failure.
-
-    const illegal_source = ".cogexec\nJMP hub_entry\n.hubexec 0x1000\nhub_entry:\nRFBYTE PA\n";
-    try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "illegal.propan", .data = illegal_source });
-    const illegal_path = try tmp.dir.realPathFileAlloc(std.testing.io, "illegal.propan", std.testing.allocator);
-    defer std.testing.allocator.free(illegal_path);
-
-    var illegal = try propan.assemble(std.testing.allocator, std.testing.io, illegal_path, illegal_source, &errors.writer);
-    defer illegal.deinit();
-
-    var output: std.ArrayList(u8) = .empty;
-    defer output.deinit(std.testing.allocator);
-
-    try std.testing.expectError(error.HardwareClosed, p2aas.run(std.testing.allocator, std.testing.io, endpoint, .{
-        .image = illegal.image,
-        .stdin = "",
-        .ready = "",
-        .baudrate = 115200,
-        .timeout_ms = 1000,
-    }, &output, &errors.writer));
-    try std.testing.expect(std.mem.find(u8, errors.written(), "P2AAS close 1011:") != null);
-    try server.await(std.testing.io);
 }
 
 test "DAC checklist observations are local-only, bounded and reject preconditions" {

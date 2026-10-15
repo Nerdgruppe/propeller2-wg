@@ -18,7 +18,7 @@ pub const std_options: std.Options = .{ .log_level = .err };
 /// Allocate the large backing RAM off the test stack and initialize all links.
 fn newHub() !*Hub {
     const hub = try std.testing.allocator.create(Hub);
-    hub.init();
+    try hub.init(.ideal);
     return hub;
 }
 

@@ -149,6 +149,51 @@ behavior with `fast-io: off "reason"`.
 [Serial hardware findings](../accumulated.md#serial-smart-pins-live-configuration-and-retained-state-2026-10-14)
 record the measured limits; regression fixtures live in `tests/windtunnel/`.
 
+## Initialization-time system configuration
+
+The CLI selects a profile for image runs or all fresh server sessions:
+
+```sh
+zig-out/bin/windtunnel --sim ideal --image program.bin
+zig-out/bin/windtunnel --sim realistic --image program.bin
+zig-out/bin/windtunnel --sim realistic --serve
+```
+
+`--sim` accepts only `ideal` or `realistic` and defaults to `ideal`.
+
+Every Hub is initialized with an explicit host-side configuration:
+
+```zig
+try hub.init(.ideal);     // Default used by the CLI, server and normal fixtures.
+try hub.init(.realistic); // Datasheet-based fast outputs and approximate leakage.
+
+var configuration: windtunnel.SystemConfiguration = .realistic;
+configuration.vio_voltage = 3.2;
+configuration.pad_capacitance = 8e-12;
+try hub.init(configuration);
+```
+
+`SystemConfiguration.zig` defines both presets and validates all parameters before
+replacing Hub state. Nonfinite quantities, nonpositive capacitance/resistances/current
+limits, threshold ratios outside `[0, 1]`, unordered/nonpositive curve points and
+inconsistent rating bounds return `InvalidConfiguration`. Inactive model parameters
+are validated too. Failed initialization leaves an existing Hub unchanged.
+
+The Hub owns a copy in `system_configuration`; treat it as read-only. There is no
+runtime setter: changes require initialization, which clears runtime RAM, cogs,
+external sources and electrical snapshots. Firmware-triggered resets reuse the
+active system configuration. The configuration is separate from firmware HUBSET;
+firmware cannot select a different electrical model.
+
+The desktop Hub inspector shows active settings separately from an editable draft.
+Ideal/Realistic buttons populate the draft; edited values display as Custom. Editing
+does not affect simulation. While paused, **Reinitialize with settings** validates
+the draft, restores the original loaded image, starts cog 0 and leaves execution
+paused. Without an image, all cogs remain stopped. Runtime RAM edits and external
+stimuli are discarded, while debugger breakpoint/watchpoint definitions are retained.
+All effective electrical parameters are editable in engineering units; no rebuild or
+configuration file is needed.
+
 ## RC pads and digital sampling
 
 `sim/Pad.zig` models each physical pad as two current-limited voltage sources
@@ -171,7 +216,7 @@ if (hub.io.getExternal(pad)) |state| {
     // state.voltage, state.current and state.internal_current are concrete f64 values.
 }
 const digital = hub.io.pads[10]; // Signal.low or Signal.high
-try hub.io.setExternal(pad, .float); // Release drive; capacitor charge persists.
+try hub.io.setExternal(pad, .float); // Release drive; configured leakage may discharge the pad.
 ```
 
 `setExternal()` validates before replacing the descriptor, and changes take effect
@@ -188,35 +233,88 @@ is optional: it is null before the first completed clock following initializatio
 or reset. Every pad then has a defined voltage and currents, even with no active cogs
 or drivers. `current` is positive from the external source into the pad;
 `internal_current` is positive from the P2 driver into the pad. Both are instantaneous
-currents at the end of the clock. Their sum charges the capacitor, so they need not
-cancel during a transient. Reads and staging a source do not advance the model.
+currents at the end of the clock. Their sum, minus configured leakage, charges the
+capacitor, so they need not cancel during a transient. Reads and staging a source do not advance the model.
 Full hub reset clears external descriptors and snapshots and initializes voltage to zero.
 
-Provisional, uncalibrated constants are 3.3 V supply, 1.65 V digital threshold,
-5 pF internal pad capacitance and 30-ohm fast drive. High and low WRPIN drive modes
-are mapped independently to 30 ohms, 1.5/15/150 kilohms, or a 30-ohm rail source
-limited to 1 mA, 100 microamps or 10 microamps. Floating modes and physical output
-disable disconnect that driver. Each enabled source follows
-`I = clamp((Vs - Vpad) / R, -Imax, +Imax)`.
+The ideal preset retains the simplified RC behavior: 3.3 V VIO, a 0.5 threshold
+ratio, 5 pF internal capacitance, 30-ohm fast high/low drive and zero leakage.
+Both presets retain 1.5/15/150-kilohm resistor modes and 1 mA/100 microamp/10 microamp
+current modes implemented as current-limited 30-ohm rail sources. Their values,
+VIO, threshold ratio, capacitance and rating limits are all initialization parameters.
+Floating modes and physical output disable disconnect the output driver.
+
+The realistic preset replaces fast drive with piecewise output curves from the
+[DC characteristics](../p2/datasheet.md#dc-characteristics):
+
+| Current | Low voltage above ground | High voltage drop below VIO |
+| --- | --- | --- |
+| 0 mA | 0 mV | 0 mV |
+| 1 mA | 15 mV | 6 mV |
+| 10 mA | 160 mV | 170 mV |
+| 30 mA | 510 mV | 580 mV |
+
+The model interpolates between these points, extends the final segment above 30 mA,
+and mirrors each curve for reverse current. Those extensions are assumptions.
+Changing VIO shifts the high rail without rescaling the drops; the reference points
+apply to nominal 3.3 V I/O conditions. The extracted datasheet labels these rows
+`VDD=3.3V`, inconsistent with its separate 1.7–1.9 V core VDD range; this model
+interprets the rows as 3.3 V I/O measurements. The table's extracted output rows
+also lack their original min/typ/max column layout, so they are used as reference
+points rather than a complete transistor characterization.
+
+Realistic mode enables a 33-megohm leakage path to ground, approximating 0.1 microamp
+at 3.3 V. The datasheet specifies ±0.1 microamp typical and ±10 microamp maximum
+at ground/VIO, without a full leakage curve or direction. A ground-directed resistor
+is an explicit approximation, not a measurement. With 5 pF and no external load,
+its RC time constant is 165 microseconds. Ideal mode disables leakage and retains
+floating charge indefinitely. Configured leakage remains active with output disabled.
 
 Once per system clock, the module solves the piecewise-linear backward-Euler equation
-`Ctotal * (Vnew - Vold) / dt = Iinternal(Vnew) + Iexternal(Vnew)`, where
-`dt = 1 / clock_frequency`. Transients continue with unchanged digital outputs;
-already-settled pads skip redundant solves. This is stable for short RC constants,
-but coarse clocks distort the continuous-time settling curve. There is no inductance,
-leakage, rail protection, electrical noise or hardware calibration.
+`Ctotal * (Vnew - Vold) / dt = Iinternal(Vnew) + Iexternal(Vnew) - Ileakage(Vnew)`,
+where `dt = 1 / clock_frequency`. Linear branches follow
+`I = clamp((Vs - Vpad) / R, -Imax, +Imax)`; piecewise fast branches use the configured
+curves. Transients continue with unchanged digital outputs; settled pads skip redundant
+solves. This is stable for short RC constants, but coarse clocks distort the continuous
+settling curve. No parameters are hardware-calibrated in this implementation.
 
-Digital reads are low below 1.65 V and high at or above it. Contention produces a
-resolved voltage, not an unknown digital value. Undriven pads retain charge without
-leakage and still produce a digital read. `Signal` contains only `low` and `high`;
-float belongs to the source's drive enable. Feedback drive selections use the previous
-completed digital pad snapshot; all pads then advance together, without iterative
-settling or multiple analog steps in one clock. Existing relative-pin routing is
+Digital reads are low below `VIO * threshold_ratio` and high at or above it.
+The default ratio is the datasheet's typical 0.5; its 0.3–0.7 range describes threshold
+variation and does not become an unknown voltage band. Contention produces a voltage,
+not an unknown digital value. `Signal` contains only `low` and `high`; float belongs
+to the source's drive enable. Feedback uses the previous completed digital snapshot;
+all pads then advance together without iterative settling. Relative-pin routing is
 logical routing, not an electrical connection between pads.
+
+### Currents and absolute-rating diagnostics
+
+Snapshots additionally expose `pin_current`, positive from the pad into the chip:
+`Cinternal * (Vnew - Vold) / dt + Ileakage - internal_current`. External capacitance
+is excluded, so current used to charge an external capacitor is not all counted
+as chip-pin current. `current` remains the external source's total branch current.
+
+The `violations` structure reports `undervoltage`, `overvoltage` and `overcurrent`.
+Both presets default to the [absolute ratings](../p2/datasheet.md#absolute-maximum-electrical-ratings):
+voltage below −0.3 V, voltage above `VIO + 0.3 V`, or absolute `pin_current` above
+30 mA. Equality is within the limit. Flags reflect completed-clock endpoints and
+clear on recovery; the GUI grid and pin inspector display them. They neither stop
+simulation nor clamp voltage/current. These stress ratings do not guarantee correct
+operation at their boundaries and do not model damage or cumulative exposure.
+
+The ±10 mA protection-diode rating is reference information only: no diode I–V
+characteristic is supplied and no protection diode is simulated. The same applies
+to chip-wide ratings: VDD −0.3..2.2 V, VIO −0.3..4.0 V, 120 mA per supply pin,
+4 A ground current, 2.5 W dissipation, ambient −40..125 °C and storage −40..150 °C,
+and ESD ratings of 4 kV HBM/1 kV CDM. DC operating ranges (VDD 1.7..1.9 V,
+VIO 3.15..3.45 V, temperature −40..105 °C) and quiescent currents (40 microamp
+VDD, 0.5 microamp VIO under the stated reset conditions) remain reference data.
+There is no thermal, supply-power, ESD, inductance or noise model. The selected
+XI/XO capacitance figures do not characterize P0–P63 and do not replace the
+provisional GPIO capacitance.
 
 A/B selectors, inversion, digital logic, optional synchronization, and the
 2/3/5/8-sample unanimous filters remain digital. Schmitt configurations still use the
-same midpoint threshold; no hysteresis or comparator behavior is added. SETDACS,
+same configured threshold; no hysteresis or comparator behavior is added. SETDACS,
 the [digital streamer](streamer.md), and the [color converter](converter.md) retain
 per-cog DAC bytes without driving analog pads. DAC internal sources remain disconnected.
 The existing host-supplied raw ADC density stays independent of pad voltage; ADC

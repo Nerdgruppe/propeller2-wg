@@ -5,6 +5,7 @@ const std = @import("std");
 
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
+pub const SystemConfiguration = @import("SystemConfiguration.zig");
 const Cordic = @import("Cordic.zig");
 const Random = @import("Random.zig");
 const Vcd = @import("Vcd.zig");
@@ -43,6 +44,8 @@ memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
+/// Host configuration is fixed for this initialized simulation, including across firmware resets.
+system_configuration: SystemConfiguration,
 cordic: Cordic = .{},
 random: Random = .{},
 debug: struct {
@@ -76,7 +79,8 @@ pub fn clock_reached(clock: u64, deadline: u64) bool {
 }
 
 /// Initialize all shared resources and stopped cogs, binding each cog back to this hub.
-pub fn init(hub: *Hub) void {
+pub fn init(hub: *Hub, configuration: SystemConfiguration) error{InvalidConfiguration}!void {
+    try configuration.validate();
     hub.* = .{
         .cogs = .{
             .init(hub, 0),
@@ -89,6 +93,7 @@ pub fn init(hub: *Hub) void {
             .init(hub, 7),
         },
         .io = .{},
+        .system_configuration = configuration,
     };
     @memcpy(hub.memory[0x7c000..], boot_rom);
     for (&hub.locks, 0..) |*lock, i| {
@@ -218,7 +223,7 @@ pub fn observe(hub: *Hub, space: Debugger.Space, cog: ?u3, address: u32, access:
 /// Reset returns only after init() has restored the entire hub and stopped every cog.
 pub fn step(hub: *Hub) StepResult {
     if (hub.reset_requested) {
-        hub.init();
+        hub.init(hub.system_configuration) catch unreachable;
         return .reset;
     }
     if (hub.debugger) |debugger| {
@@ -319,7 +324,7 @@ pub fn step(hub: *Hub) StepResult {
         hub.read_class = .data;
         cog.clock_command();
         if (hub.reset_requested) {
-            hub.init();
+            hub.init(hub.system_configuration) catch unreachable;
             return .reset;
         }
     }
@@ -335,7 +340,7 @@ pub fn step(hub: *Hub) StepResult {
             hub.read_class = .data;
             cog.step();
             if (hub.reset_requested) {
-                hub.init();
+                hub.init(hub.system_configuration) catch unreachable;
                 return .reset;
             }
         }
@@ -436,7 +441,7 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
         _ = hub.step();
@@ -508,7 +513,7 @@ test "COGSTOP aborts a UART frame before its completion edge" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
@@ -553,7 +558,7 @@ test "event delivery coalesces without crossing cogs and reset cancels queued la
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const events = std.enums.values(EventId);
     for (events) |event| {
         hub.cogs[0].signal_event(event);
@@ -597,7 +602,7 @@ test "pending events arrive during a timed wait" {
     defer std.testing.allocator.destroy(hub);
 
     for (std.enums.values(EventId)) |event| {
-        hub.init();
+        try hub.init(.ideal);
         const cog = &hub.cogs[0];
         cog.exec_mode = .cog;
         cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_161F }; // WAITX #11.
@@ -617,7 +622,7 @@ test "pending events keep their two-clock delay across counter rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 1;
     hub.clocking = true;
     hub.cogs[0].signal_event(.QMT);
@@ -635,7 +640,7 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
     defer std.testing.allocator.destroy(hub);
 
     for (0..8) |offset| {
-        hub.init();
+        try hub.init(.ideal);
         hub.counter = std.math.maxInt(u64) - offset;
         const fifo_address: u32 = @intCast((hub.counter & 7) * 4);
         const read_address: u32 = @intCast(((hub.counter +% 1) & 7) * 4);
@@ -669,7 +674,7 @@ test "wait deadlines remain future across counter rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 4;
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -688,7 +693,7 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 10;
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
@@ -715,7 +720,7 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     _ = hub.step();
     try std.testing.expectEqualStrings("x", output.written());
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 4;
     // The first loaded instruction stops cog 1; the other words are data.
     hub.write_memory(0x1000, 0xFD64_0203, 4, false);
@@ -738,7 +743,7 @@ test "pattern conditions are sampled while a cog waits" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
@@ -758,7 +763,7 @@ test "selectable pin samples retain delayed notifications during waits" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
@@ -799,7 +804,7 @@ test "cog restart clears pending interrupts and controller state" {
     defer std.testing.allocator.destroy(hub);
 
     for (std.enums.values(Cog.InterruptLevel)) |level| {
-        hub.init();
+        try hub.init(.ideal);
         try hub.start_cog(3, .{ .hub_address = 0x4000, .load_image = false, .clocked = false });
         const cog = &hub.cogs[3];
         try std.testing.expect(cog.started_no_load);
@@ -821,7 +826,7 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     var expected = hub.random;
     hub.counter = std.math.maxInt(u64) - 3;
     for (0..16) |_| {
@@ -842,7 +847,7 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
 
     for (0..8) |id| {
         for (0..8) |phase| {
-            hub.init();
+            try hub.init(.ideal);
             for (0..16) |_| {
                 _ = hub.step();
             }
@@ -870,7 +875,7 @@ test "ROM cache aliases, byte protection, masked wrapping and configuration lock
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
     try std.testing.expectEqual(hub.read_memory(0x7c000, 4), hub.read_memory(0xfc000, 4));
     hub.write_memory(0x7ffff, 0x1122_3344, 4, false);
@@ -888,7 +893,7 @@ test "ROM cache aliases, byte protection, masked wrapping and configuration lock
     try hub.start_cog(0, .{ .clocked = false });
     try std.testing.expect(hub.debug.locked);
     try std.testing.expectEqual(Cog.InterruptState.pending, hub.cogs[0].debug.state);
-    hub.init();
+    try hub.init(.ideal);
     try std.testing.expect(!hub.debug.locked);
     try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
 }
@@ -898,7 +903,7 @@ test "debug ROM saves and restores sixteen registers for all eight cogs" {
     defer std.testing.allocator.destroy(hub);
 
     for (0..8) |id| {
-        hub.init();
+        try hub.init(.ideal);
         hub.configure(0x2000_00ff);
         const cog = &hub.cogs[id];
         const base: u32 = 0xff800 + ((15 ^ @as(u32, @intCast(id))) << 7);
@@ -929,7 +934,7 @@ test "deferred write authorization survives a debug state transition" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.configure(0x2001_0001);
     const before = hub.read_memory(0xfc000, 4);
     const cog = &hub.cogs[0];
@@ -947,7 +952,7 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     @memset(&hub.memory, 0xaa);
     hub.counter = 123;
     hub.debug = .{ .enables = 0xff, .protected = true, .locked = true };
@@ -1001,7 +1006,7 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
 
 test "converter clocks independently of execution and cog reset clears only its own DAC state" {
     var hub: Hub = undefined;
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.streamer.apply(cog, .{ .dacs = 0x7856_3412 });
     cog.converter.apply(.{ .cy = 0x8000_0001 });
@@ -1021,4 +1026,36 @@ test "converter clocks independently of execution and cog reset clears only its 
     try std.testing.expectEqual([4]u8{ 0, 0, 0, 0 }, cog.raw_dacs);
     try std.testing.expect(!cog.converter.active());
     try std.testing.expectEqualDeep(adjacent, hub.cogs[1].converter);
+}
+
+test "system configuration initializes atomically and survives firmware reset" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    var configuration: SystemConfiguration = .realistic;
+    configuration.vio_voltage = 2.5;
+    configuration.threshold_ratio = 0.25;
+    try hub.init(configuration);
+    hub.memory[0] = 0xaa;
+    hub.counter = 7;
+    try hub.io.setExternal(@enumFromInt(10), .{ .voltage = 1, .resistance = 1 });
+    try std.testing.expectEqual(StepResult.normal, hub.step());
+    try std.testing.expectEqual(IO.Signal.high, hub.io.pads[10]);
+    const state = hub.io.getExternal(@enumFromInt(10)).?;
+    var invalid = configuration;
+    invalid.pad_capacitance = 0;
+    try std.testing.expectError(error.InvalidConfiguration, hub.init(invalid));
+    try std.testing.expectEqualDeep(configuration, hub.system_configuration);
+    try std.testing.expectEqual(@as(u8, 0xaa), hub.memory[0]);
+    try std.testing.expectEqual(@as(u64, 8), hub.counter);
+    try std.testing.expectEqualDeep(state, hub.io.getExternal(@enumFromInt(10)).?);
+    hub.configure(0x1000_0000);
+    try std.testing.expectEqual(StepResult.reset, hub.step());
+    try std.testing.expectEqualDeep(configuration, hub.system_configuration);
+    try std.testing.expectEqual(@as(u64, 0), hub.counter);
+    try std.testing.expectEqual(@as(u8, 0), hub.memory[0]);
+    try std.testing.expect(hub.io.getExternal(@enumFromInt(10)) == null);
+    try std.testing.expectEqualDeep(IO.Pad.Source.float, hub.io.external[10]);
+    try hub.init(.ideal);
+    try std.testing.expectEqualDeep(SystemConfiguration.ideal, hub.system_configuration);
 }

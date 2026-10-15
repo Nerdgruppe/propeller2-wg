@@ -40,8 +40,14 @@ pub fn main(init: std.process.Init) !u8 {
 
     var gui: GUI = .{ .hub = undefined, .debugger = .{ .allocator = init.gpa } };
     defer gui.debugger.deinit();
+    defer {
+        if (gui.initial_image) |image| {
+            init.gpa.free(image);
+        }
+    }
+
     var host_io = init.io;
-    gui.hub.init();
+    try gui.hub.init(.ideal);
     gui.hub.debugger = &gui.debugger;
 
     if (cli.options.image) |path| {
@@ -59,6 +65,7 @@ pub fn main(init: std.process.Init) !u8 {
             std.log.info("loaded {Bi:.2} into hub memory", .{count});
         }
 
+        gui.initial_image = try init.gpa.dupe(u8, gui.hub.memory[0..count]);
         try gui.hub.start_cog(0, .{});
         gui.cogs_visible[0] = true;
     }
@@ -129,6 +136,9 @@ const inspect = windtunnel.inspect;
 const GUI = struct {
     hub: windtunnel.Hub,
     debugger: Debugger,
+    initial_image: ?[]const u8 = null,
+    configuration_draft: windtunnel.SystemConfiguration = .ideal,
+    configuration_error: ?anyerror = null,
     is_running: bool = false,
     step_requested: bool = false,
     frame: windtunnel.Frame = .{},
@@ -377,8 +387,10 @@ const GUI = struct {
         show("Debug configuration", hub.debug);
         show("Pending starts", hub.pending_starts);
         show("Fault", hub.fault);
+        show("Active system configuration (SI units)", hub.system_configuration);
         zgui.beginDisabled(.{ .disabled = gui.is_running });
         defer zgui.endDisabled();
+        gui.systemConfiguration();
         _ = hexInput("HUBSET clock/debug", &gui.hubset, false);
         if (zgui.button("Apply HUBSET", .{})) {
             hub.configure(gui.hubset);
@@ -435,6 +447,94 @@ const GUI = struct {
         }
     }
 
+    /// Reinitialize with validated draft parameters, restoring only the original image and host debugger definitions.
+    fn reinitialize(gui: *GUI) !void {
+        try gui.hub.init(gui.configuration_draft);
+        gui.debugger.acknowledge(&gui.hub);
+        gui.hub.debugger = &gui.debugger;
+        if (gui.initial_image) |image| {
+            @memcpy(gui.hub.memory[0..image.len], image);
+            try gui.hub.start_cog(0, .{});
+            gui.cogs_visible[0] = true;
+        }
+        gui.is_running = false;
+        gui.step_requested = false;
+        gui.jump_pending = false;
+        gui.frame = .{};
+        gui.configuration_error = null;
+    }
+
+    /// Edit a host-only draft; the active chip changes only when explicitly reinitialized.
+    fn systemConfiguration(gui: *GUI) void {
+        if (!header("System Configuration", .{}))
+            return;
+        const draft = &gui.configuration_draft;
+        zgui.text("Active: {s} | Draft: {s}", .{ gui.hub.system_configuration.name(), draft.name() });
+        if (zgui.button("Ideal", .{})) {
+            draft.* = .ideal;
+            gui.configuration_error = null;
+        }
+        zgui.sameLine(.{});
+        if (zgui.button("Realistic", .{})) {
+            draft.* = .realistic;
+            gui.configuration_error = null;
+        }
+        quantityInput("VIO (V)", &draft.vio_voltage, 1);
+        quantityInput("Digital threshold / VIO", &draft.threshold_ratio, 1);
+        quantityInput("Internal pad capacitance (pF)", &draft.pad_capacitance, 1e12);
+        if (zgui.button(if (draft.fast_model == .linear) "Fast drive: linear" else "Fast drive: piecewise", .{})) {
+            draft.fast_model = switch (draft.fast_model) {
+                .linear => .piecewise,
+                .piecewise => .linear,
+            };
+        }
+        quantityInput("Linear fast low (ohm)", &draft.fast_low_resistance, 1);
+        quantityInput("Linear fast high (ohm)", &draft.fast_high_resistance, 1);
+        if (zgui.beginTable("Fast drive curve", .{ .column = 4, .flags = .{ .borders = .all } })) {
+            zgui.tableNextRow(.{});
+            for ([_][:0]const u8{ "Point", "Current (mA)", "Low drop (mV)", "High drop (mV)" }, 0..) |label, i| {
+                _ = zgui.tableSetColumnIndex(@intCast(i));
+                zgui.textUnformatted(label);
+            }
+            for (&draft.curve, 0..) |*point, i| {
+                zgui.pushIntId(@intCast(i));
+                zgui.tableNextRow(.{});
+                _ = zgui.tableSetColumnIndex(0);
+                zgui.text("{}", .{i + 1});
+                _ = zgui.tableSetColumnIndex(1);
+                quantityInput("##current", &point.current, 1e3);
+                _ = zgui.tableSetColumnIndex(2);
+                quantityInput("##low", &point.low_drop, 1e3);
+                _ = zgui.tableSetColumnIndex(3);
+                quantityInput("##high", &point.high_drop, 1e3);
+                zgui.popId();
+            }
+            zgui.endTable();
+        }
+        quantityInput("1k5 drive (kohm)", &draft.resistor_1k5, 1e-3);
+        quantityInput("15k drive (kohm)", &draft.resistor_15k, 1e-3);
+        quantityInput("150k drive (kohm)", &draft.resistor_150k, 1e-3);
+        quantityInput("Current-drive resistance (ohm)", &draft.current_drive_resistance, 1);
+        quantityInput("1mA drive limit (mA)", &draft.current_1ma, 1e3);
+        quantityInput("100uA drive limit (uA)", &draft.current_100ua, 1e6);
+        quantityInput("10uA drive limit (uA)", &draft.current_10ua, 1e6);
+        _ = zgui.checkbox("Leakage enabled", .{ .v = &draft.leakage_enabled });
+        quantityInput("Leakage to ground (Mohm)", &draft.leakage_resistance, 1e-6);
+        quantityInput("Minimum pad voltage (V)", &draft.min_pad_voltage, 1);
+        quantityInput("Maximum pad voltage above VIO (V)", &draft.max_pad_voltage_margin, 1);
+        quantityInput("Maximum pin current (mA)", &draft.max_pin_current, 1e3);
+        zgui.textUnformatted("Reinitialize restores the original image and pauses.");
+        zgui.textUnformatted("Runtime RAM edits and external stimuli are discarded.");
+        if (zgui.button("Reinitialize with settings", .{})) {
+            gui.reinitialize() catch |err| {
+                gui.configuration_error = err;
+            };
+        }
+        if (gui.configuration_error) |err| {
+            zgui.textColored(.{ 1, 0.3, 0.25, 1 }, "Cannot initialize: {t}", .{err});
+        }
+    }
+
     /// Show digital pad samples, electrical snapshots and independent external source controls.
     fn ioWindow(gui: *GUI) void {
         if (!new_window("I/O", &gui.io_visible))
@@ -459,6 +559,9 @@ const GUI = struct {
             zgui.text("Ext: {s}", .{if (source.drive_enabled) "driven" else "float"});
             if (io.getExternal(@enumFromInt(i))) |state| {
                 zgui.text("{d:.3} V | {d:.3} mA", .{ state.voltage, state.current * 1e3 });
+                if (state.violations.any()) {
+                    zgui.textColored(.{ 1, 0.3, 0.25, 1 }, "RATING EXCEEDED", .{});
+                }
             }
             signalText("Sample", io.pad_reads[i]);
             if (zgui.button("Inspect", .{})) {
@@ -952,6 +1055,14 @@ fn disassemblyText(word: u32) void {
     zgui.textUnformatted(writer.buffered());
 }
 
+/// Edit an electrical parameter in engineering units without changing its SI representation.
+fn quantityInput(label: [:0]const u8, value: *f64, scale: f64) void {
+    var displayed = value.* * scale;
+    if (zgui.inputScalar(label, f64, .{ .v = &displayed, .cfmt = "%.6g" })) {
+        value.* = displayed / scale;
+    }
+}
+
 /// Give both digital levels explicit labels.
 fn signalName(signal: windtunnel.IO.Signal) [:0]const u8 {
     return switch (signal) {
@@ -1055,10 +1166,11 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     defer std.testing.allocator.destroy(gui);
 
     gui.* = .{ .hub = undefined, .debugger = .{ .allocator = std.testing.allocator } };
-    gui.hub.init();
+    try gui.hub.init(.ideal);
     defer gui.debugger.deinit();
 
     gui.hub.debugger = &gui.debugger;
+    gui.configuration_draft = .realistic;
     gui.cogs_visible = @splat(true);
     gui.pins_visible = @splat(true);
     gui.memory_visible = true;
@@ -1142,4 +1254,68 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     try std.testing.expectEqual(@as(usize, 0), gui.debugger.hits.items.len);
     try std.testing.expect(gui.debugger.hasExecution(execution));
     try std.testing.expectEqual(@as(u32, 0x7fff0), gui.jump);
+    try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.ideal, gui.hub.system_configuration);
+    try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.realistic, gui.configuration_draft);
+}
+
+test "GUI configuration drafts are isolated and reinitialization restores the image and debugger definitions" {
+    const gui = try std.testing.allocator.create(GUI);
+    defer std.testing.allocator.destroy(gui);
+
+    gui.* = .{ .hub = undefined, .debugger = .{ .allocator = std.testing.allocator } };
+    defer gui.debugger.deinit();
+
+    try gui.hub.init(.ideal);
+    gui.hub.debugger = &gui.debugger;
+    const image = [_]u8{ 0x11, 0x22, 0x33, 0x44 };
+    gui.initial_image = &image;
+    const execution: Debugger.Execution = .{ .cog = 0, .domain = .cog, .pc = 0 };
+    try gui.debugger.toggleExecution(execution);
+    try gui.debugger.watches.append(std.testing.allocator, .{
+        .space = .hub,
+        .cog = null,
+        .start = 0,
+        .end = 4,
+        .access = .both,
+    });
+    gui.hub.memory[0] = 0xaa;
+    gui.hub.memory[4096] = 0xbb;
+    try gui.hub.io.setExternal(@enumFromInt(10), .high);
+    try std.testing.expectEqual(windtunnel.Hub.StepResult.normal, gui.hub.step());
+    gui.debugger.stop = .data;
+    gui.is_running = true;
+    gui.step_requested = true;
+    gui.jump_pending = true;
+    gui.configuration_draft = .realistic;
+    gui.configuration_draft.pad_capacitance = 0;
+    try std.testing.expectError(error.InvalidConfiguration, gui.reinitialize());
+    try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.ideal, gui.hub.system_configuration);
+    try std.testing.expectEqual(@as(u8, 0xaa), gui.hub.memory[0]);
+    try std.testing.expectEqual(@as(u64, 1), gui.hub.counter);
+    try std.testing.expect(gui.is_running and gui.step_requested);
+    gui.configuration_draft = .realistic;
+    try gui.reinitialize();
+    try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.realistic, gui.hub.system_configuration);
+    try std.testing.expectEqualSlices(u8, &image, gui.hub.memory[0..image.len]);
+    try std.testing.expectEqual(@as(u8, 0), gui.hub.memory[4096]);
+    try std.testing.expectEqual(@as(u64, 0), gui.hub.counter);
+    try std.testing.expect(gui.hub.io.getExternal(@enumFromInt(10)) == null);
+    try std.testing.expectEqualDeep(windtunnel.Pad.Source.float, gui.hub.io.external[10]);
+    try std.testing.expect(gui.hub.is_any_cog_active());
+    try std.testing.expect(gui.hub.debugger == &gui.debugger);
+    try std.testing.expect(gui.debugger.hasExecution(execution));
+    try std.testing.expectEqual(@as(usize, 1), gui.debugger.watches.items.len);
+    try std.testing.expectEqual(Debugger.Stop.none, gui.debugger.stop);
+    try std.testing.expectEqual(@as(usize, 0), gui.debugger.hits.items.len);
+    try std.testing.expectEqual(@as(usize, 0), gui.debugger.encounters.items.len);
+    try std.testing.expect(!gui.is_running and !gui.step_requested and !gui.jump_pending);
+    try std.testing.expectEqualDeep(windtunnel.Frame{}, gui.frame);
+    gui.initial_image = null;
+    gui.configuration_draft.vio_voltage = 3.2;
+    try std.testing.expectEqualStrings("Custom", gui.configuration_draft.name());
+    try std.testing.expectEqual(@as(f64, 3.3), gui.hub.system_configuration.vio_voltage);
+    try gui.reinitialize();
+    try std.testing.expect(!gui.hub.is_any_cog_active());
+    try std.testing.expectEqual(@as(u8, 0), gui.hub.memory[0]);
+    try std.testing.expectEqual(@as(f64, 3.2), gui.hub.system_configuration.vio_voltage);
 }

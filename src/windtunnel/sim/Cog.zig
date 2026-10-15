@@ -2396,7 +2396,7 @@ test "XBYTE sentinel is exact, POP consumes it, and direct jumps still fetch deb
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     for ([_]u32{ 0x8000_01ff, 0x4000_01ff, 0x0010_01ff }) |value| {
@@ -2420,7 +2420,7 @@ test "reset cancels every XBYTE phase and mode while retaining LUT RAM" {
     defer std.testing.allocator.destroy(hub);
 
     for (0..4) |clocks| {
-        hub.init();
+        try hub.init(.ideal);
         const cog = &hub.cogs[0];
         cog.exec_mode = .cog;
         cog.xbyte_mode = @enumFromInt(0x101);
@@ -2446,7 +2446,7 @@ test "five clock passage delays writeback and forwards to the following operand 
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     // MOV r20,#7; ADD r20,#1.
@@ -2472,7 +2472,7 @@ test "execute-only ROM fetch differs from underlying tail RAM and discarded fetc
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.pc = 504;
@@ -2494,7 +2494,7 @@ test "illegal execution stops the cog and discards pending pipeline writes" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .hub;
     // RFBYTE r20: the instruction FIFO cannot also serve software reads.
@@ -2519,7 +2519,7 @@ test "stop discards startup, FIFO, transfers and queued results but preserves RA
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     try hub.start_cog(1, .{});
     const cog = &hub.cogs[1];
     cog.registers.values[100] = 77;
@@ -2548,7 +2548,7 @@ test "COGINIT allocates free cogs and pairs, reports failure, and retains RAM on
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.write_reg(@enumFromInt(20), 0x30); // Start a free cog without loading RAM.
@@ -2608,7 +2608,7 @@ test "LUT sharing receives companion writes and selectable events track both cog
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const even = &hub.cogs[2];
     const odd = even.other();
     even.lut_sharing = true;
@@ -2632,7 +2632,7 @@ test "GETCT reads both halves and counter waits cross the 32-bit wrap" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     hub.counter = 0x1234_5678_ffff_ffff;
     cog.c = false;
@@ -2675,7 +2675,7 @@ test "counter configuration clears each latch and the reached condition reassert
     defer std.testing.allocator.destroy(hub);
 
     for ([_]EventId{ .CT1, .CT2, .CT3 }) |event| {
-        hub.init();
+        try hub.init(.ideal);
         const cog = &hub.cogs[0];
         cog.exec_mode = .cog;
         hub.counter = 0xffff_fffe;
@@ -2704,7 +2704,7 @@ test "selectable configuration masks nine bits and clears only the configured ev
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     for ([_]EventId{ .SE1, .SE2, .SE3, .SE4 }, 0..) |event, index| {
         cog.events = .full;
@@ -2735,7 +2735,7 @@ test "selectable pin sensors sample every architectural input with independent e
     };
     for (0..64) |index| {
         for (cases) |case| {
-            hub.init();
+            try hub.init(.ideal);
             const cog = &hub.cogs[3];
             cog.exec_mode = .cog;
             hub.io.samples.active = true;
@@ -2782,7 +2782,7 @@ test "RDFAST clears block-wrap only on accepted initialization and not on stalle
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     const read: PipelineState = .{ .pc = 0, .instr = 0xFC78_0015 }; // RDFAST #0,r21.
@@ -2820,7 +2820,7 @@ test "FBLOCK replaces the descriptor of a configuration still draining prior wri
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.begin_fifo(.write, 0, 0x1000);
     try std.testing.expect(cog.write_fifo(0x11223344, 4));
@@ -2851,7 +2851,7 @@ test "FIFO ring reads cross the physical end and full writes retain their augmen
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.begin_fifo(.read, 0, 0xfffff);
     cog.fifo_state.engine.?.head = 18;
@@ -2883,7 +2883,7 @@ test "FIFO byte eligibility survives CT rollover and reset discards only uncommi
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     hub.counter = std.math.maxInt(u64) - 1;
     cog.begin_fifo(.write, 0, 0);
@@ -2910,7 +2910,7 @@ test "FIFO write eligibility still waits for the rotating hub RAM slice" {
     defer std.testing.allocator.destroy(hub);
 
     for (0..8) |phase| {
-        hub.init();
+        try hub.init(.ideal);
         hub.counter = phase;
         const cog = &hub.cogs[0];
         cog.begin_fifo(.write, 0, 0);
@@ -2945,7 +2945,7 @@ test "pattern comparison reads architectural INA or INB and retains the SETPAT f
     for (cases) |case| {
         for ([_]bool{ false, true }) |port_b| {
             for ([_]bool{ false, true }) |equal| {
-                hub.init();
+                try hub.init(.ideal);
                 const cog = &hub.cogs[0];
                 hub.io.samples.active = true;
                 // Pads and unsampled routing deliberately disagree with the architectural register.
@@ -2983,7 +2983,7 @@ test "pattern latches survive a false condition and rearm on new edges during wa
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     const other_cog = &hub.cogs[1];
     hub.io.samples.active = true;
@@ -3056,7 +3056,7 @@ test "SETPAT dispatch resolves registers immediates augmentation and cancellatio
         for ([_]bool{ false, true }) |s_imm| {
             for ([_]bool{ false, true }) |augmented| {
                 for (0..4) |flags| {
-                    hub.init();
+                    try hub.init(.ideal);
                     const cog = &hub.cogs[0];
                     const mask: u32 = if (augmented)
                         0x8000_000f
@@ -3124,7 +3124,7 @@ test "writeback acknowledgement and a new streamer event on the same clock prese
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = 9;
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -3150,7 +3150,7 @@ test "interrupt requests select every event source independently of event latche
 
     for (std.enums.values(EventId)[1..]) |event| {
         for (std.enums.values(InterruptLevel)) |level| {
-            hub.init();
+            try hub.init(.ideal);
             const cog = &hub.cogs[3];
             const slot = cog.interrupts.levels.getPtr(level);
             cog.events.insert(event);
@@ -3189,7 +3189,7 @@ test "interrupt completion requires a register IRET source and both flag writes"
     defer std.testing.allocator.destroy(hub);
 
     for (std.enums.values(InterruptLevel), [_]Register{ .IRET1, .IRET2, .IRET3 }) |level, source| {
-        hub.init();
+        try hub.init(.ideal);
         const cog = &hub.cogs[0];
         for (&cog.interrupts.levels.values) |*slot| {
             slot.state = .active;
@@ -3212,7 +3212,7 @@ test "interrupt injection holds the PC and FIFO and respects priority reservatio
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .hub;
     cog.pc = 0x4003;
@@ -3258,7 +3258,7 @@ test "zero augmentations shield until a non-canceled consumer is ahead of the in
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.trigger_interrupt(.int1);
     hub.counter += 1;
@@ -3292,7 +3292,7 @@ test "WAITINT samples pending requests rather than the pollable interrupt latch"
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.events.insert(.INT);
     try std.testing.expect(!cog.event_for_wait(.INT));
