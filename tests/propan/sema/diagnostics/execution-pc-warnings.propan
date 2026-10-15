@@ -1,11 +1,13 @@
 //? PROPAN CHECK LIST
-//? err: warn_emitted_padding_byte_s line 19 count==16
-//? err: warn_hubexec_pc_below_branch_range line 10
-//? err: warn_hubexec_pc_below_branch_range line 13
-//? err: warn_cogexec_pc_in_interrupt_registers line 16
-//? err: warn_cogexec_pc_in_pointer_registers line 19
-//? err: warn_cogexec_pc_in_interrupt_registers line 22
-//? err: warn_cogexec_pc_in_pointer_registers line 22
+//? err: warn_emitted_padding_byte_s line 21 count==16
+//? err: warn_hubexec_pc_below_branch_range line 12
+//? err: warn_hubexec_pc_below_branch_range line 15
+//? err: warn_cogexec_pc_in_interrupt_registers line 18
+//? err: warn_cogexec_pc_in_pointer_registers line 21
+//? err: warn_cogexec_pc_in_interrupt_registers line 24
+//? err: warn_cogexec_pc_in_pointer_registers line 24
+//? err: warn_cogexec_pc_in_interrupt_registers line 29
+//? err: warn_cogexec_pc_in_pointer_registers line 29
 
 .hubexec 0x3FF
 BYTE 0
@@ -21,8 +23,8 @@ NOP
 // A new segment can start directly in the pointer register region.
 .cogexec $, 502
 NOP
-// LUT and register-space limits stay independent of the cog execution limit.
+// LUT limits stay independent of the cog execution limit.
 .lutexec $, 0x3FF
 NOP
-.regspace $, 511
+.regspace $, 502
 RES 1

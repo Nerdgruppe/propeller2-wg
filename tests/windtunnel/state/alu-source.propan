@@ -1,0 +1,102 @@
+//? WINDTUNNEL CHECK LIST
+//? pre: cog[0].c = true
+//? post: cog[0].reg[from_register] == 1
+//? post: cog[0].reg[from_immediate] == 2
+//? post: cog[0].reg[skipped] == 0
+//? post: cog[0].reg[after_skip] == 9
+//? post: cog[0].reg[after_nop] == 11
+//? post: cog[0].reg[after_prefix] == 0x12345678
+//? post: cog[0].reg[aug_override] == 1
+//? post: cog[0].reg[after_aug] == 7
+//? post: cog[0].reg[signed_value] == 0xffff8000
+//? post: cog[0].reg[chained] == 1
+//? post: cog[0].reg[after_wait] == 13
+//? post: cog[0].reg[after_return] == 17
+//? post: cog[0].reg[scale] == 0x8000
+//? post: cog[0].reg[negative] == 0x8000
+//? post: cog[0].reg[zero_result] == 0
+//? post: cog[0].reg[fifo_byte] == 0xa5
+//? post: cog[0].reg[seed] == 0x84908405
+//? post: cog[0].reg[random] == 0x62690201
+//? post: cog[0].reg[random_immediate] == 0x62690201
+//? post: cog[0].q == 0x62690201
+
+// Check next-instruction source forwarding from SCA, SCAS and XORO32.
+// NOPs, canceled instructions, prefixes, waits and returns reveal which instruction consumes the forwarded source.
+
+                SCA     scale,              2
+                MOV     from_register,      source
+                SCA     scale,              4
+                MOV     from_immediate,     123
+                SCA     scale,              6
+    if(!C)      MOV     skipped,            0
+                MOV     after_skip,         9
+                SCA     scale,              8
+                NOP
+                MOV     after_nop,          11
+                SCA     scale,              10
+                AUGS    0x12345678
+                MOV     after_prefix,       0x78
+                AUGS    0x87654200
+                SCA     scale,              source
+                MOV     aug_override,       0x12
+                MOV     after_aug,          7
+                SCAS    negative,           factor
+                MOV     signed_value,       0
+                SCA     scale,              4
+                SCA     scale,              0
+                MOV     chained,            0
+                SCA     scale,              2
+                WAITX   2
+                MOV     after_wait,         13
+                CALL    after_return_test
+                MOV     after_return,       17
+                SCA     zero,               2
+                MOV     zero_result,        source
+                SCAS    factor,             address
+                RDFAST  0,                  0
+                RFBYTE  fifo_byte
+                XORO32  seed
+                MOV     random,             source
+                XORO32  second_seed
+                MOV     random_immediate,   123
+                JMP     nrel(_end)
+after_return_test:
+    return      SCA     scale,          2
+                MOV     after_return,   0
+var scale:      LONG    0x8000
+var negative:   LONG    0x8000
+var factor:     LONG    0x4000
+var source:     LONG    2
+var from_register:
+                LONG    0
+var from_immediate:
+                LONG    0
+var skipped:    LONG    0
+var after_skip: LONG    0
+var after_nop:  LONG    0
+var after_prefix:
+                LONG    0
+var aug_override:
+                LONG    0
+var after_aug:  LONG    0
+var signed_value:
+                LONG    0
+var chained:    LONG    0
+var after_wait: LONG    0
+var after_return:
+                LONG    0
+var seed:       LONG    1
+var random:     LONG    0
+var second_seed:
+                LONG    1
+var random_immediate:
+                LONG    0
+var zero:       LONG    0
+var zero_result:
+                LONG    123
+var address:    LONG    hubaddr(buffer)
+var fifo_byte:  LONG    0
+.data
+buffer:         BYTE    0xa5
+

@@ -159,27 +159,29 @@ const Entries = struct {
         return .blank;
     }
 
+    /// Aligns attached blocks, preserving rounded indentation after labels and before directives.
     fn comment_indent(self: Entries, index: usize) usize {
         const comments = self.file.comments;
         var first = index;
         while (first > 0 and comments[first - 1].span.location().line + 1 == comments[first].span.location().line and standalone(comments[first - 1])) first -= 1;
         var last = index;
         while (last + 1 < comments.len and comments[last].span.location().line + 1 == comments[last + 1].span.location().line and standalone(comments[last + 1])) last += 1;
-        const first_line = comments[first].span.location().line;
+        const follows_label = for (0..self.line_index) |back| {
+            const line = self.file.sequence[self.line_index - back - 1];
+            if (line == .empty) continue;
+            break line == .label and line_location(line).line + 1 == comments[first].span.location().line;
+        } else false;
         const last_line = comments[last].span.location().line;
-        if (first_line > 1 and self.blank_line(first_line - 1) and self.blank_line(last_line + 1))
-            return std.mem.alignForward(usize, comments[first].span.location().column - 1, 4);
         for (self.file.sequence[self.line_index..]) |line| {
             if (line == .empty or line_location(line).line <= last_line) continue;
-            return if (line == .instruction and !is_directive(line.instruction)) mnemonic_column else 0;
+            if (line_location(line).line != last_line + 1) break;
+            if (line == .instruction) {
+                if (is_directive(line.instruction) or follows_label) break;
+                return mnemonic_column;
+            }
+            return 0;
         }
         return std.mem.alignForward(usize, comments[first].span.location().column - 1, 4);
-    }
-
-    fn blank_line(self: Entries, line: u32) bool {
-        const text = self.file.source.line(line) orelse return false;
-        const start = self.file.source.line_starts[line - 1];
-        return start < self.file.source.text.len and std.mem.trim(u8, text, " \t\r").len == 0;
     }
 };
 

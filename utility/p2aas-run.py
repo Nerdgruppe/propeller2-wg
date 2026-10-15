@@ -2,16 +2,24 @@
 """Assemble a Propan file and run it on the local P2AAS board."""
 
 import asyncio
+import os
 import struct
 import subprocess
 import sys
+import urllib.parse
 from pathlib import Path
 
 import websockets
 
 
 async def run(image: bytes) -> None:
-    url = "ws://127.0.0.1:12880/?baudrate=115200&timeout_ms=5000"
+    endpoint = urllib.parse.urlsplit(os.environ.get("P2AAS_ENDPOINT", "ws://127.0.0.1:12880/"))
+    query = dict(urllib.parse.parse_qsl(endpoint.query, keep_blank_values=True))
+    if "code" in query:
+        raise ValueError("P2AAS_ENDPOINT must not select URL-code upload")
+    query.setdefault("baudrate", "115200")
+    query.setdefault("timeout_ms", "5000")
+    url = urllib.parse.urlunsplit(endpoint._replace(query=urllib.parse.urlencode(query)))
     async with websockets.connect(url, max_size=None) as socket:
         await socket.send(struct.pack("<I", len(image)) + image)
         try:

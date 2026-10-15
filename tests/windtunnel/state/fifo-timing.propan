@@ -1,0 +1,287 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 5000
+//? max-cycles: 2000000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-kind0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? run: "cog0-kind1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? run: "cog0-kind2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? run: "cog0-kind3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 3
+//? run: "cog0-kind4"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 4
+//? run: "cog0-kind5"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 5
+//? run: "cog1-kind0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? run: "cog1-kind1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? run: "cog1-kind2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? run: "cog1-kind3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 3
+//? run: "cog1-kind4"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 4
+//? run: "cog1-kind5"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 5
+//? run: "cog2-kind0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? run: "cog2-kind1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? run: "cog2-kind2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? run: "cog2-kind3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 3
+//? run: "cog2-kind4"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 4
+//? run: "cog2-kind5"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 5
+//? run: "cog3-kind0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? run: "cog3-kind1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? run: "cog3-kind2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? run: "cog3-kind3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 3
+//? run: "cog3-kind4"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 4
+//? run: "cog3-kind5"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 5
+//? run: "cog4-kind0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? run: "cog4-kind1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? run: "cog4-kind2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? run: "cog4-kind3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 3
+//? run: "cog4-kind4"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 4
+//? run: "cog4-kind5"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 5
+//? run: "cog5-kind0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? run: "cog5-kind1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? run: "cog5-kind2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? run: "cog5-kind3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 3
+//? run: "cog5-kind4"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 4
+//? run: "cog5-kind5"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 5
+//? run: "cog6-kind0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? run: "cog6-kind1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? run: "cog6-kind2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? run: "cog6-kind3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 3
+//? run: "cog6-kind4"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 4
+//? run: "cog6-kind5"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 5
+//? run: "cog7-kind0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? run: "cog7-kind1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? run: "cog7-kind2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? run: "cog7-kind3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 3
+//? run: "cog7-kind4"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 4
+//? run: "cog7-kind5"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 5
+
+                // Sweep setup latency across banks, byte alignments and CT phase; WAITX isolates each case's background state.
+                MOV     address,    aug(hubaddr(payload))
+                MOV     bank,       0
+bank_loop:
+                MOV     alignment,  0
+alignment_loop:
+                MOV     phase,  0
+phase_loop:
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      phase
+                ADDCT1  timer,      0
+                WAITCT1
+.if probe_kind >= 4
+                WRFAST  0,          address
+                WFLONG  aug(0x12121212)
+.endif
+                GETCT   start
+.if probe_kind == 0 or probe_kind == 2 or probe_kind == 5
+                RDFAST  config,     address
+.else
+                WRFAST  config,     address
+.endif
+                GETCT   finish
+                SUB     finish,     start
+                AND     start,      7
+.if probe_kind == 0
+                MOV     expected,   bank
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                SUB     expected,   5
+                AND     expected,   7
+                ADD     expected,   12
+.elif   probe_kind == 1
+                MOV     expected,   5
+.elif   probe_kind == 2 or probe_kind == 3
+                MOV     expected,   4
+.else
+                MOV     expected,   bank
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                AND     expected,   7
+.if probe_kind == 4
+                CMP     alignment,  0               :wz
+    if(!Z)      ADD     expected,   1
+                ADD     expected,   2
+                FGE     expected,   5
+.else
+                ADD     expected,   15
+.endif
+.endif
+                CMP     finish,     expected        :wz
+    if(!Z)      ADD     failures,   1
+                WAITX   100
+                GETPTR  pointer
+                MOV     expected,   address
+                AND     expected,   aug(0xfffff)
+                CMP     pointer,    expected        :wz
+    if(!Z)      ADD     failures,   1
+                ADD     phase,      1
+                CMP     phase,      8               :wz
+    if(!Z)      JMP     phase_loop
+                ADD     address,    1
+                ADD     alignment,  1
+                CMP     alignment,  4               :wz
+    if(!Z)      JMP     alignment_loop
+                ADD     bank,       1
+                CMP     bank,       8               :wz
+    if(!Z)      JMP     bank_loop
+                JMP     nrel(_end)
+var address:    LONG    0
+var bank:       LONG    0
+var alignment:  LONG    0
+var phase:      LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var expected:   LONG    0
+var pointer:    LONG    0
+var failures:   LONG    0
+.if probe_kind == 2 or probe_kind == 3
+var config:     LONG    0xffffc000
+.else
+var config:     LONG    0x7fffc000
+.endif
+.data
+.align  32
+payload:        LONG    [0x12121212] * 128
+

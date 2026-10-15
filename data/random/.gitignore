@@ -1,0 +1,14 @@
+# Hardware harness dumps and reports can be recaptured from the .propan probes.
+/captures/
+
+# Derived seed-hammer statistics; regenerate with seed_hammer.py.
+/seed-hammer-statistics.json
+/seed-hammer-pooled.json
+
+# recover.py outputs, including runs saved in custom subdirectories.
+constraints.smt2
+solver.txt
+model.json
+
+# Keep taps.json (the simulator's reference calibration), published-mapping.json,
+# probe sources, analysis tools and research notes visible to Git.

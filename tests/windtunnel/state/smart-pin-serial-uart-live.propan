@@ -1,0 +1,130 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-n8-to4-at2-p64"
+//? const: old = 8
+//? const: new = 4
+//? const: at = 2
+//? const: p = 64
+//? post: cog[*].reg[result0] == 0xf0000000
+//? post: cog[*].reg[ready0] == 0x00000001
+//? post: cog[*].reg[result1] == 0x33c00000
+//? post: cog[*].reg[ready1] == 0x00000001
+//? post: cog[*].reg[result2] == 0x54cf0000
+//? post: cog[*].reg[ready2] == 0x00000001
+//? post: cog[*].reg[result3] == 0x25533c00
+//? post: cog[*].reg[ready3] == 0x00000001
+//? run: "pll0-n4-to8-at2-p64"
+//? const: old = 4
+//? const: new = 8
+//? const: at = 2
+//? const: p = 64
+//? post: cog[*].reg[result0] == 0xef000000
+//? post: cog[*].reg[ready0] == 0x00000001
+//? post: cog[*].reg[result1] == 0xef000000
+//? post: cog[*].reg[ready1] == 0x00000001
+//? post: cog[*].reg[result2] == 0xf37bc000
+//? post: cog[*].reg[ready2] == 0x00000001
+//? post: cog[*].reg[result3] == 0x4d3cdef0
+//? post: cog[*].reg[ready3] == 0x00000001
+//? run: "pll0-n8-to2-at5-p64"
+//? const: old = 8
+//? const: new = 2
+//? const: at = 5
+//? const: p = 64
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[ready0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[ready1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[ready2] == 0x00000000
+//? post: cog[*].reg[result3] == 0x00000000
+//? post: cog[*].reg[ready3] == 0x00000000
+//? run: "pll0-n8-to8-at3-p32"
+//? const: old = 8
+//? const: new = 8
+//? const: at = 3
+//? const: p = 32
+//? post: cog[*].reg[result0] == 0x9f000000
+//? post: cog[*].reg[ready0] == 0x00000001
+//? post: cog[*].reg[result1] == 0x1e67c000
+//? post: cog[*].reg[ready1] == 0x00000001
+//? post: cog[*].reg[result2] == 0x660799f0
+//? post: cog[*].reg[ready2] == 0x00000001
+//? post: cog[*].reg[result3] == 0x181981e6
+//? post: cog[*].reg[ready3] == 0x00000001
+//? run: "pll0-n8-to8-at3-p128"
+//? const: old = 8
+//? const: new = 8
+//? const: at = 3
+//? const: p = 128
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[ready0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x77000000
+//? post: cog[*].reg[ready1] == 0x00000001
+//? post: cog[*].reg[result2] == 0x77000000
+//? post: cog[*].reg[ready2] == 0x00000001
+//? post: cog[*].reg[result3] == 0x77000000
+//? post: cog[*].reg[ready3] == 0x00000001
+
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
+
+                // P3 supplies a long hardware UART frame; P4 changes its receive configuration mid-frame.
+                WRPIN   P_TT_01 | P_ASYNC_TX,           3
+                WRPIN   aug(0x70000000 | P_ASYNC_RX),   4
+                WXPIN   aug((64 << 16) | 31),           3
+                WXPIN   aug((64 << 16) | (old - 1)),    4
+                DIRH    3
+                DIRH    4
+                WAITX   32
+                WYPIN   aug(0x89abcdef),                3
+                WAITX   aug(at * 64)
+.if at != 0
+                WXPIN   aug((p << 16) | (new - 1)),     4
+.endif
+
+                // Capture successive results without acknowledging the receiver.
+                WAITX   aug(512)
+                RQPIN   result0,                        4
+                TESTP   4                                                   :wc
+                WRC     ready0
+
+                // Capture successive results without acknowledging the receiver.
+                WAITX   aug(512)
+                RQPIN   result1,                        4
+                TESTP   4                                                   :wc
+                WRC     ready1
+
+                // Capture successive results without acknowledging the receiver.
+                WAITX   aug(512)
+                RQPIN   result2,                        4
+                TESTP   4                                                   :wc
+                WRC     ready2
+
+                // Capture successive results without acknowledging the receiver.
+                WAITX   aug(512)
+                RQPIN   result3,                        4
+                TESTP   4                                                   :wc
+                WRC     ready3
+
+                DIRL    3
+                DIRL    4
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var result0:    LONG    0
+var ready0:     LONG    0
+var result1:    LONG    0
+var ready1:     LONG    0
+var result2:    LONG    0
+var ready2:     LONG    0
+var result3:    LONG    0
+var ready3:     LONG    0
+

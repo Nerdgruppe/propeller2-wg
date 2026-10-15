@@ -1,0 +1,1094 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "goertzel-arithmetic 0"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x0
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 1"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x50000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 2"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf0000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 3"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x1000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 4"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x51000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 5"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf1000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 6"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x2000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 7"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x52000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 8"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf2000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 9"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x3000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 10"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x53000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 11"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf3000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 12"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x4000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 13"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x54000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 14"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf4000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 15"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x5000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 16"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x55000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 17"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf5000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 18"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x6000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 19"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x56000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 20"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf6000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 21"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x7000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 22"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x57000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffffd1dd
+//? post: cog[0].reg[y] == 0x2e80
+//? post: cog[0].reg[again] == 0xffffd1dd
+//? post: cog[0].reg[qval] == 0x2e80
+//? run: "goertzel-arithmetic 23"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf7000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 24"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x8000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 25"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x58000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 26"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf8000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 27"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x9000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 28"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x59000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 29"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf9000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 30"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xa000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 31"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x5a000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 32"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xfa000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 33"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xb000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 34"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x5b000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffffd1dd
+//? post: cog[0].reg[y] == 0x2e80
+//? post: cog[0].reg[again] == 0xffffd1dd
+//? post: cog[0].reg[qval] == 0x2e80
+//? run: "goertzel-arithmetic 35"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xfb000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 36"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xc000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 37"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x5c000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 38"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xfc000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 39"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xd000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 40"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x5d000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffffd1dd
+//? post: cog[0].reg[y] == 0x2e80
+//? post: cog[0].reg[again] == 0xffffd1dd
+//? post: cog[0].reg[qval] == 0x2e80
+//? run: "goertzel-arithmetic 41"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xfd000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 42"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xe000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffff09f
+//? post: cog[0].reg[y] == 0xf80
+//? post: cog[0].reg[again] == 0xfffff09f
+//? post: cog[0].reg[qval] == 0xf80
+//? run: "goertzel-arithmetic 43"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x5e000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffffd1dd
+//? post: cog[0].reg[y] == 0x2e80
+//? post: cog[0].reg[again] == 0xffffd1dd
+//? post: cog[0].reg[qval] == 0x2e80
+//? run: "goertzel-arithmetic 44"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xfe000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf61
+//? post: cog[0].reg[y] == 0xfffff080
+//? post: cog[0].reg[again] == 0xf61
+//? post: cog[0].reg[qval] == 0xfffff080
+//? run: "goertzel-arithmetic 45"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xf000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 46"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0x5f000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffffe13e
+//? post: cog[0].reg[y] == 0x1f00
+//? post: cog[0].reg[again] == 0xffffe13e
+//? post: cog[0].reg[qval] == 0x1f00
+//? run: "goertzel-arithmetic 47"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0070004
+//? const: config = 0xff000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 48"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x0
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 49"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x50000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 50"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf0000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 51"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x1000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 52"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x51000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 53"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf1000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 54"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x2000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 55"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x52000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 56"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf2000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 57"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x3000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 58"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x53000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 59"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf3000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 60"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x4000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 61"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x54000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 62"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf4000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 63"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x5000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 64"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x55000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 65"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf5000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 66"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x6000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 67"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x56000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 68"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf6000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 69"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x7000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 70"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x57000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffd1dd0
+//? post: cog[0].reg[y] == 0x2e800
+//? post: cog[0].reg[again] == 0xfffd1dd0
+//? post: cog[0].reg[qval] == 0x2e800
+//? run: "goertzel-arithmetic 71"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf7000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 72"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x8000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 73"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x58000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 74"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf8000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 75"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x9000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 76"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x59000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 77"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf9000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 78"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xa000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 79"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x5a000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 80"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xfa000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 81"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xb000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 82"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x5b000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffd1dd0
+//? post: cog[0].reg[y] == 0x2e800
+//? post: cog[0].reg[again] == 0xfffd1dd0
+//? post: cog[0].reg[qval] == 0x2e800
+//? run: "goertzel-arithmetic 83"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xfb000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 84"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xc000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 85"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x5c000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 86"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xfc000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 87"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xd000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 88"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x5d000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffd1dd0
+//? post: cog[0].reg[y] == 0x2e800
+//? post: cog[0].reg[again] == 0xfffd1dd0
+//? post: cog[0].reg[qval] == 0x2e800
+//? run: "goertzel-arithmetic 89"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xfd000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 90"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xe000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xffff09f0
+//? post: cog[0].reg[y] == 0xf800
+//? post: cog[0].reg[again] == 0xffff09f0
+//? post: cog[0].reg[qval] == 0xf800
+//? run: "goertzel-arithmetic 91"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x5e000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffd1dd0
+//? post: cog[0].reg[y] == 0x2e800
+//? post: cog[0].reg[again] == 0xfffd1dd0
+//? post: cog[0].reg[qval] == 0x2e800
+//? run: "goertzel-arithmetic 92"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xfe000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xf610
+//? post: cog[0].reg[y] == 0xffff0800
+//? post: cog[0].reg[again] == 0xf610
+//? post: cog[0].reg[qval] == 0xffff0800
+//? run: "goertzel-arithmetic 93"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xf000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+//? run: "goertzel-arithmetic 94"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0x5f000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0xfffe13e0
+//? post: cog[0].reg[y] == 0x1f000
+//? post: cog[0].reg[again] == 0xfffe13e0
+//? post: cog[0].reg[qval] == 0x1f000
+//? run: "goertzel-arithmetic 95"
+//? const: frequency = 0x10000000
+//? const: control = 0xf0870004
+//? const: config = 0xff000
+//? const: lut = 0x807f55aa
+//? const: increment = 0x0
+//? const: pins = 0x5
+//? post: cog[0].reg[x] == 0x0
+//? post: cog[0].reg[y] == 0x0
+//? post: cog[0].reg[again] == 0x0
+//? post: cog[0].reg[qval] == 0x0
+
+                // Drive known digital input bits; no electrical ADC model participates in these vectors.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                MOV     OUTA,   aug(pins)
+                DIRH    aug(0 | (3 << 6))
+                WAITX   20
+                // Fill the whole LUT so phase, table base, offset and signed byte overflow are observable.
+                MOV     index,  0
+                MOV     value,  aug(lut)
+fill_table:
+                WRLUT   value,          index
+                ADD     value,          aug(increment)
+                ADD     index,          1
+                CMP     index,          aug(512)        :wz
+    if(!Z)      JMP     fill_table
+                // A fresh finite command freezes its final integration state when it ends.
+                SETQ    aug(frequency)
+                XINIT   aug(control),   aug(config)
+                WAITXFI
+                GETXACC x
+                MOV     y,              0
+                GETXACC again
+                MOV     qval,           0
+                // Restore the oracle's terminal clock before returning its register snapshot.
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                MOV     DIRA,           0
+                JMP     nrel(_end)
+var index:      LONG    0
+var value:      LONG    0
+var x:          LONG    0
+var y:          LONG    0
+var again:      LONG    0
+var qval:       LONG    0
+

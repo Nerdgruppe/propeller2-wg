@@ -1,0 +1,116 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-mode29"
+//? const: mode = 29
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[ready0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[ready1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[ready2] == 0x00000000
+//? post: cog[*].reg[reset_result] == 0x00000000
+//? post: cog[*].reg[count] == 0x00000000
+//? run: "pll0-mode31"
+//? const: mode = 31
+//? post: cog[*].reg[result0] == 0x00000000
+//? post: cog[*].reg[ready0] == 0x00000000
+//? post: cog[*].reg[result1] == 0x00000000
+//? post: cog[*].reg[ready1] == 0x00000000
+//? post: cog[*].reg[result2] == 0x00000000
+//? post: cog[*].reg[ready2] == 0x00000000
+//? post: cog[*].reg[reset_result] == 0x00000000
+//? post: cog[*].reg[count] == 0x00000000
+
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
+
+                // Supply a start or clock stream, then shorten below the active bit count.
+                DRVH    3
+                DRVL    5
+                WRPIN   aug(0x71000000 | (mode << 1)),  4
+                WXPIN   aug((16 << 16) | 7),            4
+                DIRH    4
+                WAITX   32
+.if mode == 31
+                DRVL    3
+                WAITX   78
+                WXPIN   aug((16 << 16) | 1),            4
+                DRVH    3
+                WAITX   400
+                RQPIN   result0,                        4
+                TESTP   4                                   :wc
+                WRC     ready0
+                WAITX   aug(800)
+                RQPIN   result1,                        4
+                TESTP   4                                   :wc
+                WRC     ready1
+                WAITX   aug(4000)
+                RQPIN   result2,                        4
+                TESTP   4                                   :wc
+                WRC     ready2
+.else
+                MOV     count,                          5
+first_bits:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,  first_bits
+                WXPIN   1,      4
+                MOV     count,  27
+next_bits:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,      next_bits
+                RQPIN   result0,    4
+                TESTP   4                       :wc
+                WRC     ready0
+                MOV     count,      4
+more_bits:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,      more_bits
+                RQPIN   result1,    4
+                TESTP   4                       :wc
+                WRC     ready1
+                MOV     count,      32
+last_bits:
+                DRVH    5
+                WAITX   8
+                DRVL    5
+                WAITX   8
+                DJNZ    count,          last_bits
+                RQPIN   result2,        4
+                TESTP   4                                   :wc
+                WRC     ready2
+.endif
+                // Reset must not leave any external driver active.
+                DIRL    4
+                WAITX   8
+                RQPIN   reset_result,   4
+                DIRL    3
+                DIRL    5
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var result0:    LONG    0
+var ready0:     LONG    0
+var result1:    LONG    0
+var ready1:     LONG    0
+var result2:    LONG    0
+var ready2:     LONG    0
+var reset_result:
+                LONG    0
+var count:      LONG    0
+

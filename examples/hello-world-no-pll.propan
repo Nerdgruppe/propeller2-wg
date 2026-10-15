@@ -1,0 +1,36 @@
+// Hello world immediately after ROM serial loading, using RCFAST without crystal or PLL.
+// Keep the ROM's calibrated TX baud divider; do not assume RCFAST is exactly 20 MHz.
+// Use baudrate=2000000 with P2AAS, matching its upload rate to avoid a host baud change.
+.cogexec
+                HUBSET  0xF0
+                // ROM reset clears the pin mode but preserves its calibrated X register.
+                DIRL    TX_PIN
+                WRPIN   P_TT_01 | P_ASYNC_TX,   TX_PIN
+                DIRH    TX_PIN
+
+                CALLPA  aug(hubaddr(message)),  write_str
+
+// Drain the last buffered frame, including its stop bit, before halting.
+.flush:         RQPIN   PA,                     TX_PIN      :wc
+    if(C)       JMP     .flush
+.halt:          JMP     .halt
+
+// Write the zero-terminated string at hub address PA.
+write_str:
+                RDFAST  0,  PA
+.next:          RFBYTE  PA          :wz
+    if(!Z)      CALL    write_byte
+    return      TJNZ    PA, .next
+
+// Wait for the preceding frame, then transmit PA without a fixed per-byte delay.
+write_byte:
+                RQPIN   PB, TX_PIN  :wc
+    if(C)       JMP     write_byte
+                WYPIN   PA, TX_PIN
+                RET
+
+message:        BYTE    "Hello world!\r\n", 0
+                LONG    0                           // Align the upload to a whole long.
+
+const TX_PIN = 62
+

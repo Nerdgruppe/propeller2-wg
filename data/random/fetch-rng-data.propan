@@ -1,0 +1,208 @@
+.cogexec
+                HUBSET  aug(CLOCK_MODE)
+                WRPIN   P_TT_01 | P_ASYNC_TX,   TX_PIN
+                WXPIN   aug(UART_CFG),          TX_PIN
+                DIRH    TX_PIN
+                // WAITX   aug(20_000_000)
+
+                CALLPA  '.',                    write_byte
+
+                // Launch all cogs with the hammering:
+                COGINIT 1,                      aug(hubaddr(hammer_poor_rng))
+                COGINIT 2,                      aug(hubaddr(hammer_poor_rng))
+                COGINIT 3,                      aug(hubaddr(hammer_poor_rng))
+                COGINIT 4,                      aug(hubaddr(hammer_poor_rng))
+                COGINIT 5,                      aug(hubaddr(hammer_poor_rng))
+                COGINIT 6,                      aug(hubaddr(hammer_poor_rng))
+                COGINIT 7,                      aug(hubaddr(hammer_poor_rng))
+
+                WAITX   aug(4000)
+
+                CALLPA  '[',                    write_byte
+
+                GETRND  register(0)
+                GETRND  register(1)
+                GETRND  register(2)
+                GETRND  register(3)
+                GETRND  register(4)
+                GETRND  register(5)
+                GETRND  register(6)
+                GETRND  register(7)
+                GETRND  register(8)
+                GETRND  register(9)
+                GETRND  register(10)
+                GETRND  register(11)
+                GETRND  register(12)
+                GETRND  register(13)
+                GETRND  register(14)
+                GETRND  register(15)
+                GETRND  register(16)
+                GETRND  register(17)
+                GETRND  register(18)
+                GETRND  register(19)
+                GETRND  register(20)
+                GETRND  register(21)
+                GETRND  register(22)
+                GETRND  register(23)
+                GETRND  register(24)
+                GETRND  register(25)
+                GETRND  register(26)
+                GETRND  register(27)
+                GETRND  register(28)
+                GETRND  register(29)
+                GETRND  register(30)
+                GETRND  register(31)
+                GETRND  register(32)
+                GETRND  register(33)
+                GETRND  register(34)
+                GETRND  register(35)
+                GETRND  register(36)
+                GETRND  register(37)
+                GETRND  register(38)
+                GETRND  register(39)
+                GETRND  register(40)
+                GETRND  register(41)
+                GETRND  register(42)
+                GETRND  register(43)
+                GETRND  register(44)
+                GETRND  register(45)
+                GETRND  register(46)
+                GETRND  register(47)
+                GETRND  register(48)
+                GETRND  register(49)
+                GETRND  register(50)
+                GETRND  register(51)
+                GETRND  register(52)
+                GETRND  register(53)
+                GETRND  register(54)
+                GETRND  register(55)
+                GETRND  register(56)
+                GETRND  register(57)
+                GETRND  register(58)
+                GETRND  register(59)
+                GETRND  register(60)
+                GETRND  register(61)
+                GETRND  register(62)
+                GETRND  register(63)
+                GETRND  register(64)
+                GETRND  register(65)
+                GETRND  register(66)
+                GETRND  register(67)
+                GETRND  register(68)
+                GETRND  register(69)
+                GETRND  register(70)
+                GETRND  register(71)
+                GETRND  register(72)
+                GETRND  register(73)
+                GETRND  register(74)
+                GETRND  register(75)
+                GETRND  register(76)
+                GETRND  register(77)
+                GETRND  register(78)
+                GETRND  register(79)
+                GETRND  register(80)
+                GETRND  register(81)
+                GETRND  register(82)
+                GETRND  register(83)
+                GETRND  register(84)
+                GETRND  register(85)
+                GETRND  register(86)
+                GETRND  register(87)
+                GETRND  register(88)
+                GETRND  register(89)
+                GETRND  register(90)
+                GETRND  register(91)
+                GETRND  register(92)
+                GETRND  register(93)
+                GETRND  register(94)
+                GETRND  register(95)
+                GETRND  register(96)
+                GETRND  register(97)
+                GETRND  register(98)
+                GETRND  register(99)
+                GETRND  register(100)
+                GETRND  register(101)
+                GETRND  register(102)
+                GETRND  register(103)
+                GETRND  register(104)
+                GETRND  register(105)
+                GETRND  register(106)
+                GETRND  register(107)
+                GETRND  register(108)
+                GETRND  register(109)
+                GETRND  register(110)
+                GETRND  register(111)
+                GETRND  register(112)
+                GETRND  register(113)
+                GETRND  register(114)
+                GETRND  register(115)
+                GETRND  register(116)
+                GETRND  register(117)
+                GETRND  register(118)
+                GETRND  register(119)
+                GETRND  register(120)
+                GETRND  register(121)
+                GETRND  register(122)
+                GETRND  register(123)
+                GETRND  register(124)
+                GETRND  register(125)
+                GETRND  register(126)
+                GETRND  register(127)
+
+                MOV     .index,                 0
+.loop:          ALTD    .index
+                CALLPB  altered,                write_hex
+                ADD     .index,                 1
+                CMP     .index,                 128                 :wz
+    if(!Z)      JMP     .loop
+                COGSTOP 0xFF
+
+var .index:     LONG    0
+
+
+// Writes "PB" to UART TX as "AABBCCDD<LF>"
+write_hex:
+                MOV     .cnt,   8
+.loop:          GETNIB  .chr,   PB, 7
+                SHL     PB,     4
+                CMP     .chr,   10          :wc
+    if(c)       ADD     .chr,   '0'
+    if(!c)      ADD     .chr,   'A' - 10
+                CALLPA  .chr,   write_byte
+                DJNZ    .cnt,   .loop
+                CALLPA  '\n',   write_byte
+                RET
+var .cnt:       LONG    0
+var .chr:       LONG    0
+
+// Writes "PA" to UART TX at TX_PIN
+write_byte:
+                WYPIN   PA, TX_PIN
+                WAITX   1
+.wait:          TESTP   TX_PIN      :wc
+    if(!C)      JMP     .wait
+                RET
+
+
+.cogexec
+hammer_poor_rng:
+
+                REP     1,  0                   // ad infinitum!
+                HUBSET  aug(0x8000_0000)
+
+
+const TX_PIN     = 62
+const UART_CFG   = SmartPin.UartTx.config(
+                       baud=115_200,
+                       bits=8,
+                       clk=200_000_000,
+                   )
+const CLOCK_MODE = Hub.clockMode(
+                       pll=#on,
+                       in_div=1,
+                       mul=10,
+                       out_div=1,
+                       xi=#15pF,
+                       sysclk=#pll,
+                   )
+

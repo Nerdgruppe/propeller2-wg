@@ -1,0 +1,74 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? timeout-ms: 1000
+//? max-cycles: 1_000_000
+//? stdout: "\x44\x33\x22\x11\x00\x00\x00\x00\x44\x33\x22\x11\x44\x33\x22\x11\xef\xbe\xad\xde\x00\x00\x00\x00\x00\x00\x00\x00"
+
+.cogexec    0
+                HUBSET  0xF0
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                DIRH    62
+                // Copy the actual sixteen-long ISR image into cog 1's cached debugger slot.
+                SETQ    15
+                RDLONG  register(0x100),        aug(hubaddr(debug_image))
+                SETQ    15
+                WRLONG  register(0x100),        aug(0xFFF40)
+                // Application writes cannot alter protected RAM; lower alias reads zero.
+                WRLONG  aug(0x11223344),        aug(0xFF800)
+                HUBSET  aug(0x20010002)
+                WRLONG  aug(0x55667788),        aug(0xFF800)
+                RDLONG  register(0x91),         aug(0xFF800)
+                WRLONG  register(0x91),         aug(0x1000)
+                RDLONG  register(0x91),         aug(0x7F800)
+                WRLONG  register(0x91),         aug(0x1004)
+                COGINIT 1,                      aug(hubaddr(target))
+                WAITX   aug(100000)
+                // FIFO writes remain unprivileged even while their owner services INT0.
+                RDLONG  register(0x91),         aug(0xFF800)
+                WRLONG  register(0x91),         aug(0x1010)
+                RDLONG  register(0x91),         aug(0x7F800)
+                WRLONG  register(0x91),         aug(0x1014)
+                HUBSET  aug(0x20030002)
+                HUBSET  aug(0x20000000)
+                RDLONG  register(0x91),         aug(0x7F800)
+                WRLONG  register(0x91),         aug(0x1018)
+                MOV     PTRB,                   aug(0x1000)
+                MOV     register(0x90),         28
+byte:
+                RDBYTE  PA, PTRB++
+                WYPIN   PA, 62
+                WAITX   1
+ready:
+                TESTP   62                      :wc
+    if(!C)      JMP     ready
+                DJNZ    register(0x90), byte
+
+flush:
+                RQPIN   PB, 62  :wc
+    if(C)       JMP     flush
+_end:
+                JMP     _end
+
+.pack   off
+.cogexec    0x2000, 0
+debug_image:
+                JMP     nrel(debug_handler)
+                LONG    [0] * 15
+
+.cogexec    0x3000, 0
+target:
+                COGSTOP 1
+.org    0x100
+debug_handler:
+        // Both immediate and buffered writes target the same protected byte mapping.
+                RDLONG  register(0x80),     aug(0xFF800)
+                WRLONG  register(0x80),     aug(0x1008)
+                WRFAST  0,                  aug(0xFF800)
+                WFLONG  aug(0xAABBCCDD)
+                WAITX   100
+                RDLONG  register(0x80),     aug(0xFF800)
+                WRLONG  register(0x80),     aug(0x100C)
+                WRLONG  aug(0xDEADBEEF),    aug(0xFF800)
+                WRLONG  aug(0xBBBBBBBB),    aug(0x7F800)
+                JMP     nrel(0x1fd)

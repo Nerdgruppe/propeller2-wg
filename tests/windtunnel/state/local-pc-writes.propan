@@ -1,0 +1,134 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 3000
+                //? run: "phase16-cog0"
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x20
+                //? post: cog[*].reg[saved] == 0x402
+                //? cog: 0
+                //? const: phase = 16
+                //? run: "phase16-cog7"
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[elapsed] == 0x20
+                //? post: cog[*].reg[saved] == 0x402
+                //? cog: 7
+                //? const: phase = 16
+                //? run: "phase24-cog0"
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x28
+                //? post: cog[*].reg[saved] == 0x406
+                //? cog: 0
+                //? const: phase = 24
+                //? run: "phase24-cog7"
+                //? post: cog[*].reg[hits] == 0x3
+                //? post: cog[*].reg[elapsed] == 0x28
+                //? post: cog[*].reg[saved] == 0x406
+                //? cog: 7
+                //? const: phase = 24
+                //? run: "phase32-cog0"
+                //? post: cog[*].reg[hits] == 0x7
+                //? post: cog[*].reg[elapsed] == 0x30
+                //? post: cog[*].reg[saved] == 0x40a
+                //? cog: 0
+                //? const: phase = 32
+                //? run: "phase32-cog7"
+                //? post: cog[*].reg[hits] == 0x7
+                //? post: cog[*].reg[elapsed] == 0x30
+                //? post: cog[*].reg[saved] == 0x40a
+                //? cog: 7
+                //? const: phase = 32
+                //? run: "phase48-cog0"
+                //? post: cog[*].reg[hits] == 0xf
+                //? post: cog[*].reg[elapsed] == 0x40
+                //? post: cog[*].reg[saved] == 0x412
+                //? cog: 0
+                //? const: phase = 48
+                //? run: "phase48-cog7"
+                //? post: cog[*].reg[hits] == 0xf
+                //? post: cog[*].reg[elapsed] == 0x40
+                //? post: cog[*].reg[saved] == 0x412
+                //? cog: 7
+                //? const: phase = 48
+                // Copy an ADD into the next S-selected instruction slot and observe the simultaneous-write fetch.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(511)
+                STALLI
+                MOV     IJMP1,          vector
+                SETINT1 0
+                GETCT   timer
+                ADD     timer,          128
+                ADDCT2  timer,          0
+                ADD     timer,          phase
+                ADDCT1  timer,          0
+                SETINT1 EVENT_CT1
+                NIXINT1
+                WAITCT2
+                ALLOWI
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+isr:
+                // Stop further interrupts before saving or returning through the overflow PC.
+                STALLI
+                SETINT1 0
+                MOV     saved,  IRET1
+                AND     saved,  aug(0xfffff)
+                JMP     nrel(done)
+replacement:
+                ADD     hits,   1
+var vector:     LONG    pcaddr(isr)
+var saved:      LONG    0
+var timer:      LONG    0
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:
+                // These words are loaded into the physical cog instruction slots above.
+                MOV     register(1),    register(cogaddr(replacement))
+                NOP
+                JMP     nrel(done)
+                NOP
+                NOP
+                NOP
+                NOP
+.lutexec    0x3100, 0x3fe
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+                NOP
+                NOP
+

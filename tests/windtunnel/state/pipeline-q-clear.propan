@@ -1,0 +1,473 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "cog=0 COGINIT mode=0"
+//? cog: 0
+//? const: canceled_instruction = 0xccec0001
+//? const: execution_mode = 0
+//? run: "cog=0 COGINIT mode=1"
+//? cog: 0
+//? const: canceled_instruction = 0xccec0001
+//? const: execution_mode = 1
+//? run: "cog=0 COGINIT mode=2"
+//? cog: 0
+//? const: canceled_instruction = 0xccec0001
+//? const: execution_mode = 2
+//? run: "cog=0 QDIV mode=0"
+//? cog: 0
+//? const: canceled_instruction = 0xcd1c0001
+//? const: execution_mode = 0
+//? run: "cog=0 QDIV mode=1"
+//? cog: 0
+//? const: canceled_instruction = 0xcd1c0001
+//? const: execution_mode = 1
+//? run: "cog=0 QDIV mode=2"
+//? cog: 0
+//? const: canceled_instruction = 0xcd1c0001
+//? const: execution_mode = 2
+//? run: "cog=0 QFRAC mode=0"
+//? cog: 0
+//? const: canceled_instruction = 0xcd2c0001
+//? const: execution_mode = 0
+//? run: "cog=0 QFRAC mode=1"
+//? cog: 0
+//? const: canceled_instruction = 0xcd2c0001
+//? const: execution_mode = 1
+//? run: "cog=0 QFRAC mode=2"
+//? cog: 0
+//? const: canceled_instruction = 0xcd2c0001
+//? const: execution_mode = 2
+//? run: "cog=0 QROTATE mode=0"
+//? cog: 0
+//? const: canceled_instruction = 0xcd4c0001
+//? const: execution_mode = 0
+//? run: "cog=0 QROTATE mode=1"
+//? cog: 0
+//? const: canceled_instruction = 0xcd4c0001
+//? const: execution_mode = 1
+//? run: "cog=0 QROTATE mode=2"
+//? cog: 0
+//? const: canceled_instruction = 0xcd4c0001
+//? const: execution_mode = 2
+//? run: "cog=2 COGINIT mode=0"
+//? cog: 2
+//? const: canceled_instruction = 0xccec0001
+//? const: execution_mode = 0
+//? run: "cog=2 COGINIT mode=1"
+//? cog: 2
+//? const: canceled_instruction = 0xccec0001
+//? const: execution_mode = 1
+//? run: "cog=2 COGINIT mode=2"
+//? cog: 2
+//? const: canceled_instruction = 0xccec0001
+//? const: execution_mode = 2
+//? run: "cog=2 QDIV mode=0"
+//? cog: 2
+//? const: canceled_instruction = 0xcd1c0001
+//? const: execution_mode = 0
+//? run: "cog=2 QDIV mode=1"
+//? cog: 2
+//? const: canceled_instruction = 0xcd1c0001
+//? const: execution_mode = 1
+//? run: "cog=2 QDIV mode=2"
+//? cog: 2
+//? const: canceled_instruction = 0xcd1c0001
+//? const: execution_mode = 2
+//? run: "cog=2 QFRAC mode=0"
+//? cog: 2
+//? const: canceled_instruction = 0xcd2c0001
+//? const: execution_mode = 0
+//? run: "cog=2 QFRAC mode=1"
+//? cog: 2
+//? const: canceled_instruction = 0xcd2c0001
+//? const: execution_mode = 1
+//? run: "cog=2 QFRAC mode=2"
+//? cog: 2
+//? const: canceled_instruction = 0xcd2c0001
+//? const: execution_mode = 2
+//? run: "cog=2 QROTATE mode=0"
+//? cog: 2
+//? const: canceled_instruction = 0xcd4c0001
+//? const: execution_mode = 0
+//? run: "cog=2 QROTATE mode=1"
+//? cog: 2
+//? const: canceled_instruction = 0xcd4c0001
+//? const: execution_mode = 1
+//? run: "cog=2 QROTATE mode=2"
+//? cog: 2
+//? const: canceled_instruction = 0xcd4c0001
+//? const: execution_mode = 2
+
+                // The selected instruction is always if(C), with C held clear.
+                // All four instructions clear Q during decode without executing.
+                MODCZ   _CLR,           _CLR                                        :wcz
+                WRLUT   19,             lut_address
+.if execution_mode == 1
+                SETQ2   aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+                RDLONG  register(0),    aug(hubaddr(probe_start))
+.endif
+                JMP     nrel(probe_start)
+var failures:   LONG    0
+var sample:     LONG    0
+var before:     LONG    0
+var scratch:    LONG    1
+var all_bits:   LONG    0xffffffff
+var lut_address:
+                LONG    500
+
+.if execution_mode == 1
+.lutexec    0x3800, 0x200
+.endif
+.if execution_mode == 2
+.hubexec    0x4000
+.endif
+probe_start:
+
+                // An unprefixed, canceled instruction clears Q.
+                SETQ    3
+                MOV     scratch,    1
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+
+                // An immediately preceding SETQ wins the clear.
+                SETQ    3
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // An immediately preceding SETQ2 also wins the clear.
+                SETQ2   3
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // SETQ protection survives an executed augmentation.
+                SETQ    3
+                AUGS    0
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // SETQ2 protection does not survive augmentation.
+                SETQ2   3
+                AUGS    0
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+
+                // A canceled ordinary instruction consumes SETQ.
+                SETQ    3
+    if(C)       MOV     scratch,    0
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+
+                // A canceled augmentation also consumes SETQ.
+                SETQ    3
+    if(C)       AUGS    0
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+
+                // CRCNIB wins the adjacent decode clear.
+                SETQ    3
+                MOV     scratch,    1
+                CRCNIB  scratch,    all_bits
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     48          :wz
+    if(!Z)      ADD     failures,   1
+
+                // RDLUT loses the adjacent decode clear.
+                RDLUT   scratch,    lut_address
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+
+                // XORO32 loses the adjacent decode clear.
+                MOV     scratch,    1
+                XORO32  scratch
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+
+                // The older MUXQ reads Q before the next instruction clears it.
+                SETQ    3
+                MOV     before,     0
+                MUXQ    before,     all_bits
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+                CMP     before,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // A taken branch discards the instruction but retains its Q clear.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(branch_return)
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+branch_return:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     0           :wz
+    if(!Z)      ADD     failures,   1
+
+                // A NOP guard prevents the Q-clearing instruction reaching decode.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(guard_return)
+                NOP
+.if canceled_instruction == 0xccec0001
+    if(C)       COGINIT 0,          1
+.endif
+.if canceled_instruction == 0xcd1c0001
+    if(C)       QDIV    0,          1
+.endif
+.if canceled_instruction == 0xcd2c0001
+    if(C)       QFRAC   0,          1
+.endif
+.if canceled_instruction == 0xcd4c0001
+    if(C)       QROTATE 0,          1
+.endif
+guard_return:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Discarded SETQ does not have the Q-clearing side effect.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(control_0)
+                SETQ    73
+control_0:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Discarded SETQ2 does not have the Q-clearing side effect.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(control_1)
+                SETQ2   91
+control_1:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Discarded RDLUT does not have the Q-clearing side effect.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(control_2)
+                RDLUT   scratch,    lut_address
+control_2:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Discarded CRCNIB does not have the Q-clearing side effect.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(control_3)
+                CRCNIB  scratch,    all_bits
+control_3:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Discarded XORO32 does not have the Q-clearing side effect.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(control_4)
+                XORO32  scratch
+control_4:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Discarded QMUL does not have the Q-clearing side effect.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(control_5)
+                QMUL    0,          1
+control_5:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Discarded QSQRT does not have the Q-clearing side effect.
+                SETQ    3
+                MOV     scratch,    1
+                JMP     nrel(control_6)
+                QSQRT   0,          1
+control_6:
+                MOV     sample,     0
+                MUXQ    sample,     all_bits
+                CMP     sample,     3           :wz
+    if(!Z)      ADD     failures,   1
+
+                // Leave the shared reporter a known Q and a safe trailing fetch.
+                SETQ    0
+                JMP     nrel(_end)
+                NOP
+probe_end:
+

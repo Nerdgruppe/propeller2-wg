@@ -16,7 +16,7 @@ MOV PTRB, 345 :wz
 
 
      // isolated comment block keeps its indentation
-   // aligned with the first comment
+   // all lines share the first comment's column
 
 
 

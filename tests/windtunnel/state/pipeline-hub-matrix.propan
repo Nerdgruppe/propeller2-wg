@@ -1,0 +1,212 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
+//? run: "0-1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_size = 1
+//? run: "0-2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_size = 2
+//? run: "0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_size = 4
+//? run: "1-1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_size = 1
+//? run: "1-2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_size = 2
+//? run: "1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_size = 4
+//? run: "2-1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_size = 1
+//? run: "2-2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_size = 2
+//? run: "2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_size = 4
+//? run: "3-1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_size = 1
+//? run: "3-2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_size = 2
+//? run: "3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_size = 4
+//? run: "4-1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_size = 1
+//? run: "4-2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_size = 2
+//? run: "4"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_size = 4
+//? run: "5-1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_size = 1
+//? run: "5-2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_size = 2
+//? run: "5"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_size = 4
+//? run: "6-1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_size = 1
+//? run: "6-2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_size = 2
+//? run: "6"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_size = 4
+//? run: "7-1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_size = 1
+//? run: "7-2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_size = 2
+//? run: "7"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_size = 4
+
+// Measure byte, word and long hub reads/writes across cogs, banks, phases and alignment.
+// GETCT records raw deltas; only accesses crossing a long boundary add the crossing clock.
+// Hardware raw GETCT deltas: read = 11 + crossing + phase; write = 5 + crossing + phase.
+// Here phase = (bank + 4 - start_CT - cog) & 7; the measurement pair contributes two clocks.
+
+                MOV     PTRB,       aug(hubaddr(results))
+                MOV     address,    aug(hubaddr(buffer))
+                MOV     bank,       0
+bank_loop:
+                MOV     alignment,  0
+alignment_loop:
+                MOV     crossing,   alignment
+                ADD     crossing,   probe_size
+                CMP     crossing,   4           :wcz
+                MOV     crossing,   0
+    if(>)       MOV     crossing,   1
+                MOV     offset,     0
+phase_loop:
+                GETCT   timer
+                // Synchronize safely in the future; offset then selects each CT modulo-eight phase.
+                ADD     timer,          128
+                ANDN    timer,          7
+                ADD     timer,          offset
+                ADDCT1  timer,          0
+                WAITCT1
+                GETCT   start
+.if probe_size == 1
+                RDBYTE  loaded,         address
+.elif   probe_size == 2
+                RDWORD  loaded,         address
+.else
+                RDLONG  loaded,         address
+.endif
+                GETCT   read_delta
+                SUB     read_delta,     start
+                AND     start,          7
+                MOV     expected,       bank
+                ADD     expected,       4
+                SUB     expected,       start
+                SUB     expected,       probe_cog
+                AND     expected,       7
+                ADD     expected,       11
+                ADD     expected,       crossing
+                CMP     read_delta,     expected    :wz
+    if(!Z)      ADD     failures,       1
+                MOV     expected,       offset
+                ADD     expected,       4
+                AND     expected,       7
+                CMP     start,          expected    :wz
+    if(!Z)      ADD     failures,       1
+                WRLONG  bank,           PTRB++
+                WRLONG  offset,         PTRB++
+                WRLONG  start,          PTRB++
+                WRLONG  read_delta,     PTRB++
+                GETCT   timer
+                ADD     timer,          128
+                ANDN    timer,          7
+                ADD     timer,          offset
+                ADDCT1  timer,          0
+                WAITCT1
+                GETCT   start
+.if probe_size == 1
+                WRBYTE  loaded,         address
+.elif   probe_size == 2
+                WRWORD  loaded,         address
+.else
+                WRLONG  loaded,         address
+.endif
+                GETCT   write_delta
+                SUB     write_delta,    start
+                AND     start,          7
+                WRLONG  start,          PTRB++
+                WRLONG  write_delta,    PTRB++
+                MOV     expected,       bank
+                ADD     expected,       4
+                SUB     expected,       start
+                SUB     expected,       probe_cog
+                AND     expected,       7
+                ADD     expected,       5
+                ADD     expected,       crossing
+                CMP     write_delta,    expected    :wz
+    if(!Z)      ADD     failures,       1
+
+                ADD     offset,         1
+                CMP     offset,         8           :wz
+    if(!Z)      JMP     phase_loop
+                ADD     address,        1
+                ADD     alignment,      1
+                CMP     alignment,      4           :wz
+    if(!Z)      JMP     alignment_loop
+                ADD     bank,           1
+                CMP     bank,           8           :wz
+    if(!Z)      JMP     bank_loop
+                JMP     nrel(_end)
+var failures:   LONG    0
+var expected:   LONG    0
+var alignment:  LONG    0
+var crossing:   LONG    0
+var bank:       LONG    0
+var offset:     LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var loaded:     LONG    0
+var read_delta: LONG    0
+var write_delta:
+                LONG    0
+var address:    LONG    0
+.data
+// A 32-byte-aligned base makes successive longs select hub slices 0 through 7.
+.align  32
+buffer:         LONG    [0x12345678] * 8
+results:        LONG    [0] * 1536
+

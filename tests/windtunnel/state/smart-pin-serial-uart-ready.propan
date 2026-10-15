@@ -1,0 +1,219 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-phase0"
+//? const: phase = 0
+//? post: cog[*].reg[ready] == 0x00001fff
+//? post: cog[*].reg[busy] == 0x0000e000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+//? run: "pll0-phase1"
+//? const: phase = 1
+//? post: cog[*].reg[ready] == 0x00001fff
+//? post: cog[*].reg[busy] == 0x0000e000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+//? run: "pll0-phase2"
+//? const: phase = 2
+//? post: cog[*].reg[ready] == 0x00001fff
+//? post: cog[*].reg[busy] == 0x0000e000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+//? run: "pll0-phase3"
+//? const: phase = 3
+//? post: cog[*].reg[ready] == 0x00001fff
+//? post: cog[*].reg[busy] == 0x0000c000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+//? run: "pll0-phase4"
+//? const: phase = 4
+//? post: cog[*].reg[ready] == 0x00003fff
+//? post: cog[*].reg[busy] == 0x0000c000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+//? run: "pll0-phase5"
+//? const: phase = 5
+//? post: cog[*].reg[ready] == 0x00003fff
+//? post: cog[*].reg[busy] == 0x0000c000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+//? run: "pll0-phase6"
+//? const: phase = 6
+//? post: cog[*].reg[ready] == 0x00003fff
+//? post: cog[*].reg[busy] == 0x0000c000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+//? run: "pll0-phase7"
+//? const: phase = 7
+//? post: cog[*].reg[ready] == 0x00003fff
+//? post: cog[*].reg[busy] == 0x0000c000
+//? post: cog[*].reg[event] == 0x00002000
+//? post: cog[*].reg[result] == 0xa5000000
+//? post: cog[*].reg[ack] == 0x00000080
+//? post: cog[*].reg[sample] == 0xd2800000
+
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
+
+                // The receiver and transmitter share routed pads but independent baud counters.
+                WRPIN   P_TT_01 | P_ASYNC_TX,           3
+                WRPIN   aug(0x70000000 | P_ASYNC_RX),   4
+                WXPIN   aug((16 << 16) | 7),            3
+                WXPIN   aug((16 << 16) | 7),            4
+                DIRH    3
+                DIRH    4
+                WAITX   32
+                // Clear a loader-era event before selecting the receive-ready rising edge.
+                SETSE1  0
+                POLLSE1                                                     :wc
+                SETSE1  aug((1 << 6) | 4)
+                WYPIN   0xa5,                           3
+                WAITX   aug(128 + phase)
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+                TESTP   4                                                   :wc
+                RCL     ready,                          1
+                RQPIN   sample,                         3                   :wc
+                RCL     busy,                           1
+                POLLSE1                                                     :wc
+                RCL     event,                          1
+
+                // Acknowledgement and reset retain Z while clearing the ready indication.
+                RDPIN   result,                         4
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+                TESTP   4                                                   :wc
+                RCL     ack,                            1
+
+                DIRL    4
+                DIRL    3
+
+                // TT-enabled smart outputs still drive in reset; restore GPIO before reporting.
+                DIRL    aug(0 | (7 << 6))
+                WRPIN   0,                              aug(0 | (7 << 6))
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var ready:      LONG    0
+var busy:       LONG    0
+var event:      LONG    0
+var result:     LONG    0
+var ack:        LONG    0
+var sample:     LONG    0
+

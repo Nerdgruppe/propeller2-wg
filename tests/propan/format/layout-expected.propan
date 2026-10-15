@@ -1,4 +1,4 @@
-// before a directive
+    // before a directive
 .cogexec
 // before a label
 code:
@@ -18,7 +18,7 @@ code:
 
 
         // isolated comment block keeps its indentation
-        // aligned with the first comment
+        // all lines share the first comment's column
 
 
 abcdefghijklmn: LONG    1,  20, 300
@@ -29,12 +29,12 @@ words:          WORD    7,  8
 var value:      LONG    9
 spaced:         LONG    10
 blocked:
-                // prevents folding the label
+    // prevents folding the label
                 BYTE    10
 inline:                         // also prevents folding
                 LONG    11
 .local_blocked:
-                // prevents folding a local label
+    // prevents folding a local label
                 NOP
 constants:
 .constant_label:

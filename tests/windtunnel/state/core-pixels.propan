@@ -1,0 +1,50 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[added] == 0xfffffe00
+//? post: cog[0].reg[multiplied] == 0x80ff2000
+//? post: cog[0].reg[blended] == 0x80808080
+//? post: cog[0].reg[identity] == 0x12345678
+//? post: cog[0].c == true
+//? post: cog[0].z == false
+//? pre: sym[mix_source] = u32 [ 0x10203040 ]
+//? run: "saturated"
+//? post: cog[0].reg[mixed] == 0xffffffff
+//? run:
+//? pre: sym[mixed] = u32 [ 0 ]
+//? post: cog[0].reg[mixed] == 0x10203040
+//? run: "lane sum"
+//? pre: sym[mixed] = u32 [ 0x10203040 ]
+//? post: cog[0].reg[mixed] == 0x20406080
+//? run: "one byte"
+//? pre: sym[mixed] = hex [ 00 ]
+//? post: cog[0].reg[mixed] == 0xffffff40
+//? run: "shared patch override"
+//? pre: sym[mix_source] = u16 [ 0x0201, 0x0403 ]
+//? pre: sym[mixed] = u32 [ 0 ]
+//? post: cog[0].reg[mixed] == 0x04030201
+//? run: "base restored"
+//? post: cog[0].reg[mixed] == 0xffffffff
+
+// Check packed-pixel arithmetic, blending and configurable mixing.
+// Use different channel values and pivot extremes to distinguish saturation, scaling and blend identity.
+
+                MODCZ   _SET,       _CLR        :wcz
+                ADDPIX  added,      white
+                MULPIX  multiplied, factor
+                SETPIV  128
+                BLNPIX  blended,    full_white
+                SETPIV  0
+                BLNPIX  identity,   white
+                SETPIX  0b001001
+                MIXPIX  mixed,      mix_source
+                JMP     nrel(_end)
+var added:      LONG    0x01808000
+var white:      LONG    0xff807e00
+var multiplied: LONG    0xffff8000
+var factor:     LONG    0x80ff4000
+var blended:    LONG    0
+var identity:   LONG    0x12345678
+var mixed:      LONG    0xffffffff
+var full_white: LONG    0xffffffff
+var mix_source: LONG    0xffffffff
+

@@ -1,0 +1,41 @@
+                //? WINDTUNNEL CHECK LIST
+                //? post: cog[0].reg[result] == 0
+                //? post: cog[0].reg[status] == 0x200000
+                //? post: cog[0].reg[final] == 202
+                // Inspect event transitions with instruction-visible polls.
+                MOV     result,                     0
+                SETXFRQ aug(0x08000000)
+                GETCT   duration
+                XINIT   aug(X_IMM_1X32_4DAC8 | 8),  0
+                GETBRK  status                                      :wcz
+                AND     status,                     aug(0x200000)
+                POLLXMT                                             :wc
+                MUXC    result,                     1
+                POLLXMT                                             :wc
+                MUXC    result,                     2
+                POLLXFI                                             :wc
+                MUXC    result,                     4
+                XCONT   aug(X_IMM_1X32_4DAC8 | 4),  0
+                POLLXMT                                             :wc
+                MUXC    result,                     8
+                WAITXMT
+                POLLXMT                                             :wc
+                MUXC    result,                     16
+                WAITXFI
+                GETCT   final
+                SUB     final,                      duration
+                POLLXFI                                             :wc
+                MUXC    result,                     32
+                POLLXMT                                             :wc
+                MUXC    result,                     64
+                WAITX   10
+                POLLXFI                                             :wc
+                MUXC    result,                     128
+                POLLXMT                                             :wc
+                MUXC    result,                     256
+                JMP     nrel(_end)
+var result:     LONG    0
+var duration:   LONG    0
+var status:     LONG    0
+var final:      LONG    0
+

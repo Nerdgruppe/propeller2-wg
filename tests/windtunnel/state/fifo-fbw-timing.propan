@@ -1,0 +1,227 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 10000
+//? max-cycles: 4000000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0"
+//? cog: 0
+//? const: probe_cog = 0
+//? run: "cog1"
+//? cog: 1
+//? const: probe_cog = 1
+//? run: "cog2"
+//? cog: 2
+//? const: probe_cog = 2
+//? run: "cog3"
+//? cog: 3
+//? const: probe_cog = 3
+//? run: "cog4"
+//? cog: 4
+//? const: probe_cog = 4
+//? run: "cog5"
+//? cog: 5
+//? const: probe_cog = 5
+//? run: "cog6"
+//? cog: 6
+//? const: probe_cog = 6
+//? run: "cog7"
+//? cog: 7
+//? const: probe_cog = 7
+
+                // Locate the FBW edge independently of consumption: the sixteenth read grant wraps the block.
+                MOV     address,    aug(hubaddr(payload))
+                MOV     bank,       0
+bank_loop:
+                MOV     phase,  0
+phase_loop:
+                MOV     delay,  18
+delay_loop:
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      phase
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                RDFAST  no_wait,    address
+                WAITX   delay
+                POLLFBW                                     :wc
+                MUXC    occurred,   1
+                MOV     expected,   bank
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                SUB     expected,   5
+                AND     expected,   7
+                ADD     expected,   20
+                MOV     sample,     delay
+                ADD     sample,     6
+                CMP     sample,     expected                :wcz
+                MOV     expected,   0
+    if(!C)      MOV     expected,   1
+                CMP     occurred,   expected                :wz
+    if(!Z)      ADD     failures,   1
+                // No second wrap is possible while software leaves the nineteen-long ring full.
+                WAITX   100
+                POLLFBW                                     :wc
+                MUXC    late,       1
+                XOR     late,       occurred
+                CMP     late,       1                       :wz
+    if(!Z)      ADD     failures,   1
+                ADD     delay,      1
+                CMP     delay,      32                      :wz
+    if(!Z)      JMP     delay_loop
+                // A read-side WAITFBW uses the same direct wake path as write-side wraps.
+                GETCT   start
+                RDFAST  no_wait,    address
+                WAITFBW
+                GETCT   finish
+                SUB     finish,     start
+                MOV     expected,   bank
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                SUB     expected,   5
+                AND     expected,   7
+                ADD     expected,   22
+                CMP     finish,     expected                :wz
+    if(!Z)      ADD     failures,   1
+                ADD     phase,      1
+                CMP     phase,      8                       :wz
+    if(!Z)      JMP     phase_loop
+                ADD     address,    4
+                ADD     bank,       1
+                CMP     bank,       8                       :wz
+    if(!Z)      JMP     bank_loop
+                // A write wrap is raised on the final physical grant, including a WAITFBW already pending.
+                MOV     address,    aug(hubaddr(payload))
+                MOV     bank,       0
+write_bank_loop:
+                MOV     phase,  0
+write_phase_loop:
+                WRFAST  1,          address
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      phase
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WAITFBW
+                GETCT   finish
+                SUB     finish,     start
+                MOV     expected,   bank
+                ADD     expected,   15
+                SUB     expected,   start
+                SUB     expected,   probe_cog
+                SUB     expected,   34
+                AND     expected,   7
+                ADD     expected,   36
+                CMP     finish,     expected    :wz
+    if(!Z)      ADD     failures,   1
+                POLLFBW                         :wc
+    if(C)       ADD     failures,   1
+                // FBW timeouts use a one-clock resume and retain normal timeout flags.
+                WRFAST  1,          address
+                GETCT   start
+                MOV     timeout,    start
+                ADD     timeout,    32
+                SETQ    timeout
+                WAITFBW                         :wcz
+                GETCT   finish
+    if(!C)      ADD     failures,   1
+    if(!Z)      ADD     failures,   1
+                SUB     finish,     start
+                CMP     finish,     35          :wz
+    if(!Z)      ADD     failures,   1
+                MOV     delay,      0
+write_poll_loop:
+                WRFAST  1,          address
+                GETCT   timer
+                ADD     timer,      128
+                ANDN    timer,      7
+                ADD     timer,      phase
+                ADDCT1  timer,      0
+                WAITCT1
+                GETCT   start
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WFLONG  value
+                WAITX   delay
+                POLLFBW                         :wc
+                MUXC    occurred,   1
+                MOV     grant,      start
+                ADD     grant,      34
+                MOV     expected,   bank
+                ADD     expected,   15
+                SUB     expected,   grant
+                SUB     expected,   probe_cog
+                AND     expected,   7
+                ADD     grant,      expected
+                MOV     sample,     start
+                ADD     sample,     36
+                ADD     sample,     delay
+                CMP     sample,     grant       :wcz
+                MOV     expected,   0
+    if(!C)      MOV     expected,   1
+                CMP     occurred,   expected    :wz
+    if(!Z)      ADD     failures,   1
+                ADD     delay,      1
+                CMP     delay,      8           :wz
+    if(!Z)      JMP     write_poll_loop
+                ADD     phase,      1
+                CMP     phase,      8           :wz
+    if(!Z)      JMP     write_phase_loop
+                ADD     address,    4
+                ADD     bank,       1
+                CMP     bank,       8           :wz
+    if(!Z)      JMP     write_bank_loop
+                // Normalize the absolute timeout value before the shared reporter snapshots Q.
+                SETQ    0
+                JMP     nrel(_end)
+var address:    LONG    0
+var bank:       LONG    0
+var phase:      LONG    0
+var delay:      LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var finish:     LONG    0
+var value:      LONG    0x34343434
+var sample:     LONG    0
+var expected:   LONG    0
+var occurred:   LONG    0
+var late:       LONG    0
+var timeout:    LONG    0
+var grant:      LONG    0
+var failures:   LONG    0
+var no_wait:    LONG    0x80000001
+.data
+.align  32
+payload:        LONG    [0x12121212] * 64
+

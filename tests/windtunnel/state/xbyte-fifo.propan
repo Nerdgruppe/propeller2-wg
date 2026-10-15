@@ -1,0 +1,181 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? run: "cog7-gap0"
+//? cog: 7
+//? const: gap = 0
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 16
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog7-gap7"
+//? cog: 7
+//? const: gap = 7
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 30
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap2"
+//? cog: 0
+//? const: gap = 2
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 20
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap0"
+//? cog: 0
+//? const: gap = 0
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 16
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap7"
+//? cog: 0
+//? const: gap = 7
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 30
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog7-gap3"
+//? cog: 7
+//? const: gap = 3
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 22
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap5"
+//? cog: 0
+//? const: gap = 5
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 26
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog7-gap4"
+//? cog: 7
+//? const: gap = 4
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 24
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap4"
+//? cog: 0
+//? const: gap = 4
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 24
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog7-gap2"
+//? cog: 7
+//? const: gap = 2
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 20
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap1"
+//? cog: 0
+//? const: gap = 1
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 18
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog7-gap6"
+//? cog: 7
+//? const: gap = 6
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 28
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap6"
+//? cog: 0
+//? const: gap = 6
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 28
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog0-gap3"
+//? cog: 0
+//? const: gap = 3
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 22
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog7-gap5"
+//? cog: 7
+//? const: gap = 5
+//? post: cog[*].reg[pa_out] == 1
+//? post: cog[*].reg[pb_out] == 16385
+//? post: cog[*].reg[elapsed] == 26
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+//? run: "cog7-gap1"
+//? cog: 7
+//? const: gap = 1
+//? post: cog[*].reg[pa_out] == 0
+//? post: cog[*].reg[pb_out] == 16384
+//? post: cog[*].reg[elapsed] == 18
+//? post: cog[*].reg[status] == 33554432
+//? post: cog[*].reg[q_out] == 0
+
+                // Both possible bytes reach the same handler; PA and PB reveal empty-FIFO behavior.
+                WRLUT   nrel(handler),      0
+                WRLUT   nrel(handler),      1
+                PUSH    0x1ff
+                GETCT   start
+                RDFAST  aug(0x80000000),    aug(hubaddr(bytecodes))
+.if gap >= 1
+                NOP
+.endif
+.if gap >= 2
+                NOP
+.endif
+.if gap >= 3
+                NOP
+.endif
+.if gap >= 4
+                NOP
+.endif
+.if gap >= 5
+                NOP
+.endif
+.if gap >= 6
+                NOP
+.endif
+.if gap >= 7
+                NOP
+.endif
+    return      SETQ    0
+handler:
+                GETCT   elapsed
+                MOV     pa_out,     PA
+                MOV     pb_out,     PB
+                GETBRK  status                      :wc
+                MOV     q_out,      0
+                MUXQ    q_out,      all_bits
+                POP     discarded
+                SUB     elapsed,    start
+                AND     status,     aug(0xffff0000)
+                JMP     nrel(_end)
+var pa_out:     LONG    0
+var pb_out:     LONG    0
+var elapsed:    LONG    0
+var start:      LONG    0
+var status:     LONG    0
+var q_out:      LONG    0
+var all_bits:   LONG    0xffffffff
+var discarded:  LONG    0
+.hubexec    0x4000
+bytecodes:      BYTE    1,  1,  1,  1
+

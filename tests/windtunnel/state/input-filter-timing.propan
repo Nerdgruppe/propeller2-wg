@@ -1,0 +1,354 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "length0-tap0-phase0"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xc0000000
+//? const: length = 0
+//? const: tap = 0
+//? const: phase = 0
+//? run: "length0-tap0-phase1"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xc0000000
+//? const: length = 0
+//? const: tap = 0
+//? const: phase = 1
+//? run: "length0-tap1-phase0"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xc0000000
+//? const: length = 0
+//? const: tap = 1
+//? const: phase = 0
+//? run: "length0-tap1-phase1"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xc0000000
+//? const: length = 0
+//? const: tap = 1
+//? const: phase = 1
+//? run: "length0-tap2-phase0"
+//? post: cog[*].reg[rising] == 0x1fffffff
+//? post: cog[*].reg[falling] == 0xf0000000
+//? const: length = 0
+//? const: tap = 2
+//? const: phase = 0
+//? run: "length0-tap2-phase1"
+//? post: cog[*].reg[rising] == 0x1fffffff
+//? post: cog[*].reg[falling] == 0xe0000000
+//? const: length = 0
+//? const: tap = 2
+//? const: phase = 1
+//? run: "length0-tap5-phase0"
+//? post: cog[*].reg[rising] == 0xfffff
+//? post: cog[*].reg[falling] == 0xffe00000
+//? const: length = 0
+//? const: tap = 5
+//? const: phase = 0
+//? run: "length0-tap5-phase1"
+//? post: cog[*].reg[rising] == 0x1fffff
+//? post: cog[*].reg[falling] == 0xffe00000
+//? const: length = 0
+//? const: tap = 5
+//? const: phase = 1
+//? run: "length1-tap0-phase0"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xc0000000
+//? const: length = 1
+//? const: tap = 0
+//? const: phase = 0
+//? run: "length1-tap0-phase1"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xc0000000
+//? const: length = 1
+//? const: tap = 0
+//? const: phase = 1
+//? run: "length1-tap1-phase0"
+//? post: cog[*].reg[rising] == 0x1fffffff
+//? post: cog[*].reg[falling] == 0xe0000000
+//? const: length = 1
+//? const: tap = 1
+//? const: phase = 0
+//? run: "length1-tap1-phase1"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xe0000000
+//? const: length = 1
+//? const: tap = 1
+//? const: phase = 1
+//? run: "length1-tap2-phase0"
+//? post: cog[*].reg[rising] == 0xfffffff
+//? post: cog[*].reg[falling] == 0xf8000000
+//? const: length = 1
+//? const: tap = 2
+//? const: phase = 0
+//? run: "length1-tap2-phase1"
+//? post: cog[*].reg[rising] == 0xfffffff
+//? post: cog[*].reg[falling] == 0xf0000000
+//? const: length = 1
+//? const: tap = 2
+//? const: phase = 1
+//? run: "length1-tap5-phase0"
+//? post: cog[*].reg[rising] == 0xfff
+//? post: cog[*].reg[falling] == 0xffffe000
+//? const: length = 1
+//? const: tap = 5
+//? const: phase = 0
+//? run: "length1-tap5-phase1"
+//? post: cog[*].reg[rising] == 0x1fff
+//? post: cog[*].reg[falling] == 0xffffe000
+//? const: length = 1
+//? const: tap = 5
+//? const: phase = 1
+//? run: "length2-tap0-phase0"
+//? post: cog[*].reg[rising] == 0x1fffffff
+//? post: cog[*].reg[falling] == 0xe0000000
+//? const: length = 2
+//? const: tap = 0
+//? const: phase = 0
+//? run: "length2-tap0-phase1"
+//? post: cog[*].reg[rising] == 0x3fffffff
+//? post: cog[*].reg[falling] == 0xe0000000
+//? const: length = 2
+//? const: tap = 0
+//? const: phase = 1
+//? run: "length2-tap1-phase0"
+//? post: cog[*].reg[rising] == 0xfffffff
+//? post: cog[*].reg[falling] == 0xf0000000
+//? const: length = 2
+//? const: tap = 1
+//? const: phase = 0
+//? run: "length2-tap1-phase1"
+//? post: cog[*].reg[rising] == 0x1fffffff
+//? post: cog[*].reg[falling] == 0xf0000000
+//? const: length = 2
+//? const: tap = 1
+//? const: phase = 1
+//? run: "length2-tap2-phase0"
+//? post: cog[*].reg[rising] == 0x3ffffff
+//? post: cog[*].reg[falling] == 0xfe000000
+//? const: length = 2
+//? const: tap = 2
+//? const: phase = 0
+//? run: "length2-tap2-phase1"
+//? post: cog[*].reg[rising] == 0x3ffffff
+//? post: cog[*].reg[falling] == 0xfc000000
+//? const: length = 2
+//? const: tap = 2
+//? const: phase = 1
+//? run: "length2-tap5-phase0"
+//? post: cog[*].reg[rising] == 0x0
+//? post: cog[*].reg[falling] == 0x0
+//? const: length = 2
+//? const: tap = 5
+//? const: phase = 0
+//? run: "length2-tap5-phase1"
+//? post: cog[*].reg[rising] == 0x0
+//? post: cog[*].reg[falling] == 0x0
+//? const: length = 2
+//? const: tap = 5
+//? const: phase = 1
+//? run: "length3-tap0-phase0"
+//? post: cog[*].reg[rising] == 0xfffffff
+//? post: cog[*].reg[falling] == 0xf0000000
+//? const: length = 3
+//? const: tap = 0
+//? const: phase = 0
+//? run: "length3-tap0-phase1"
+//? post: cog[*].reg[rising] == 0x1fffffff
+//? post: cog[*].reg[falling] == 0xf0000000
+//? const: length = 3
+//? const: tap = 0
+//? const: phase = 1
+//? run: "length3-tap1-phase0"
+//? post: cog[*].reg[rising] == 0x7ffffff
+//? post: cog[*].reg[falling] == 0xf8000000
+//? const: length = 3
+//? const: tap = 1
+//? const: phase = 0
+//? run: "length3-tap1-phase1"
+//? post: cog[*].reg[rising] == 0x7ffffff
+//? post: cog[*].reg[falling] == 0xf8000000
+//? const: length = 3
+//? const: tap = 1
+//? const: phase = 1
+//? run: "length3-tap2-phase0"
+//? post: cog[*].reg[rising] == 0x7fffff
+//? post: cog[*].reg[falling] == 0xffc00000
+//? const: length = 3
+//? const: tap = 2
+//? const: phase = 0
+//? run: "length3-tap2-phase1"
+//? post: cog[*].reg[rising] == 0x7fffff
+//? post: cog[*].reg[falling] == 0xff800000
+//? const: length = 3
+//? const: tap = 2
+//? const: phase = 1
+//? run: "length3-tap5-phase0"
+//? post: cog[*].reg[rising] == 0x0
+//? post: cog[*].reg[falling] == 0x0
+//? const: length = 3
+//? const: tap = 5
+//? const: phase = 0
+//? run: "length3-tap5-phase1"
+//? post: cog[*].reg[rising] == 0x0
+//? post: cog[*].reg[falling] == 0x0
+//? const: length = 3
+//? const: tap = 5
+//? const: phase = 1
+
+                // Select the cog OUT bit to isolate filter timing from physical pad latency.
+                DIRH    8
+                OUTL    8
+                HUBSET  aug(0x40000000 | (length << 5) | tap)
+                WRPIN   aug(0x40800000),    8
+                WAITX   aug(1024)
+                GETCT   clock
+                ADD     clock,              aug(512)
+                ANDN    clock,              511
+                ADDCT1  clock,              0
+                WAITCT1
+                GETCT   clock
+                OUTH    8
+.if phase != 0
+                NOP
+.endif
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                TESTP   8                                       :wc
+                RCL     rising,             1
+                OUTL    8
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+                TESTP   8                                       :wc
+                RCL     falling,            1
+// Normalize the capture if WAITCT1 resumed four clocks later in the CT period.
+// Taps 0/1/2 divide that offset exactly and need no normalization.
+.if tap >= 3
+                TESTB   clock,              3                   :wc
+    if(C)       SHR     rising,             1
+    if(C)       SAR     falling,            1
+.endif
+                // Phase normalization is bookkeeping; publish deterministic snapshot flags.
+                MODCZ   _CLR,               _CLR                :wcz
+                JMP     nrel(_end)
+var clock:      LONG    0
+var rising:     LONG    0
+var falling:    LONG    0
+

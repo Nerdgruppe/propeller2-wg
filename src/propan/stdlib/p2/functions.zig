@@ -27,31 +27,9 @@ pub const FilterConfig = packed struct(u32) {
     tag: u4 = 0b0100,
 };
 
-pub const CrystalMode = enum(u2) {
-    float = 0,
-    nocap = 1,
-    @"15pF" = 2,
-    @"30pF" = 3,
-};
-
-pub const ClockSource = enum(u2) {
-    rcfast = 0b00,
-    rcslow = 0b01,
-    xi = 0b10,
-    pll = 0b11,
-};
-
-pub const ClockMode = packed struct(u32) {
-    // %0000_000E_DDDD_DDMM_MMMM_MMMM_PPPP_CCSS
-    clock_src: ClockSource,
-    crystal: CrystalMode,
-    vco_div: u4,
-    vco_mul: u10,
-    xi_div: u6,
-    pll_on: bool,
-    _padding: u3 = 0,
-    tag: u4 = 0b0000,
-};
+pub const CrystalMode = @import("p2").types.CrystalMode;
+pub const ClockSource = @import("p2").types.ClockSource;
+pub const ClockMode = @import("p2").types.ClockMode;
 
 pub const BitField = packed struct(u10) {
     // Make bitfield, (x & $1F) | (y & $1F) << 5

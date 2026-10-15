@@ -1,0 +1,597 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 2000
+//? max-cycles: 200000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-pin0-se1"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog0-pin0-se2"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog0-pin0-se3"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog0-pin0-se4"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog0-pin31-se1"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 31
+//? const: probe_tracker = 1
+//? run: "cog0-pin31-se2"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 31
+//? const: probe_tracker = 2
+//? run: "cog0-pin31-se3"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 31
+//? const: probe_tracker = 3
+//? run: "cog0-pin31-se4"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 31
+//? const: probe_tracker = 4
+//? run: "cog0-pin32-se1"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog0-pin32-se2"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog0-pin32-se3"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog0-pin32-se4"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog0-pin59-se1"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 59
+//? const: probe_tracker = 1
+//? run: "cog0-pin59-se2"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 59
+//? const: probe_tracker = 2
+//? run: "cog0-pin59-se3"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 59
+//? const: probe_tracker = 3
+//? run: "cog0-pin59-se4"
+//? cog: 0
+//? const: probe_writer = 1
+//? const: probe_pin = 59
+//? const: probe_tracker = 4
+//? run: "cog3-pin0-se1"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog3-pin0-se2"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog3-pin0-se3"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog3-pin0-se4"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog3-pin31-se1"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 31
+//? const: probe_tracker = 1
+//? run: "cog3-pin31-se2"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 31
+//? const: probe_tracker = 2
+//? run: "cog3-pin31-se3"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 31
+//? const: probe_tracker = 3
+//? run: "cog3-pin31-se4"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 31
+//? const: probe_tracker = 4
+//? run: "cog3-pin32-se1"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog3-pin32-se2"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog3-pin32-se3"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog3-pin32-se4"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog3-pin59-se1"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 59
+//? const: probe_tracker = 1
+//? run: "cog3-pin59-se2"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 59
+//? const: probe_tracker = 2
+//? run: "cog3-pin59-se3"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 59
+//? const: probe_tracker = 3
+//? run: "cog3-pin59-se4"
+//? cog: 3
+//? const: probe_writer = 2
+//? const: probe_pin = 59
+//? const: probe_tracker = 4
+//? run: "cog7-pin0-se1"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 1
+//? run: "cog7-pin0-se2"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 2
+//? run: "cog7-pin0-se3"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 3
+//? run: "cog7-pin0-se4"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 0
+//? const: probe_tracker = 4
+//? run: "cog7-pin31-se1"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 31
+//? const: probe_tracker = 1
+//? run: "cog7-pin31-se2"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 31
+//? const: probe_tracker = 2
+//? run: "cog7-pin31-se3"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 31
+//? const: probe_tracker = 3
+//? run: "cog7-pin31-se4"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 31
+//? const: probe_tracker = 4
+//? run: "cog7-pin32-se1"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 1
+//? run: "cog7-pin32-se2"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 2
+//? run: "cog7-pin32-se3"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 3
+//? run: "cog7-pin32-se4"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 32
+//? const: probe_tracker = 4
+//? run: "cog7-pin59-se1"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 59
+//? const: probe_tracker = 1
+//? run: "cog7-pin59-se2"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 59
+//? const: probe_tracker = 2
+//? run: "cog7-pin59-se3"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 59
+//? const: probe_tracker = 3
+//? run: "cog7-pin59-se4"
+//? cog: 7
+//? const: probe_writer = 6
+//? const: probe_pin = 59
+//? const: probe_tracker = 4
+
+                // A companion cog holds the selected input through a mailbox acknowledgment.
+                // Every change settles for 64 clocks; no physical input/output timing is asserted.
+                MOV     PTRA,           aug(hubaddr(mailbox))
+                MOV     PTRB,           PTRA
+                ADD     PTRB,           4
+                MOV     image,          aug(hubaddr(writer))
+                SETQ    PTRA
+                COGINIT probe_writer,   image
+                MOV     level,          0
+                CALL    exchange
+                // Normalize inherited sensors and drain their notifications before pin selection.
+                SETSE1  0
+                SETSE2  0
+                SETSE3  0
+                SETSE4  0
+                WAITX   64
+                POLLSE1
+                POLLSE2
+                POLLSE3
+                POLLSE4
+                MOV     mode,           1
+mode_loop:
+                MOV     selector,       mode
+                SHL     selector,       6
+                OR      selector,       probe_pin
+                // Bits above D[8:0] must be ignored, including for high/low mode aliases.
+                OR      selector,       aug(0xffff_fe00)
+                CALL    configure
+                WAITX   64
+                CALL    poll_sensor
+                MOV     expected,       0
+                CMP     mode,           4                   :wz
+    if(Z)       MOV     expected,       1
+                CMP     mode,           5                   :wz
+    if(Z)       MOV     expected,       1
+                CALL    check_value
+                // A rising input triggers rising/change/high sensors, and held high only reasserts high.
+                MOV     level,          1
+                CALL    exchange
+                CALL    poll_sensor
+                // A departing low level leaves its sticky notification set until this poll.
+                MOV     expected,       1
+                CMP     mode,           2                   :wz
+    if(Z)       MOV     expected,       0
+                CALL    check_value
+                CALL    poll_sensor
+                MOV     expected,       0
+                CMP     mode,           6                   :wz
+    if(Z)       MOV     expected,       1
+                CMP     mode,           7                   :wz
+    if(Z)       MOV     expected,       1
+                CALL    check_value
+                CALL    exchange
+                CALL    poll_sensor
+                CALL    check_value
+                // Falling and held-low cases distinguish falling/change from continuous low sensing.
+                MOV     level,          0
+                CALL    exchange
+                CALL    poll_sensor
+                // A departing high level likewise leaves a sticky notification to consume.
+                MOV     expected,       1
+                CMP     mode,           1                   :wz
+    if(Z)       MOV     expected,       0
+                CALL    check_value
+                CALL    poll_sensor
+                MOV     expected,       0
+                CMP     mode,           4                   :wz
+    if(Z)       MOV     expected,       1
+                CMP     mode,           5                   :wz
+    if(Z)       MOV     expected,       1
+                CALL    check_value
+                // Choose active/inactive input levels for this mode and verify sticky edge history.
+                MOV     active_level,   1
+                CMP     mode,           2                   :wz
+    if(Z)       MOV     active_level,   0
+                CMP     mode,           4                   :wz
+    if(Z)       MOV     active_level,   0
+                CMP     mode,           5                   :wz
+    if(Z)       MOV     active_level,   0
+                MOV     level,          active_level
+                XOR     level,          1
+                CALL    exchange
+                CALL    poll_sensor
+                CALL    latch_event
+                CALL    poll_sensor
+                MOV     expected,       1
+                CALL    check_value
+                CALL    poll_sensor
+                MOV     expected,       0
+                CALL    check_value
+                // Both branch polarities consume the latch, even when the branch is not taken.
+                CALL    latch_event
+                CALL    positive_branch
+                MOV     expected,       1
+                CALL    check_value
+                CALL    positive_branch
+                MOV     expected,       0
+                CALL    check_value
+                CALL    negative_branch
+                MOV     expected,       1
+                CALL    check_value
+                CALL    latch_event
+                CALL    negative_branch
+                MOV     expected,       0
+                CALL    check_value
+                CALL    positive_branch
+                CALL    check_value
+                // A missing event times out with C=Z=1; a delayed input event wakes with C=Z=0.
+                CALL    wait_sensor
+    if(!C)      ADD     failures,       1
+    if(!Z)      ADD     failures,       1
+                MOV     level,          active_level
+                MOV     delay,          2
+                CALL    send_command
+                CALL    wait_sensor
+    if(C)       ADD     failures,       1
+    if(Z)       ADD     failures,       1
+                CALL    await_ack
+                MOV     level,          active_level
+                XOR     level,          1
+                CALL    exchange
+                CALL    poll_sensor
+                // Rearming clears a sticky latch, preserves C/Z, and captures a stable edge baseline.
+                CALL    latch_event
+                MODCZ   _SET,           _CLR                :wcz
+                CALL    configure
+                WRC     saved_c
+                WRZ     saved_z
+                CMP     saved_c,        1                   :wz
+    if(!Z)      ADD     failures,       1
+                CMP     saved_z,        0                   :wz
+    if(!Z)      ADD     failures,       1
+                WAITX   64
+                CALL    poll_sensor
+                MOV     expected,       0
+                CALL    check_value
+                // Every pin mode can drive an interrupt through any of the four SE source IDs.
+                STALLI
+                NIXINT1
+                MOV     IJMP1,          vector
+                SETINT1 (3 + probe_tracker)
+                MOV     level,          active_level
+                MOV     delay,          2
+                CALL    send_command
+                ALLOWI
+                WAITX   aug(2048)
+                NOP
+                NOP
+                NOP
+                CMP     count,          mode                :wz
+    if(!Z)      ADD     failures,       1
+                CALL    await_ack
+                CALL    poll_sensor
+                MOV     expected,       1
+                CALL    check_value
+                STALLI
+                MOV     level,          active_level
+                XOR     level,          1
+                CALL    exchange
+                // Move away from level sensing and drain queued notifications before the next mode.
+                CALL    disable_sensor
+                WAITX   64
+                CALL    poll_sensor
+                MOV     level,          0
+                CALL    exchange
+                ADD     mode,           1
+                CMP     mode,           8                   :wz
+    if(!Z)      JMP     mode_loop
+                // Stop the writer and clear prefix state before the shared snapshot reporter.
+                MOV     command,        aug(0x4000_0000)
+                WRLONG  command,        PTRA
+                CALL    await_ack
+                SETQ    0
+                MODCZ   _CLR,           _CLR                :wcz
+                JMP     nrel(_end)
+// Compare a consumer's captured Boolean with the expected result.
+check_value:
+                CMP     value,      expected    :wz
+    if(!Z)      ADD     failures,   1
+                RET
+// Create a sticky event, then leave the input inactive before consuming it.
+latch_event:
+                MOV     level,  active_level
+                CALL    exchange
+                XOR     level,  1
+                CALL    exchange
+                RET
+// Configure or deselect only the tracker under test.
+configure:
+.if probe_tracker == 1
+                SETSE1  selector
+.endif
+.if probe_tracker == 2
+                SETSE2  selector
+.endif
+.if probe_tracker == 3
+                SETSE3  selector
+.endif
+.if probe_tracker == 4
+                SETSE4  selector
+.endif
+                RET
+disable_sensor:
+.if probe_tracker == 1
+                SETSE1  0
+.endif
+.if probe_tracker == 2
+                SETSE2  0
+.endif
+.if probe_tracker == 3
+                SETSE3  0
+.endif
+.if probe_tracker == 4
+                SETSE4  0
+.endif
+                RET
+// Poll the selected latch and capture C before returning.
+poll_sensor:
+.if probe_tracker == 1
+                POLLSE1         :wc
+.endif
+.if probe_tracker == 2
+                POLLSE2         :wc
+.endif
+.if probe_tracker == 3
+                POLLSE3         :wc
+.endif
+.if probe_tracker == 4
+                POLLSE4         :wc
+.endif
+                WRC     value
+                RET
+// Bound both the timeout and delayed-event wakeup tests.
+wait_sensor:
+                GETCT   timer
+                ADD     timer,  aug(4096)
+                SETQ    timer
+.if probe_tracker == 1
+                WAITSE1                     :wcz
+.endif
+.if probe_tracker == 2
+                WAITSE2                     :wcz
+.endif
+.if probe_tracker == 3
+                WAITSE3                     :wcz
+.endif
+.if probe_tracker == 4
+                WAITSE4                     :wcz
+.endif
+                RET
+// Capture taken/not-taken behavior for both event branch polarities.
+positive_branch:
+.if probe_tracker == 1
+                JSE1    branch_taken
+.endif
+.if probe_tracker == 2
+                JSE2    branch_taken
+.endif
+.if probe_tracker == 3
+                JSE3    branch_taken
+.endif
+.if probe_tracker == 4
+                JSE4    branch_taken
+.endif
+                MOV     value,  0
+                RET
+negative_branch:
+.if probe_tracker == 1
+                JNSE1   branch_taken
+.endif
+.if probe_tracker == 2
+                JNSE2   branch_taken
+.endif
+.if probe_tracker == 3
+                JNSE3   branch_taken
+.endif
+.if probe_tracker == 4
+                JNSE4   branch_taken
+.endif
+
+                MOV     value,  0
+                RET
+branch_taken:
+                MOV     value,  1
+                RET
+// An ISR disables its source so a held level cannot trigger another entry after RETI.
+isr:
+                SETINT1 0
+                ADD     count,  1
+                RETI1
+// Send a held level, optionally delayed, and wait for a settled acknowledgment.
+exchange:
+                MOV     delay,  0
+                CALL    send_command
+await_ack:
+                RDLONG  ack,    PTRB
+                CMP     ack,    command :wz
+    if(!Z)      JMP     await_ack
+                RET
+send_command:
+                ADD     serial,     4
+                MOV     command,    serial
+                OR      command,    level
+                OR      command,    delay
+                WRLONG  command,    PTRA
+                RET
+var image:      LONG    0
+var mode:       LONG    0
+var selector:   LONG    0
+var level:      LONG    0
+var active_level:
+                LONG    0
+var delay:      LONG    0
+var serial:     LONG    0
+var command:    LONG    0
+var ack:        LONG    0
+var expected:   LONG    0
+var value:      LONG    0
+var timer:      LONG    0
+var saved_c:    LONG    0
+var saved_z:    LONG    0
+var count:      LONG    0
+var failures:   LONG    0
+var vector:     LONG    pcaddr(isr)
+.data
+mailbox:        LONG    [0, 0]
+.cogexec    0x4000, 0
+writer:
+                MOV     register(402),  PTRA
+                ADD     register(402),  4
+                MOV     register(401),  0
+writer_wait:
+                RDLONG  register(400),  PTRA
+                CMP     register(400),  register(401)       :wz
+    if(Z)       JMP     writer_wait
+                MOV     register(401),  register(400)
+                TEST    register(400),  aug(0x4000_0000)    :wz
+    if(!Z)      JMP     writer_stop
+                // Bit 1 delays an input change until the receiver is waiting; bit 0 is the level.
+                TEST    register(400),  2                   :wz
+    if(!Z)      WAITX   aug(1024)
+                TEST    register(400),  1                   :wz
+    if(Z)       DRVL    probe_pin
+    if(!Z)      DRVH    probe_pin
+                WAITX   64
+                WRLONG  register(400),  register(402)
+                JMP     writer_wait
+writer_stop:
+                FLTL    probe_pin
+                WRLONG  register(400),  register(402)
+                COGSTOP probe_writer
+

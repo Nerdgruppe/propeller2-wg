@@ -1,0 +1,301 @@
+//? WINDTUNNEL CHECK LIST
+//? post: hub[results] == u32 [ 0 0 1 4 0 0 1 187 0 0 187 0 1 ]
+//? post: cog[*].reg[first_x] == 91
+//? post: cog[*].reg[last_x] == 95
+//? post: cog[*].reg[own_qmt] == 0
+//? run: "issuer 0 reader 1"
+//? cog: 0
+//? const: reader_cog = 1
+//? run: "issuer 0 reader 2"
+//? cog: 0
+//? const: reader_cog = 2
+//? run: "issuer 0 reader 3"
+//? cog: 0
+//? const: reader_cog = 3
+//? run: "issuer 0 reader 4"
+//? cog: 0
+//? const: reader_cog = 4
+//? run: "issuer 0 reader 5"
+//? cog: 0
+//? const: reader_cog = 5
+//? run: "issuer 0 reader 6"
+//? cog: 0
+//? const: reader_cog = 6
+//? run: "issuer 0 reader 7"
+//? cog: 0
+//? const: reader_cog = 7
+//? run: "issuer 1 reader 0"
+//? cog: 1
+//? const: reader_cog = 0
+//? run: "issuer 1 reader 2"
+//? cog: 1
+//? const: reader_cog = 2
+//? run: "issuer 1 reader 3"
+//? cog: 1
+//? const: reader_cog = 3
+//? run: "issuer 1 reader 4"
+//? cog: 1
+//? const: reader_cog = 4
+//? run: "issuer 1 reader 5"
+//? cog: 1
+//? const: reader_cog = 5
+//? run: "issuer 1 reader 6"
+//? cog: 1
+//? const: reader_cog = 6
+//? run: "issuer 1 reader 7"
+//? cog: 1
+//? const: reader_cog = 7
+//? run: "issuer 2 reader 0"
+//? cog: 2
+//? const: reader_cog = 0
+//? run: "issuer 2 reader 1"
+//? cog: 2
+//? const: reader_cog = 1
+//? run: "issuer 2 reader 3"
+//? cog: 2
+//? const: reader_cog = 3
+//? run: "issuer 2 reader 4"
+//? cog: 2
+//? const: reader_cog = 4
+//? run: "issuer 2 reader 5"
+//? cog: 2
+//? const: reader_cog = 5
+//? run: "issuer 2 reader 6"
+//? cog: 2
+//? const: reader_cog = 6
+//? run: "issuer 2 reader 7"
+//? cog: 2
+//? const: reader_cog = 7
+//? run: "issuer 3 reader 0"
+//? cog: 3
+//? const: reader_cog = 0
+//? run: "issuer 3 reader 1"
+//? cog: 3
+//? const: reader_cog = 1
+//? run: "issuer 3 reader 2"
+//? cog: 3
+//? const: reader_cog = 2
+//? run: "issuer 3 reader 4"
+//? cog: 3
+//? const: reader_cog = 4
+//? run: "issuer 3 reader 5"
+//? cog: 3
+//? const: reader_cog = 5
+//? run: "issuer 3 reader 6"
+//? cog: 3
+//? const: reader_cog = 6
+//? run: "issuer 3 reader 7"
+//? cog: 3
+//? const: reader_cog = 7
+//? run: "issuer 4 reader 0"
+//? cog: 4
+//? const: reader_cog = 0
+//? run: "issuer 4 reader 1"
+//? cog: 4
+//? const: reader_cog = 1
+//? run: "issuer 4 reader 2"
+//? cog: 4
+//? const: reader_cog = 2
+//? run: "issuer 4 reader 3"
+//? cog: 4
+//? const: reader_cog = 3
+//? run: "issuer 4 reader 5"
+//? cog: 4
+//? const: reader_cog = 5
+//? run: "issuer 4 reader 6"
+//? cog: 4
+//? const: reader_cog = 6
+//? run: "issuer 4 reader 7"
+//? cog: 4
+//? const: reader_cog = 7
+//? run: "issuer 5 reader 0"
+//? cog: 5
+//? const: reader_cog = 0
+//? run: "issuer 5 reader 1"
+//? cog: 5
+//? const: reader_cog = 1
+//? run: "issuer 5 reader 2"
+//? cog: 5
+//? const: reader_cog = 2
+//? run: "issuer 5 reader 3"
+//? cog: 5
+//? const: reader_cog = 3
+//? run: "issuer 5 reader 4"
+//? cog: 5
+//? const: reader_cog = 4
+//? run: "issuer 5 reader 6"
+//? cog: 5
+//? const: reader_cog = 6
+//? run: "issuer 5 reader 7"
+//? cog: 5
+//? const: reader_cog = 7
+//? run: "issuer 6 reader 0"
+//? cog: 6
+//? const: reader_cog = 0
+//? run: "issuer 6 reader 1"
+//? cog: 6
+//? const: reader_cog = 1
+//? run: "issuer 6 reader 2"
+//? cog: 6
+//? const: reader_cog = 2
+//? run: "issuer 6 reader 3"
+//? cog: 6
+//? const: reader_cog = 3
+//? run: "issuer 6 reader 4"
+//? cog: 6
+//? const: reader_cog = 4
+//? run: "issuer 6 reader 5"
+//? cog: 6
+//? const: reader_cog = 5
+//? run: "issuer 6 reader 7"
+//? cog: 6
+//? const: reader_cog = 7
+//? run: "issuer 7 reader 0"
+//? cog: 7
+//? const: reader_cog = 0
+//? run: "issuer 7 reader 1"
+//? cog: 7
+//? const: reader_cog = 1
+//? run: "issuer 7 reader 2"
+//? cog: 7
+//? const: reader_cog = 2
+//? run: "issuer 7 reader 3"
+//? cog: 7
+//? const: reader_cog = 3
+//? run: "issuer 7 reader 4"
+//? cog: 7
+//? const: reader_cog = 4
+//? run: "issuer 7 reader 5"
+//? cog: 7
+//? const: reader_cog = 5
+//? run: "issuer 7 reader 6"
+//? cog: 7
+//? const: reader_cog = 6
+
+                // A different cog must see empty reads, even while the issuer has a pending or completed result.
+                // After a local result, foreign traffic must leave the reader's retained words unchanged.
+                MOV     PTRA,       aug(hubaddr(mailbox))
+                MOV     image,      aug(hubaddr(reader))
+                SETQ    PTRA
+                COGINIT reader_cog, image
+                GETCT   timer
+                ADD     timer,      aug(4096)
+                ANDN    timer,      7
+                WRLONG  timer,      PTRA
+                ADDCT1  timer,      0
+                WAITCT1
+                QMUL    7,          13
+                WAITX   aug(256)
+                GETQX   first_x
+                GETQY   scratch
+                POLLQMT                                     :wc
+                WRC     own_qmt
+                MOV     phase_ptr,  PTRA
+                ADD     phase_ptr,  4
+wait_local:
+                RDLONG  phase,  phase_ptr
+                CMP     phase,  1           :wz
+    if(!Z)      JMP     wait_local
+                QMUL    5,      19
+                WAITX   100
+                WRLONG  2,      phase_ptr
+wait_done:
+                RDLONG  phase,      phase_ptr
+                CMP     phase,      3           :wz
+    if(!Z)      JMP     wait_done
+                GETQX   last_x
+                GETQY   scratch
+                POLLQMT                         :wc
+    if(C)       ADD     own_qmt,    1
+                WAITX   128
+                SETQ    0
+                JMP     nrel(_end)
+var image:      LONG    0
+var timer:      LONG    0
+var first_x:    LONG    0
+var last_x:     LONG    0
+var scratch:    LONG    0
+var own_qmt:    LONG    0
+var phase_ptr:  LONG    0
+var phase:      LONG    0
+.data
+mailbox:        LONG    [0] * 2
+results:        LONG    [0] * 13
+.cogexec    0x4000, 0
+reader:
+                MOV     worker_phase_ptr,   PTRA
+                ADD     worker_phase_ptr,   4
+worker_wait_start:
+                RDLONG  worker_timer,   PTRA
+                CMP     worker_timer,   0                   :wz
+    if(Z)       JMP     worker_wait_start
+                ADDCT1  worker_timer,   0
+                WAITCT1
+                // Read during the foreign computation: this must take two clocks, with QMT set.
+                WAITX   16
+                GETCT   worker_before
+                GETQX   pending_x
+                GETCT   pending_time
+                SUB     pending_time,   worker_before
+                GETQY   pending_y
+                POLLQMT                                     :wc
+                WRC     pending_qmt
+                // Read after the foreign computation: neither word becomes ready here.
+                WAITX   128
+                GETQX   foreign_x
+                GETQY   foreign_y
+                POLLQMT                                     :wc
+                WRC     foreign_qmt
+                // Establish retained local words before the issuer submits another operation.
+                QMUL    11,             17
+                GETQX   local_x
+                GETQY   local_y
+                POLLQMT                                     :wc
+                WRC     local_qmt
+                WRLONG  1,              worker_phase_ptr
+worker_wait_second:
+                RDLONG  worker_phase,       worker_phase_ptr
+                CMP     worker_phase,       2                   :wz
+    if(!Z)      JMP     worker_wait_second
+                GETQX   repeated_x
+                GETQY   repeated_y
+                POLLQMT                                         :wc
+                WRC     repeated_qmt
+                // Record one contiguous block, then signal completion and stop the reader cog.
+                MOV     worker_destination, PTRA
+                ADD     worker_destination, 8
+                SETQ    12
+                WRLONG  pending_x,          worker_destination
+                WRLONG  3,                  worker_phase_ptr
+                COGSTOP reader_cog
+var worker_timer:
+                LONG    0
+var worker_phase_ptr:
+                LONG    0
+var worker_phase:
+                LONG    0
+var worker_before:
+                LONG    0
+var worker_destination:
+                LONG    0
+var pending_x:  LONG    0
+var pending_y:  LONG    0
+var pending_qmt:
+                LONG    0
+var pending_time:
+                LONG    0
+var foreign_x:  LONG    0
+var foreign_y:  LONG    0
+var foreign_qmt:
+                LONG    0
+var local_x:    LONG    0
+var local_y:    LONG    0
+var local_qmt:  LONG    0
+var repeated_x: LONG    0
+var repeated_y: LONG    0
+var repeated_qmt:
+                LONG    0
+// Ensure the complete 504-long startup image is present.
+reader_end:     LONG    [0] * (504 - cogaddr(reader_end))
+.data
+

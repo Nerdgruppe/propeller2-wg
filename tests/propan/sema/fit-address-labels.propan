@@ -15,12 +15,12 @@ lut_end:
 NOP
 .fit lut_end
 
-.regspace $, 0x1fe
+.regspace $, 0x1f7
 var reg_start:
 RES 1
 .regspace $, reg_start
 RES 1
-.fit 0x1ff
+.fit 0x1f8
 
 .hubexec $
 .fit hub_end

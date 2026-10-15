@@ -1,0 +1,211 @@
+# Windtunnel fixtures
+
+A `.propan` fixture starts with `//? WINDTUNNEL CHECK LIST`, followed by contiguous
+`//?` lines. Leading spaces or tabs are accepted, including the indentation
+produced by `propan --pretty-print`. The first ordinary source line ends the
+checklist. Run the suite with
+`zig-0.16.0 build install test-windtunnel`, or select files with
+`zig-out/bin/windtunnel-tests FILE.propan ...`.
+
+Use `--include FILTERS` and `--exclude FILTERS` to select files before assembling
+or running their cases. Each value is a comma-separated list of case-sensitive
+substrings matched against the file path; surrounding whitespace is ignored.
+Multiple include patterns are alternatives, and exclusions always take precedence.
+Without includes, all candidate files are eligible. Empty patterns and selections
+that match no files are errors. Filters apply to explicit file arguments and
+automatic discovery, which ignores imported helpers without checklist headers.
+Summaries and timing reports describe only the selected files.
+
+For routine validation without the expensive FIFO visibility sweep:
+
+```sh
+zig-out/bin/windtunnel-tests --exclude fifo-write-visibility.propan
+zig-0.16.0 build install test -Doptimize=ReleaseSafe -Dcoverage=false -Dwindtunnel-exclude=fifo-write-visibility.propan
+```
+
+Build-driven runs also accept `-Dwindtunnel-include=FILTERS`. Omit the filter
+options for final validation of the complete registered suite; exclusions are
+never enabled by default.
+
+The runner uses a bounded worker group and defaults to all available logical cores.
+Use `-j N` (or `-jN`) to select the worker count; `-j 0` uses all cores and `-j 1`
+runs sequentially. Build-driven fixture runs accept `-Dwindtunnel-jobs=N`;
+Zig's own `-j` option controls build parallelism separately. Hardware oracle and
+characterization uploads always use one worker to keep the board exclusively owned.
+Prepared images can be generated in parallel. Cases retain independent simulator
+state, and diagnostic output is reported in fixture order after the workers finish.
+
+Measure simulator performance changes with ReleaseSafe, coverage disabled, and
+`-j 1`, using the same fixtures and excluding compilation time. Report parallel
+scaling separately from improvements to sequential execution.
+
+Add `--timing-report FILE.md` to the runner, or `-Dwindtunnel-timing-report=FILE.md`
+to the build, to write a Markdown report sorted from longest to shortest. It lists
+each file's total and run count, minimum/average/maximum run duration, followed by
+every individual run with its duration and result (including failures). Timings
+use elapsed wall time: file totals include checklist preparation plus the sum of
+run durations, and runs include assembly, simulation, assertions and hardware
+access when enabled. Queue waiting and report generation are excluded. Parallel
+durations overlap and include scheduling contention; use `-j1` for comparisons.
+No timing clock reads are added when the report is disabled. Build-driven reports
+always execute the fixtures afresh instead of reusing a cached test result.
+
+## Runs and initial values
+
+Conditions before the first `run:` apply to every run. Each `run:` starts a new
+section containing additional `pre:` and `post:` conditions. Runs may also
+select a `cog:` and supply `const:` assembler parameters. Names are optional
+quoted strings; explicit names must be nonempty and unique within the fixture.
+A fixture without `run:` has one implicit run. The common section does not create
+an extra run when explicit sections exist.
+
+```cpp
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? pre: sym[input] = u32 [ 10 ]
+//? post: cog[0].c == false
+//? run: "common input"
+//? post: cog[0].reg[result] == 11
+//? run:
+//? pre: sym[input] = u32 [ 20 ]
+//? post: cog[0].reg[result] == 21
+//? run: "common input restored"
+//? post: cog[0].reg[result] == 11
+
+    MOV result, input
+    ADD result, 1
+    JMP nrel(_end)
+var input: LONG 0
+var result: LONG 0
+```
+
+A matrix can share its source and assertions while varying assembly-time values:
+
+```cpp
+//? WINDTUNNEL CHECK LIST
+//? const: size = 4
+//? post: cog[*].reg[failures] == 0
+//? run: "cog 0, long"
+//? cog: 0
+//? run: "cog 7, byte"
+//? cog: 7
+//? const: size = 1
+```
+
+`cog[*]` means the selected cog for that run. Explicit `cog[N]` targets must
+still match the selected cog. Run-local cog selection defaults to the shared
+`cog:` value; it does not carry into the next run.
+
+`const: name = INTEGER` supplies a Propan constant before assembling the fixture
+for either backend. Integers accept the same bases and separators as other
+checklist numbers. Common constants apply to all runs, with run-local values
+overriding matching names. A name may appear only once in each section; names
+reserved for the oracle (`_wt_...`) are rejected. Constants cannot duplicate
+symbols declared in the fixture. Use constants for layout or instruction choices
+and `pre: sym[...]` for initial memory values. Each named matrix case is a normal
+run with its own fresh assembly, oracle upload, result, and failure evidence.
+
+`pre: sym[name] = BLOCK` patches the assembled image at the symbol's hub byte
+offset before startup. Cog variables are initialized by loading this patched
+image, so the same syntax seeds hub memory and cog registers. Symbols must exist,
+be unambiguous, and have an emitted hub address. Patches must be nonempty and fit
+entirely in emitted fixture memory; they cannot touch oracle instrumentation.
+They may cover multiple values or only part of a value.
+
+Every run starts with a fresh assembly and simulator. Common patches apply first,
+then local patches in source order; later patches overwrite overlapping bytes.
+Unpatched bytes always retain their original assembled values. Neither patches
+nor mutations during execution carry into subsequent runs. The hardware oracle
+uses the same patches, resolved against its own assembly.
+
+Existing flag and Q seeds remain available:
+
+```cpp
+//? pre: cog[0].c = true
+//? pre: cog[0].z = false
+//? pre: cog[0].q = 0x12345678
+```
+
+A local seed for C, Z, or Q replaces the common seed for that field. Repeated
+seeds for a field within the effective section are errors. Common and local
+postconditions are all checked. `sym[...]` is only a precondition target;
+`cog[N].reg[...]` and `hub[...]` are postcondition targets.
+
+## Values and observations
+
+Blocks support `u8 [ ... ]`, `u16 [ ... ]`, `u32 [ ... ]`, and `hex [ ... ]`.
+Integer elements are emitted in little-endian order. Decimal, hexadecimal, binary,
+underscores, and negative values that fit the element width are accepted. Commas
+are optional, and blocks can span multiple checklist lines. Hex blocks contain
+pairs of hexadecimal digits, for example `hex [ 00 80 ff ]`.
+
+```cpp
+//? post: cog[0].reg[result] == 0x12345678
+//? post: hub[buffer] == u16 [ 0x1234, -1 ]
+//? post: cog[0].c == true
+//? post: cog[0].z == false
+//? post: cog[0].q == 3
+```
+
+Local-only postconditions also accept `cog[*].dacs == u8 [0x12 0x34 0x56 0x78]`.
+Exactly four u8 values and an explicit `oracle: off` reason are required.
+DAC state cannot be seeded or observed through the hardware reporting protocol.
+
+Register addresses may be symbols or numeric register indices. Hub addresses may
+be symbols or numeric byte offsets. State targets select the configured cog; `cog[*]` follows run-local selection.
+Register 0 and registers 506..511 belong to the scaffold or special registers;
+hub observations must refer to emitted fixture memory.
+
+## Shared configuration
+
+Configuration directives precede all run sections and apply to every run.
+`cog:` and `const:` may also occur inside a run to override their shared values:
+
+| Directive | Default and meaning |
+| --- | --- |
+| `profile: cog` or `program` | `cog`: imported isolated fixture with state snapshots; `program`: complete standalone program |
+| `cog: N` | `0`; target cog, 0..7, for the cog profile |
+| `entry: symbol` | Start of imported code; optional alternative entry for the cog profile |
+| `stop: symbol` | Optional checkpoint for a program fixture; cog fixtures always exit through `_end` |
+| `max-cycles: N` | `1000000`; positive simulator cycle limit per run |
+| `timeout-ms: N` | `5000`; hardware timeout, 100..10000 ms |
+| `baudrate: N` | `2000000`; UART baud rate; cog reporters require the upload rate |
+| `oracle: required` | Default; hardware checks run when enabled |
+| `oracle: off "reason"` | Skip hardware checks for the stated nonempty reason |
+| `fast-io: off "reason"` | Retain clocked serial timing even with `--fast-io`; requires a nonempty reason |
+| `stdin: STREAM` | Empty; program UART input |
+| `stdin-after: STREAM` | Empty; output prefix that signals input readiness |
+| `stdout: STREAM` | Empty; exact expected program UART output |
+
+Streams accept blocks or quoted strings with `\n`, `\r`, `\t`, `\xNN`, `\"`,
+and `\\` escapes. Nonempty stdin requires `stdin-after`, which must be a prefix of
+the expected stdout. Program fixtures support symbol patches and serial checks;
+cog fixtures support state checks and reserve serial I/O for the reporter.
+
+Loaded images receive the serial ROM's nominal RCFAST handoff: 20 MHz, cleared
+UART modes and DIR, and retained 2 Mbaud 8N1 dividers in pins 62 and 63. Program
+fixtures can restore TX/RX mode without WXPIN or a startup delay. The hardware
+ROM calibrates those dividers against the upload stream. Keep the host at
+2 Mbaud to avoid a runtime baud change. Cog reporters use this same handoff.
+
+Simulation also has a host-time guard: 30 seconds per cog run and 600 seconds
+per program run. `max-cycles` remains the
+simulated execution limit; `timeout-ms` controls hardware runs only.
+
+`zig-out/bin/windtunnel-tests --fast-io FILE.propan ...` accelerates serial endpoints
+for fixtures without a `fast-io: off` directive. The build option `-Dfast-io=true`
+passes this flag to the fixture runner. CPU execution and waits that are part
+of a test remain unchanged; hardware oracle images are unchanged as well.
+
+The runner reports each run separately and continues after a failed run. Its exit
+code is nonzero if any fixture or run fails. Failure evidence and
+`--prepare-oracle` artifacts record the run name and patched image in separate
+directories. Enable live hardware checks with `--oracle` and `P2AAS_ENDPOINT`.
+
+See [core-pixels.propan](../../tests/windtunnel/state/core-pixels.propan) for a
+fixture using named and unnamed runs, shared seeds, overrides, and partial patches.
+
+Program-profile `run:` sections may also override `stdin`, `stdout`, and `stdin-after`.
+Omitted streams inherit the common value; an explicitly empty stream replaces it.
+Each effective run must still have a readiness marker for nonempty input, and that marker
+must be a prefix of its expected output. This allows terminal test matrices to share one source.

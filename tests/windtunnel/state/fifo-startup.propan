@@ -1,0 +1,1107 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 5000
+//? max-cycles: 2000000
+//? post: cog[*].reg[failures] == 0
+//? run: "cog0-kind0-gap0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog0-kind0-gap1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog0-kind0-gap2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog0-kind0-gap3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog0-kind0-gap4"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog0-kind0-gap5"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog0-kind0-gap6"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog0-kind0-gap7"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog0-kind1-gap0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog0-kind1-gap1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog0-kind1-gap2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog0-kind1-gap3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog0-kind1-gap4"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog0-kind1-gap5"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog0-kind1-gap6"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog0-kind1-gap7"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog0-kind2-gap0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog0-kind2-gap1"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog0-kind2-gap2"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog0-kind2-gap3"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog0-kind2-gap4"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog0-kind2-gap5"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog0-kind2-gap6"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog0-kind2-gap7"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+//? run: "cog1-kind0-gap0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog1-kind0-gap1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog1-kind0-gap2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog1-kind0-gap3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog1-kind0-gap4"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog1-kind0-gap5"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog1-kind0-gap6"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog1-kind0-gap7"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog1-kind1-gap0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog1-kind1-gap1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog1-kind1-gap2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog1-kind1-gap3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog1-kind1-gap4"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog1-kind1-gap5"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog1-kind1-gap6"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog1-kind1-gap7"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog1-kind2-gap0"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog1-kind2-gap1"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog1-kind2-gap2"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog1-kind2-gap3"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog1-kind2-gap4"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog1-kind2-gap5"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog1-kind2-gap6"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog1-kind2-gap7"
+//? cog: 1
+//? const: probe_cog = 1
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+//? run: "cog2-kind0-gap0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog2-kind0-gap1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog2-kind0-gap2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog2-kind0-gap3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog2-kind0-gap4"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog2-kind0-gap5"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog2-kind0-gap6"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog2-kind0-gap7"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog2-kind1-gap0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog2-kind1-gap1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog2-kind1-gap2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog2-kind1-gap3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog2-kind1-gap4"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog2-kind1-gap5"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog2-kind1-gap6"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog2-kind1-gap7"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog2-kind2-gap0"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog2-kind2-gap1"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog2-kind2-gap2"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog2-kind2-gap3"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog2-kind2-gap4"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog2-kind2-gap5"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog2-kind2-gap6"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog2-kind2-gap7"
+//? cog: 2
+//? const: probe_cog = 2
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+//? run: "cog3-kind0-gap0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog3-kind0-gap1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog3-kind0-gap2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog3-kind0-gap3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog3-kind0-gap4"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog3-kind0-gap5"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog3-kind0-gap6"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog3-kind0-gap7"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog3-kind1-gap0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog3-kind1-gap1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog3-kind1-gap2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog3-kind1-gap3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog3-kind1-gap4"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog3-kind1-gap5"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog3-kind1-gap6"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog3-kind1-gap7"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog3-kind2-gap0"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog3-kind2-gap1"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog3-kind2-gap2"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog3-kind2-gap3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog3-kind2-gap4"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog3-kind2-gap5"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog3-kind2-gap6"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog3-kind2-gap7"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+//? run: "cog4-kind0-gap0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog4-kind0-gap1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog4-kind0-gap2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog4-kind0-gap3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog4-kind0-gap4"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog4-kind0-gap5"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog4-kind0-gap6"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog4-kind0-gap7"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog4-kind1-gap0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog4-kind1-gap1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog4-kind1-gap2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog4-kind1-gap3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog4-kind1-gap4"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog4-kind1-gap5"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog4-kind1-gap6"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog4-kind1-gap7"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog4-kind2-gap0"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog4-kind2-gap1"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog4-kind2-gap2"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog4-kind2-gap3"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog4-kind2-gap4"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog4-kind2-gap5"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog4-kind2-gap6"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog4-kind2-gap7"
+//? cog: 4
+//? const: probe_cog = 4
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+//? run: "cog5-kind0-gap0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog5-kind0-gap1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog5-kind0-gap2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog5-kind0-gap3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog5-kind0-gap4"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog5-kind0-gap5"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog5-kind0-gap6"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog5-kind0-gap7"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog5-kind1-gap0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog5-kind1-gap1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog5-kind1-gap2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog5-kind1-gap3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog5-kind1-gap4"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog5-kind1-gap5"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog5-kind1-gap6"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog5-kind1-gap7"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog5-kind2-gap0"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog5-kind2-gap1"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog5-kind2-gap2"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog5-kind2-gap3"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog5-kind2-gap4"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog5-kind2-gap5"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog5-kind2-gap6"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog5-kind2-gap7"
+//? cog: 5
+//? const: probe_cog = 5
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+//? run: "cog6-kind0-gap0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog6-kind0-gap1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog6-kind0-gap2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog6-kind0-gap3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog6-kind0-gap4"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog6-kind0-gap5"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog6-kind0-gap6"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog6-kind0-gap7"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog6-kind1-gap0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog6-kind1-gap1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog6-kind1-gap2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog6-kind1-gap3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog6-kind1-gap4"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog6-kind1-gap5"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog6-kind1-gap6"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog6-kind1-gap7"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog6-kind2-gap0"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog6-kind2-gap1"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog6-kind2-gap2"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog6-kind2-gap3"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog6-kind2-gap4"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog6-kind2-gap5"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog6-kind2-gap6"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog6-kind2-gap7"
+//? cog: 6
+//? const: probe_cog = 6
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+//? run: "cog7-kind0-gap0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 0
+//? run: "cog7-kind0-gap1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 1
+//? run: "cog7-kind0-gap2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 2
+//? run: "cog7-kind0-gap3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 3
+//? run: "cog7-kind0-gap4"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 4
+//? run: "cog7-kind0-gap5"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 5
+//? run: "cog7-kind0-gap6"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 6
+//? run: "cog7-kind0-gap7"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 0
+//? const: probe_gap = 7
+//? run: "cog7-kind1-gap0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 0
+//? run: "cog7-kind1-gap1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 1
+//? run: "cog7-kind1-gap2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 2
+//? run: "cog7-kind1-gap3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 3
+//? run: "cog7-kind1-gap4"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 4
+//? run: "cog7-kind1-gap5"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 5
+//? run: "cog7-kind1-gap6"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 6
+//? run: "cog7-kind1-gap7"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 1
+//? const: probe_gap = 7
+//? run: "cog7-kind2-gap0"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 0
+//? run: "cog7-kind2-gap1"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 1
+//? run: "cog7-kind2-gap2"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 2
+//? run: "cog7-kind2-gap3"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 3
+//? run: "cog7-kind2-gap4"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 4
+//? run: "cog7-kind2-gap5"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 5
+//? run: "cog7-kind2-gap6"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 6
+//? run: "cog7-kind2-gap7"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: probe_kind = 2
+//? const: probe_gap = 7
+
+                // Separate the FIFO startup strobe from normal RAM responses using a known retained read value.
+                MOV     address,        aug(hubaddr(payload))
+                MOV     seed_address,   aug(hubaddr(seed_data))
+                MOV     bank,           0
+bank_loop:
+                MOV     phase,  0
+phase_loop:
+                MOV     random_address,     aug(hubaddr(normal_data))
+                MOV     temporary,          phase
+                SHL     temporary,          2
+                ADD     random_address,     temporary
+                WRLONG  aug(0x12345678),    random_address
+                RDLONG  seed,               seed_address
+                GETCT   timer
+                ADD     timer,              128
+                ANDN    timer,              7
+                ADD     timer,              phase
+                ADDCT1  timer,              0
+                WAITCT1
+                GETCT   start
+                RDFAST  no_wait,            address
+.if probe_gap >= 1
+                NOP
+.endif
+.if probe_gap >= 2
+                NOP
+.endif
+.if probe_gap >= 3
+                NOP
+.endif
+.if probe_gap >= 4
+                NOP
+.endif
+.if probe_gap >= 5
+                NOP
+.endif
+.if probe_gap >= 6
+                NOP
+.endif
+.if probe_gap >= 7
+                NOP
+.endif
+
+.if probe_kind == 0
+                RFLONG  loaded
+.elif   probe_kind == 1
+                RDLONG  loaded,             random_address
+.else
+                WRLONG  written,            random_address
+.endif
+                GETPTR  pointer
+                WAITX   100
+                // Calculate the first FIFO grant and response from the captured CT, independently of simulator state.
+                MOV     first_grant,        bank
+                SUB     first_grant,        start
+                SUB     first_grant,        probe_cog
+                SUB     first_grant,        5
+                AND     first_grant,        7
+                ADD     first_grant,        start
+                ADD     first_grant,        5
+                MOV     response,           first_grant
+                ADD     response,           5
+                MOV     request,            start
+                ADD     request,            4 + 2 * probe_gap
+                MOV     expected_pointer,   address
+.if probe_kind == 0
+                MOV     expected,           0
+                CMP     request,            response                    :wcz
+    if(>=)      MOV     expected,           bank
+    if(>=)      ADD     expected,           1
+    if(>=)      ADD     expected_pointer,   4
+.elif   probe_kind == 1
+                MOV     grant,              request
+                ADD     grant,              2
+                MOV     temporary,          phase
+                SUB     temporary,          grant
+                SUB     temporary,          probe_cog
+                AND     temporary,          7
+                ADD     grant,              temporary
+                MOV     expected,           aug(0x12345678)
+                CMP     request,            response                    :wcz
+    if(>)       JMP     compare
+                CMP     grant,              first_grant                 :wcz
+    if(>=)      MOV     expected,           aug(0xdeadface)
+.else
+                RDLONG  loaded,             random_address
+                MOV     expected,           written
+.endif
+compare:
+                CMP     loaded,             expected            :wz
+    if(!Z)      ADD     failures,           1
+                CMP     pointer,            expected_pointer    :wz
+    if(!Z)      ADD     failures,           1
+                RFLONG  late
+                MOV     expected,           bank
+                ADD     expected,           1
+.if probe_kind == 0
+                CMP     expected_pointer,   address             :wz
+    if(!Z)      ADD     expected,           1
+.endif
+                CMP     late,               expected            :wz
+    if(!Z)      ADD     failures,           1
+                ADD     phase,              1
+                CMP     phase,              8                   :wz
+    if(!Z)      JMP     phase_loop
+                ADD     address,            4
+                ADD     bank,               1
+                CMP     bank,               8                   :wz
+    if(!Z)      JMP     bank_loop
+                JMP     nrel(_end)
+var address:    LONG    0
+var random_address:
+                LONG    0
+var seed_address:
+                LONG    0
+var seed:       LONG    0
+var bank:       LONG    0
+var phase:      LONG    0
+var timer:      LONG    0
+var start:      LONG    0
+var first_grant:
+                LONG    0
+var grant:      LONG    0
+var response:   LONG    0
+var request:    LONG    0
+var temporary:  LONG    0
+var loaded:     LONG    0
+var late:       LONG    0
+var pointer:    LONG    0
+var expected_pointer:
+                LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+var no_wait:    LONG    0x80000000
+var written:    LONG    0xabcdef01
+.data
+.align  32
+payload:        LONG    1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+.align  32
+normal_data:    LONG    [0x12345678] * 8
+seed_data:      LONG    0xdeadface
+

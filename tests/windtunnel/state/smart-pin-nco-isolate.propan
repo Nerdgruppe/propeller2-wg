@@ -1,0 +1,86 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? max-cycles: 500000
+//? run: "pll0-y1-tt0"
+//? const: y = 1
+//? const: tt = 0
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y1-tt1"
+//? const: y = 1
+//? const: tt = 1
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y65536-tt0"
+//? const: y = 65536
+//? const: tt = 0
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y65536-tt1"
+//? const: y = 65536
+//? const: tt = 1
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y16777216-tt0"
+//? const: y = 16777216
+//? const: tt = 0
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y16777216-tt1"
+//? const: y = 16777216
+//? const: tt = 1
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y1073741824-tt0"
+//? const: y = 1073741824
+//? const: tt = 0
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y1073741824-tt1"
+//? const: y = 1073741824
+//? const: tt = 1
+//? post: cog[*].reg[result] == 0x00000000
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x00000000
+//? run: "pll0-y2271560481-tt0"
+//? const: y = 2271560481
+//? const: tt = 0
+//? post: cog[*].reg[result] == 0x5c28f5c3
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x1eb851ec
+//? run: "pll0-y2271560481-tt1"
+//? const: y = 2271560481
+//? const: tt = 1
+//? post: cog[*].reg[result] == 0x5c28f5c3
+//? post: cog[*].reg[marker] == 0x0000007b
+//? post: cog[*].reg[held] == 0x1eb851ec
+
+// Use nominal 20 MHz RCFAST and retain the ROM-calibrated UART divider.
+
+                WRPIN   aug((6 << 1) | (tt << 6)),  4
+                WXPIN   1,                          4
+                DIRH    4
+                WYPIN   aug(y),                     4
+                WAITX   100
+                RQPIN   result,                     4
+                MOV     marker,                     123
+                DIRL    4
+                WAITX   16
+                RQPIN   held,                       4
+
+                // Restore RCFAST before the shared reporter uses the ROM-calibrated UART.
+                HUBSET  0xF0
+                WAITX   64
+                JMP     nrel(_end)
+
+var result:     LONG    0
+var marker:     LONG    0
+var held:       LONG    0
+

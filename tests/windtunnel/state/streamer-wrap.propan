@@ -1,0 +1,27 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[low] == 0x00deadbe
+//? post: cog[*].reg[high] == 0x2f000000
+//? post: cog[*].reg[original] == 0
+
+                // A 32-pin transfer beginning at P56 wraps through P0..P23; OUT remains architectural.
+                // Keep the fixture reporter smart pins P62/P63 disabled and out of the input observation.
+                MOV     OUTA,                                                   0
+                MOV     OUTB,                                                   0
+                MOV     DIRA,                                                   aug(0x00ffffff)
+                MOV     DIRB,                                                   aug(0x3f000000)
+                SETXFRQ 0
+                XINIT   aug(X_IMM_1X32_4DAC8 | X_PINS_ON | (7 << 20) | 0xffff), aug(0xdeadbeef)
+                WAITX   20
+                MOV     low,                                                    INA
+                AND     low,                                                    aug(0x00ffffff)
+                MOV     high,                                                   INB
+                AND     high,                                                   aug(0x3f000000)
+                MOV     original,                                               OUTB
+                XSTOP
+                MOV     DIRA,                                                   0
+                MOV     DIRB,                                                   0
+                JMP     nrel(_end)
+var low:        LONG    0
+var high:       LONG    0
+var original:   LONG    0
+

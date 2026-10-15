@@ -1,0 +1,29 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[enabled] == 0x00400000
+//? post: cog[*].reg[disabled] == 0
+//? post: cog[*].reg[reenabled] == 0x00400000
+
+                // Check active status separately from the independent TMDS enable bit.
+                SETCMOD 0x100
+                GETBRK  disabled                    :wcz
+                AND     disabled,   aug(1 << 22)
+                MOV     control,    aug(0xfffffd20)
+                SETCMOD control
+                GETBRK  enabled                     :wcz
+                AND     enabled,    aug(1 << 22)
+                // Canceled parameter instructions must not change converter mode or consume operands twice.
+                MODC    _CLR                        :wc
+    if(C)       SETCMOD 0
+    if(C)       SETCY   aug(0xffffffff)
+    if(C)       SETCI   aug(0xffffffff)
+    if(C)       SETCQ   aug(0xffffffff)
+    if(C)       SETCFRQ aug(0xffffffff)
+                GETBRK  reenabled                   :wcz
+                AND     reenabled,  aug(1 << 22)
+                SETCMOD 0
+                JMP     nrel(_end)
+var control:    LONG    0
+var enabled:    LONG    0
+var disabled:   LONG    0
+var reenabled:  LONG    0
+

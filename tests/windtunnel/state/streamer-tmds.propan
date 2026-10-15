@@ -1,0 +1,168 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "TMDS 100 data d5455552"
+//? const: video = 0x100
+//? const: data = 0xd5455552
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0xa6
+//? post: cog[*].reg[s4] == 0xaa
+//? post: cog[*].reg[s5] == 0x99
+//? post: cog[*].reg[s6] == 0xaa
+//? post: cog[*].reg[s7] == 0xa9
+//? post: cog[*].reg[s8] == 0xa6
+//? post: cog[*].reg[s9] == 0xaa
+//? post: cog[*].reg[s10] == 0x99
+//? post: cog[*].reg[s11] == 0xaa
+//? run: "TMDS 100 data 12345600"
+//? const: video = 0x100
+//? const: data = 0x12345600
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x5a
+//? post: cog[*].reg[s4] == 0x56
+//? post: cog[*].reg[s5] == 0xa5
+//? post: cog[*].reg[s6] == 0x56
+//? post: cog[*].reg[s7] == 0x95
+//? post: cog[*].reg[s8] == 0x6a
+//? post: cog[*].reg[s9] == 0x66
+//? post: cog[*].reg[s10] == 0xa5
+//? post: cog[*].reg[s11] == 0x9a
+//? run: "TMDS 180 data d5455552"
+//? const: video = 0x180
+//? const: data = 0xd5455552
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x65
+//? post: cog[*].reg[s4] == 0x55
+//? post: cog[*].reg[s5] == 0x99
+//? post: cog[*].reg[s6] == 0x55
+//? post: cog[*].reg[s7] == 0x95
+//? post: cog[*].reg[s8] == 0x65
+//? post: cog[*].reg[s9] == 0x55
+//? post: cog[*].reg[s10] == 0x99
+//? post: cog[*].reg[s11] == 0x55
+//? run: "TMDS 180 data 12345600"
+//? const: video = 0x180
+//? const: data = 0x12345600
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x5a
+//? post: cog[*].reg[s4] == 0x6a
+//? post: cog[*].reg[s5] == 0xa5
+//? post: cog[*].reg[s6] == 0x6a
+//? post: cog[*].reg[s7] == 0xa9
+//? post: cog[*].reg[s8] == 0x56
+//? post: cog[*].reg[s9] == 0x66
+//? post: cog[*].reg[s10] == 0xa5
+//? post: cog[*].reg[s11] == 0x59
+//? run: "converter plus TMDS 100 data d5455552"
+//? const: video = 0x120
+//? const: data = 0xd5455552
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0xa6
+//? post: cog[*].reg[s4] == 0xaa
+//? post: cog[*].reg[s5] == 0x99
+//? post: cog[*].reg[s6] == 0xaa
+//? post: cog[*].reg[s7] == 0xa9
+//? post: cog[*].reg[s8] == 0xa6
+//? post: cog[*].reg[s9] == 0xaa
+//? post: cog[*].reg[s10] == 0x99
+//? post: cog[*].reg[s11] == 0xaa
+//? run: "converter plus TMDS 100 data 12345600"
+//? const: video = 0x120
+//? const: data = 0x12345600
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x5a
+//? post: cog[*].reg[s4] == 0x56
+//? post: cog[*].reg[s5] == 0xa5
+//? post: cog[*].reg[s6] == 0x56
+//? post: cog[*].reg[s7] == 0x95
+//? post: cog[*].reg[s8] == 0x6a
+//? post: cog[*].reg[s9] == 0x66
+//? post: cog[*].reg[s10] == 0xa5
+//? post: cog[*].reg[s11] == 0x9a
+//? run: "converter plus TMDS 180 data d5455552"
+//? const: video = 0x1a0
+//? const: data = 0xd5455552
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x65
+//? post: cog[*].reg[s4] == 0x55
+//? post: cog[*].reg[s5] == 0x99
+//? post: cog[*].reg[s6] == 0x55
+//? post: cog[*].reg[s7] == 0x95
+//? post: cog[*].reg[s8] == 0x65
+//? post: cog[*].reg[s9] == 0x55
+//? post: cog[*].reg[s10] == 0x99
+//? post: cog[*].reg[s11] == 0x55
+//? run: "converter plus TMDS 180 data 12345600"
+//? const: video = 0x1a0
+//? const: data = 0x12345600
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x5a
+//? post: cog[*].reg[s4] == 0x6a
+//? post: cog[*].reg[s5] == 0xa5
+//? post: cog[*].reg[s6] == 0x6a
+//? post: cog[*].reg[s7] == 0xa9
+//? post: cog[*].reg[s8] == 0x56
+//? post: cog[*].reg[s9] == 0x66
+//? post: cog[*].reg[s10] == 0xa5
+//? post: cog[*].reg[s11] == 0x59
+
+                // Sample the serialized differential pairs at two-clock instruction intervals.
+                MOV     DIRA,                                   255
+                SETCMOD aug(video)
+                SETXFRQ aug(0x0ccccccd)
+                XINIT   aug(X_IMM_1X32_4DAC8 | X_PINS_ON | 32), aug(data)
+                MOV     s0,                                     INA
+                AND     s0,                                     255
+                MOV     s1,                                     INA
+                AND     s1,                                     255
+                MOV     s2,                                     INA
+                AND     s2,                                     255
+                MOV     s3,                                     INA
+                AND     s3,                                     255
+                MOV     s4,                                     INA
+                AND     s4,                                     255
+                MOV     s5,                                     INA
+                AND     s5,                                     255
+                MOV     s6,                                     INA
+                AND     s6,                                     255
+                MOV     s7,                                     INA
+                AND     s7,                                     255
+                MOV     s8,                                     INA
+                AND     s8,                                     255
+                MOV     s9,                                     INA
+                AND     s9,                                     255
+                MOV     s10,                                    INA
+                AND     s10,                                    255
+                MOV     s11,                                    INA
+                AND     s11,                                    255
+                XSTOP
+                MOV     DIRA,                                   0
+                SETCMOD 0
+                JMP     nrel(_end)
+var s0:         LONG    0
+var s1:         LONG    0
+var s2:         LONG    0
+var s3:         LONG    0
+var s4:         LONG    0
+var s5:         LONG    0
+var s6:         LONG    0
+var s7:         LONG    0
+var s8:         LONG    0
+var s9:         LONG    0
+var s10:        LONG    0
+var s11:        LONG    0
+

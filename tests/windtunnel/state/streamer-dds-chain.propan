@@ -1,0 +1,292 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "opcodefcb00000 size0 first1"
+//? const: opcode = 4239392768
+//? const: size = 0
+//? const: first = 1
+//? post: cog[0].reg[r0] == 224
+//? post: cog[0].reg[r1] == 231
+//? post: cog[0].reg[r2] == 5796
+//? post: cog[0].reg[r3] == 6309
+//? post: cog[0].reg[r4] == 634
+//? post: cog[0].reg[r5] == 702
+//? run: "opcodefcb00000 size0 first8"
+//? const: opcode = 4239392768
+//? const: size = 0
+//? const: first = 8
+//? post: cog[0].reg[r0] == 4294967222
+//? post: cog[0].reg[r1] == 4294967239
+//? post: cog[0].reg[r2] == 6707
+//? post: cog[0].reg[r3] == 7223
+//? post: cog[0].reg[r4] == 666
+//? post: cog[0].reg[r5] == 734
+//? run: "opcodefcb00000 size0 first65535"
+//? const: opcode = 4239392768
+//? const: size = 0
+//? const: first = 65535
+//? post: cog[0].reg[r0] == 528
+//? post: cog[0].reg[r1] == 544
+//? post: cog[0].reg[r2] == 7824
+//? post: cog[0].reg[r3] == 8337
+//? post: cog[0].reg[r4] == 738
+//? post: cog[0].reg[r5] == 806
+//? run: "opcodefcb00000 size3 first1"
+//? const: opcode = 4239392768
+//? const: size = 3
+//? const: first = 1
+//? post: cog[0].reg[r0] == 2057
+//? post: cog[0].reg[r1] == 2072
+//? post: cog[0].reg[r2] == 99426
+//? post: cog[0].reg[r3] == 99465
+//? post: cog[0].reg[r4] == 10174
+//? post: cog[0].reg[r5] == 10176
+//? run: "opcodefcb00000 size3 first8"
+//? const: opcode = 4239392768
+//? const: size = 3
+//? const: first = 8
+//? post: cog[0].reg[r0] == 4294966154
+//? post: cog[0].reg[r1] == 4294966188
+//? post: cog[0].reg[r2] == 101835
+//? post: cog[0].reg[r3] == 101881
+//? post: cog[0].reg[r4] == 10178
+//? post: cog[0].reg[r5] == 10180
+//? run: "opcodefcb00000 size3 first65535"
+//? const: opcode = 4239392768
+//? const: size = 3
+//? const: first = 65535
+//? post: cog[0].reg[r0] == 1466
+//? post: cog[0].reg[r1] == 1500
+//? post: cog[0].reg[r2] == 99699
+//? post: cog[0].reg[r3] == 99738
+//? post: cog[0].reg[r4] == 10188
+//? post: cog[0].reg[r5] == 10190
+//? run: "opcodefcb00000 size7 first1"
+//? const: opcode = 4239392768
+//? const: size = 7
+//? const: first = 1
+//? post: cog[0].reg[r0] == 2363
+//? post: cog[0].reg[r1] == 2378
+//? post: cog[0].reg[r2] == 90068
+//? post: cog[0].reg[r3] == 90107
+//? post: cog[0].reg[r4] == 8182
+//? post: cog[0].reg[r5] == 8184
+//? run: "opcodefcb00000 size7 first8"
+//? const: opcode = 4239392768
+//? const: size = 7
+//? const: first = 8
+//? post: cog[0].reg[r0] == 4294967213
+//? post: cog[0].reg[r1] == 4294967247
+//? post: cog[0].reg[r2] == 92451
+//? post: cog[0].reg[r3] == 92497
+//? post: cog[0].reg[r4] == 8182
+//? post: cog[0].reg[r5] == 8184
+//? run: "opcodefcb00000 size7 first65535"
+//? const: opcode = 4239392768
+//? const: size = 7
+//? const: first = 65535
+//? post: cog[0].reg[r0] == 2316
+//? post: cog[0].reg[r1] == 2350
+//? post: cog[0].reg[r2] == 90068
+//? post: cog[0].reg[r3] == 90107
+//? post: cog[0].reg[r4] == 8182
+//? post: cog[0].reg[r5] == 8184
+//? run: "opcodefcc00000 size0 first1"
+//? const: opcode = 4240441344
+//? const: size = 0
+//? const: first = 1
+//? post: cog[0].reg[r0] == 392
+//? post: cog[0].reg[r1] == 406
+//? post: cog[0].reg[r2] == 10863
+//? post: cog[0].reg[r3] == 11369
+//? post: cog[0].reg[r4] == 1410
+//? post: cog[0].reg[r5] == 1478
+//? run: "opcodefcc00000 size0 first8"
+//? const: opcode = 4240441344
+//? const: size = 0
+//? const: first = 8
+//? post: cog[0].reg[r0] == 4294967222
+//? post: cog[0].reg[r1] == 4294967239
+//? post: cog[0].reg[r2] == 4294966886
+//? post: cog[0].reg[r3] == 130
+//? post: cog[0].reg[r4] == 962
+//? post: cog[0].reg[r5] == 6
+//? run: "opcodefcc00000 size0 first65535"
+//? const: opcode = 4240441344
+//? const: size = 0
+//? const: first = 65535
+//? post: cog[0].reg[r0] == 1384
+//? post: cog[0].reg[r1] == 1418
+//? post: cog[0].reg[r2] == 5774
+//? post: cog[0].reg[r3] == 6293
+//? post: cog[0].reg[r4] == 4294966916
+//? post: cog[0].reg[r5] == 4294966984
+//? run: "opcodefcc00000 size3 first1"
+//? const: opcode = 4240441344
+//? const: size = 3
+//? const: first = 1
+//? post: cog[0].reg[r0] == 2281
+//? post: cog[0].reg[r1] == 2296
+//? post: cog[0].reg[r2] == 91037
+//? post: cog[0].reg[r3] == 91074
+//? post: cog[0].reg[r4] == 9842
+//? post: cog[0].reg[r5] == 9844
+//? run: "opcodefcc00000 size3 first8"
+//? const: opcode = 4240441344
+//? const: size = 3
+//? const: first = 8
+//? post: cog[0].reg[r0] == 4294966154
+//? post: cog[0].reg[r1] == 4294966188
+//? post: cog[0].reg[r2] == 95646
+//? post: cog[0].reg[r3] == 95690
+//? post: cog[0].reg[r4] == 10106
+//? post: cog[0].reg[r5] == 10108
+//? run: "opcodefcc00000 size3 first65535"
+//? const: opcode = 4240441344
+//? const: size = 3
+//? const: first = 65535
+//? post: cog[0].reg[r0] == 1822
+//? post: cog[0].reg[r1] == 1856
+//? post: cog[0].reg[r2] == 85752
+//? post: cog[0].reg[r3] == 85788
+//? post: cog[0].reg[r4] == 9638
+//? post: cog[0].reg[r5] == 9640
+//? run: "opcodefcc00000 size7 first1"
+//? const: opcode = 4240441344
+//? const: size = 7
+//? const: first = 1
+//? post: cog[0].reg[r0] == 2377
+//? post: cog[0].reg[r1] == 2392
+//? post: cog[0].reg[r2] == 82321
+//? post: cog[0].reg[r3] == 82358
+//? post: cog[0].reg[r4] == 7842
+//? post: cog[0].reg[r5] == 7844
+//? run: "opcodefcc00000 size7 first8"
+//? const: opcode = 4240441344
+//? const: size = 7
+//? const: first = 8
+//? post: cog[0].reg[r0] == 4294967213
+//? post: cog[0].reg[r1] == 4294967247
+//? post: cog[0].reg[r2] == 84718
+//? post: cog[0].reg[r3] == 84762
+//? post: cog[0].reg[r4] == 7842
+//? post: cog[0].reg[r5] == 7844
+//? run: "opcodefcc00000 size7 first65535"
+//? const: opcode = 4240441344
+//? const: size = 7
+//? const: first = 65535
+//? post: cog[0].reg[r0] == 2340
+//? post: cog[0].reg[r1] == 2374
+//? post: cog[0].reg[r2] == 78572
+//? post: cog[0].reg[r3] == 78608
+//? post: cog[0].reg[r4] == 7664
+//? post: cog[0].reg[r5] == 7666
+//? run: "opcodefcb00000 size0 first64"
+//? const: opcode = 4239392768
+//? const: size = 0
+//? const: first = 64
+//? post: cog[0].reg[r0] == 4294967176
+//? post: cog[0].reg[r1] == 4294967038
+//? post: cog[0].reg[r2] == 5200
+//? post: cog[0].reg[r3] == 5717
+//? post: cog[0].reg[r4] == 602
+//? post: cog[0].reg[r5] == 670
+//? run: "opcodefcb00000 size3 first64"
+//? const: opcode = 4239392768
+//? const: size = 3
+//? const: first = 64
+//? post: cog[0].reg[r0] == 4294959644
+//? post: cog[0].reg[r1] == 4294959879
+//? post: cog[0].reg[r2] == 101580
+//? post: cog[0].reg[r3] == 101628
+//? post: cog[0].reg[r4] == 10170
+//? post: cog[0].reg[r5] == 10172
+//? run: "opcodefcb00000 size7 first64"
+//? const: opcode = 4239392768
+//? const: size = 7
+//? const: first = 64
+//? post: cog[0].reg[r0] == 4294966707
+//? post: cog[0].reg[r1] == 4294966942
+//? post: cog[0].reg[r2] == 92448
+//? post: cog[0].reg[r3] == 92496
+//? post: cog[0].reg[r4] == 8182
+//? post: cog[0].reg[r5] == 8184
+//? run: "opcodefcc00000 size0 first64"
+//? const: opcode = 4240441344
+//? const: size = 0
+//? const: first = 64
+//? post: cog[0].reg[r0] == 4294967176
+//? post: cog[0].reg[r1] == 4294967038
+//? post: cog[0].reg[r2] == 4294961671
+//? post: cog[0].reg[r3] == 4294962212
+//? post: cog[0].reg[r4] == 4294965984
+//? post: cog[0].reg[r5] == 4294966052
+//? run: "opcodefcc00000 size3 first64"
+//? const: opcode = 4240441344
+//? const: size = 3
+//? const: first = 64
+//? post: cog[0].reg[r0] == 4294959644
+//? post: cog[0].reg[r1] == 4294959879
+//? post: cog[0].reg[r2] == 99615
+//? post: cog[0].reg[r3] == 99662
+//? post: cog[0].reg[r4] == 10288
+//? post: cog[0].reg[r5] == 10290
+//? run: "opcodefcc00000 size7 first64"
+//? const: opcode = 4240441344
+//? const: size = 7
+//? const: first = 64
+//? post: cog[0].reg[r0] == 4294966707
+//? post: cog[0].reg[r1] == 4294966942
+//? post: cog[0].reg[r2] == 88539
+//? post: cog[0].reg[r3] == 88586
+//? post: cog[0].reg[r4] == 8012
+//? post: cog[0].reg[r5] == 8014
+
+                // A ramp LUT makes phase reset, continuation, table offsets and live frequency changes visible.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                DRVH    0
+                MOV     index,  0
+                MOV     value,  0
+fill_table:
+                WRLUT   value,                      index
+                ADD     value,                      aug(0x01010000)
+                ADD     index,                      1
+                CMP     index,                      aug(512)                                                :wz
+    if(!Z)      JMP     fill_table
+                SETQ    aug(0x12345678)
+                XINIT   aug(0xf0070000 | first),    aug(0x1000 | (size << 9) | 511)
+                WAITX   3
+                SETXFRQ aug(0x23456789)
+                MOV     register(cogaddr(command)), aug(opcode | (cogaddr(control) << 9) | cogaddr(config))
+                MOV     control,                    aug(0xf0870003)
+                MOV     config,                     aug(0x1000 | (size << 9) | 85)
+                SETQ    aug(0x08000000)
+// Encode either register-operand XZERO or XCONT without adding a conditional instruction slot.
+command:
+                XZERO   control,            config
+                SETQ    aug(0x0ccccccd)
+                XCONT   aug(0xf0070004),    aug(0x1000 | (size << 9) | 3)
+                GETXACC r0
+                MOV     r1,                 0
+                // A third queued command stalls until space exists; captured frequency and operands must survive.
+                XCONT   0,                  0
+                GETXACC r2
+                MOV     r3,                 0
+                WAITXFI
+                GETXACC r4
+                MOV     r5,                 0
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                DIRL    0
+                JMP     nrel(_end)
+var index:      LONG    0
+var value:      LONG    0
+var control:    LONG    0
+var config:     LONG    0
+var r0:         LONG    0
+var r1:         LONG    0
+var r2:         LONG    0
+var r3:         LONG    0
+var r4:         LONG    0
+var r5:         LONG    0
+

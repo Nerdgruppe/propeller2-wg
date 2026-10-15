@@ -1,0 +1,386 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "FIFO sequence 8000"
+//? const: mode = 0x8000
+//? const: lut = 0
+//? const: mask = 0x1
+//? post: cog[*].reg[amount] == 5
+//? post: hub[samples] == u32 [
+//?     0x1 0x0 0x0 0x0 0x0 0x1 0x0 0x0
+//?     0x1 0x1 0x0 0x0 0x0 0x0 0x1 0x0
+//?     0x1 0x0 0x1 0x0 0x0 0x1 0x1 0x0
+//?     0x1 0x1 0x1 0x0 0x0 0x0 0x0 0x1
+//?     0x1 0x0 0x1 0x0 0x0 0x1 0x0 0x0
+//? ]
+//? run: "FIFO sequence 9000"
+//? const: mode = 0x9000
+//? const: lut = 0
+//? const: mask = 0x3
+//? post: cog[*].reg[amount] == 10
+//? post: hub[samples] == u32 [
+//?     0x1 0x0 0x2 0x0 0x3 0x0 0x0 0x1
+//?     0x1 0x1 0x2 0x1 0x3 0x1 0x0 0x2
+//?     0x1 0x1 0x2 0x0 0x2 0x1 0x0 0x1
+//?     0x3 0x1 0x2 0x1 0x0 0x2 0x0 0x2
+//?     0x1 0x2 0x2 0x0 0x1 0x2 0x0 0x1
+//? ]
+//? run: "FIFO sequence a000"
+//? const: mode = 0xa000
+//? const: lut = 0
+//? const: mask = 0xf
+//? post: cog[*].reg[amount] == 20
+//? post: hub[samples] == u32 [
+//?     0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8
+//?     0x5 0x2 0x6 0x4 0x7 0x6 0x8 0x8
+//?     0x9 0x2 0x9 0x4 0x9 0x6 0x9 0x8
+//?     0xd 0x2 0xc 0x4 0xb 0x6 0xa 0x8
+//?     0x1 0x3 0xf 0x4 0xd 0x6 0xb 0x8
+//? ]
+//? run: "FIFO sequence a00e"
+//? const: mode = 0xa00e
+//? const: lut = 0
+//? const: mask = 0xff
+//? post: cog[*].reg[amount] == 40
+//? post: hub[samples] == u32 [
+//?     0x21 0x43 0x65 0x87 0x25 0x46 0x67 0x88
+//?     0x29 0x49 0x69 0x89 0x2d 0x4c 0x6b 0x8a
+//?     0x31 0x4f 0x6d 0x8b 0x35 0x52 0x6f 0x8c
+//?     0x39 0x55 0x71 0x8d 0x3d 0x58 0x73 0x8e
+//?     0x41 0x5b 0x75 0x8f 0x45 0x5e 0x77 0x90
+//? ]
+//? run: "FIFO sequence b000"
+//? const: mode = 0xb000
+//? const: lut = 0
+//? const: mask = 0xffff
+//? post: cog[*].reg[amount] == 80
+//? post: hub[samples] == u32 [
+//?     0x4321 0x8765 0x4625 0x8867 0x4929 0x8969 0x4c2d 0x8a6b
+//?     0x4f31 0x8b6d 0x5235 0x8c6f 0x5539 0x8d71 0x583d 0x8e73
+//?     0x5b41 0x8f75 0x5e45 0x9077 0x6149 0x9179 0x644d 0x927b
+//?     0x6751 0x937d 0x6a55 0x947f 0x6d59 0x9581 0x705d 0x9683
+//?     0x7361 0x9785 0x7665 0x9887 0x7969 0x9989 0x7c6d 0x9a8b
+//? ]
+//? run: "FIFO sequence b001"
+//? const: mode = 0xb001
+//? const: lut = 0
+//? const: mask = 0xffffffff
+//? post: cog[*].reg[amount] == 160
+//? post: hub[samples] == u32 [
+//?     0x87654321 0x88674625 0x89694929 0x8a6b4c2d 0x8b6d4f31 0x8c6f5235 0x8d715539 0x8e73583d
+//?     0x8f755b41 0x90775e45 0x91796149 0x927b644d 0x937d6751 0x947f6a55 0x95816d59 0x9683705d
+//?     0x97857361 0x98877665 0x99897969 0x9a8b7c6d 0x9b8d7f71 0x9c8f8275 0x9d918579 0x9e93887d
+//?     0x9f958b81 0xa0978e85 0xa1999189 0xa29b948d 0xa39d9791 0xa49f9a95 0xa5a19d99 0xa6a3a09d
+//?     0xa7a5a3a1 0xa8a7a6a5 0xa9a9a9a9 0xaaabacad 0xabadafb1 0xacafb2b5 0xadb1b5b9 0xaeb3b8bd
+//? ]
+//? run: "FIFO sequence 8001"
+//? const: mode = 0x8001
+//? const: lut = 0
+//? const: mask = 0x1
+//? post: cog[*].reg[amount] == 5
+//? post: hub[samples] == u32 [
+//?     0x0 0x0 0x1 0x0 0x0 0x0 0x0 0x1
+//?     0x0 0x1 0x0 0x0 0x0 0x0 0x1 0x1
+//?     0x0 0x1 0x1 0x0 0x0 0x1 0x0 0x1
+//?     0x1 0x0 0x0 0x0 0x0 0x1 0x1 0x1
+//?     0x0 0x0 0x1 0x0 0x0 0x1 0x0 0x1
+//? ]
+//? run: "FIFO sequence 9001"
+//? const: mode = 0x9001
+//? const: lut = 0
+//? const: mask = 0x3
+//? post: cog[*].reg[amount] == 10
+//? post: hub[samples] == u32 [
+//?     0x0 0x2 0x0 0x1 0x1 0x0 0x0 0x3
+//?     0x1 0x2 0x1 0x1 0x2 0x0 0x1 0x3
+//?     0x0 0x2 0x1 0x1 0x1 0x0 0x1 0x2
+//?     0x1 0x2 0x1 0x3 0x2 0x0 0x2 0x0
+//?     0x0 0x2 0x2 0x1 0x1 0x0 0x2 0x1
+//? ]
+//? run: "FIFO sequence a001"
+//? const: mode = 0xa001
+//? const: lut = 0
+//? const: mask = 0xf
+//? post: cog[*].reg[amount] == 20
+//? post: hub[samples] == u32 [
+//?     0x2 0x1 0x4 0x3 0x6 0x5 0x8 0x7
+//?     0x2 0x5 0x4 0x6 0x6 0x7 0x8 0x8
+//?     0x2 0x9 0x4 0x9 0x6 0x9 0x8 0x9
+//?     0x2 0xd 0x4 0xc 0x6 0xb 0x8 0xa
+//?     0x3 0x1 0x4 0xf 0x6 0xd 0x8 0xb
+//? ]
+//? run: "FIFO sequence 7002"
+//? const: mode = 0x7002
+//? const: lut = 1
+//? const: mask = 0xffffffff
+//? post: cog[*].reg[amount] == 8
+//? post: hub[samples] == u32 [
+//?     0x1e1 0x1e0 0x1e0 0x1e0 0x1e0 0x1e1 0x1e0 0x1e0
+//?     0x1e1 0x1e1 0x1e0 0x1e0 0x1e0 0x1e0 0x1e1 0x1e0
+//?     0x1e1 0x1e0 0x1e1 0x1e0 0x1e0 0x1e1 0x1e1 0x1e0
+//?     0x1e1 0x1e1 0x1e1 0x1e0 0x1e0 0x1e0 0x1e0 0x1e1
+//?     0x1e1 0x1e0 0x1e1 0x1e0 0x1e0 0x1e1 0x1e0 0x1e0
+//? ]
+//? run: "FIFO sequence 7004"
+//? const: mode = 0x7004
+//? const: lut = 1
+//? const: mask = 0xffffffff
+//? post: cog[*].reg[amount] == 12
+//? post: hub[samples] == u32 [
+//?     0x1e1 0x1e0 0x1e2 0x1e0 0x1e3 0x1e0 0x1e0 0x1e1
+//?     0x1e1 0x1e1 0x1e2 0x1e1 0x1e3 0x1e1 0x1e0 0x1e2
+//?     0x1e1 0x1e1 0x1e2 0x1e0 0x1e2 0x1e1 0x1e0 0x1e1
+//?     0x1e3 0x1e1 0x1e2 0x1e1 0x1e0 0x1e2 0x1e0 0x1e2
+//?     0x1e1 0x1e2 0x1e2 0x1e0 0x1e1 0x1e2 0x1e0 0x1e1
+//? ]
+//? run: "FIFO sequence 7006"
+//? const: mode = 0x7006
+//? const: lut = 1
+//? const: mask = 0xffffffff
+//? post: cog[*].reg[amount] == 20
+//? post: hub[samples] == u32 [
+//?     0x1e1 0x1e2 0x1e3 0x1e4 0x1e5 0x1e6 0x1e7 0x1e8
+//?     0x1e5 0x1e2 0x1e6 0x1e4 0x1e7 0x1e6 0x1e8 0x1e8
+//?     0x1e9 0x1e2 0x1e9 0x1e4 0x1e9 0x1e6 0x1e9 0x1e8
+//?     0x1ed 0x1e2 0x1ec 0x1e4 0x1eb 0x1e6 0x1ea 0x1e8
+//?     0x1e1 0x1e3 0x1ef 0x1e4 0x1ed 0x1e6 0x1eb 0x1e8
+//? ]
+//? run: "FIFO sequence 7008"
+//? const: mode = 0x7008
+//? const: lut = 1
+//? const: mask = 0xffffffff
+//? post: cog[*].reg[amount] == 40
+//? post: hub[samples] == u32 [
+//?     0x1 0x23 0x45 0x67 0x5 0x26 0x47 0x68
+//?     0x9 0x29 0x49 0x69 0xd 0x2c 0x4b 0x6a
+//?     0x11 0x2f 0x4d 0x6b 0x15 0x32 0x4f 0x6c
+//?     0x19 0x35 0x51 0x6d 0x1d 0x38 0x53 0x6e
+//?     0x21 0x3b 0x55 0x6f 0x25 0x3e 0x57 0x70
+//? ]
+
+                // Exercise packed shifts and refills across several FIFO source words.
+                MOV     OUTA,   0
+                MOV     DIRA,   aug(0xffffffff)
+.if lut
+                MOV     index,  0
+fill:
+                WRLUT   index,                              index
+                ADD     index,                              1
+                CMP     index,                              aug(512)                :wz
+    if(!Z)      JMP     fill
+.endif
+                RDFAST  0,                                  aug(hubaddr(data))
+                SETXFRQ aug(0x04000000)
+                XINIT   aug((mode << 16) | X_PINS_ON | 40), 15
+                WAITX   10
+                MOV     s0,                                 INA
+                AND     s0,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s1,                                 INA
+                AND     s1,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s2,                                 INA
+                AND     s2,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s3,                                 INA
+                AND     s3,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s4,                                 INA
+                AND     s4,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s5,                                 INA
+                AND     s5,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s6,                                 INA
+                AND     s6,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s7,                                 INA
+                AND     s7,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s8,                                 INA
+                AND     s8,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s9,                                 INA
+                AND     s9,                                 aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s10,                                INA
+                AND     s10,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s11,                                INA
+                AND     s11,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s12,                                INA
+                AND     s12,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s13,                                INA
+                AND     s13,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s14,                                INA
+                AND     s14,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s15,                                INA
+                AND     s15,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s16,                                INA
+                AND     s16,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s17,                                INA
+                AND     s17,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s18,                                INA
+                AND     s18,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s19,                                INA
+                AND     s19,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s20,                                INA
+                AND     s20,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s21,                                INA
+                AND     s21,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s22,                                INA
+                AND     s22,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s23,                                INA
+                AND     s23,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s24,                                INA
+                AND     s24,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s25,                                INA
+                AND     s25,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s26,                                INA
+                AND     s26,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s27,                                INA
+                AND     s27,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s28,                                INA
+                AND     s28,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s29,                                INA
+                AND     s29,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s30,                                INA
+                AND     s30,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s31,                                INA
+                AND     s31,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s32,                                INA
+                AND     s32,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s33,                                INA
+                AND     s33,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s34,                                INA
+                AND     s34,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s35,                                INA
+                AND     s35,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s36,                                INA
+                AND     s36,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s37,                                INA
+                AND     s37,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s38,                                INA
+                AND     s38,                                aug(mask)
+                WAITXRO
+                WAITX   10
+                MOV     s39,                                INA
+                AND     s39,                                aug(mask)
+                WAITXFI
+                GETPTR  amount
+                SUB     amount,                             aug(hubaddr(data))
+                MOV     DIRA,                               0
+                SETQ    39
+                WRLONG  s0,                                 aug(hubaddr(samples))
+                SETQ    0
+                JMP     nrel(_end)
+var index:      LONG    0
+var amount:     LONG    0
+var s0:         LONG    0
+var s1:         LONG    0
+var s2:         LONG    0
+var s3:         LONG    0
+var s4:         LONG    0
+var s5:         LONG    0
+var s6:         LONG    0
+var s7:         LONG    0
+var s8:         LONG    0
+var s9:         LONG    0
+var s10:        LONG    0
+var s11:        LONG    0
+var s12:        LONG    0
+var s13:        LONG    0
+var s14:        LONG    0
+var s15:        LONG    0
+var s16:        LONG    0
+var s17:        LONG    0
+var s18:        LONG    0
+var s19:        LONG    0
+var s20:        LONG    0
+var s21:        LONG    0
+var s22:        LONG    0
+var s23:        LONG    0
+var s24:        LONG    0
+var s25:        LONG    0
+var s26:        LONG    0
+var s27:        LONG    0
+var s28:        LONG    0
+var s29:        LONG    0
+var s30:        LONG    0
+var s31:        LONG    0
+var s32:        LONG    0
+var s33:        LONG    0
+var s34:        LONG    0
+var s35:        LONG    0
+var s36:        LONG    0
+var s37:        LONG    0
+var s38:        LONG    0
+var s39:        LONG    0
+.data
+.align  4
+var samples:    LONG    [0] * 40
+var data:       LONG    0x87654321, 0x88674625, 0x89694929, 0x8a6b4c2d, 0x8b6d4f31, 0x8c6f5235, 0x8d715539, 0x8e73583d, 0x8f755b41, 0x90775e45, 0x91796149, 0x927b644d, 0x937d6751, 0x947f6a55, 0x95816d59, 0x9683705d, 0x97857361, 0x98877665, 0x99897969, 0x9a8b7c6d, 0x9b8d7f71, 0x9c8f8275, 0x9d918579, 0x9e93887d, 0x9f958b81, 0xa0978e85, 0xa1999189, 0xa29b948d, 0xa39d9791, 0xa49f9a95, 0xa5a19d99, 0xa6a3a09d, 0xa7a5a3a1, 0xa8a7a6a5, 0xa9a9a9a9, 0xaaabacad, 0xabadafb1, 0xacafb2b5, 0xadb1b5b9, 0xaeb3b8bd
+

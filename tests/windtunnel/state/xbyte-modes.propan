@@ -1,0 +1,103 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? run: "explicit"
+//? cog: 0
+//? const: explicit = 1
+//? post: cog[*].reg[status1] == 33554432
+//? post: cog[*].reg[status2] == 50397184
+//? post: cog[*].reg[status3] == 33554432
+//? post: cog[*].reg[pa1] == 0
+//? post: cog[*].reg[pa2] == 1
+//? post: cog[*].reg[pa3] == 2
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[elapsed] == 64
+//? post: cog[*].reg[q_out] == 257
+//? post: cog[*].reg[status4] == 50331648
+//? post: cog[*].reg[status5] == 50331648
+//? post: cog[*].reg[pa4] == 3
+//? post: cog[*].reg[pa5] == 4
+//? run: "implicit"
+//? cog: 0
+//? const: explicit = 0
+//? post: cog[*].reg[status1] == 33554432
+//? post: cog[*].reg[status2] == 50397184
+//? post: cog[*].reg[status3] == 33554432
+//? post: cog[*].reg[pa1] == 0
+//? post: cog[*].reg[pa2] == 1
+//? post: cog[*].reg[pa3] == 2
+//? post: cog[*].reg[stack_out] == 511
+//? post: cog[*].reg[elapsed] == 64
+//? post: cog[*].reg[q_out] == 257
+//? post: cog[*].reg[status4] == 50331648
+//? post: cog[*].reg[status5] == 50331648
+//? post: cog[*].reg[pa4] == 3
+//? post: cog[*].reg[pa5] == 4
+
+                // Enter the normal table, use an alternate table once, then resume the normal mode.
+                WRLUT   nrel(first),    0
+                WRLUT   nrel(second),   aug(0x101)
+                WRLUT   nrel(third),    2
+                WRLUT   nrel(fourth),   aug(0x103)
+                WRLUT   nrel(fifth),    aug(0x104)
+                RDFAST  0,              aug(hubaddr(bytecodes))
+                PUSH    aug(0x12345)
+                PUSH    0x1ff
+                GETCT   start
+    return      SETQ    0
+first:
+                GETBRK  status1     :wc
+                MOV     pa1,    PA
+    return      SETQ2   0x101
+second:
+                GETBRK  status2             :wc
+                MOV     pa2,    PA
+                MOV     q_out,  0
+                MUXQ    q_out,  all_bits
+.if explicit
+                RET                         :wcz
+.else
+    return      MOV     marker, 1
+.endif
+third:
+                GETBRK  status3         :wc
+                MOV     pa3,    PA
+                // A permanent update masks to nine bits; ordinary SETQ before RET keeps that mode.
+    return      SETQ    permanent_mode
+fourth:
+                GETBRK  status4     :wc
+                MOV     pa4,    PA
+                SETQ    0
+                RET
+fifth:
+                GETCT   elapsed
+                GETBRK  status5                     :wc
+                MOV     pa5,        PA
+                POP     stack_out
+                SUB     elapsed,    start
+                AND     status1,    aug(0xffff0000)
+                AND     status2,    aug(0xffff0000)
+                AND     status3,    aug(0xffff0000)
+                AND     status4,    aug(0xffff0000)
+                AND     status5,    aug(0xffff0000)
+                JMP     nrel(_end)
+var permanent_mode:
+                LONG    0xdead0100
+var status4:    LONG    0
+var status5:    LONG    0
+var pa4:        LONG    0
+var pa5:        LONG    0
+var status1:    LONG    0
+var status2:    LONG    0
+var status3:    LONG    0
+var pa1:        LONG    0
+var pa2:        LONG    0
+var pa3:        LONG    0
+var stack_out:  LONG    0
+var elapsed:    LONG    0
+var start:      LONG    0
+var q_out:      LONG    0
+var marker:     LONG    0
+var all_bits:   LONG    0xffffffff
+.hubexec    0x4000
+bytecodes:      BYTE    0,  1,  2,  3,  4,  0
+

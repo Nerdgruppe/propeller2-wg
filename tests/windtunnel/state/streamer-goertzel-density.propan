@@ -1,0 +1,166 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "density40000000 sinc0 phase0"
+//? const: density = 1073741824
+//? const: sinc = 0
+//? const: phase = 0
+//? post: cog[0].reg[x] == 1580
+//? post: cog[0].reg[y] == 4294967286
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 0
+//? post: cog[0].reg[s3] == 256
+//? run: "density40000000 sinc0 phase1"
+//? const: density = 1073741824
+//? const: sinc = 0
+//? const: phase = 1
+//? post: cog[0].reg[x] == 620
+//? post: cog[0].reg[y] == 4294965766
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 0
+//? post: cog[0].reg[s3] == 256
+//? run: "density40000000 sinc1 phase0"
+//? const: density = 1073741824
+//? const: sinc = 1
+//? const: phase = 0
+//? post: cog[0].reg[x] == 24720
+//? post: cog[0].reg[y] == 1120
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 0
+//? post: cog[0].reg[s3] == 256
+//? run: "density40000000 sinc1 phase1"
+//? const: density = 1073741824
+//? const: sinc = 1
+//? const: phase = 1
+//? post: cog[0].reg[x] == 9680
+//? post: cog[0].reg[y] == 4294942656
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 0
+//? post: cog[0].reg[s3] == 256
+//? run: "density80000000 sinc0 phase0"
+//? const: density = 2147483648
+//? const: sinc = 0
+//? const: phase = 0
+//? post: cog[0].reg[x] == 180
+//? post: cog[0].reg[y] == 410
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+//? run: "density80000000 sinc0 phase1"
+//? const: density = 2147483648
+//? const: sinc = 0
+//? const: phase = 1
+//? post: cog[0].reg[x] == 4294967116
+//? post: cog[0].reg[y] == 4294966886
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+//? run: "density80000000 sinc1 phase0"
+//? const: density = 2147483648
+//? const: sinc = 1
+//? const: phase = 0
+//? post: cog[0].reg[x] == 2320
+//? post: cog[0].reg[y] == 7840
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+//? run: "density80000000 sinc1 phase1"
+//? const: density = 2147483648
+//? const: sinc = 1
+//? const: phase = 1
+//? post: cog[0].reg[x] == 4294964976
+//? post: cog[0].reg[y] == 4294959456
+//? post: cog[0].reg[s0] == 0
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+//? run: "densityc0000000 sinc0 phase0"
+//? const: density = 3221225472
+//? const: sinc = 0
+//? const: phase = 0
+//? post: cog[0].reg[x] == 500
+//? post: cog[0].reg[y] == 4294966266
+//? post: cog[0].reg[s0] == 256
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+//? run: "densityc0000000 sinc0 phase1"
+//? const: density = 3221225472
+//? const: sinc = 0
+//? const: phase = 1
+//? post: cog[0].reg[x] == 4294965716
+//? post: cog[0].reg[y] == 10
+//? post: cog[0].reg[s0] == 256
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+//? run: "densityc0000000 sinc1 phase0"
+//? const: density = 3221225472
+//? const: sinc = 1
+//? const: phase = 0
+//? post: cog[0].reg[x] == 7760
+//? post: cog[0].reg[y] == 4294950656
+//? post: cog[0].reg[s0] == 256
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+//? run: "densityc0000000 sinc1 phase1"
+//? const: density = 3221225472
+//? const: sinc = 1
+//? const: phase = 1
+//? post: cog[0].reg[x] == 4294942576
+//? post: cog[0].reg[y] == 4294966176
+//? post: cog[0].reg[s0] == 256
+//? post: cog[0].reg[s1] == 0
+//? post: cog[0].reg[s2] == 256
+//? post: cog[0].reg[s3] == 256
+
+                // A duty NCO emits the same kind of digital density stream used by the ADC host interface.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                WRPIN   aug(P_NCO_DUTY | P_TT_01),      9
+                WXPIN   1,                              9
+                WYPIN   aug(density),                   9
+                WRPIN   aug(0x10000000),                8
+                DIRH    9
+                // Distinct signed quadrature weights expose the bitstream/lookup alignment.
+                WRLUT   aug(0x1e9c0000),                0
+                WRLUT   aug(0xa6140000),                1
+                WRLUT   aug(0x05500000),                2
+                WRLUT   aug(0x46ce0000),                3
+                WAITX   20
+                // Ordinary IN snapshots distinguish input transport from the Goertzel sampling boundary.
+                MOV     s0,                             INA
+                MOV     s1,                             INA
+                WAITX   1
+                MOV     s2,                             INA
+                MOV     s3,                             INA
+                WAITX   phase
+                SETQ    aug(0x20000000)
+                XINIT   aug(0xf0170008 | (sinc << 23)), aug(0x1000 | (7 << 9))
+                WAITXFI
+                GETXACC x
+                MOV     y,                              0
+                DIRL    9
+                WRPIN   0,                              9
+                WRPIN   0,                              8
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                AND     s0,                             aug(1 << 8)
+                AND     s1,                             aug(1 << 8)
+                AND     s2,                             aug(1 << 8)
+                AND     s3,                             aug(1 << 8)
+                JMP     nrel(_end)
+var x:          LONG    0
+var y:          LONG    0
+var s0:         LONG    0
+var s1:         LONG    0
+var s2:         LONG    0
+var s3:         LONG    0
+

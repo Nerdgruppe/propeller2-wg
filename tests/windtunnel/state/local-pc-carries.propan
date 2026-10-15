@@ -1,0 +1,186 @@
+                //? WINDTUNNEL CHECK LIST
+                //? timeout-ms: 10000
+                //? max-cycles: 3000000
+                //? run: "phase16-cog0"
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x402
+                //? post: cog[*].reg[elapsed] == 0x20
+                //? post: cog[*].reg[saved] == 0x402
+                //? cog: 0
+                //? const: phase = 16
+                //? run: "phase16-cog7"
+                //? post: cog[*].reg[hits] == 0x1
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x402
+                //? post: cog[*].reg[elapsed] == 0x20
+                //? post: cog[*].reg[saved] == 0x402
+                //? cog: 7
+                //? const: phase = 16
+                //? run: "phase2060-cog0"
+                //? post: cog[*].reg[hits] == 0x100
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x600
+                //? post: cog[*].reg[elapsed] == 0x81c
+                //? post: cog[*].reg[saved] == 0x800
+                //? cog: 0
+                //? const: phase = 2060
+                //? run: "phase2060-cog7"
+                //? post: cog[*].reg[hits] == 0x100
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x600
+                //? post: cog[*].reg[elapsed] == 0x81c
+                //? post: cog[*].reg[saved] == 0x800
+                //? cog: 7
+                //? const: phase = 2060
+                //? run: "phase4108-cog0"
+                //? post: cog[*].reg[hits] == 0x200
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0xa00
+                //? post: cog[*].reg[elapsed] == 0x101c
+                //? post: cog[*].reg[saved] == 0xc00
+                //? cog: 0
+                //? const: phase = 4108
+                //? run: "phase4108-cog7"
+                //? post: cog[*].reg[hits] == 0x200
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0xa00
+                //? post: cog[*].reg[elapsed] == 0x101c
+                //? post: cog[*].reg[saved] == 0xc00
+                //? cog: 7
+                //? const: phase = 4108
+                //? run: "phase65548-cog0"
+                //? post: cog[*].reg[hits] == 0x2000
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x8200
+                //? post: cog[*].reg[elapsed] == 0x1001c
+                //? post: cog[*].reg[saved] == 0x8400
+                //? cog: 0
+                //? const: phase = 65548
+                //? run: "phase65548-cog7"
+                //? post: cog[*].reg[hits] == 0x2000
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x8200
+                //? post: cog[*].reg[elapsed] == 0x1001c
+                //? post: cog[*].reg[saved] == 0x8400
+                //? cog: 7
+                //? const: phase = 65548
+                //? run: "phase1048588-cog0"
+                //? post: cog[*].reg[hits] == 0x20000
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x80200
+                //? post: cog[*].reg[elapsed] == 0x10001c
+                //? post: cog[*].reg[saved] == 0x80400
+                //? cog: 0
+                //? const: phase = 1048588
+                //? run: "phase1048588-cog7"
+                //? post: cog[*].reg[hits] == 0x20000
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0x80200
+                //? post: cog[*].reg[elapsed] == 0x10001c
+                //? post: cog[*].reg[saved] == 0x80400
+                //? cog: 7
+                //? const: phase = 1048588
+                //? run: "phase2095112-cog0"
+                //? post: cog[*].reg[hits] == 0x3ff00
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0xffe00
+                //? post: cog[*].reg[elapsed] == 0x1ff818
+                //? post: cog[*].reg[saved] == 0xffffe
+                //? cog: 0
+                //? const: phase = 2095112
+                //? run: "phase2095112-cog7"
+                //? post: cog[*].reg[hits] == 0x3ff00
+                //? post: cog[*].reg[stamp_a] == 0x0
+                //? post: cog[*].reg[stamp_b] == 0xffe00
+                //? post: cog[*].reg[elapsed] == 0x1ff818
+                //? post: cog[*].reg[saved] == 0xffffe
+                //? cog: 7
+                //? const: phase = 2095112
+                // Use timed interrupts and an initialized LUT to observe higher logical PC carries.
+                // Keep setup beyond the cog-zero template that it installs.
+                JMP     nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+                // Install controlled instruction sources before entering the local boundary.
+                SETQ    6
+                RDLONG  register(0),    aug(hubaddr(cog_template))
+                SETQ2   511
+                RDLONG  register(0),    aug(hubaddr(local_lut_image))
+                MOV     PTRA,           aug(hubaddr(tail_template))
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(510)
+                RDLONG  word,           PTRA++
+                WRLUT   word,           aug(511)
+                STALLI
+                MOV     IJMP1,          vector
+                SETINT1 0
+                GETCT   timer
+                ADD     timer,          128
+                ADDCT2  timer,          0
+                ADD     timer,          aug(phase)
+                ADDCT1  timer,          0
+                SETINT1 EVENT_CT1
+                NIXINT1
+                WAITCT2
+                ALLOWI
+                GETCT   start
+                JMP     nrel(tail_template)
+done:
+                GETCT   elapsed
+                SUB     elapsed,    start
+                MOV     stamp_a,    PA
+                MOV     stamp_b,    PB
+                MOV     stamp_c,    PTRA
+                JMP     nrel(_end)
+isr:
+                // Stop further interrupts before saving or returning through the overflow PC.
+                STALLI
+                SETINT1 0
+                MOV     saved,  IRET1
+                AND     saved,  aug(0xfffff)
+                JMP     nrel(done)
+var vector:     LONG    pcaddr(isr)
+var saved:      LONG    0
+var timer:      LONG    0
+var word:       LONG    0
+var hits:       LONG    0
+var stamp_a:    LONG    0
+var stamp_b:    LONG    0
+var stamp_c:    LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+.cogexec    0x3000, 0
+cog_template:
+                // These words are loaded into the physical cog instruction slots above.
+                ADD     hits,   1
+                LONG    0xfeb00000
+                JMP     nrel(done)
+                NOP
+                NOP
+                NOP
+                NOP
+.lutexec    0x3100, 0x3fe
+tail_template:
+                // Enter the final LUT words and continue with a retained logical PC.
+                NOP
+                NOP
+
+
+.import "../local-pc-lut.propan"
+

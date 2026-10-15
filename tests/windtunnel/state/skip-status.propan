@@ -1,0 +1,602 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "kind0-fast0-bits0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast0-bits0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast0-bits8-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 0
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 4
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast0-bits8-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 0
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 4
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast0-bits10-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 0
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 5
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast0-bits10-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 0
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 402653184
+//? post: cog[*].reg[inside_pattern] == 5
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind1-fast0-bits0-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind1-fast0-bits0-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast0-bits0-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 134217728
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast0-bits0-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 134217728
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast0-bits8-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 0
+//? const: bits = 8
+//? post: cog[*].reg[a] == 134217728
+//? post: cog[*].reg[b] == 1
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast0-bits8-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 0
+//? const: bits = 8
+//? post: cog[*].reg[a] == 134217728
+//? post: cog[*].reg[b] == 1
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast0-bits10-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 0
+//? const: bits = 10
+//? post: cog[*].reg[a] == 134217728
+//? post: cog[*].reg[b] == 1
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast0-bits10-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 0
+//? const: bits = 10
+//? post: cog[*].reg[a] == 134217728
+//? post: cog[*].reg[b] == 1
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast0-bits0-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast0-bits0-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 0
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast0-bits8-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 0
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast0-bits8-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 0
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast0-bits10-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 0
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast0-bits10-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 0
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast1-bits0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast1-bits0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast1-bits8-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 1
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[inside_pattern] == 4
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast1-bits8-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 1
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[inside_pattern] == 4
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast1-bits10-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[inside_pattern] == 2
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind0-fast1-bits10-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 268435456
+//? post: cog[*].reg[inside_pattern] == 2
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind1-fast1-bits0-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind1-fast1-bits0-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind1-fast1-bits10-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind1-fast1-bits10-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast1-bits0-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast1-bits0-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 1
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast1-bits8-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 1
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast1-bits8-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 1
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast1-bits10-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind2-fast1-bits10-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 0
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 0
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast1-bits0-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast1-bits0-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 1
+//? const: bits = 0
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast1-bits8-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 1
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast1-bits8-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 1
+//? const: bits = 8
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast1-bits10-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+//? run: "kind3-fast1-bits10-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: fast = 1
+//? const: bits = 10
+//? post: cog[*].reg[a] == 0
+//? post: cog[*].reg[b] == 0
+//? post: cog[*].reg[cflag] == 0
+//? post: cog[*].reg[zflag] == 0
+//? post: cog[*].reg[inside] == 134217728
+//? post: cog[*].reg[inside_pattern] == 0
+//? post: cog[*].reg[after] == 134217728
+//? post: cog[*].reg[after_pattern] == 0
+
+// Probe empty patterns, return underflow and installation while suspended.
+.if kind == 1
+                PUSH    nrel(done)
+.endif
+.if fast
+                SKIPF   bits
+.else
+                SKIP    bits
+.endif
+.if kind == 0
+                CALL    nrel(sub)
+.elif   kind == 1
+                RET
+.elif   kind == 2
+                GETBRK  a               :wc
+                WRC     cflag
+                GETBRK  b               :wz
+                WRZ     zflag
+.else
+                CALL    nrel(reset_sub)
+.endif
+                NOP
+                NOP
+                NOP
+                NOP
+done:
+                GETBRK  after                   :wc
+                GETBRK  after_pattern           :wz
+                AND     a,      aug(0xF8000000)
+                AND     inside, aug(0xF8000000)
+                AND     after,  aug(0xF8000000)
+                JMP     nrel(_end)
+sub:
+                GETBRK  inside          :wc
+                GETBRK  inside_pattern  :wz
+                RET
+reset_sub:
+                SKIP    0
+                GETBRK  inside          :wc
+                GETBRK  inside_pattern  :wz
+                RET
+var a:          LONG    0
+var b:          LONG    0
+var cflag:      LONG    0
+var zflag:      LONG    0
+var inside:     LONG    0
+var inside_pattern:
+                LONG    0
+var after:      LONG    0
+var after_pattern:
+                LONG    0
+var value:      LONG    0
+

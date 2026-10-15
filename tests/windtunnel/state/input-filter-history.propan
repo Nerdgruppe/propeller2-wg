@@ -1,0 +1,80 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[rewrite] == 1
+//? post: cog[*].reg[frozen] == 1
+//? post: cog[*].reg[disabled] == 1
+//? post: cog[*].reg[bypass] == 0
+//? post: cog[*].reg[restored] == 1
+//? post: cog[*].reg[lengthened] == 1
+//? post: cog[*].reg[switched] == 1
+//? post: cog[*].reg[fresh] == 0
+//? post: cog[*].reg[tracked] == 0
+//? timeout-ms: 1000
+
+                // Freeze CT31 sampling after establishing a high filter output.
+                DIRH    8
+                OUTH    8
+                HUBSET  aug(0x40000000)
+                WRPIN   aug(0x40800000),    8
+                WAITX   64
+                HUBSET  aug(0x4000001f)
+                WRPIN   aug(0x40800000),    8
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     rewrite
+                OUTL    8
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     frozen
+                DIRL    8
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     disabled
+                DIRH    8
+                WRPIN   aug(0x40000000),    8
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     bypass
+                WRPIN   aug(0x40800000),    8
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     restored
+                HUBSET  aug(0x4000007f)
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     lengthened
+                HUBSET  aug(0x4000009f)
+                WRPIN   aug(0x40a00000),    8
+                WAITX   32
+                TESTP   8                       :wc
+                WRC     switched
+                // Input logic bypassed: does the inactive filter history still track selected A?
+                DIRH    9
+                OUTH    9
+                WRPIN   aug(0x40000000),    9
+                WAITX   64
+                WRPIN   aug(0x40a00000),    9
+                WAITX   32
+                TESTP   9                       :wc
+                WRC     fresh
+                // Bypassed logic still clocks the filter history from the selected global tap.
+                HUBSET  aug(0x40000000)
+                DIRH    10
+                OUTH    10
+                WRPIN   aug(0x40000000),    10
+                WAITX   64
+                HUBSET  aug(0x4000001f)
+                WRPIN   aug(0x40800000),    10
+                WAITX   32
+                TESTP   10                      :wc
+                WRC     tracked
+                JMP     nrel(_end)
+var rewrite:    LONG    0
+var frozen:     LONG    0
+var disabled:   LONG    0
+var bypass:     LONG    0
+var restored:   LONG    0
+var lengthened: LONG    0
+var switched:   LONG    0
+var fresh:      LONG    0
+var tracked:    LONG    0
+

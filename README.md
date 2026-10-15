@@ -10,7 +10,7 @@ Install [Zig 0.16](https://ziglang.org/download/#release-0.16.0), then build the
 [user@machine propeller2-wg]$ zig build -Doptimize=ReleaseSafe
 [user@machine propeller2-wg]$
 [user@machine propeller2-wg]$ ls ./zig-out/bin/
-propan  propan-lsp  turboprop  windtunnel
+propan  propan-lsp  turboprop  windtunnel  windtunnel-gui
 [user@machine propeller2-wg]$ ./zig-out/bin/propan --help
 Usage: ./zig-out/bin/propan [-h] [-o <output>] <sources...>
 
@@ -35,11 +35,48 @@ To format a Propan source file, run `./zig-out/bin/propan --pretty-print source.
 Formatted source is written to stdout; use `--pretty-print -` to read from stdin.
 
 Run `zig-0.16.0 build test` from the repository root to execute the Propan unit tests
-and fixture suites in a single process. Add `-Dwith-flexspin` to include Spin2
+and fixture suites, plus the Windtunnel checklist suite. Add `-Dwith-flexspin` to include Spin2
 round-trip and assembler equivalence tests; those two categories are skipped otherwise.
 If `kcov` is installed, the build captures coverage in `.coverage/propan-tests/`.
 The installed `zig-out/bin/propan-tests` executable can also be run directly from
 the repository root without coverage collection.
+
+Run `zig-0.16.0 build install test-windtunnel` for Windtunnel alone. Its
+[`//? WINDTUNNEL CHECK LIST`](docs/windtunnel/check-list.md) annotations support
+multiple isolated runs per file, shared and per-run conditions, symbol-based image
+preseeding, and exact UART stdin/stdout. Hardware
+oracle runs use the native Zig WebSocket client and require a P2AAS endpoint:
+
+```sh
+P2AAS_ENDPOINT='ws://localhost:12880/' \
+  zig-0.16.0 build install test-windtunnel -Dwith-p2aas
+```
+
+Local runs report hardware skips. Add `-Dcoverage=false` to disable Propan's
+optional kcov collection.
+
+Use `zig-0.16.0 build install test-windtunnel -Dfast-io=true` to accelerate serial
+endpoints, or run selected fixtures with `zig-out/bin/windtunnel-tests --fast-io FILE.propan`.
+The simulator also accepts `windtunnel --fast-io --image program.bin` and
+`windtunnel --serve --fast-io`. UART baud delays become single-clock word transfers;
+USART endpoints already transfer one word per pin update. Fast RX holds unread
+words until acknowledgement. CPU clocks and explicit `WAITX` warmups still run
+normally. Fixtures requiring serial frame timing can opt out with
+`//? fast-io: off "reason"`; ordinary runs retain clocked UART timing.
+
+See [Windtunnel core coverage](docs/windtunnel/core.md) for implemented operations
+and the remaining functional and timing limitations.
+
+The `windtunnel-gui` desktop starter uses zig-gamedev's GLFW/OpenGL packages and
+zgui (Dear ImGui), with pinned dependencies managed by Zig's package manager.
+Run `zig-0.16.0 build run-windtunnel-gui`, or install just the GUI with
+`zig-0.16.0 build build-windtunnel-gui` and launch `zig-out/bin/windtunnel-gui`.
+It provides editable image-path, cog, step-size and fast-I/O controls; these are
+not yet connected to the simulator. A desktop session with OpenGL 3.3 is required.
+
+`zig-out/bin/windtunnel --serve` exposes a compatible P2AAS endpoint at
+`ws://127.0.0.1:21591/`. See [the server documentation](docs/windtunnel/p2aas.md)
+for protocol behavior, client interchangeability, and hardware comparisons.
 
 Run `zig-0.16.0 build test --fuzz` to start Zig's native fuzzer, or use
 `--fuzz=10K` for a bounded run. Fuzz-test discovery uses Zig's test-server protocol.

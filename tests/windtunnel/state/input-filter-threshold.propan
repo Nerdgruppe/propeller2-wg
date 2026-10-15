@@ -1,0 +1,98 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "logic0-gap0"
+//? post: cog[*].reg[result] == 0
+//? const: logic = 0
+//? const: gap = 0
+//? run: "logic0-gap1"
+//? post: cog[*].reg[result] == 0
+//? const: logic = 0
+//? const: gap = 1
+//? run: "logic0-gap2"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 0
+//? const: gap = 2
+//? run: "logic0-gap3"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 0
+//? const: gap = 3
+//? run: "logic0-gap4"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 0
+//? const: gap = 4
+//? run: "logic0-gap5"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 0
+//? const: gap = 5
+//? run: "logic0-gap6"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 0
+//? const: gap = 6
+//? run: "logic0-gap7"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 0
+//? const: gap = 7
+//? run: "logic4-gap0"
+//? post: cog[*].reg[result] == 0
+//? const: logic = 4
+//? const: gap = 0
+//? run: "logic4-gap1"
+//? post: cog[*].reg[result] == 0
+//? const: logic = 4
+//? const: gap = 1
+//? run: "logic4-gap2"
+//? post: cog[*].reg[result] == 0
+//? const: logic = 4
+//? const: gap = 2
+//? run: "logic4-gap3"
+//? post: cog[*].reg[result] == 0
+//? const: logic = 4
+//? const: gap = 3
+//? run: "logic4-gap4"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 4
+//? const: gap = 4
+//? run: "logic4-gap5"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 4
+//? const: gap = 5
+//? run: "logic4-gap6"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 4
+//? const: gap = 6
+//? run: "logic4-gap7"
+//? post: cog[*].reg[result] == 1
+//? const: logic = 4
+//? const: gap = 7
+
+                DIRH    8
+                OUTL    8
+                HUBSET  aug(0x40000000)
+                WRPIN   aug(0x40000000 | (logic << 21)),    8
+                WAITX   64
+                OUTH    8
+.if gap > 0
+                NOP
+.endif
+.if gap > 1
+                NOP
+.endif
+.if gap > 2
+                NOP
+.endif
+.if gap > 3
+                NOP
+.endif
+.if gap > 4
+                NOP
+.endif
+.if gap > 5
+                NOP
+.endif
+.if gap > 6
+                NOP
+.endif
+                TESTP   8                                       :wc
+                WRC     result
+                JMP     nrel(_end)
+var result:     LONG    0
+

@@ -1,0 +1,259 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "v0 phase0 dataaaaaaaab"
+//? const: video = 0
+//? const: mode = 16384
+//? const: data = 2863311531
+//? const: phase = 0
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x0
+//? post: cog[*].reg[s4] == 0x1
+//? post: cog[*].reg[s5] == 0x1
+//? post: cog[*].reg[s6] == 0x1
+//? post: cog[*].reg[s7] == 0x1
+//? post: cog[*].reg[s8] == 0x1
+//? post: cog[*].reg[s9] == 0x1
+//? post: cog[*].reg[s10] == 0x1
+//? post: cog[*].reg[s11] == 0x1
+//? post: cog[*].reg[s12] == 0x1
+//? post: cog[*].reg[s13] == 0x1
+//? post: cog[*].reg[s14] == 0x0
+//? post: cog[*].reg[s15] == 0x0
+//? post: cog[*].reg[s16] == 0x0
+//? post: cog[*].reg[s17] == 0x0
+//? post: cog[*].reg[s18] == 0x0
+//? post: cog[*].reg[s19] == 0x1
+//? post: cog[*].reg[s20] == 0x1
+//? post: cog[*].reg[s21] == 0x1
+//? post: cog[*].reg[s22] == 0x1
+//? post: cog[*].reg[s23] == 0x1
+//? run: "v0 phase1 dataaaaaaaab"
+//? const: video = 0
+//? const: mode = 16384
+//? const: data = 2863311531
+//? const: phase = 1
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x1
+//? post: cog[*].reg[s4] == 0x1
+//? post: cog[*].reg[s5] == 0x1
+//? post: cog[*].reg[s6] == 0x1
+//? post: cog[*].reg[s7] == 0x1
+//? post: cog[*].reg[s8] == 0x1
+//? post: cog[*].reg[s9] == 0x1
+//? post: cog[*].reg[s10] == 0x1
+//? post: cog[*].reg[s11] == 0x1
+//? post: cog[*].reg[s12] == 0x1
+//? post: cog[*].reg[s13] == 0x0
+//? post: cog[*].reg[s14] == 0x0
+//? post: cog[*].reg[s15] == 0x0
+//? post: cog[*].reg[s16] == 0x0
+//? post: cog[*].reg[s17] == 0x0
+//? post: cog[*].reg[s18] == 0x1
+//? post: cog[*].reg[s19] == 0x1
+//? post: cog[*].reg[s20] == 0x1
+//? post: cog[*].reg[s21] == 0x1
+//? post: cog[*].reg[s22] == 0x1
+//? post: cog[*].reg[s23] == 0x0
+//? run: "v100 phase0 datad5455552"
+//? const: video = 256
+//? const: mode = 28673
+//? const: data = 3578090834
+//? const: phase = 0
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x0
+//? post: cog[*].reg[s4] == 0x56
+//? post: cog[*].reg[s5] == 0xa6
+//? post: cog[*].reg[s6] == 0xaa
+//? post: cog[*].reg[s7] == 0xaa
+//? post: cog[*].reg[s8] == 0xa9
+//? post: cog[*].reg[s9] == 0x99
+//? post: cog[*].reg[s10] == 0xa6
+//? post: cog[*].reg[s11] == 0xaa
+//? post: cog[*].reg[s12] == 0xaa
+//? post: cog[*].reg[s13] == 0xa9
+//? post: cog[*].reg[s14] == 0x99
+//? post: cog[*].reg[s15] == 0xa6
+//? post: cog[*].reg[s16] == 0xaa
+//? post: cog[*].reg[s17] == 0xaa
+//? post: cog[*].reg[s18] == 0xa9
+//? post: cog[*].reg[s19] == 0x99
+//? post: cog[*].reg[s20] == 0xa6
+//? post: cog[*].reg[s21] == 0xaa
+//? post: cog[*].reg[s22] == 0xaa
+//? post: cog[*].reg[s23] == 0xa9
+//? run: "v100 phase1 datad5455552"
+//? const: video = 256
+//? const: mode = 28673
+//? const: data = 3578090834
+//? const: phase = 1
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x0
+//? post: cog[*].reg[s4] == 0x56
+//? post: cog[*].reg[s5] == 0x56
+//? post: cog[*].reg[s6] == 0x56
+//? post: cog[*].reg[s7] == 0x55
+//? post: cog[*].reg[s8] == 0x55
+//? post: cog[*].reg[s9] == 0x95
+//? post: cog[*].reg[s10] == 0x56
+//? post: cog[*].reg[s11] == 0x56
+//? post: cog[*].reg[s12] == 0x55
+//? post: cog[*].reg[s13] == 0x55
+//? post: cog[*].reg[s14] == 0x95
+//? post: cog[*].reg[s15] == 0x56
+//? post: cog[*].reg[s16] == 0x56
+//? post: cog[*].reg[s17] == 0x55
+//? post: cog[*].reg[s18] == 0x55
+//? post: cog[*].reg[s19] == 0x95
+//? post: cog[*].reg[s20] == 0x56
+//? post: cog[*].reg[s21] == 0x56
+//? post: cog[*].reg[s22] == 0x55
+//? post: cog[*].reg[s23] == 0x55
+//? run: "v100 phase0 data12345600"
+//? const: video = 256
+//? const: mode = 28673
+//? const: data = 305419776
+//? const: phase = 0
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x0
+//? post: cog[*].reg[s4] == 0x56
+//? post: cog[*].reg[s5] == 0x5a
+//? post: cog[*].reg[s6] == 0xaa
+//? post: cog[*].reg[s7] == 0x56
+//? post: cog[*].reg[s8] == 0x69
+//? post: cog[*].reg[s9] == 0xa5
+//? post: cog[*].reg[s10] == 0xa6
+//? post: cog[*].reg[s11] == 0x56
+//? post: cog[*].reg[s12] == 0xaa
+//? post: cog[*].reg[s13] == 0x95
+//? post: cog[*].reg[s14] == 0xa5
+//? post: cog[*].reg[s15] == 0x6a
+//? post: cog[*].reg[s16] == 0x9a
+//? post: cog[*].reg[s17] == 0x66
+//? post: cog[*].reg[s18] == 0x59
+//? post: cog[*].reg[s19] == 0xa5
+//? post: cog[*].reg[s20] == 0x6a
+//? post: cog[*].reg[s21] == 0x9a
+//? post: cog[*].reg[s22] == 0x66
+//? post: cog[*].reg[s23] == 0x59
+//? run: "v100 phase1 data12345600"
+//? const: video = 256
+//? const: mode = 28673
+//? const: data = 305419776
+//? const: phase = 1
+//? post: cog[*].reg[s0] == 0x0
+//? post: cog[*].reg[s1] == 0x0
+//? post: cog[*].reg[s2] == 0x0
+//? post: cog[*].reg[s3] == 0x0
+//? post: cog[*].reg[s4] == 0x56
+//? post: cog[*].reg[s5] == 0x9a
+//? post: cog[*].reg[s6] == 0xa6
+//? post: cog[*].reg[s7] == 0x69
+//? post: cog[*].reg[s8] == 0x65
+//? post: cog[*].reg[s9] == 0x59
+//? post: cog[*].reg[s10] == 0x66
+//? post: cog[*].reg[s11] == 0x5a
+//? post: cog[*].reg[s12] == 0x95
+//? post: cog[*].reg[s13] == 0x99
+//? post: cog[*].reg[s14] == 0xa5
+//? post: cog[*].reg[s15] == 0xaa
+//? post: cog[*].reg[s16] == 0x96
+//? post: cog[*].reg[s17] == 0x59
+//? post: cog[*].reg[s18] == 0x55
+//? post: cog[*].reg[s19] == 0x69
+//? post: cog[*].reg[s20] == 0xaa
+//? post: cog[*].reg[s21] == 0x96
+//? post: cog[*].reg[s22] == 0x59
+//? post: cog[*].reg[s23] == 0x55
+
+                // Observe alternate instruction phases to reconstruct every digital output clock.
+                MOV     DIRA,                               255
+                SETCMOD aug(video)
+                SETXFRQ aug(0x0ccccccd)
+                XINIT   aug((mode << 16) | X_PINS_ON | 32), aug(data)
+                WAITX   phase
+                MOV     s0,                                 INA
+                MOV     s1,                                 INA
+                MOV     s2,                                 INA
+                MOV     s3,                                 INA
+                MOV     s4,                                 INA
+                MOV     s5,                                 INA
+                MOV     s6,                                 INA
+                MOV     s7,                                 INA
+                MOV     s8,                                 INA
+                MOV     s9,                                 INA
+                MOV     s10,                                INA
+                MOV     s11,                                INA
+                MOV     s12,                                INA
+                MOV     s13,                                INA
+                MOV     s14,                                INA
+                MOV     s15,                                INA
+                MOV     s16,                                INA
+                MOV     s17,                                INA
+                MOV     s18,                                INA
+                MOV     s19,                                INA
+                MOV     s20,                                INA
+                MOV     s21,                                INA
+                MOV     s22,                                INA
+                MOV     s23,                                INA
+                AND     s0,                                 255
+                AND     s1,                                 255
+                AND     s2,                                 255
+                AND     s3,                                 255
+                AND     s4,                                 255
+                AND     s5,                                 255
+                AND     s6,                                 255
+                AND     s7,                                 255
+                AND     s8,                                 255
+                AND     s9,                                 255
+                AND     s10,                                255
+                AND     s11,                                255
+                AND     s12,                                255
+                AND     s13,                                255
+                AND     s14,                                255
+                AND     s15,                                255
+                AND     s16,                                255
+                AND     s17,                                255
+                AND     s18,                                255
+                AND     s19,                                255
+                AND     s20,                                255
+                AND     s21,                                255
+                AND     s22,                                255
+                AND     s23,                                255
+                XSTOP
+                MOV     DIRA,                               0
+                SETCMOD 0
+                JMP     nrel(_end)
+var s0:         LONG    0
+var s1:         LONG    0
+var s2:         LONG    0
+var s3:         LONG    0
+var s4:         LONG    0
+var s5:         LONG    0
+var s6:         LONG    0
+var s7:         LONG    0
+var s8:         LONG    0
+var s9:         LONG    0
+var s10:        LONG    0
+var s11:        LONG    0
+var s12:        LONG    0
+var s13:        LONG    0
+var s14:        LONG    0
+var s15:        LONG    0
+var s16:        LONG    0
+var s17:        LONG    0
+var s18:        LONG    0
+var s19:        LONG    0
+var s20:        LONG    0
+var s21:        LONG    0
+var s22:        LONG    0
+var s23:        LONG    0
+

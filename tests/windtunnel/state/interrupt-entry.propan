@@ -1,0 +1,131 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[observed] == 1
+//? post: cog[*].reg[elapsed] == 28
+//? post: cog[*].reg[stamp] == 10
+//? post: cog[*].reg[saved_return] == 5
+//? post: cog[*].reg[status] == 0
+//? post: cog[*].reg[finished] == 5
+//? run: "int1-cog0"
+//? cog: 0
+//? const: irq_level = 1
+//? run: "int1-cog1"
+//? cog: 1
+//? const: irq_level = 1
+//? run: "int1-cog2"
+//? cog: 2
+//? const: irq_level = 1
+//? run: "int1-cog3"
+//? cog: 3
+//? const: irq_level = 1
+//? run: "int1-cog4"
+//? cog: 4
+//? const: irq_level = 1
+//? run: "int1-cog5"
+//? cog: 5
+//? const: irq_level = 1
+//? run: "int1-cog6"
+//? cog: 6
+//? const: irq_level = 1
+//? run: "int1-cog7"
+//? cog: 7
+//? const: irq_level = 1
+//? run: "int2-cog0"
+//? cog: 0
+//? const: irq_level = 2
+//? run: "int2-cog1"
+//? cog: 1
+//? const: irq_level = 2
+//? run: "int2-cog2"
+//? cog: 2
+//? const: irq_level = 2
+//? run: "int2-cog3"
+//? cog: 3
+//? const: irq_level = 2
+//? run: "int2-cog4"
+//? cog: 4
+//? const: irq_level = 2
+//? run: "int2-cog5"
+//? cog: 5
+//? const: irq_level = 2
+//? run: "int2-cog6"
+//? cog: 6
+//? const: irq_level = 2
+//? run: "int2-cog7"
+//? cog: 7
+//? const: irq_level = 2
+//? run: "int3-cog0"
+//? cog: 0
+//? const: irq_level = 3
+//? run: "int3-cog1"
+//? cog: 1
+//? const: irq_level = 3
+//? run: "int3-cog2"
+//? cog: 2
+//? const: irq_level = 3
+//? run: "int3-cog3"
+//? cog: 3
+//? const: irq_level = 3
+//? run: "int3-cog4"
+//? cog: 4
+//? const: irq_level = 3
+//? run: "int3-cog5"
+//? cog: 5
+//? const: irq_level = 3
+//? run: "int3-cog6"
+//? cog: 6
+//? const: irq_level = 3
+//? run: "int3-cog7"
+//? cog: 7
+//? const: irq_level = 3
+
+
+                // Locate the injected CALLD relative to instructions already in flight.
+                MOV     register(0x1f6 - 2 * irq_level),    vector
+                GETCT   start
+.if irq_level == 1
+                TRGINT1
+.elif   irq_level == 2
+                TRGINT2
+.else
+                TRGINT3
+.endif
+                MOV     sequence,                           1
+                MOV     sequence,                           2
+                MOV     sequence,                           3
+                MOV     sequence,                           4
+                MOV     sequence,                           5
+                GETCT   elapsed
+                SUB     elapsed,                            start
+                SUB     stamp,                              start
+                GETBRK  status                                          :wcz
+                MOV     finished,                           sequence
+                STALLI
+                SETINT1 0
+                SETINT2 0
+                SETINT3 0
+                SETQ    0
+                MODCZ   _CLR,                               _CLR        :wcz
+                JMP     nrel(_end)
+isr:
+                GETCT   stamp
+                MOV     observed,       sequence
+                MOV     saved_return,   register(0x1f7 - 2 * irq_level)
+.if irq_level == 1
+                RETI1
+.elif   irq_level == 2
+                RETI2
+.else
+                RETI3
+.endif
+var vector:     LONG    pcaddr(isr)
+var start:      LONG    0
+var sequence:   LONG    0
+var observed:   LONG    0
+var elapsed:    LONG    0
+var stamp:      LONG    0
+var saved_return:
+                LONG    0
+var status:     LONG    0
+var finished:   LONG    0
+

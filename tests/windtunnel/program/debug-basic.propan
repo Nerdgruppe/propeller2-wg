@@ -1,0 +1,77 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: program
+//? stop: _end
+//? timeout-ms: 1000
+//? max-cycles: 1_000_000
+//? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x00\x00\x00\x02\x00\x00\xc0\x00\x00\x00\x11\xf8\x01\x00\x00\x78\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x11\xf8\x01\x00\x00\x88\x00\x00\x00\x09\x00\x00\x00\x00\x00\x00\x2a\xf8\x01\x00\x00\x78\x00\x00\x00"
+
+// Standard ROM entry/exit, saved flags, BRK codes and the false-condition exception.
+.cogexec    0
+                HUBSET  0xF0
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                DIRH    62
+                // Copy the actual sixteen-long ISR image into cog 1's cached debugger slot.
+                SETQ    15
+                RDLONG  register(0x100),        aug(hubaddr(debug_image))
+                SETQ    15
+                WRLONG  register(0x100),        aug(0xFFF40)
+                HUBSET  aug(0x20000002)
+                SETQ    aug(0x1000)
+                COGINIT 1,                      aug(hubaddr(target))
+                WAITX   aug(100000)
+                // Report PC, status and IJMP0 from each of the four entries.
+                MOV     PTRB,                   aug(0x1000)
+                MOV     register(0x90),         4
+                RDLONG  register(0x92),         PTRB[3]
+record:
+                RDLONG  register(0x93), PTRB[3]
+                MOV     register(0x94), register(0x93)
+                SUB     register(0x93), register(0x92)
+                WRLONG  register(0x93), PTRB[3]
+                MOV     register(0x92), register(0x94)
+                MOV     register(0x91), 16
+byte:
+                RDBYTE  PA, PTRB++
+                WYPIN   PA, 62
+                WAITX   1
+ready:
+                TESTP   62                      :wc
+    if(!C)      JMP     ready
+                DJNZ    register(0x91), byte
+                DJNZ    register(0x90), record
+
+flush:
+                RQPIN   PB, 62  :wc
+    if(C)       JMP     flush
+_end:
+                JMP     _end
+
+.pack   off
+.cogexec    0x2000, 0
+debug_image:
+                MOV     register(0x80), PTRA
+                MOV     register(0x81), INB
+                GETBRK  register(0x82)                  :wcz
+                MOV     register(0x83), INA
+                GETCT   register(0x84)
+                SETQ    3
+                WRLONG  register(0x81), register(0x80)
+                ADD     PTRA,           16
+                BRK     16
+                JMP     nrel(0x1fd)
+                LONG    [0] * 6
+
+// The ROM restores these first sixteen longs before returning to the application.
+.cogexec    0x3000, 0
+target:
+                MODCZ   _SET,   _SET    :wcz
+                BRK     17
+                NOP
+                NOP
+                MODCZ   _CLR,   _CLR    :wcz
+    if(C)       BRK     29
+                NOP
+                NOP
+                BRK     42
+                NOP
+                COGSTOP 1

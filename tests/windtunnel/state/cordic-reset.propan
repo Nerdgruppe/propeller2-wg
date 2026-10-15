@@ -1,0 +1,103 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[late_x] == 42
+//? post: cog[*].reg[late_y] == 0
+//? run: "mode 0 cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: mode = 0
+//? post: cog[*].reg[early_x] == 0
+//? post: cog[*].reg[early_qmt] == 1
+//? post: cog[*].reg[late_qmt] == 0
+//? run: "mode 0 cog 3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: mode = 0
+//? post: cog[*].reg[early_x] == 0
+//? post: cog[*].reg[early_qmt] == 1
+//? post: cog[*].reg[late_qmt] == 0
+//? run: "mode 0 cog 7"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: mode = 0
+//? post: cog[*].reg[early_x] == 0
+//? post: cog[*].reg[early_qmt] == 1
+//? post: cog[*].reg[late_qmt] == 0
+//? run: "mode 1 cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: mode = 1
+//? post: cog[*].reg[early_x] == 42
+//? post: cog[*].reg[early_qmt] == 1
+//? post: cog[*].reg[late_qmt] == 1
+//? run: "mode 1 cog 3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: mode = 1
+//? post: cog[*].reg[early_x] == 42
+//? post: cog[*].reg[early_qmt] == 1
+//? post: cog[*].reg[late_qmt] == 1
+//? run: "mode 1 cog 7"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: mode = 1
+//? post: cog[*].reg[early_x] == 42
+//? post: cog[*].reg[early_qmt] == 1
+//? post: cog[*].reg[late_qmt] == 1
+//? run: "mode 2 cog 0"
+//? cog: 0
+//? const: probe_cog = 0
+//? const: mode = 2
+//? post: cog[*].reg[early_x] == 42
+//? post: cog[*].reg[early_qmt] == 0
+//? post: cog[*].reg[late_qmt] == 1
+//? run: "mode 2 cog 3"
+//? cog: 3
+//? const: probe_cog = 3
+//? const: mode = 2
+//? post: cog[*].reg[early_x] == 42
+//? post: cog[*].reg[early_qmt] == 0
+//? post: cog[*].reg[late_qmt] == 1
+//? run: "mode 2 cog 7"
+//? cog: 7
+//? const: probe_cog = 7
+//? const: mode = 2
+//? post: cog[*].reg[early_x] == 42
+//? post: cog[*].reg[early_qmt] == 0
+//? post: cog[*].reg[late_qmt] == 1
+
+// Cog reset clears readiness/tracking, retains result words, and leaves hub computations running.
+// Reloading cog RAM also allows the older result to arrive during startup.
+.if mode == 2
+                RDLONG  state,              aug(hubaddr(flag))
+                CMP     state,              0                       :wz
+    if(!Z)      JMP     restarted
+                WRLONG  1,                  aug(hubaddr(flag))
+.endif
+                QMUL    6,                  7
+.if mode == 1
+                WAITX   100
+.endif
+.if mode == 2
+                COGINIT probe_cog,          aug(hubaddr(_wt_start))
+.else
+                COGINIT (probe_cog | 0x20), restarted
+.endif
+restarted:
+                GETQX   early_x
+                POLLQMT             :wc
+                WRC     early_qmt
+                WAITX   100
+                GETQX   late_x
+                GETQY   late_y
+                POLLQMT             :wc
+                WRC     late_qmt
+                JMP     nrel(_end)
+var state:      LONG    0
+var early_x:    LONG    0
+var early_qmt:  LONG    0
+var late_x:     LONG    0
+var late_y:     LONG    0
+var late_qmt:   LONG    0
+.data
+flag:           LONG    0
+

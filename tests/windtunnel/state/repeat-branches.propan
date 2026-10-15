@@ -1,0 +1,345 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? run: "kind0-count0-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: count = 0
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind0-count0-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: count = 0
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind0-count1-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind0-count1-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind0-count3-cog0"
+//? cog: 0
+//? const: kind = 0
+//? const: count = 3
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind0-count3-cog7"
+//? cog: 7
+//? const: kind = 0
+//? const: count = 3
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind1-count0-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: count = 0
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind1-count0-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: count = 0
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind1-count1-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind1-count1-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind1-count3-cog0"
+//? cog: 0
+//? const: kind = 1
+//? const: count = 3
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind1-count3-cog7"
+//? cog: 7
+//? const: kind = 1
+//? const: count = 3
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind2-count0-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: count = 0
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind2-count0-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: count = 0
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind2-count1-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind2-count1-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind2-count3-cog0"
+//? cog: 0
+//? const: kind = 2
+//? const: count = 3
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind2-count3-cog7"
+//? cog: 7
+//? const: kind = 2
+//? const: count = 3
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind3-count0-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: count = 0
+//? post: cog[*].reg[landed] == 3
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 20
+//? run: "kind3-count0-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: count = 0
+//? post: cog[*].reg[landed] == 3
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 20
+//? run: "kind3-count1-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: count = 1
+//? post: cog[*].reg[landed] == 3
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 3
+//? post: cog[*].reg[elapsed] == 20
+//? run: "kind3-count1-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: count = 1
+//? post: cog[*].reg[landed] == 3
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 3
+//? post: cog[*].reg[elapsed] == 20
+//? run: "kind3-count3-cog0"
+//? cog: 0
+//? const: kind = 3
+//? const: count = 3
+//? post: cog[*].reg[landed] == 3
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 20
+//? run: "kind3-count3-cog7"
+//? cog: 7
+//? const: kind = 3
+//? const: count = 3
+//? post: cog[*].reg[landed] == 3
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 20
+//? run: "kind4-count0-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: count = 0
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind4-count0-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: count = 0
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind4-count1-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 3
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind4-count1-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: count = 1
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 3
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind4-count3-cog0"
+//? cog: 0
+//? const: kind = 4
+//? const: count = 3
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind4-count3-cog7"
+//? cog: 7
+//? const: kind = 4
+//? const: count = 3
+//? post: cog[*].reg[landed] == 2
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[link] == 0
+//? post: cog[*].reg[elapsed] == 18
+//? run: "kind5-count1-cog0"
+//? cog: 0
+//? const: kind = 5
+//? const: count = 1
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 16
+//? run: "kind5-count1-cog7"
+//? cog: 7
+//? const: kind = 5
+//? const: count = 1
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 16
+//? run: "kind5-count3-cog0"
+//? cog: 0
+//? const: kind = 5
+//? const: count = 3
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 3
+//? post: cog[*].reg[elapsed] == 28
+//? run: "kind5-count3-cog7"
+//? cog: 7
+//? const: kind = 5
+//? const: count = 3
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 3
+//? post: cog[*].reg[elapsed] == 28
+//? run: "kind6-count0-cog0"
+//? cog: 0
+//? const: kind = 6
+//? const: count = 0
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 2
+//? post: cog[*].reg[elapsed] == 22
+//? run: "kind6-count0-cog7"
+//? cog: 7
+//? const: kind = 6
+//? const: count = 0
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 2
+//? post: cog[*].reg[elapsed] == 22
+//? run: "kind6-count1-cog0"
+//? cog: 0
+//? const: kind = 6
+//? const: count = 1
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 16
+//? run: "kind6-count1-cog7"
+//? cog: 7
+//? const: kind = 6
+//? const: count = 1
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 1
+//? post: cog[*].reg[elapsed] == 16
+//? run: "kind6-count3-cog0"
+//? cog: 0
+//? const: kind = 6
+//? const: count = 3
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 2
+//? post: cog[*].reg[elapsed] == 22
+//? run: "kind6-count3-cog7"
+//? cog: 7
+//? const: kind = 6
+//? const: count = 3
+//? post: cog[*].reg[landed] == 1
+//? post: cog[*].reg[value] == 2
+//? post: cog[*].reg[elapsed] == 22
+
+                // Branch targets at a repeat boundary use the already-wrapped next PC.
+                GETCT   a
+                REP     3,      count
+                ADD     value,  1
+                NOP
+.if kind == 0
+                JMP     destination
+.elif   kind == 1
+                JMP     nrel(destination)
+.elif   kind == 2
+                JMP     target
+.elif   kind == 3
+                CALL    nrel(callee)
+.elif   kind == 4
+                CALLD   link,   target
+.elif   kind == 5
+                TJZ     value,  destination
+.else
+                REP     0,      0
+.endif
+                MOV     landed, 1
+                JMP     nrel(checked)
+                NOP
+destination:
+                MOV     landed, 2
+                JMP     nrel(checked)
+callee:
+                POP     link
+                MOV     landed, 3
+                JMP     nrel(checked)
+checked:
+                GETCT   b
+                SUB     link,       body_address
+                MOV     elapsed,    b
+                SUB     elapsed,    a
+                JMP     nrel(_end)
+var target:     LONG    pcaddr(destination)
+var body_address:
+                LONG    pcaddr(_wt_testcode) + 2
+var landed:     LONG    0
+var value:      LONG    0
+var link:       LONG    0
+var elapsed:    LONG    0
+var a:          LONG    0
+var b:          LONG    0
+var inside:     LONG    0
+var after:      LONG    0
+var pattern_out:
+                LONG    0
+

@@ -1,0 +1,26 @@
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[first] == 0x9abcdef0
+//? post: cog[*].reg[value] == 0x12345678
+//? post: cog[*].reg[amount] == 8
+
+                // Coincide the initial streamer FIFO read with a software RFLONG.
+                MOV     OUTA,                                           0
+                MOV     DIRA,                                           aug(0xffffffff)
+                RDFAST  0,                                              aug(hubaddr(data))
+                SETXFRQ 0
+                XINIT   aug(X_RFLONG_32P_4DAC8 | X_PINS_ON | 0xffff),   0
+                RFLONG  first
+                WAITX   20
+                MOV     value,                                          INA
+                GETPTR  amount
+                SUB     amount,                                         aug(hubaddr(data))
+                XSTOP
+                MOV     DIRA,                                           0
+                JMP     nrel(_end)
+var first:      LONG    0
+var value:      LONG    0
+var amount:     LONG    0
+.data
+.align  4
+var data:       LONG    0x12345678, 0x9abcdef0
+

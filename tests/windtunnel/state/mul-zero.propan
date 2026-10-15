@@ -1,0 +1,30 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? pre: cog[0].c = true
+//? post: cog[0].c == true
+//? post: cog[0].reg[unsigned_zero] == 1
+//? post: cog[0].reg[signed_zero] == 1
+//? post: cog[0].reg[product] == 0
+//? run: "zero low destination"
+//? pre: sym[product] = u32 [0x10000]
+//? pre: sym[source] = u32 [1]
+//? run: "zero low source"
+//? pre: sym[product] = u32 [1]
+//? pre: sym[source] = u32 [0x80000000]
+
+                // Only the low 16 bits participate in multiplication and its Z result.
+                MOV     signed_product, product
+                MUL     product,        source  :wz
+                WRZ     unsigned_zero
+                MULS    signed_product, source  :wz
+                WRZ     signed_zero
+                JMP     nrel(_end)
+var product:    LONG    0
+var signed_product:
+                LONG    0
+var source:     LONG    0
+var unsigned_zero:
+                LONG    0
+var signed_zero:
+                LONG    0
+

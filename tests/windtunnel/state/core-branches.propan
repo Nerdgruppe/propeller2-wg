@@ -1,0 +1,178 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[0].reg[failures] == 0
+//? post: cog[0].c == false
+//? post: cog[0].z == true
+//? post: cog[0].reg[taken0] == 0
+//? post: cog[0].reg[untaken0] == 1
+//? post: cog[0].reg[taken1] == 1
+//? post: cog[0].reg[untaken1] == 0
+//? post: cog[0].reg[taken2] == 4294967295
+//? post: cog[0].reg[untaken2] == 0
+//? post: cog[0].reg[taken3] == 0
+//? post: cog[0].reg[untaken3] == 4294967295
+//? post: cog[0].reg[taken4] == 0
+//? post: cog[0].reg[untaken4] == 1
+//? post: cog[0].reg[taken5] == 1
+//? post: cog[0].reg[untaken5] == 0
+//? post: cog[0].reg[taken6] == 0
+//? post: cog[0].reg[untaken6] == 1
+//? post: cog[0].reg[taken7] == 1
+//? post: cog[0].reg[untaken7] == 0
+//? post: cog[0].reg[taken8] == 4294967295
+//? post: cog[0].reg[untaken8] == 0
+//? post: cog[0].reg[taken9] == 0
+//? post: cog[0].reg[untaken9] == 4294967295
+//? post: cog[0].reg[taken10] == 2147483648
+//? post: cog[0].reg[untaken10] == 0
+//? post: cog[0].reg[taken11] == 0
+//? post: cog[0].reg[untaken11] == 2147483648
+//? post: cog[0].reg[taken12] == 2147483648
+//? post: cog[0].reg[untaken12] == 0
+//? post: cog[0].reg[iterations] == 3
+
+// Exercise taken and untaken arithmetic/test branches and a backward loop.
+// Each branch has both paths checked; skipped failure increments distinguish a correct target from fall-through.
+
+                MODCZ   _CLR,       _SET        :wcz
+                DJZ     taken0,     taken_ok0
+                ADD     failures,   1
+taken_ok0:
+                DJZ     untaken0,   untaken_bad0
+                JMP     untaken_ok0
+untaken_bad0:
+                ADD     failures,   1
+untaken_ok0:
+                DJNZ    taken1,     taken_ok1
+                ADD     failures,   1
+taken_ok1:
+                DJNZ    untaken1,   untaken_bad1
+                JMP     untaken_ok1
+untaken_bad1:
+                ADD     failures,   1
+untaken_ok1:
+                DJF     taken2,     taken_ok2
+                ADD     failures,   1
+taken_ok2:
+                DJF     untaken2,   untaken_bad2
+                JMP     untaken_ok2
+untaken_bad2:
+                ADD     failures,   1
+untaken_ok2:
+                DJNF    taken3,     taken_ok3
+                ADD     failures,   1
+taken_ok3:
+                DJNF    untaken3,   untaken_bad3
+                JMP     untaken_ok3
+untaken_bad3:
+                ADD     failures,   1
+untaken_ok3:
+                IJZ     taken4,     taken_ok4
+                ADD     failures,   1
+taken_ok4:
+                IJZ     untaken4,   untaken_bad4
+                JMP     untaken_ok4
+untaken_bad4:
+                ADD     failures,   1
+untaken_ok4:
+                IJNZ    taken5,     taken_ok5
+                ADD     failures,   1
+taken_ok5:
+                IJNZ    untaken5,   untaken_bad5
+                JMP     untaken_ok5
+untaken_bad5:
+                ADD     failures,   1
+untaken_ok5:
+                TJZ     taken6,     taken_ok6
+                ADD     failures,   1
+taken_ok6:
+                TJZ     untaken6,   untaken_bad6
+                JMP     untaken_ok6
+untaken_bad6:
+                ADD     failures,   1
+untaken_ok6:
+                TJNZ    taken7,     taken_ok7
+                ADD     failures,   1
+taken_ok7:
+                TJNZ    untaken7,   untaken_bad7
+                JMP     untaken_ok7
+untaken_bad7:
+                ADD     failures,   1
+untaken_ok7:
+                TJF     taken8,     taken_ok8
+                ADD     failures,   1
+taken_ok8:
+                TJF     untaken8,   untaken_bad8
+                JMP     untaken_ok8
+untaken_bad8:
+                ADD     failures,   1
+untaken_ok8:
+                TJNF    taken9,     taken_ok9
+                ADD     failures,   1
+taken_ok9:
+                TJNF    untaken9,   untaken_bad9
+                JMP     untaken_ok9
+untaken_bad9:
+                ADD     failures,   1
+untaken_ok9:
+                TJS     taken10,    taken_ok10
+                ADD     failures,   1
+taken_ok10:
+                TJS     untaken10,  untaken_bad10
+                JMP     untaken_ok10
+untaken_bad10:
+                ADD     failures,   1
+untaken_ok10:
+                TJNS    taken11,    taken_ok11
+                ADD     failures,   1
+taken_ok11:
+                TJNS    untaken11,  untaken_bad11
+                JMP     untaken_ok11
+untaken_bad11:
+                ADD     failures,   1
+untaken_ok11:
+                TJV     taken12,    taken_ok12
+                ADD     failures,   1
+taken_ok12:
+                TJV     untaken12,  untaken_bad12
+                JMP     untaken_ok12
+untaken_bad12:
+                ADD     failures,   1
+untaken_ok12:
+                MOV     count,  3
+backward:
+                ADD     iterations, 1
+                DJNZ    count,      backward
+                JMPREL  1
+                ADD     failures,   1
+                JMP     nrel(_end)
+var failures:   LONG    0
+var taken0:     LONG    1
+var untaken0:   LONG    2
+var taken1:     LONG    2
+var untaken1:   LONG    1
+var taken2:     LONG    0
+var untaken2:   LONG    1
+var taken3:     LONG    1
+var untaken3:   LONG    0
+var taken4:     LONG    4294967295
+var untaken4:   LONG    0
+var taken5:     LONG    0
+var untaken5:   LONG    4294967295
+var taken6:     LONG    0
+var untaken6:   LONG    1
+var taken7:     LONG    1
+var untaken7:   LONG    0
+var taken8:     LONG    4294967295
+var untaken8:   LONG    0
+var taken9:     LONG    0
+var untaken9:   LONG    4294967295
+var taken10:    LONG    2147483648
+var untaken10:  LONG    0
+var taken11:    LONG    0
+var untaken11:  LONG    2147483648
+var taken12:    LONG    2147483648
+var untaken12:  LONG    0
+var count:      LONG    0
+var iterations: LONG    0
+

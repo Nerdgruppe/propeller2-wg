@@ -1,0 +1,417 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 1000
+//? post: cog[*].reg[completed] == 1
+//? post: cog[*].reg[return_error] == 0
+//? post: cog[*].reg[elapsed] == 24
+//? post: cog[*].c == true
+//? post: cog[*].z == false
+//? run: "cog-jmp--11-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = -11
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-jmp--10-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = -10
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-jmp--9-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-jmp--9-cog7"
+//? cog: 7
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-jmp--8-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = -8
+//? post: cog[*].reg[landed] == 101
+//? run: "cog-jmp-0-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 0
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-jmp-1-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-jmp-1-cog7"
+//? cog: 7
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-jmp-2-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 2
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-jmp-3-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 3
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-jmp-4-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 4
+//? post: cog[*].reg[landed] == 1
+//? run: "cog-jmp-5-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 5
+//? post: cog[*].reg[landed] == 1
+//? run: "cog-jmp-6-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 6
+//? post: cog[*].reg[landed] == 1
+//? run: "cog-jmp-7-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 0
+//? const: delta = 7
+//? post: cog[*].reg[landed] == 1
+//? run: "cog-call--11-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = -11
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-call--10-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = -10
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-call--9-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-call--9-cog7"
+//? cog: 7
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "cog-call--8-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = -8
+//? post: cog[*].reg[landed] == 101
+//? run: "cog-call-0-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 0
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-call-1-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-call-1-cog7"
+//? cog: 7
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-call-2-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 2
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-call-3-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 3
+//? post: cog[*].reg[landed] == 0
+//? run: "cog-call-4-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 4
+//? post: cog[*].reg[landed] == 1
+//? run: "cog-call-5-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 5
+//? post: cog[*].reg[landed] == 1
+//? run: "cog-call-6-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 6
+//? post: cog[*].reg[landed] == 1
+//? run: "cog-call-7-cog0"
+//? cog: 0
+//? const: domain = 0
+//? const: kind = 1
+//? const: delta = 7
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-jmp--11-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = -11
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-jmp--10-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = -10
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-jmp--9-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-jmp--9-cog7"
+//? cog: 7
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-jmp--8-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = -8
+//? post: cog[*].reg[landed] == 101
+//? run: "lut-jmp-0-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 0
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-jmp-1-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-jmp-1-cog7"
+//? cog: 7
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-jmp-2-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 2
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-jmp-3-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 3
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-jmp-4-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 4
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-jmp-5-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 5
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-jmp-6-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 6
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-jmp-7-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 0
+//? const: delta = 7
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-call--11-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = -11
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-call--10-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = -10
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-call--9-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-call--9-cog7"
+//? cog: 7
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = -9
+//? post: cog[*].reg[landed] == 102
+//? run: "lut-call--8-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = -8
+//? post: cog[*].reg[landed] == 101
+//? run: "lut-call-0-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 0
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-call-1-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-call-1-cog7"
+//? cog: 7
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 1
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-call-2-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 2
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-call-3-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 3
+//? post: cog[*].reg[landed] == 0
+//? run: "lut-call-4-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 4
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-call-5-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 5
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-call-6-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 6
+//? post: cog[*].reg[landed] == 1
+//? run: "lut-call-7-cog0"
+//? cog: 0
+//? const: domain = 1
+//? const: kind = 1
+//? const: delta = 7
+//? post: cog[*].reg[landed] == 1
+
+                // Raw A fields exercise byte displacements that ordinary labels cannot emit.
+                // Distinct adjacent branch targets expose the local displacement conversion.
+                JMP     nrel(setup)
+hit_minus2:
+                MOV     landed, 102
+                JMP     nrel(finish)
+hit_minus1:
+                MOV     landed, 101
+                JMP     nrel(finish)
+hit_zero:
+                MOV     landed, 0
+                JMP     nrel(finish)
+hit_plus1:
+                MOV     landed, 1
+                JMP     nrel(finish)
+hit_plus2:
+                MOV     landed, 2
+                JMP     nrel(finish)
+finish:
+                GETCT   elapsed
+                SUB     elapsed,        start
+.if kind == 1
+                POP     return_error
+                SUB     return_error,   aug(0x80000000 | pcaddr(after))
+.endif
+                MOV     completed,      1
+                JMP     nrel(_end)
+
+// Install the raw JMP/CALL word into a code-marked instruction slot.
+setup:
+                MODCZ   _SET,                       _CLR                :wcz
+.if domain == 0
+                MOV     register(cogaddr(site)),    branch_word
+                NOP
+                NOP
+                GETCT   start
+                JMP     nrel(entry)
+.else
+                SETQ2   7
+                RDLONG  register(0),                aug(hubaddr(entry))
+                WRLUT   branch_word,                aug(pcaddr(site))
+                GETCT   start
+                JMP     nrel(entry)
+.endif
+var branch_word:
+                LONG    (0xfd900000 + (kind << 21)) | (delta & 0xfffff)
+var landed:     LONG    99
+var completed:  LONG    0
+var return_error:
+                LONG    0
+var start:      LONG    0
+var elapsed:    LONG    0
+
+// Each candidate slot jumps to a safe handler, including negative offsets.
+.if domain == 1
+.lutexec    0x3000, 0x200
+.endif
+entry:
+                JMP     nrel(site)
+minus3:
+                JMP     nrel(hit_minus2)
+minus2:
+                JMP     nrel(hit_minus2)
+minus1:
+                JMP     nrel(hit_minus1)
+site:
+                JMP     nrel(hit_zero)
+after:
+                JMP     nrel(hit_zero)
+plus1:
+                JMP     nrel(hit_plus1)
+plus2:
+                JMP     nrel(hit_plus2)

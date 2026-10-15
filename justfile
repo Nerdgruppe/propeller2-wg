@@ -12,8 +12,12 @@ build:
         install \
         test
 
+run-gui:
+    {{zig}} build
+    ./zig-out/bin/windtunnel-gui 
+
 test:
-    {{zig}} build install test -Dwith-flexspin 
+    {{zig}} build install test -Dwith-flexspin -Dwith-p2aas -Dfast-io
 
 # Regenerates src/windtunnel/sim/{encoding,decode}.zig files
 update-windtunnel:

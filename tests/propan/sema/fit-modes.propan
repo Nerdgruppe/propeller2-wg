@@ -13,7 +13,7 @@ NOP
 NOP
 .fit 0x400
 
-.regspace $, 0x1ff
+.regspace $, 0x1f8
 RES 1
 .fit $
 
