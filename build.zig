@@ -42,6 +42,7 @@ pub fn build(b: *std.Build) !void {
     // Options:
     const with_flexspin = b.option(bool, "with-flexspin", "Includes FlexSpin for Spin2 round-trip and assembler equivalence tests.") orelse false;
     const no_emit_bin = b.option(bool, "no-emit-bin", "Does not emit a binary, just compiles the applications") orelse false;
+    const no_gui = b.option(bool, "no-gui", "Skip the Windtunnel graphical interface and its tests") orelse false;
     const coverage = b.option(bool, "coverage", "Collect Propan and Windtunnel coverage with kcov when available") orelse true;
     const with_p2aas = b.option(bool, "with-p2aas", "Run Windtunnel hardware oracle tests through P2AAS_ENDPOINT") orelse false;
     const fast_io = b.option(bool, "fast-io", "Use single-clock serial endpoint throughput in Windtunnel fixtures") orelse false;
@@ -155,7 +156,7 @@ pub fn build(b: *std.Build) !void {
         break :blk exe;
     };
 
-    {
+    if (!no_gui) {
         const zglfw = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
         const zopengl = b.dependency("zopengl", .{ .target = target });
         const zgui = b.dependency("zgui", .{

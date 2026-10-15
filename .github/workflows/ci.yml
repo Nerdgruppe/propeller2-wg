@@ -33,4 +33,4 @@ jobs:
             ${{ runner.os }}-zig-pkg-
 
       - name: Build and Test
-        run: zig build -Dwith-flexspin install test
+        run: zig build -Dno-gui -Dwith-flexspin install test
