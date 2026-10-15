@@ -25,6 +25,12 @@ source_confidence: "high"
 - Corrected the previously claimed absence of emitted-segment overlap validation: the semantic emitter diagnoses overlapping nonempty HUB ranges.
 - Updated worked examples, source/fixture distinctions, source coverage and future audit tasks. Full test execution and formatter audit remain pending.
 
+## 2026-10-15 — formatter follow-up
+
+- Added `/projects/propan/formatting.md` based on the parser-only `--pretty-print` path, `frontend/render.zig`, the golden format fixtures and existing idempotence/semantic byte-equivalence test contracts.
+- Documented alignment, label folding, constant groups, expressions, comments and newline handling while distinguishing formatter acceptance from semantic assembler acceptance.
+- Linked the new reference from the Propan index/tooling reference and updated coverage and TODO. No formatter tests were executed for this documentation-only edit.
+
 ## 2026-09-30
 
 - Established the Propan documentation scope and current-state source precedence.

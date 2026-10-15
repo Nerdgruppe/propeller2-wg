@@ -90,7 +90,7 @@ Parser, import and semantic errors normally cause exit status `1`. CLI usage err
 | `-F`, `--fill-byte` | gap/padding byte |
 | `-I`, `--include-path` | repeatable import search directory |
 | `--list-file` | textual listing |
-| `--pretty-print <path>` | parse and pretty-print a single source file (or `-` for stdin) to stdout; separate from normal semantic analysis and import expansion |
+| `--pretty-print <path>` | parse and format one source file (or `-` for stdin) to stdout; does not expand imports or perform semantic analysis; see [/projects/propan/formatting.md](/projects/propan/formatting.md) |
 | `--no-warnings` | suppress warnings in CLI output |
 | `--render-stdlib-docs` | render P2 standard-library metadata as HTML |
 | `-v`, `--verbose` | debug logging |

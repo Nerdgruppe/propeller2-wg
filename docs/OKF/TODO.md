@@ -9,7 +9,9 @@ The checklist below was completed or triaged against the **September 2026** impl
 - [x] Update `tooling.md` for **one** CLI root, recursive `.import`/`.import once`, repeatable `-I`, and `--format spin2`; reconcile coverage/source inventory.
 - [x] Update symbol documentation for scoped leading-dot labels and dependency-resolved forward constants.
 - [x] Reaudit core directive/address-mode behavior in `directives-and-data.md` and `addresses-and-segments.md` against `.org`, `RES`, `.fit`, `.regspace`, `.data`, `.pack`, `.pic`, `FILE`, expanded origins and string/sequence emission; remaining instruction-specific address helper cases are separately open.
-- [x] Reaudit expression/stdlib/lexical **language behavior** for sequence, repetition, current PC, address helpers, conditional compilation and new library functions; formatter implementation and rendered-output regressions remain to be checked.
+- [x] Reaudit expression/stdlib/lexical **language behavior** for sequence, repetition, current PC, address helpers, conditional compilation and new library functions.
+- [x] Source-review formatter implementation, golden fixtures, idempotence and semantic byte-equivalence tests; document current `--pretty-print` behavior in `/projects/propan/formatting.md`.
+- [ ] Execute formatter and documentation-example checks as an OKF-specific validation pass; existing test registrations have been inspected, but not run here.
 - [x] Reaudit central `instruction-syntax.md`, `pointer-addressing.md`, and `examples.md` for conditioned NOP rejection, PIC/CALLD preference, augmented pointer-index limits, and RES/register-space support.
 - [x] Correct the post-merge semantic overlap-error behavior in the tooling, address, and directive references.
 - [ ] Recheck residual instruction selection/address-domain edge cases and non-fixture examples; audit all remaining September implementation/discrepancy register entries individually.

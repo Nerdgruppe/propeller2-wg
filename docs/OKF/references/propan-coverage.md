@@ -23,7 +23,7 @@ A parser fixture alone is never sufficient evidence that a feature is a current 
 
 | Area | Current OKF reference | Principal implementation/evidence | Current validation examples | Coverage note |
 |---|---|---|---|---|
-| lexical/source grammar | `/projects/propan/lexical-and-source-grammar.md` | frontend parser and semantic conditional filter | `parser/values.propan`, `sema/conditional-compilation.propan`, `parser/diagnostics/inactive-conditional-syntax.propan`, `sema/diagnostics/conditional-values.propan` | **Refreshed 2026-10-15:** bracket sequences, `$` current-location token and conditional source filtering; formatter audit still pending |
+| lexical/source grammar | `/projects/propan/lexical-and-source-grammar.md` | frontend parser and semantic conditional filter | `parser/values.propan`, `sema/conditional-compilation.propan`, `parser/diagnostics/inactive-conditional-syntax.propan`, `sema/diagnostics/conditional-values.propan` | **Refreshed 2026-10-15:** bracket sequences, `$` current-location token and conditional source filtering; formatter documented separately |
 | expressions/value model | `/projects/propan/expressions.md` | parser, `sema.zig` evaluator, `stdlib/eval.zig` | `sema/array-emission.propan`, `array-constants.propan`, `string-emission.propan`, `diagnostics/unsupported-binary-types.propan` | **Refreshed 2026-10-15:** sequences/repetition, PC/address helpers and diagnostics; negative `/`/`%` policy open |
 | function-call grammar | lexical reference + `/projects/propan/stdlib.md` | parser + generated function wrapper metadata | `parser/fncalls.propan`, `sema/stdlib.propan` | active P2 callable namespace documented; generated metadata remains exhaustive source |
 | symbols/constants/labels/vars | `/projects/propan/symbols-and-declarations.md` | semantic symbol declaration/evaluation, recursive constant resolver, local scope rebinding | `sema/local-labels.propan`, `sema/diagnostics/constant-cycle.propan`, `test_suite.zig` listing/JSON tests | **Refreshed 2026-10-15:** leading-dot local scope and forward constants supported; label-dependent layout values need separate treatment |
@@ -42,6 +42,7 @@ A parser fixture alone is never sufficient evidence that a feature is a current 
 | single-root/imports | `/projects/propan/tooling.md` | `src/propan/propan.zig` + `frontend/imports.zig` | `test_suite.zig` root rejection, include precedence, import-once identity and imported source metadata | **Refreshed 2026-10-15:** multi-root input is rejected; imports expand into a single module |
 | flat/JSON/Spin2/fill | `/projects/propan/tooling.md` | `src/propan/emit/` and CLI composition | `test_suite.zig` fill-byte, Spin2 readable output and configured FlexSpin round-trip | **Refreshed 2026-10-15:** `spin2` is an output format; do not claim unconditional round-trip coverage |
 | list files | `/projects/propan/tooling.md` | `src/propan/listfile.zig` and its unit tests | in-source `listfile.zig` tests | covered at implementation-unit level rather than `tests/propan/` fixture level |
+| source formatter | `/projects/propan/formatting.md` | `frontend/render.zig` + `propan.zig` pretty-print CLI path | `frontend/render_tests.zig`, `test_suite.zig` formatter golden/idempotence and byte-equivalence tests, `tests/propan/format/` | **Refreshed 2026-10-15:** formatter behavior source-reviewed and pre-existing test coverage mapped; test suite not rerun for this documentation edit |
 | implementation limitations | `/projects/propan/implementation-findings.md` | current semantic code plus September historical register | varies per finding | **Refreshed 2026-10-15:** conditioned NOP, string emission, overlap validation and CALLD comparison fixes separated from unresolved issues |
 | documentation conflicts | `/projects/propan/documentation-discrepancies.md` | comparison of current implementation with README/old docs/examples | parser/sema/equivalence evidence as applicable | prevents parser-only/historical material becoming normative accidentally |
 
@@ -59,7 +60,7 @@ The following are intentionally **not** treated as closed merely because adjacen
 - intended use of ordinary user constants during layout;
 - executable validation of documentation examples;
 - documentation link/generated-reference consistency checking;
-- formatter implementation/round-trip verification, remaining historical finding classification, and non-fixture example status.
+- execution of formatter/doc examples as part of a reproducible OKF validation workflow, remaining historical finding classification, and non-fixture example status.
 - post-merge revalidation of remaining directive, expression, segment, instruction and implementation-finding pages.
 
 ## Maintenance rule
