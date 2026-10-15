@@ -14,15 +14,18 @@ The checklist below was completed or triaged against the **September 2026** impl
 - [ ] Execute formatter and documentation-example checks as an OKF-specific validation pass; existing test registrations have been inspected, but not run here.
 - [x] Reaudit central `instruction-syntax.md`, `pointer-addressing.md`, and `examples.md` for conditioned NOP rejection, PIC/CALLD preference, augmented pointer-index limits, and RES/register-space support.
 - [x] Correct the post-merge semantic overlap-error behavior in the tooling, address, and directive references.
-- [ ] Recheck residual instruction selection/address-domain edge cases and non-fixture examples; audit all remaining September implementation/discrepancy register entries individually.
-- [ ] Audit remaining historical checkboxes/example classifications below against the merged code, especially `examples/rgbx.propan`, and retire or reclassify superseded TODOs and defects.
-- [ ] Run automated docs checks and executable examples once their current coverage is established.
+- [x] Audit each named September implementation/discrepancy register entry against merged source and fixture registrations; separate current limitations, superseded defects, and untested cases without claiming executed tests.
+- [ ] Reproduce residual CALLD double-pointer candidate reachability, directive condition/effect behavior, and intended cross-local-segment semantics with targeted tests.
+- [ ] Run a dedicated `examples/rgbx.propan` assembly test and decide whether to register/migrate it; `.org`, `RES`, `.fit` are no longer proof of unsupported source.
+- [ ] Audit remaining historical checklist detail below as needed; September check marks are archival, not broad current-test certification.
+- [x] Run a source-tree static check across all 27 `docs/OKF/**/*.md` documents for internal target existence, duplicate headings, embedded frontmatter, and balanced Markdown fences (2026-10-15; no defects in those categories).
+- [ ] Execute the compiled assembler/formatter test suite and extract runnable doc examples; Zig 0.16 and a local checkout were not available in the documentation-worker environment.
 
 ## 1. Establish the authoritative language contract
 
 - [x] Define which documents under `docs/OKF/` are current-state descriptions of Propan behavior and clearly mark design notes, historical notes, and proposals as non-normative.
 - [x] Inventory the current syntax and semantics across `src/propan/`, parser/sema/equivalence/regression tests, repository examples, the root `README.md`, and `docs/propan/semantics.md`; source roles, precedence, conflicts, and coverage are now mapped under `/references/` and the current-state Propan pages.
-- [x] Identify stale syntax in existing `.propan` examples and classify current/legacy/unverified status in the discrepancy register; `rgbx.propan` is confirmed legacy due to unsupported directives, while the other examples remain current-looking or semantically unverified rather than canonical tests.
+- [x] Preserve the September example audit historically; **superseded on 2026-10-15:** `.org`, `RES`, `.fit` are implemented, `sumloop.propan` now uses `alti.state(...)`, and both `sumloop.propan`/`propio-client.propan` are registered active assembler fixtures. `rgbx.propan` remains outside that tested example group.
 - [x] Document the relationship between Propan and PASM2: generated mnemonics/operand order and encodings are inherited from canonical P2 data while source expression, condition/effect, address-control, and directive syntax intentionally differs.
 - [x] State case-sensitivity rules for mnemonics, identifiers, directives, effects, constants, and standard-library names.
 - [x] State whitespace/newline rules, including multiline instruction arguments and multiline function calls.
@@ -67,7 +70,7 @@ The checklist below was completed or triaged against the **September 2026** impl
 - [x] Document current relative versus absolute branch/call selection and augmentation behavior, including generic `A` operands, PC-relative `S**` operands, `aug()`/`nrel()`, and CALLD overlap rules.
 - [x] Document current warnings/errors for crossing execution modes or segments, including explicitly incomplete segment validation.
 - [x] Provide examples that contrast local and HUB interpretations of the same label.
-- [ ] Resolve intended `localaddr(register)` semantics; current behavior is now documented as always erroring, while the implementation TODO suggests but does not implement COG-only acceptance.
+- [x] Revalidate `localaddr(register)` against the merged evaluator: the COG-exec branch now returns a register index with a warning; other execution modes diagnose an error. The old 'always errors' finding is historical.
 
 ## 6. Segments, cursors, and execution modes
 

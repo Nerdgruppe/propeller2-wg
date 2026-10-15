@@ -89,7 +89,7 @@ Use for:
 - instruction selection;
 - alignment and selected address/layout behavior.
 
-The `segment_management.propan` fixture mixes implemented and planned syntax and is not blanket evidence that every directive appearing in it is current.
+The previously cited `tests/propan/sema/segment_management.propan` is **absent from the current branch**. It was historical evidence and must not be treated as a present-day passing fixture. Use current `tests/propan/sema/` layout and diagnostics fixtures plus `src/propan/sema.zig` instead.
 
 ### `tests/propan/regressions/`
 
@@ -133,19 +133,19 @@ Useful for intent and existing syntax explanations, but not authoritative when i
 
 ### `docs/propan/semantics.md`
 
-Role: historical/design note about segment/address concepts and proposed directive mappings.
+Role: a **mixed historical/design and implementation-note** document. It contains original conceptual `.section` mappings alongside newer explanations of `.org`, `.fit`, `.pack`, `.pic`, conditional directives and imports.
 
-Do not treat as a current syntax reference without implementation verification.
+Do not treat all sections as universally current or universally obsolete; validate each syntax claim against semantic code.
 
 ### `examples/*.propan`
 
-Role: realistic source examples with mixed current/legacy status.
+Role: realistic source examples with **different test registration states**, not an undifferentiated legacy set.
 
-Current review:
+Current review (2026-10-15):
 
-- `rgbx.propan` uses unsupported `.org`, `.RES`, and `.fit` and is confirmed legacy/stale relative to the current semantic directive table;
-- `propio-client.propan` is broadly aligned with current syntax but is not part of the current conformance/regression suite;
-- `sumloop.propan` avoids the known obsolete directives but still contains packed label-valued expressions whose full semantic validity is not regression-established.
+- `rgbx.propan` uses the now-implemented `.org`, `RES` and `.fit`, but is listed as a **support file**, not in the active `examples` fixture group; full assembly status is not yet established.
+- `propio-client.propan` and `sumloop.propan` are both included in `tests/propan/cases.zig`'s active `examples` group. This establishes regression registration, not an execution result in the current OKF audit or proof of hardware behavior.
+- `sumloop.propan` now constructs ALTI state with `alti.state(...)` rather than unsupported bitwise operations on raw address labels.
 
 Use `/projects/propan/documentation-discrepancies.md` for the maintained per-file classification.
 

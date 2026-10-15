@@ -31,6 +31,12 @@ source_confidence: "high"
 - Documented alignment, label folding, constant groups, expressions, comments and newline handling while distinguishing formatter acceptance from semantic assembler acceptance.
 - Linked the new reference from the Propan index/tooling reference and updated coverage and TODO. No formatter tests were executed for this documentation-only edit.
 
+## 2026-10-15 — current finding and discrepancy audit
+
+- Rebuilt the current implementation findings and public documentation discrepancy registers from merged parser, semantic, value-helper, root README, and current tests/examples. Kept obsolete September observations explicitly archived and residual possible limitations separate from proven behavior.
+- Reclassified `sumloop.propan` and `propio-client.propan` as registered assembler fixtures and `rgbx.propan` as a support-only example needing a dedicated compilation review; removed historical claims about missing directives and a now-absent `segment_management.propan` file.
+- Reconciled the source inventory, coverage reference and historical TODO text. Ran static root-relative link, heading, frontmatter and fence checks across all 27 OKF Markdown files; no issues in those categories. Did not run Zig unit, formatter or example compilation tests.
+
 ## 2026-09-30
 
 - Established the Propan documentation scope and current-state source precedence.
