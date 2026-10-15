@@ -1,139 +1,73 @@
 ---
 type: "Finding Register"
 title: "Propan implementation findings"
-description: "Potential assembler issues and implementation limitations discovered while documenting current Propan behavior."
+description: "Audited current limitations and archived historical issues in the Propan assembler."
 tags: ["propan", "assembler", "findings", "issues"]
 status: "draft"
 source_confidence: "high"
 ---
 # Propan implementation findings
 
-This page records potential assembler defects or limitations discovered during documentation work. It is not a substitute for the repository issue tracker. Findings remain here while they materially affect how current behavior should be documented.
+This register distinguishes **current confirmed behavior**, **possible limitations needing focused reproduction**, and **superseded September 2026 observations**. The current audit is based on source and existing test fixtures from `rework-documentation` as of 2026-10-15. **Tests were inspected, not executed in this documentation session.** Behavior found in source is not automatically a proven hardware/runtime defect.
 
-## Post-merge status (2026-10-15)
+## Current limitations and open interpretations
 
-This register was written against the September code. **Entries under "September findings" below are retained as historical findings and must not be cited as current defects without independent re-verification.** The following changes have been confirmed in the merged implementation:
+### Directive conditions and effects: possible silent no-op
 
-- **Conditioned NOP:** semantic mnemonic selection now emits `err_nop_cannot_have_condition` for an explicit condition on `NOP` (`src/propan/sema.zig`); the former conditional-ROR encoding observation describes the old source, not accepted current syntax.
-- **Raw strings in data:** `BYTE`/`WORD`/`LONG` now expand strings into element sequences and support integer sequences (`data_expr_count` and `emit_code`); the former "string emission not supported" panic entry is superseded.
-- **Assertions:** the optional message type is now checked before the true/false result is returned (`evaluate_asserts`). The old message-type diagnostic defect is no longer established by that source.
-- **Constant resolution:** `resolve_constant` recursively evaluates dependencies and detects cycles; the former blanket prohibition on forward user-constant references is obsolete.
-- **Source/segment model:** `.org`, `RES`, `.regspace` and `.data` are implemented. An older assumption that all non-emitting reservations are unsupported no longer applies.
+The parser attaches condition/effect fields to any instruction-shaped source line. Unlike ordinary encoded P2 instructions, most directives do not process these modifiers: `select_instruction_mnemonic` assigns their internal mnemonic and `emit_code` handles data/layout without applying the P2 condition/effect encoding. Hence `if(C) BYTE 1` and `.assert 1 :wc` may be accepted without the modifier affecting semantics.
 
-**Additional verified upstream corrections:**
+**Exceptions matter:** the `ConditionalFilter` explicitly rejects conditions/effects on `.if`/`.elif`/`.else`/`.endif` control lines, and semantic selection rejects explicitly conditioned `NOP`. Do not generalize this observation to all instruction-shaped lines. The active `examples/sumloop.propan` contains a conditioned `LONG` line, making this a source behavior that warrants a dedicated explicit regression and an intended-semantics decision.
 
-- **Overlap validation is now active:** `emit_code` compares each pair of emitted HUB ranges and emits `err_segments_and_overlap_at_hub_address_0x_x_0_5` for positive-length overlap. The historical "disabled overlap validation" item below is superseded for nonempty segments.
-- **CALLD pointer-register selection:** the current ambiguity guard checks `pointer_reg` operands in **both** competing variants and uses `select_calld_ambiguous_encoding`. The September copy/paste defect is fixed, although a defensive panic still exists for two simultaneously matching pointer-register variants.
-- **Relative `@`:** current evaluation checks execution-domain compatibility and emits `warn_relative_address_crosses_segments` for cross-segment displacement. This is not the unguarded HUB-byte subtraction described by the old finding.
+**Evidence:** `src/propan/frontend/parser.zig`, `src/propan/sema.zig` (`ConditionalFilter.directive`, `select_instruction_mnemonic`, `emit_code`). **Status:** current source-level limitation; exact accepted directive combinations should be regression-tested.
 
-Other historical findings still require verification against the merged source and fixtures before being reported as current defects.
+### Unknown string escape recovery
 
-## September findings (historical; unrevalidated after merge)
+`unescape_string` warns on an unknown `\q` escape, emits the **original backslash** and skips the `q`. This is recovery behavior rather than an alternate supported escaping convention.
 
-### Confirmed code-level findings
+**Evidence:** `src/propan/frontend/parser.zig` (`unescape_string`, invalid-escape branch). **Status:** current source-confirmed behavior; focused recovery regression still useful.
 
-### Pointer-register ambiguity check contains a copy/paste defect
+### Cross-segment and cross-domain executable references
 
-Instruction selection computes `any_ptrreg_prev` and `any_ptrreg_now`, but the ambiguity guard currently tests `any_ptrreg_prev` twice:
+`get_offset_for_exec_mode` returns an execution-address representation but does not universally check segment identity. It warns for HUB↔local execution-domain transitions. COG↔LUT transitions are no longer blanket errors in this helper; they can share a local branch domain. The `@` evaluator does reject mismatched execution modes and warns when segment IDs differ (rather than silently subtracting unrelated HUB addresses).
 
-```zig
-if (any_ptrreg_prev == true and any_ptrreg_prev == true) {
-    @panic("incredibly amgigious instructions, should check the setup");
-}
-```
+**Status:** source-confirmed guards plus **unresolved intended policy** for transfers between unrelated local-exec segments or same-mode segment origins. It would be incorrect either to promise complete cross-segment validation or to claim the old total absence of segment warnings. Relevant evidence: `get_offset_for_exec_mode`, `evaluate_expr` (`@`), `tests/propan/sema/spin2-cross-segment-rep.propan`.
 
-This means the guard does not express the apparent intended condition of both competing variants being pointer-register variants. It can also terminate the assembler with a process panic rather than a source diagnostic if reached.
+### Remaining defensive pointer-variant panic
 
-The generated table makes this relevant to `CALLD`: the ordinary `CALLD D,{#}S**` form overlaps in source type space with `CALLD PA/PB/PTRA/PTRB,#{\}A`. The intended selector preference is to choose a matching `pointer_reg` variant over an ordinary register variant. Existing equivalence material exercises several cases but leaves some special-destination label/numeric forms commented out, so the complete overlap surface is not regression-proven.
+The `CALLD`/pointer-register variant selector now checks **both** candidates for pointer-register operands and uses `select_calld_ambiguous_encoding` to distinguish ordinary and special CALLD encodings. If **both** candidate variants contain `pointer_reg`, the selector still contains `@panic("incredibly amgigious instructions, should check the setup")`. Ordinary ambiguity produces `err_ambigious_instruction_selection_for`.
 
-**Documentation impact:** the current selection rule and CALLD forms can be described, but pointer-register overlap should be treated as a known current limitation rather than fully hardened behavior. Add focused regression coverage when the ambiguity guard is corrected.
+**Status:** code-level defensive panic exists; **reachability from current generated variants has not been demonstrated**. This is distinct from the fixed September copy/paste error. Evidence: `src/propan/sema.zig` (`select_instruction_encoding`), `tests/propan/sema/pointer-variant-order.propan` and `tests/propan/equivalence/ambigious.propan`.
 
-### Binary operations on address values and strings can panic
+### Layout constants depend on evaluation phase
 
-After type equality is established, binary expression evaluation handles integer/register/enumerator/pointer-expression values but uses `@panic` for `.address` and `.string` operands.
+The current assembler recursively resolves forward constant dependencies, including label-independent constants used to determine layout. However, a constant that depends on a **label address** cannot be resolved during the layout pass, before those address values are available. Such dependencies are diagnosed.
 
-**Documentation impact:** do not imply that all syntactically accepted binary expressions are safely diagnosed. Address/string binary expressions are currently an implementation hazard.
+**Evidence:** `resolve_constant` (`forbid_label_addresses = ana.in_layout`), `tests/propan/sema/lazy-constants.propan`, `tests/propan/sema/diagnostics/layout-constant-label.propan` and `layout-constant-known-label.propan`. **Status:** current and intentional phase constraint; not a blanket prohibition on user constants in `.org` or `.align`.
 
-### Raw string and enumerator data emission can panic
+## Superseded September observations
 
-The generic value-to-data cast used by `BYTE`, `WORD`, and `LONG` contains `@panic("string emission not supported yet")` for strings and an internal-error panic for unresolved enumerators.
+The earlier reference captured behavior of a pre-merge Zig implementation. The table preserves the observation and records the current replacement; **none of the historical claims below is a current defect merely because the old code once exhibited it**.
 
-**Documentation impact:** strings are valid expression values but are not currently supported as raw data-emission arguments. Enumerator values require a consuming instruction enumeration context rather than direct emission.
+| September observation | Audited merged state | Evidence |
+|---|---|---|
+| CALLD pointer-register guard compared `any_ptrreg_prev` to itself | Fixed: compares `any_ptrreg_prev` and `any_ptrreg_now`; a distinct double-pointer-register panic remains unproven reachable | `sema.zig` variant selector |
+| Binary operations on equal-type address/string operands called `@panic` | Fixed: address/string/sequence invalid binary operations emit typed source diagnostics | `sema.zig` evaluator; `diagnostics/unsupported-binary-types.propan` |
+| `BYTE`/`WORD`/`LONG` raw string emission panicked | Fixed: strings expand to elements; integer sequences/repetition and Unicode helpers also work | `sema.zig` data expression handling; `array-emission.propan` |
+| All user-defined constants failed in layout directives | Fixed for **label-independent** recursive/forward constants; label-dependent layout values are still restricted | `resolve_constant`; `lazy-constants.propan` |
+| Explicitly conditioned `NOP` became a conditional `ROR` word | Fixed: semantic error `err_nop_cannot_have_condition` | `sema.zig`, `diagnostics/conditional-nop.propan` |
+| `localaddr(register)` always failed | Fixed: supported with a warning in COG execution context; rejected outside it | `sema.zig` address builtins; `diagnostics/localaddr-register-modes.propan` |
+| Segment overlap validation was disabled | Fixed for **nonempty emitted HUB segments**: pairwise range intersection emits a semantic error | `sema.zig` `emit_code` overlap check |
+| `.assert` wrong-type message reported the condition type | Fixed: message validation now diagnoses `msg.value` | `sema.zig` `evaluate_asserts`; `diagnostics/assert-needs-string-message.propan` |
+| `TaggedAddress.init()` used nonexistent `.hub` field | Fixed: uses `.hub_address`; current layout code calls this constructor | `stdlib/eval.zig`; `sema.zig` layout |
+| `@` ignored segment identity and execution domain | Fixed in part: mismatched execution modes diagnose and cross-segment relative references warn; whether to disallow all cross-segment references remains a design decision | `sema.zig` `evaluate_expr`; `spin2-cross-segment-rep.propan` |
 
-### Layout directives cannot currently use ordinary user constants
+Enum values are still not arbitrary integer data: raw enumeration payloads fail numeric type checks unless an instruction/function explicitly consumes the enum.
 
-Location assignment runs before `evaluate_constant_values()`. `.align` and explicit `.cogexec`/`.lutexec`/`.hubexec` HUB-address operands are evaluated during that earlier layout pass, when user constant symbols exist but their values are still unset.
+## Evidence and maintenance rules
 
-As a result, a declared user constant cannot currently be used for those layout values. `.align` also maps the resulting `UndefinedSymbol` evaluation failure to a message saying labels cannot be referenced, which is misleading for this case.
+- **Official/hardware semantics** belong to canonical Propeller 2 instruction material, not inferred from assembler implementation details.
+- **Current source behavior** means the branch implementation was inspected. Cite particular source functions and distinguishing fixtures; do not claim a test passed unless executed.
+- **Potential bug** means a code branch or inconsistency exists but its operational reachability or intended behavior is unresolved.
+- **Historical** means the finding was valid or plausibly derived from an earlier version, not current verified behavior.
 
-**Documentation impact:** directive documentation must distinguish expressions accepted grammatically from values available during layout. This ordering may warrant implementation changes if user constants are intended for layout directives.
-
-### Conditions/effects on assembler directives are silently ignored
-
-The parser stores optional conditions and effects on every instruction-shaped line, including assembler directives. Semantic encoding validates and applies those fields only for generated encoded instructions; directive paths such as `BYTE`, `.align`, and `.assert` bypass that handling.
-
-As a result, source such as `if(C) BYTE 1` or `.assert 1 :wc` can be accepted while the condition/effect has no directive meaning and is ignored.
-
-**Documentation impact:** conditions/effects are documented as generated-instruction syntax only. Directive modifiers should not be recommended until the assembler rejects them or defines explicit semantics.
-
-### Explicitly conditioned `NOP` encodes a different instruction form
-
-The generated `NOP` entry is the special all-zero P2 word. Emission forces condition code `0000` only when the source has no explicit condition. If a condition is supplied, the requested condition code replaces the high four bits while the lower 28 bits remain zero.
-
-Those lower 28 bits are also the base encoding of `ROR D,{#}S` with C/Z/I, D, and S all zero. A source form such as `if(Z) NOP` therefore does not remain a NOP word; it produces a conditionally executed zero-field ROR form (`ROR r0, r0` in register interpretation).
-
-**Documentation impact:** explicitly conditioned NOP must not be recommended. Parser acceptance is an encoding defect/hazard until the assembler rejects such source or models NOP as a fixed complete word that cannot accept a condition.
-
-### Unknown escape recovery drops the unrecognized escaped character
-
-The string unescaper stores the current byte as `char`. When `char` is a backslash it increments the input index to inspect the escaped character. In the invalid-escape branch it emits a warning using that following byte but appends the saved `char`, which is still the original backslash. The loop then advances past the inspected byte.
-
-Thus `\q` currently recovers as a single backslash byte while `q` is discarded.
-
-**Documentation impact:** the exact recovery is now documented, but invalid escapes should not be relied on as intentional language syntax. A regression test would still be useful to lock down the behavior if recovery semantics are intended to remain stable.
-
-### `localaddr(register)` always diagnoses an error
-
-The evaluator has a register branch for `cogaddr()`, `lutaddr()`, and `localaddr()`. `lutaddr(register)` is rejected directly. The `localaddr(register)` branch contains a TODO to check whether execution mode is COG, but currently emits `localaddr() is only valid for registers in a cogexec scope` unconditionally, then also emits the generic warning before returning the numeric register index internally.
-
-Because an error diagnostic marks semantic analysis unsuccessful, `localaddr(register)` is not currently a successful interface even in COG-exec scope.
-
-**Documentation impact:** document register use as unsettled/invalid current behavior. The TODO suggests intended COG-only acceptance, but that intent is not implemented and should not be promoted to language contract without a project decision.
-
-### Segment-overlap validation is disabled
-
-Location assignment contains a commented-out overlap check with a `TODO: Reinclude the overlap check!`. Moving a new HUB segment backwards emits a warning, but the intended overlap error is not active there.
-
-**Documentation impact:** current multi-segment/overlay behavior must be described carefully. Do not state that accidental overlap is rejected until this is implemented and tested.
-
-### `.assert` wrong-type message reports the condition type
-
-When a second `.assert` argument is present but is not a string, the diagnostic formats `@tagName(condition.value)` rather than the type of the message expression.
-
-**Documentation impact:** no language-semantic impact, but diagnostics may be misleading for this error case.
-
-### `TaggedAddress.init()` initializes the wrong field name
-
-`TaggedAddress` contains a `hub_address` field, but its generic `init()` helper currently returns a struct literal using `.hub = hub`. Repository search found no current `TaggedAddress.init(` call site, so Zig's lazy function analysis can allow this latent defect to remain unnoticed while the helper is unused.
-
-**Documentation impact:** none for currently exercised address construction, which uses the specialized `init_hub`/`init_cog`/`init_lut` helpers. The generic helper is verified unused by repository search and malformed as written; it should be corrected or removed before use.
-
-## Findings requiring verification
-
-### `@` relative-offset operator does not validate segment identity
-
-The evaluator contains an explicit TODO to verify that the current location and target address belong to the same segment before calculating the longword delta from HUB addresses.
-
-**Documentation impact:** the current address reference documents the implemented HUB-address calculation and this missing validation separately.
-
-### Cross-local-segment jump checking is incomplete
-
-`get_offset_for_exec_mode()` rejects COG↔LUT execution-domain transitions and warns for HUB↔local transitions, but its own comment notes that segment identity still needs to be incorporated into the protection logic so unrelated local-exec segments cannot be confused merely because their local addresses overlap.
-
-**Documentation impact:** address-domain diagnostics should be described as current safeguards, not as complete segment-safety validation.
-
-## Documentation policy for findings
-
-- Describe current behavior, not desired behavior.
-- Mark unexecuted code-reading conclusions as potential until sufficiently determined by explicit control flow or a test/reproducible invocation.
-- If a finding is fixed, retain a short historical note only if it explains documentation/version differences; otherwise remove it from the current-state reference and note the change in `log.md`.
+When a limitation is fixed, move it to the superseded section or maintenance log and update the relevant canonical reference. For current instruction and address rules, see [/projects/propan/instruction-syntax.md](/projects/propan/instruction-syntax.md), [/projects/propan/pointer-addressing.md](/projects/propan/pointer-addressing.md), and [/projects/propan/expressions.md](/projects/propan/expressions.md).

@@ -1,130 +1,57 @@
 ---
 type: "Reference"
 title: "Propan documentation discrepancies"
-description: "Tracks known conflicts between current Propan implementation and repository documentation outside the OKF."
+description: "Current verified conflicts and archived September classifications across public Propan documentation and examples."
 tags: ["propan", "documentation", "conflicts", "migration"]
 status: "draft"
 source_confidence: "high"
 ---
 # Propan documentation discrepancies
 
-This register records cases where repository documentation or examples outside `docs/OKF/` do not accurately describe the current Zig implementation. These are not automatically bugs in either direction: some may represent stale documentation, some unfinished implementation, and some intended future syntax.
+This is an audit of documentation and examples **outside** `docs/OKF/` against the Zig assembler on `rework-documentation` as of 2026-10-15. It distinguishes public syntax conflicts, parser-only evidence, design notes, and examples registered for assembly tests. The root README and other prose are not automatically the language authority; see [/projects/propan/status-and-source-precedence.md](/projects/propan/status-and-source-precedence.md).
 
-Do not resolve these by assumption. Until the project explicitly chooses an intended contract, the OKF should state the current implementation behavior and preserve the discrepancy.
+## Current confirmed documentation differences
 
-## Post-merge reconciliation (2026-10-15)
+### Root README: ternary operator advertised but not parsed
 
-The September classifications below are **historical** until reaudited. Several are now definitely obsolete:
+The root `README.md` lists a Propan `? :` ternary expression in its operator comparison. The current tokenizer recognizes `?` and `:` tokens, but `src/propan/frontend/parser.zig` has no ternary expression production. **Classification:** current documentation/implementation conflict. The OKF does not list ternary expressions as supported syntax; implementation or README should eventually be reconciled.
 
-- `.org`, `RES` (without a dot), `.fit`, `.regspace` and `.data` now appear in the semantic mnemonic table. The old blanket "unsupported" classifications for those spellings no longer hold.
-- `.import` is a current source-expansion directive, not merely parser syntax; see the current tooling reference.
-- Leading-dot local labels now have scoped semantics. `foo.loop` remains an ordinary globally named symbol; `.loop` after `foo:` is local.
-- `examples/propio-client.propan` and `examples/sumloop.propan` are in the current `tests/propan/cases.zig` example fixture group; that establishes test registration for source/assembly checks, not hardware-runtime correctness.
-- `examples/rgbx.propan` should be reassessed: it uses implemented `.org`, `RES` and `.fit`, but is listed under `support_files`, not the active example fixture group, in `tests/propan/cases.zig`. Full assembly success is not established by that list.
+### Root README: octal literal and effect alias coverage
 
-Corrected behavior is documented in the current directive, symbol and tooling pages. Keep the historical entries for provenance, but do **not** use them as post-merge current-state claims.
+The current tokenizer/number parser recognizes `0o...` octal literals while the README's visible numeric examples omit them. The parser accepts compact effects `:andc`, `:andz`, `:orc`, `:orz`, `:xorc`, `:xorz` and `:wzc` in addition to the longer canonical forms shown in the README. **Classification:** implemented/under-documented, not evidence of a broken parser. The OKF lexical and instruction references include these forms.
 
-## September discrepancy register (historical; not yet fully reaudited)
+### Root README: historical multi-input CLI example
 
-### Current discrepancies
+The README's embedded sample usage advertises `<sources...>`, whereas the current CLI accepts **exactly one positional root source** plus recursively expanded `.import` files. The merged test suite covers multiple-positional-input rejection. **Classification:** stale help/example material; see [/projects/propan/tooling.md](/projects/propan/tooling.md). This does not imply the current `--help` output necessarily still uses the old wording.
 
-### Root README: ternary operator
+### Design note: `docs/propan/semantics.md`
 
-**External documentation:** the root `README.md` lists `? :` as a Propan ternary operator.
+This file combines older conceptual notation (`.section` and proposed origin mappings) with subsequently added implementation-oriented details for `.org`, `.fit`, `.pack`, `.pic`, conditional source selection and imports. Treat it as a **mixed design/history document**, not uniformly unsupported or uniformly normative. Verify accepted directive forms against `src/propan/sema.zig` and import handling.
 
-**Current implementation:** `?` and `:` tokens exist, but the current Zig expression parser has no ternary parsing production.
+### Parser fixtures do not prove semantic directives
 
-**Classification:** conflict; likely stale/future documentation.
+`tests/propan/parser/directives.propan` includes forms such as `.cogfit` and reserved register declarations. A parser fixture proves tokens can be read; it does not establish registration as a supported semantic directive. The current semantic mnemonic table implements `.org`, `RES` (without leading dot), `.fit`, `.data`, `.regspace` and other current forms, but not every parser-only spelling (for example `.cogfit`). **Classification:** validation-scope distinction, not automatically a bug.
 
-**Action:** determine whether ternary expressions are intended to be implemented or removed from the public syntax table.
+## Current example classification
 
-### Root README: octal literals omitted
+| File | Evidence at current HEAD | Classification and limitations |
+|---|---|---|
+| `examples/propio-client.propan` | Included in `tests/propan/cases.zig` `examples` group. Uses `const`, `var`, `aug`, smart-pin helpers and current local labels. | **Registered assembly fixture**; not a hardware-runtime certification. |
+| `examples/sumloop.propan` | Included in the same `examples` group. Current source uses `alti.state(...)` and `alti.config(...)`, not the old direct `buf_c << 18` address construction. | **Registered assembly fixture**; the old September incompatibility claim is superseded. Hardware execution is a separate question. |
+| `examples/rgbx.propan` | Listed in `support_files` rather than the active `examples` group. Uses the now-implemented `.org`, `RES` and `.fit` spellings. | **Needs end-to-end assembly review**; no longer established as legacy merely by those directive names. No full successful assembly run is claimed here. |
 
-**External documentation:** the visible syntax material demonstrates decimal, binary, quaternary, and hexadecimal numbers.
+Being listed in a test manifest is evidence of coverage intent and test registration. It does not prove the tests were run in this documentation session, nor does it prove runtime behavior on hardware.
 
-**Current implementation:** the tokenizer and integer parser explicitly accept `0o...` octal literals.
+## September classifications retained only as history
 
-**Classification:** implemented but under-documented.
+The September reference reflected an earlier semantic directive table and local-label model. It classified `.org`/`RES`/`.fit`/`.data`/`.regspace` as unsupported, leading-dot names as global, `sumloop.propan` as using unsupported address/bitshift combinations, and the project examples as absent from the active assembler fixture suite.
 
-**Current handling:** the canonical OKF lexical reference includes octal syntax. When non-OKF documentation is revisited, update the root README if octal support remains part of the intended public syntax.
+**Those classifications are obsolete for the current branch.** `tests/propan/sema/segment_management.propan`, previously named in that register, is also **not present at current HEAD**; this missing historical path must not be cited as a passing present-day fixture.
 
-### Root README: effect aliases omitted
+The original historical rationale can be recovered from pre-merge commits and the 2026-09-30 documentation log. It should not be recopied into current references as a claim about the merged compiler.
 
-**External documentation:** the effect table lists `:and_c`, `:and_z`, `:or_c`, `:or_z`, `:xor_c`, `:xor_z`, `:wc`, `:wcz`, and `:wz`.
+## Maintenance and unresolved decisions
 
-**Current implementation:** the parser additionally accepts the compact aliases `:andc`, `:andz`, `:orc`, `:orz`, `:xorc`, and `:xorz`, plus `:wzc` as an alias of `:wcz`. Effect matching is case-insensitive.
+Keep unresolved design choices explicit: whether to implement the advertised ternary syntax, whether to update public README syntax tables and usage snapshots, and whether to migrate/register `rgbx.propan` as an executable conformance example. A final assembled/hardware-verified classification requires actually running the relevant tools.
 
-**Classification:** implemented aliases are under-documented, not an implementation conflict.
-
-**Current handling:** the OKF instruction reference carries the full accepted spelling set. When the root README is revisited, decide whether it should enumerate aliases or simply point to the canonical reference.
-
-### `docs/propan/semantics.md`: directive model does not match current implementation
-
-**External documentation/design note:** `docs/propan/semantics.md` describes mappings involving `.section`, `.org`, `.cogexec [hub_address]`, `.lutexec [hub_address]`, and `.hubexec [hub_address]`.
-
-**Current implementation:** semantic analysis currently registers `.cogexec`, `.lutexec`, `.hubexec`, `.align`, `.assert`, `BYTE`, `WORD`, and `LONG` as assembler mnemonics/pseudo-instructions. The old document reads as a design exploration rather than a current language reference.
-
-**Classification:** historical/design note with partial conceptual value, not normative syntax documentation.
-
-**Current handling:** the implemented segment/address concepts have been preserved in the current OKF pages. Proposed directive spellings remain classified as historical/design material unless semantic support is added.
-
-### Parser directive examples overstate semantic support
-
-**External/test material:** `tests/propan/parser/directives.propan` contains directive-looking forms including `.huborg`, `.cogorg`, `.lutorg`, `.cogfit`, and `.regs`.
-
-**Current implementation:** parser tests prove these tokens can be parsed as instruction mnemonics. The semantic mnemonic table does not currently register those names as implemented directives.
-
-**Classification:** test-scope mismatch, not necessarily a test bug.
-
-**Current handling:** the OKF directive reference treats parser fixtures as grammar evidence only and verifies support against the semantic mnemonic table. Unsupported names remain outside the canonical directive list unless implementation changes establish them.
-
-### `tests/propan/sema/segment_management.propan` mixes implemented and planned semantics
-
-**External/test material:** this file describes `.org`, `.reserve`, `.regspace`, and `.data` alongside `.cogexec`, `.lutexec`, and `.hubexec`, with comments that read like intended semantics.
-
-**Current implementation:** the hard-coded semantic mnemonic table registers the three exec-mode directives but not `.org`, `.reserve`, `.regspace`, or `.data`.
-
-**Classification:** mixed design/fixture material. The file must not be interpreted as a passing semantic-conformance test for every form it contains.
-
-**Action:** determine whether the unsupported forms are planned language features, obsolete names, or unfinished implementation. Until then, only the independently verified forms belong in the current-state reference.
-
-### Repository `examples/*.propan` have mixed current/legacy status
-
-The current `examples/` directory contains three `.propan` files. They should not be treated as a uniform current-language conformance suite.
-
-#### `examples/rgbx.propan`
-
-This file uses `.org`, `.RES`, and `.fit`. None of those names is registered by the current semantic directive table.
-
-**Classification:** confirmed legacy/stale syntax relative to the current Zig semantic implementation.
-
-**Action:** do not use this file as canonical current syntax. If the example is retained, it should eventually be migrated to the current segment/data model or explicitly marked as a legacy example outside the OKF.
-
-#### `examples/propio-client.propan`
-
-The file does not use the unsupported origin/reservation directives above and its active source uses current-looking constructs such as `const`, `var`, `aug()`, current smart-pin helper calls, `if(...)`, effect suffixes, `REP @label`, and current instruction mnemonics.
-
-It also uses dotted identifiers such as `.end`. In the current language these are ordinary global identifiers, not specially scoped local labels. The example happens to use such names without demonstrating reusable local-label scope.
-
-**Classification:** broadly aligned with current source syntax, but not established as a current conformance example because `examples/` is not part of the semantic/equivalence regression suite.
-
-**Action:** retain as an implementation example only with that caveat until an automated assembly regression validates it on the current branch.
-
-#### `examples/sumloop.propan`
-
-The file uses current directive names (`LONG`, `.align`) and generated instructions, with no obsolete origin/reservation directive spellings. It also forms packed values using label-valued expressions such as `buf_c << 18`, `buf_b << 9`, and `buf_a << 0`.
-
-The current documentation does not establish those mixed address/integer binary-expression forms as a supported general arithmetic interface. Without a dedicated regression run, this file should therefore not be promoted as a canonical current-language example solely because its directive spellings are current.
-
-**Classification:** compatibility/unverified example: no confirmed stale directive syntax, but semantic validity of all expressions is not established by the reviewed evidence.
-
-**Action:** add a current assembler regression or rewrite the packed-address construction using explicitly supported address conversion once intended semantics are confirmed.
-
-## Maintenance rule
-
-When another conflict is discovered, add it here with:
-
-- the external statement/example;
-- the current implementation evidence;
-- whether the discrepancy is confirmed or still open;
-- the follow-up needed to resolve intent.
+Future entries should identify the external claim, source/fixture evidence, current-versus-historical status, and concrete correction or verification required.
