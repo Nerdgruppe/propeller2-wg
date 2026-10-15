@@ -8,7 +8,7 @@ source_confidence: "high"
 ---
 # Propan documentation and validation coverage
 
-This page maps the current OKF Propan reference to the repository evidence used to validate it. It is a maintenance aid, not a claim that every documented edge case has a dedicated regression test.
+This page maps the OKF Propan reference to implementation and test evidence. **Coverage rows not explicitly refreshed after the 2026-10-15 upstream merge still reflect the September baseline and must be revalidated.** It is a maintenance aid, not a claim that every documented edge case has a dedicated regression test.
 
 Test roles differ:
 
@@ -26,7 +26,7 @@ A parser fixture alone is never sufficient evidence that a feature is a current 
 | lexical/source grammar | `/projects/propan/lexical-and-source-grammar.md` | frontend tokenizer/parser | `parser/comments.propan`, `parser/escape_sequences.propan`, `parser/labels.propan`, `parser/values.propan` | grammar well covered; exact invalid-escape recovery is additionally established by direct parser control flow, though no focused regression locks it down |
 | expressions/value model | `/projects/propan/expressions.md` | semantic evaluator/value types | `parser/expressions.propan`, `sema/operators.propan`, `sema/operator-associativity.propan`, `sema/unary-plus.propan`, `sema/value-hint-converter.propan` | core operators covered; intended negative `/` and `%` semantics remain a design question |
 | function-call grammar | lexical reference + `/projects/propan/stdlib.md` | parser + generated function wrapper metadata | `parser/fncalls.propan`, `sema/stdlib.propan` | active P2 callable namespace documented; generated metadata remains exhaustive source |
-| symbols/constants/labels/vars | `/projects/propan/symbols-and-declarations.md` | semantic symbol declaration/evaluation | `parser/labels.propan`, `sema/basic-constants.propan`, `sema/basic-label-addressing.propan` | current source-order constant behavior documented; forward-constant policy remains open |
+| symbols/constants/labels/vars | `/projects/propan/symbols-and-declarations.md` | semantic symbol declaration/evaluation, recursive constant resolver, local scope rebinding | `sema/local-labels.propan`, `sema/diagnostics/constant-cycle.propan`, `test_suite.zig` listing/JSON tests | **Refreshed 2026-10-15:** leading-dot local scope and forward constants supported; label-dependent layout values need separate treatment |
 | address model | `/projects/propan/addresses-and-segments.md` | tagged addresses + semantic conversion/encoding | `sema/addressing-modes.propan`, `sema/basic-label-addressing.propan`, `equivalence/absrel_sample.propan`, `equivalence/branching.propan` | current HUB/COG/LUT model and allocation/emission relationship documented; intended `localaddr(register)` policy remains open |
 | execution segments/layout | `/projects/propan/addresses-and-segments.md`, `/projects/propan/directives-and-data.md` | semantic location assignment/segments | `sema/addressing-modes.propan`, `sema/align.propan`, `sema/segment_management.propan` | implemented COG/LUT/HUB model and mixed layout documented; broader segment fixture still contains non-current/design material |
 | data/directives | `/projects/propan/directives-and-data.md` | semantic directive table + emitter | `parser/directives.propan`, `sema/align.propan`, `regressions/null-in-assert.propan` | supported set documented; string-data and directive condition/effect policy remain open |
@@ -39,7 +39,8 @@ A parser fixture alone is never sufficient evidence that a feature is a current 
 | standard library | `/projects/propan/stdlib.md` | `src/propan/stdlib/` metadata/implementations | `sema/stdlib.propan`, equivalence `hubset.propan` for related configuration use | namespace/signatures documented; hardware-facing helper correctness is not universally revalidated by this map |
 | PASM2 migration | `/projects/propan/pasm2-differences.md` | generated mapping + current grammar | equivalence suite broadly | source-form translation summarized; repository examples have been separately classified for current/legacy/unverified status |
 | worked examples | `/projects/propan/examples.md` | current references + parser/sema/equivalence fixtures | forms drawn from pointer, branch, condition/effect, alignment, and addressing fixtures | examples are evidence-grounded but not yet extracted into a dedicated automated doc-example test |
-| multi-file/output/JSON/fill | `/projects/propan/tooling.md` | CLI merge loop + emitter | `regressions/multi-file-first.propan`, `multi-file-second.propan`, `check-multi-file-json.zig`, `fill-byte.propan`, `check-flat-output.zig` | direct end-to-end regression coverage |
+| single-root/imports | `/projects/propan/tooling.md` | `src/propan/propan.zig` + `frontend/imports.zig` | `test_suite.zig` root rejection, include precedence, import-once identity and imported source metadata | **Refreshed 2026-10-15:** multi-root input is rejected; imports expand into a single module |
+| flat/JSON/Spin2/fill | `/projects/propan/tooling.md` | `src/propan/emit/` and CLI composition | `test_suite.zig` fill-byte, Spin2 readable output and configured FlexSpin round-trip | **Refreshed 2026-10-15:** `spin2` is an output format; do not claim unconditional round-trip coverage |
 | list files | `/projects/propan/tooling.md` | `src/propan/listfile.zig` and its unit tests | in-source `listfile.zig` tests | covered at implementation-unit level rather than `tests/propan/` fixture level |
 | implementation limitations | `/projects/propan/implementation-findings.md` | code inspection + relevant tests | varies per finding | findings distinguish confirmed behavior/defects from unresolved intent |
 | documentation conflicts | `/projects/propan/documentation-discrepancies.md` | comparison of current implementation with README/old docs/examples | parser/sema/equivalence evidence as applicable | prevents parser-only/historical material becoming normative accidentally |
@@ -50,14 +51,15 @@ The following are intentionally **not** treated as closed merely because adjacen
 
 - desired negative-operand contract for `/` and `%`;
 - desired `localaddr(register)` behavior;
-- forward references between user constants;
+- verifying which label-dependent constants are legal in layout-phase evaluation (ordinary forward constant dependencies now resolve);
 - intended string-data syntax/semantics;
 - conditions/effects on assembler directives;
 - focused CALLD pointer-register overlap cases after the selector defect is corrected;
 - intended future status of the broader segment-management fixture;
 - intended use of ordinary user constants during layout;
 - executable validation of documentation examples;
-- documentation link/generated-reference consistency checking.
+- documentation link/generated-reference consistency checking;
+- post-merge revalidation of remaining directive, expression, segment, instruction and implementation-finding pages.
 
 ## Maintenance rule
 

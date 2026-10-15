@@ -8,6 +8,13 @@ source_confidence: "high"
 ---
 # Log
 
+## 2026-10-15
+
+- Began post-merge revalidation after `main` was merged into `rework-documentation`. The earlier first-pass audit is explicitly limited to its pre-merge code baseline.
+- Replaced the obsolete multi-positional-file overlay reference with the actual single-root CLI contract, recursive `.import`/`.import once`, include search paths, preserved imported source locations, `spin2` output, and current CLI options.
+- Updated symbol reference for scoped leading-dot labels, import-aware rebinding, recursive forward constant resolution and cycle detection.
+- Updated source inventory and coverage entries for the newly verified behavior, and opened explicit follow-up work for the other changed language areas.
+
 ## 2026-09-30
 
 - Established the Propan documentation scope and current-state source precedence.

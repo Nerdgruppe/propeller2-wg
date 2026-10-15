@@ -33,6 +33,6 @@ Propan is under active development. These pages describe the repository state th
 
 ## Review status
 
-The first-pass current-state reference set and repository-example classification are complete and have passed an OKF-only integrity audit for internal links, navigation, front-matter consistency, terminology, and stale coordination wording. The set is ready for project review.
+The September first-pass reference was audited against the **pre-merge** Propan implementation. After merging 120 upstream commits into `rework-documentation` on 2026-10-15, several previously correct language statements became obsolete. **Do not treat the entire scope as revalidated against the merged implementation.**
 
-Remaining work is limited to unresolved language/design choices, focused code/test fixes or regressions, documentation-validation automation, and eventual cleanup of non-OKF documentation. These items remain tracked in `/TODO.md`.
+The first post-merge update refreshes [/projects/propan/tooling.md](/projects/propan/tooling.md) for one-root assembly, source imports and Spin2 output, and [/projects/propan/symbols-and-declarations.md](/projects/propan/symbols-and-declarations.md) for local labels and recursive constant dependencies. Other pages—particularly directives/data, execution layout, expressions, instruction selection and the discrepancy/implementation registers—require a subsequent source-by-source audit. See [/TODO.md](/TODO.md) and [/references/propan-coverage.md](/references/propan-coverage.md). The existing September review remains valid only for the historical version it examined.

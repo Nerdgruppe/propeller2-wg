@@ -1,147 +1,107 @@
 ---
 type: "Reference"
 title: "Propan command-line and output behavior"
-description: "Current source-file loading, multi-file overlay, output formats, fill behavior, list files, diagnostics, and CLI conventions."
-tags: ["propan", "cli", "output", "json", "list-file", "multi-file"]
+description: "Current single-root assembly, source imports, CLI options, output formats, diagnostics, and listings."
+tags: ["propan", "cli", "imports", "output", "json", "spin2", "list-file"]
 status: "draft"
 source_confidence: "high"
 ---
 # Propan command-line and output behavior
 
-This page documents the current command-line assembler behavior implemented by `src/propan/propan.zig`, `emit.zig`, and `listfile.zig`.
+This reference describes the implementation merged from `main` on 2026-10-15. Its primary sources are `src/propan/propan.zig`, `src/propan/frontend/imports.zig`, `src/propan/emit/` and `src/propan/test_suite.zig`. It supersedes the earlier multi-root/overlay description.
 
-## Input files
+## Input: one root source
 
-The CLI accepts one or more positional source paths. Each input is read, parsed, and semantically analyzed as an independent module. `-` may be used as an input path to read source from standard input.
+The assembler currently accepts **exactly one positional input file**. `-` reads the root source from standard input. Multiple positional files produce `error: multiple input files are not supported` before either source is analyzed; they are not independent modules overlaid together.
 
-The CLI does not enforce a filename extension. `.propan` is the repository's normal extension for current Propan source, but extension acceptance is not a language rule in the current command-line implementation.
+There is no enforced filename extension. `.propan` is conventional, not mandatory.
 
-There is no current source-level include/import facility in the parser/semantic pipeline. Multi-file assembly is performed by passing multiple source files to the CLI, not by including one source file from another.
+To assemble code split over files, use source-level `.import` directives. All imported source is expanded into the root's instruction/definition sequence and analyzed as **one module**, not separately linked modules. Symbol definitions and references can therefore cross import boundaries. The original imported path is retained in diagnostics and emitted source metadata.
 
-Each module has its own user symbol/constant namespace. Symbols from one positional input are not imported into another module for expression or instruction resolution.
+### Imports
 
-## Multi-file assembly and overlay behavior
+`.import "relative/path.propan"` inserts another Propan source at that point. The mnemonic is matched case-insensitively. The argument must be **one string literal**, with no condition or effect.
 
-Inputs are analyzed in command-line order. After each module is produced, every emitted segment is copied into one shared flat output buffer at its HUB offset.
+`.import once` is an in-file marker: the containing file is expanded at most once during the entire root expansion. The marker emits nothing and is not a path import. It is detected before descending into that file's imports, allowing it to stop otherwise recursive import-once graphs. Re-importing a file without this marker can repeat its contents; active import cycles are rejected with a diagnostic.
 
-The merge algorithm is currently mechanical:
+For each relative path, lookup checks the **containing source file's directory first**, then `-I` / `--include-path` directories in command-line order. The option is repeatable, including `--include-path=directory`. The expander uses canonical filesystem identities for import-once tracking so differently spelled paths to the same file do not bypass it. Absolute imported paths are resolved directly. Missing/unreadable files and cycles are errors.
 
-1. grow the shared output to cover the segment end;
-2. fill newly grown bytes with `--fill-byte`;
-3. copy the segment bytes into `output[hub_offset..]`.
+For example:
 
-There is currently no cross-module overlap rejection in this path. If a later input emits bytes over a range already written by an earlier input, the later segment overwrites those bytes in the flat output. This is current behavior, not a guarantee that overlapping modules are intended as a stable linking model.
+```propan
+// root.propan
+.import "common.propan"
+.hubexec
+entry:
+    NOP
+```
 
-Within the JSON and list-file views, modules and their segments remain individually represented even though flat output bytes may overlap.
+```propan
+// common.propan
+.import once
+const BUFFER_SIZE = 64
+```
 
-## Output selection
+`-I dir` is an import search-path option; it does not make the assembler accept multiple roots. The root file's identity/path matters when resolving relative imports, including when supplying source through standard input.
 
-`--format` selects one of the implementation enum values:
+**Evidence:** `frontend/imports.zig`; `test_suite.zig` tests for containing-directory precedence, include-path order, canonical import-once identity, imported diagnostics, imported listing labels and JSON paths; `tests/propan/sema/import-basic.propan`.
 
-| Format | Behavior |
+## Output formats
+
+`--format` (`-f`) selects:
+
+| Format | Output |
 |---|---|
-| `flat` | writes the merged flat byte buffer |
-| `json` | writes structured module/segment/symbol/line metadata with segment data base64-encoded |
-| `none` | performs assembly without emitting the main output |
+| `flat` (default) | contiguous assembled HUB bytes |
+| `json` | structured segments, symbols, and source-range metadata |
+| `spin2` | generated human-readable Spin2 `CON`/`DAT` listing of the assembled image |
+| `none` | analyze without writing the main assembly output |
 
-`flat` is the default format.
+Only `flat` is marked binary by the implementation. Without `-o`, implicit binary output to the terminal is rejected. Use `-o -` explicitly to send flat bytes to standard output. Text formats can be emitted to standard output with no output filename. Output files are atomically replaced by the CLI.
 
-For binary/flat output, omitting `-o` is a usage error because the tool refuses to emit binary data to the terminal implicitly. Use `-o -` to force flat output to standard output. JSON is not classified as binary and may be written to standard output when no output path is supplied.
+The `spin2` emitter attempts readable PASM2 instruction spellings where the source/encoding metadata supports them, falling back to byte/word/long data for other regions. It preserves assembled padding, emits constants and usable symbol names, and carries through selected source comments. This is an **export of the assembled image**, not a guarantee of a lossless reconstruction of the original Propan source. The test suite includes a FlexSpin byte-for-byte round-trip check for semantic fixtures when its external tool configuration is available.
 
-When an output path is supplied, the implementation uses atomic replacement for the main output file.
+### Flat layout and fill
 
-## `--fill-byte`
+The semantic analyzer produces segments; the CLI copies their bytes into one flat output image using their absolute HUB offsets. It grows the buffer to accommodate the last emitted address, fills newly allocated gaps with `--fill-byte`, and copies each segment in order. Default fill is `0x00`; `-F` is the short option.
 
-`--fill-byte` (short form `-F`) sets the byte used when the shared flat output buffer grows across previously undefined address space. The default is `0x00`.
+The image-composition code does not currently enforce non-overlap: later segment writes can overwrite existing ranges. This is a **single-module segment overlap risk**, not a multi-positional-file overlay feature. Padding during segment emission also uses the configured fill byte (see `src/propan/sema.zig` and the `fill-byte.propan` regression).
 
-It does not pre-fill a fixed address space. Bytes are added only as needed to reach the end of an emitted segment. Segment data then overwrites the corresponding range.
+### JSON metadata
 
-If a later segment starts beyond the current end, the gap and newly allocated range are initialized with the fill byte before the segment is copied.
+JSON includes `total_size`, `segments`, `symbols` and `line_map`. Segments contain HUB offset, byte size, encoded data, identity and execution mode. Symbols contain name, kind, segment and address information, with source locations retained for imported files. The mode model now also includes `data` and `regspace` in addition to COG/LUT/HUB; not every mode has an executable PC. Source locations in the line map refer to the actual containing source file.
 
-## JSON format
-
-The JSON document contains:
-
-- `total_size`: length of the merged flat output buffer;
-- `segments`: all module segments;
-- `symbols`: all exported code/data symbols;
-- `line_map`: source locations for emitted ranges.
-
-Each segment contains:
-
-- a numeric `id`;
-- HUB `offset`;
-- byte `size`;
-- base64-encoded `data`;
-- execution `mode` (`hub`, `cog`, or `lut`).
-
-Segment IDs are local to semantic modules, so JSON emission rebases IDs between modules to keep them distinct in the combined document.
-
-Each symbol records its name, type, rebased segment ID, HUB offset, execution mode, and mode-specific jump/local address. User constants are not emitted in the JSON symbol list.
-
-The line map records emitted HUB offset/size plus source file, line, and column.
+The separate-module segment-ID rebasing described in the pre-merge OKF no longer applies to the single-root CLI path.
 
 ## List files
 
-`--list-file <path>` writes a human-readable listing after all modules have been analyzed. `--list-file -` writes it to standard output. A file path is written through atomic replacement.
-
-The list has three layers:
-
-1. a `symbols` table;
-2. a `segments` table;
-3. one detailed body table per segment.
-
-### Symbol table
-
-Labels show:
-
-- execution kind (`hub`, `cog`, or `lut`);
-- HUB address;
-- local PC for COG/LUT symbols;
-- symbol name;
-- original source line.
-
-User constants appear as `const` rows with their evaluated value and source line. HUB/local address columns are placeholders for constants.
-
-### Segment table
-
-Each segment receives a display index across all input modules and reports execution mode, HUB start, and byte size.
-
-### Segment bodies
-
-Each body row reports:
-
-- HUB address;
-- COG/LUT local PC where applicable;
-- emitted bytes for the source line;
-- original source text.
-
-Zero-length label rows are associated with a segment by semantic segment identity; emitted rows are associated by HUB range.
-
-The list file is therefore the most direct user-facing view for correlating source lines with HUB addresses, local COG/LUT PCs, symbols, constants, and emitted bytes.
+`--list-file <path>` produces the human-readable symbol, segment and per-segment source/byte tables. `--list-file -` writes to standard output. The listing correlates HUB offsets, execution-local PCs when applicable, labels/constants and original source lines. Imported paths and scoped local-label debug names can appear in these views; see `test_suite.zig` import/local-label tests.
 
 ## Diagnostics and exit status
 
-Parser failures and semantic errors cause the CLI to return exit status `1`. Usage errors such as missing input files or attempting implicit flat-binary output to the terminal also return `1`.
+Parser, import and semantic errors normally cause exit status `1`. CLI usage errors (including multiple roots or an unspecified flat-binary output destination) also return `1`. Warnings alone do not fail assembly. `--no-warnings` suppresses warnings in CLI rendering, without changing semantic acceptance. Some internal errors can still escape as Zig runtime errors and should not be misrepresented as stable language diagnostics.
 
-Warnings are rendered through the diagnostic collection but do not by themselves make assembly fail. In internal test mode, warning/info rendering is suppressed.
-
-Some internal/runtime failures remain ordinary Zig errors rather than source diagnostics; documented implementation findings should not be interpreted as guaranteed exit-status behavior for panic paths.
-
-## Other useful CLI options
+## Other CLI options
 
 | Option | Purpose |
 |---|---|
-| `-o`, `--output` | main output path; `-` means standard output |
-| `-f`, `--format` | `flat`, `json`, or `none` |
-| `-F`, `--fill-byte` | fill byte for newly created gaps/ranges |
-| `--list-file` | write the human-readable listing; `-` means stdout |
-| `--render-stdlib-docs` | render P2 standard-library metadata as HTML; `-` means stdout |
-| `-v`, `--verbose` | enable debug logging |
-| `-h`, `--help` | print CLI help |
+| `-o`, `--output` | destination; `-` means standard output |
+| `-f`, `--format` | `flat`, `json`, `spin2`, `none` |
+| `-F`, `--fill-byte` | gap/padding byte |
+| `-I`, `--include-path` | repeatable import search directory |
+| `--list-file` | textual listing |
+| `--pretty-print <path>` | parse and pretty-print a single source file (or `-` for stdin) to stdout; separate from normal semantic analysis and import expansion |
+| `--no-warnings` | suppress warnings in CLI output |
+| `--render-stdlib-docs` | render P2 standard-library metadata as HTML |
+| `-v`, `--verbose` | debug logging |
+| `-h`, `--help` | CLI usage |
 
-`--test-mode` and `--compare-to` are marked internal-use-only in the CLI metadata and are not normal user-facing assembly options.
+`--test-mode` and `--compare-to` are internal testing options.
 
-## Current overlap limitation
+## Evidence boundaries
 
-The assembler's current output-composition loop does not reject overlapping HUB ranges between modules or segments at this stage. Later writes win in flat output. Documentation and tests should distinguish this observed behavior from any intended future segment-validation/linking policy.
+- **Implemented:** single-root CLI validation, recursive imports/import-once, option parsing, single-module image assembly, and `spin2` selection.
+- **Tested:** rejection of multiple roots; import path precedence, identity, source metadata; fill-byte behavior; selected Spin2 readability and configured FlexSpin round-trip coverage.
+- **Open:** this page does not claim every generated Spin2 construct round-trips under every external assembler or that overlapping segments are valid by design.
+
+For syntax and data directives, see [/projects/propan/directives-and-data.md](/projects/propan/directives-and-data.md). For evidence/test roles, see [/references/propan-coverage.md](/references/propan-coverage.md).

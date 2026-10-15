@@ -55,15 +55,15 @@ Use for:
 - special register/configuration values;
 - instruction operand/effect metadata used by Propan.
 
-### `src/propan/propan.zig`, `emit.zig`, and `listfile.zig`
+### `src/propan/propan.zig`, `frontend/imports.zig`, `emit/`, and `listfile.zig`
 
-Role: authoritative current CLI, multi-file composition, output-format, fill-byte, and list-file behavior.
+Role: authoritative current single-root CLI, recursive source imports, output-format, fill-byte, and list-file behavior.
 
 Use for:
 
-- positional source processing;
-- module overlay order;
-- flat/JSON output;
+- single positional root validation and stdin input;
+- `.import` expansion, `.import once`, and include search paths;
+- flat/JSON/Spin2 output;
 - list-file rendering;
 - exit/error behavior;
 - generated stdlib-reference entrypoint.
@@ -95,7 +95,7 @@ The `segment_management.propan` fixture mixes implemented and planned syntax and
 
 Role: focused assembler/CLI regression evidence.
 
-Use for output behavior, multi-file assembly, fill byte behavior, JSON output, and fixed defects.
+Use for output behavior, import handling, single-root rejection, fill byte behavior, JSON/Spin2 output, and fixed defects. The in-source `src/propan/test_suite.zig` now contains many relevant CLI, import, local-label, and Spin2-export tests.
 
 ### `tests/propan/equivalence/`
 
@@ -163,8 +163,8 @@ Material under `docs/p2/` and the pinned p2docs submodule may be used to explain
 
 ## Current coverage state
 
-The first-pass source inventory has now been exercised across the current implementation, parser/sema/equivalence/regression tests, generated instruction data, examples, root README, and historical `docs/propan/semantics.md` material.
+The September source inventory was built against the pre-merge implementation. Source and test roles above were refreshed for the 2026-10-15 CLI/import/output changes, but other language areas must still be rechecked against the merged sources.
 
 The major current-state reference areas that originally motivated this inventory are now covered: lexical grammar, expressions, symbols, address/segment behavior, directives/data, instruction syntax/selection, pointer addressing, standard library, PASM2 differences, CLI/output behavior, examples, and coverage mapping.
 
-Remaining work is narrower and is tracked explicitly in `/TODO.md`: unresolved language/design choices, missing focused regressions, documentation validation automation, and eventual cleanup/replacement of older non-OKF documentation.
+Remaining work is tracked in `/TODO.md`, including a post-merge semantics/directives audit before the full first-pass reference can again be considered current.

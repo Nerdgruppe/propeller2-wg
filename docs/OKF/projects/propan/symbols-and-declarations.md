@@ -20,9 +20,9 @@ This page describes the current semantic model for user-defined symbols. Lexical
 
 A declaration by itself never emits bytes. Data storage is emitted separately with `BYTE`, `WORD`, or `LONG`; see [/projects/propan/directives-and-data.md](/projects/propan/directives-and-data.md).
 
-## One flat user-symbol namespace
+## Global user symbols and scoped local labels
 
-Labels, `var` declarations, user constants, and predefined/builtin constants share one case-sensitive symbol table.
+Ordinary labels, `var` declarations, user constants, and predefined/builtin constants share a case-sensitive global symbol table. Leading-dot local label declarations and references are additionally qualified by lexical scope; their internal keys cannot collide with identically spelled global names.
 
 Consequences:
 
@@ -44,11 +44,30 @@ start:
 
 A label emits no data and consumes no address space. Its address is the cursor position at the declaration.
 
-### No special local-label scope is currently implemented
+### Leading-dot local labels
 
-`.` is a legal identifier character, but semantic analysis stores the complete identifier string in the same flat symbol table as every other user symbol. There is currently no separate parent/local-label scope mechanism in the Zig semantic layer.
+**Implemented and tested:** a leading-dot declaration such as `.loop:` is local to the most recent non-dot label (`foo:`, `var storage:`, etc.). Another non-dot declaration opens a new scope. Mode directives (`.cogexec`, `.lutexec`, `.hubexec`, `.regspace`, `.data`) end the previous local scope. Local labels at the beginning of a source scope also have their own implicit scope. References to `.loop` bind in the active scope, and a later `bar:` may declare a different `.loop:`.
 
-For example, `.loop:` is a symbol whose name is literally `.loop`; it is not automatically scoped beneath the preceding non-dot label.
+`foo.loop:`, by contrast, does **not** begin with a dot: it is a literal global identifier, distinct from `.loop:` under `foo:`.
+
+```propan
+foo:
+    LONG .loop
+.loop:
+    LONG 0
+
+bar:
+    LONG .loop
+.loop:
+    LONG 0
+
+foo.loop:
+    LONG 0
+```
+
+The analyzer internally namespaces local labels by scope and emits qualified display names such as `foo:loop` and `bar:loop` in JSON/listing metadata. Imports are expanded before local scopes are rebound, so the effective lexical sequence can span source files.
+
+**Evidence:** `src/propan/frontend/parser.zig` (scope changes), `src/propan/sema.zig` (`get_label_info` and import rebind), `tests/propan/sema/local-labels.propan` and `src/propan/test_suite.zig` local-label/listing tests.
 
 ## `var` declarations
 
@@ -82,12 +101,13 @@ A constant declaration has the form:
 const name = expression
 ```
 
-All constant names are declared during the initial symbol-declaration pass, but their values are evaluated later **in source order**.
+All constant names are declared before ordinary evaluation. Constant values are then **resolved recursively on demand** with cached results and explicit cycle detection, including dependencies on constants declared later in the source.
 
 Current accepted constant result categories are:
 
 - integer;
 - string;
+- integer sequence;
 - enumerator;
 - register value (currently accepted, with an implementation TODO questioning whether this should remain allowed).
 
@@ -106,31 +126,27 @@ const address = hubaddr(label)
 
 Label locations have already been assigned by the time user constants are evaluated, so explicit address conversion can use label values.
 
-### Constant dependency order
+### Constant dependencies and cycles
 
-Because constant values are evaluated in source order, a constant can use a constant that has already been evaluated:
-
-```propan
-const a = 10
-const b = a + 5
-```
-
-A reference to a later constant is different. Its name is known from the declaration pass, so it is not reported as an unknown symbol, but its value is still unset when the earlier constant is evaluated:
+Both earlier and later constant definitions can be referenced:
 
 ```propan
 const a = b + 1
 const b = 10
 ```
 
-The current evaluator therefore fails to evaluate `a`. Forward references between user constants are not currently resolved through dependency ordering or repeated evaluation.
+**Current result:** `a` resolves to `11`. The evaluator walks dependencies recursively (`resolve_constant`), records evaluation state and diagnoses cyclic dependencies instead of relying on source-order availability. The current implementation also permits string/sequence constants.
 
-Circular constant dependencies likewise have no resolution mechanism.
+There is an important **layout-phase qualification**: directives such as `.align` and `.org` need values while locations are being assigned. Constants whose evaluation depends on label addresses not yet assigned can fail during that phase, even though ordinary constant evaluation succeeds after layout. Do not treat dependency resolution as permission to use arbitrary label-dependent expressions in layout directives.
+
+**Evidence:** `src/propan/sema.zig` (`resolve_constant`, `evaluate_constant_values`, `layout_integer`); `tests/propan/sema/diagnostics/constant-cycle.propan`.
+
 
 ## Forward label references
 
 Labels are declared before reference validation, and all label locations are assigned before ordinary instruction arguments and constants are finally evaluated. Therefore normal references to labels declared later in the file are supported by the semantic pipeline.
 
-This differs from user constants: label addresses are assigned in a dedicated layout pass, while constant values are evaluated sequentially afterward.
+Label addresses are assigned in a dedicated layout pass. Constant dependencies can be resolved recursively; expressions that require not-yet-known label addresses during layout remain restricted.
 
 ## Undefined references
 

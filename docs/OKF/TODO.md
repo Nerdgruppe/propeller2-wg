@@ -2,6 +2,18 @@
 
 This file is a temporary worklist for the Propan documentation rework. Items should move into durable documentation, tests, scripts, or normal issue tracking as they are resolved. Remove this file when it is no longer useful as a coordination artifact.
 
+## Post-merge revalidation (2026-10-15)
+
+The checklist below was completed or triaged against the **September 2026** implementation; its checked boxes are historical evidence, not a claim of current correctness after merging upstream `main`. Begin with the following targeted revalidation work:
+
+- [x] Update `tooling.md` for **one** CLI root, recursive `.import`/`.import once`, repeatable `-I`, and `--format spin2`; reconcile coverage/source inventory.
+- [x] Update symbol documentation for scoped leading-dot labels and dependency-resolved forward constants.
+- [ ] Reaudit `directives-and-data.md` and `addresses-and-segments.md` against newly implemented `.org`, `RES`, `.fit`, `.regspace`, `.data`, `.pack`, `.pic`, `FILE`, expanded execution origins, and string/sequence data emission. The older "unsupported" lists are not current.
+- [ ] Reaudit `expressions.md`, `stdlib.md` and `lexical-and-source-grammar.md` for sequence, repetition, encoding helpers, conditional compilation and formatter changes.
+- [ ] Reaudit `instruction-syntax.md`, `pointer-addressing.md`, `examples.md`, and the implementation/discrepancy registers against newly added diagnostics, instruction selection and equivalence tests (including conditioned NOP rejection).
+- [ ] Audit all remaining checked boxes and example classifications below against the merged code; remove or reclassify superseded TODOs and defects, rather than assuming they persist.
+- [ ] Run automated docs checks and executable examples once their current coverage is established.
+
 ## 1. Establish the authoritative language contract
 
 - [x] Define which documents under `docs/OKF/` are current-state descriptions of Propan behavior and clearly mark design notes, historical notes, and proposals as non-normative.
