@@ -25,10 +25,10 @@ Use the canonical P2 instruction reference to answer hardware questions such as 
 | relative/absolute `#{\}A` notation | ordinary address expression with automatic selection | use `nrel(value)` to force absolute mode; relative mode is selected automatically where legal |
 | augmented immediate using PASM2 augmentation conventions | `aug(value)` | augmentation is an expression wrapper and emits AUGD/AUGS according to generated operand slot |
 | PTRA/PTRB pointer syntax | PTRA/PTRB with `[]`, prefix/postfix `++`/`--` | spelling is similar, but it evaluates to a dedicated `pointer_expr` value in Propan |
-| assembler origin/fit/reservation directives from Spin2/PASM2 toolchains | not general current aliases | use the implemented `.hubexec`, `.cogexec`, `.lutexec`, `.align`, `.assert`, `BYTE`, `WORD`, `LONG` set; unsupported legacy names must not be assumed |
+| assembler origin/fit/reservation directives from Spin2/PASM2 toolchains | similar concepts but not blanket aliases | Propan now implements `.org`, `RES` (without leading dot), `.fit`, `.regspace`, `.data`, `.pack` and execution-mode directives; see the precise mode/arity restrictions in the current directive reference |
 | Spin/PASM-style expression/operator spellings | Propan expression grammar | rewrite to current C-like/word operators; external comparison tables do not imply parser support |
 | PASM/Spin local-label conventions | ordinary Propan identifiers only | no special local-label scope is currently implemented |
-| source inclusion/object model | multiple CLI input modules | there is no current source-level include/import construct |
+| source inclusion/object model | one CLI root with recursive `.import` | use `.import "file.propan"` / `.import once` and optional `-I` directories; multiple positional CLI roots are rejected |
 
 ## Instructions: what is inherited directly
 
@@ -171,7 +171,7 @@ See [/projects/propan/expressions.md](/projects/propan/expressions.md) for prece
 
 Propan currently uses one ordinary identifier syntax for labels. There is no special local-label scope analogous to common PASM/Spin local-label conventions.
 
-Multiple CLI source inputs are analyzed as independent modules and overlaid into the common output by HUB address. There is no current source-level include/import form and no cross-module symbol import/linking mechanism.
+The CLI now accepts one root source; `.import` recursively expands included Propan files into a single semantic module, allowing references across included files. Imports do not create an independent linking namespace. For import paths, import-once and single-root errors see [/projects/propan/tooling.md](/projects/propan/tooling.md).
 
 ## Migration checklist
 

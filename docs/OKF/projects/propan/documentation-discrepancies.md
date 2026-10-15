@@ -12,7 +12,21 @@ This register records cases where repository documentation or examples outside `
 
 Do not resolve these by assumption. Until the project explicitly chooses an intended contract, the OKF should state the current implementation behavior and preserve the discrepancy.
 
-## Current discrepancies
+## Post-merge reconciliation (2026-10-15)
+
+The September classifications below are **historical** until reaudited. Several are now definitely obsolete:
+
+- `.org`, `RES` (without a dot), `.fit`, `.regspace` and `.data` now appear in the semantic mnemonic table. The old blanket "unsupported" classifications for those spellings no longer hold.
+- `.import` is a current source-expansion directive, not merely parser syntax; see the current tooling reference.
+- Leading-dot local labels now have scoped semantics. `foo.loop` remains an ordinary globally named symbol; `.loop` after `foo:` is local.
+- `examples/propio-client.propan` and `examples/sumloop.propan` are listed as examples in `tests/propan/cases.zig`, but that listing alone does not establish the status of every intended runtime behavior.
+- `examples/rgbx.propan` should be reassessed: the formerly cited `.org` / `RES` / `.fit` forms are now implemented, though that does not establish that the whole example assembles.
+
+Corrected behavior is documented in the current directive, symbol and tooling pages. Keep the historical entries for provenance, but do **not** use them as post-merge current-state claims.
+
+## September discrepancy register (historical; not yet fully reaudited)
+
+### Current discrepancies
 
 ### Root README: ternary operator
 

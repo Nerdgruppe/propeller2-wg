@@ -1,205 +1,101 @@
 ---
 type: "Reference"
 title: "Propan addresses and segments"
-description: "Current address-domain, segment, and execution-mode semantics implemented by Propan."
-tags: ["propan", "addresses", "segments", "cog", "lut", "hub"]
+description: "HUB/COG/LUT addresses, register and data modes, segment origins, and allocation as implemented after the upstream merge."
+tags: ["propan", "addresses", "segments", "cog", "lut", "hub", "regspace", "data"]
 status: "draft"
 source_confidence: "high"
 ---
 # Propan addresses and segments
 
-Historical design notes and parser fixtures contain additional planned syntax that is not currently implemented; those conflicts are called out explicitly below.
+**Revalidated for the merged implementation (2026-10-15)** using `src/propan/sema.zig`, `src/propan/stdlib/eval.zig`, the mode directive table, and current semantic/diagnostic fixtures. Some instruction-specific address controls remain documented elsewhere.
 
 ## Tagged addresses
 
-Propan does not represent a label as only one integer. The semantic layer uses a tagged address containing:
+Labels retain a segment identity and a native address domain, rather than being plain integers. Depending on the mode they can carry:
 
-- an absolute HUB byte address;
-- a segment identifier;
-- an execution-local address domain: HUB, COG, or LUT.
+- a HUB **byte** address where emitted content resides;
+- a COG/LUT **long/register/PC** address identifying a local instruction or data slot;
+- a register-only location with **no HUB address** (`.regspace`);
+- a HUB-resident data location with **no execution PC** (`.data`).
 
-For COG/LUT addresses the local value is a register/instruction address while the HUB address records where the corresponding bytes are emitted. For HUB-exec addresses the local value is the HUB address itself.
+A COG/LUT label can thus identify an execution-local address and the HUB byte offset where its initializer/code is emitted. Use explicit address helpers when address units matter.
 
-This lets one source label retain both its emitted HUB location and the address value meaningful to code executing from COG/LUT/HUB space.
+## Label usage and address conversion
 
-## Label defaults
+A normal code label defaults to literal/address-oriented operand usage; `var` declares a data label with register-oriented usage. Neither label declaration emits or reserves storage. `&label` requests literal-style use; `*label` requests register-style use.
 
-Code labels and `var`/data labels both carry tagged addresses, but they receive different default usage hints:
-
-- a code label evaluates as an address intended for **literal** use;
-- a data label evaluates as an address intended for **register** use.
-
-The unary operators `*` and `&` switch that usage hint:
-
-- `*label` requests register-style use;
-- `&label` requests literal/address-style use.
-
-They do not relocate the label or change its tagged address.
-
-## Address helper functions
-
-| Expression | Meaning in the current implementation |
+| Expression | Role |
 |---|---|
-| `label` | tagged address, encoded according to its default/current usage and the consuming operand |
-| `hubaddr(label)` | absolute HUB byte address |
-| `cogaddr(label)` | COG-local address; requires a COG-tagged address |
-| `lutaddr(label)` | LUT-local address; requires a LUT-tagged address |
-| `localaddr(label)` | local address for whichever execution domain owns the label |
-| `@label` | current-location-relative longword displacement based on HUB addresses |
-| `*label` | same tagged address with register usage requested |
-| `&label` | same tagged address with literal usage requested |
+| `hubaddr(label)` | obtain HUB byte location when present |
+| `cogaddr(label)`, `lutaddr(label)` | obtain the matching local register/PC address |
+| `localaddr(label)` | obtain a local-domain address |
+| `byteoffset(label)`, `wordoffset(label)` | obtain sub-register offset information for packed data |
+| `pcaddr(...)` | explicit execution-PC-domain helper; consult current evaluator for operand restrictions |
+| `@label` | execution-relative offset; alignment and domain restrictions apply |
+| `aug(expr)`, `nrel(expr)` | instruction encoding/address-selection controls |
 
-The semantic tests demonstrate the distinction directly. In the initial COG segment, a label at HUB byte address `8` has local COG address `2`; `localaddr(data)` therefore emits `2` while `hubaddr(data)` emits `8`.
-
-`localaddr(register)` is not currently a successful interface: the evaluator unconditionally emits an error for register input even though its TODO suggests intended COG-only acceptance. See [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
-
-## Address units
-
-HUB addresses are byte addresses.
-
-COG/LUT local addresses are register/instruction-long addresses. Advancing one encoded instruction or one `LONG` advances the local COG/LUT address by one while advancing emitted HUB storage by four bytes.
-
-That distinction is visible in semantic fixtures: after three emitted LONGs, a COG-local end label has local address `3` and HUB address `12`.
+The register forms of these helpers have additional checks. Their behavior must not be inferred from a label-only example; see [/projects/propan/expressions.md](/projects/propan/expressions.md) for the remaining helper audit.
 
 ## Execution modes
 
-The semantic address model has three execution modes:
+| Directive | Label mode | Origin interpretation | Allowed content |
+|---|---|---|---|
+| `.cogexec [hub[, local]]` | COG | HUB byte address plus optional local index (default `0`) | code and initialized data |
+| `.lutexec [hub[, local]]` | LUT | HUB byte address plus optional local index (default `0x200`) | code and initialized data |
+| `.hubexec [hub]` | HUB | HUB byte/execution address | code and initialized data |
+| `.regspace [hub[, local]]` | register-only | no HUB storage address on labels; optional local COG index | non-emitting register declarations/reservation |
+| `.data [hub]` | HUB data-only | HUB byte origin; no execution PC | data but no encoded instructions |
 
-- `cog`
-- `lut`
-- `hub`
+Mode changes create new segments. The HUB origin defaults to the current HUB cursor if absent. COG/regspace local indices are checked against `0x000..0x200` and LUT against `0x200..0x400`; entering a local mode does not implicitly shift HUB contents to match those register indices.
 
-Starting a new execution segment determines how local addresses are interpreted.
+## Local layout versus output bytes
 
-### `.cogexec [hub_address]`
+The `Cursor` maintains a HUB offset, a local **byte** cursor for COG/LUT/register-only mode, an active mode and a reservation state. Its exposed COG/LUT local PC is derived from long positions (`local_bytes / 4`, with LUT base `0x200`).
 
-Starts a new COG-exec segment. Its local PC starts at `0x000` while bytes are emitted at the current HUB cursor or at the explicitly supplied HUB address.
+- An emitted `LONG` or instruction normally advances the HUB cursor by 4 bytes and an emitting COG/LUT local address by one long.
+- An emitted `BYTE` or `WORD` can occupy part of a local long; natural alignment or `.pack` controls element placement.
+- A `var name:` declaration only records the position; an accompanying `LONG`/`WORD`/`BYTE` emits initialized bytes.
+- `.org target` advances the selected origin in the current address domain; it rejects backward movement and cannot be used in `.data`.
+- `RES count` in COG/regspace advances the *local* register cursor without emitting HUB data, and blocks further emission in that mode until a mode change.
+- `.align N` aligns local indices in COG/LUT/regspace but byte offsets in HUB/data. The actual emitted gap uses the configured fill byte.
 
-### `.lutexec [hub_address]`
+Do not equate a reserved COG register with four initialized HUB bytes. A register-space address need not have a HUB location at all.
 
-Starts a new LUT-exec segment. Its local PC starts at `0x200` while bytes are emitted at the current HUB cursor or at the explicitly supplied HUB address.
-
-### `.hubexec [hub_address]`
-
-Starts a new HUB-exec segment. Local execution address and HUB byte address are the same; an explicit operand chooses the new HUB address.
-
-All three forms currently accept zero or one operand. Supplying more operands is diagnosed.
-
-## COG/LUT allocation versus HUB emission
-
-The current implementation does not have a separate COG/LUT reservation allocator. Local register/PC movement is derived directly from emitted byte count inside a COG- or LUT-exec segment.
-
-For COG/LUT segments:
-
-- four emitted HUB bytes advance the local address by one;
-- an ordinary encoded instruction is four bytes and therefore advances the local PC by one;
-- `LONG` emits four bytes and advances the local address by one;
-- `WORD`/`BYTE` advance HUB by their byte size; local-address calculation is still derived from the segment's HUB-byte offset, so layouts intended to represent register/instruction slots should remain longword-aligned;
-- `var name:` only records the current tagged address and gives the symbol register-oriented default usage; it does **not** reserve a register or emit bytes.
-
-Consequently a current source pattern such as:
-
-```propan
-.cogexec
-var temp:
-    LONG 0
-```
-
-places `temp` at local COG register `0` and emits a four-byte initialized slot into the segment's HUB image. A following `var next:` would be at local COG register `1` only after that `LONG` has advanced the cursor.
-
-There is currently no implemented equivalent of a non-emitting `.RES`/`.reserve` directive. Historical examples using `.RES`, `.regs`, `.reserve`, or `.regspace` must not be interpreted as current reservation syntax. Under the current directive set, representing register/data slots means emitting their backing bytes with `BYTE`/`WORD`/`LONG` or arranging layout externally.
-
-The same rule applies to LUT-exec, except the local address starts at `0x200`.
-
-## Segment identity
-
-Each execution-mode transition creates a distinct segment identifier. The tag survives on labels so the implementation can distinguish addresses that happen to have similar local values but originate in different logical emitted regions.
-
-Not every code path currently enforces that distinction correctly. In particular, `@label` contains an explicit TODO to verify same-segment use before computing its displacement.
-
-## Crossing execution domains
-
-When an address is converted for instruction encoding, the current implementation compares the target address's native execution mode with the instruction's execution mode.
-
-- HUB ↔ COG/LUT mismatches emit a warning because the transition may be intentional but needs attention.
-- COG ↔ LUT mismatches are currently rejected as errors.
-- the implementation comments that stronger segment-identity checking is still needed to prevent jumps between unrelated local-exec segments.
-
-## Moving the HUB cursor and overlap handling
-
-An explicit HUB address supplied to `.cogexec`, `.lutexec`, or `.hubexec` can move emission to a new HUB location. Moving backwards below the previous HUB position emits a warning.
-
-The code contains a disabled overlap-validation block (`TODO: Reinclude the overlap check!`). Therefore the OKF must **not** claim that overlapping segments are rejected. Accidental overlap remains an implementation risk.
-
-## Verified sequential-segment example
-
-`tests/propan/sema/addressing-modes.propan` exercises four sequential segments. Each segment emits three `LONG` values followed by a two-argument `LONG`, for 20 HUB bytes total per segment.
-
-With no explicit HUB relocation, the resulting layout is:
-
-| Segment | HUB start | Local start | `_endN` after three LONGs | HUB `_endN` |
-|---|---:|---:|---:|---:|
-| first COG | `0x00000` | COG `0x000` | COG `0x003` | `0x0000C` |
-| second COG | `0x00014` | COG `0x000` | COG `0x003` | `0x00020` |
-| LUT | `0x00028` | LUT `0x200` | LUT `0x203` | `0x00034` |
-| HUB | `0x0003C` | HUB `0x0003C` | HUB `0x00048` | `0x00048` |
-
-This demonstrates two important current rules:
-
-1. HUB emission continues sequentially unless a new exec directive supplies an explicit HUB address;
-2. each new COG segment restarts local addressing at `0`, each new LUT segment at `0x200`, while HUB-exec local addresses equal HUB byte addresses.
-
-## Complete mixed-layout example
-
-The following example combines COG code/register-like data, LUT code/data, and HUB-resident data using only currently implemented directives:
+## Mixed-mode example
 
 ```propan
 .cogexec 0x1000
-cog_start:
+code_start:
     NOP
-var cog_temp:
+var cog_value:
     LONG 0
 
 .lutexec
 lut_start:
     NOP
-var lut_temp:
+var lut_value:
     LONG 0
 
-.hubexec
-hub_data:
-    LONG 0x12345678
+.data
+table:
+    BYTE "OK"
 ```
 
-Its layout is:
+The first COG code label is local `0` at HUB `0x1000`, and `cog_value` follows it at local `1` / HUB `0x1004`. The LUT label is local `0x200` at HUB `0x1008` and its `LONG`-initialized value is local `0x201` / HUB `0x100C`. The `.data` table starts at HUB `0x1010`, emits the string bytes, and has no executable PC. These addresses follow from the current natural alignment and the four-byte instruction/long lengths.
 
-| Symbol | Domain/local address | HUB address | Why |
-|---|---:|---:|---|
-| `cog_start` | COG `0x000` | `0x1000` | COG segment starts at local zero |
-| `cog_temp` | COG `0x001` | `0x1004` | one 4-byte NOP precedes it |
-| `lut_start` | LUT `0x200` | `0x1008` | new LUT segment restarts local PC at `0x200` |
-| `lut_temp` | LUT `0x201` | `0x100C` | one 4-byte NOP precedes it |
-| `hub_data` | HUB `0x1010` | `0x1010` | HUB segment begins at current HUB cursor |
+For a reserved register slot instead of emitted initialized bytes, switch into `.regspace` or use `RES` in COG mode, subject to the non-emitting semantics and restrictions described in [/projects/propan/directives-and-data.md](/projects/propan/directives-and-data.md).
 
-The two `var` declarations themselves consume no space; their following `LONG 0` directives create the emitted slots. This is the current replacement for examples that only need initialized register-like storage. It is **not** equivalent to a non-emitting reservation directive, because the four zero bytes are part of the HUB image.
+## Relative addressing, crossings and limitations
 
-## Planned/historical directive syntax is not current language
+Instruction selection distinguishes HUB/local domains, native address units, and when relative encoding can be used. The merged branch adds `.pic` selection policy and origin/sub-register helpers; precise per-instruction behavior is governed by generated instruction metadata and the encoding selector, not a blanket rule that COG↔LUT transitions are always rejected.
 
-Several repository files outside the OKF describe or demonstrate a broader segment model:
+A warning may be emitted for jumps between HUB and local execution domains. This is **not** a proof of complete cross-segment safety: the address-conversion code still needs careful same-segment validation for some constructs.
 
-- `docs/propan/semantics.md` discusses `.section` and `.org` mappings;
-- `tests/propan/sema/segment_management.propan` describes `.org`, `.reserve`, `.regspace`, and `.data` in addition to the implemented exec-mode directives;
-- parser fixtures and examples contain `.huborg`, `.cogorg`, `.lutorg`, `.regs`, `.cogfit`, `.RES`, `.fit`, and similar forms.
+The flat-image composer copies each segment at its HUB offset and does not enforce cross-segment non-overlap. A later segment can overwrite earlier emitted bytes. This must not be interpreted as a supported linker/relocation design.
 
-The current semantic mnemonic table does not register those names as implemented directives. They should therefore be treated as **design/historical or parser-only material until independently verified**, not as supported syntax.
+## Evidence and remaining verification
 
-See [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md).
-
-## Current implementation issues affecting this model
-
-- `@label` does not yet validate same-segment identity.
-- cross-local-segment protection is explicitly incomplete in `get_offset_for_exec_mode()` comments.
-- segment-overlap rejection is disabled.
-- the generic `TaggedAddress.init()` helper is unused and malformed (`.hub` instead of `.hub_address`).
-
-These findings are tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
+- **Implemented:** `Cursor.init/sync/change_mode/align_data/alignas/org/reserve`, the semantic directive dispatch, and the current tagged-address unions.
+- **Tested:** `tests/propan/sema/data-mode.propan`, `spin2-register-origins.propan`, `pack.propan`, `local-labels.propan` and origin/reservation diagnostic fixtures, plus JSON/listing tests in `src/propan/test_suite.zig`.
+- **Open:** revalidate all instruction-class-specific PC-relative conversions, PIC controls, cross-local-segment checks, and helper behavior against source + dedicated tests. Do not rely on the older pre-merge wording for those details.

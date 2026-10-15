@@ -10,7 +10,21 @@ source_confidence: "high"
 
 This page records potential assembler defects or limitations discovered during documentation work. It is not a substitute for the repository issue tracker. Findings remain here while they materially affect how current behavior should be documented.
 
-## Confirmed code-level findings
+## Post-merge status (2026-10-15)
+
+This register was written against the September code. **Entries under "September findings" below are retained as historical findings and must not be cited as current defects without independent re-verification.** The following changes have been confirmed in the merged implementation:
+
+- **Conditioned NOP:** semantic mnemonic selection now emits `err_nop_cannot_have_condition` for an explicit condition on `NOP` (`src/propan/sema.zig`); the former conditional-ROR encoding observation describes the old source, not accepted current syntax.
+- **Raw strings in data:** `BYTE`/`WORD`/`LONG` now expand strings into element sequences and support integer sequences (`data_expr_count` and `emit_code`); the former "string emission not supported" panic entry is superseded.
+- **Assertions:** the optional message type is now checked before the true/false result is returned (`evaluate_asserts`). The old message-type diagnostic defect is no longer established by that source.
+- **Constant resolution:** `resolve_constant` recursively evaluates dependencies and detects cycles; the former blanket prohibition on forward user-constant references is obsolete.
+- **Source/segment model:** `.org`, `RES`, `.regspace` and `.data` are implemented. An older assumption that all non-emitting reservations are unsupported no longer applies.
+
+The remaining findings, including overlapping emission ranges and subtle addressing/selection behavior, require a fresh code/test audit before promoting them to current issues.
+
+## September findings (historical; unrevalidated after merge)
+
+### Confirmed code-level findings
 
 ### Pointer-register ambiguity check contains a copy/paste defect
 

@@ -1,180 +1,124 @@
 ---
 type: "Reference"
 title: "Propan directives and data"
-description: "Current assembler-defined directives and data-emission semantics."
-tags: ["propan", "directives", "data", "alignment", "assertions"]
+description: "Current semantic assembler directives, origin/reservation modes, data emission, packing, alignment, and assertions."
+tags: ["propan", "directives", "data", "alignment", "origins", "reservation", "assertions"]
 status: "draft"
 source_confidence: "high"
 ---
 # Propan directives and data
 
-The current semantic mnemonic table defines these assembler directives/pseudo-instructions in addition to generated P2 instructions:
+**Verified against the 2026-10-15 merged source.** The semantic mnemonic table is in `src/propan/sema.zig` (`Analyzer.init`); the implementation is in `assign_locations`, `evaluate_asserts` and `emit_code`. These directives are *not* inferred merely from parser fixtures.
 
-| Name | Arguments | Emits bytes | Purpose |
-|---|---:|---:|---|
-| `BYTE` | zero or more expressions | 1 per argument | emit 8-bit values |
-| `WORD` | zero or more expressions | 2 per argument | emit 16-bit values |
-| `LONG` | zero or more expressions | 4 per argument | emit 32-bit values |
-| `.align` | exactly 1 expression | padding only | advance to a power-of-two HUB alignment |
-| `.assert` | 1 condition, optional message | no | assembly-time assertion |
-| `.cogexec` | 0 or 1 expression | no | start a COG-exec segment |
-| `.lutexec` | 0 or 1 expression | no | start a LUT-exec segment |
-| `.hubexec` | 0 or 1 expression | no | start a HUB-exec segment |
+## Implemented names
 
-Mnemonic lookup is case-insensitive, so `long`, `LONG`, and mixed-case spellings resolve to the same directive.
+Mnemonic lookup is case-insensitive.
 
-### Conditions and effects are not directive modifiers
+| Directive | Arguments | Effect |
+|---|---|---|
+| `BYTE`, `WORD`, `LONG` | zero or more data expressions | emit 1-, 2-, or 4-byte elements |
+| `FILE` | exactly one literal string path | embed external file bytes |
+| `.cogexec`, `.lutexec` | optional HUB origin, optional local origin | start executable COG/LUT segment |
+| `.hubexec` | optional HUB origin | start executable HUB segment |
+| `.regspace` | optional HUB origin, optional local origin | enter register-only allocation mode |
+| `.data` | optional HUB origin | enter HUB data-only mode |
+| `.org` | one integer/address-origin expression | move the current origin forward |
+| `RES` | one nonnegative register count | non-emitting register reservation in COG/regspace |
+| `.align` | one nonzero power-of-two integer | align the active cursor |
+| `.pack` | `off`, `byte`, `word`, or `long` | control implicit data alignment |
+| `.pic` | `default`, `prefer`, `avoid`, or `force` | choose branch-addressing preference |
+| `.assert` | condition; optional message string | compile-time assertion |
+| `.fit` | limit; optional message string | assert active cursor fits within limit |
 
-The parser uses the same instruction-shaped line form for directives and generated P2 instructions, so it can attach an `if(...)`/`return` condition or a recognized `:effect` token to a directive AST node.
+`.import "path"` and `.import once` are handled by the source expander *before* semantic analysis; see [/projects/propan/tooling.md](/projects/propan/tooling.md).
 
-Current directive semantic paths do not validate or apply those fields. For example, a condition on `BYTE` does not make the emitted byte conditional, and an effect on `.assert` has no assertion meaning. Such modifiers are currently ignored rather than rejected.
+**Not registered as equivalents in the current semantic mnemonic table:** `.huborg`, `.cogorg`, `.lutorg`, `.reserve`, `.regs`, `.RES` (leading dot), `.cogfit`, `.section`. In particular, `RES` (without dot) is implemented and must not be confused with `.RES`.
 
-Do not use conditions/effects on assembler directives. The implementation finding is tracked in [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md); generated-instruction condition/effect syntax is documented in [/projects/propan/instruction-syntax.md](/projects/propan/instruction-syntax.md).
-
-## Data emission: `BYTE`, `WORD`, `LONG`
-
-General form:
-
-```propan
-BYTE expr, expr, ...
-WORD expr, expr, ...
-LONG expr, expr, ...
-```
-
-Zero arguments are currently accepted and emit no bytes.
-
-Each argument is evaluated independently and narrowed to the directive width:
-
-- `BYTE` → `u8`;
-- `WORD` → `u16`;
-- `LONG` → `u32`.
-
-Negative and oversized integer values are truncated to the destination width. The assembler emits a warning when the narrowed result differs from the original value.
-
-Values are written **little-endian**.
-
-### Address values
-
-Address expressions are converted using the current segment's execution mode before being narrowed. This means a bare label in a data directive can produce its execution-local address rather than necessarily its HUB byte address.
-
-Use explicit helpers such as `hubaddr(label)`, `cogaddr(label)`, or `lutaddr(label)` when the intended address domain must be unambiguous.
-
-### Strings are not currently data emitters
-
-Although string expressions exist in the language, `BYTE "text"`, `WORD "text"`, and `LONG "text"` do not currently expand a string into data. The generic emission cast reaches a `string emission not supported yet` panic for string values.
-
-This is an implementation limitation, not supported string-data syntax.
-
-### Enumerators in raw data directives
-
-Enumerator values such as `#name` are normally resolved by instruction operands with an enumeration table. The generic data-emission cast treats an unresolved enumerator as an internal error path rather than a normal data value. Do not use enumerators directly with `BYTE`/`WORD`/`LONG` unless they have first been converted by some supported expression/function context.
-
-## `.align`
-
-Form:
+## Data: BYTE, WORD, LONG
 
 ```propan
-.align alignment
+BYTE 0x12, "Hi"
+WORD 0x1234
+LONG 0x11223344
+BYTE [1, 2, 3]
+BYTE "ab" * 3
 ```
 
-The directive expects exactly one argument. The evaluated value must:
+Each scalar is narrowed to its target element width; narrowing that changes the value can warn. Values are emitted in **little-endian** order. Zero-argument data directives are accepted and emit no bytes.
 
-- be an integer;
-- fit in `u20`;
-- be nonzero;
-- be a power of two.
+**Strings are now supported.** A string produces one element per encoded byte; for example, `WORD "AB"` emits two 16-bit values (`0x0041` and `0x0042`), not one packed word. Integer sequences likewise expand into separate elements. `*` repetition accepts a sequence/string and an integer repetition count, with zero repetitions warned about and size limits checked. Nested literal sequences and UTF conversion helpers are represented as sequence data, not as ordinary pointer dereferences.
 
-The HUB cursor advances forward to the next address divisible by the requested alignment. `.align` itself has zero logical instruction size; when emission later encounters the gap, the assembler fills the skipped HUB bytes with `0xFF`.
+The element count and emitted size are computed during layout (`data_expr_count`); if final evaluation disagrees with that planned size, the assembler emits a diagnostic. Arbitrary non-layout-known lengths therefore are not a general dynamic array facility.
 
-In COG/LUT execution modes, the corresponding local long/register address is advanced consistently with the HUB movement.
+Address-valued expressions are converted to the current execution/address context; use `hubaddr(label)` etc. to select an explicit domain. Bare enumerator operands belong to instruction enumeration contexts, not to an unrestricted raw-data convention.
 
-### Current evaluation-phase limitation
+### Implicit alignment and .pack
 
-`.align` is evaluated during location assignment. User-defined constants are evaluated only after location assignment, so an expression such as:
+Ordinary `WORD` and `LONG` data are implicitly aligned to the element width, as are encoded instructions (long-aligned). `.pack byte`, `.pack word`, `.pack long` select alignment of 1, 2, or 4 bytes respectively, and `.pack off` restores natural alignment. This changes layout and can generate warnings for unaligned packed instructions; it does **not** change each element's stored width.
+
+Evidence: `tests/propan/sema/pack.propan` and `src/propan/sema.zig` (`Cursor.align_data`).
+
+## Binary inclusion: FILE
 
 ```propan
-const boundary = 16
-.align boundary
+FILE "assets/table.bin"
 ```
 
-cannot currently use `boundary`, even though the symbol has already been declared. Builtin constants whose values were loaded before layout are available.
+The assembler reads the named file into the image as raw bytes. The path is absolute or relative to the source file containing `FILE` (important with imports); it requires one literal string path. The current I/O path limits files to 512 KiB and diagnoses unreadable files. `FILE` is a **binary data inclusion**, distinct from source-code `.import`.
 
-The current `.align` error path describes `UndefinedSymbol` as `cannot refer to labels in .align`; that message can therefore also be misleading for an unavailable user constant.
+## Execution and data modes
 
-## `.assert`
-
-Forms:
+`.cogexec` / `.lutexec` accept **zero, one or two** operands:
 
 ```propan
-.assert condition
-.assert condition, "message"
+.cogexec 0x1000, 0x20    // HUB emission origin, COG-local register/PC origin
+.lutexec 0x1200, 0x220  // HUB emission origin, LUT-local origin
+.hubexec 0x1400         // HUB emission/execution origin
+.regspace 0, 0x100      // no emitted bytes, registers from COG 0x100
+.data 0x1800            // HUB-resident data, no instruction execution PC
 ```
 
-The condition must evaluate to an integer. Zero fails the assertion; any nonzero integer passes.
+An omitted HUB origin continues at the current HUB cursor. An omitted local origin defaults to COG `0` or LUT `0x200`. Local origins in COG/regspace are bounded by `0x000..0x200`; LUT origins by `0x200..0x400`. `.hubexec` and `.data` accept at most one HUB-origin operand.
 
-On failure:
+`.regspace` creates register-tagged addresses with **no HUB storage address**; emitted data/code inside it is rejected. `.data` creates HUB-addressed data labels without an executable PC; encoded instructions inside it are rejected. These are distinct from `var`, which labels the current address but does not reserve any storage.
 
-- with no message, the assembler emits `assertion failed: expression returned 0`, with additional relation-specific formatting for several comparison expressions;
-- with a second argument, that value must be a string and becomes the assertion message.
+Changing mode creates a new segment. Cross-segment overlap is not rejected automatically at final flat-image composition; see [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
 
-The second argument's string type is checked only on the failing path. If the condition is nonzero, semantic analysis returns before validating the message type.
+## .org and RES
 
-Zero operands are rejected. More than two operands produce an arity error.
+`.org target` advances the position in the **current address domain**. In HUB-exec the target is a HUB byte address; in COG/LUT/regspace the target is a local long/register index. It cannot move the cursor backward or be used in `.data` mode; local target ranges are checked. Forward origins in emitting modes increase HUB allocation correspondingly, with padding using the configured fill byte.
 
-`.assert` emits no output bytes.
+`RES count` reserves **count local registers (longs)** without emitting HUB bytes. It is legal only in `.cogexec` or `.regspace`; it advances the local cursor by `count * 4` bytes, sets the reservation state, and prevents subsequent data/code emission in that segment until a new mode directive. This is not an alias for a data directive and cannot be used in HUB/LUT/data modes.
 
-A known diagnostic defect causes the wrong value type to be named when a failing assertion has a non-string message; see [/projects/propan/implementation-findings.md](/projects/propan/implementation-findings.md).
+**Evidence:** `assign_locations`, `Cursor.org`, `Cursor.reserve`, and `tests/propan/sema/diagnostics/res-invalid-in-mode.propan`.
 
-## Execution-mode directives
+## .align
 
-### `.cogexec [hub_address]`
+`.align alignment` requires one nonzero power-of-two integer no greater than `0x80000`. In HUB/data modes it aligns the HUB byte cursor; in COG/LUT/regspace modes it aligns the corresponding **local register/PC index**, accounting for the LUT base index. This distinction matters: `.align 4` in COG mode means a multiple-of-four *long index*, not merely a four-byte HUB alignment.
 
-Starts a new COG-exec segment with local PC `0x000`. With no argument, HUB emission continues from the current HUB cursor. With one argument, the supplied value selects the segment's HUB emission address.
+The required address growth in emitting modes produces padding with the configured `--fill-byte`, not a fixed `0xFF` guarantee. In register-only space, alignment adjusts the local position without emitting bytes.
 
-### `.lutexec [hub_address]`
+## .pic
 
-Starts a new LUT-exec segment with local PC `0x200`, using either the current HUB cursor or an explicitly supplied HUB address.
+`.pic default`, `.pic prefer`, `.pic avoid`, and `.pic force` set the running policy for relative versus absolute branch-address selection. `force` can diagnose a branch that would require an absolute address. The directive itself emits no bytes. Specific instruction encodings still depend on the generated operand metadata; see [/projects/propan/instruction-syntax.md](/projects/propan/instruction-syntax.md).
 
-### `.hubexec [hub_address]`
+## .assert and .fit
 
-Starts a new HUB-exec segment. The local execution address is the HUB address itself.
+```propan
+.assert 1 == 1, "failed condition"
+.fit 0x1F0, "code exceeds expected register range"
+```
 
-All three accept zero or one operand; more operands are diagnosed.
+`.assert` accepts an integer condition; zero fails. `.fit` instead compares the active cursor's position against the supplied limit: COG/regspace and LUT use local register/PC indices, while HUB/data use HUB byte addresses. Both accept an optional string message, reject incorrect argument counts, and emit no bytes. The optional message's type is validated before the pass/fail decision in the merged implementation.
 
-Explicit HUB-address operands are evaluated during location assignment, so they share the same phase limitation as `.align`: ordinary user-defined constants do not yet have values at that point.
+## Evaluation phase, conditions and effects
 
-Moving an explicit HUB address backward emits a warning. Segment-overlap rejection is currently disabled; see [/projects/propan/addresses-and-segments.md](/projects/propan/addresses-and-segments.md).
+Mode origins, `.org`, `.align`, `RES` and sizes of sequence expressions are decided during **location assignment**. Ordinary constant dependencies may resolve recursively, but constants that need a label address that is still being assigned cannot necessarily be used in those positions. This is a layout-phase restriction, not a blanket prohibition on user-defined constants.
 
-## Names present elsewhere but not implemented as current directives
+Parser-level conditions/effects can appear on directive-shaped lines, but these are not defined as conditional emission or side-effect modifiers for the directives. Do not rely on them for layout control. Conditional-source directives (`.if` / `.elif` / `.else` / `.endif`) belong to the earlier filter stage and require separate reference coverage.
 
-The current semantic mnemonic table does **not** register the following names found in parser fixtures, examples, or historical/design documentation:
+## Evidence and limits
 
-- `.org`
-- `.huborg`
-- `.cogorg`
-- `.lutorg`
-- `.reserve`
-- `.regspace`
-- `.data`
-- `.regs`
-- `.RES`
-- `.fit`
-- `.cogfit`
-- `.section`
-
-Parser acceptance of an identifier in mnemonic position does not make it an implemented directive. These names remain tracked in [/projects/propan/documentation-discrepancies.md](/projects/propan/documentation-discrepancies.md).
-
-No current compatibility aliases for the implemented directive set have been established by semantic analysis. For new code, use the spellings listed in this page.
-
-## Compact behavior summary
-
-| Directive | Cursor effect | Output behavior | Important failure/limitation |
-|---|---|---|---|
-| `BYTE` | +1 byte/arg | little-endian byte values | strings/enumerators are not supported raw data values |
-| `WORD` | +2 bytes/arg | little-endian 16-bit values | narrowing can warn |
-| `LONG` | +4 bytes/arg | little-endian 32-bit values | address meaning depends on exec mode unless converted explicitly |
-| `.align` | forward to aligned HUB address | gap filled with `0xFF` | power-of-two `u20`; user constants unavailable during layout |
-| `.assert` | none | none | integer condition; optional string checked on failure |
-| `.cogexec` | new segment, COG local `0` | subsequent bytes at selected HUB cursor | 0/1 arg; user constants unavailable for explicit HUB address |
-| `.lutexec` | new segment, LUT local `0x200` | subsequent bytes at selected HUB cursor | same |
-| `.hubexec` | new segment, HUB-local address | subsequent bytes at selected HUB cursor | same |
+- **Implemented:** all names in the table appear in the live semantic dispatch; mode, origin, reservation, data expansion and emission paths were checked.
+- **Tested:** `test_suite.zig` and `tests/propan/sema/` contain cases for packing, origin limits, reservation diagnostics, embedded files, data/UTF sequences, and fit/assert behavior. Not every option or edge case has been rerun for this documentation edit.
+- **Open:** incomplete cross-segment safety and accidental image overlaps; exact user-intent semantics of every PIC policy and conditional source form should be checked with focused tests, not inferred from this overview.

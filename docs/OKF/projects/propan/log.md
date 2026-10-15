@@ -14,6 +14,8 @@ source_confidence: "high"
 - Replaced the obsolete multi-positional-file overlay reference with the actual single-root CLI contract, recursive `.import`/`.import once`, include search paths, preserved imported source locations, `spin2` output, and current CLI options.
 - Updated symbol reference for scoped leading-dot labels, import-aware rebinding, recursive forward constant resolution and cycle detection.
 - Updated source inventory and coverage entries for the newly verified behavior, and opened explicit follow-up work for the other changed language areas.
+- Revalidated and rewrote the directive/data and address/segment references for `.org`, `RES`, `.regspace`, `.data`, `.fit`, `.pack`, `.pic`, `FILE`, expanded origin options, and string/sequence emission.
+- Corrected the PASM2 migration summary for source imports and reservation/origin syntax. Explicitly archived pre-merge implementation findings and discrepancy classifications where upstream code superseded them.
 
 ## 2026-09-30
 
