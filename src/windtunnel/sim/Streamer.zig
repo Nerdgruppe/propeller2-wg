@@ -5,8 +5,18 @@ const Debugger = @import("Debugger.zig");
 const pipeline = @import("pipeline.zig");
 const Streamer = @This();
 
+const DdsOutput = struct {
+    selector: u4,
+    channels: [4]u8,
+};
+
+const AccumulatorState = struct {
+    values: [2]i32 = @splat(0),
+    active: bool = false,
+};
+
 pub const Start = enum { immediate, zero, continuous };
-pub const Source = enum { immediate, fifo, pins };
+pub const Source = enum { immediate, fifo, pins, dds };
 pub const Pixel = enum { none, luma8, rgbi8, rgb8, rgb16, rgb24 };
 pub const Video = enum(u2) { normal, normal_reverse, forward, reverse };
 
@@ -45,7 +55,12 @@ pub const Command = struct {
             format.lut = true;
             format.bits = @as(u6, 1) << @as(u2, @intCast(major));
         } else {
-            format.source = if (major >= 12) .pins else if (major >= 8) .fifo else .immediate;
+            format.source = if (major >= 12)
+                .pins
+            else if (major >= 8)
+                .fifo
+            else
+                .immediate;
             const group = if (major >= 12) major - 8 else if (major >= 8) major - 4 else major;
             switch (group) {
                 4 => {
@@ -90,9 +105,14 @@ pub const Command = struct {
                         format.channel_bits = 8;
                     },
                     2...9 => {
-                        if (major == 15)
-                            return error.UnsupportedMode;
-                        if (major == 7) {
+                        if (major == 15) {
+                            if (minor != 7)
+                                return error.UnsupportedMode;
+                            format.source = .dds;
+                            format.bits = 32;
+                            format.channel_bits = 8;
+                            format.lut = true;
+                        } else if (major == 7) {
                             format.source = .fifo;
                             format.lut = true;
                             format.bits = @as(u6, 1) << @as(u2, @intCast((minor - 2) >> 1));
@@ -138,7 +158,7 @@ pub const Command = struct {
         if (@as(u16, @truncate(command.control)) == 0)
             return null;
         return switch (command.format.source) {
-            .immediate => null,
+            .immediate, .dds => null,
             .fifo => .read,
             .pins => if (command.control & (1 << 23) != 0) .write else null,
         };
@@ -163,11 +183,17 @@ pub const Active = struct {
 
 frequency: u32 = 0x8000_0000,
 phase: u32 = 0,
+/// DDS addresses use the advancing NCO phase; command counts consume the preceding rollover.
+dds_phase: u32 = 0,
+issued_frequency: ?struct { value: u32, at: u64 } = null,
 active: ?Active = null,
 pending: ?Command = null,
 issued: ?struct { command: Command, at: u64 } = null,
 background: [4]u8 = @splat(0),
 channels: [4]u8 = @splat(0),
+/// DDS adds a registered DAC override stage; unselected SETDACS bytes keep their ordinary timing.
+dds_dac_pipeline: pipeline.Pipeline(?DdsOutput, 1) = .init(null),
+dds_dacs: ?DdsOutput = null,
 pins: u64 = 0,
 pin_data: u64 = 0,
 pin_pipeline: pipeline.Pipeline(u64, 2) = .init(0),
@@ -176,21 +202,45 @@ video_pipeline: pipeline.Pipeline(?u64, 2) = .init(null),
 lut_write: ?u9 = null,
 lut_value: u32 = 0,
 tmds: Tmds = .{},
+/// Multiplication/integration registers clock only while DDS/Goertzel is active.
+goertzel_mul: [2]i32 = @splat(0),
+goertzel_acc: [2]i32 = @splat(0),
+/// GETXACC observes the arithmetic port three clocks before ordinary execute-stage results.
+acc_history: pipeline.Pipeline(AccumulatorState, 3) = .init(.{}),
+
 /// Flush the longest output path after stop without clocking eight idle engines forever.
 drain_clocks: u3 = 0,
+
+/// Forecast the next buffer release for the command port's one-clock ready lookahead.
+pub fn releasesBufferNextClock(streamer: *const Streamer) bool {
+    const active = streamer.active orelse return false;
+    if (active.remaining != 1 and active.remaining != 0xffff)
+        return false;
+    const phase = if (active.command.format.source == .dds)
+        streamer.dds_phase
+    else
+        (streamer.phase & 0x7fff_ffff) +% streamer.frequency;
+    return !active.first_clock and phase & 0x8000_0000 != 0;
+}
 
 /// Commit an instruction effect at the same shared boundary as other cog writebacks.
 pub fn apply(streamer: *Streamer, cog: *Cog, action: Action) void {
     switch (action) {
-        .frequency => |value| streamer.frequency = value,
+        .frequency => |value| {
+            if (cog.hub.clocking) {
+                streamer.issued_frequency = .{ .value = value, .at = cog.hub.counter +% 1 };
+            } else {
+                streamer.frequency = value;
+            }
+        },
         .dacs => |value| {
             streamer.background = dacBytes(value);
             streamer.publishDacs(cog);
         },
         .command => |command| {
-            cog.events.remove(.XMT);
-            cog.events.remove(.XFI);
-            cog.events.remove(.XRO);
+            cog.acknowledge_event(.XMT);
+            cog.acknowledge_event(.XFI);
+            cog.acknowledge_event(.XRO);
             if (cog.hub.clocking) {
                 streamer.issued = .{ .command = command, .at = cog.hub.counter +% 1 };
             } else {
@@ -207,7 +257,7 @@ fn accept(streamer: *Streamer, cog: *Cog, command: Command) void {
         streamer.begin(cog, command);
     } else if (streamer.active == null) {
         streamer.begin(cog, command);
-        cog.raise_event(.XMT);
+        cog.signal_event(.XMT);
     } else {
         std.debug.assert(streamer.pending == null);
         streamer.pending = command;
@@ -218,6 +268,9 @@ fn accept(streamer: *Streamer, cog: *Cog, command: Command) void {
 fn begin(streamer: *Streamer, cog: *Cog, command: Command) void {
     if (command.start != .continuous) {
         streamer.phase = 0;
+        streamer.dds_phase = 0;
+    } else if (streamer.active == null or streamer.active.?.command.format.source != .dds) {
+        streamer.dds_phase = streamer.phase;
     }
     if (command.frequency) |value| {
         streamer.frequency = value;
@@ -225,7 +278,7 @@ fn begin(streamer: *Streamer, cog: *Cog, command: Command) void {
     const count: u16 = @truncate(command.control);
     if (count == 0) {
         if (streamer.active != null) {
-            cog.raise_event(.XFI);
+            cog.signal_event(.XFI);
         }
         streamer.active = null;
         streamer.pin_data = 0;
@@ -246,20 +299,29 @@ fn begin(streamer: *Streamer, cog: *Cog, command: Command) void {
 
 /// Advance the NCO even while its cog waits; serialization advances on every system clock.
 pub fn step(streamer: *Streamer, cog: *Cog) void {
-    if (streamer.active == null and streamer.issued == null) {
+    if (streamer.active == null and streamer.issued == null and streamer.issued_frequency == null) {
         if (streamer.drain_clocks == 0)
             return;
         streamer.drain_clocks -= 1;
     } else {
         streamer.drain_clocks = 5;
     }
+    if (streamer.issued_frequency) |issued| {
+        if (issued.at == cog.hub.counter) {
+            streamer.frequency = issued.value;
+            streamer.issued_frequency = null;
+        }
+    }
     if (streamer.issued) |issued| {
         if (issued.at == cog.hub.counter) {
             streamer.issued = null;
             if (issued.command.start == .immediate and streamer.active != null and !streamer.active.?.first_clock) {
-                const old_phase = (streamer.phase & 0x7fff_ffff) +% streamer.frequency;
+                const old_phase = if (streamer.active.?.command.format.source == .dds)
+                    streamer.dds_phase
+                else
+                    (streamer.phase & 0x7fff_ffff) +% streamer.frequency;
                 if (old_phase & 0x8000_0000 != 0) {
-                    cog.raise_event(.XRO);
+                    cog.signal_event(.XRO);
                 }
             }
             streamer.accept(cog, issued.command);
@@ -269,9 +331,12 @@ pub fn step(streamer: *Streamer, cog: *Cog) void {
         if (active.first_clock) {
             active.first_clock = false;
         } else {
-            streamer.phase = (streamer.phase & 0x7fff_ffff) +% streamer.frequency;
+            streamer.phase = if (active.command.format.source == .dds)
+                streamer.dds_phase
+            else
+                (streamer.phase & 0x7fff_ffff) +% streamer.frequency;
             if (streamer.phase & 0x8000_0000 != 0) {
-                cog.raise_event(.XRO);
+                cog.signal_event(.XRO);
                 if (active.remaining == 1 or (active.remaining == 0xffff and streamer.pending != null)) {
                     if (streamer.pending) |command| {
                         streamer.pending = null;
@@ -279,12 +344,12 @@ pub fn step(streamer: *Streamer, cog: *Cog) void {
                         if (streamer.active) |*next| {
                             next.first_clock = false;
                         }
-                        cog.raise_event(.XMT);
+                        cog.signal_event(.XMT);
                     } else {
                         streamer.active = null;
                         streamer.pin_data = 0;
                         streamer.publishDacs(cog);
-                        cog.raise_event(.XFI);
+                        cog.signal_event(.XFI);
                     }
                 } else {
                     if (active.remaining != 0xffff) {
@@ -292,6 +357,8 @@ pub fn step(streamer: *Streamer, cog: *Cog) void {
                     }
                     streamer.sample(cog, false);
                 }
+            } else if (active.command.format.source == .dds) {
+                streamer.sample(cog, false);
             }
         }
     }
@@ -300,7 +367,7 @@ pub fn step(streamer: *Streamer, cog: *Cog) void {
     if (video) {
         if (streamer.active) |active| {
             const command = active.command;
-            const enabled = command.control & (1 << 23) != 0;
+            const enabled = command.format.source != .dds and command.control & (1 << 23) != 0;
             serialized = if (enabled)
                 std.math.rotl(u64, streamer.tmds.step(videoMode(cog)), command.pinBase())
             else
@@ -319,27 +386,49 @@ pub fn step(streamer: *Streamer, cog: *Cog) void {
     // Both instruction phases resolve one raw-data clock and four total TMDS clocks before GPIO transport.
     streamer.pin_pipeline.resize(if (video) 2 else 1) catch unreachable;
     streamer.pins = streamer.pin_pipeline.step(streamer.pin_data);
+    const dds_output: ?DdsOutput = if (streamer.active) |active| blk: {
+        break :blk if (active.command.format.source == .dds)
+            .{
+                .selector = @truncate(active.command.control >> 24),
+                .channels = streamer.channels,
+            }
+        else
+            null;
+    } else blk: {
+        break :blk null;
+    };
+    streamer.dds_dacs = streamer.dds_dac_pipeline.step(dds_output);
+    streamer.publishDacs(cog);
+    _ = streamer.acc_history.step(.{
+        .values = streamer.goertzel_acc,
+        .active = streamer.active != null and streamer.active.?.command.format.source == .dds,
+    });
 }
 
 /// Route selected streamer channels over the retained background values without analog consumers.
 fn publishDacs(streamer: *const Streamer, cog: *Cog) void {
     cog.raw_dacs = streamer.background;
-    if (streamer.active == null) {
-        cog.dacs = cog.converter.output(cog.raw_dacs);
-        return;
-    }
-    const active = streamer.active.?;
-    const selector: u4 = @truncate(active.command.control >> 24);
+    const output: DdsOutput = if (streamer.active) |active| blk: {
+        break :blk if (active.command.format.source == .dds)
+            streamer.dds_dacs orelse .{ .selector = 0, .channels = @splat(0) }
+        else
+            .{ .selector = @truncate(active.command.control >> 24), .channels = streamer.channels };
+    } else blk: {
+        break :blk streamer.dds_dacs orelse .{ .selector = 0, .channels = @splat(0) };
+    };
     const routes = [16][4]i8{
         .{ -1, -1, -1, -1 }, .{ 0, 0, 0, 0 },    .{ 0, 0, -1, -1 },  .{ -1, -1, 0, 0 },
         .{ 0, -1, -1, -1 },  .{ -1, 0, -1, -1 }, .{ -1, -1, 0, -1 }, .{ -1, -1, -1, 0 },
         .{ 0, 4, 0, 4 },     .{ 0, 4, -1, -1 },  .{ -1, -1, 0, 4 },  .{ 0, 1, 0, 1 },
         .{ 0, 1, -1, -1 },   .{ -1, -1, 0, 1 },  .{ 0, 4, 1, 5 },    .{ 0, 1, 2, 3 },
     };
-    for (&cog.raw_dacs, routes[selector]) |*out, route| {
+    for (&cog.raw_dacs, routes[output.selector]) |*out, route| {
         if (route >= 0) {
-            const value = streamer.channels[@as(u3, @intCast(route)) & 3];
-            out.* = if (route >= 4) ~value else value;
+            const value = output.channels[@as(u3, @intCast(route)) & 3];
+            out.* = if (route >= 4)
+                ~value
+            else
+                value;
         }
     }
     cog.dacs = cog.converter.output(cog.raw_dacs);
@@ -357,6 +446,10 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
     const command = active.command;
     const format = command.format;
     cog.hub.access_context = command.provenance;
+    if (format.source == .dds) {
+        streamer.sampleDds(cog, command, initial);
+        return;
+    }
     if (command.fifoMode()) |mode| {
         if (cog.exec_mode == .hub or cog.fifo_state.engine == null or cog.fifo_state.engine.?.mode != mode) {
             cog.hub.fault = .{
@@ -395,7 +488,7 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
         if (initial or streamer.lut_write == null) {
             streamer.lut_value = cog.read_lut(address);
             if (address == 0x1ff) {
-                cog.raise_event(.XRL);
+                cog.signal_event(.XRL);
             }
         }
         value = streamer.lut_value;
@@ -441,6 +534,78 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
     }
     if (videoMode(cog) == .forward or videoMode(cog) == .reverse) {
         streamer.tmds.load(value);
+    }
+    streamer.publishDacs(cog);
+}
+
+/// Read and optionally clear the clock-gated accumulator pair, cosine first.
+pub fn readAccumulators(streamer: *Streamer, clocked: bool) [2]u32 {
+    const captured = if (clocked)
+        streamer.acc_history.current()
+    else
+        AccumulatorState{
+            .values = streamer.goertzel_acc,
+            .active = streamer.active != null and streamer.active.?.command.format.source == .dds,
+        };
+    if (captured.active) {
+        // Preserve work after the early capture boundary when retiring the instruction.
+        for (&streamer.goertzel_acc, captured.values) |*acc, value| {
+            acc.* -%= value;
+        }
+        for (&streamer.acc_history.values) |*state| {
+            for (&state.values, captured.values) |*acc, value| {
+                acc.* -%= value;
+            }
+        }
+    }
+    return @bitCast(captured.values);
+}
+
+/// Synthesize four unsigned DAC bytes and integrate signed digital input correlations each clock.
+fn sampleDds(streamer: *Streamer, cog: *Cog, command: Command, initial: bool) void {
+    const shift: u3 = @truncate(command.data >> 9);
+    const mask: u9 = @as(u9, 0x1ff) >> shift;
+    const offset: u9 = @truncate(command.data);
+    streamer.dds_phase = (streamer.dds_phase & 0x7fff_ffff) +% streamer.frequency;
+    const index: u9 = @truncate(streamer.dds_phase >> (@as(u5, 22) + shift));
+    const address = (offset & ~mask) | ((offset +% index) & mask);
+    if (initial or streamer.lut_write == null) {
+        streamer.lut_value = cog.read_lut(address);
+        if (address == 0x1ff) {
+            cog.signal_event(.XRL);
+        }
+    }
+    const value = streamer.lut_value;
+    streamer.channels = dacBytes(value ^ 0x8080_8080);
+    streamer.pin_data = 0;
+    const base: u6 = @as(u6, @as(u4, @truncate(command.control >> 19))) << 2;
+    const enabled: u4 = @truncate(command.data >> 12);
+    const inverted: u4 = @truncate(command.data >> 16);
+    var sum: i32 = 0;
+    for (0..4) |bit| {
+        const select = @as(u4, 1) << @intCast(bit);
+        if (enabled & select != 0) {
+            // Goertzel samples the IN stage one clock before the ordinary cog register read.
+            const sampled = cog.hub.io.eventInput(@enumFromInt(base + @as(u6, @intCast(bit))));
+            const high = sampled != (inverted & select != 0);
+            sum += if (high)
+                @as(i32, 1)
+            else
+                -1;
+        }
+    }
+    if (@popCount(enabled) == 2 or @popCount(enabled) == 4) {
+        sum >>= 1;
+    }
+    const sinc2 = command.control & (1 << 23) != 0;
+    for (&streamer.goertzel_mul, &streamer.goertzel_acc, 0..) |*mul, *acc, channel| {
+        const coefficient: i8 = @bitCast(@as(u8, @truncate(value >> @intCast(16 + 8 * channel))));
+        acc.* +%= mul.*;
+        const product = sum * coefficient;
+        mul.* = if (sinc2)
+            mul.* +% product
+        else
+            product;
     }
     streamer.publishDacs(cog);
 }
@@ -671,4 +836,64 @@ test "alternate ordering reverses samples within bytes, preserving sample bit or
     try std.testing.expectEqual(@as(u32, 0x80c4a2e6), reorder(0x01234567, 1));
     try std.testing.expectEqual(@as(u32, 0x40c851d9), reorder(0x01234567, 2));
     try std.testing.expectEqual(@as(u32, 0x10325476), reorder(0x01234567, 4));
+}
+
+test "raw ADC density feeds Goertzel without analog DAC feedback" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    hub.io.editConfiguration(@enumFromInt(0), 0x0011_8000);
+    try hub.io.setAdcDensity(@enumFromInt(0), 0.75);
+    for (0..32) |_| {
+        _ = hub.step();
+    }
+    const cog = &hub.cogs[0];
+    cog.lut = @splat(0x7f80_0000);
+    const command = try Command.init(0xff07_03e9, 0x1000, 0x8000_0000, .immediate, .{});
+    cog.streamer.apply(cog, .{ .command = command });
+    for (0..1004) |_| {
+        _ = hub.step();
+    }
+    const values = cog.streamer.readAccumulators(false);
+    try std.testing.expectEqual(@as(i32, -64_000), @as(i32, @bitCast(values[0])));
+    try std.testing.expectEqual(@as(i32, 63_500), @as(i32, @bitCast(values[1])));
+    try std.testing.expectEqualSlices(u8, &.{ 0, 0, 0, 0 }, &cog.dacs);
+    cog.reset();
+    try std.testing.expectEqualDeep(Streamer{}, cog.streamer);
+    try std.testing.expectEqual(@as(f64, 0.75), hub.io.adc_inputs[0].density);
+}
+
+test "DDS publishes the physically checked four-entry DAC waveform every clock" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    const cog = &hub.cogs[0];
+    @memcpy(cog.lut[0..4], &[_]u32{ 0x7f00_c080, 0x807f_00c0, 0xc080_7f00, 0x00c0_807f });
+    const command = try Command.init(0xff07_ffff, 7 << 9, 0x2000_0000, .immediate, .{});
+    cog.streamer.apply(cog, .{ .command = command });
+    _ = hub.step();
+    try std.testing.expectEqualSlices(u8, &.{ 0, 0, 0, 0 }, &cog.dacs);
+
+    // The 160x hardware captures start at table entry one after the registered override stage.
+    const expected = [_][4]u8{
+        .{ 64, 128, 255, 0 },
+        .{ 128, 255, 0, 64 },
+        .{ 255, 0, 64, 128 },
+        .{ 0, 64, 128, 255 },
+    };
+    for (0..3) |_| {
+        for (expected) |bytes| {
+            _ = hub.step();
+            try std.testing.expectEqualSlices(u8, &bytes, &cog.dacs);
+        }
+    }
+    const stop = try Command.init(0, 0, null, .immediate, .{});
+    cog.streamer.apply(cog, .{ .command = stop });
+    _ = hub.step();
+    _ = hub.step();
+    try std.testing.expectEqualSlices(u8, &.{ 0, 0, 0, 0 }, &cog.dacs);
 }

@@ -143,7 +143,92 @@ Typical workflows (started from the workspace root):
   - Example: `operation: u3` is not a case where an integer is appropriate, it sounds like `operation` is something one can add 3 to. Better: `operation: OperationKind` + `OperationKind = enum(u3) { ... }`.
   - Use fully open enums for IDs that are not arithmetic values or indices.
 - Code Style
-  - Do not use `if(...) foo();` in a single line of code
+  - These formatting rules apply to all control-flow constructs, including `if`, `switch`,
+    `while`, `for`, and similar constructs, whether used as expressions or statements.
+    Never put an entire control-flow construct on one line or cram nested constructs onto one line.
+    When computing a value, use a multiline expression and keep the result `const`; do not replace
+    it with an `undefined` temporary assigned in branches. Use labeled blocks when an expression
+    branch needs multiple statements. The `if` examples below illustrate the general rule.
+
+    ```zig
+    // Forbidden:
+    const x = if (cond) value else other;
+
+    // Forbidden:
+    var x: Type = undefined;
+    if (cond) {
+        x = value;
+    } else {
+        x = other;
+    }
+
+    // Allowed:
+    const x = if (cond)
+        value
+    else
+        other;
+
+    // Allowed:
+    const x = if (cond) blk: {
+        // More code here.
+        break :blk value;
+    } else blk: {
+        // More code here.
+        break :blk other;
+    };
+    ```
+
+  - When a control-flow construct does not produce a value, use statement blocks for its bodies
+    and branches. A single `return`, `break`, or `continue` may omit braces where the syntax allows,
+    but must be on the next line. Function calls require braces, even when the call is on the next line.
+
+    ```zig
+    // Forbidden:
+    if (cond) return 10;
+    if (cond) break;
+    if (cond) continue;
+    if (cond) call();
+    if (cond)
+        call();
+
+    // Allowed:
+    if (cond)
+        return 10;
+    if (cond)
+        break;
+    if (cond)
+        continue;
+    if (cond) {
+        call();
+    }
+    ```
+
+    ```zig
+    // Forbidden:
+    const x = switch (kind) { .first => value, else => other };
+    for (items) |item| call(item);
+    while (cond)
+        call();
+    if (cond) for (items) |item| call(item);
+
+    // Allowed:
+    const x = switch (kind) {
+        .first => value,
+        else => other,
+    };
+    for (items) |item| {
+        call(item);
+    }
+    while (cond) {
+        call();
+    }
+    if (cond) {
+        for (items) |item| {
+            call(item);
+        }
+    }
+    ```
+
   - Try to keep the lines under 120 characters.
     - This is not a hard limit, but shorter lines are better than cramping everything into one line.
   - Try to keep lines free of multiple field assignments.
@@ -152,19 +237,6 @@ Typical workflows (started from the workspace root):
   - Do not cramp multiple independent expressions (e.g. arguments) into a single line.
     - Bad style: `if (!cog.return_debug(args.s, args.s_imm, args.c_mod == .write and args.z_mod == .write, target))`
       - Better assign the return value to a constant, and put each argument onto its own line for clarity.
-  - Do not use a expression-style `if` when the result value is not used.
-    - Bad: `if(a) foo() else bar();`
-      - Better: `if(a) {LF> foo();LF> } else {LF> bar();<LF> }`
-    - Bad: `if(a) <LF> foo(a, b, c, d);`
-      - Better:`if(a) { <LF> foo(a, b, c, d);<LF> }`
-      - Exception: Do this for a `return`, `continue` or `break` unless the code has multiple lines.
-  - The styles for `if` also apply to other constructs like `for` or `while`.
-    - Really bad style: `if(foo) for(...) {};`
-      - Better:`if(foo) { for(...) {} }`
-  - Do not use two code constructs on the same line
-    - This means `if`/`for`/`while` and body should be put onto separate lines.
-    - Forbidden: `if(foo) return X;`
-      - Use `if(foo)<LF>return X;`
   - Do not use inline structs in function signatureds.
     - Bad style: `pub fn start_cog(hub: *Hub, index: u3, options: struct { hub_address: u32 = 0, ptra: u32 = 0, load_image: bool = true, clocked: bool = true, command_clock: ?u64 = null }) !void {`
       - Better: `const StartCogOptions = struct { hub_address: u32 = 0, ptra: u32 = 0, load_image: bool = true, clocked: bool = true, command_clock: ?u64 = null, };  pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {` which will format into readable code.

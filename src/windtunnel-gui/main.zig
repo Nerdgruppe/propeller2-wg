@@ -376,7 +376,6 @@ const GUI = struct {
         show("Random generator", hub.random);
         show("Debug configuration", hub.debug);
         show("Pending starts", hub.pending_starts);
-        show("Pending events", hub.pending_events);
         show("Fault", hub.fault);
         zgui.beginDisabled(.{ .disabled = gui.is_running });
         defer zgui.endDisabled();
@@ -682,7 +681,7 @@ const GUI = struct {
                 zgui.beginDisabled(.{ .disabled = gui.is_running });
                 if (zgui.checkbox(@tagName(event), .{ .v = &active })) {
                     if (active) {
-                        cog.raise_event(event);
+                        cog.signal_event(event);
                     } else {
                         cog.events.remove(event);
                     }
@@ -691,6 +690,7 @@ const GUI = struct {
             }
         }
         show("Counter sensors", cog.ct_targets);
+        show("Pending events", cog.pending_events);
         show("Selectable sensors", cog.selectable_events);
         show("Pattern sensor", cog.pattern);
         show("Interrupt controller", cog.interrupts);

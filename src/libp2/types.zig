@@ -293,6 +293,17 @@ pub const PinConfiguration = packed struct(u32) {
     b: Selector = .{},
     a: Selector = .{},
 
+    /// Identify ADC-capable pad modes; DAC modes additionally gate their ADC with OUT/OTHER and TT.
+    pub fn isAdc(configuration: PinConfiguration) bool {
+        return configuration.pad_mode == .adc_gio_vio_float_1x or
+            configuration.pad_mode == .adc_3x_10x_30x_100x or configuration.isDac();
+    }
+
+    /// Identify DAC pad modes whose level bits replace the digital drive configuration.
+    pub fn isDac(configuration: PinConfiguration) bool {
+        return configuration.pad_mode == .dac_990r_600r or configuration.pad_mode == .dac_124r_75r;
+    }
+
     pub const Drive = enum(u3) { fast, resistor_1k5, resistor_15k, resistor_150k, current_1ma, current_100ua, current_10ua, float };
     /// The upper four bits of the physical configuration. ADC/DAC modes reinterpret lower bits.
     pub const PadMode = enum(u4) {

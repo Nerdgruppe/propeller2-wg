@@ -564,11 +564,29 @@ RDFAST/WRFAST decode finite blocks and the full-map zero count, support blocking
 and nonblocking setup, and wait for old writes before changing mode. FBLOCK
 updates the reload descriptor, or the initial descriptor when setup is still
 waiting for prior writes. Read-ahead/write grants produce FBW at transport wrap;
-event consumption remains generic over EventId in execute.zig. Cog supplies
-the measured WAITFBW wake/timeout resume delays. GETBRK WCZ bit 20
+event consumption remains generic over EventId in execute.zig. FBW uses the cog's
+direct event input, while its timeout crosses one response stage. GETBRK WCZ bit 20
 reports write mode. GETPTR tracks software byte consumption independently of
 transport wrapping; hub mode and the return to local execution retain the
 instruction FIFO pointer semantics measured on hardware.
+
+Event storage and delivery are cog resources. Each cog owns a clock-indexed pipeline
+of latch inputs and interrupt/debug request pulses; the hub only routes attention
+and shared-resource signals to a destination cog. A single static table selects both
+port delays by event; SE1–SE4 use their configured pin or LUT/lock source. The source
+configuration is sampled when the event is signalled, so later reconfiguration does
+not change pulses already in flight. Separate port delays preserve earlier interrupt
+requests when the architectural event latch has additional sampling stages. WAIT consumers complete when their
+event is delivered, without a subsequent event-specific resume delay. WAITINT
+samples the pending interrupt-request port through its own clocked stages;
+SETQ timeout responses remain separate from event latches.
+
+POLL/WAIT/J/JN sample an event during execution and acknowledge it at writeback.
+Writeback acknowledgement precedes delivery on the same edge. Therefore an old
+occurrence can be consumed while a newly delivered occurrence remains latched.
+Cog reset cancels its pending pulses and acknowledgements. Counter rearming also
+discards old-comparison latch pulses; selectable sensor reconfiguration retains
+samples already in flight. Event acknowledgement/delivery appears in pipeline traces.
 
 Variable reads decode up to four bytes with 7/14/21/29 payload bits. Startup
 response ordering reproduces the nonblocking RDFAST read-completion erratum.

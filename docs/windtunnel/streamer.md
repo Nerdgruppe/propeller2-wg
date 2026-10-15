@@ -54,14 +54,85 @@ Streamer LUT reads also notify matching selectable LUT-read sensors. These
 sources use the existing POLL/WAIT/J/JN consumers, interrupts and debug traps.
 GETBRK WCZ includes the streamer-active bit.
 
+XMT/XFI publication crosses the cog's two-clock event path; XRO crosses one clock.
+Their WAIT consumers need no additional event-resume delay. Hardware probes at identical
+instruction positions show that an already-pollable event also satisfies the corresponding
+WAIT without an extra stall. These modeled transport stages do not establish a physical
+pipeline topology. Other event sources retain their separately characterized wake timing.
+Pending deliveries belong to the cog. POLL/WAIT/J/JN acknowledgements commit at writeback
+before new deliveries on that edge, so acknowledgement of an older occurrence does not
+erase a new occurrence delivered on the same clock.
+
 SETCMOD selects normal/forward/reverse digital video independently of the
 [color converter](converter.md). TMDS maintains separate running disparities for RGB,
 encodes pixel bytes or passes literal ten-bit symbols, and serializes LSB first
 with clock and differential pairs. Use NCO frequency `$0CCCCCCD` for ten system
 clocks per pixel. This digital mechanism does not transform DAC bytes.
 
-DDS/Goertzel, GETXACC, scope/ADC commands and ADC capture modes remain unsupported.
+Scope commands and ADC capture modes remain unsupported. Raw ADC input for DDS/Goertzel is digital.
+For example, `X_1ADC8_0P_1DAC8_WFBYTE` captures one eight-bit SCOPE channel, no GPIO bits,
+updates one DAC source byte, and optionally records bytes through WRFAST when D[23] is set.
+It requires SETSCP and an enabled ADC-sampling/scope smart pin; it is distinct from raw-bit Goertzel input.
 Converter modes transform the mixed DAC bytes without changing digital streamer pins.
+
+## DDS and Goertzel
+
+DDS/Goertzel reads the LUT and samples four selected IN bits on every active
+system clock, including when the NCO frequency is zero. Frequency rollovers
+still count command duration and activate buffered commands. The first lookup
+uses the phase after adding frequency. All eight table sizes, bounded base
+addresses and wrapping phase offsets are supported; shared LUT port contention
+retains the previous sample just as in the other LUT modes. Actual reads raise
+XRL and the existing selectable LUT-read sensors.
+
+The four signed LUT bytes become unsigned DAC samples by toggling each MSB,
+then use the ordinary sixteen DAC routes and complemented-channel selectors.
+DDS adds one registered DAC override stage after command delivery, including
+restoration on stop. Unselected background DAC bytes keep their ordinary
+SETDACS timing. DDS never generates digital pin output, including when CMOD
+selects TMDS; D[23] selects SINC2 in this mode.
+
+Goertzel samples the IN stage one clock before ordinary cog register reads.
+Selected input bits map zero to -1 and one to +1, with individual inversion.
+Exactly two or four selected channels divide their even sum by two. Signed LUT
+bytes 2 and 3 supply cosine and sine coefficients. A one-clock multiplication
+stage feeds wrapping 32-bit accumulators. SINC2 integrates the products before
+final accumulation; that first integrator persists through GETXACC and command
+changes. Arithmetic registers retain their values while DDS/Goertzel is inactive.
+
+GETXACC captures cosine into D, sine into Q and the following instruction's full
+S value. Its capture/clear port is three clocks earlier than ordinary instruction
+result retirement; the model preserves the intervening work when retiring a
+valid instruction. It clears the final accumulators only when DDS/Goertzel is
+active at that capture boundary. Repeated stopped reads retain the same values.
+Failed instruction conditions and cancelled instructions have no capture effects.
+Cog stop/restart and hub reset clear all accumulator and output pipeline state.
+
+Raw ADC pads accept a host-supplied fraction of one bits through
+`hub.io.setAdcDensity(pin, density)`, with finite `density` in `[0, 1]` (default
+0.5). A deterministic first-order delta/sigma source emits one digital bit per
+system clock while that raw ADC pad is selected. Changing density retains the
+fractional phase. ADC gain and calibration selectors do not convert this fraction
+into voltage. Raw ADC pad modes retain ordinary digital OUT drive, output inversion,
+DIR gating and independent high/low float settings. Their ADC selector bits do not
+enable GPIO input inversion or synchronous I/O.
+
+`PinConfiguration.isAdc()` identifies ADC-capable modes, including both DAC pad groups;
+it does not report whether their ADC is currently enabled. In plain DAC modes, TT=00/01
+and OUT high enable the same independent density source, regardless of DIR. OUT low
+or bit-DAC selection (TT=10/11) returns zero without advancing that source. DAC level bits
+are not GPIO drive/inversion/synchronization settings. The pin resolver does not synthesize
+an electrical DAC driver or feed DAC bytes back into this source.
+
+Ordinary digital pins or external Boolean streams can also feed
+Goertzel. ADC smart-pin conversions, electrical pad behavior and DAC-to-ADC
+feedback are outside this interface; DAC outputs remain the four bytes per cog.
+
+Two-board characterization uses the DUT at nominal 1 MHz via PLL `$0100009B`
+and EVN PLX6ZJKWX at 160 MHz. Digital input vectors establish integer behavior;
+independent ADC observations compare physical DAC codes and oversample transport
+at up to 160 samples per DUT clock. Measurements and the low-VCO limitation of
+this session's PLL configuration are recorded in [Accumulated P2 Knowledge](../accumulated.md).
 
 ## Inspection and verification
 
@@ -96,3 +167,23 @@ The complete project suite includes 3,426 Windtunnel fixture runs and 376 passin
 unit/harness/GUI tests, with two optional Propan tests skipped. Use
 `zig-0.16.0 build install test -Doptimize=ReleaseSafe -Dcoverage=false` to repeat
 local validation; hardware comparisons require the existing P2AAS oracle.
+
+Validation on 2026-10-15 adds eleven DDS/Goertzel fixtures with 298 runs:
+264 hardware comparisons at 1 MHz and 34 local DAC-state checks backed by
+independent two-board measurements. Coverage includes changing digital densities,
+all LUT sizes, phase offsets, live and buffered frequency changes, backpressure,
+SINC2 overflow, capture/clear timing, Q/source forwarding, and shared-LUT reads.
+Physical DAC checks cover all sixteen routes, start/stop timing and four-channel
+sample-per-clock playback with the 160 MHz EVN observer. Initial shared-LUT
+contention uncertainty is recorded in the accumulated knowledge.
+
+The full `zig-0.16.0 build install test -Doptimize=ReleaseSafe -Dcoverage=false`
+run passes all 3,874 checklist runs and 392 unit/harness/GUI tests; two optional
+Propan tests are skipped. The ADC interface and DDS arithmetic remain digital,
+with four effective DAC bytes per cog and no electrical feedback path.
+
+The event-delivery follow-up adds `streamer-event-edge.propan` (36 runs with twelve
+probe offsets each) and `streamer-event-ack.propan` (24 runs around coincident
+acknowledgement/delivery). All 60 runs agree with the physical DUT at 1 MHz.
+Full validation with `zig-0.16.0` passes 398 tests, skips two optional tests, and
+passes all 3,934 runs across 241 registered Windtunnel fixtures.

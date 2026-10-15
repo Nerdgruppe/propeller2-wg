@@ -16,6 +16,22 @@ pub const DataSource = smart_pin.DataSource;
 pub const DataSink = smart_pin.DataSink;
 const IO = @This();
 
+/// Deterministic first-order delta/sigma source; density is a fraction of one bits, not a voltage.
+pub const DeltaSigma = struct {
+    density: f64 = 0.5,
+    phase: f64 = 0,
+
+    /// Emit one raw ADC bit while retaining fractional error for the next system clock.
+    pub fn step(source: *DeltaSigma) bool {
+        source.phase += source.density;
+        const bit = source.phase >= 1;
+        if (bit) {
+            source.phase -= 1;
+        }
+        return bit;
+    }
+};
+
 /// One global unanimous-filter setting, selected independently by each pin.
 pub const FilterConfiguration = struct {
     length: enum(u2) {
@@ -168,6 +184,8 @@ const Samples = struct {
 };
 
 pins: [64]Pin = @splat(.{}),
+/// Host-supplied raw ADC densities replace electrical conversion; inactive sources retain their phase.
+adc_inputs: [64]DeltaSigma = @splat(.{}),
 /// Reused frame storage keeps ReleaseSafe from poisoning large scratch arrays every clock.
 frame_inputs: [64]smart_pin.Inputs = @splat(.{}),
 frame_outputs: [64]smart_pin.Outputs = @splat(.{}),
@@ -220,7 +238,8 @@ pub fn supported(value: u32) bool {
     if (value & 1 != 0)
         return true; // WRPIN #1 / AKPIN acknowledges only.
     const configuration: PinConfiguration = @bitCast(value);
-    return @intFromEnum(configuration.pad_mode) <= @intFromEnum(PinConfiguration.PadMode.schmitt_adjacent_feedback);
+    return @intFromEnum(configuration.pad_mode) <= @intFromEnum(PinConfiguration.PadMode.schmitt_adjacent_feedback) or
+        (configuration.isAdc() and configuration.mode == .gpio);
 }
 
 /// Decode HUBSET's global filter selector, history length, and CT timing tap.
@@ -380,7 +399,8 @@ pub fn step(io: *IO, hub: *Hub) void {
         }
     }
     for (&io.sync_out, 0..) |*state, i| {
-        if (!io.pins[i].configuration.synchronous)
+        const configuration = io.pins[i].configuration;
+        if (configuration.isAdc() or !configuration.synchronous)
             continue;
         const sync_pipeline = &io.pins[i].sync_output_pipeline;
         state.* = sync_pipeline.step(io.outputState(@enumFromInt(i)));
@@ -491,6 +511,13 @@ pub fn setExternal(io: *IO, index: PadIndex, state: Signal) void {
     io.dirty = true;
 }
 
+/// Set a normalized ADC bit density, retaining modulator phase for continuously changing input.
+pub fn setAdcDensity(io: *IO, index: PinIndex, density: f64) error{InvalidDensity}!void {
+    if (!std.math.isFinite(density) or density < 0 or density > 1)
+        return error.InvalidDensity;
+    io.adc_inputs[@intFromEnum(index)].density = density;
+}
+
 /// Build one smart-logic input sample from the aggregate cog registers and routed pads.
 fn pinInputs(io: *const IO, index: PinIndex) smart_pin.Inputs {
     const i = @intFromEnum(index);
@@ -547,9 +574,11 @@ fn outputState(io: *const IO, index: PadIndex) Signal {
 fn drive(io: *const IO, index: PadIndex) Signal {
     const i = @intFromEnum(index);
     const configuration = io.pins[i].configuration;
-    if (!io.outputEnabled(index))
+    // DAC pad levels have no digital driver representation; only the cog's four DAC bytes are modeled.
+    if (configuration.isDac() or !io.outputEnabled(index))
         return .z;
-    const state = if (configuration.synchronous)
+    // ADC source/gain selection reuses the GPIO synchronization bit; OUT remains asynchronous.
+    const state = if (!configuration.isAdc() and configuration.synchronous)
         io.sync_out[i]
     else
         io.outputState(index);
@@ -649,11 +678,19 @@ fn routeInputs(io: *IO) void {
             .logic_adjacent_feedback, .schmitt_adjacent_feedback => i ^ 1,
             else => i,
         };
-        const input = if (configuration.synchronous)
+        const adc = configuration.isAdc();
+        const input = if (adc) blk: {
+            // In plain DAC mode TT=00/01 selects OUT as ADC enable; TT=10/11 selects bit-DAC instead.
+            if (configuration.isDac() and (configuration.output_source == .other or
+                io.outputs & (@as(u64, 1) << @intCast(i)) == 0))
+                break :blk Signal.zero;
+            break :blk Signal.from(io.adc_inputs[i].step());
+        } else if (configuration.synchronous)
             io.sync_in[source]
         else
             pads[source];
-        state.* = if (configuration.invert_input)
+        // ADC source/gain bits alias the GPIO inversion and synchronization fields.
+        state.* = if (!adc and configuration.invert_input)
             input.invert()
         else
             input;
@@ -688,7 +725,7 @@ pub fn get_in(io: *const IO) u64 {
         io.routed_inputs;
 }
 
-/// Selectable sensors observe IN one pipeline stage before the cog-visible TESTP sample.
+/// Goertzel and selectable sensors observe IN one pipeline stage before the cog-visible TESTP sample.
 pub fn eventInput(io: *const IO, index: PinIndex) bool {
     const inputs = if (io.samples.active)
         io.samples.inputs[(io.last_clock -% 1) % io.samples.inputs.len]
@@ -1367,4 +1404,123 @@ test "switching to virtual TX preserves the ordinary output propagation delay" {
         try std.testing.expectEqual(Signal.one, hub.io.pads[4]);
         try std.testing.expectEqual(Signal.one, pin.outputs.smart_out);
     }
+}
+
+test "raw ADC retains GPIO drive enable inversion and float legs without a synchronization alias" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for (0..8) |source| {
+        for ([_]bool{ false, true }) |inverted| {
+            for ([_]PinConfiguration.Drive{ .fast, .resistor_1k5, .float }) |high_drive| {
+                for ([_]PinConfiguration.Drive{ .fast, .resistor_1k5, .float }) |low_drive| {
+                    hub.init();
+                    const mode = @as(u32, 0x0010_0000) | (@as(u32, @intCast(source)) << 15);
+                    var adc: PinConfiguration = @bitCast(mode);
+                    adc.invert_output = inverted;
+                    adc.high_drive = high_drive;
+                    adc.low_drive = low_drive;
+                    hub.io.editConfiguration(@enumFromInt(0), @bitCast(adc));
+                    // Compare each clock with a GPIO output using the same physical driver settings.
+                    var gpio = adc;
+                    gpio.pad_mode = .logic;
+                    gpio.synchronous = false;
+                    gpio.invert_input = false;
+                    hub.io.editConfiguration(@enumFromInt(1), @bitCast(gpio));
+                    try hub.io.setAdcDensity(@enumFromInt(0), 1);
+                    hub.cogs[0].write_reg(.DIRA, 3);
+                    for ([_]bool{ false, true, false }) |out| {
+                        hub.cogs[0].write_reg(.OUTA, if (out)
+                            3
+                        else
+                            0);
+                        for (0..6) |_| {
+                            _ = hub.step();
+                            try std.testing.expectEqual(hub.io.pads[1], hub.io.pads[0]);
+                        }
+                        const level = out != inverted;
+                        const drive_mode = if (level)
+                            high_drive
+                        else
+                            low_drive;
+                        const expected = if (drive_mode == .float)
+                            Signal.z
+                        else
+                            Signal.from(level);
+                        try std.testing.expectEqual(expected, hub.io.pads[0]);
+                        // The host-supplied ADC stream stays independent of the driven pad level.
+                        try std.testing.expect(hub.io.get_in() & 1 != 0);
+                    }
+                    hub.cogs[0].write_reg(.DIRA, 0);
+                    for (0..6) |_| {
+                        _ = hub.step();
+                    }
+                    try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
+                }
+            }
+        }
+    }
+}
+
+test "DAC pad modes gate the independent raw ADC stream with OUT and TT instead of DIR" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]u32{ 0x0014_0000, 0x0015_0000, 0x0016_0000, 0x0017_0000 }) |mode| {
+        for (0..4) |tt| {
+            for ([_]bool{ false, true }) |dir| {
+                hub.init();
+                hub.io.editConfiguration(@enumFromInt(0), mode | 0x8800 | (@as(u32, @intCast(tt)) << 6));
+                try hub.io.setAdcDensity(@enumFromInt(0), 0.25);
+                hub.cogs[0].write_reg(.DIRA, @intFromBool(dir));
+                for ([_]bool{ false, true, false }) |out| {
+                    hub.cogs[0].write_reg(.OUTA, @intFromBool(out));
+                    for (0..6) |_| {
+                        _ = hub.step();
+                    }
+                    var count: u32 = 0;
+                    for (0..16) |_| {
+                        _ = hub.step();
+                        count += @intFromBool(hub.io.get_in() & 1 != 0);
+                    }
+                    const expected: u32 = if (tt < 2 and out)
+                        4
+                    else
+                        0;
+                    try std.testing.expectEqual(expected, count);
+                    try std.testing.expectEqual(Signal.z, hub.io.pads[0]);
+                    try std.testing.expectEqualSlices(u8, &.{ 0, 0, 0, 0 }, &hub.cogs[0].dacs);
+                }
+            }
+        }
+    }
+}
+
+test "raw ADC densities emit bounded digital streams and reject nonfinite inputs" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    const io = &hub.io;
+    const configurations = [_]u32{ 0x0010_0000, 0x0010_8000, 0x0011_0000, 0x0011_8000, 0x0012_0000 };
+    for ([_]f64{ 0, 0.125, 0.5, 0.875, 1 }, 0..) |density, i| {
+        io.editConfiguration(@enumFromInt(i), configurations[i]);
+        try io.setAdcDensity(@enumFromInt(i), density);
+    }
+    var counts: [5]usize = @splat(0);
+    for (0..1024) |_| {
+        _ = hub.step();
+        for (&counts, 0..) |*count, i| {
+            count.* += @intFromBool(io.routed_inputs & (@as(u64, 1) << @intCast(i)) != 0);
+        }
+    }
+    try std.testing.expectEqualDeep([5]usize{ 0, 128, 512, 896, 1024 }, counts);
+    for ([_]f64{ -0.01, 1.01, std.math.nan(f64), std.math.inf(f64) }) |density| {
+        try std.testing.expectError(error.InvalidDensity, io.setAdcDensity(@enumFromInt(0), density));
+    }
+    try std.testing.expectEqual(@as(f64, 0), io.adc_inputs[0].density);
+    try std.testing.expect(supported(0x0010_0000));
+    try std.testing.expect(!supported(0x0010_0030));
+    hub.init();
+    try std.testing.expectEqualDeep(DeltaSigma{}, hub.io.adc_inputs[0]);
 }

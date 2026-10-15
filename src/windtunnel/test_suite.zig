@@ -1755,9 +1755,7 @@ test "streamer excluded modes and FIFO ownership fail explicitly, while cancella
     const ctx: Context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer, .retain_failures = false };
     const header = "//? WINDTUNNEL CHECK LIST\n//? post: cog[*].c == false\n\n";
     for ([_][]const u8{
-        "XINIT aug(X_DDS_GOERTZEL_SINC1 | 1), 0\n",
         "XINIT aug(X_1ADC8_0P_1DAC8_WFBYTE | 1), 0\n",
-        "GETXACC register(20)\n",
     }) |instruction| {
         const source = try std.mem.concat(ctx.allocator, u8, &.{ header, instruction, "JMP nrel(_end)\n" });
         defer ctx.allocator.free(source);

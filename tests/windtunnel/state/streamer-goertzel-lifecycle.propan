@@ -1,0 +1,133 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "sinc0 frequency0"
+//? const: sinc = 0
+//? const: frequency = 0
+//? post: cog[0].reg[x0] == 1905
+//? post: cog[0].reg[y0] == 4294965376
+//? post: cog[0].reg[q0] == 4294965376
+//? post: cog[0].reg[x1] == 1778
+//? post: cog[0].reg[y1] == 4294965504
+//? post: cog[0].reg[x2] == 1524
+//? post: cog[0].reg[y2] == 4294965760
+//? post: cog[0].reg[x3] == 3556
+//? post: cog[0].reg[y3] == 4294963712
+//? post: cog[0].reg[q3] == 4294963712
+//? run: "sinc0 frequency1000000"
+//? const: sinc = 0
+//? const: frequency = 16777216
+//? post: cog[0].reg[x0] == 1905
+//? post: cog[0].reg[y0] == 4294965376
+//? post: cog[0].reg[q0] == 4294965376
+//? post: cog[0].reg[x1] == 1778
+//? post: cog[0].reg[y1] == 4294965504
+//? post: cog[0].reg[x2] == 1524
+//? post: cog[0].reg[y2] == 4294965760
+//? post: cog[0].reg[x3] == 3556
+//? post: cog[0].reg[y3] == 4294963712
+//? post: cog[0].reg[q3] == 4294963712
+//? run: "sinc0 frequency87654321"
+//? const: sinc = 0
+//? const: frequency = 2271560481
+//? post: cog[0].reg[x0] == 1905
+//? post: cog[0].reg[y0] == 4294965376
+//? post: cog[0].reg[q0] == 4294965376
+//? post: cog[0].reg[x1] == 1778
+//? post: cog[0].reg[y1] == 4294965504
+//? post: cog[0].reg[x2] == 1524
+//? post: cog[0].reg[y2] == 4294965760
+//? post: cog[0].reg[x3] == 3556
+//? post: cog[0].reg[y3] == 4294963712
+//? post: cog[0].reg[q3] == 4294963712
+//? run: "sinc1 frequency0"
+//? const: sinc = 1
+//? const: frequency = 0
+//? post: cog[0].reg[x0] == 15240
+//? post: cog[0].reg[y0] == 4294951936
+//? post: cog[0].reg[q0] == 4294951936
+//? post: cog[0].reg[x1] == 40005
+//? post: cog[0].reg[y1] == 4294926976
+//? post: cog[0].reg[x2] == 54102
+//? post: cog[0].reg[y2] == 4294912768
+//? post: cog[0].reg[x3] == 154686
+//? post: cog[0].reg[y3] == 4294811392
+//? post: cog[0].reg[q3] == 4294811392
+//? run: "sinc1 frequency1000000"
+//? const: sinc = 1
+//? const: frequency = 16777216
+//? post: cog[0].reg[x0] == 15240
+//? post: cog[0].reg[y0] == 4294951936
+//? post: cog[0].reg[q0] == 4294951936
+//? post: cog[0].reg[x1] == 40005
+//? post: cog[0].reg[y1] == 4294926976
+//? post: cog[0].reg[x2] == 54102
+//? post: cog[0].reg[y2] == 4294912768
+//? post: cog[0].reg[x3] == 154686
+//? post: cog[0].reg[y3] == 4294811392
+//? post: cog[0].reg[q3] == 4294811392
+//? run: "sinc1 frequency87654321"
+//? const: sinc = 1
+//? const: frequency = 2271560481
+//? post: cog[0].reg[x0] == 15240
+//? post: cog[0].reg[y0] == 4294951936
+//? post: cog[0].reg[q0] == 4294951936
+//? post: cog[0].reg[x1] == 40005
+//? post: cog[0].reg[y1] == 4294926976
+//? post: cog[0].reg[x2] == 54102
+//? post: cog[0].reg[y2] == 4294912768
+//? post: cog[0].reg[x3] == 154686
+//? post: cog[0].reg[y3] == 4294811392
+//? post: cog[0].reg[q3] == 4294811392
+
+                // Perpetual commands continue sampling even at zero NCO frequency.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                DRVH    0
+                MOV     index,  0
+fill_table:
+                WRLUT   aug(0x807f0000),                index
+                ADD     index,                          1
+                CMP     index,                          aug(512)        :wz
+    if(!Z)      JMP     fill_table
+                SETQ    aug(frequency)
+                XINIT   aug(0xf007ffff | (sinc << 23)), aug(0x1000)
+                WAITX   16
+                GETXACC x0
+                ADD     y0,                             1
+                MUXQ    q0,                             aug(0xffffffff)
+                // A failed condition must not capture, clear, replace Q or forward the next source.
+                TEST    scratch,                        1               :wc
+    if(C)       GETXACC scratch
+                ADD     y1,                             7
+                GETXACC x1
+                MOV     y1,                             0
+                // Ordinary streamer activity exposes whether accumulator clears share the DDS clock gate.
+                SETQ    0
+                XINIT   aug(0x7001ffff),                0
+                WAITX   16
+                GETXACC x2
+                MOV     y2,                             0
+                // Resume DDS and confirm first integrator persistence and Q readback.
+                XINIT   aug(0xf007ffff | (sinc << 23)), aug(0x1000)
+                WAITX   16
+                GETXACC x3
+                MOV     y3,                             0
+                MUXQ    q3,                             aug(0xffffffff)
+                XSTOP
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                DIRL    0
+                JMP     nrel(_end)
+var index:      LONG    0
+var scratch:    LONG    0
+var x0:         LONG    0
+var y0:         LONG    0
+var q0:         LONG    0
+var x1:         LONG    0
+var y1:         LONG    0
+var x2:         LONG    0
+var y2:         LONG    0
+var x3:         LONG    0
+var y3:         LONG    0
+var q3:         LONG    0
+

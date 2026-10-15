@@ -1457,3 +1457,240 @@ direct replacement therefore cleared the previous `$80000000` carrier frequency.
 A signed-coefficient CMOD transition with DAC3=64 and coefficient 128 changed
 64 to 192 at the four-clock coefficient boundary, independently of the earlier
 final-mode mux boundary.
+
+## DDS/Goertzel integer datapath, 2026-10-15
+
+The DUT runs at nominal 1 MHz with PLL `$0100009B`, with the independent
+P2-EVAL PLX6ZJKWX at 160 MHz driving deterministic digital levels on P8..P11.
+UART exchanges use RCFAST outside the measured region. The low VCO limitation
+of this PLL setting is the same as in the converter measurements above.
+
+An initial 136-vector sweep covers 96 signed coefficient, input selection,
+inversion and SINC1/SINC2 cases, plus 40 LUT size/offset combinations. The input
+sum treats each selected zero as -1 and one as +1, applies per-channel inversion,
+and divides by two for exactly two or four selected channels. All signed byte
+coefficient cases agree, including -128 and +127.
+
+DDS lookup uses the NCO phase after adding frequency, including on the first
+active clock. Table size selects bits 30..22 through 30..29; the low address
+bits add the configured offset and wrap within the selected table, leaving its
+upper base bits fixed. All eight sizes were checked at five offsets using a
+ramp table whose upper bytes expose the selected index in GETXACC.
+
+Fresh finite commands with constant coefficients establish a one-clock stage
+before accumulation: N active clocks return `(N-1)*coefficient` in SINC1 and
+`N*(N-1)/2*coefficient` in SINC2. This stage retains its state between commands.
+GETXACC while active clears the final accumulators, retaining the first SINC2
+integrator. After a finite command stops, GETXACC can read the accumulated state
+but does not clear it; the arithmetic registers are clock gated. Repeated idle
+reads return the same pair, and starting a later command resumes the retained
+state. These observations qualify the manual's unconditional "clear" wording.
+
+Raw ADC observations on the 160 MHz EVN board resolve DDS DAC transport at up to
+160 observer samples per DUT clock. Across 32 captures each of SETDACS, DDS start
+and XSTOP, marker-relative transition areas are respectively 1.984..2.013,
+3.990..4.016 and 4.000..4.024 DUT clocks across four channels (one SETDACS capture
+lacked sufficient marker lead-in). The marker precedes each tested instruction
+by the same two-clock register-operand sequence. DDS start and stop therefore
+add two clocks relative to SETDACS: the command-delivery boundary and one further
+DAC override register. These are observable transport boundaries; the ADC is
+used only for physical characterization and is absent from simulator DAC output.
+
+All sixteen DDS DAC selectors were compared at two distinct signed LUT words
+against interleaved SETDACS references, on each of four physical DAC/ADC channel
+pairs, with the DUT held at 1 MHz during each settled 160 MHz observer reading.
+Three short-average cases were drift-sensitive (common offsets up to 1.09 DAC
+codes). Repeating each four times with 8,192-sample averages and bracketing
+same-code SETDACS references reduces the mean differences below 0.10 DAC code
+on every channel. These observations support the signed-byte MSB inversion and
+the existing DAC route/complement table, without adding voltage-valued outputs.
+
+GETXACC's arithmetic capture/clear boundary precedes the simulator's ordinary
+execute-stage result boundary by three clocks. Eight active-clear/forwarding/
+SINC-switch/stop sequences, eight fixed-delay controls, and eight timestamp
+controls distinguish this from clearing on register writeback. The simulator
+retains a short arithmetic history and retires valid instructions against the
+early boundary, preserving work accumulated afterwards. Cancelled instructions
+therefore have no speculative accumulator side effects.
+
+A separate 24-case XMT wake sweep covers ordinary immediate output and DDS.
+With GETCT surrounding WAITXMT, adjacent probe delays return 6, 5 and then 4 clocks.
+The original interpretation as a WAIT-only qualification delay was incorrect:
+the paired POLL/WAIT follow-up below instead establishes delayed event visibility.
+This also resolves the active Goertzel capture sequence at an exact command boundary.
+
+Thirty-four fresh finite-command cases cover signed -128/+127 coefficients,
+three summed inputs, counts through 65,534, both integrators, and frequencies
+`$40000000`, `$7FFFFFFF`, `$80000000`, `$87654321` and `$FFFFFFFF` (the last with
+one rollover only). Every result agrees with wrapping 32-bit integration and
+the documented masked-phase NCO, including SINC2 accumulator overflow. A high
+frequency word is not an ideal unbounded phase carry: `$FFFFFFFF` rolls over
+once initially, then the masked accumulator decrements below its MSB for a
+very long interval. Finite-duration reference generators must use the actual
+NCO bit rule rather than assuming `count/frequency` alone.
+
+Twelve changing-frequency ramp-table vectors establish a registered SETXFRQ
+update one clock after ordinary writeback. DDS must retain its advancing phase
+independently of the preceding rollover consumed by command counting; recomputing
+an apparent phase as `old_count_phase + new_frequency` incorrectly shifts a live
+waveform. In particular, setting frequency to zero holds the accumulated phase
+rather than moving it backwards by an old frequency step.
+
+Buffered command readiness has one clock of lookahead to the releasing NCO
+rollover. Eighteen timestamp cases around a blocked buffered stop return one
+clock less than waiting for the occupied buffer to become visibly empty.
+Seventy-two ramp-table command/capture/timestamp vectors (SINC1, SINC2, phase
+reset, continued phase, changed buffered frequency, and a longer nonzero command
+that also blocks) agree when acceptance is forecast one clock before release.
+Instruction operands and SETQ frequency remain captured throughout the stall.
+
+Shared-LUT contention was checked with a paired cog writing either the DDS
+lookup address or another address every two clocks, at both instruction phases
+and in both integrator modes. The first SINC1 capture is **not repeatable across
+sessions** even for byte-identical complete uploaded images. For example, writing
+`$070B0000` to LUT address 100 while DDS reads `$05030000` at address 0 yielded
+first cosine/sine pairs 17/17 and 9/15 on separate runs of the same bytes.
+Writing the lookup address itself yielded 25/17 and 33/21. Both original and
+uploaded binary images were compared byte-for-byte; no source, oracle layout,
+serial payload or clock configuration changed. A 44-case first-capture delay
+sweep also found phase-dependent startup effects around an immediately issued
+GETXACC; later captures were stable in these measurements.
+
+The deterministic port model retains the previous LUT sample when a companion
+write displaces an ongoing read, with the initial sample represented as
+prefetched. The collision regression checks the stable later captures in both
+SINC modes and both phases, without encoding an arbitrary first power-up/read
+bus state. These data do not establish physical latch contents, RAM port
+implementation or repeatability for every collision and startup condition.
+
+Raw ADC pad configuration reinterprets GPIO control fields: the manual's
+`%100000_OHHHLLL` through `%100111_OHHHLLL` select GND, VIO, float and five input
+gains. In particular, `P_ADC_1X` (`$00118000`) sets bits that the generic GPIO
+structure names synchronization and input inversion. They select the ADC source
+and gain here, and must not invert or synchronize a host-supplied raw bit density.
+The independent A/B selector inversion remains applicable after the raw input.
+
+A final four-entry waveform test uses unsigned levels 0, 64, 128 and 255, rotated
+across the four DAC channels, with DDS frequency `$20000000` and table size 4.
+Thirty-two EVN captures sample the 1 MHz DUT at 160 MHz; 31 contain sufficient
+marker lead-in and playback for the comparison. From marker +4 clocks onward,
+the outputs follow table entries 1, 2, 3, 0 on successive system clocks, on all
+four channels. Central 120-of-160-sample windows avoid the transition edges.
+Within-channel normalization between the observed minimum and maximum gives
+middle-code deviations below 0.79 DAC code. This validates sample-per-clock DDS
+playback and its initial phase separately from GETXACC arithmetic and settled
+routing, without adding analog values or DAC feedback to the simulator.
+
+Twelve changing-input correlation cases use duty-NCO digital densities 1/4,
+1/2 and 3/4, two instruction phases, both SINC modes, and four distinct signed
+quadrature weights. Ordinary IN snapshots agree with the existing digital pad
+model, while Goertzel samples the IN pipeline **one clock earlier** than the
+ordinary cog register-read tap. Using the ordinary IN tap rotates these
+correlations by one sample, despite passing all constant-input arithmetic tests.
+The model therefore uses the existing earlier input stage also observed by
+selectable pin sensors, without altering GPIO transport or introducing voltages.
+
+The retained DDS/Goertzel regression set has eleven fixtures and 298 runs,
+including 264 silicon comparisons at the 1 MHz DUT clock. The other 34 checks
+inspect DAC byte state locally, backed by the two-board route and waveform
+measurements above. Final project validation passes 3,874 fixture runs and 392
+unit/harness/GUI tests, with two optional Propan tests skipped, using
+`zig-0.16.0 build install test -Doptimize=ReleaseSafe -Dcoverage=false`.
+
+### ADC-capable pad output and streamer event edges (2026-10-15)
+
+The silicon documentation's WRPIN pin-configuration table retains DIR-controlled
+OUT drive, output inversion, and independent HHH/LLL drive selectors in all eight
+raw ADC source/gain modes. ADC mode does **not** imply a floating output. Its source/
+gain bits reuse the GPIO input-inversion and synchronization positions, so those
+GPIO interpretations must be ignored. A 32-case nominal 20 MHz RCFAST P2AAS sweep
+on unloaded P40, observed with P41's adjacent comparator at DAC threshold 128 and
+DIR low, confirms all 64 settled low/high observations: eight ADC selectors,
+both output polarities, and fast/1.5 kOhm drive. Both pins are restored to GPIO
+with DIR low before reporting. This experiment establishes simultaneous ADC
+configuration and digital output drive, without modeling electrical conversion.
+
+Both DAC PadMode groups are also ADC-capable. Sixteen additional RCFAST cases
+cover all four DAC ranges and four TT settings on unloaded P40. With DIR high,
+DAC code $88 (and SETDACS $88888888 for channel selection), 256 TESTP samples
+return zero ones for OUT low. OUT high yields 40..136 ones for TT=00/01, whereas
+TT=10/11 yields zero. Thus plain DAC mode permits simultaneous DAC output and
+raw ADC sampling; bit-DAC selection disables that raw input in these cases.
+Counts are uncalibrated observations of ADC enable, not reference voltages.
+The documented ADC enable is independent of DIR, which enables the DAC output.
+The simulator uses OUT and TT to gate a separately supplied bit density, retaining
+only the four per-cog DAC bytes and adding no electrical DAC-to-ADC feedback.
+
+A paired streamer event campaign at the original nominal 1 MHz DUT clock compares
+POLLXMT/POLLXFI/POLLXRO with the corresponding WAIT at identical instruction
+positions, in separate fresh runs. Both ordinary immediate output and DDS agree.
+With frequency $10000000, `WAITX delay; GETCT; consumer; GETCT` gives these edges:
+
+| Event | First delay with POLL true | GETCT span around WAIT at delays 0,1,2,3,4 |
+| --- | --- | --- |
+| XMT | 2 | 6, 5, 4, 4, 4 |
+| XFI | 4 | 8, 7, 6, 5, 4 |
+| XRO | 1 | 5, 4, 4, 4, 4 |
+
+XMT/XRO use XINIT followed by XCONT; XFI uses finite XINIT count 1 followed by
+NOP in place of XCONT. The four-clock baseline includes the consumer and the
+following GETCT; it is not a four-clock WAIT execution time. No measured offset
+has POLL true while the same-position WAIT still adds a stall. A POLL consumes
+the flag, so POLL followed by WAIT in one run is not an equivalent experiment.
+
+The initial 144 edge observations and 60 additional early/late probes at
+$08000000/$20000000 exposed simulator publication that was two clocks early for
+XMT/XFI and one early for XRO. The XMT-specific wait adjustment masked only part
+of that discrepancy. Publication now uses those measured delays, and these
+registered event sources do not add a second resume delay for an arriving event.
+Other events retain their separately measured timing, including WAITFBW's direct
+wake path. These delays describe simulator boundaries, not an established physical
+register topology. The retained `streamer-event-edge.propan` fixture checks twelve
+offsets in each of 36 combinations of frequency, mode, event and consumer; all
+432 comparisons also pass on the physical chip. This evidence does not establish
+identical edge behavior for every other event source.
+
+### Event delivery and simultaneous acknowledgement (2026-10-15)
+
+A further 102 native P2AAS probes use finite ordinary/DDS streamers, frequency
+$10000000 at the nominal 1 MHz DUT clock, counts 1/2/3, and seventeen offsets
+before three consecutive `POLLXRO WC; WRC result` pairs. Both modes agree at every
+offset. At count 2 and delay 12, the three results are `1,1,0`; at delay 13 they
+are `1,0,0`. A count-1 control gives `1,0,0` at both offsets. Thus the second
+result in the delay-12 case represents a second occurrence, not rereading the
+same sticky flag. The first poll samples the older flag; the second rollover
+arrives at its writeback acknowledgement edge and survives. At the next offset,
+both occurrences have already coalesced before acknowledgement.
+
+`streamer-event-ack.propan` retains 24 cases around this boundary, including
+one-/three-rollover controls and both streamer modes. A simulator unit test also
+injects an older XRO plus a new delivery at the exact acknowledgement writeback
+clock and verifies that the new flag remains available to the next poll.
+The cog now owns pending event stages. Consumer acknowledgements commit before
+new deliveries on the same clock; source-specific latch/request transport
+replaces the former post-WAIT resume-delay helper. Interrupt/debug request
+transport is separate from architectural flag transport, as required to retain
+the measured counter-interrupt and selectable-pin timings. These are model
+boundaries, rather than claims about the chip's internal register topology.
+
+Thirty-four additional paired CT1 POLL/WAIT probes at nominal 20 MHz RCFAST
+schedule a target 32 clocks after GETCT and vary the probe delay from 16 through
+32. POLL becomes true at delay 24; WAIT spans 12,11,...,5,4 clocks at delays
+16..24 and remains at its four-clock baseline thereafter. Both consumers agree
+with a two-clock latch-delivery stage, without an extra WAIT resume stage.
+Rearming must discard latch pulses from the old counter comparison, including
+the startup target of zero, while preserving already-pending interrupt requests.
+This differs from a selectable input sample already in flight, which survives
+selector reconfiguration.
+
+A separate unloaded-P40 GPIO-to-selectable-input probe found the event already
+available at its earliest sampled consumer position on hardware, while the
+existing fixed digital GPIO transport model delivers it later. The event changes
+retain the previously validated P4 smart/GPIO event fixtures; they do not resolve
+that broader pad-loopback approximation or introduce electrical signal modeling.
+
+Follow-up validation: `zig-0.16.0 build install test -Doptimize=ReleaseSafe
+-Dcoverage=false --summary all` succeeds in all 36 build steps, with 398 tests
+passed and two optional tests skipped. All 241 registered Windtunnel fixtures
+pass their 3,934 runs. The two retained streamer event fixtures also pass all
+60 P2AAS oracle runs (432 edge comparisons plus 24 acknowledgement scenarios).

@@ -1,0 +1,194 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "mode70010000-count1-delay8"
+//? const: mode = 1879113728
+//? const: count = 1
+//? const: delay = 8
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count1-delay11"
+//? const: mode = 1879113728
+//? const: count = 1
+//? const: delay = 11
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count1-delay12"
+//? const: mode = 1879113728
+//? const: count = 1
+//? const: delay = 12
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count1-delay13"
+//? const: mode = 1879113728
+//? const: count = 1
+//? const: delay = 13
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count2-delay8"
+//? const: mode = 1879113728
+//? const: count = 2
+//? const: delay = 8
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 1
+//? run: "mode70010000-count2-delay11"
+//? const: mode = 1879113728
+//? const: count = 2
+//? const: delay = 11
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count2-delay12"
+//? const: mode = 1879113728
+//? const: count = 2
+//? const: delay = 12
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count2-delay13"
+//? const: mode = 1879113728
+//? const: count = 2
+//? const: delay = 13
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count3-delay8"
+//? const: mode = 1879113728
+//? const: count = 3
+//? const: delay = 8
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 1
+//? run: "mode70010000-count3-delay11"
+//? const: mode = 1879113728
+//? const: count = 3
+//? const: delay = 11
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count3-delay12"
+//? const: mode = 1879113728
+//? const: count = 3
+//? const: delay = 12
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "mode70010000-count3-delay13"
+//? const: mode = 1879113728
+//? const: count = 3
+//? const: delay = 13
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 1
+//? run: "modef0070000-count1-delay8"
+//? const: mode = 4026990592
+//? const: count = 1
+//? const: delay = 8
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count1-delay11"
+//? const: mode = 4026990592
+//? const: count = 1
+//? const: delay = 11
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count1-delay12"
+//? const: mode = 4026990592
+//? const: count = 1
+//? const: delay = 12
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count1-delay13"
+//? const: mode = 4026990592
+//? const: count = 1
+//? const: delay = 13
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count2-delay8"
+//? const: mode = 4026990592
+//? const: count = 2
+//? const: delay = 8
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 1
+//? run: "modef0070000-count2-delay11"
+//? const: mode = 4026990592
+//? const: count = 2
+//? const: delay = 11
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count2-delay12"
+//? const: mode = 4026990592
+//? const: count = 2
+//? const: delay = 12
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count2-delay13"
+//? const: mode = 4026990592
+//? const: count = 2
+//? const: delay = 13
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count3-delay8"
+//? const: mode = 4026990592
+//? const: count = 3
+//? const: delay = 8
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 1
+//? run: "modef0070000-count3-delay11"
+//? const: mode = 4026990592
+//? const: count = 3
+//? const: delay = 11
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count3-delay12"
+//? const: mode = 4026990592
+//? const: count = 3
+//? const: delay = 12
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 1
+//? post: cog[0].reg[third] == 0
+//? run: "modef0070000-count3-delay13"
+//? const: mode = 4026990592
+//? const: count = 3
+//? const: delay = 13
+//? post: cog[0].reg[first] == 1
+//? post: cog[0].reg[second] == 0
+//? post: cog[0].reg[third] == 1
+
+                // Finite rollovers distinguish coalescing from acknowledgement coincident with a new event.
+                // At delay12, the first POLLXRO acknowledges the old flag as the second rollover is delivered.
+                // The new flag survives for the second poll. At delay13 both rollovers have already coalesced.
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                SETQ    aug(0x10000000)
+                XINIT   aug(mode | count),  0
+                NOP
+                WAITX   delay
+                POLLXRO                         :wc
+                WRC     first
+                POLLXRO                         :wc
+                WRC     second
+                POLLXRO                         :wc
+                WRC     third
+                XSTOP
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                JMP     nrel(_end)
+var first:      LONG    0
+var second:     LONG    0
+var third:      LONG    0
+

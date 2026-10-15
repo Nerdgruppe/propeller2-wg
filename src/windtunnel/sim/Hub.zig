@@ -61,8 +61,6 @@ clocking: bool = false,
 /// HUBSET reset is consumed at the next step boundary or immediately after its issuing cog.
 reset_requested: bool = false,
 pending_starts: [8]?struct { provenance: Debugger.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
-pending_events: [4][8]Cog.EventSet = @splat(@splat(.empty)),
-event_head: usize = 0,
 
 pub const Lock = struct {
     allocated: bool = false,
@@ -142,20 +140,11 @@ pub fn signal_lock(hub: *Hub, id: u4, taken: bool) void {
     }
 }
 
-/// Attention and selectable inputs cross two event-sampling registers.
-pub fn signal_event(hub: *Hub, id: u3, event: EventId) void {
-    if (hub.clocking) {
-        hub.pending_events[(hub.event_head + 2) % hub.pending_events.len][id].insert(event);
-    } else {
-        hub.cogs[id].raise_event(event);
-    }
-}
-
 /// Strobe attention for every cog selected by the low eight bits of the operand.
 pub fn send_attention(hub: *Hub, mask: u32) void {
     for (&hub.cogs) |*cog| {
         if (mask & (@as(u32, 1) << cog.id) != 0) {
-            hub.signal_event(cog.id, .ATN);
+            cog.signal_event(.ATN);
         }
     }
 }
@@ -248,15 +237,6 @@ pub fn step(hub: *Hub) StepResult {
         hub.read_class = .data;
     }
 
-    const events = &hub.pending_events[hub.event_head];
-    for (&hub.cogs, events) |*cog, pending| {
-        for (std.enums.values(EventId)) |event| {
-            if (pending.contains(event)) {
-                cog.raise_event(event);
-            }
-        }
-    }
-    events.* = @splat(.empty);
     var lut_writes: [8]@TypeOf(hub.cogs[0].writeback.lut) = undefined;
     var lut_provenance: [8]Debugger.Provenance = undefined;
     for (&hub.cogs, &lut_writes) |*cog, *write| {
@@ -267,6 +247,9 @@ pub fn step(hub: *Hub) StepResult {
     for (&hub.cogs) |*cog| {
         hub.access_context = cog.writeback.provenance;
         cog.commit_results();
+    }
+    for (&hub.cogs) |*cog| {
+        cog.clock_events();
     }
     // Both RAM ports complete together. Distinct-address writes both become
     // visible. Same-address collisions vary by physical RAM instance; use a
@@ -329,6 +312,8 @@ pub fn step(hub: *Hub) StepResult {
     if (hub.cordic.step()) |delivery| {
         hub.cogs[@intFromEnum(delivery.cog)].cordic_result.accept(delivery);
     }
+    // Issue shared hub commands before advancing any cog's instruction pipeline.
+    // Command side effects belong to this edge; each cog completes from its saved result.
     for (&hub.cogs) |*cog| {
         hub.access_context = cog.provenance();
         hub.read_class = .data;
@@ -360,7 +345,6 @@ pub fn step(hub: *Hub) StepResult {
         cog.advance_read_bus();
     }
     hub.io.advance_delays();
-    hub.event_head = (hub.event_head + 1) % hub.pending_events.len;
 
     if (hub.vcd) |vcd|
         vcd.capture(hub) catch |err| {
@@ -572,37 +556,38 @@ test "event delivery coalesces without crossing cogs and reset cancels queued la
     hub.init();
     const events = std.enums.values(EventId);
     for (events) |event| {
-        hub.signal_event(0, event);
+        hub.cogs[0].signal_event(event);
     }
     try std.testing.expect(hub.cogs[0].events.eql(.full));
     hub.cogs[0].reset();
     hub.clocking = true;
     for (events) |event| {
-        hub.signal_event(0, event);
-        hub.signal_event(0, event);
-        hub.signal_event(1, event);
-        hub.signal_event(2, event);
+        hub.cogs[0].signal_event(event);
+        hub.cogs[0].signal_event(event);
+        hub.cogs[1].signal_event(event);
+        hub.cogs[2].signal_event(event);
     }
     hub.clocking = false;
     hub.cogs[0].events = .full;
     hub.cogs[0].reset();
     try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
-    for (0..2) |_| {
+    for (0..3) |_| {
         _ = hub.step();
-        for (hub.cogs) |cog| {
+        try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
+        for (hub.cogs[3..]) |cog| {
             try std.testing.expectEqual(@as(usize, 0), cog.events.count());
         }
     }
-    _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), hub.cogs[0].events.count());
     try std.testing.expect(hub.cogs[1].events.eql(.full));
     try std.testing.expect(hub.cogs[2].events.eql(.full));
     for (hub.cogs[3..]) |cog| {
         try std.testing.expectEqual(@as(usize, 0), cog.events.count());
     }
-    for (hub.pending_events) |edge| {
-        for (edge) |pending| {
-            try std.testing.expectEqual(@as(usize, 0), pending.count());
+    for (hub.cogs) |cog| {
+        for (cog.pending_events) |pending| {
+            try std.testing.expectEqual(@as(usize, 0), pending.flags.count());
+            try std.testing.expectEqual(@as(usize, 0), pending.requests.count());
         }
     }
 }
@@ -618,7 +603,7 @@ test "pending events arrive during a timed wait" {
         cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_161F }; // WAITX #11.
         _ = hub.step();
         hub.clocking = true;
-        hub.signal_event(cog.id, event);
+        cog.signal_event(event);
         hub.clocking = false;
         for (0..3) |_| {
             _ = hub.step();
@@ -635,7 +620,7 @@ test "pending events keep their two-clock delay across counter rollover" {
     hub.init();
     hub.counter = std.math.maxInt(u64) - 1;
     hub.clocking = true;
-    hub.signal_event(0, .QMT);
+    hub.cogs[0].signal_event(.QMT);
     hub.clocking = false;
     for (0..2) |_| {
         _ = hub.step();
@@ -787,8 +772,12 @@ test "selectable pin samples retain delayed notifications during waits" {
     _ = hub.step();
     try std.testing.expect(!cog.events.contains(.SE1));
     _ = hub.step();
-    try std.testing.expect(cog.events.contains(.SE1));
+    try std.testing.expect(!cog.events.contains(.SE1));
     try std.testing.expectEqual(Cog.InterruptState.pending, cog.interrupts.levels.get(.int1).state);
+    _ = hub.step();
+    try std.testing.expect(!cog.events.contains(.SE1));
+    _ = hub.step();
+    try std.testing.expect(cog.events.contains(.SE1));
     cog.cancel_interrupt(.int1);
     cog.events.remove(.SE1);
     // Only the sampled event/architectural input buses change; no pad propagation is involved.
@@ -797,8 +786,8 @@ test "selectable pin samples retain delayed notifications during waits" {
     cog.step();
     try std.testing.expect(cog.events.contains(.SE1));
     cog.reset();
-    for (hub.pending_events) |edge| {
-        try std.testing.expect(!edge[0].contains(.SE1));
+    for (cog.pending_events) |pending| {
+        try std.testing.expect(!pending.flags.contains(.SE1));
     }
     for (cog.selectable_events) |selection| {
         try std.testing.expect(selection == null);

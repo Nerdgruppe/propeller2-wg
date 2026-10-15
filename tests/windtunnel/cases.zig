@@ -1,5 +1,18 @@
 /// Assembly fixtures registered in the software suite; exploratory probes stay outside the build.
 pub const fixtures = [_][]const u8{
+    "tests/windtunnel/state/streamer-goertzel-density.propan",
+    "tests/windtunnel/state/streamer-dds-frequency.propan",
+    "tests/windtunnel/state/streamer-dds-chain.propan",
+    "tests/windtunnel/state/streamer-dds-lut-collision.propan",
+    "tests/windtunnel/state/streamer-goertzel-lifecycle.propan",
+    "tests/windtunnel/state/streamer-goertzel-overflow.propan",
+    "tests/windtunnel/state/streamer-xmt-edge.propan",
+    "tests/windtunnel/state/streamer-event-edge.propan",
+    "tests/windtunnel/state/streamer-event-ack.propan",
+    "tests/windtunnel/state/streamer-goertzel-control.propan",
+    "tests/windtunnel/state/streamer-dds-dacs.propan",
+    "tests/windtunnel/state/streamer-goertzel-arithmetic.propan",
+    "tests/windtunnel/state/streamer-dds-lut.propan",
     "tests/windtunnel/state/converter-vectors.propan",
     "tests/windtunnel/state/converter-control.propan",
     "tests/windtunnel/state/converter-streamer.propan",

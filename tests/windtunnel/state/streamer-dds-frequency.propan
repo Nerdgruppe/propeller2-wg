@@ -1,0 +1,166 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "before1000000 after0 sinc0"
+//? const: before = 16777216
+//? const: after = 0
+//? const: sinc = 0
+//? post: cog[0].reg[r0] == 612
+//? post: cog[0].reg[r1] == 612
+//? post: cog[0].reg[r2] == 1748
+//? post: cog[0].reg[r3] == 1748
+//? post: cog[0].reg[r4] == 480
+//? post: cog[0].reg[r5] == 480
+//? run: "before1000000 after0 sinc1"
+//? const: before = 16777216
+//? const: after = 0
+//? const: sinc = 1
+//? post: cog[0].reg[r0] == 3876
+//? post: cog[0].reg[r1] == 3876
+//? post: cog[0].reg[r2] == 33444
+//? post: cog[0].reg[r3] == 33444
+//? post: cog[0].reg[r4] == 15840
+//? post: cog[0].reg[r5] == 15840
+//? run: "before1000000 after8000000 sinc0"
+//? const: before = 16777216
+//? const: after = 134217728
+//? const: sinc = 0
+//? post: cog[0].reg[r0] == 612
+//? post: cog[0].reg[r1] == 612
+//? post: cog[0].reg[r2] == 148
+//? post: cog[0].reg[r3] == 156
+//? post: cog[0].reg[r4] == 192
+//? post: cog[0].reg[r5] == 196
+//? run: "before1000000 after8000000 sinc1"
+//? const: before = 16777216
+//? const: after = 134217728
+//? const: sinc = 1
+//? post: cog[0].reg[r0] == 3876
+//? post: cog[0].reg[r1] == 3876
+//? post: cog[0].reg[r2] == 17380
+//? post: cog[0].reg[r3] == 17464
+//? post: cog[0].reg[r4] == 4672
+//? post: cog[0].reg[r5] == 4730
+//? run: "before1000000 after23456789 sinc0"
+//? const: before = 16777216
+//? const: after = 591751049
+//? const: sinc = 0
+//? post: cog[0].reg[r0] == 612
+//? post: cog[0].reg[r1] == 612
+//? post: cog[0].reg[r2] == 130
+//? post: cog[0].reg[r3] == 139
+//? post: cog[0].reg[r4] == 67
+//? post: cog[0].reg[r5] == 70
+//? run: "before1000000 after23456789 sinc1"
+//? const: before = 16777216
+//? const: after = 591751049
+//? const: sinc = 1
+//? post: cog[0].reg[r0] == 3876
+//? post: cog[0].reg[r1] == 3876
+//? post: cog[0].reg[r2] == 17234
+//? post: cog[0].reg[r3] == 17333
+//? post: cog[0].reg[r4] == 5031
+//? post: cog[0].reg[r5] == 5098
+//? run: "before10000000 after0 sinc0"
+//? const: before = 268435456
+//? const: after = 0
+//? const: sinc = 0
+//? post: cog[0].reg[r0] == 4294966848
+//? post: cog[0].reg[r1] == 4294966856
+//? post: cog[0].reg[r2] == 4294967104
+//? post: cog[0].reg[r3] == 4294967124
+//? post: cog[0].reg[r4] == 0
+//? post: cog[0].reg[r5] == 6
+//? run: "before10000000 after0 sinc1"
+//? const: before = 268435456
+//? const: after = 0
+//? const: sinc = 1
+//? post: cog[0].reg[r0] == 4294962752
+//? post: cog[0].reg[r1] == 4294962820
+//? post: cog[0].reg[r2] == 4294953280
+//? post: cog[0].reg[r3] == 4294953666
+//? post: cog[0].reg[r4] == 4294963456
+//? post: cog[0].reg[r5] == 4294963645
+//? run: "before10000000 after8000000 sinc0"
+//? const: before = 268435456
+//? const: after = 134217728
+//? const: sinc = 0
+//? post: cog[0].reg[r0] == 4294966848
+//? post: cog[0].reg[r1] == 4294966856
+//? post: cog[0].reg[r2] == 4294967040
+//? post: cog[0].reg[r3] == 4294967052
+//? post: cog[0].reg[r4] == 4294967008
+//? post: cog[0].reg[r5] == 4294967012
+//? run: "before10000000 after8000000 sinc1"
+//? const: before = 268435456
+//? const: after = 134217728
+//? const: sinc = 1
+//? post: cog[0].reg[r0] == 4294962752
+//? post: cog[0].reg[r1] == 4294962820
+//? post: cog[0].reg[r2] == 4294951808
+//? post: cog[0].reg[r3] == 4294952126
+//? post: cog[0].reg[r4] == 4294961504
+//? post: cog[0].reg[r5] == 4294961642
+//? run: "before10000000 after23456789 sinc0"
+//? const: before = 268435456
+//? const: after = 591751049
+//? const: sinc = 0
+//? post: cog[0].reg[r0] == 4294966848
+//? post: cog[0].reg[r1] == 4294966856
+//? post: cog[0].reg[r2] == 4294967022
+//? post: cog[0].reg[r3] == 4294967033
+//? post: cog[0].reg[r4] == 4294967139
+//? post: cog[0].reg[r5] == 4294967141
+//? run: "before10000000 after23456789 sinc1"
+//? const: before = 268435456
+//? const: after = 591751049
+//? const: sinc = 1
+//? post: cog[0].reg[r0] == 4294962752
+//? post: cog[0].reg[r1] == 4294962820
+//? post: cog[0].reg[r2] == 4294950126
+//? post: cog[0].reg[r3] == 4294950422
+//? post: cog[0].reg[r4] == 4294962375
+//? post: cog[0].reg[r5] == 4294962496
+
+// Drive a fixed digital input while a ramp table exposes every live NCO phase change.
+
+                HUBSET  aug(0x01000098)
+                WAITX   aug(300000)
+                HUBSET  aug(0x0100009b)
+                DRVH    0
+                MOV     index,  0
+                MOV     value,  0
+// Fill both signed Goertzel coefficient bytes from the LUT index.
+fill_table:
+                WRLUT   value,                          index
+                ADD     value,                          aug(0x01010000)
+                ADD     index,                          1
+                CMP     index,                          aug(512)        :wz
+    if(!Z)      JMP     fill_table
+                MOV     new_frequency,                  aug(after)
+                SETQ    aug(before)
+                XINIT   aug(0xf007ffff | (sinc << 23)), aug(0x1000)
+                WAITX   16
+                // Change frequency without resetting the accumulated phase.
+                SETXFRQ new_frequency
+                GETXACC r0
+                MOV     r1,                             0
+                WAITX   16
+                GETXACC r2
+                MOV     r3,                             0
+                XSTOP
+                GETXACC r4
+                MOV     r5,                             0
+                HUBSET  0xf0
+                WAITX   aug(50000)
+                DIRL    0
+                JMP     nrel(_end)
+var index:      LONG    0
+var value:      LONG    0
+var new_frequency:
+                LONG    0
+var r0:         LONG    0
+var r1:         LONG    0
+var r2:         LONG    0
+var r3:         LONG    0
+var r4:         LONG    0
+var r5:         LONG    0
+

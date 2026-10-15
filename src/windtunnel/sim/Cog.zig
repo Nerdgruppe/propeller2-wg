@@ -13,6 +13,7 @@ const ColorConverter = @import("ColorConverter.zig");
 
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
+const delays = @import("pipeline.zig");
 const execute = @import("execute.zig");
 const p2 = @import("p2");
 const types = p2.types;
@@ -21,6 +22,41 @@ const PinIndex = types.PinIndex;
 
 pub const Register = types.Register;
 pub const EventSet = std.EnumSet(EventId);
+
+/// Source transport to the event latch and the independent interrupt/debug request port.
+const EventTiming = struct {
+    latch: u3,
+    request: u3,
+};
+
+/// Fixed source transport delays; selectable pin sensors have an additional latch sampling stage.
+const event_timings = .{
+    .events = std.EnumArray(EventId, EventTiming).init(.{
+        .INT = .{ .latch = 2, .request = 0 },
+        .CT1 = .{ .latch = 2, .request = 0 },
+        .CT2 = .{ .latch = 2, .request = 0 },
+        .CT3 = .{ .latch = 2, .request = 0 },
+        .SE1 = .{ .latch = 2, .request = 2 },
+        .SE2 = .{ .latch = 2, .request = 2 },
+        .SE3 = .{ .latch = 2, .request = 2 },
+        .SE4 = .{ .latch = 2, .request = 2 },
+        .PAT = .{ .latch = 2, .request = 0 },
+        .FBW = .{ .latch = 0, .request = 0 },
+        .XMT = .{ .latch = 2, .request = 2 },
+        .XFI = .{ .latch = 2, .request = 2 },
+        .XRO = .{ .latch = 1, .request = 1 },
+        .XRL = .{ .latch = 2, .request = 0 },
+        .ATN = .{ .latch = 2, .request = 2 },
+        .QMT = .{ .latch = 2, .request = 0 },
+    }),
+    .selectable_pin = EventTiming{ .latch = 4, .request = 2 },
+};
+
+/// One clock of event latch inputs and interrupt/debug request pulses.
+const EventDelivery = struct {
+    flags: EventSet = .empty,
+    requests: EventSet = .empty,
+};
 
 /// Execute-only register ROM, transcribed from the silicon instruction words.
 pub const debug_rom = [8]u32{
@@ -94,6 +130,10 @@ fifo_state: FifoState = .{},
 read_bus: ReadBus = .{},
 ct_targets: [3]?u32 = @splat(null),
 events: EventSet = .empty,
+/// Clock-indexed event delivery stages, owned and reset with this cog.
+pending_events: [8]EventDelivery = @splat(.{}),
+/// WAITINT observes the pending-request port through its measured sampling stages.
+interrupt_wait: delays.Pipeline(bool, 1) = .init(false),
 selectable_events: [4]?SelectableEvent = @splat(null),
 pattern: ?Pattern = null,
 pixel_pivot: u8 = 0,
@@ -362,6 +402,7 @@ const Writeback = struct {
     lut: ?struct { address: u9, value: u32 } = null,
     streamer: ?Streamer.Action = null,
     converter: ?ColorConverter.Action = null,
+    acknowledged_events: EventSet = .empty,
 };
 
 /// Create a stopped cog with cleared execution state and a link to its shared hub.
@@ -389,9 +430,6 @@ pub fn reset(cog: *Cog) void {
             hub.release_lock(lock);
         }
     }
-    for (&hub.pending_events) |*edge| {
-        edge[id] = .empty;
-    }
     cog.* = .init(hub, id);
     // Cog and LUT RAM survive COGSTOP and no-load COGINIT.
     cog.registers = registers;
@@ -410,10 +448,12 @@ pub fn step(cog: *Cog) void {
         return;
     }
 
+    defer _ = cog.interrupt_wait.step(cog.has_pending_interrupt());
+
     for (&cog.ct_targets, [3]EventId{ .CT1, .CT2, .CT3 }) |*target, event| {
         if (target.*) |value| {
             if (@as(u32, @truncate(cog.hub.counter)) -% value < 0x8000_0000) {
-                cog.raise_event(event);
+                cog.signal_event(event);
             }
         }
     }
@@ -424,7 +464,7 @@ pub fn step(cog: *Cog) void {
                 .pin => |*pin| {
                     const value = cog.read_input_bit(pin.index);
                     if (pin.triggered(value)) {
-                        cog.hub.signal_event(cog.id, event);
+                        cog.signal_event(event);
                     }
                     pin.previous = value;
                 },
@@ -433,7 +473,7 @@ pub fn step(cog: *Cog) void {
     if (cog.pattern) |*pattern| {
         const matched = cog.pattern_matches();
         if (matched and !pattern.matched) {
-            cog.raise_event(.PAT);
+            cog.signal_event(.PAT);
         }
         pattern.matched = matched;
     }
@@ -502,7 +542,7 @@ pub fn step(cog: *Cog) void {
             } else {
                 const ordinary: InterruptLevel = @enumFromInt(@intFromEnum(level) - 1);
                 cog.interrupts.levels.getPtr(ordinary).state = .active;
-                cog.raise_event(.INT);
+                cog.signal_event(.INT);
                 const index: u5 = @intFromEnum(ordinary);
                 if (cog.debug.control & ((@as(u32, 1) << (5 + index)) | (@as(u32, 1) << (1 + index))) != 0) {
                     cog.request_debug(false);
@@ -512,6 +552,9 @@ pub fn step(cog: *Cog) void {
         var result = if (instr.cancelled)
             cog.cancel_instruction()
         else if (instr.command_result) |result| blk: {
+            // clock_command already executed this shared command at its grant edge.
+            // ready_at held this stage through the response delay; resume with the
+            // saved result and let ordinary writeback commit its register/flag changes.
             cog.writeback = instr.command_writeback;
             break :blk result;
         } else execute.execute_instruction(cog, instr);
@@ -638,9 +681,14 @@ pub fn clock_startup(cog: *Cog) void {
     startup.grant_at +%= 1;
 }
 
-/// Hub commands have a separate eight-clock round robin, whose slot is the
-/// cog ID (unlike the rotating RAM slices). Evaluate before any cog executes,
-/// so a stop, start, or lock event has the same edge for every observer.
+/// Issue cog-control, lock, HUBSET and CORDIC commands at their shared hub command slot.
+/// This eight-clock round robin grants when CT & 7 == cog.id, independently of RAM slices.
+/// Hub.step services this phase for all cogs before advancing their instruction pipelines,
+/// so shared effects such as stopping a cog or releasing a lock are visible on the same
+/// edge to every observer, regardless of the order in which cog.step runs.
+/// Reuse the instruction executor to apply command semantics once at the grant edge.
+/// Save its result and register/flag writes while ready_at holds the execute stage through
+/// any response delay; cog.step then consumes those saved values instead of executing again.
 pub fn clock_command(cog: *Cog) void {
     if (cog.exec_mode == .stopped or cog.startup != null)
         return;
@@ -778,7 +826,7 @@ fn advance_fifo_block(cog: *Cog) void {
     if (fifo.block) |block| {
         fifo.address = block.address & 0xffffc;
         fifo.remaining = block.longs;
-        cog.raise_event(.FBW);
+        cog.signal_event(.FBW);
     } else {
         fifo.remaining = 0x40000;
     }
@@ -846,6 +894,17 @@ pub fn commit_results(cog: *Cog) void {
     if (cog.writeback.converter) |action| {
         cog.converter.apply(action);
         cog.dacs = cog.converter.output(cog.raw_dacs);
+    }
+    for (std.enums.values(EventId)) |event| {
+        if (cog.writeback.acknowledged_events.contains(event)) {
+            if (cog.hub.trace_writer) |writer| {
+                if (cog.hub.trace_lines_left > 0) {
+                    writer.print("CT={d} cog={d} event={t} acknowledge\n", .{ cog.hub.counter, cog.id, event }) catch {};
+                    cog.hub.trace_lines_left -= 1;
+                }
+            }
+            cog.events.remove(event);
+        }
     }
     cog.writeback = .{};
     cog.retired = cog.pipeline[4];
@@ -1297,9 +1356,80 @@ pub fn return_address(cog: *Cog) u32 {
     return (@as(u32, @intFromBool(cog.c)) << 31) | (@as(u32, @intFromBool(cog.z)) << 30) | pc;
 }
 
-/// Latch a sampled event and notify idle interrupt levels selecting that source.
-pub fn raise_event(cog: *Cog, event: EventId) void {
+/// Select the fixed transport delay from the event and its configured sensor source.
+fn event_timing(cog: *const Cog, event: EventId) EventTiming {
+    switch (event) {
+        .SE1, .SE2, .SE3, .SE4 => {
+            const index = @intFromEnum(event) - @intFromEnum(EventId.SE1);
+            if (cog.selectable_events[index]) |source| {
+                if (source == .pin)
+                    return event_timings.selectable_pin;
+            }
+        },
+        else => {},
+    }
+    return event_timings.events.get(event);
+}
+
+/// Schedule latch and request pulses through this cog's event stages; untimed calls deliver immediately.
+pub fn signal_event(cog: *Cog, event: EventId) void {
+    if (!cog.hub.clocking) {
+        cog.deliver_event(event);
+        cog.notify_event(event);
+        return;
+    }
+    const timing = cog.event_timing(event);
+    if (timing.latch == 0) {
+        cog.deliver_event(event);
+    } else {
+        const index = (cog.hub.counter +% timing.latch) % cog.pending_events.len;
+        cog.pending_events[index].flags.insert(event);
+    }
+    if (timing.request == 0) {
+        cog.notify_event(event);
+    } else {
+        const index = (cog.hub.counter +% timing.request) % cog.pending_events.len;
+        cog.pending_events[index].requests.insert(event);
+    }
+}
+
+/// Publish this clock's event stage after writeback acknowledgements, so a new occurrence survives.
+pub fn clock_events(cog: *Cog) void {
+    const pending = &cog.pending_events[cog.hub.counter % cog.pending_events.len];
+    const delivered = pending.*;
+    pending.* = .{};
+    for (std.enums.values(EventId)) |event| {
+        if (delivered.requests.contains(event)) {
+            cog.notify_event(event);
+        }
+        if (delivered.flags.contains(event)) {
+            cog.deliver_event(event);
+        }
+    }
+}
+
+/// Acknowledge the sampled latch at instruction writeback; later deliveries on that edge take priority.
+pub fn acknowledge_event(cog: *Cog, event: EventId) void {
+    if (cog.collecting_writes) {
+        cog.writeback.acknowledged_events.insert(event);
+    } else {
+        cog.events.remove(event);
+    }
+}
+
+/// Set the architectural event latch at its delivery stage.
+fn deliver_event(cog: *Cog, event: EventId) void {
+    if (cog.hub.trace_writer) |writer| {
+        if (cog.hub.trace_lines_left > 0) {
+            writer.print("CT={d} cog={d} event={t} deliver\n", .{ cog.hub.counter, cog.id, event }) catch {};
+            cog.hub.trace_lines_left -= 1;
+        }
+    }
     cog.events.insert(event);
+}
+
+/// Notify idle interrupt levels and the debug event trap at the source's request stage.
+fn notify_event(cog: *Cog, event: EventId) void {
     if (cog.debug.control & (1 << 9) != 0 and @as(u4, @truncate(cog.debug.control >> 12)) == @intFromEnum(event)) {
         cog.request_debug(false);
     }
@@ -1315,24 +1445,20 @@ pub fn raise_event(cog: *Cog, event: EventId) void {
 /// Other waits sample their ordinary event latch. This distinction is measured on silicon.
 pub fn event_for_wait(cog: *const Cog, event: EventId) bool {
     if (event == .INT) {
-        for (cog.interrupts.levels.values) |level| {
-            if (level.state == .pending)
-                return true;
-        }
-        return false;
+        if (cog.hub.clocking)
+            return cog.interrupt_wait.current();
+        return cog.has_pending_interrupt();
     }
     return cog.events.contains(event);
 }
 
-/// Return the measured stalled-wait resume delay; FBW has a direct FIFO wake path.
-pub fn event_wait_resume_clocks(_: *const Cog, event: EventId, occurred: bool) u2 {
-    return if (event == .FBW)
-        (if (occurred)
-            @as(u2, 0)
-        else
-            1)
-    else
-        2;
+/// Read the request port independently of the pollable interrupt-occurred latch.
+fn has_pending_interrupt(cog: *const Cog) bool {
+    for (cog.interrupts.levels.values) |level| {
+        if (level.state == .pending)
+            return true;
+    }
+    return false;
 }
 
 /// Select the low-four-bit event ID; zero disables the source without selecting INT.
@@ -1627,6 +1753,10 @@ pub fn set_counter_target(cog: *Cog, event: EventId, value: u32) void {
     std.debug.assert(event == .CT1 or event == .CT2 or event == .CT3);
     cog.ct_targets[@intFromEnum(event) - @intFromEnum(EventId.CT1)] = value;
     cog.events.remove(event);
+    // Rearming the comparator discards old-condition pulses from its latch stages.
+    for (&cog.pending_events) |*pending| {
+        pending.flags.remove(event);
+    }
 }
 
 /// Capture the operands and C/Z-selected comparison, clear PAT, and establish its edge baseline.
@@ -1687,7 +1817,7 @@ pub fn read_cordic_result(cog: *Cog, axis: Cordic.Axis) ?u32 {
     if (!cog.cordic_result.ready.get(axis)) {
         if (cog.cordic_result.busy())
             return null;
-        cog.raise_event(.QMT);
+        cog.signal_event(.QMT);
     }
     cog.cordic_result.ready.set(axis, false);
     return switch (axis) {
@@ -1860,7 +1990,7 @@ pub fn signal_selectable(cog: *Cog, config: u6) void {
         if (selection) |sensor|
             switch (sensor) {
                 .lut_lock => |source| if (source == config) {
-                    cog.hub.signal_event(cog.id, event);
+                    cog.signal_event(event);
                 },
                 .pin => {},
             };
@@ -2130,11 +2260,13 @@ pub const PipelineState = struct {
     operands: ?struct { d: u32, s: u32, ptra: u32, ptrb: u32, pa: u32, pb: u32 } = null,
     ready_at: ?u64 = null,
     execution_ready: bool = false,
-    waited_for_event: bool = false,
-    event_resume_at: ?u64 = null,
-    event_result: bool = false,
+    /// Timeout completion crosses its own response pipeline instead of delaying event consumers.
+    event_timeout: delays.Pipeline(bool, 2) = .init(false),
+    /// Shared command grant edge; ready_at also includes any subsequent response delay.
     command_at: ?u64 = null,
+    /// Execution outcome saved by clock_command for completion in step.
     command_result: ?ExecResult = null,
+    /// Register/flag writes held until step resumes ordinary writeback after the response delay.
     command_writeback: Writeback = .{},
 };
 
@@ -2522,6 +2654,10 @@ test "GETCT reads both halves and counter waits cross the 32-bit wrap" {
     _ = hub.step();
     try std.testing.expect(!cog.events.contains(.CT3));
     _ = hub.step();
+    try std.testing.expect(!cog.events.contains(.CT3));
+    _ = hub.step();
+    try std.testing.expect(!cog.events.contains(.CT3));
+    _ = hub.step();
     try std.testing.expect(cog.events.contains(.CT3));
     cog.q = 4;
     cog.setq_pending = true;
@@ -2551,6 +2687,10 @@ test "counter configuration clears each latch and the reached condition reassert
         for (0..3) |_| {
             _ = hub.step();
         }
+        try std.testing.expect(!cog.events.contains(event));
+        _ = hub.step();
+        try std.testing.expect(!cog.events.contains(event));
+        _ = hub.step();
         try std.testing.expect(!cog.events.contains(event));
         _ = hub.step();
         try std.testing.expect(cog.events.contains(event));
@@ -2974,6 +3114,30 @@ test "SETPAT dispatch resolves registers immediates augmentation and cancellatio
     }
 }
 
+test "writeback acknowledgement and a new streamer event on the same clock preserve the new event" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    hub.init();
+    hub.counter = 9;
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .cog;
+    cog.events.insert(.XRO);
+    const poll_xro = 0xFD70_1824; // POLLXRO WC.
+    cog.pipeline[3] = .{ .pc = 0, .instr = poll_xro };
+    hub.clocking = true;
+    cog.signal_event(.XRO);
+    hub.clocking = false;
+    _ = hub.step(); // Sample the older flag and schedule its acknowledgement for clock 10.
+    try std.testing.expect(cog.writeback.acknowledged_events.contains(.XRO));
+    _ = hub.step(); // Commit that acknowledgement, then deliver the new XRO on the same edge.
+    try std.testing.expect(cog.c);
+    try std.testing.expect(cog.events.contains(.XRO));
+    try std.testing.expectEqual(ExecResult.next, execute.execute_instruction(cog, .{ .pc = 1, .instr = poll_xro }));
+    try std.testing.expect(cog.c);
+    try std.testing.expect(!cog.events.contains(.XRO));
+}
+
 test "interrupt requests select every event source independently of event latches" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
@@ -2989,7 +3153,7 @@ test "interrupt requests select every event source independently of event latche
             try std.testing.expectEqual(InterruptState.idle, slot.state);
             cog.interrupts.stalled = true;
             hub.counter = std.math.maxInt(u64);
-            cog.raise_event(event);
+            cog.signal_event(event);
             try std.testing.expectEqual(InterruptState.pending, slot.state);
             try std.testing.expectEqual(hub.counter, slot.pending_since);
             cog.events.remove(event);
@@ -2999,7 +3163,7 @@ test "interrupt requests select every event source independently of event latche
             cog.trigger_interrupt(level);
             try std.testing.expectEqual(hub.counter, slot.pending_since);
             slot.state = .active;
-            cog.raise_event(event);
+            cog.signal_event(event);
             cog.trigger_interrupt(level);
             try std.testing.expectEqual(InterruptState.active, slot.state);
             cog.cancel_interrupt(level);

@@ -94,8 +94,10 @@ fn streamerCommand(cog: *Cog, args: encoding.Both_Dimm_Simm, start: Streamer.Sta
         }
         break :capture command;
     };
-    if (start != .immediate and cog.streamer.pending != null)
-        return .wait;
+    if (start != .immediate and cog.streamer.pending != null) {
+        if (!cog.collecting_writes or !cog.streamer.releasesBufferNextClock())
+            return .wait;
+    }
     streamerAction(cog, .{ .command = command });
     return .next;
 }
@@ -569,7 +571,7 @@ fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog
 /// Sample and clear an event latch, writing requested status flags without waiting.
 fn pollEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult {
     const occurred = cog.events.contains(event);
-    cog.events.remove(event);
+    cog.acknowledge_event(event);
     if (args.c_mod == .write) {
         cog.c = occurred;
     }
@@ -580,9 +582,9 @@ fn pollEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult
 }
 
 /// Consume a matching event or SETQ timeout while retaining the request across stalled clocks.
-/// An event arriving after a stall incurs the measured two-clock pipeline-resume delay.
+/// Events complete on delivery; SETQ timeouts cross a separate clocked response path.
 fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult {
-    var occurred = cog.event_for_wait(event);
+    const occurred = cog.event_for_wait(event);
     if (cog.wait_until == null and cog.setq_pending and !cog.q2) {
         const delta = cog.q -% @as(u32, @truncate(cog.hub.counter));
         cog.wait_until = cog.hub.counter +% delta;
@@ -591,28 +593,19 @@ fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult
         clock_reached(cog.hub.counter, deadline)
     else
         false;
-    if (cog.collecting_writes) {
+    const completed_timeout = if (cog.collecting_writes) blk: {
         const state = &cog.pipeline[3].?;
-        if (state.event_resume_at == null) {
-            if (!occurred and !timeout) {
-                state.waited_for_event = true;
-                return .wait;
-            }
-            // Sensor-specific wake timing belongs to the cog event subsystem.
-            // An already-set event incurs no additional stall.
-            state.event_resume_at = cog.hub.counter +% @as(u64, if (state.waited_for_event)
-                cog.event_wait_resume_clocks(event, occurred)
-            else
-                0);
-            state.event_result = occurred;
+        if (event == .FBW) {
+            state.event_timeout.resize(1) catch unreachable;
         }
-        if (!clock_reached(cog.hub.counter, state.event_resume_at.?))
-            return .wait;
-        occurred = state.event_result;
-    } else if (!occurred and !timeout)
+        break :blk state.event_timeout.step(timeout);
+    } else blk: {
+        break :blk timeout;
+    };
+    if (!occurred and !completed_timeout)
         return .wait;
     cog.wait_until = null;
-    cog.events.remove(event);
+    cog.acknowledge_event(event);
     if (args.c_mod == .write) {
         cog.c = !occurred;
     }
@@ -626,7 +619,7 @@ fn waitEvent(cog: *Cog, args: encoding.OnlyFlags, event: EventId) Cog.ExecResult
 fn branchEvent(cog: *Cog, args: encoding.Only_Simm, event: EventId, positive: bool) Cog.ExecResult {
     const target = branchS(cog, args.s, args.s_imm);
     const occurred = cog.events.contains(event);
-    cog.events.remove(event);
+    cog.acknowledge_event(event);
     if (occurred == positive) {
         cog.jump(target);
     }
@@ -4924,10 +4917,13 @@ pub fn setxfrq(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=D, stack=None
 pub fn getxacc(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // codegen: begin:getxacc
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const values = cog.streamer.readAccumulators(cog.collecting_writes);
+    cog.write_result(args.d, values[0]);
+    cog.q = values[1];
+    if (cog.following_instruction()) |next| {
+        next.s_value = values[1];
+    }
+    return .next;
     // codegen: end:getxacc
 }
 
@@ -5323,6 +5319,7 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
                 cog.events.insert(event);
                 if (event == .INT) {
                     cog.trigger_interrupt(.int1);
+                    cog.interrupt_wait = .init(true);
                 }
             }
             if (scenario == .timeout or scenario == .simultaneous) {
@@ -5331,14 +5328,22 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
             }
             const completion: u64 = if (scenario == .ready)
                 0
-            else
-                5 + @as(u64, cog.event_wait_resume_clocks(event, scenario != .timeout));
+            else if (scenario == .timeout or event == .INT)
+                (if (event == .FBW)
+                    @as(u64, 6)
+                else
+                    7)
+            else switch (event) {
+                .FBW => 3,
+                .XRO => 4,
+                else => 5,
+            };
             for (0..completion + 1) |elapsed| {
                 if (elapsed == 3 and (scenario == .signal or scenario == .simultaneous)) {
                     hub.clocking = true;
-                    hub.signal_event(cog.id, event);
+                    cog.signal_event(event);
                     if (event == .INT) {
-                        hub.signal_event(cog.id, .ATN);
+                        cog.signal_event(.ATN);
                     }
                     hub.clocking = false;
                 }
@@ -5355,10 +5360,10 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
             }
             try std.testing.expect(cog.pipeline[4] != null);
             try std.testing.expectEqual(instruction, cog.pipeline[4].?.instr);
-            try std.testing.expect(!cog.events.contains(event));
             try std.testing.expect(cog.wait_until == null);
             try std.testing.expect(!cog.setq_pending);
-            _ = hub.step(); // Flags become architectural on the next writeback edge.
+            _ = hub.step(); // Flags and acknowledgement become architectural on the next writeback edge.
+            try std.testing.expect(!cog.events.contains(event));
             try std.testing.expectEqual(scenario == .timeout, cog.c);
             try std.testing.expectEqual(scenario == .timeout, cog.z);
         }
