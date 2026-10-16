@@ -135,7 +135,7 @@ pub const SmartPinMode = enum(u5) {
     /// ADC scope with trigger.
     adc_scope = 0b11010,
     /// USB host/device on an odd/even pin pair.
-    usb_pair = 0b11011,
+    usb = 0b11011,
     /// Synchronous serial transmit.
     sync_tx = 0b11100,
     /// Synchronous serial receive.
@@ -180,11 +180,11 @@ pub const SmartPinMode = enum(u5) {
             .adc,
             .adc_ext,
             .adc_scope,
+            .usb,
             => true,
 
             .gpio,
             .dac_noise,
-            .usb_pair,
             => false,
         };
     }
@@ -221,7 +221,7 @@ pub const SmartPinMode = enum(u5) {
             .adc,
             .adc_ext,
             .adc_scope,
-            .usb_pair,
+            .usb,
             .sync_tx,
             .sync_rx,
             .uart_tx,
@@ -240,7 +240,7 @@ pub const SmartPinMode = enum(u5) {
             .pwm_triangle,
             .pwm_sawtooth,
             .pwm_smps,
-            .usb_pair,
+            .usb,
             .sync_tx,
             .uart_tx,
             => true,

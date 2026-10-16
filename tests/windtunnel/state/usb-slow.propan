@@ -1,0 +1,177 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "x512-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "x512-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 40
+//? run: "x512-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x512-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "x512-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 40
+//? run: "x512-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x512-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "x512-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 40
+//? run: "x512-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x512-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "x512-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 40
+//? run: "x512-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x512-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "x512-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 40
+//? run: "x512-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 512
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+
+                // Configure the physical pair before applying the shared lower-pin baud and role.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                WRPIN   aug(0x60000000),    aug(42 | (1 << 6))
+                WRPIN   aug(mode0),         40
+                WRPIN   aug(mode1),         41
+                WXPIN   aug(x),             40
+                DIRH    aug(40 | (1 << 6))
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   128
+                // Clear startup error history after the pair is held in a driven J state.
+                WYPIN   0x80,               aug(40 | (1 << 6))
+                WAITX   aug(4096)
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   128
+                WAITX   aug(phase)
+                WYPIN   2,                  aug(40 | (1 << 6))
+                WAITX   aug(delay)
+                // Preserve result, carry, both engine handshakes and paired physical input aliases.
+                RQPIN   result,             40                  :wc
+                MOV     flags,              0
+                MUXC    flags,              1
+                RQPIN   upper,              41                  :wc
+                MUXC    flags,              2
+                TESTP   40                                      :wc
+                MUXC    flags,              4
+                TESTP   41                                      :wc
+                MUXC    flags,              8
+                TESTP   42                                      :wc
+                MUXC    flags,              16
+                TESTP   43                                      :wc
+                MUXC    flags,              32
+                // Release every experiment pin before the oracle reporter.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                JMP     nrel(_end)
+var result:     LONG    0
+var upper:      LONG    0
+var flags:      LONG    0
+

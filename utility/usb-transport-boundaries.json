@@ -1,0 +1,305 @@
+[
+  {
+    "fixture": "usb-fractional",
+    "runs": [
+      {
+        "name": "x12000-p0-d0",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 12000,
+          "phase": 0,
+          "delay": 0
+        },
+        "expected": [
+          9,
+          0,
+          40
+        ]
+      },
+      {
+        "name": "x8192-p0-d64",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 8192,
+          "phase": 0,
+          "delay": 64
+        },
+        "expected": [
+          2,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x4095-p7-d12",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4095,
+          "phase": 7,
+          "delay": 12
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x4095-p15-d4",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4095,
+          "phase": 15,
+          "delay": 4
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x4095-p3-d16",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4095,
+          "phase": 3,
+          "delay": 16
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x6000-p7-d12",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 6000,
+          "phase": 7,
+          "delay": 12
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x6000-p3-d16",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 6000,
+          "phase": 3,
+          "delay": 16
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x8192-p0-d8",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 8192,
+          "phase": 0,
+          "delay": 8
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x4095-p11-d8",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4095,
+          "phase": 11,
+          "delay": 8
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x12000-p15-d12",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 12000,
+          "phase": 15,
+          "delay": 12
+        },
+        "expected": [
+          9,
+          0,
+          44
+        ]
+      },
+      {
+        "name": "x12000-p11-d0",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 12000,
+          "phase": 11,
+          "delay": 0
+        },
+        "expected": [
+          9,
+          0,
+          40
+        ]
+      }
+    ]
+  },
+  {
+    "fixture": "usb-lifecycle",
+    "runs": [
+      {
+        "name": "a2-d0-active0",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 2,
+          "delay": 0,
+          "active": 0
+        },
+        "expected": [
+          23177,
+          0,
+          60
+        ]
+      },
+      {
+        "name": "a11-d2-active0",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 11,
+          "delay": 2,
+          "active": 0
+        },
+        "expected": [
+          0,
+          0,
+          16
+        ]
+      },
+      {
+        "name": "a2-d8-active1",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 2,
+          "delay": 8,
+          "active": 1
+        },
+        "expected": [
+          1,
+          0,
+          4
+        ]
+      },
+      {
+        "name": "a2-d2-active1",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 2,
+          "delay": 2,
+          "active": 1
+        },
+        "expected": [
+          1,
+          0,
+          36
+        ]
+      },
+      {
+        "name": "a2-d16-active1",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 2,
+          "delay": 16,
+          "active": 1
+        },
+        "expected": [
+          2,
+          0,
+          20
+        ]
+      },
+      {
+        "name": "a2-d4-active1",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 2,
+          "delay": 4,
+          "active": 1
+        },
+        "expected": [
+          1,
+          0,
+          36
+        ]
+      },
+      {
+        "name": "a8-d4-active1",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 8,
+          "delay": 4,
+          "active": 1
+        },
+        "expected": [
+          1,
+          0,
+          32
+        ]
+      },
+      {
+        "name": "a11-d4-active1",
+        "constants": {
+          "mode0": 118,
+          "mode1": 118,
+          "x": 4096,
+          "action": 11,
+          "delay": 4,
+          "active": 1
+        },
+        "expected": [
+          1,
+          0,
+          32
+        ]
+      }
+    ]
+  }
+]

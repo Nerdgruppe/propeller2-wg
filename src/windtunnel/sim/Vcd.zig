@@ -826,3 +826,54 @@ test "trace distinguishes Schmitt receiver history from voltage and raw ADC bits
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "1p1a\n") != null);
     try vcd.finish();
 }
+
+test "USB pair isolation and turnaround preserve physical drivers and VCD electrical snapshots" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]SystemConfiguration{ .ideal, .realistic }) |system| {
+        try hub.init(system);
+        var trace: std.Io.Writer.Allocating = .init(std.testing.allocator);
+        defer trace.deinit();
+
+        var vcd: Vcd = .{ .writer = &trace.writer };
+        try hub.attachVcd(&vcd);
+        // Two adjacent pairs run independently; an ordinary neighboring GPIO keeps its drive.
+        for (8..12) |pin| {
+            hub.io.editConfiguration(@enumFromInt(pin), 0x76);
+        }
+        hub.io.editSmartRegister(@enumFromInt(8), .x, 4096);
+        hub.io.editSmartRegister(@enumFromInt(10), .x, 0xc000 | 4096);
+        hub.cogs[0].write_reg(.DIRA, 0x1f00);
+        hub.cogs[0].write_reg(.OUTA, 1 << 12);
+        // Queue state changes after both controllers have left reset.
+        for (0..16) |_| {
+            _ = hub.step();
+        }
+        hub.io.editSmartRegister(@enumFromInt(8), .y, 2);
+        hub.io.editSmartRegister(@enumFromInt(10), .y, 1);
+        for (0..256) |_| {
+            _ = hub.step();
+        }
+        const before = snapshot(hub);
+        try std.testing.expectEqual(IO.Signal.low, hub.io.pads[8]);
+        try std.testing.expectEqual(IO.Signal.high, hub.io.pads[9]);
+        try std.testing.expectEqual(IO.Signal.low, hub.io.pads[10]);
+        try std.testing.expectEqual(IO.Signal.low, hub.io.pads[11]);
+        try std.testing.expectEqual(IO.Signal.high, hub.io.pads[12]);
+        // A live sniffer transition releases only the selected physical pair.
+        hub.io.editConfiguration(@enumFromInt(8), 0x36);
+        hub.io.editConfiguration(@enumFromInt(9), 0x36);
+        for (0..32) |_| {
+            _ = hub.step();
+        }
+        const after = snapshot(hub);
+        try std.testing.expectEqualDeep(before.pads[10], after.pads[10]);
+        try std.testing.expectEqualDeep(before.pads[11], after.pads[11]);
+        try std.testing.expectEqualDeep(before.pads[12], after.pads[12]);
+        try std.testing.expectEqual(.floating, after.pads[8].state);
+        try std.testing.expectEqual(.floating, after.pads[9].state);
+        try vcd.finish();
+        try std.testing.expect(std.mem.indexOf(u8, trace.written(), "$enddefinitions") != null);
+    }
+}

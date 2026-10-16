@@ -1,36 +1,42 @@
 # Windtunnel I/O
 
-`sim/IO.zig` owns 64 `Pin` instances, each containing a typed WRPIN
-configuration, a `SmartPin` from `sim/smart_pin.zig`, and its published outputs.
-`SmartPin` owns one shared `Registers` struct and a `Logic` union tagged by
-`libp2.types.SmartPinMode`. Repository, digital smart pins, UART TX/RX and USART TX/RX payloads
-contain only their private engine state. `configure()` retains the payload for
-same-mode digital, ADC, scope, DAC and serial WRPIN writes and replaces it on mode changes, retaining shared
-registers and host-selected receive/transmit modes. `step(Inputs)` updates X/Y, enabled and
-acknowledgement state, dispatches the active payload with the shared registers,
-and latches the returned result and IN signal. Inputs carry DIR/OUT,
-SmartA/SmartB, optional X/Y writes and acknowledgement; outputs carry SmartOut,
-IN, the result bus and scheduler signals. IO caches these outputs for pad
-resolution and register sampling.
+`sim/IO.zig` owns 64 `Pin` instances and a separate `[32]Usb` bank from
+`sim/smart_pin.zig`. Each pin contains typed WRPIN configuration, its `SmartPin`
+and published outputs. The `SmartPin.Logic.usb` payload is only a forwarder to
+one bank port; shared USB state lives exclusively in the corresponding `Usb`.
+Initialization binds the ports after the hub reaches its final address.
+
+`configure(Mode)` retains same-mode digital, ADC, scope, DAC and serial state.
+USB mode changes are sampled by the shared block; same-mode USB WRPIN retains
+its state while acknowledging the addressed endpoint. Shared smart registers and
+host-selected serial endpoints survive configuration changes.
 
 Each simulation frame commits cog writebacks and aggregates OUT/DIR, combines
 commands due on that edge, and prepares SmartA/SmartB from delayed pad samples.
-It calls every pin's `step()` exactly once with fixed inputs, publishes all
-returned outputs together, resolves pads, and updates the input/result pipelines.
+It then runs explicit phases:
+
+1. `SmartPin.sample(Inputs)` records every pin's inputs, register writes,
+   acknowledgements and DIR/OUT stages. The attached USB port reads this
+   fixed frame, including when the pin uses an ordinary smart mode.
+2. `Usb.clock()` advances each shared pair from both snapshots and produces its
+   two endpoint outputs without changing either pin's registers.
+3. `SmartPin.clock()` advances ordinary engines or reads the USB forwarder,
+   then latches result, readiness and output-register state.
+4. IO publishes all 64 returned outputs together, resolves pads, and updates
+   the input/result pipelines.
+
 The cogs then execute and queue commands for future frames, followed by counter
 advancement and VCD capture of the completed clock. Physical receiver feedback updates within analog substeps; clocked feedback samples
 once per system clock. Each RC pad advances through the configured analog substeps per frame. Commands queued outside `Hub.step()` use the same delivery delay; external
 driver changes are staged until the next frame.
-Unimplemented modes use `DummyMode`, whose step fails with
-`UnsupportedSmartPinMode`; IO records a simulation fault with the issuing pin,
-cog, PC and instruction, including when DIR is low.
+All smart-pin mode encodings have engines. Endpoint failures still record the issuing pin, cog, PC and instruction.
 
 The surrounding `IO.Pin` owns typed `libp2.types.PinConfiguration` WRPIN bit
 fields and decodes OUT/OTHER/SMART selection, DIR/TT output enable and data-source
 clocked operation. IO owns input/output routing and pad drive
 resolution. These configuration decisions are independent of smart-engine outputs.
-The normal engine routes SmartA to IN and OUT to SmartOut through the same step
-interface as the other engines. `PinIndex` identifies a smart engine/register bit;
+The normal engine routes SmartA to IN and OUT to SmartOut through the same
+sample/clock phases as the other engines. `PinIndex` identifies a smart engine/register bit;
 `PadIndex` identifies a physical pad. Cog registers remain individual; the hub
 aggregates them once per edge after all cog writebacks. Directions combine
 with OR, and each cog's output contributes only where that cog enables its
@@ -439,7 +445,7 @@ use measured 68/45/28-tap FIR coefficients and hysteretic arming/triggering.
 SETSCP selects a four-aligned block of smart-result low bytes for each cog;
 GETSCP and all five ADC streamer formats read this pipe. Disabling SETSCP holds
 the last word. Scope and streamer captures preserve existing FIFO and event behavior.
-USB remains unsupported.
+USB pair operation is described below.
 
 The Ideal profile uses zero receiver/reference delay. Realistic currently assumes
 3 ns receiver delay, 10 ns comparator delay and 50 ns reference settling; the
@@ -465,6 +471,94 @@ starts with experiment pins released, preserves RCFAST/calibrated UART, and clea
 WRPIN/DIR on completion or after a two-second nominal idle watchdog. Raw captures
 stay outside tracked source. Deterministic measurements are retained as registered
 `.propan` fixtures and require no external hardware for ordinary regression runs.
+
+## USB smart-pin pairs
+
+USB uses even DM / odd DP endpoints. Each `Usb` in the separate pair bank advances
+independent TX/RX machines from its sampled ports. The lower endpoint provides the
+fractional NCO configuration: X[13:0]
+is the increment, X[14] selects full/low-speed polarity and X[15] selects
+host/device idle loading. Both speed settings work at programmable slower rates;
+no operating-system USB backend or runtime dependency is involved. Firmware
+constructs packets, CRCs and enumeration traffic.
+
+WYPIN commands select IDLE, SE0, K, J, EOP or SOP ($80). The transmitter serializes
+LSB first with NRZI encoding, inserts zero after six consecutive ones across byte
+boundaries, and automatically emits two SE0 periods and J when data runs out.
+One pending byte complements the active serializer. An unconsumed write is
+replaced by another write. Upper IN starts low and latches a buffer-transfer
+notification; send the first command unconditionally, then feed using upper IN.
+Acknowledging upper IN clears it until another transfer, including when a write
+coincides with transfer. Upper RQPIN returns zero and carry clear.
+
+Lower IN latches receiver status changes and lower RQPIN/RDPIN returns:
+
+| Bits | Meaning |
+| --- | --- |
+| 15:8 | Last completed byte, retained across SOP |
+| 7 | Byte toggle; cleared by SOP and toggled per completed byte |
+| 6 / C | Error: stuffing violation, SE1 or packet EOP exceeding three SE0 bits; cleared by SOP |
+| 5 / 4 | EOP / SOP; cleared after steady idle qualification |
+| 3 | Steady state, rather than the older pin page's SE1 indication |
+| 2 / 1 / 0 | SE0 / K / J |
+| 31:16 | Zero |
+
+A long SE0 outside a packet is bus reset and does not set error. Malformed SYNC
+is ignored. RX observes local transmissions too. Its DM input is lower routed A,
+including selection/inversion and FFF logic; DP is the upper physical receiver
+before upper A/B routing. Physical input inversion still applies.
+
+USB overrides the ordinary H/L drive fields. Active differential states and SE0
+use the configured fast electrical profile. IDLE selects 15 kOhm pulldowns for
+host, or a 1.5 kOhm J-high pullup and a floating other line for device. These
+engine-selected strengths travel with the logic level through output registers;
+IO resolves them using the existing electrical frontend and per-pad TT gate.
+This is a model of the measured strength changes, without claiming whether
+silicon internally reconfigures the pad or selects a separate override.
+Clearing lower DIR releases both drives and resets TX/RX. Clearing upper DIR
+resets only its readiness latch. Same-mode WRPIN preserves the engine and
+acknowledges its endpoint, permitting live TT changes for sniffing. Partial
+pairs are allowed; an upper GPIO remains an independent physical input/driver.
+
+The characterization uses both connected boards at nominal 20 MHz RCFAST, with
+relative clock calibration, independent streamer GPIO captures and malformed
+GPIO injection. Reproduce it with compiled Propan/Turboprop and the existing
+optional Python `websockets` package:
+
+```sh
+python utility/characterize-usb.py packets --artifacts /tmp/usb
+python utility/characterize-usb.py receive --artifacts /tmp/usb
+python utility/characterize-usb.py electrical --artifacts /tmp/usb
+python utility/characterize-usb.py drives --artifacts /tmp/usb
+python utility/characterize-usb.py basics --artifacts /tmp/usb
+python utility/characterize-usb.py lifecycle --artifacts /tmp/usb
+python utility/characterize-usb.py export --artifacts /tmp/usb
+zig-out/bin/windtunnel-tests --oracle --include usb --artifact-dir /tmp/usb-oracle
+```
+
+`utility/usb-monitor.propan` contains bounded firmware timing/capture/injection
+and restores WRPIN=0/DIR low on completion, timeout or host cleanup. Raw captures
+stay outside tracked source. Two compact JSON datasets in `tests/windtunnel`
+(`usb-vectors.json` and `usb-transmit-vectors.json`) retain GPIO wire runs,
+observed byte/toggle events, final silicon status and independently sampled TX
+symbols. The assembly fixtures retain deterministic command, self-reception,
+FIFO, acknowledgement, lifecycle, stopped/slow/fractional baud and RX error probes.
+
+The model does not claim 12 Mb/s electrical compliance, analog USB eye diagrams,
+metastability, jitter or board-specific input bias/leakage. Undriven physical
+levels retain the configured capacitor/leakage behavior, rather than measured
+observer bias. The fixed transport matches the retained 16-clock line-state
+boundaries, but exploratory fractional-carry and immediate DIR/live-speed
+snapshots still differ at immediate sampling boundaries; those propagation
+boundaries remain physical-fidelity limits, alongside the ordinary GPIO limits.
+
+The measured exceptions are retained explicitly in
+`utility/usb-transport-boundaries.json`. Generate their assembly probes with
+`python utility/characterize-usb.py boundaries --artifacts /tmp/usb-boundaries`;
+`windtunnel-tests --characterize` can remeasure them without requiring agreement
+with the provisional simulator transport. These 19 snapshots cover fractional
+sampling/carry and immediate DIR/live-speed visibility; they are outside the
+exact boundary claim and are not counted as passing regression cases.
 
 ## Command and transport timing
 

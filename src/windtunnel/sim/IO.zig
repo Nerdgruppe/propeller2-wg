@@ -15,6 +15,7 @@ pub const Signal = signal.Signal;
 pub const PinIndex = types.PinIndex;
 pub const PadIndex = types.PadIndex;
 const PinConfiguration = types.PinConfiguration;
+const DriveSignal = smart_pin.DriveSignal;
 pub const DataSource = smart_pin.DataSource;
 pub const DataSink = smart_pin.DataSink;
 const IO = @This();
@@ -90,11 +91,13 @@ pub const Pin = struct {
     /// Logic outputs published after every pin has advanced for the frame.
     outputs: smart_pin.Outputs = .{},
     /// Registered output-mux path, clocked in every mode without configuration-time resets.
-    output_pipeline: Pipeline(Signal, 1) = .init(.low),
+    output_pipeline: Pipeline(DriveSignal, 1) = .init(.{}),
     /// Optional output synchronization retains its history while deselected.
-    sync_output_pipeline: Pipeline(Signal, 3) = .init(.low),
+    sync_output_pipeline: Pipeline(DriveSignal, 3) = .init(.{}),
     /// Selected OUT/OTHER/SmartOut after the common propagation delay.
     output: Signal = .low,
+    /// Engine drive override, transported alongside the selected output level.
+    strength: ?PinConfiguration.Drive = null,
     /// Host architectural edits deliver their engine strobes on the next complete hub edge.
     edits: struct { x: ?u32 = null, y: ?u32 = null } = .{},
     filter_a: InputFilter = .{},
@@ -197,6 +200,8 @@ const Samples = struct {
 };
 
 pins: [64]Pin = @splat(.{}),
+/// Shared physical USB hardware, separate from the 64 per-pin smart-engine payloads.
+usb: [32]smart_pin.Usb = @splat(.{}),
 /// Voltage-derived deterministic ADC modulators; explicit test overrides retain their phase.
 adc_inputs: [64]DeltaSigma = @splat(.{}),
 adc_overrides: [64]?f64 = @splat(null),
@@ -222,7 +227,7 @@ external: [64]Pad.Source = @splat(.float),
 analog_pads: Pads = .{},
 last_driver_keys: [64]DriveKey = @splat(.floating),
 pad_reads: [64]Signal = @splat(.low),
-sync_out: [64]Signal = @splat(.low),
+sync_out: [64]DriveSignal = @splat(.{}),
 sync_in: [64]Signal = @splat(.low),
 directions: u64 = 0,
 physical_directions: u64 = 0,
@@ -243,6 +248,13 @@ commands: CommandPipeline = .{},
 owners: [64]struct { cog: u3 = 0, pc: u20 = 0, instruction: u32 = 0 } = @splat(.{}),
 collision: ?struct { clock: u64, pin: PinIndex, cogs: u8 } = null,
 failure: ?struct { pin: PinIndex, err: anyerror } = null,
+
+/// Bind each smart-pin USB forwarder to the bank after IO reaches its final address.
+pub fn connect(io: *IO) void {
+    for (&io.pins, 0..) |*pin, index| {
+        pin.smart.connectUsb(&io.usb[index / 2].ports[index % 2]);
+    }
+}
 
 /// Decode HUBSET's global filter selector, history length, and CT timing tap.
 pub fn configureFilter(io: *IO, value: u32) void {
@@ -362,15 +374,22 @@ pub fn step(io: *IO, hub: *Hub) void {
     }
     slot.* = @splat(null);
     io.routeInputs(&hub.system_configuration);
-    for (inputs, &io.pins, io.smart_a, io.smart_b) |*sample, *pin, a, b| {
+    for (inputs, &io.pins, io.smart_a, io.smart_b, io.pad_reads) |*sample, *pin, a, b, physical| {
+        sample.physical = physical;
         sample.a = a;
         sample.b = b;
         sample.dac_mode = pin.configuration.pad_mode.is_dac();
     }
     // Keep all outputs from the previous frame visible until every pin has advanced.
     const next = &io.frame_outputs;
-    for (&io.pins, inputs, next, 0..) |*pin, sample, *state, i| {
-        state.* = pin.smart.step(sample) catch |err| {
+    for (&io.pins, inputs) |*pin, sample| {
+        pin.smart.sample(sample);
+    }
+    for (&io.usb) |*usb| {
+        usb.clock();
+    }
+    for (&io.pins, next, 0..) |*pin, *state, i| {
+        state.* = pin.smart.clock() catch |err| {
             io.fail(hub, @enumFromInt(i), err);
             return;
         };
@@ -396,14 +415,15 @@ pub fn step(io: *IO, hub: *Hub) void {
     for (&io.pins, 0..) |*pin, i| {
         const mux_signal = io.selectedOutput(@enumFromInt(i));
         const output = pin.output_pipeline.step(mux_signal);
-        pin.output = output;
+        pin.output = output.level;
+        pin.strength = output.strength;
     }
     for (&io.sync_out, 0..) |*state, i| {
         const configuration = io.pins[i].configuration;
         if (configuration.isAdc() or configuration.hasFeedback() or !configuration.synchronous)
             continue;
         const sync_pipeline = &io.pins[i].sync_output_pipeline;
-        state.* = sync_pipeline.step(io.outputState(@enumFromInt(i)));
+        state.* = sync_pipeline.step(.{ .level = io.outputState(@enumFromInt(i)), .strength = io.pins[i].strength });
     }
     io.resolvePads(hub);
     io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
@@ -442,10 +462,7 @@ fn fail(io: *IO, hub: *Hub, index: PinIndex, err: anyerror) void {
         .cog = owner.cog,
         .pc = owner.pc,
         .instruction = owner.instruction,
-        .result = if (err == error.UnsupportedSmartPinMode)
-            .not_implemented
-        else
-            .{ .illegal = "smart-pin I/O failure (see pin diagnostic)" },
+        .result = .{ .illegal = "smart-pin I/O failure (see pin diagnostic)" },
     };
     std.log.warn("smart pin {d}: {t}", .{ @intFromEnum(index), err });
 }
@@ -549,15 +566,15 @@ fn smartOutput(io: *const IO, index: PinIndex) Signal {
 }
 
 /// Select the current OUT/OTHER/SmartOut signal before the common output pipeline.
-fn selectedOutput(io: *const IO, index: PadIndex) Signal {
+fn selectedOutput(io: *const IO, index: PadIndex) DriveSignal {
     const i = @intFromEnum(index);
     const pin = &io.pins[i];
     return switch (pin.outputSource()) {
-        .smart => pin.outputs.smart_out,
-        .other => if (i & 1 != 0)
+        .smart => .{ .level = pin.outputs.smart_out, .strength = pin.outputs.strength },
+        .other => .{ .level = if (i & 1 != 0)
             io.smartOutput(@enumFromInt(i ^ 1)).invert()
         else
-            Signal.from((io.random_bits >> @intCast(i)) & 1 != 0),
+            Signal.from((io.random_bits >> @intCast(i)) & 1 != 0) },
     };
 }
 
@@ -609,11 +626,12 @@ fn driveKey(io: *const IO, hub: *const Hub, index: PadIndex) DriveKey {
         } else configuration.dacCode();
         return @enumFromInt(17 + @as(u16, @intFromEnum(configuration.dacRange())) * 256 + code);
     }
-    const state = if (!configuration.isAdc() and !configuration.hasFeedback() and configuration.synchronous)
+    const drive = if (!configuration.isAdc() and !configuration.hasFeedback() and configuration.synchronous)
         io.sync_out[i]
     else
-        io.outputState(index);
-    const mode: PinConfiguration.Drive = if (configuration.pad_mode.is_level())
+        DriveSignal{ .level = io.outputState(index), .strength = io.pins[i].strength };
+    const state = drive.level;
+    const mode: PinConfiguration.Drive = drive.strength orelse if (configuration.pad_mode.is_level())
         .resistor_1k5
     else switch (state) {
         .low => configuration.low_drive,
@@ -760,7 +778,7 @@ fn routeInputs(io: *IO, system: *const Hub.SystemConfiguration) void {
                     (configuration.mode != .gpio or configuration.output_source == .other))
                     break :blk Signal.low;
                 const enabled = if (configuration.isSmartDac() and configuration.output_source == .other)
-                    io.selectedOutput(@enumFromInt(i)) == .high
+                    io.selectedOutput(@enumFromInt(i)).level == .high
                 else
                     io.outputs & (@as(u64, 1) << @intCast(i)) != 0;
                 if (!enabled)
@@ -1226,7 +1244,7 @@ test "all DAC encodings use repository semantics without DAC_MODE" {
     }
 }
 
-test "dummy smart modes fault at command delivery with DIR low and retain issuing instruction" {
+test "a partially configured USB pair starts with DIR low without a configuration fault" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
@@ -1235,7 +1253,7 @@ test "dummy smart modes fault at command delivery with DIR low and retain issuin
     hub.io.enqueue(hub, .{
         .mask = @as(u64, 1) << @intFromEnum(index),
         .kind = .configure,
-        .value = @as(u32, @intFromEnum(smart_pin.Mode.usb_pair)) << 1,
+        .value = @as(u32, @intFromEnum(smart_pin.Mode.usb)) << 1,
         .cog = 5,
         .pc = 0x1234,
         .instruction = 0xfc000009,
@@ -1245,14 +1263,11 @@ test "dummy smart modes fault at command delivery with DIR low and retain issuin
         try std.testing.expect(hub.fault == null);
     }
     _ = hub.step();
-    try std.testing.expect(hub.io.pins[9].smart.logic == .usb_pair);
+    try std.testing.expect(hub.io.pins[9].smart.logic == .usb);
     try std.testing.expectEqual(@as(u64, 0), hub.io.directions);
-    try std.testing.expectEqual(index, hub.io.failure.?.pin);
-    try std.testing.expectEqual(error.UnsupportedSmartPinMode, hub.io.failure.?.err);
-    try std.testing.expectEqual(@as(u3, 5), hub.fault.?.cog);
-    try std.testing.expectEqual(@as(u20, 0x1234), hub.fault.?.pc);
-    try std.testing.expectEqual(@as(u32, 0xfc000009), hub.fault.?.instruction);
-    try std.testing.expect(hub.fault.?.result == .not_implemented);
+    try std.testing.expect(hub.io.failure == null);
+    try std.testing.expect(hub.fault == null);
+    try std.testing.expectEqual(@as(u32, 0), hub.io.pins[9].outputs.y);
 }
 
 test "each pin advances once per frame and outputs publish together after fixed input sampling" {
@@ -1823,6 +1838,74 @@ test "asynchronous level feedback resolves within substeps and converges around 
             // Endpoint sampling aliases the oscillation; its span need not decrease at every factor.
             try std.testing.expect(span < coarse_span);
             try std.testing.expect(span < 0.25);
+        }
+    }
+}
+
+test "USB idle pulls, active fast drives and sniffer gating resolve through both electrical profiles" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]Hub.SystemConfiguration{ .ideal, .realistic }) |system| {
+        for ([_]bool{ false, true }) |host| {
+            for ([_]bool{ false, true }) |full_speed| {
+                try hub.init(system);
+                for (8..10) |i| {
+                    hub.io.editConfiguration(@enumFromInt(i), @bitCast(PinConfiguration{
+                        .mode = .usb,
+                        .output_enable = true,
+                        .high_drive = .float,
+                        .low_drive = .float,
+                    }));
+                    const load = if (host)
+                        system.vio_voltage
+                    else
+                        0;
+                    try hub.io.setExternal(@enumFromInt(i), .{ .voltage = load, .resistance = 1500 });
+                }
+                const x: u32 = 4096 | (@as(u32, @intFromBool(host)) << 15) |
+                    (@as(u32, @intFromBool(full_speed)) << 14);
+                hub.io.editSmartRegister(@enumFromInt(8), .x, x);
+                // Lower DIR enables both physical drives; upper DIR may remain clear.
+                hub.cogs[0].write_reg(.DIRA, 1 << 8);
+                for (0..256) |_| {
+                    _ = hub.step();
+                }
+                for (8..10) |i| {
+                    const pullup = (i == 9) == full_speed;
+                    const expected = if (host)
+                        system.vio_voltage * system.resistor_15k / (1500 + system.resistor_15k)
+                    else if (pullup)
+                        system.vio_voltage * 1500 / (1500 + system.resistor_1k5)
+                    else
+                        0;
+                    try std.testing.expectApproxEqAbs(expected, hub.io.getExternal(@enumFromInt(i)).?.voltage, 0.003);
+                }
+                hub.io.editSmartRegister(@enumFromInt(8), .y, 2);
+                for (0..64) |_| {
+                    _ = hub.step();
+                }
+                for (8..10) |i| {
+                    const high = (i == 9) != full_speed;
+                    const voltage = hub.io.getExternal(@enumFromInt(i)).?.voltage;
+                    const driven = if (high)
+                        voltage > 3.2
+                    else
+                        voltage < 0.1;
+                    try std.testing.expect(driven);
+                    // TT disables each pad independently while the serializer keeps running.
+                    var configuration = hub.io.pins[i].configuration;
+                    configuration.output_enable = false;
+                    hub.io.editConfiguration(@enumFromInt(i), @bitCast(configuration));
+                }
+                for (0..64) |_| {
+                    _ = hub.step();
+                }
+                for (8..10) |i| {
+                    const driver_state = hub.io.resolvedDriver(@enumFromInt(i), &system);
+                    try std.testing.expect(driver_state == .linear and !driver_state.linear.drive_enabled);
+                }
+            }
         }
     }
 }

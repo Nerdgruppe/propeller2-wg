@@ -266,6 +266,17 @@ pub fn build(b: *std.Build) !void {
         .imports = &.{.{ .name = "p2", .module = mod_p2 }},
     });
     debugger_module.addImport("boot-rom", boot_rom);
+
+    // Hardware capture goldens are test data; named embeds keep them outside src.
+    const usb_vectors = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/usb-vectors.json") });
+    const usb_transmit_vectors = b.createModule(.{
+        .root_source_file = b.path("tests/windtunnel/usb-transmit-vectors.json"),
+    });
+    for ([_]*std.Build.Module{ windtunnel_mod, windtunnel_suite, debugger_module }) |module| {
+        module.addImport("usb-vectors", usb_vectors);
+        module.addImport("usb-transmit-vectors", usb_transmit_vectors);
+    }
+
     const debugger_tests = b.addTest(.{ .name = "windtunnel-debugger-tests", .root_module = debugger_module, .use_llvm = true });
     const debugger_run = b.addRunArtifact(debugger_tests);
     const debugger_step = b.step("test-windtunnel-debugger", "Run headless debugger and simulator regressions");

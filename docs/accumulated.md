@@ -1826,3 +1826,80 @@ with OUT high. Floating-output observations near the observer's ADC bias are
 measurement loading, not evidence of a hidden DAC drive. The functional simulator
 uses a nonloading ADC observer and does not model ADC charge injection/input bias
 currents; explicit external sources describe measurement loads.
+
+## USB smart-pin characterization, 2026-10-16
+
+Two connected P2 boards (P8..P15 and GND, DUT accessed exclusively through P2AAS)
+are probed at nominal 20 MHz RCFAST. Both speed-mode settings are exercised at
+slower agreed NCO rates; these measurements do not claim USB electrical compliance
+at 12 Mb/s. Raw GPIO captures are independent of USB decoding, and routed GPIO
+aliases on P10/P11 observe the physical P8/P9 receivers while their USB IN bits
+report engine handshakes.
+
+Both boards confirm the documented idle resistors: device mode pulls the J-high
+line up through nominal 1.5 kOhm and floats the other; host mode pulls both lines
+down through nominal 15 kOhm. A 1.5 kOhm opposing load gives approximately half
+supply for the device pullup and 0.91 supply against the host pulldown. The full-
+speed bit exchanges the J/K electrical polarities independently of the NCO rate.
+Floating-line voltages observed through an ADC include its bias loading and are
+not a hidden USB drive.
+
+Upper IN starts low after the measured DIR-release sequence. Sending the first
+command makes readiness observable; AKPIN, WXPIN, WYPIN and WRPIN on the upper
+pin acknowledge that indication. These upper-pin commands do not replace the
+lower pin's baud/role register. Quiescent receiver bit 3 marks a steady state,
+consistent with the silicon document and differing from the older pin page's
+SE1-in description. Lower receiver status normalizes J/K independently of their
+physical polarities. The FIFO, error, routing and lifecycle findings below were established before
+simulator semantics changed.
+
+Independent GPIO injection into both USB receivers confirms that SE1 sets error,
+while a long SE0 outside a packet is a reset/steady state without an error.
+After a valid packet, one, two and three bit periods of SE0 terminate without
+error; four through six set error. Thus these observations agree with the pin
+page's greater-than-three threshold, not the silicon document's greater-than-two.
+Malformed sync is ignored in the tested sequence. Missing stuffed-zero transitions
+set error and abort reception; an independently encoded 00 FF FF 55 packet decodes
+correctly, including stuffing across byte boundaries and byte-toggle updates.
+
+Consecutive-write probes distinguish one pending transmitter byte from the active
+serializer: during SYNC, multiple unacknowledged writes replace the pending byte,
+and only the final byte is received (one byte-toggle change). The documented
+"two-level FIFO" therefore includes the active serializer; it is not two pending
+bytes in addition to that serializer. Writing another value before the first baud
+boundary can overwrite an unconsumed SOP command. Upper IN is a latched buffer-
+transfer notification, not a continuously asserted empty/room level: after an
+upper acknowledgement it stays low until another transfer. Upper RQPIN data is
+zero in these probes.
+
+Native same-mode WRPIN retains the controller, FIFO, NCO and RX state while
+acknowledging the addressed endpoint. Clearing lower DIR resets the controller
+and receiver but does not clear a still-enabled upper readiness latch. Clearing
+upper DIR clears only that latch; DP transmission continues when lower DIR stays
+set. Lower DIR gates both USB electrical drives. TT's low bit independently gates
+each pad and permits live sniffer changes. USB overrides the H/L drive fields:
+active J/K/SE0 uses fast drivers, unlike the idle pulls measured above.
+
+Routing probes distinguish the receiver sources: DM uses the lower routed A,
+including A selection/inversion and FFF A/B logic; DP uses the upper physical
+receiver before its A selector. The physical input inversion bit still applies to
+DP. Upper A selection and lower B selection alone do not select DP. The retained
+self-contained receive fixture exploits this with lower A=OUT and upper GPIO.
+
+Consecutive-write captures also expose malformed first bytes: an MSB-set value
+such as $88 starts serialization of that value, rather than substituting a fixed
+$80 SYNC. It is not recognized as SOP by the receiver. These exploratory values
+are outside the documented command set but distinguish the first-byte shifter
+from a hardcoded SYNC generator.
+
+A fresh valid SOP clears error and byte-toggle but retains the last completed
+byte. Sixty bounded packet-sequence probes at both speed polarities and five
+phases confirm FF -> $FF89, FF FF -> $FF09, FF FF 55 -> $5589, followed by an
+empty packet -> $5509, or by a new 33 packet -> $3389 after idle qualification.
+Outside a packet, bit 2 selects EOP independently of the low two state bits;
+this distinguishes burst-written $77 from a floating IDLE command.
+
+A defined-input sniffer probe confirms that upper GPIO and all three non-DAC
+repository encodings retain independent Z/IN when only the lower endpoint is
+USB. Lower USB buffer transfers do not raise an ordinary upper engine's IN.
+All four cases are retained in `usb-partial.propan`.

@@ -1,0 +1,53 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "gpio"
+//? const: upper_mode = 0
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "repository-noise"
+//? const: upper_mode = 66
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "repository-random"
+//? const: upper_mode = 68
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "repository-pwm"
+//? const: upper_mode = 70
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+
+                // Lower A=OUT and upper physical GPIO hold a defined J while the USB transmitter runs in sniffer mode.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   aug(0x40000036),    40
+                WRPIN   aug(upper_mode),    41
+                OUTL    41
+                OUTH    40
+                WXPIN   aug(4096),          40
+                DIRH    aug(40 | (1 << 6))
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   aug(256)
+                WYPIN   0x80,               aug(40 | (1 << 6))
+                WAITX   aug(512)
+                // Read both engine results and handshakes; do not sample the floating lower physical pad.
+                RQPIN   result,             40                  :wc
+                MOV     flags,              0
+                MUXC    flags,              1
+                RQPIN   upper,              41                  :wc
+                MUXC    flags,              2
+                TESTP   40                                      :wc
+                MUXC    flags,              4
+                TESTP   41                                      :wc
+                MUXC    flags,              8
+                TESTB   flags,              0                   :wc
+                // Release both pins before the oracle reporter.
+                DIRL    aug(40 | (1 << 6))
+                WRPIN   0,                  aug(40 | (1 << 6))
+                JMP     nrel(_end)
+var result:     LONG    0
+var upper:      LONG    0
+var flags:      LONG    0
+

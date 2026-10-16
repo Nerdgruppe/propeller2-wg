@@ -1,5 +1,14 @@
 /// Assembly fixtures registered in the software suite; exploratory probes stay outside the build.
 pub const fixtures = [_][]const u8{
+    "tests/windtunnel/state/usb-partial.propan",
+    "tests/windtunnel/state/usb-slow.propan",
+    "tests/windtunnel/state/usb-packets.propan",
+    "tests/windtunnel/state/usb-line-timing.propan",
+    "tests/windtunnel/state/usb-fifo.propan",
+    "tests/windtunnel/state/usb-lifecycle.propan",
+    "tests/windtunnel/state/usb-fractional.propan",
+    "tests/windtunnel/state/usb-receiver.propan",
+
     "tests/windtunnel/state/adc-conversions.propan",
     "tests/windtunnel/state/adc-arithmetic.propan",
     "tests/windtunnel/state/dac-pad-modes.propan",

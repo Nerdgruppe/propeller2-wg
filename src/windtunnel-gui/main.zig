@@ -1571,7 +1571,7 @@ const GUI = struct {
                 });
             }
             gui.show("DIR delivery", io.direction_pipeline);
-            signalText("Synchronous OUT", io.sync_out[id]);
+            signalText("Synchronous OUT", io.sync_out[id].level);
             signalText("Synchronous IN", io.sync_in[id]);
         }
         if (io.failure) |failure| {

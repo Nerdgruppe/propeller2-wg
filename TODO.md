@@ -156,17 +156,8 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - IO Interface Improvement
   - Configuration file support for I/O setup
     - Defaults to "stdio routed to pins 62/63"
-  - Input filtering
-  - Smart modes
-    - Physical U(S)ART encoding/decoding and exact serial waveform timing
   - Validate physical pad timing with a logic analyzer
   - Optional instruction-level pin logging (VCD and collision diagnostics exist)
-  - Analog subsystem
-    - ADC
-    - DACs
-    - Comparator
-    - `SETDACS`
-    - `SETSCP`, `GETSCP`
 - P2AAS server
   - Feature Parity with hw oracle
 - Validate/implement cog startup behavior
@@ -175,6 +166,8 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Cache `hub.random.word` to not compute it multiple times per clock
 - Implement Streamer FIFO bypass erratum
 - Extend test runner to store/print the time per test fixture and test run to find outliers.
+- Create a concept for how to react to misbehavior/undefined behavior.
+- Refactor code to adapt to better coding standards.
 
 ### Analog Subsystem
 
@@ -189,32 +182,3 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
   jitter remain unmodeled.
 - Investigation aid if revisited: dedicated-board access, an independent timing
   reference and clock-output captures with an oscilloscope/frequency counter.
-
-### Pad Electrical Model
-
-- **Status: partial; analog subsystem deferred.**
-- Keep the existing digital model. Resistance/current drive, thresholds,
-  hysteresis, comparators and analog routing remain unmodeled.
-- Investigation aid if revisited: known loads, voltage sweeps and oscilloscope
-  measurements. I/O propagation-delay corrections remain outside current scope.
-
-### Streamer
-
-- **Status: missing; deferred.**
-- Implement `XINIT`, `XZERO`, `XCONT`, `SETXFRQ`, `GETXACC` and the `XSTOP` alias;
-  command buffering, NCO, FIFO/LUT/pin/DAC paths, HDMI and DDS/Goertzel behavior.
-  Include FIFO consumption/arbitration, streamer event producers and related
-  interrupt/status interactions.
-- Add `XMT`, `XFI`,  `XRO` and `XRL` events
-- Investigation aid if revisited: deterministic digital patterns captured by a
-  second cog or logic analyzer, correlated with command/event timestamps and
-  second-cog hub writes. Analog paths remain deferred with the analog subsystems.
-
-### Colorspace Converter
-
-- **Status: missing; deferred.**
-- Implement `SETCY`, `SETCI`, `SETCQ`, `SETCFRQ`, `SETCMOD`, per-clock matrix/IQ
-  processing, DAC overrides and pipeline behavior.
-- Investigation aid if revisited: known vectors with controlled streamer timing
-  and internal result capture if available; otherwise DAC captures through an
-  oscilloscope or external ADC.

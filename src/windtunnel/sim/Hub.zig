@@ -78,7 +78,7 @@ pub fn clock_reached(clock: u64, deadline: u64) bool {
     return clock -% deadline < (@as(u64, 1) << 63);
 }
 
-/// Initialize all shared resources and stopped cogs, binding each cog back to this hub.
+/// Initialize all shared resources and stopped cogs, binding cogs and I/O ports to this hub.
 pub fn init(hub: *Hub, configuration: SystemConfiguration) error{InvalidConfiguration}!void {
     try configuration.validate();
     hub.* = .{
@@ -95,6 +95,7 @@ pub fn init(hub: *Hub, configuration: SystemConfiguration) error{InvalidConfigur
         .io = .{},
         .system_configuration = configuration,
     };
+    hub.io.connect();
     hub.io.analog_pads.init(&hub.system_configuration);
     @memcpy(hub.memory[0x7c000..], boot_rom);
     for (&hub.locks, 0..) |*lock, i| {

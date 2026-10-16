@@ -1,0 +1,1123 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "a0-d0-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 0
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a0-d0-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 0
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a0-d2-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 2
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a0-d2-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 2
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a0-d4-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 4
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a0-d4-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 4
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a0-d8-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 8
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a0-d8-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 8
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a0-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a0-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a0-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a0-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 0
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "a1-d0-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 0
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d0-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 0
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d2-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 2
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d2-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 2
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d4-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 4
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d4-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 4
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d8-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 8
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d8-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 8
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a1-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 1
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "a2-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 2
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23232
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 61
+//? run: "a2-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 2
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 36
+//? run: "a2-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 2
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23240
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 61
+//? run: "a2-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 2
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "a3-d0-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 0
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d0-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 0
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d2-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 2
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d2-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 2
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d4-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 4
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d4-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 4
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d8-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 8
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d8-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 8
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 52
+//? run: "a3-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a3-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 3
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "a4-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 4
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a4-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 4
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a4-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 4
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a4-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 4
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "a5-d0-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 0
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d0-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 0
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d2-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 2
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d2-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 2
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d4-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 4
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d4-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 4
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d8-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 8
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d8-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 8
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a5-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 5
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "a6-d0-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 0
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a6-d0-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 0
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a6-d2-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 2
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a6-d2-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 2
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a6-d4-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 4
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a6-d4-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 4
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a6-d8-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 8
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a6-d8-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 8
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a6-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a6-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a6-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a6-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 6
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "a7-d0-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 0
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d0-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 0
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d2-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 2
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d2-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 2
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d4-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 4
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d4-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 4
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d8-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 8
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d8-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 8
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a7-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 7
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "a8-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 8
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a8-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 8
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 32
+//? run: "a8-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 8
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 24
+//? run: "a8-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 8
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 32
+//? run: "a9-d0-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 0
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d0-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 0
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d2-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 2
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d2-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 2
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d4-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 4
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d4-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 4
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d8-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 8
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d8-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 8
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 1
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a9-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 9
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 20
+//? run: "a10-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 10
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "a10-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 10
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 36
+//? run: "a10-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 10
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "a10-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 10
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "a11-d32-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 11
+//? const: delay = 32
+//? const: active = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "a11-d32-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 11
+//? const: delay = 32
+//? const: active = 1
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 32
+//? run: "a11-d512-active0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 11
+//? const: delay = 512
+//? const: active = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 16
+//? run: "a11-d512-active1"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: action = 11
+//? const: delay = 512
+//? const: active = 1
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 32
+
+                // Configure the physical pair before applying the shared lower-pin baud and role.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                WRPIN   aug(0x60000000),    aug(42 | (1 << 6))
+                WRPIN   aug(mode0),         40
+                WRPIN   aug(mode1),         41
+                WXPIN   aug(x),             40
+                DIRH    aug(40 | (1 << 6))
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   128
+                // Clear startup error history after the pair is held in a driven J state.
+                WYPIN   0x80,               aug(40 | (1 << 6))
+                WAITX   aug(512)
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   128
+                // Establish a byte or change configuration while sync is still being transmitted.
+                WYPIN   0x80,               aug(40 | (1 << 6))
+                WAITX   32
+                WYPIN   0x5a,               aug(40 | (1 << 6))
+.if !active
+                WAITX   aug(512)
+.endif
+.if action == 0
+                AKPIN   40
+.endif
+.if action == 1
+                AKPIN   41
+.endif
+.if action == 2
+                WXPIN   aug(0x5000),        40
+.endif
+.if action == 3
+                WXPIN   aug(0x5000),        41
+.endif
+.if action == 4
+                WYPIN   0,                  40
+.endif
+.if action == 5
+                WYPIN   0,                  41
+.endif
+.if action == 6
+                WRPIN   0x76,               40
+.endif
+.if action == 7
+                WRPIN   0x76,               41
+.endif
+.if action == 8
+                DIRL    40
+.endif
+.if action == 9
+                DIRL    41
+.endif
+.if action == 10
+                WRPIN   0x36,               aug(40 | (1 << 6))
+.endif
+.if action == 11
+                DIRL    aug(40 | (1 << 6))
+.endif
+                WAITX   aug(delay)
+                // Preserve result, carry, both engine handshakes and paired physical input aliases.
+                RQPIN   result,             40                  :wc
+                MOV     flags,              0
+                MUXC    flags,              1
+                RQPIN   upper,              41                  :wc
+                MUXC    flags,              2
+                TESTP   40                                      :wc
+                MUXC    flags,              4
+                TESTP   41                                      :wc
+                MUXC    flags,              8
+                TESTP   42                                      :wc
+                MUXC    flags,              16
+                TESTP   43                                      :wc
+                MUXC    flags,              32
+                // Release every experiment pin before the oracle reporter.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                JMP     nrel(_end)
+var result:     LONG    0
+var upper:      LONG    0
+var flags:      LONG    0
+
