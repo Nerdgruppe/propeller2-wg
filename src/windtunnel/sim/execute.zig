@@ -4763,8 +4763,6 @@ pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrpin
     const value = operandD(cog, args.d, args.d_imm);
     const field = operandS(cog, args.s, args.s_imm);
-    if (!IO.supported(value))
-        return .not_implemented;
     pinCommand(cog, pinMask(cog, field), if (value & 1 != 0)
         .acknowledge
     else
@@ -4828,10 +4826,13 @@ pub fn setdacs(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setscp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setscp
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const configuration: types.OscilloscopeConfig = @bitCast(operandD(cog, args.d, args.d_imm));
+    if (cog.collecting_writes) {
+        cog.writeback.scope = configuration;
+    } else {
+        cog.scope_configuration = configuration;
+    }
+    return .next;
     // codegen: end:setscp
 }
 
@@ -4844,10 +4845,8 @@ pub fn setscp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn getscp(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // codegen: begin:getscp
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    cog.write_result(args.d, cog.scope);
+    return .next;
     // codegen: end:getscp
 }
 

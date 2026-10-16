@@ -32,7 +32,9 @@ in the [pipeline notes](pipeline.md) and [hardware findings](../accumulated.md).
 The [digital streamer](streamer.md) supports timed pin output/capture, FIFO/LUT
 transfers, pixel unpacking, TMDS output, events and inspectable DAC bytes.
 The [digital color converter](converter.md) transforms those bytes and supports
-component, S-Video and composite modes. DDS/Goertzel and analog I/O remain unsupported.
+component, S-Video and composite modes. DDS/Goertzel consumes digital ADC bitstreams;
+the electrical frontend supports RC pads, comparators, feedback, DACs, ADC smart modes,
+and cog scope/streamer capture.
 
 `Hub.step()` returns `normal`, `breakpoint`, `reset`, or `trap`. Breakpoints stop
 before execution or after a complete edge for data watchpoints; traps retain the

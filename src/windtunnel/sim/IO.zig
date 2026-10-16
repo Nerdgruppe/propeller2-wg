@@ -1,9 +1,10 @@
-//! Shared digital pads, routing, and simultaneous cog-to-smart-pin commands.
+//! Electrical pads, physical receivers, routing, and simultaneous cog-to-smart-pin commands.
 const std = @import("std");
 const Hub = @import("Hub.zig");
 const smart_pin = @import("smart_pin.zig");
 pub const Pad = @import("Pad.zig");
 const Pads = @import("Pads.zig");
+const Receiver = @import("Receiver.zig");
 const pipeline = @import("pipeline.zig");
 const Pipeline = pipeline.Pipeline;
 pub const SmartPin = smart_pin.SmartPin;
@@ -101,16 +102,25 @@ pub const Pin = struct {
 
     const OutputSource = enum { other, smart };
 
-    /// Apply WRPIN routing and select the smart engine, preserving same-mode digital state.
+    /// Apply WRPIN routing and delegate engine configuration and state retention to the smart pin.
     pub fn configure(pin: *Pin, configuration: PinConfiguration) void {
         pin.configuration = configuration;
-        pin.smart.configure(engineMode(configuration));
+        pin.smart.configure(configuration.mode);
     }
 
     /// Decode the silicon's SMART override and OUT/OTHER selector from WRPIN.
     /// See docs/p2docs.github.io/page/mirror/p2silicon.md, "pin DIR/OUT control".
     fn outputSource(pin: *const Pin) OutputSource {
-        return if (pin.smart.overridesOutput() or pin.configuration.output_source == .out) .smart else .other;
+        const configuration = pin.configuration;
+        if (configuration.isDac() and configuration.mode == .gpio and
+            configuration.output_source == .other and !configuration.output_enable)
+        {
+            return .smart;
+        }
+        return if (pin.smart.overridesOutput() or configuration.output_source == .out)
+            .smart
+        else
+            .other;
     }
 
     /// Decode physical output enable: DIR without smart logic, otherwise WRPIN's TT low bit.
@@ -176,7 +186,8 @@ const CommandPipeline = struct {
 /// Pad, OUT, input, and smart-result samples from the same four-clock window.
 const Samples = struct {
     pads: [4][64]Signal = @splat(@splat(.low)),
-    /// OUT selectors cross the same two input sampling stages as physical pad reads.
+    receivers: [4][64]Signal = @splat(@splat(.low)),
+    /// OUT history supplies the mode-specific two/three-clock input selector delay.
     out: [4]u64 = @splat(0),
     directions: [4]u64 = @splat(0),
     inputs: [4]u64 = @splat(0),
@@ -186,8 +197,15 @@ const Samples = struct {
 };
 
 pins: [64]Pin = @splat(.{}),
-/// Host-supplied raw ADC densities replace electrical conversion; inactive sources retain their phase.
+/// Voltage-derived deterministic ADC modulators; explicit test overrides retain their phase.
 adc_inputs: [64]DeltaSigma = @splat(.{}),
+adc_overrides: [64]?f64 = @splat(null),
+receivers: [64]Receiver = @splat(.{}),
+/// Ordinary receivers can publish the SIMD threshold plane without touching per-pin analog state.
+simple_receivers: bool = true,
+receiver_inputs: [64]Signal = @splat(.low),
+adc_bits: [64]Signal = @splat(.low),
+clocked_feedback: [64]Signal = @splat(.low),
 /// Reused frame storage keeps ReleaseSafe from poisoning large scratch arrays every clock.
 frame_inputs: [64]smart_pin.Inputs = @splat(.{}),
 frame_outputs: [64]smart_pin.Outputs = @splat(.{}),
@@ -226,25 +244,6 @@ owners: [64]struct { cog: u3 = 0, pc: u20 = 0, instruction: u32 = 0 } = @splat(.
 collision: ?struct { clock: u64, pin: PinIndex, cogs: u8 } = null,
 failure: ?struct { pin: PinIndex, err: anyerror } = null,
 
-/// Select the smart engine, including digital long-repository aliases.
-fn engineMode(configuration: PinConfiguration) smart_pin.Mode {
-    const mode = configuration.mode;
-    // In the supported digital pad configurations, all three encodings are repositories.
-    return switch (mode) {
-        .dac_dither_rnd, .dac_dither_pwm => .repository,
-        else => mode,
-    };
-}
-
-/// Check digital pad routing; smart-mode support is diagnosed by its engine.
-pub fn supported(value: u32) bool {
-    if (value & 1 != 0)
-        return true; // WRPIN #1 / AKPIN acknowledges only.
-    const configuration: PinConfiguration = @bitCast(value);
-    return @intFromEnum(configuration.pad_mode) <= @intFromEnum(PinConfiguration.PadMode.schmitt_adjacent_feedback) or
-        (configuration.isAdc() and configuration.mode == .gpio);
-}
-
 /// Decode HUBSET's global filter selector, history length, and CT timing tap.
 pub fn configureFilter(io: *IO, value: u32) void {
     const index: u2 = @truncate(value >> 7);
@@ -276,8 +275,6 @@ fn apply(io: *IO, index: PinIndex, command: Command, inputs: *smart_pin.Inputs) 
     io.owners[i] = .{ .cog = command.cog, .pc = command.pc, .instruction = command.instruction };
     switch (command.kind) {
         .configure => {
-            if (!supported(command.value))
-                return error.UnsupportedPinConfiguration;
             const configuration: PinConfiguration = @bitCast(command.value);
             io.pins[i].configure(configuration);
             inputs.ack = true;
@@ -295,6 +292,7 @@ pub fn step(io: *IO, hub: *Hub) void {
     io.updateDirections(hub);
     if (!io.samples.active) {
         io.samples.pads = @splat(io.pads);
+        io.samples.receivers = @splat(io.receiver_inputs);
         io.samples.out = @splat(io.drives);
         io.samples.directions = @splat(io.directions);
         io.samples.inputs = @splat(io.routed_inputs);
@@ -309,6 +307,7 @@ pub fn step(io: *IO, hub: *Hub) void {
         io.physical_directions = directions;
         io.direction_pipeline.directions[io.direction_pipeline.head] = null;
     }
+    io.clocked_feedback = io.receiver_inputs;
     const inputs = &io.frame_inputs;
     for (inputs, 0..) |*sample, i| {
         sample.* = io.pinInputs(@enumFromInt(i));
@@ -362,10 +361,11 @@ pub fn step(io: *IO, hub: *Hub) void {
         };
     }
     slot.* = @splat(null);
-    io.routeInputs();
-    for (inputs, io.smart_a, io.smart_b) |*sample, a, b| {
+    io.routeInputs(&hub.system_configuration);
+    for (inputs, &io.pins, io.smart_a, io.smart_b) |*sample, *pin, a, b| {
         sample.a = a;
         sample.b = b;
+        sample.dac_mode = pin.configuration.pad_mode.is_dac();
     }
     // Keep all outputs from the previous frame visible until every pin has advanced.
     const next = &io.frame_outputs;
@@ -381,6 +381,17 @@ pub fn step(io: *IO, hub: *Hub) void {
         io.routed_inputs |= @as(u64, state.in) << @intCast(i);
         pin.outputs = state;
     }
+    for (&hub.cogs) |*cog| {
+        if (!cog.scope_configuration.enabled)
+            continue;
+        const base = @as(usize, cog.scope_configuration.pin_base) * 4;
+        var word: u32 = 0;
+        for (0..4) |channel| {
+            const value = io.readResult(@enumFromInt(base + channel), hub.counter).value;
+            word |= (value & 255) << @as(u5, @intCast(channel * 8));
+        }
+        cog.scope = word;
+    }
     // Delay the selected output in every mode, including GPIO and WRPIN mux changes.
     for (&io.pins, 0..) |*pin, i| {
         const mux_signal = io.selectedOutput(@enumFromInt(i));
@@ -389,13 +400,14 @@ pub fn step(io: *IO, hub: *Hub) void {
     }
     for (&io.sync_out, 0..) |*state, i| {
         const configuration = io.pins[i].configuration;
-        if (configuration.isAdc() or !configuration.synchronous)
+        if (configuration.isAdc() or configuration.hasFeedback() or !configuration.synchronous)
             continue;
         const sync_pipeline = &io.pins[i].sync_output_pipeline;
         state.* = sync_pipeline.step(io.outputState(@enumFromInt(i)));
     }
     io.resolvePads(hub);
     io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
+    io.samples.receivers[hub.counter % io.samples.receivers.len] = io.receiver_inputs;
     io.samples.out[hub.counter % io.samples.out.len] = io.drives;
     io.samples.directions[hub.counter % io.samples.directions.len] = io.directions;
     io.samples.inputs[hub.counter % io.samples.inputs.len] = io.routed_inputs;
@@ -502,11 +514,14 @@ pub fn getExternal(io: *const IO, index: PadIndex) ?Pad.State {
     return io.analog_pads.get(@intFromEnum(index));
 }
 
-/// Set a normalized ADC bit density, retaining modulator phase for continuously changing input.
-pub fn setAdcDensity(io: *IO, index: PinIndex, density: f64) error{InvalidDensity}!void {
-    if (!std.math.isFinite(density) or density < 0 or density > 1)
-        return error.InvalidDensity;
-    io.adc_inputs[@intFromEnum(index)].density = density;
+/// Override a normalized ADC density for tests, or restore electrical conversion with null.
+pub fn setAdcOverride(io: *IO, index: PinIndex, density: ?f64) error{InvalidDensity}!void {
+    if (density) |value| {
+        if (!std.math.isFinite(value) or value < 0 or value > 1)
+            return error.InvalidDensity;
+        io.adc_inputs[@intFromEnum(index)].density = value;
+    }
+    io.adc_overrides[@intFromEnum(index)] = density;
 }
 
 /// Build one smart-logic input sample from the aggregate cog registers and routed pads.
@@ -524,6 +539,7 @@ fn pinInputs(io: *const IO, index: PinIndex) smart_pin.Inputs {
         .out = @intFromBool(io.drives & mask != 0),
         .dir = io.pins[i].smart.directionInput(direction, registered_direction),
         .clock = io.last_clock,
+        .random = @truncate(std.math.rotr(u64, io.random_bits, @as(u6, @intCast(i)))),
     };
 }
 
@@ -550,46 +566,81 @@ fn outputState(io: *const IO, index: PadIndex) Signal {
     const i = @intFromEnum(index);
     const configuration = io.pins[i].configuration;
     var state = io.pins[i].output;
-    switch (configuration.pad_mode) {
-        .logic_feedback, .schmitt_feedback => state = io.pads[i],
-        .logic_adjacent_feedback, .schmitt_adjacent_feedback => state = io.pads[i ^ 1],
-        else => {},
+    if (configuration.hasFeedback()) {
+        state = if (configuration.synchronous)
+            io.clocked_feedback[i]
+        else
+            io.receivers[i].output;
+        if (configuration.pad_mode.has_negative_feedback()) {
+            state = state.invert();
+        }
     }
-    if (configuration.invert_output) {
+    if (!configuration.pad_mode.is_level() and configuration.invert_output) {
         state = state.invert();
     }
     return state;
 }
 
 /// Cached electrical identity: zero floats, other values encode selected WRPIN drive and rail.
-const DriveKey = enum(u5) { floating, _ };
+const DriveKey = enum(u16) { floating, _ };
 
 /// Select registered drive characteristics without rebuilding unchanged numeric descriptors.
-fn driveKey(io: *const IO, index: PadIndex) DriveKey {
+fn driveKey(io: *const IO, hub: *const Hub, index: PadIndex) DriveKey {
     const i = @intFromEnum(index);
     const configuration = io.pins[i].configuration;
-    if (!io.outputEnabled(index) or configuration.isDac())
+    if (!io.outputEnabled(index))
         return .floating;
-    const state = if (!configuration.isAdc() and configuration.synchronous)
+    if (configuration.isDac()) {
+        const code = if (configuration.isSmartDac())
+            io.pins[i].outputs.dac orelse 0
+        else if (configuration.mode != .gpio or configuration.output_source == .other) blk: {
+            const high = io.pins[i].output == .high;
+            const nibble: u8 = if (high)
+                configuration.dacCode() >> 4
+            else
+                configuration.dacCode() & 15;
+            break :blk nibble * 17;
+        } else if (configuration.output_enable) blk: {
+            const cog = configuration.dacCode() & 15;
+            break :blk if (cog < hub.cogs.len)
+                hub.cogs[cog].dacs[i % 4]
+            else
+                0;
+        } else configuration.dacCode();
+        return @enumFromInt(17 + @as(u16, @intFromEnum(configuration.dacRange())) * 256 + code);
+    }
+    const state = if (!configuration.isAdc() and !configuration.hasFeedback() and configuration.synchronous)
         io.sync_out[i]
     else
         io.outputState(index);
-    const mode = switch (state) {
+    const mode: PinConfiguration.Drive = if (configuration.pad_mode.is_level())
+        .resistor_1k5
+    else switch (state) {
         .low => configuration.low_drive,
         .high => configuration.high_drive,
     };
     if (mode == .float)
         return .floating;
-    return @enumFromInt(1 + @as(u5, @intFromEnum(mode)) * 2 + @intFromEnum(state));
+    return @enumFromInt(1 + @as(u16, @intFromEnum(mode)) * 2 + @intFromEnum(state));
 }
 
 /// Expand a changed physical drive identity using the immutable initialized system parameters.
 fn driver(key: DriveKey, system: *const Hub.SystemConfiguration) Pad.Driver {
     if (key == .floating)
         return .float;
+    if (@intFromEnum(key) >= 17) {
+        const encoded = @intFromEnum(key) - 17;
+        const range: PinConfiguration.DacRange = @enumFromInt(@as(u2, @intCast(encoded / 256)));
+        return Pad.dacDriver(system, range, @truncate(encoded));
+    }
     const encoded = @intFromEnum(key) - 1;
     const mode: PinConfiguration.Drive = @enumFromInt(encoded >> 1);
     return Pad.internalDriver(system, .{ .low_drive = mode, .high_drive = mode }, Signal.from(encoded & 1 != 0), true);
+}
+
+/// Inspect the actual committed electrical driver without decoding private cache identities.
+pub fn resolvedDriver(io: *const IO, index: PadIndex, system: *const Hub.SystemConfiguration) Pad.Driver {
+    return driver(io.last_driver_keys[@intFromEnum(index)], system);
 }
 
 /// Select a relative physical pad or the cog OUT bit for one smart input.
@@ -605,8 +656,12 @@ fn selected(io: *const IO, index: PinIndex, selector: PinConfiguration.Selector)
         .minus1 => 63,
     };
     const pad: PadIndex = @enumFromInt(i +% offset);
+    const out_delay: u64 = switch (io.pins[i].configuration.mode) {
+        .adc, .adc_ext, .adc_scope => 3,
+        else => 2,
+    };
     const out = if (io.samples.active)
-        io.samples.out[(io.last_clock -% 2) % io.samples.out.len]
+        io.samples.out[(io.last_clock -% out_delay) % io.samples.out.len]
     else
         io.drives;
     const state = if (selector.source == .out)
@@ -619,63 +674,116 @@ fn selected(io: *const IO, index: PinIndex, selector: PinConfiguration.Selector)
         state;
 }
 
-/// Advance RC pads through analog substeps, with feedback drivers fixed from the previous completed snapshot.
+/// Advance simultaneous RC substeps, updating asynchronous feedback between electrical solves.
 fn resolvePads(io: *IO, hub: *Hub) void {
     const system = &hub.system_configuration;
     const frequency = io.clock_frequency;
     const dt = 1 / @as(f64, @floatFromInt(frequency)) / @as(f64, @floatFromInt(system.oversample));
-    for (0..64) |i| {
-        const key = io.driveKey(@enumFromInt(i));
-        if (key != io.last_driver_keys[i]) {
-            io.analog_pads.setInternal(i, driver(key, system));
-            io.last_driver_keys[i] = key;
-        }
-    }
     if (hub.vcd) |vcd| {
         if (system.oversample > 1) {
             vcd.beginClock(hub.counter, frequency);
         }
     }
+    var all_logic = true;
+    for (&io.pins) |*pin| {
+        if (pin.configuration.pad_mode != .logic) {
+            all_logic = false;
+            break;
+        }
+    }
+    const simple = all_logic and dt >= system.receiver_delay;
+    if (!simple and io.simple_receivers) {
+        for (&io.receivers, io.receiver_inputs) |*receiver, input| {
+            receiver.output = input;
+            receiver.pending = input;
+            receiver.remaining = 0;
+        }
+    }
+    io.simple_receivers = simple;
+    var asynchronous_feedback = false;
     for (0..system.oversample) |substep| {
+        if (substep == 0 or asynchronous_feedback) {
+            for (0..64) |i| {
+                const configuration = io.pins[i].configuration;
+                asynchronous_feedback = asynchronous_feedback or
+                    (configuration.hasFeedback() and !configuration.synchronous);
+                const key = io.driveKey(hub, @enumFromInt(i));
+                if (key != io.last_driver_keys[i]) {
+                    io.analog_pads.setInternal(i, driver(key, system));
+                    io.last_driver_keys[i] = key;
+                }
+            }
+        }
         io.analog_pads.step(system, dt);
+        const levels = io.analog_pads.digital(system);
+        if (simple) {
+            io.receiver_inputs = levels;
+        } else {
+            for (&io.receivers, &io.pins, &io.receiver_inputs, levels, 0..) |*receiver, *pin, *input, level, i| {
+                if (pin.configuration.pad_mode == .logic and dt >= system.receiver_delay) {
+                    receiver.output = level;
+                    receiver.pending = level;
+                    receiver.remaining = 0;
+                } else {
+                    const voltage = io.analog_pads.get(i).?.voltage;
+                    const adjacent = io.analog_pads.get(i ^ 1).?.voltage;
+                    receiver.step(pin.configuration, system, voltage, adjacent, dt);
+                }
+                input.* = receiver.output;
+            }
+        }
         if (hub.vcd) |vcd| {
             if (substep + 1 < system.oversample) {
-                vcd.capturePads(&io.analog_pads, system, @intCast(substep + 1));
+                vcd.capturePads(io, system, @intCast(substep + 1));
             }
         }
     }
     const next = io.analog_pads.digital(system);
     io.pads = next;
-    io.sync_in = next;
+    io.sync_in = io.receiver_inputs;
 }
 
 /// Compute SmartA/SmartB from the previous pad samples without advancing smart logic.
-fn routeInputs(io: *IO) void {
+fn routeInputs(io: *IO, system: *const Hub.SystemConfiguration) void {
     const previous_clock = io.input_clock;
     io.input_clock = io.last_clock;
     const pads = if (io.samples.active)
-        io.samples.pads[(io.last_clock -% 2) % io.samples.pads.len]
+        io.samples.receivers[(io.last_clock -% 2) % io.samples.receivers.len]
     else
-        io.pads;
+        io.receiver_inputs;
     for (&io.pad_reads, 0..) |*state, i| {
         const configuration = io.pins[i].configuration;
-        const source = switch (configuration.pad_mode) {
-            .logic_adjacent_feedback, .schmitt_adjacent_feedback => i ^ 1,
-            else => i,
-        };
         const adc = configuration.isAdc();
         const input = if (adc) blk: {
-            // In plain DAC mode TT=00/01 selects OUT as ADC enable; TT=10/11 selects bit-DAC instead.
-            if (configuration.isDac() and (configuration.output_source == .other or
-                io.outputs & (@as(u64, 1) << @intCast(i)) == 0))
-                break :blk Signal.low;
+            if (configuration.isDac()) {
+                if (!configuration.isSmartDac() and
+                    (configuration.mode != .gpio or configuration.output_source == .other))
+                    break :blk Signal.low;
+                const enabled = if (configuration.isSmartDac() and configuration.output_source == .other)
+                    io.selectedOutput(@enumFromInt(i)) == .high
+                else
+                    io.outputs & (@as(u64, 1) << @intCast(i)) != 0;
+                if (!enabled)
+                    break :blk Signal.low;
+            }
+            const voltage = if (io.analog_pads.get(i)) |pad|
+                pad.voltage
+            else
+                0;
+            io.adc_inputs[i].density = io.adc_overrides[i] orelse Receiver.adcDensity(configuration, system, voltage);
             break :blk Signal.from(io.adc_inputs[i].step());
-        } else if (configuration.synchronous)
-            io.sync_in[source]
+        } else if (configuration.synchronous and configuration.pad_mode.is_level())
+            io.samples.receivers[(io.last_clock -% 3) % io.samples.receivers.len][i]
+        else if (configuration.synchronous)
+            io.sync_in[i]
         else
-            pads[source];
+            pads[i];
+        io.adc_bits[i] = if (adc)
+            input
+        else
+            .low;
         // ADC source/gain bits alias the GPIO inversion and synchronization fields.
-        state.* = if (!adc and configuration.invert_input)
+        state.* = if (!adc and !configuration.pad_mode.is_level() and configuration.invert_input)
             input.invert()
         else
             input;
@@ -1094,7 +1202,7 @@ test "a primed USART exposes its first bit on enable and waits for B clocks" {
     try std.testing.expect(!hub.io.pins[8].smart.registers.ready);
 }
 
-test "digital repository aliases select the repository engine while preserving WRPIN configuration" {
+test "all DAC encodings use repository semantics without DAC_MODE" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
@@ -1104,10 +1212,11 @@ test "digital repository aliases select the repository engine while preserving W
         testCommand(hub, @enumFromInt(8), .configure, configuration);
         const pin = &hub.io.pins[8].smart;
         try std.testing.expectEqual(configuration, @as(u32, @bitCast(hub.io.pins[8].configuration)));
-        try std.testing.expect(pin.logic == .repository);
+        try std.testing.expectEqual(hub.io.pins[8].configuration.mode, std.meta.activeTag(pin.logic));
         testCommand(hub, @enumFromInt(8), .write_x, 0x89abcdef);
         _ = hub.step();
         try std.testing.expect(pin.registers.ready);
+        try std.testing.expect(hub.io.pins[8].outputs.dac == null);
         try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
         hub.cogs[0].write_reg(.DIRA, 0);
         testCommand(hub, @enumFromInt(8), .write_x, 0);
@@ -1336,10 +1445,10 @@ test "all global filters independently sample selected inverted A and B on both 
         });
     }
     // Every selected A is high and each inverted B is low.
-    io.pads = @splat(.high);
+    io.receiver_inputs = @splat(.high);
     for (0..31) |clock| {
         io.last_clock = clock;
-        io.routeInputs();
+        io.routeInputs(&Hub.SystemConfiguration.ideal);
         for (io.pins[0..4]) |pin| {
             try std.testing.expectEqual(@as(u8, 0), pin.filter_b.history);
         }
@@ -1350,7 +1459,7 @@ test "all global filters independently sample selected inverted A and B on both 
     }
     for (31..34) |clock| {
         io.last_clock = clock;
-        io.routeInputs();
+        io.routeInputs(&Hub.SystemConfiguration.ideal);
     }
     for (0..4) |i| {
         try std.testing.expectEqual(Signal.high, io.smart_a[i]);
@@ -1360,36 +1469,41 @@ test "all global filters independently sample selected inverted A and B on both 
     io.configureFilter(0x4000_001f);
     io.pins[0].filter_a.history = 3;
     io.last_clock = 34;
-    io.routeInputs();
+    io.routeInputs(&Hub.SystemConfiguration.ideal);
     try std.testing.expectEqual(Signal.high, io.smart_a[0]);
     // The sampled CT tap is half a period ahead: test both transitions and rollover.
     io.pins[0].filter_a.history = 0;
     io.input_clock = (@as(u64, 1) << 30) - 1;
     io.last_clock = @as(u64, 1) << 30;
-    io.routeInputs();
+    io.routeInputs(&Hub.SystemConfiguration.ideal);
     try std.testing.expectEqual(@as(u8, 1), io.pins[0].filter_a.history);
     io.input_clock = (@as(u64, 3) << 30) - 1;
     io.last_clock = @as(u64, 3) << 30;
-    io.routeInputs();
+    io.routeInputs(&Hub.SystemConfiguration.ideal);
     try std.testing.expectEqual(@as(u8, 3), io.pins[0].filter_a.history);
     io.input_clock = std.math.maxInt(u64);
     io.last_clock = 0;
-    io.routeInputs();
+    io.routeInputs(&Hub.SystemConfiguration.ideal);
     try std.testing.expectEqual(@as(u8, 3), io.pins[0].filter_a.history);
 }
 
 test "adjacent pad input precedes inversion and selectors even with output disabled" {
     var io: IO = .{};
-    io.pads[0] = .high;
-    io.pads[1] = .low;
-    io.sync_in = io.pads;
+    io.receiver_inputs[0] = .high;
+    io.receiver_inputs[1] = .low;
+    io.sync_in = io.receiver_inputs;
     for ([_]PinConfiguration.PadMode{ .logic_adjacent_feedback, .schmitt_adjacent_feedback }) |mode| {
         for ([_]bool{ false, true }) |synchronous| {
             for ([_]bool{ false, true }) |invert| {
                 io.pins[0].configure(.{ .pad_mode = mode, .synchronous = synchronous, .invert_input = invert });
                 io.pins[1].configure(.{ .pad_mode = mode, .synchronous = synchronous, .invert_input = invert });
                 io.pins[63].configure(.{ .a = .{ .source = .plus1, .invert = false } });
-                io.routeInputs();
+                io.receivers[0].step(io.pins[0].configuration, &Hub.SystemConfiguration.ideal, 3.3, 0, 50e-9);
+                io.receivers[1].step(io.pins[1].configuration, &Hub.SystemConfiguration.ideal, 0, 3.3, 50e-9);
+                io.receiver_inputs[0] = io.receivers[0].output;
+                io.receiver_inputs[1] = io.receivers[1].output;
+                io.sync_in = io.receiver_inputs;
+                io.routeInputs(&Hub.SystemConfiguration.ideal);
                 try std.testing.expectEqual(Signal.from(invert), io.smart_a[0]);
                 try std.testing.expectEqual(Signal.from(!invert), io.smart_a[1]);
                 try std.testing.expectEqual(io.smart_a[0], io.smart_a[63]);
@@ -1403,11 +1517,11 @@ test "Boolean routing changes A only and preserves B" {
     var io: IO = .{};
     for ([_]Signal{ .low, .high }) |a| {
         for ([_]Signal{ .low, .high }) |b| {
-            io.pads[0] = a;
-            io.pads[1] = b;
+            io.receiver_inputs[0] = a;
+            io.receiver_inputs[1] = b;
             inline for ([_]PinConfiguration.InputLogic{ .a, .a_and_b, .a_or_b, .a_xor_b }) |logic| {
                 io.pins[0].configure(.{ .input_logic = logic, .b = .{ .source = .plus1, .invert = false } });
-                io.routeInputs();
+                io.routeInputs(&Hub.SystemConfiguration.ideal);
                 try std.testing.expectEqual(Signal.logic(a, b, @enumFromInt(@intFromEnum(logic))), io.smart_a[0]);
                 try std.testing.expectEqual(b, io.smart_b[0]);
             }
@@ -1419,7 +1533,7 @@ test "GPIO and smart modes receive filtered A and B through the common frame rou
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    for ([_]smart_pin.Mode{ .gpio, .repository }) |mode| {
+    for ([_]smart_pin.Mode{ .gpio, .dac_noise }) |mode| {
         try hub.init(.ideal);
         try std.testing.expectEqual(@as(u5, 0), hub.io.filters[0].tap);
         try std.testing.expectEqual(@as(u5, 5), hub.io.filters[1].tap);
@@ -1494,7 +1608,7 @@ test "raw ADC retains GPIO drive enable inversion and float legs without a synch
                     gpio.synchronous = false;
                     gpio.invert_input = false;
                     hub.io.editConfiguration(@enumFromInt(1), @bitCast(gpio));
-                    try hub.io.setAdcDensity(@enumFromInt(0), 1);
+                    try hub.io.setAdcOverride(@enumFromInt(0), 1);
                     hub.cogs[0].write_reg(.DIRA, 3);
                     for ([_]bool{ false, true, false }) |out| {
                         hub.cogs[0].write_reg(.OUTA, if (out)
@@ -1543,7 +1657,7 @@ test "DAC pad modes gate the independent raw ADC stream with OUT and TT instead 
             for ([_]bool{ false, true }) |dir| {
                 try hub.init(.ideal);
                 hub.io.editConfiguration(@enumFromInt(0), mode | 0x8800 | (@as(u32, @intCast(tt)) << 6));
-                try hub.io.setAdcDensity(@enumFromInt(0), 0.25);
+                try hub.io.setAdcOverride(@enumFromInt(0), 0.25);
                 hub.cogs[0].write_reg(.DIRA, @intFromBool(dir));
                 for ([_]bool{ false, true, false }) |out| {
                     hub.cogs[0].write_reg(.OUTA, @intFromBool(out));
@@ -1560,7 +1674,8 @@ test "DAC pad modes gate the independent raw ADC stream with OUT and TT instead 
                     else
                         0;
                     try std.testing.expectEqual(expected, count);
-                    try std.testing.expectEqual(Signal.low, hub.io.pads[0]);
+                    const expected_pad = dir and tt != 1 and (mode == 0x140000 or mode == 0x160000);
+                    try std.testing.expectEqual(Signal.from(expected_pad), hub.io.pads[0]);
                     try std.testing.expectEqualSlices(u8, &.{ 0, 0, 0, 0 }, &hub.cogs[0].dacs);
                 }
             }
@@ -1577,7 +1692,7 @@ test "raw ADC densities emit bounded digital streams and reject nonfinite inputs
     const configurations = [_]u32{ 0x0010_0000, 0x0010_8000, 0x0011_0000, 0x0011_8000, 0x0012_0000 };
     for ([_]f64{ 0, 0.125, 0.5, 0.875, 1 }, 0..) |density, i| {
         io.editConfiguration(@enumFromInt(i), configurations[i]);
-        try io.setAdcDensity(@enumFromInt(i), density);
+        try io.setAdcOverride(@enumFromInt(i), density);
     }
     var counts: [5]usize = @splat(0);
     for (0..1024) |_| {
@@ -1588,16 +1703,14 @@ test "raw ADC densities emit bounded digital streams and reject nonfinite inputs
     }
     try std.testing.expectEqualDeep([5]usize{ 0, 128, 512, 896, 1024 }, counts);
     for ([_]f64{ -0.01, 1.01, std.math.nan(f64), std.math.inf(f64) }) |density| {
-        try std.testing.expectError(error.InvalidDensity, io.setAdcDensity(@enumFromInt(0), density));
+        try std.testing.expectError(error.InvalidDensity, io.setAdcOverride(@enumFromInt(0), density));
     }
     try std.testing.expectEqual(@as(f64, 0), io.adc_inputs[0].density);
-    try std.testing.expect(supported(0x0010_0000));
-    try std.testing.expect(!supported(0x0010_0030));
     try hub.init(.ideal);
     try std.testing.expectEqualDeep(DeltaSigma{}, hub.io.adc_inputs[0]);
 }
 
-test "analog oversampling converges toward RC behavior while feedback remains clock synchronous" {
+test "analog oversampling converges toward RC behavior while clocked feedback remains synchronous" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
@@ -1623,8 +1736,8 @@ test "analog oversampling converges toward RC behavior while feedback remains cl
         try hub.io.setExternal(@enumFromInt(0), .high);
         _ = hub.step();
         try hub.io.setExternal(@enumFromInt(0), .float);
-        hub.io.editConfiguration(@enumFromInt(0), 0x40000);
-        hub.io.editConfiguration(@enumFromInt(1), 0x40000);
+        hub.io.editConfiguration(@enumFromInt(0), 0x50000);
+        hub.io.editConfiguration(@enumFromInt(1), 0x50000);
         hub.cogs[0].write_reg(.DIRA, 3);
         for (0..3) |_| {
             _ = hub.step();
@@ -1637,5 +1750,79 @@ test "analog oversampling converges toward RC behavior while feedback remains cl
         _ = hub.step();
         try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
         try std.testing.expectEqual(Signal.low, hub.io.pads[1]);
+    }
+}
+
+test "DAC loading and same-pad ADC conversion share the solved physical voltage" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for (0..4) |range| {
+        for ([_]u8{ 0, 32, 128, 255 }) |code| {
+            try hub.init(.ideal);
+            const configuration: PinConfiguration = @bitCast(@as(u32, 0x140000) |
+                (@as(u32, @intCast(range)) << 16) | (@as(u32, code) << 8));
+            hub.io.editConfiguration(@enumFromInt(0), @bitCast(configuration));
+            try hub.io.setExternal(@enumFromInt(0), .{ .voltage = 0, .resistance = 1500 });
+            hub.cogs[0].write_reg(.DIRA, 1);
+            hub.cogs[0].write_reg(.OUTA, 1);
+            for (0..32) |_| {
+                _ = hub.step();
+            }
+            const source = Pad.dacDriver(&hub.system_configuration, configuration.dacRange(), code).linear;
+            const expected = source.voltage * 1500 / (1500 + source.resistance);
+            const snapshot = hub.io.getExternal(@enumFromInt(0)).?;
+            try std.testing.expectApproxEqAbs(expected, snapshot.voltage, 1e-10);
+            try std.testing.expectApproxEqAbs(
+                Receiver.adcDensity(configuration, &hub.system_configuration, expected),
+                hub.io.adc_inputs[0].density,
+                1e-10,
+            );
+            try std.testing.expectEqual(source.resistance, hub.io.resolvedDriver(@enumFromInt(0), &hub.system_configuration).linear.resistance);
+            try hub.io.setAdcOverride(@enumFromInt(0), 0.125);
+            _ = hub.step();
+            try std.testing.expectEqual(@as(f64, 0.125), hub.io.adc_inputs[0].density);
+            try hub.io.setAdcOverride(@enumFromInt(0), null);
+            _ = hub.step();
+            try std.testing.expectApproxEqAbs(Receiver.adcDensity(configuration, &hub.system_configuration, expected), hub.io.adc_inputs[0].density, 1e-10);
+        }
+    }
+}
+
+test "asynchronous level feedback resolves within substeps and converges around its reference" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    var coarse_span: f64 = 0;
+    for ([_]u32{ 1, 8, 32, 128 }) |factor| {
+        var configuration = Hub.SystemConfiguration.realistic;
+        configuration.oversample = factor;
+        try hub.init(configuration);
+        try hub.io.setExternal(@enumFromInt(0), .{ .voltage = 0, .resistance = 1, .drive_enabled = false, .capacitance = 100e-12 });
+        hub.io.editConfiguration(@enumFromInt(0), 0x1a8000);
+        hub.cogs[0].write_reg(.DIRA, 1);
+        for (0..256) |_| {
+            _ = hub.step();
+        }
+        var minimum: f64 = configuration.vio_voltage;
+        var maximum: f64 = 0;
+        var sum: f64 = 0;
+        for (0..256) |_| {
+            _ = hub.step();
+            const voltage = hub.io.getExternal(@enumFromInt(0)).?.voltage;
+            minimum = @min(minimum, voltage);
+            maximum = @max(maximum, voltage);
+            sum += voltage;
+        }
+        const span = maximum - minimum;
+        try std.testing.expect(minimum < 1.65 and maximum > 1.65);
+        try std.testing.expectApproxEqAbs(@as(f64, 1.65), sum / 256, 0.08);
+        if (factor == 1) {
+            coarse_span = span;
+        } else {
+            // Endpoint sampling aliases the oscillation; its span need not decrease at every factor.
+            try std.testing.expect(span < coarse_span);
+            try std.testing.expect(span < 0.25);
+        }
     }
 }

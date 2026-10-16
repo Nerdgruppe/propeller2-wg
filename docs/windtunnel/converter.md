@@ -2,7 +2,7 @@
 
 Each cog owns a `ColorConverter`. SETDACS and streamer routing produce
 `raw_dacs: [4]u8`; conversion publishes `dacs: [4]u8`, ordered DAC0 through DAC3.
-Both arrays are observable state. Neither array drives analog simulation.
+Both arrays are observable state. IO routes the final `dacs` bytes into configured constant-impedance DAC pads.
 
 SETCY, SETCI and SETCQ supply three coefficient bytes and one output offset each.
 SETCFRQ supplies the carrier frequency. SETCMOD writes nine bits: sync polarity,
@@ -67,8 +67,8 @@ background restoration through an active converter.
 
 The measurement setup, calibrated control comparisons and limitations are
 recorded in [Accumulated P2 Knowledge](../accumulated.md#color-converter-arithmetic-and-transport-2026-10-14).
-ADC firmware used for those measurements is outside Windtunnel's runtime;
-ADC/scope simulation, DDS and Goertzel remain unsupported.
+The original measurement firmware remains independent of Windtunnel. The electrical
+frontend now supports ADC/scope conversion and capture; DDS/Goertzel consume its raw bitstream.
 
 Final validation used `zig-0.16.0 build install test -Doptimize=ReleaseSafe
 -Dcoverage=false`: all 36 build steps succeeded, with 386 tests passing and two

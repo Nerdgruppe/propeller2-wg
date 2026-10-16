@@ -76,3 +76,41 @@ Validation: 347 Windtunnel tests including GUI tests, 241 fixtures / 3934 runs,
 CLI/GUI/benchmark builds, both-profile VCD/FST round-trips, and 16 focused electrical
 tests including customized curve/supply/capacitance/leakage parameters. No physical
 model or source validation rules changed; f64 results allow normal rounding differences.
+
+## Analog subsystem follow-up — 2026-10-16
+
+Adding physical receivers, feedback, electrical ADC conversion and smart analog
+engines adds 18–34% to these GPIO full-Hub workloads (about 0.7–0.9 µs per clock).
+This compares the completed frontend against the SIMD implementation at
+`608af02`; it is additional feature cost, not a change to the electrical solver.
+The bank still uses SIMD thresholds for ordinary logic receivers, caches drive
+identities, and rebuilds drivers between substeps only for asynchronous feedback.
+
+The comparison uses the same machine, CPU affinity and native LLVM ReleaseSafe
+flags as above: nine randomized pairs, 10,000 measured Hub clocks after 5,000
+warmup clocks, with compilation, GUI, tracing, hardware and tests excluded. Both
+snapshots use the same benchmark and P2 type module. These workloads measure the
+ordinary GPIO cost; they do not bound the cost of running 64 FIR filters or
+raising the analog oversampling factor.
+
+| Workload | Preset | Previous µs | Analog frontend µs | Increase |
+|---|---|---:|---:|---:|
+| Idle | ideal | 2.810 | 3.634 | 29.3% |
+| One fast pin | ideal | 2.499 | 3.212 | 28.6% |
+| 64 fast pins | ideal | 2.671 | 3.396 | 27.1% |
+| Eight cogs, 64 fast pins | ideal | 3.581 | 4.302 | 20.1% |
+| 64 RC loads | ideal | 2.681 | 3.418 | 27.5% |
+| 64 current loads | ideal | 3.335 | 4.087 | 22.6% |
+| 64 mixed loads | ideal | 3.319 | 4.070 | 22.6% |
+| Idle | realistic | 2.056 | 2.757 | 34.1% |
+| One fast pin | realistic | 3.260 | 3.982 | 22.2% |
+| 64 fast pins | realistic | 3.448 | 4.187 | 21.4% |
+| Eight cogs, 64 fast pins | realistic | 4.385 | 5.188 | 18.3% |
+| 64 RC loads | realistic | 2.647 | 3.398 | 28.4% |
+| 64 current loads | realistic | 3.333 | 4.068 | 22.1% |
+| 64 mixed loads | realistic | 3.428 | 4.220 | 23.1% |
+
+Temporary baseline/current executables, snapshot sources, paired runner and all
+raw trials are in `/tmp/p2-analog/performance/` (`results.json`,
+`final-results.log`, `run.py`). The permanent benchmark can be rebuilt and run
+using the commands in the I/O documentation.

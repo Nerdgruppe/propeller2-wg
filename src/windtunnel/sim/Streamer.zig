@@ -1,4 +1,4 @@
-//! Cog-local digital streamer, DAC overrides and TMDS serializer. No analog signal generation.
+//! Cog-local streamer, scope capture, DAC-byte overrides and TMDS serializer; IO resolves pad voltages.
 const std = @import("std");
 const Cog = @import("Cog.zig");
 const Debugger = @import("Debugger.zig");
@@ -16,7 +16,8 @@ const AccumulatorState = struct {
 };
 
 pub const Start = enum { immediate, zero, continuous };
-pub const Source = enum { immediate, fifo, pins, dds };
+pub const Source = enum { immediate, fifo, pins, scope, dds };
+pub const ScopeFormat = enum { none, one, one_pins8, two, two_pins16, four };
 pub const Pixel = enum { none, luma8, rgbi8, rgb8, rgb16, rgb24 };
 pub const Video = enum(u2) { normal, normal_reverse, forward, reverse };
 
@@ -28,6 +29,7 @@ pub const Format = struct {
     lut: bool,
     alternate: bool,
     pixel: Pixel,
+    scope: ScopeFormat,
 };
 
 /// Captured instruction operands survive command buffering and execute-stage stalls.
@@ -50,6 +52,7 @@ pub const Command = struct {
             .lut = false,
             .alternate = false,
             .pixel = .none,
+            .scope = .none,
         };
         if (major <= 3) {
             format.lut = true;
@@ -106,12 +109,24 @@ pub const Command = struct {
                     },
                     2...9 => {
                         if (major == 15) {
-                            if (minor != 7)
-                                return error.UnsupportedMode;
-                            format.source = .dds;
-                            format.bits = 32;
-                            format.channel_bits = 8;
-                            format.lut = true;
+                            if (minor <= 6) {
+                                format.source = .scope;
+                                format.scope = @enumFromInt(minor - 1);
+                                format.bits = switch (format.scope) {
+                                    .one => 8,
+                                    .one_pins8, .two => 16,
+                                    .two_pins16, .four => 32,
+                                    .none => unreachable,
+                                };
+                                format.channel_bits = 8;
+                            } else {
+                                if (minor != 7)
+                                    return error.UnsupportedMode;
+                                format.source = .dds;
+                                format.bits = 32;
+                                format.channel_bits = 8;
+                                format.lut = true;
+                            }
                         } else if (major == 7) {
                             format.source = .fifo;
                             format.lut = true;
@@ -160,7 +175,7 @@ pub const Command = struct {
         return switch (command.format.source) {
             .immediate, .dds => null,
             .fifo => .read,
-            .pins => if (command.control & (1 << 23) != 0) .write else null,
+            .pins, .scope => if (command.control & (1 << 23) != 0) .write else null,
         };
     }
 };
@@ -462,7 +477,20 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
         }
     }
     var value: u32 = 0;
-    if (format.source == .pins) {
+    if (format.source == .scope) {
+        const channel: u2 = @truncate(command.data);
+        const pin_word: u32 = @truncate(std.math.rotr(u64, cog.hub.io.get_in(), command.pinBase()));
+        const byte = (cog.scope >> (@as(u5, channel) * 8)) & 255;
+        const pair = (cog.scope >> (@as(u5, channel & 2) * 8)) & 0xffff;
+        value = switch (format.scope) {
+            .one => byte,
+            .one_pins8 => (byte << 8) | (pin_word & 255),
+            .two => pair,
+            .two_pins16 => (pair << 16) | (pin_word & 0xffff),
+            .four => cog.scope,
+            .none => unreachable,
+        };
+    } else if (format.source == .pins) {
         value = @truncate(std.math.rotr(u64, cog.hub.io.get_in(), command.pinBase()));
     } else {
         if (format.source == .fifo and active.samples_left == 0) {
@@ -499,7 +527,7 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
     } else {
         streamer.channels = expand(value, format.bits, format.channel_bits);
     }
-    if (format.source == .pins and command.control & (1 << 23) != 0) {
+    if ((format.source == .pins or format.source == .scope) and command.control & (1 << 23) != 0) {
         if (format.bits < 8) {
             const offset = if (format.alternate) 8 - format.bits - active.capture_bits else active.capture_bits;
             active.capture |= value << @as(u5, @intCast(offset));
@@ -517,7 +545,7 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
             }
         }
     }
-    if (format.source != .pins) {
+    if (format.source != .pins and format.source != .scope) {
         if (format.source == .fifo or active.samples_left > 1) {
             if (format.bits == 32) {
                 active.shift = 0;
@@ -527,7 +555,7 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
             active.samples_left -= 1;
         }
     }
-    if (command.control & (1 << 23) != 0 and format.source != .pins) {
+    if (command.control & (1 << 23) != 0 and format.source != .pins and format.source != .scope) {
         streamer.pin_data = std.math.rotl(u64, value, command.pinBase());
     } else {
         streamer.pin_data = 0;
@@ -845,7 +873,7 @@ test "raw ADC density feeds Goertzel without analog DAC feedback" {
 
     try hub.init(.ideal);
     hub.io.editConfiguration(@enumFromInt(0), 0x0011_8000);
-    try hub.io.setAdcDensity(@enumFromInt(0), 0.75);
+    try hub.io.setAdcOverride(@enumFromInt(0), 0.75);
     for (0..32) |_| {
         _ = hub.step();
     }

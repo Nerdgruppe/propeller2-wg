@@ -1,4 +1,4 @@
-//! Smart engines only. WRPIN routing and pad configuration belong to IO.zig.
+//! Smart engines and their configuration/state retention; IO owns routing and electrical pad state.
 const std = @import("std");
 const p2 = @import("p2");
 const signal = @import("signal.zig");
@@ -91,6 +91,10 @@ pub const Inputs = struct {
     /// Mode-selected DIR level. NCOs receive raw cog DIR for their private pipelines;
     /// IO supplies the sampled enable/reset level to the other digital engines.
     dir: u1 = 0,
+    /// Physical DAC_MODE for this update; all three DAC encodings become repositories when false.
+    dac_mode: bool = false,
+    /// Approximate projection of the shared RNG, sampled without advancing it.
+    random: u8 = 0,
     /// OR of the cogs' OUT bits, before the physical pad's drive gating and delays.
     out: u1 = 0,
     /// SmartA after input selection, inversion, A/B logic and applicable sampling delays.
@@ -120,6 +124,8 @@ pub const Outputs = struct {
     /// Logic drive before pad routing, inversion and electrical resolution.
     /// Emulated serial transmitters generate this level; virtual transmitters hold their reset level.
     smart_out: Signal = .low,
+    /// Smart-DAC code overrides the physical mode register's code for this clock.
+    dac: ?u8 = null,
     /// Signal sent toward the cog IN registers: routed SmartA for GPIO, ready for smart modes.
     in: u1 = 0,
     /// Current result (Z) returned through RDPIN/RQPIN, distinct from the WYPIN register.
@@ -188,6 +194,245 @@ pub const Repository = struct {
             state.in = @intFromBool(regs.enabled);
         }
         state.scheduled = logic.raise_next;
+        return state;
+    }
+};
+
+/// DAC noise/dither with a shared long-repository fallback when DAC_MODE is disabled.
+fn Dac(comptime mode: Mode) type {
+    return struct {
+        repository: Repository = .{},
+        /// DAC_MODE observed during the preceding engine update.
+        dac_mode: bool = false,
+        /// Resolve same-mode WRPIN retention when the next update supplies physical DAC_MODE.
+        reconfigure: bool = false,
+        count: u16 = 0,
+        accumulation: u16 = 0,
+        value: u16 = 0,
+
+        /// Use repository semantics without DAC_MODE; otherwise emit a DAC code and accumulate A.
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+            if (logic.reconfigure and !(logic.dac_mode and inputs.dac_mode)) {
+                logic.* = .{};
+            }
+            logic.reconfigure = false;
+            logic.dac_mode = inputs.dac_mode;
+            if (!inputs.dac_mode)
+                return logic.repository.step(regs, inputs);
+
+            var state = outputs(regs, inputs);
+            if (!regs.enabled) {
+                logic.count = 0;
+                logic.accumulation = 0;
+                logic.value = @min(@as(u16, @truncate(regs.y)), 0xff00);
+                state.in = 0;
+            } else {
+                logic.accumulation +%= @intFromBool(inputs.a.sample());
+                logic.count +%= 1;
+                if (logic.count == @as(u16, @truncate(regs.x))) {
+                    state.y = logic.accumulation;
+                    state.in = 1;
+                    logic.count = 0;
+                    logic.accumulation = 0;
+                    logic.value = @min(@as(u16, @truncate(regs.y)), 0xff00);
+                }
+            }
+            state.dac = if (mode == .dac_noise)
+                inputs.random
+            else blk: {
+                const fraction: u8 = @truncate(logic.value);
+                const phase: u8 = if (mode == .dac_dither_rnd)
+                    inputs.random
+                else
+                    @truncate(logic.count);
+                break :blk @as(u8, @intCast(logic.value >> 8)) + @as(u8, @intFromBool(phase < fraction));
+            };
+            state.flag = false;
+            state.scheduled = regs.enabled;
+            return state;
+        }
+    };
+}
+
+/// Three wrapping silicon-width integrators, period differences and raw ADC snapshots.
+pub fn Adc(comptime external_clock: bool) type {
+    return struct {
+        const SamplingMode = enum(u2) { automatic, sinc2, sinc3, raw };
+
+        integrators: [3]u27 = @splat(0),
+        differences: [2]u27 = @splat(0),
+        raw: u32 = 0,
+        elapsed: u16 = 0,
+        period_override: ?u14 = null,
+        pending_period: ?u14 = null,
+        ready: bool = false,
+        previous_b: bool = false,
+
+        /// Apply X/Y strobes, integrate one selected A bit and publish completed sample periods.
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+            var state = outputs(regs, inputs);
+            state.flag = false;
+            if (inputs.ack or inputs.new_x != null or inputs.new_y != null or !regs.enabled) {
+                logic.ready = false;
+            }
+            state.in = @intFromBool(logic.ready);
+            if (logic.pending_period) |period| {
+                logic.period_override = period;
+                logic.pending_period = null;
+                logic.elapsed = 0;
+            }
+            const b = inputs.b.sample();
+            const rising = b and !logic.previous_b;
+            logic.previous_b = b;
+            if (inputs.new_x != null) {
+                logic.period_override = null;
+            }
+            const mode: SamplingMode = @enumFromInt(@as(u2, @truncate(regs.x >> 4)));
+            if (inputs.new_y) |y| {
+                if (mode != .automatic) {
+                    logic.pending_period = @truncate(y);
+                }
+            }
+            state.scheduled = regs.enabled;
+            if (!regs.enabled) {
+                logic.elapsed = 0;
+                state.in = 0;
+            }
+            if (external_clock and !rising)
+                return state;
+            const bit: u27 = @intFromBool(inputs.a.sample());
+            const old = logic.integrators;
+            logic.integrators[0] +%= bit;
+            logic.integrators[1] +%= old[0];
+            logic.integrators[2] +%= old[1];
+            logic.raw = (logic.raw >> 1) | (@as(u32, @intCast(bit)) << 31);
+            if (!regs.enabled)
+                return state;
+            const period: u16 = if (logic.period_override) |value|
+                if (value == 0)
+                    0x4000
+                else
+                    value
+            else
+                @as(u16, 1) << @as(u4, @truncate(regs.x));
+            logic.elapsed +%= 1;
+            if (logic.elapsed == period) {
+                logic.elapsed = 0;
+                const stage: usize = if (mode == .sinc3)
+                    2
+                else
+                    1;
+                const accumulator = if (external_clock)
+                    old[stage]
+                else
+                    logic.integrators[stage];
+                const difference = accumulator -% logic.differences[0];
+                logic.differences[0] = accumulator;
+                state.y = switch (mode) {
+                    .automatic => blk: {
+                        const sample = difference -% logic.differences[1];
+                        logic.differences[1] = difference;
+                        const exponent: u4 = @truncate(regs.x);
+                        const rounding: u27 = if (exponent < 2)
+                            0
+                        else
+                            @as(u27, 1) << (exponent - 2);
+                        const rounded = sample +% rounding;
+                        break :blk if (exponent == 0)
+                            @as(u32, rounded) << 1
+                        else
+                            @as(u32, rounded) >> (exponent - 1);
+                    },
+                    .sinc2, .sinc3 => difference,
+                    .raw => logic.raw,
+                };
+                logic.ready = true;
+                state.in = 1;
+            }
+            state.flag = false;
+            return state;
+        }
+    };
+}
+
+/// Measured symmetric integer FIRs, normalized to 255 for a continuously high input.
+pub const Scope = struct {
+    pub const Filter = enum(u2) { tukey68, tukey45, hann28, hann28_alias };
+
+    history: u128 = 0,
+    armed: bool = false,
+
+    pub const tukey68 = [_]u8{
+        1,  2,  4,  6,  8,  11, 14, 17, 20, 23, 26, 29, 32, 34, 36, 38, 39,
+        40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
+        40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
+        39, 38, 36, 34, 32, 29, 26, 23, 20, 17, 14, 11, 8,  6,  4,  2,  1,
+    };
+    pub const tukey45 = [_]u8{
+        1,  2,  4,  6,  8,  11, 14, 17, 20, 23, 26, 28, 30, 32, 33,
+        34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34,
+        33, 32, 30, 28, 26, 23, 20, 17, 14, 11, 8,  6,  4,  2,  1,
+    };
+    pub const hann28 = [_]u8{
+        1,  3,  5,  8,  11, 14, 17, 20, 23, 26, 29, 31, 33, 34,
+        34, 33, 31, 29, 26, 23, 20, 17, 14, 11, 8,  5,  3,  1,
+    };
+
+    /// Sum the selected filter with exact measured fixed-point truncation.
+    pub fn sample(history: u128, filter: Filter) u8 {
+        const weights: []const u8 = switch (filter) {
+            .tukey68 => &tukey68,
+            .tukey45 => &tukey45,
+            .hann28, .hann28_alias => &hann28,
+        };
+        var sum: u16 = 0;
+        for (weights, 0..) |weight, index| {
+            if (history & (@as(u128, 1) << @intCast(index)) != 0) {
+                sum += weight;
+            }
+        }
+        const shift: u4 = switch (filter) {
+            .tukey68 => 3,
+            .tukey45 => 2,
+            .hann28, .hann28_alias => 1,
+        };
+        return @intCast(sum >> shift);
+    }
+
+    /// Publish each clock's filtered sample and apply the strict/inclusive hysteretic trigger.
+    fn step(logic: *Scope, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+        var state = outputs(regs, inputs);
+        if (!regs.enabled) {
+            logic.history = 0;
+            logic.armed = false;
+            state.in = 0;
+            state.y = 0;
+            state.flag = false;
+            return state;
+        }
+        const value = sample(logic.history, @enumFromInt(@as(u2, @truncate(regs.x))));
+        logic.history = (logic.history << 1) | @intFromBool(inputs.a.sample());
+        const a: u6 = @truncate(regs.x >> 2);
+        const b: u6 = @truncate(regs.x >> 10);
+        const compared = value >> 2;
+        if (logic.armed) {
+            const triggered = if (a > b)
+                compared < b
+            else
+                compared >= b;
+            if (triggered) {
+                logic.armed = false;
+                state.in = 1;
+            }
+        } else {
+            logic.armed = if (a > b)
+                compared >= a
+            else
+                compared < a;
+        }
+        state.y = value;
+        state.flag = logic.armed;
+        state.scheduled = regs.enabled;
         return state;
     }
 };
@@ -1029,12 +1274,13 @@ pub const SmartPin = struct {
     out_pipeline: Pipeline(u1, 2) = .init(0),
     /// Output engines publish through a register; GPIO passes the registered cog OUT bus through.
     output_register: Pipeline(Signal, 1) = .init(.low),
+    adc_ready_pipeline: Pipeline(u1, 3) = .init(0),
 
     pub const Logic = union(Mode) {
         gpio: Normal,
-        repository: Repository,
-        dac_dither_rnd: DummyMode,
-        dac_dither_pwm: DummyMode,
+        dac_noise: Dac(.dac_noise),
+        dac_dither_rnd: Dac(.dac_dither_rnd),
+        dac_dither_pwm: Dac(.dac_dither_pwm),
         pulse: Pulse,
         transition: Transition,
         nco_frequency: Nco(false),
@@ -1055,9 +1301,9 @@ pub const SmartPin = struct {
         counter_ticks: Periods(.counter_ticks),
         counter_highs: Periods(.counter_highs),
         counter_periods: Periods(.counter_periods),
-        adc: DummyMode,
-        adc_ext: DummyMode,
-        adc_scope: DummyMode,
+        adc: Adc(false),
+        adc_ext: Adc(true),
+        adc_scope: Scope,
         usb_pair: DummyMode,
         sync_tx: UsartTx,
         sync_rx: UsartRx,
@@ -1072,11 +1318,20 @@ pub const SmartPin = struct {
 
     /// Return the measured engine-to-cog result latency, including the shared two-clock return path.
     pub fn resultLatency(pin: *const SmartPin) u64 {
-        return if (pin.digitalLogic() and pin.logic != .events_ticks) 3 else 2;
+        return switch (pin.logic) {
+            .adc, .adc_ext => 4,
+            .adc_scope => 3,
+            else => if (pin.digitalLogic() and pin.logic != .events_ticks)
+                3
+            else
+                2,
+        };
     }
 
     /// Apply the digital engine's reset-release sampling; NCOs maintain their own internal DIR stages.
     pub fn directionInput(pin: *const SmartPin, raw: bool, registered: bool) u1 {
+        if (pin.logic == .adc_scope)
+            return @intFromBool(registered);
         const nco = pin.logic == .nco_frequency or pin.logic == .nco_duty;
         return @intFromBool(raw and (nco or !pin.digitalLogic() or registered));
     }
@@ -1086,11 +1341,21 @@ pub const SmartPin = struct {
         return std.meta.activeTag(pin.logic).digitalLogic();
     }
 
-    /// Retain running digital and serial logic on same-mode WRPIN; replace the payload when its mode changes.
+    /// Configure the engine mode; DAC aliases resolve retention using DAC_MODE in the next update.
     pub fn configure(pin: *SmartPin, mode: Mode) void {
-        if (mode.retainsState() and std.meta.activeTag(pin.logic) == mode) {
-            return;
+        if (std.meta.activeTag(pin.logic) == mode) {
+            switch (pin.logic) {
+                inline .dac_noise, .dac_dither_rnd, .dac_dither_pwm => |*logic| {
+                    logic.reconfigure = true;
+                    return;
+                },
+                else => {
+                    if (mode.retainsState())
+                        return;
+                },
+            }
         }
+        pin.adc_ready_pipeline = .init(0);
         pin.logic = switch (mode) {
             inline else => |tag| @unionInit(Logic, @tagName(tag), .{}),
         };
@@ -1123,6 +1388,9 @@ pub const SmartPin = struct {
             .sync_tx => |*logic| logic.step(&pin.registers, signals, pin.tx_mode),
             inline else => |*logic| logic.step(&pin.registers, signals),
         };
+        if (pin.logic == .adc or pin.logic == .adc_ext) {
+            state.in = pin.adc_ready_pipeline.step(state.in);
+        }
         const output = pin.output_register.step(state.smart_out);
         state.smart_out = if (pin.overridesOutput()) output else Signal.from(out != 0);
         pin.registers.result = state.y;
@@ -1694,7 +1962,7 @@ test "UART width can extend after the nominal last sample and before capture" {
 
 test "step updates shared registers and latches repository outputs" {
     var pin: SmartPin = .{};
-    pin.configure(.repository);
+    pin.configure(.dac_noise);
     const written = try pin.step(.{ .dir = 1, .new_x = 0x89abcdef, .new_y = 123, .clock = 10 });
     try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.x);
     try std.testing.expectEqual(@as(u32, 123), pin.registers.y);
@@ -1709,6 +1977,36 @@ test "step updates shared registers and latches repository outputs" {
     try std.testing.expectEqual(@as(u32, 456), pin.registers.x);
     try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
     try std.testing.expect(!pin.registers.enabled);
+}
+
+test "DAC configuration owns repository reset and running sample-period retention" {
+    for ([_]Mode{ .dac_noise, .dac_dither_rnd, .dac_dither_pwm }) |mode| {
+        var pin: SmartPin = .{};
+        pin.configure(mode);
+        _ = try pin.step(.{ .dir = 1, .new_x = 123 });
+        pin.configure(mode);
+        const reset = try pin.step(.{ .dir = 1 });
+        try std.testing.expectEqual(@as(u1, 0), reset.in);
+        try std.testing.expect(reset.dac == null);
+
+        pin.configure(mode);
+        _ = try pin.step(.{ .dac_mode = true, .new_x = 4, .new_y = 0x8000 });
+        for (0..2) |_| {
+            _ = try pin.step(.{ .dac_mode = true, .dir = 1, .a = .high });
+        }
+        try std.testing.expect(!pin.registers.ready);
+        pin.configure(mode);
+        for (0..2) |_| {
+            _ = try pin.step(.{ .dac_mode = true, .dir = 1, .a = .high });
+        }
+        try std.testing.expect(pin.registers.ready);
+        try std.testing.expectEqual(@as(u32, 4), pin.registers.result);
+
+        pin.configure(mode);
+        const restored = try pin.step(.{ .dir = 1, .new_x = 456 });
+        try std.testing.expect(restored.dac == null);
+        try std.testing.expectEqual(@as(u32, 456), restored.y);
+    }
 }
 
 test "configuration replaces only logic and unsupported logic fails through step" {
@@ -1806,4 +2104,19 @@ test "zero minimum window and fixed-period count encode the full 32-bit range" {
     state = try pin.step(.{ .dir = 1, .b = .high });
     try std.testing.expectEqual(@as(u32, 124), state.y);
     try std.testing.expectEqual(@as(u1, 1), state.in);
+}
+
+test "scope FIR normalization and smart DAC clipping preserve measured full scales" {
+    for (0..4) |filter| {
+        try std.testing.expectEqual(@as(u8, 255), Scope.sample(std.math.maxInt(u128), @enumFromInt(filter)));
+        try std.testing.expectEqual(@as(u8, 0), Scope.sample(0, @enumFromInt(filter)));
+    }
+    var pin: SmartPin = .{};
+    pin.configure(.dac_dither_pwm);
+    _ = try pin.step(.{ .dac_mode = true, .new_x = 256, .new_y = 0xffff });
+    for (0..512) |_| {
+        const state = try pin.step(.{ .dac_mode = true, .dir = 1, .a = .high });
+        try std.testing.expectEqual(@as(?u8, 255), state.dac);
+    }
+    try std.testing.expectEqual(@as(u32, 256), pin.registers.result);
 }

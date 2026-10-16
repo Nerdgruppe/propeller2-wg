@@ -134,8 +134,6 @@ const WindowSize = struct {
 };
 
 const PinDrive = struct {
-    mode: ?windtunnel.types.PinConfiguration.Drive,
-    level: windtunnel.IO.Signal,
     driver: windtunnel.Pad.Driver,
 };
 
@@ -685,6 +683,19 @@ const GUI = struct {
         zgui.textUnformatted("Analog substeps only; cogs and smart pins keep the system clock.");
         quantityInput("VIO (V)", &draft.vio_voltage, 1);
         quantityInput("Digital threshold / VIO", &draft.threshold_ratio, 1);
+        quantityInput("Schmitt low / VIO", &draft.schmitt_low_ratio, 1);
+        quantityInput("Schmitt high / VIO", &draft.schmitt_high_ratio, 1);
+        quantityInput("Receiver delay (ns)", &draft.receiver_delay, 1e9);
+        quantityInput("Comparator delay (ns)", &draft.comparator_delay, 1e9);
+        quantityInput("Comparator reference settling (ns)", &draft.reference_settle_time, 1e9);
+        quantityInput("DAC 990R range (ohm)", &draft.dac_resistance[0], 1);
+        quantityInput("DAC 600R range (ohm)", &draft.dac_resistance[1], 1);
+        quantityInput("DAC 124R range (ohm)", &draft.dac_resistance[2], 1);
+        quantityInput("DAC 75R range (ohm)", &draft.dac_resistance[3], 1);
+        quantityInput("ADC GIO density", &draft.adc_gio_density, 1);
+        quantityInput("ADC VIO density", &draft.adc_vio_density, 1);
+        quantityInput("ADC floating density", &draft.adc_float_density, 1);
+        quantityInput("ADC gain center / VIO", &draft.adc_center_ratio, 1);
         quantityInput("Internal pad capacitance (pF)", &draft.pad_capacitance, 1e12);
         if (zgui.button(if (draft.fast_model == .linear) "Fast drive: linear" else "Fast drive: piecewise", .{})) {
             draft.fast_model = switch (draft.fast_model) {
@@ -1386,23 +1397,10 @@ const GUI = struct {
 
     /// Decode the cached driver that produced the last electrical snapshot, including delayed output selection.
     fn pinDrive(gui: *const GUI, id: u6) PinDrive {
-        const key = @intFromEnum(gui.hub.io.last_driver_keys[id]);
-        if (key == 0) {
-            return .{ .mode = null, .level = .low, .driver = .float };
-        }
-        const encoded = key - 1;
-        const mode: windtunnel.types.PinConfiguration.Drive = @enumFromInt(encoded >> 1);
-        const level = windtunnel.IO.Signal.from(encoded & 1 != 0);
-        return .{
-            .mode = mode,
-            .level = level,
-            .driver = windtunnel.Pad.internalDriver(
-                &gui.hub.system_configuration,
-                .{ .low_drive = mode, .high_drive = mode },
-                level,
-                true,
-            ),
-        };
+        return .{ .driver = gui.hub.io.resolvedDriver(
+            @enumFromInt(id),
+            &gui.hub.system_configuration,
+        ) };
     }
 
     /// Summarize the physical pad, then compare external and internal electrical sources side by side.
@@ -1504,6 +1502,10 @@ const GUI = struct {
     fn pinLogic(gui: *GUI, id: u6) void {
         const io = &gui.hub.io;
         const pin = &io.pins[id];
+        zgui.text("Receiver {t}", .{io.receiver_inputs[id]});
+        if (pin.configuration.isAdc()) {
+            zgui.text("ADC density {d:.4}; bit {t}", .{ io.adc_inputs[id].density, io.adc_bits[id] });
+        }
         if (zgui.beginTable("Logic status", .{ .column = 7, .flags = .{ .borders = .all, .sizing = .fixed_fit } })) {
             defer zgui.endTable();
 
@@ -1529,7 +1531,7 @@ const GUI = struct {
         const mode = std.meta.activeTag(pin.smart.logic);
         zgui.text("Smart mode: {t}", .{mode});
         switch (mode) {
-            .gpio, .repository, .uart_tx, .uart_rx, .sync_tx, .sync_rx => {},
+            .gpio, .dac_noise, .uart_tx, .uart_rx, .sync_tx, .sync_rx => {},
             else => zgui.textColored(.{ 1, 0.4, 0.2, 1 }, "Unsupported smart engine", .{}),
         }
         var x = pin.smart.registers.x;
@@ -1611,9 +1613,6 @@ const GUI = struct {
             }
         }
         if (header("Pad", .{ .default_open = true })) {
-            if (!windtunnel.IO.supported(@as(u32, @bitCast(pin.configuration)) & ~@as(u32, 1))) {
-                zgui.textColored(.{ 1, 0.4, 0.2, 1 }, "Unsupported pad configuration", .{});
-            }
             gui.pinPad(id);
         }
         if (header("Logic", .{ .default_open = true })) {
@@ -1624,24 +1623,15 @@ const GUI = struct {
 
 /// Name the resolved internal drive and its rail without confusing it with the pad's sampled level.
 fn pinDriveText(drive: PinDrive) void {
-    if (drive.mode) |mode| {
-        const name = switch (mode) {
-            .fast => "fast",
-            .resistor_1k5 => "1.5k",
-            .resistor_15k => "15k",
-            .resistor_150k => "150k",
-            .current_1ma => "1mA",
-            .current_100ua => "100uA",
-            .current_10ua => "10uA",
-            .float => "float",
-        };
-        const level = switch (drive.level) {
-            .low => "low",
-            .high => "high",
-        };
-        zgui.text("{s} {s}", .{ name, level });
-    } else {
-        zgui.textUnformatted("float");
+    switch (drive.driver) {
+        .fast => |level| zgui.text("fast {t}", .{level}),
+        .linear => |source| {
+            if (!source.drive_enabled) {
+                zgui.textUnformatted("float");
+            } else {
+                zgui.text("{d:.2}V / {d:.0}ohm", .{ source.voltage, source.resistance });
+            }
+        },
     }
 }
 

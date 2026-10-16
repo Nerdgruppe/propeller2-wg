@@ -1699,3 +1699,130 @@ Follow-up validation: `zig-0.16.0 build install test -Doptimize=ReleaseSafe
 passed and two optional tests skipped. All 241 registered Windtunnel fixtures
 pass their 3,934 runs. The two retained streamer event fixtures also pass all
 60 P2AAS oracle runs (432 edge comparisons plus 24 acknowledgement scenarios).
+
+## Analog frontend characterization, 2026-10-16
+
+A hardware-only two-board campaign uses the P2AAS DUT and P2-EVAL PLX6ZJKWX,
+with P8..P15 connected one-to-one and common ground. Both boards retain nominal
+20 MHz RCFAST and the ROM-calibrated 2 Mbaud UART. ADC observations average 64
+8,192-clock automatic SINC2 conversions after three discarded conversions.
+Roles are reversed; these are relative measurements, not calibrated voltages.
+Raw firmware, transports and measurements are temporarily in `/tmp/p2-analog/`.
+
+The initial 290 four-channel observations cover eight ADC source/gain settings,
+four DAC ranges, seven DAC codes, and unloaded/1.5-kOhm-to-ground/1.5-kOhm-to-VIO
+loading in both board directions. GIO density on P8 is about 0.2015, VIO density
+0.8495..0.8542, and the internally floating ADC source 0.5268..0.5307. Floating
+ADC input is distinct from a floating physical pad. The five gain settings
+amplify about a midpoint: increasing gain clips low-code inputs to zero and
+high-code inputs to one; board supply/offset differences strongly affect the
+highest gains. Do not equate pad voltage/VIO directly to ADC bit density.
+
+For interior DAC codes, the observed DAC-to-load resistance ratios are roughly
+0.63..0.69, 0.39..0.42, 0.080..0.088 and 0.047..0.055 in range order
+990/600/123.75/75 ohms. They support constant source resistance per range, with
+approximately eightfold separation between the two drive-strength groups.
+The weak load's own resistance and both supplies were not independently measured;
+these ratios cannot establish absolute output resistance or voltage accuracy.
+DAC source voltage and source resistance must be represented separately.
+
+Settled DAC-driven receiver sweeps (256 ascending then descending codes, both
+board roles) distinguish logic and Schmitt thresholds. Primary P8 logic rises
+at code 124 and falls at 123; Schmitt rises at 160 and falls at 94. Secondary
+P8 logic rises at 117 and falls at 116; Schmitt rises at 152 and falls at 86.
+With adjacent P9 held at code 128, the AB comparator rises at 128 and falls at
+127 on both boards. The internal level reference 128 crosses at 131/130 on the
+primary and 125/124 on the secondary. These are settled stimulus-code thresholds,
+including DAC/supply/reference offsets, not precision threshold voltages.
+
+A separate 544-case RCFAST P2AAS campaign captures smart ADC constant-input
+behavior, scope step responses, and all five scope streamer capture formats.
+The scope pipe transports arbitrary smart-result low bytes (repository controls
+12/34/56/78), not only scope-mode results. One-channel formats select S[1:0];
+two-channel formats select the pair using S[1]; mixed pin bytes occupy the low
+part of the recorded word/long. Four-channel capture produces 12 34 56 78.
+Scope response depends on 68/45/28 historical bits, with additional input/result
+transport; impulse probes are required to distinguish internal truncation from
+an assumed linear weighted sum.
+
+The subsequent 606-row two-board campaign sweeps every DAC code in each of the
+four ranges in both directions, measures noise/random-dither/PWM-dither output,
+and exercises eight feedback configurations in asynchronous and clocked modes
+from both starting rails. Positive local feedback retains the initialized rail;
+negative level feedback averages near its programmed reference. An average alone
+does not identify oscillation frequency, propagation time or instantaneous swing.
+Both dither modes reproduce requested settled averages and clip Y above $FF00.
+
+DAC-channel selection uses the low nibble: selection zero observes cog 0's four
+bytes in pin-number modulo-four order; selections 1..15 observe zero when those
+cogs are stopped (including 8..15, which do not alias cog 0). BIT_DAC uses repeated
+high/low nibbles and DIR gates its physical output. Smart-DAC accumulation takes
+the routed A input: A=OUT with OUT high returns 256 for a 256-clock period,
+whereas the physical ADC input returns about 133..140 in the same setup. OUT low
+produces zero with the ordinary physical input. Disabling SETSCP retains the last
+32-bit word; re-enabling selects a new four-pin block.
+
+Hardware-only filter probes cover all 64 X encodings with constant low/high
+inputs, period overrides, external B clocks, scope triggers, and two/five-clock
+pulses. Automatic SINC2 full scale is 2*N through N=8192; N=16384/32768 overflow
+to zero in these probes. SINC2-filter Z is the period difference of its second
+integrator; SINC3-filter Z is the period difference of its third integrator.
+Their software consumers need one/two additional differences respectively.
+External-clocked modes count B rises, rather than system clocks. Raw capture
+places the newest bit in bit 31. Scope arming/trigger boundaries agree with the
+strict/inclusive comparisons in the shipped manual, including equal thresholds.
+
+Exact integer scope FIRs were recovered from rising/falling steps, two/five-clock
+pulses, single-clock streamer impulses and independent 32-bit streamer patterns.
+The 68/45/28 coefficient tables sum to 2040/1020/510 and normalize with >>3/>>2/>>1.
+They are symmetric. The first 17 coefficients of the 68-tap filter are
+1,2,4,6,8,11,14,17,20,23,26,29,32,34,36,38,39; its middle 34 coefficients are 40.
+The first 15 of the 45-tap filter are 1,2,4,6,8,11,14,17,20,23,26,28,30,32,33;
+its middle 15 coefficients are 34. The first 14 of the 28-tap filter are
+1,3,5,8,11,14,17,20,23,26,29,31,33,34. The remaining coefficients mirror these.
+All 60 held-out patterns across the three filters agree exactly. Additional
+independent patterns disambiguate the long-filter coefficients. Optional host Z3
+was used only to solve measurement constraints; simulation needs no solver.
+
+A 240-case RCFAST receiver timing sweep uses fast GPIO stimulus, a retained
+midpoint pad charge for AB comparison, and an adjacent level-comparator observer.
+Logic, Schmitt, AB comparator and asynchronous level comparison first change at
+WAITX operand 4 after OUT in both polarities; clocked level comparison changes at
+operand 5. This bounds additional asynchronous receiver delay at this clock;
+it does not isolate subclock propagation. High-frequency and retained-charge
+limitations from the 2026-10-14 campaign still apply.
+
+A further 180-case live-write/reset campaign establishes that same-mode WRPIN
+and WXPIN preserve ADC integrator/period history and scope tap history. DIR low
+holds the ADC result and clears readiness but does not erase its integrators or
+raw bit history; restart can therefore expose transient filter values and the
+low-input gap in an otherwise high raw snapshot. Scope DIR reset clears its taps
+and output after the registered reset path. Live WYPIN changes filter periods
+without restarting the accumulated signal history. These cases are retained in
+`adc-lifecycle.propan`; transport-stage assignments remain model interpretations.
+
+For all eight observer channels/directions, GIO/VIO/float calibration and the
+separate 1x readings predict the 3.16/10/31.6/100x held-out readings at codes
+64/128/192 within 0.04 absolute bit density (worst observed error about 0.033).
+This is a relative, channel-calibrated transfer check, not an absolute-voltage
+accuracy claim. The independent 96 readings are retained in the Receiver tests.
+
+Automatic SINC2 rounds its second period difference to nearest (half upward)
+before normalization, rather than truncating. A 64-case pulse campaign compares
+64 consecutive RQPIN observations in automatic and filter modes at periods
+4/8/16/32. All 84 nonconstant period-difference observations match rounding;
+39 disagree with truncation. The rounding addend is N/4 before shifting by
+log2(N)-1 (zero for periods 1/2). Representative independent traces are retained
+in `adc-arithmetic.propan`, including the DIR-restart transient distinguished by
+511 versus 510 in the lifecycle fixture.
+
+An 80-row two-board TT/OUT sweep combines DAC pads with ten non-DAC smart
+engines. These combinations always select BIT_DAC codes, including TT=01;
+TT's low bit gates physical output and its high bit selects OUT/OTHER unless
+SMART overrides it. The code nibbles A/3 produce the expected observer densities
+near 0.647/0.340; output-overriding modes ignore cog OUT. ADC sample/scope results
+remain zero in all these combinations: their physical raw ADC is disabled, even
+with OUT high. Floating-output observations near the observer's ADC bias are
+measurement loading, not evidence of a hidden DAC drive. The functional simulator
+uses a nonloading ADC observer and does not model ADC charge injection/input bias
+currents; explicit external sources describe measurement loads.

@@ -82,8 +82,8 @@ test "clock mode frequencies follow HUBSET encodings" {
 pub const SmartPinMode = enum(u5) {
     /// Normal I/O; the smart engine is bypassed.
     gpio = 0b00000,
-    /// Long repository, or DAC noise when DAC_MODE is enabled.
-    repository = 0b00001,
+    /// DAC noise; long repository without DAC_MODE.
+    dac_noise = 0b00001,
     /// 16-bit DAC with random dither; long repository without DAC_MODE.
     dac_dither_rnd = 0b00010,
     /// 16-bit DAC with PWM dither; long repository without DAC_MODE.
@@ -145,9 +145,10 @@ pub const SmartPinMode = enum(u5) {
     /// Asynchronous serial receive.
     uart_rx = 0b11111,
 
-    pub const dac_noise: SmartPinMode = .repository;
+    /// Long-repository alias for encoding 1 when DAC_MODE is disabled.
+    pub const repository: SmartPinMode = .dac_noise;
 
-    /// Report whether same-mode WRPIN retains the running digital or serial engine state.
+    /// Report whether same-mode WRPIN retains the running digital, analog or serial engine state.
     pub fn retainsState(mode: SmartPinMode) bool {
         return switch (mode) {
             .pulse,
@@ -174,15 +175,15 @@ pub const SmartPinMode = enum(u5) {
             .sync_rx,
             .uart_tx,
             .uart_rx,
-            => true,
-
-            .gpio,
-            .repository,
             .dac_dither_rnd,
             .dac_dither_pwm,
             .adc,
             .adc_ext,
             .adc_scope,
+            => true,
+
+            .gpio,
+            .dac_noise,
             .usb_pair,
             => false,
         };
@@ -214,7 +215,7 @@ pub const SmartPinMode = enum(u5) {
             => true,
 
             .gpio,
-            .repository,
+            .dac_noise,
             .dac_dither_rnd,
             .dac_dither_pwm,
             .adc,
@@ -245,7 +246,7 @@ pub const SmartPinMode = enum(u5) {
             => true,
 
             .gpio,
-            .repository,
+            .dac_noise,
             .dac_dither_rnd,
             .dac_dither_pwm,
             .quadrature,
@@ -295,13 +296,43 @@ pub const PinConfiguration = packed struct(u32) {
 
     /// Identify ADC-capable pad modes; DAC modes additionally gate their ADC with OUT/OTHER and TT.
     pub fn isAdc(configuration: PinConfiguration) bool {
-        return configuration.pad_mode == .adc_gio_vio_float_1x or
-            configuration.pad_mode == .adc_3x_10x_30x_100x or configuration.isDac();
+        return configuration.pad_mode.is_adc();
     }
 
     /// Identify DAC pad modes whose level bits replace the digital drive configuration.
     pub fn isDac(configuration: PinConfiguration) bool {
-        return configuration.pad_mode == .dac_990r_600r or configuration.pad_mode == .dac_124r_75r;
+        return configuration.pad_mode.is_dac();
+    }
+
+    pub const AdcSource = enum(u3) { gio, vio, floating, gain_1, gain_3, gain_10, gain_30, gain_100 };
+    pub const DacRange = enum(u2) { ohm_990_3v, ohm_600_2v, ohm_124_3v, ohm_75_2v };
+
+    /// Decode the ADC source/gain bits, which alias input inversion and clocking.
+    pub fn adcSource(configuration: PinConfiguration) AdcSource {
+        return @enumFromInt(@as(u3, @truncate(@as(u32, @bitCast(configuration)) >> 15)));
+    }
+
+    /// Decode the DAC impedance/range bits independently of GPIO clocking.
+    pub fn dacRange(configuration: PinConfiguration) DacRange {
+        return @enumFromInt(@as(u2, @truncate(@as(u32, @bitCast(configuration)) >> 16)));
+    }
+
+    /// Read the physical configuration's eight-bit DAC code or BIT_DAC nibble pair.
+    pub fn dacCode(configuration: PinConfiguration) u8 {
+        return @truncate(@as(u32, @bitCast(configuration)) >> 8);
+    }
+
+    /// Identify the three smart-DAC encodings without confusing their repository aliases.
+    pub fn isSmartDac(configuration: PinConfiguration) bool {
+        return configuration.isDac() and switch (configuration.mode) {
+            .dac_noise, .dac_dither_rnd, .dac_dither_pwm => true,
+            else => false,
+        };
+    }
+
+    /// Identify physical receiver feedback, independent of the smart engine and TT gate.
+    pub fn hasFeedback(configuration: PinConfiguration) bool {
+        return configuration.pad_mode.has_feedback();
     }
 
     pub const Drive = enum(u3) { fast, resistor_1k5, resistor_15k, resistor_150k, current_1ma, current_100ua, current_10ua, float };
@@ -323,6 +354,99 @@ pub const PinConfiguration = packed struct(u32) {
         level_negative_feedback,
         level_adjacent_positive_feedback,
         level_adjacent_negative_feedback,
+
+        /// Identify Schmitt receivers, including feedback and adjacent-input variants.
+        pub fn is_schmitt(mode: PadMode) bool {
+            return switch (mode) {
+                .schmitt,
+                .schmitt_feedback,
+                .schmitt_adjacent_feedback,
+                => true,
+                else => false,
+            };
+        }
+
+        /// Identify pin-to-pin comparators, including local feedback.
+        pub fn is_compare(mode: PadMode) bool {
+            return switch (mode) {
+                .compare,
+                .compare_feedback,
+                => true,
+                else => false,
+            };
+        }
+
+        /// Identify level comparators whose reference code replaces GPIO drive fields.
+        pub fn is_level(mode: PadMode) bool {
+            return switch (mode) {
+                .level,
+                .level_negative_feedback,
+                .level_adjacent_positive_feedback,
+                .level_adjacent_negative_feedback,
+                => true,
+                else => false,
+            };
+        }
+
+        /// Identify raw-ADC-capable pad modes; DAC modes additionally gate conversion with OUT/TT.
+        pub fn is_adc(mode: PadMode) bool {
+            return switch (mode) {
+                .adc_gio_vio_float_1x,
+                .adc_3x_10x_30x_100x,
+                .dac_990r_600r,
+                .dac_124r_75r,
+                => true,
+                else => false,
+            };
+        }
+
+        /// Identify DAC pad modes whose code and range replace GPIO drive fields.
+        pub fn is_dac(mode: PadMode) bool {
+            return switch (mode) {
+                .dac_990r_600r,
+                .dac_124r_75r,
+                => true,
+                else => false,
+            };
+        }
+
+        /// Identify pad modes that drive from their physical receiver output.
+        pub fn has_feedback(mode: PadMode) bool {
+            return switch (mode) {
+                .logic_feedback,
+                .logic_adjacent_feedback,
+                .schmitt_feedback,
+                .schmitt_adjacent_feedback,
+                .compare_feedback,
+                .level_negative_feedback,
+                .level_adjacent_positive_feedback,
+                .level_adjacent_negative_feedback,
+                => true,
+                else => false,
+            };
+        }
+
+        /// Identify level-comparator modes that invert receiver feedback before driving.
+        pub fn has_negative_feedback(mode: PadMode) bool {
+            return switch (mode) {
+                .level_negative_feedback,
+                .level_adjacent_negative_feedback,
+                => true,
+                else => false,
+            };
+        }
+
+        /// Identify receivers that sense the paired pad instead of the local pad.
+        pub fn uses_adjacent_input(mode: PadMode) bool {
+            return switch (mode) {
+                .logic_adjacent_feedback,
+                .schmitt_adjacent_feedback,
+                .level_adjacent_positive_feedback,
+                .level_adjacent_negative_feedback,
+                => true,
+                else => false,
+            };
+        }
     };
     pub const InputLogic = enum(u3) { a, a_and_b, a_or_b, a_xor_b, filter0, filter1, filter2, filter3 };
     pub const Selector = packed struct(u4) {
@@ -996,6 +1120,8 @@ test "instruction layouts match the variable fields in instructions.tsv" {
 }
 
 test "operand layouts match TSV bit positions and preserve neighboring fields" {
+    try std.testing.expectEqual(SmartPinMode.dac_noise, SmartPinMode.repository);
+
     const pixel: RGBA8888 = @bitCast(@as(u32, 0x1234_5678));
     try std.testing.expectEqual(@as(u8, 0x12), pixel.r);
     try std.testing.expectEqual(@as(u8, 0x34), pixel.g);

@@ -96,6 +96,8 @@ The following community documentation is available as well:
 
 ### General Rules
 
+Primary directive: Do not change code when only a question was asked. Questions are never an implicit request for changes.
+
 There's a `justfile` in the workspace root which has these recipies:
 
 - `just validate`: Executes all validation tasks.
@@ -142,6 +144,21 @@ Typical workflows (started from the workspace root):
 - Do not use bare integers for things that are non-arithmetic.
   - Example: `operation: u3` is not a case where an integer is appropriate, it sounds like `operation` is something one can add 3 to. Better: `operation: OperationKind` + `OperationKind = enum(u3) { ... }`.
   - Use fully open enums for IDs that are not arithmetic values or indices.
+- Do not use bare integers for bitfields.
+  - Always prefer `packed struct(Int)` over `Int` unless you need dynamic indexing into the bitfield.
+  - When a value can have multiple layouts, use `packed union(Int)` with the different layouts as variants.
+  - Do: `if (command.control & (1 << 23) != 0)`
+  - Don't: `if (command.control.write_fifo)`
+  - If you need to use bit masking still, don't just bare bit masks like (`1<<23`) but use a named constant instead.
+    - Do: `value & NAMED_MASK`, `const NAMED_MASK = (1 << 17);`
+    - Don't: `value & (1<< 17)`
+- Never compare enumerations by their numeric value unless that number has an arithmetic semantics.
+- Do not write long if-else chains when a switch is usable.
+- Do not use `else` in a switch on an enumeration unless the switch only selects a small portion of the
+  enumeration. Prefer explicit listing of enumerators.
+- For enumerations where some members share the same property or category, introduce query functions
+  - Do: `if (mode.is_schmitt())`
+  - Don't: `if (mode == .schmitt or mode == .schmitt_feedback or mode == .schmitt_adjacent_feedback)`
 - Code Style
   - These formatting rules apply to all control-flow constructs, including `if`, `switch`,
     `while`, `for`, and similar constructs, whether used as expressions or statements.

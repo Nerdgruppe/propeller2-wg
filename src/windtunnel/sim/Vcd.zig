@@ -3,7 +3,6 @@ const std = @import("std");
 const Hub = @import("Hub.zig");
 const Debugger = @import("Debugger.zig");
 const IO = @import("IO.zig");
-const Pads = @import("Pads.zig");
 const SystemConfiguration = @import("SystemConfiguration.zig");
 const Vcd = @This();
 
@@ -25,6 +24,8 @@ const names = [_][]const u8{ "OUTA", "OUTB", "DIRA", "DIRB", "INA", "INB" };
 const PadSnapshot = struct {
     state: enum { low, high, floating },
     voltage: f64,
+    receiver: IO.Signal,
+    adc: IO.Signal,
 };
 const Snapshot = struct {
     cog: [8][6]u32,
@@ -65,15 +66,18 @@ fn snapshot(hub: *const Hub) Snapshot {
         state.alive[id] = cog.exec_mode != .stopped;
         state.starting[id] = cog.startup != null;
     }
-    state.pads = padSnapshot(&hub.io.analog_pads, hub.io.pads);
+    state.pads = padSnapshot(&hub.io, hub.io.pads);
     return state;
 }
 
 /// Read only the electrical observation planes, using the appropriate completed or substep levels.
-fn padSnapshot(pads: *const Pads, levels: [64]IO.Signal) [64]PadSnapshot {
+fn padSnapshot(io: *const IO, levels: [64]IO.Signal) [64]PadSnapshot {
+    const pads = &io.analog_pads;
     var result: [64]PadSnapshot = undefined;
     for (levels, &result, 0..) |digital, *reading, index| {
         reading.* = .{
+            .receiver = io.receiver_inputs[index],
+            .adc = io.adc_bits[index],
             .state = if (pads.isDriven(index))
                 switch (digital) {
                     .low => .low,
@@ -100,6 +104,12 @@ fn emitPads(vcd: *Vcd, current: *const [64]PadSnapshot, previous: ?*const [64]Pa
                 .floating => 'z',
             };
             try vcd.writer.print("{c}p{d}s\n", .{ bit, pin });
+        }
+        if (previous == null or value.receiver != previous.?[pin].receiver) {
+            try vcd.writer.print("{d}p{d}r\n", .{ @intFromEnum(value.receiver), pin });
+        }
+        if (previous == null or value.adc != previous.?[pin].adc) {
+            try vcd.writer.print("{d}p{d}a\n", .{ @intFromEnum(value.adc), pin });
         }
         if (previous == null or value.voltage != previous.?[pin].voltage) {
             try vcd.writer.print("r{e} p{d}v\n", .{ value.voltage, pin });
@@ -144,8 +154,10 @@ fn header(vcd: *Vcd) !void {
         try writer.print(
             "$scope module p{d} $end\n" ++
                 "$var wire 1 p{d}s state $end\n" ++
-                "$var real 64 p{d}v voltage $end\n$upscope $end\n",
-            .{ pin, pin, pin },
+                "$var real 64 p{d}v voltage $end\n" ++
+                "$var wire 1 p{d}r receiver $end\n" ++
+                "$var wire 1 p{d}a adc $end\n$upscope $end\n",
+            .{ pin, pin, pin, pin, pin },
         );
     }
     try writer.writeAll("$upscope $end\n$upscope $end\n$upscope $end\n$enddefinitions $end\n#0\n$dumpvars\n1clk\n");
@@ -215,16 +227,16 @@ fn midpoint(vcd: *Vcd) !void {
 }
 
 /// Stream one intermediate pad sample, retaining electrical execution on writer failure.
-pub fn capturePads(vcd: *Vcd, pads: *const Pads, configuration: *const SystemConfiguration, substep: u32) void {
+pub fn capturePads(vcd: *Vcd, io: *const IO, configuration: *const SystemConfiguration, substep: u32) void {
     if (vcd.pending_error != null)
         return;
-    vcd.intermediate(pads, configuration, substep) catch |err| {
+    vcd.intermediate(io, configuration, substep) catch |err| {
         vcd.pending_error = err;
     };
 }
 
 /// Merge a fractional sample with the physical clock without advancing architectural snapshots.
-fn intermediate(vcd: *Vcd, pads: *const Pads, configuration: *const SystemConfiguration, substep: u32) !void {
+fn intermediate(vcd: *Vcd, io: *const IO, configuration: *const SystemConfiguration, substep: u32) !void {
     const count = configuration.oversample;
     if (!vcd.clock_open or substep == 0 or substep >= count or substep != vcd.last_substep + 1)
         return error.NonConsecutiveSample;
@@ -232,7 +244,7 @@ fn intermediate(vcd: *Vcd, pads: *const Pads, configuration: *const SystemConfig
     if (!vcd.midpoint_emitted and @as(u64, substep) * 2 >= count) {
         try vcd.midpoint();
     }
-    const current = padSnapshot(pads, pads.digital(configuration));
+    const current = padSnapshot(io, io.analog_pads.digital(configuration));
     const previous = &vcd.previous.?.pads;
     if (!std.meta.eql(previous.*, current)) {
         // Divide before multiplying to keep even the largest supported factor/frequency in u128.
@@ -775,11 +787,42 @@ test "intermediate writer errors are deferred without stopping analog substeps" 
     var bytes: [1]u8 = undefined;
     var broken = std.Io.Writer.fixed(&bytes);
     vcd.writer = &broken;
-    vcd.capturePads(&hub.io.analog_pads, &configuration, 1);
+    vcd.capturePads(&hub.io, &configuration, 1);
     try std.testing.expectEqual(error.WriteFailed, vcd.pending_error.?);
     hub.vcd = null; // Check deferred propagation directly without an intentional error log in the test runner.
     try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
     try std.testing.expect(hub.io.getExternal(@enumFromInt(0)).?.voltage > 3.29);
     try std.testing.expectError(error.WriteFailed, vcd.capture(hub, hub.io.clock_frequency));
+}
+
+test "trace distinguishes Schmitt receiver history from voltage and raw ADC bits" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    var configuration = SystemConfiguration.ideal;
+    configuration.oversample = 8;
+    try hub.init(configuration);
+    hub.io.editConfiguration(@enumFromInt(0), 0x60000);
+    hub.io.editConfiguration(@enumFromInt(1), 0x118000);
+    try hub.io.setAdcOverride(@enumFromInt(1), 0.5);
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+
+    var vcd: Vcd = .{ .writer = &output.writer };
+    try hub.attachVcd(&vcd);
+    try hub.io.setExternal(@enumFromInt(0), .high);
+    for (0..8) |_| {
+        _ = hub.step();
+    }
+    try hub.io.setExternal(@enumFromInt(0), .{ .voltage = 1.4, .resistance = 1 });
+    for (0..8) |_| {
+        _ = hub.step();
+    }
+    try std.testing.expectEqual(IO.Signal.low, hub.io.pads[0]);
+    try std.testing.expectEqual(IO.Signal.high, hub.io.receiver_inputs[0]);
+    try std.testing.expect(std.mem.indexOf(u8, output.written(), "1p0r\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, output.written(), "0p1a\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, output.written(), "1p1a\n") != null);
+    try vcd.finish();
 }

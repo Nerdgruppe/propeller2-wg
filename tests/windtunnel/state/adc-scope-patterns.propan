@@ -1,0 +1,380 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "f0-random60"
+//? const: f = 0
+//? const: delay = 3
+//? const: pattern = 3890522515
+//? const: count = 32
+//? post: cog[0].reg[value] == 0
+//? run: "f0-random61"
+//? const: f = 0
+//? const: delay = 7
+//? const: pattern = 3023819024
+//? const: count = 32
+//? post: cog[0].reg[value] == 0
+//? run: "f0-random62"
+//? const: f = 0
+//? const: delay = 55
+//? const: pattern = 2665087065
+//? const: count = 32
+//? post: cog[0].reg[value] == 69
+//? run: "f0-random63"
+//? const: f = 0
+//? const: delay = 28
+//? const: pattern = 3170962161
+//? const: count = 32
+//? post: cog[0].reg[value] == 30
+//? run: "f0-random64"
+//? const: f = 0
+//? const: delay = 46
+//? const: pattern = 3794916925
+//? const: count = 32
+//? post: cog[0].reg[value] == 76
+//? run: "f0-random65"
+//? const: f = 0
+//? const: delay = 41
+//? const: pattern = 4176783279
+//? const: count = 32
+//? post: cog[0].reg[value] == 80
+//? run: "f0-random66"
+//? const: f = 0
+//? const: delay = 37
+//? const: pattern = 2710938238
+//? const: count = 32
+//? post: cog[0].reg[value] == 58
+//? run: "f0-random67"
+//? const: f = 0
+//? const: delay = 24
+//? const: pattern = 532163063
+//? const: count = 32
+//? post: cog[0].reg[value] == 32
+//? run: "f0-random68"
+//? const: f = 0
+//? const: delay = 20
+//? const: pattern = 4235870994
+//? const: count = 32
+//? post: cog[0].reg[value] == 7
+//? run: "f0-random69"
+//? const: f = 0
+//? const: delay = 16
+//? const: pattern = 174452123
+//? const: count = 32
+//? post: cog[0].reg[value] == 7
+//? run: "f0-random70"
+//? const: f = 0
+//? const: delay = 54
+//? const: pattern = 3391401088
+//? const: count = 32
+//? post: cog[0].reg[value] == 54
+//? run: "f0-random71"
+//? const: f = 0
+//? const: delay = 16
+//? const: pattern = 3214516327
+//? const: count = 32
+//? post: cog[0].reg[value] == 7
+//? run: "f0-random72"
+//? const: f = 0
+//? const: delay = 17
+//? const: pattern = 4072581101
+//? const: count = 32
+//? post: cog[0].reg[value] == 9
+//? run: "f0-random73"
+//? const: f = 0
+//? const: delay = 56
+//? const: pattern = 3731838674
+//? const: count = 32
+//? post: cog[0].reg[value] == 100
+//? run: "f0-random74"
+//? const: f = 0
+//? const: delay = 55
+//? const: pattern = 4113642828
+//? const: count = 32
+//? post: cog[0].reg[value] == 79
+//? run: "f0-random75"
+//? const: f = 0
+//? const: delay = 38
+//? const: pattern = 4158081468
+//? const: count = 32
+//? post: cog[0].reg[value] == 65
+//? run: "f0-random76"
+//? const: f = 0
+//? const: delay = 50
+//? const: pattern = 2006403536
+//? const: count = 32
+//? post: cog[0].reg[value] == 82
+//? run: "f0-random77"
+//? const: f = 0
+//? const: delay = 58
+//? const: pattern = 1074207203
+//? const: count = 32
+//? post: cog[0].reg[value] == 60
+//? run: "f0-random78"
+//? const: f = 0
+//? const: delay = 20
+//? const: pattern = 1638030524
+//? const: count = 32
+//? post: cog[0].reg[value] == 13
+//? run: "f0-random79"
+//? const: f = 0
+//? const: delay = 47
+//? const: pattern = 3367380109
+//? const: count = 32
+//? post: cog[0].reg[value] == 64
+//? run: "f1-random60"
+//? const: f = 1
+//? const: delay = 3
+//? const: pattern = 3890522515
+//? const: count = 32
+//? post: cog[0].reg[value] == 0
+//? run: "f1-random61"
+//? const: f = 1
+//? const: delay = 7
+//? const: pattern = 3023819024
+//? const: count = 32
+//? post: cog[0].reg[value] == 0
+//? run: "f1-random62"
+//? const: f = 1
+//? const: delay = 55
+//? const: pattern = 2665087065
+//? const: count = 32
+//? post: cog[0].reg[value] == 87
+//? run: "f1-random63"
+//? const: f = 1
+//? const: delay = 28
+//? const: pattern = 3170962161
+//? const: count = 32
+//? post: cog[0].reg[value] == 56
+//? run: "f1-random64"
+//? const: f = 1
+//? const: delay = 46
+//? const: pattern = 3794916925
+//? const: count = 32
+//? post: cog[0].reg[value] == 118
+//? run: "f1-random65"
+//? const: f = 1
+//? const: delay = 41
+//? const: pattern = 4176783279
+//? const: count = 32
+//? post: cog[0].reg[value] == 138
+//? run: "f1-random66"
+//? const: f = 1
+//? const: delay = 37
+//? const: pattern = 2710938238
+//? const: count = 32
+//? post: cog[0].reg[value] == 103
+//? run: "f1-random67"
+//? const: f = 1
+//? const: delay = 24
+//? const: pattern = 532163063
+//? const: count = 32
+//? post: cog[0].reg[value] == 61
+//? run: "f1-random68"
+//? const: f = 1
+//? const: delay = 20
+//? const: pattern = 4235870994
+//? const: count = 32
+//? post: cog[0].reg[value] == 15
+//? run: "f1-random69"
+//? const: f = 1
+//? const: delay = 16
+//? const: pattern = 174452123
+//? const: count = 32
+//? post: cog[0].reg[value] == 14
+//? run: "f1-random70"
+//? const: f = 1
+//? const: delay = 54
+//? const: pattern = 3391401088
+//? const: count = 32
+//? post: cog[0].reg[value] == 79
+//? run: "f1-random71"
+//? const: f = 1
+//? const: delay = 16
+//? const: pattern = 3214516327
+//? const: count = 32
+//? post: cog[0].reg[value] == 15
+//? run: "f1-random72"
+//? const: f = 1
+//? const: delay = 17
+//? const: pattern = 4072581101
+//? const: count = 32
+//? post: cog[0].reg[value] == 18
+//? run: "f1-random73"
+//? const: f = 1
+//? const: delay = 56
+//? const: pattern = 3731838674
+//? const: count = 32
+//? post: cog[0].reg[value] == 120
+//? run: "f1-random74"
+//? const: f = 1
+//? const: delay = 55
+//? const: pattern = 4113642828
+//? const: count = 32
+//? post: cog[0].reg[value] == 97
+//? run: "f1-random75"
+//? const: f = 1
+//? const: delay = 38
+//? const: pattern = 4158081468
+//? const: count = 32
+//? post: cog[0].reg[value] == 117
+//? run: "f1-random76"
+//? const: f = 1
+//? const: delay = 50
+//? const: pattern = 2006403536
+//? const: count = 32
+//? post: cog[0].reg[value] == 129
+//? run: "f1-random77"
+//? const: f = 1
+//? const: delay = 58
+//? const: pattern = 1074207203
+//? const: count = 32
+//? post: cog[0].reg[value] == 37
+//? run: "f1-random78"
+//? const: f = 1
+//? const: delay = 20
+//? const: pattern = 1638030524
+//? const: count = 32
+//? post: cog[0].reg[value] == 26
+//? run: "f1-random79"
+//? const: f = 1
+//? const: delay = 47
+//? const: pattern = 3367380109
+//? const: count = 32
+//? post: cog[0].reg[value] == 97
+//? run: "f2-random60"
+//? const: f = 2
+//? const: delay = 3
+//? const: pattern = 3890522515
+//? const: count = 32
+//? post: cog[0].reg[value] == 0
+//? run: "f2-random61"
+//? const: f = 2
+//? const: delay = 7
+//? const: pattern = 3023819024
+//? const: count = 32
+//? post: cog[0].reg[value] == 0
+//? run: "f2-random62"
+//? const: f = 2
+//? const: delay = 55
+//? const: pattern = 2665087065
+//? const: count = 32
+//? post: cog[0].reg[value] == 59
+//? run: "f2-random63"
+//? const: f = 2
+//? const: delay = 28
+//? const: pattern = 3170962161
+//? const: count = 32
+//? post: cog[0].reg[value] == 110
+//? run: "f2-random64"
+//? const: f = 2
+//? const: delay = 46
+//? const: pattern = 3794916925
+//? const: count = 32
+//? post: cog[0].reg[value] == 97
+//? run: "f2-random65"
+//? const: f = 2
+//? const: delay = 41
+//? const: pattern = 4176783279
+//? const: count = 32
+//? post: cog[0].reg[value] == 144
+//? run: "f2-random66"
+//? const: f = 2
+//? const: delay = 37
+//? const: pattern = 2710938238
+//? const: count = 32
+//? post: cog[0].reg[value] == 118
+//? run: "f2-random67"
+//? const: f = 2
+//? const: delay = 24
+//? const: pattern = 532163063
+//? const: count = 32
+//? post: cog[0].reg[value] == 131
+//? run: "f2-random68"
+//? const: f = 2
+//? const: delay = 20
+//? const: pattern = 4235870994
+//? const: count = 32
+//? post: cog[0].reg[value] == 36
+//? run: "f2-random69"
+//? const: f = 2
+//? const: delay = 16
+//? const: pattern = 174452123
+//? const: count = 32
+//? post: cog[0].reg[value] == 36
+//? run: "f2-random70"
+//? const: f = 2
+//? const: delay = 54
+//? const: pattern = 3391401088
+//? const: count = 32
+//? post: cog[0].reg[value] == 54
+//? run: "f2-random71"
+//? const: f = 2
+//? const: delay = 16
+//? const: pattern = 3214516327
+//? const: count = 32
+//? post: cog[0].reg[value] == 36
+//? run: "f2-random72"
+//? const: f = 2
+//? const: delay = 17
+//? const: pattern = 4072581101
+//? const: count = 32
+//? post: cog[0].reg[value] == 45
+//? run: "f2-random73"
+//? const: f = 2
+//? const: delay = 56
+//? const: pattern = 3731838674
+//? const: count = 32
+//? post: cog[0].reg[value] == 60
+//? run: "f2-random74"
+//? const: f = 2
+//? const: delay = 55
+//? const: pattern = 4113642828
+//? const: count = 32
+//? post: cog[0].reg[value] == 70
+//? run: "f2-random75"
+//? const: f = 2
+//? const: delay = 38
+//? const: pattern = 4158081468
+//? const: count = 32
+//? post: cog[0].reg[value] == 156
+//? run: "f2-random76"
+//? const: f = 2
+//? const: delay = 50
+//? const: pattern = 2006403536
+//? const: count = 32
+//? post: cog[0].reg[value] == 120
+//? run: "f2-random77"
+//? const: f = 2
+//? const: delay = 58
+//? const: pattern = 1074207203
+//? const: count = 32
+//? post: cog[0].reg[value] == 10
+//? run: "f2-random78"
+//? const: f = 2
+//? const: delay = 20
+//? const: pattern = 1638030524
+//? const: count = 32
+//? post: cog[0].reg[value] == 60
+//? run: "f2-random79"
+//? const: f = 2
+//? const: delay = 47
+//? const: pattern = 3367380109
+//? const: count = 32
+//? post: cog[0].reg[value] == 98
+
+                // Streamer output creates exact one-clock bits, observed through the existing physical GPIO path.
+                DIRL    aug(40 | (1 << 6))
+                OUTL    aug(40 | (1 << 6))
+                WRPIN   0,                                                      41
+                WRPIN   aug(0x10000034),                                        40
+                WXPIN   f,                                                      40
+                DIRH    aug(40 | (1 << 6))
+                WAITX   160
+                SETXFRQ aug(0x80000000)
+                XINIT   aug(X_IMM_32X1_1DAC1 | X_PINS_ON | (41 << 17) | count), aug(pattern)
+                WAITX   delay
+                RQPIN   value,                                                  40
+                WAITXFI
+                DIRL    aug(40 | (1 << 6))
+                WRPIN   0,                                                      aug(40 | (1 << 6))
+                JMP     nrel(_end)
+var value:      LONG    0
+

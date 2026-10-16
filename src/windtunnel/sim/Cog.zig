@@ -90,6 +90,8 @@ dacs: [4]u8 = @splat(0),
 raw_dacs: [4]u8 = @splat(0),
 converter: ColorConverter = .{},
 streamer: Streamer = .{},
+scope_configuration: types.OscilloscopeConfig = @bitCast(@as(u32, 0)),
+scope: u32 = 0,
 cordic_result: Cordic.Port = .{},
 setq_pending: bool = false,
 block_pointer_delta: bool = false,
@@ -402,6 +404,7 @@ const Writeback = struct {
     lut: ?struct { address: u9, value: u32 } = null,
     streamer: ?Streamer.Action = null,
     converter: ?ColorConverter.Action = null,
+    scope: ?types.OscilloscopeConfig = null,
     acknowledged_events: EventSet = .empty,
 };
 
@@ -890,6 +893,9 @@ pub fn commit_results(cog: *Cog) void {
     }
     if (cog.writeback.streamer) |action| {
         cog.streamer.apply(cog, action);
+    }
+    if (cog.writeback.scope) |configuration| {
+        cog.scope_configuration = configuration;
     }
     if (cog.writeback.converter) |action| {
         cog.converter.apply(action);

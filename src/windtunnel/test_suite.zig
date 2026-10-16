@@ -1358,8 +1358,8 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
     try std.testing.expectError(error.MissingExitJump, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nCOGSTOP 0\n"));
     try std.testing.expectError(error.MissingExitJump, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nif(C) JMP nrel(_end)\n"));
     try std.testing.expectError(error.StopNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nCOGSTOP 0\nJMP nrel(_end)\n"));
-    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].c == false\n\nGETSCP register(20)\nJMP nrel(_end)\n"));
-    try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nGETSCP register(20)\nCOGSTOP 0\n"));
+    try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[20] == 0\n\nGETSCP register(20)\nJMP nrel(_end)\n"));
+    try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nGETSCP register(20)\nCOGSTOP 0\n"));
     try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nWRPIN P_USB_PAIR, 1\nCOGSTOP 0\n"));
     try std.testing.expectError(error.ReadinessNotReached, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: \"x\"\n//? stdin-after: \"READY\"\n//? stdout: \"READYx\"\n\n.cogexec\nCOGSTOP 0\n"));
 }
@@ -1763,7 +1763,7 @@ test "streamer excluded modes and FIFO ownership fail explicitly, while cancella
         const source = try std.mem.concat(ctx.allocator, u8, &.{ header, instruction, "JMP nrel(_end)\n" });
         defer ctx.allocator.free(source);
 
-        try std.testing.expectError(error.NotImplementedInstruction, runTemporary(ctx, source));
+        try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx, source));
     }
     try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_RFLONG_32P_4DAC8 | 1), 0\nCOGSTOP 0\n"));
     try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 1), 0\nCOGSTOP 0\n"));

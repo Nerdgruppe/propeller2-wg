@@ -1,5 +1,17 @@
 /// Assembly fixtures registered in the software suite; exploratory probes stay outside the build.
 pub const fixtures = [_][]const u8{
+    "tests/windtunnel/state/adc-conversions.propan",
+    "tests/windtunnel/state/adc-arithmetic.propan",
+    "tests/windtunnel/state/dac-pad-modes.propan",
+    "tests/windtunnel/state/dac-smart-routing.propan",
+    "tests/windtunnel/state/adc-lifecycle.propan",
+    "tests/windtunnel/state/adc-period-overrides.propan",
+    "tests/windtunnel/state/adc-external.propan",
+    "tests/windtunnel/state/adc-scope-steps.propan",
+    "tests/windtunnel/state/adc-scope-patterns.propan",
+    "tests/windtunnel/state/adc-scope-triggers.propan",
+    "tests/windtunnel/state/streamer-scope-capture.propan",
+    "tests/windtunnel/state/analog-receiver-timing.propan",
     "tests/windtunnel/state/streamer-goertzel-density.propan",
     "tests/windtunnel/state/streamer-dds-frequency.propan",
     "tests/windtunnel/state/streamer-dds-chain.propan",

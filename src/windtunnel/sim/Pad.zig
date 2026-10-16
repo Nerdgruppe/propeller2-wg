@@ -176,6 +176,18 @@ pub fn internalDriver(
     } };
 }
 
+/// Describe a constant-impedance DAC: changing its code changes voltage, never resistance.
+pub fn dacDriver(system: *const SystemConfiguration, range: p2.types.PinConfiguration.DacRange, code: u8) Driver {
+    const scale: f64 = switch (range) {
+        .ohm_990_3v, .ohm_124_3v => 1,
+        .ohm_600_2v, .ohm_75_2v => 2.0 / 3.3,
+    };
+    return .{ .linear = .{
+        .voltage = system.vio_voltage * scale * @as(f64, @floatFromInt(code)) / 256,
+        .resistance = system.dac_resistance[@intFromEnum(range)],
+    } };
+}
+
 test "source descriptors validate all electrical fields" {
     try Source.high.validate();
     try Source.low.validate();
@@ -270,5 +282,17 @@ test "datasheet fast curves match points, interpolate, extrapolate and reverse c
             -1;
         try std.testing.expectApproxEqAbs(direction * 5.5e-3, driver.current(&configuration, middle), 1e-15);
         try std.testing.expectApproxEqAbs(direction * 40e-3, driver.current(&configuration, extended), 1e-15);
+    }
+}
+
+test "DAC resistance is constant across every code in each physical range" {
+    const system = SystemConfiguration.ideal;
+    for (0..4) |range| {
+        for (0..256) |code| {
+            const source = dacDriver(&system, @enumFromInt(range), @intCast(code)).linear;
+            try std.testing.expectEqual(system.dac_resistance[range], source.resistance);
+            try std.testing.expect(source.drive_enabled);
+            try std.testing.expectEqual(@as(f64, 0), source.current(source.voltage));
+        }
     }
 }

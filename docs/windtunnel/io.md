@@ -5,7 +5,7 @@ configuration, a `SmartPin` from `sim/smart_pin.zig`, and its published outputs.
 `SmartPin` owns one shared `Registers` struct and a `Logic` union tagged by
 `libp2.types.SmartPinMode`. Repository, digital smart pins, UART TX/RX and USART TX/RX payloads
 contain only their private engine state. `configure()` retains the payload for
-same-mode digital and serial WRPIN writes and replaces it on mode changes, retaining shared
+same-mode digital, ADC, scope, DAC and serial WRPIN writes and replaces it on mode changes, retaining shared
 registers and host-selected receive/transmit modes. `step(Inputs)` updates X/Y, enabled and
 acknowledgement state, dispatches the active payload with the shared registers,
 and latches the returned result and IN signal. Inputs carry DIR/OUT,
@@ -18,9 +18,8 @@ commands due on that edge, and prepares SmartA/SmartB from delayed pad samples.
 It calls every pin's `step()` exactly once with fixed inputs, publishes all
 returned outputs together, resolves pads, and updates the input/result pipelines.
 The cogs then execute and queue commands for future frames, followed by counter
-advancement and VCD capture of the completed clock. Pad feedback reads the previous
-completed digital snapshot, and each RC pad advances through the configured analog
-substeps per frame. Commands queued outside `Hub.step()` use the same delivery delay; external
+advancement and VCD capture of the completed clock. Physical receiver feedback updates within analog substeps; clocked feedback samples
+once per system clock. Each RC pad advances through the configured analog substeps per frame. Commands queued outside `Hub.step()` use the same delivery delay; external
 driver changes are staged until the next frame.
 Unimplemented modes use `DummyMode`, whose step fails with
 `UnsupportedSmartPinMode`; IO records a simulation fault with the issuing pin,
@@ -290,8 +289,8 @@ Digital reads are low below `VIO * threshold_ratio` and high at or above it.
 The default ratio is the datasheet's typical 0.5; its 0.3–0.7 range describes threshold
 variation and does not become an unknown voltage band. Contention produces a voltage,
 not an unknown digital value. `Signal` contains only `low` and `high`; float belongs
-to the source's drive enable. Feedback uses the previous completed digital snapshot;
-all pads then advance together without iterative settling. Relative-pin routing is
+to the source's drive enable. Pads advance together from simultaneous voltage snapshots;
+asynchronous feedback updates between substeps without zero-delay iterative settling. Relative-pin routing is
 logical routing, not an electrical connection between pads.
 
 ### Analog oversampling
@@ -300,13 +299,15 @@ logical routing, not an electrical connection between pads.
 zig-out/bin/windtunnel --image program.bin --sim realistic --oversample 8 --vcd pads.vcd
 ```
 
-Each completed hub clock selects its internal drivers once and holds them through
-N analog substeps. Digital pad observations and sampling pipelines receive only
-the final result. Cogs, smart pins, CT, registered outputs, selectable events and
-feedback routing retain their system-clock cadence. Feedback uses the previous
-completed snapshot throughout all substeps; no intra-clock feedback settling is
-introduced. The analog factor is an initialization-time system setting independent
-of tracing, and the default 1 preserves existing integration behavior.
+Each completed hub clock runs N electrical substeps. Cog/streamer/smart-DAC codes and
+registered outputs remain fixed for that clock; asynchronous receiver feedback can
+change its selected driver between substeps. Clocked feedback retains one sampled
+receiver value throughout the interval. Digital pad observations and architectural
+sampling pipelines receive only the final result. ADC modulators, smart engines,
+cogs, CT and selectable events advance once per system clock, regardless of N.
+A larger factor resolves asynchronous feedback and RC settling more closely; the
+default 1 provides a coarse clock-step approximation. Propagation delays are quantized
+to substeps, so meaningful subclock behavior requires a sufficiently large factor.
 
 Smaller backward-Euler steps improve the transient approximation and change the
 final voltage slightly. Threshold crossings can consequently move between system
@@ -394,13 +395,76 @@ There is no thermal, supply-power, ESD, inductance or noise model. The selected
 XI/XO capacitance figures do not characterize P0–P63 and do not replace the
 provisional GPIO capacitance.
 
-A/B selectors, inversion, digital logic, optional synchronization, and the
-2/3/5/8-sample unanimous filters remain digital. Schmitt configurations still use the
-same configured threshold; no hysteresis or comparator behavior is added. SETDACS,
-the [digital streamer](streamer.md), and the [color converter](converter.md) retain
-per-cog DAC bytes without driving analog pads. DAC internal sources remain disconnected.
-The existing host-supplied raw ADC density stays independent of pad voltage; ADC
-smart engines, scope and USB remain unsupported.
+### Comparators, feedback, DACs and ADCs
+
+Physical receivers are distinct from `io.pads` (the ordinary thresholded voltage),
+`io.receiver_inputs`, routed SmartA/SmartB, and cog IN. Schmitt receivers retain
+hysteresis. AB comparison reads the local and paired pad voltages; level comparison
+uses an internal code/256 VIO reference and the selected local/adjacent pad.
+Level modes force 1.5 kOhm drive and reinterpret GPIO drive/inversion bits as the
+reference code. Asynchronous feedback observes propagated receiver state; clocked
+feedback retains its sampled state for the clock.
+
+DAC output is a linear Thevenin source. Nominal resistances are 990, 600, 123.75
+and 75 ohms; corresponding ranges are VIO, VIO*2/3.3, VIO and VIO*2/3.3. Source
+voltage is range*code/256 and resistance is independent of code, including zero.
+DIR gates ordinary DAC output; TT gates smart-mode output independently of DIR.
+The source mux selects WRPIN's static byte, a cog's final DAC byte (pin modulo
+four chooses the channel), repeated BIT_DAC nibbles, or the smart-DAC byte.
+Combining a DAC pad with any non-DAC smart mode always selects BIT_DAC,
+including TT=01. Noise and dither produce actual per-clock codes before electrical integration.
+The shared RNG projection is deterministic but its silicon pin tap mapping remains
+approximate. `resolvedDriver()` exposes the last committed electrical driver.
+
+ADC inputs now derive from pad voltage. GIO/VIO/internal-float calibration and
+1/3.16/10/31.6/100 gains are decoded independently of GPIO field aliases. Transfer
+parameters are initialized with the system; gain amplifies about a configurable
+midpoint and density clips to [0,1]. The deterministic error-accumulating modulator
+emits one bit per system clock. GIO/VIO/float and 1x calibration predict 96 held-out
+higher-gain hardware readings within 0.04 absolute density; default profiles are
+nominal, while precision comparisons require channel calibration. Silicon noise, exact modulator dynamics and
+per-pin offsets are not reconstructed. ADC observation is nonloading; silicon input
+bias currents and charge injection are omitted. Plain DAC modes gate ADC input with OUT;
+BIT_DAC and every non-DAC smart mode disable it. Smart DAC modes accumulate routed A over their sample period,
+so A/B routing can replace the physical bitstream.
+
+`setAdcOverride(pin, ?density)` explicitly supplies test density or restores electrical
+conversion with null. It validates [0,1] and finiteness without resetting phase.
+Normal simulations have no override. GPIO output remains available in ADC modes.
+
+The ADC smart modes implement automatic SINC2, wrapping 27-bit SINC2/SINC3
+integrators and period differences, arbitrary Y period overrides, externally
+clocked B-rise sampling, and raw snapshots with newest bit at bit 31. Scope modes
+use measured 68/45/28-tap FIR coefficients and hysteretic arming/triggering.
+SETSCP selects a four-aligned block of smart-result low bytes for each cog;
+GETSCP and all five ADC streamer formats read this pipe. Disabling SETSCP holds
+the last word. Scope and streamer captures preserve existing FIFO and event behavior.
+USB remains unsupported.
+
+The Ideal profile uses zero receiver/reference delay. Realistic currently assumes
+3 ns receiver delay, 10 ns comparator delay and 50 ns reference settling; the
+RCFAST measurements bound rather than isolate these quantities. They are tunable
+model assumptions, not separately calibrated silicon timings. Thresholds and ADC
+transfer also vary between physical pins/boards. See
+[the characterization findings](../accumulated.md#analog-frontend-characterization-2026-10-16).
+
+Reproduce the optional two-board measurements with the compiled Propan/Turboprop
+binaries and the existing optional Python WebSocket dependency:
+
+```sh
+python utility/characterize-analog.py transfer --artifacts /tmp/analog-transfer
+python utility/characterize-analog.py receivers --artifacts /tmp/analog-receivers
+python utility/characterize-analog.py dac-feedback --artifacts /tmp/analog-dac
+python utility/characterize-analog.py mux --artifacts /tmp/analog-mux
+python utility/characterize-analog.py combinations --artifacts /tmp/analog-combinations
+```
+
+The observer defaults to P2-EVAL PLX6ZJKWX; the DUT is exclusively P2AAS. The
+[monitor firmware](../../utility/analog-monitor.propan) lives beside the host utility,
+starts with experiment pins released, preserves RCFAST/calibrated UART, and clears
+WRPIN/DIR on completion or after a two-second nominal idle watchdog. Raw captures
+stay outside tracked source. Deterministic measurements are retained as registered
+`.propan` fixtures and require no external hardware for ordinary regression runs.
 
 ## Command and transport timing
 
@@ -491,6 +555,8 @@ Signals use this hierarchy (waveform viewers may display `/` as `.`):
 | `windtunnel/cog0/DIRA/DIRA[10]` | Independently selectable direction bit 10 |
 | `windtunnel/io/DIRA` | Combined direction vector |
 | `windtunnel/io/DIRA/DIRA[10]` | Independently selectable combined direction bit |
+| `windtunnel/io/pads/p1/receiver` | Physical receiver output, including hysteresis/comparison |
+| `windtunnel/io/pads/p1/adc` | Raw ADC bit, emitted once per system clock |
 | `windtunnel/io/pads/p1/state` | Thresholded driven state: `0`, `1`, or disconnected `z` |
 | `windtunnel/io/pads/p1/voltage` | VCD real value in volts, including retained charge |
 

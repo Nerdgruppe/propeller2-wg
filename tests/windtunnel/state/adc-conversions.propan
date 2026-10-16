@@ -1,0 +1,93 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "x3-v0"
+//? const: x = 3
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x3-v1"
+//? const: x = 3
+//? const: level = 1
+//? post: cog[0].reg[value] == 16
+//? post: cog[0].reg[flag] == 2
+//? run: "x13-v0"
+//? const: x = 13
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x13-v1"
+//? const: x = 13
+//? const: level = 1
+//? post: cog[0].reg[value] == 16384
+//? post: cog[0].reg[flag] == 2
+//? run: "x14-v0"
+//? const: x = 14
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x14-v1"
+//? const: x = 14
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x15-v0"
+//? const: x = 15
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x15-v1"
+//? const: x = 15
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x19-v0"
+//? const: x = 19
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x19-v1"
+//? const: x = 19
+//? const: level = 1
+//? post: cog[0].reg[value] == 1599940
+//? post: cog[0].reg[flag] == 2
+//? run: "x35-v0"
+//? const: x = 35
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x35-v1"
+//? const: x = 35
+//? const: level = 1
+//? post: cog[0].reg[value] == 133886228
+//? post: cog[0].reg[flag] == 2
+//? run: "x51-v0"
+//? const: x = 51
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x51-v1"
+//? const: x = 51
+//? const: level = 1
+//? post: cog[0].reg[value] == 4294967295
+//? post: cog[0].reg[flag] == 2
+
+                // Isolate the documented digital accumulator modes without a WYPIN override.
+                DIRL    40
+                OUTL    40
+                WRPIN   aug(0x40000030),    40
+                WXPIN   x,                  40
+.if level
+                OUTH    40
+.endif
+                DIRH    40
+                WAITX   aug(200000)
+                RQPIN   value,              40  :wc
+                MOV     flag,               0
+                MUXC    flag,               1
+                TESTP   40                      :wc
+                MUXC    flag,               2
+                DIRL    40
+                WRPIN   0,                  40
+                JMP     nrel(_end)
+var value:      LONG    0
+var flag:       LONG    0
+

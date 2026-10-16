@@ -1,0 +1,330 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "m0-d0-v0"
+//? const: config = 262144
+//? const: delay = 0
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m0-d0-v1"
+//? const: config = 262144
+//? const: delay = 0
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m0-d3-v0"
+//? const: config = 262144
+//? const: delay = 3
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m0-d3-v1"
+//? const: config = 262144
+//? const: delay = 3
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m0-d4-v0"
+//? const: config = 262144
+//? const: delay = 4
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m0-d4-v1"
+//? const: config = 262144
+//? const: delay = 4
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m0-d5-v0"
+//? const: config = 262144
+//? const: delay = 5
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m0-d5-v1"
+//? const: config = 262144
+//? const: delay = 5
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m0-d6-v0"
+//? const: config = 262144
+//? const: delay = 6
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m0-d6-v1"
+//? const: config = 262144
+//? const: delay = 6
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m0-d23-v0"
+//? const: config = 262144
+//? const: delay = 23
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m0-d23-v1"
+//? const: config = 262144
+//? const: delay = 23
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m60000-d0-v0"
+//? const: config = 655360
+//? const: delay = 0
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m60000-d0-v1"
+//? const: config = 655360
+//? const: delay = 0
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m60000-d3-v0"
+//? const: config = 655360
+//? const: delay = 3
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m60000-d3-v1"
+//? const: config = 655360
+//? const: delay = 3
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m60000-d4-v0"
+//? const: config = 655360
+//? const: delay = 4
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m60000-d4-v1"
+//? const: config = 655360
+//? const: delay = 4
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m60000-d5-v0"
+//? const: config = 655360
+//? const: delay = 5
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m60000-d5-v1"
+//? const: config = 655360
+//? const: delay = 5
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m60000-d6-v0"
+//? const: config = 655360
+//? const: delay = 6
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m60000-d6-v1"
+//? const: config = 655360
+//? const: delay = 6
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m60000-d23-v0"
+//? const: config = 655360
+//? const: delay = 23
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m60000-d23-v1"
+//? const: config = 655360
+//? const: delay = 23
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "mc0000-d0-v0"
+//? const: config = 786432
+//? const: delay = 0
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "mc0000-d0-v1"
+//? const: config = 786432
+//? const: delay = 0
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "mc0000-d3-v0"
+//? const: config = 786432
+//? const: delay = 3
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "mc0000-d3-v1"
+//? const: config = 786432
+//? const: delay = 3
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "mc0000-d4-v0"
+//? const: config = 786432
+//? const: delay = 4
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "mc0000-d4-v1"
+//? const: config = 786432
+//? const: delay = 4
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "mc0000-d5-v0"
+//? const: config = 786432
+//? const: delay = 5
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "mc0000-d5-v1"
+//? const: config = 786432
+//? const: delay = 5
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "mc0000-d6-v0"
+//? const: config = 786432
+//? const: delay = 6
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "mc0000-d6-v1"
+//? const: config = 786432
+//? const: delay = 6
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "mc0000-d23-v0"
+//? const: config = 786432
+//? const: delay = 23
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "mc0000-d23-v1"
+//? const: config = 786432
+//? const: delay = 23
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m188000-d0-v0"
+//? const: config = 1867776
+//? const: delay = 0
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m188000-d0-v1"
+//? const: config = 1867776
+//? const: delay = 0
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m188000-d3-v0"
+//? const: config = 1867776
+//? const: delay = 3
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m188000-d3-v1"
+//? const: config = 1867776
+//? const: delay = 3
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m188000-d4-v0"
+//? const: config = 1867776
+//? const: delay = 4
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m188000-d4-v1"
+//? const: config = 1867776
+//? const: delay = 4
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m188000-d5-v0"
+//? const: config = 1867776
+//? const: delay = 5
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m188000-d5-v1"
+//? const: config = 1867776
+//? const: delay = 5
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m188000-d6-v0"
+//? const: config = 1867776
+//? const: delay = 6
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m188000-d6-v1"
+//? const: config = 1867776
+//? const: delay = 6
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m188000-d23-v0"
+//? const: config = 1867776
+//? const: delay = 23
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m188000-d23-v1"
+//? const: config = 1867776
+//? const: delay = 23
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m198000-d0-v0"
+//? const: config = 1933312
+//? const: delay = 0
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m198000-d0-v1"
+//? const: config = 1933312
+//? const: delay = 0
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m198000-d3-v0"
+//? const: config = 1933312
+//? const: delay = 3
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m198000-d3-v1"
+//? const: config = 1933312
+//? const: delay = 3
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m198000-d4-v0"
+//? const: config = 1933312
+//? const: delay = 4
+//? const: level = 0
+//? post: cog[0].reg[value] == 1
+//? run: "m198000-d4-v1"
+//? const: config = 1933312
+//? const: delay = 4
+//? const: level = 1
+//? post: cog[0].reg[value] == 0
+//? run: "m198000-d5-v0"
+//? const: config = 1933312
+//? const: delay = 5
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m198000-d5-v1"
+//? const: config = 1933312
+//? const: delay = 5
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m198000-d6-v0"
+//? const: config = 1933312
+//? const: delay = 6
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m198000-d6-v1"
+//? const: config = 1933312
+//? const: delay = 6
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+//? run: "m198000-d23-v0"
+//? const: config = 1933312
+//? const: delay = 23
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? run: "m198000-d23-v1"
+//? const: config = 1933312
+//? const: delay = 23
+//? const: level = 1
+//? post: cog[0].reg[value] == 1
+
+                // A fast neighbor is observed using the selected receiver path; no wiring changes are needed.
+                DIRL    aug(40 | (1 << 6))
+                OUTL    40
+                WRPIN   0,              40
+                WRPIN   aug(0x168000),  41
+                DIRH    41
+                WAITX   100
+                DIRL    41
+                WRPIN   aug(config),    41
+                DIRH    40
+.if !level
+                OUTH    40
+.endif
+                WAITX   200
+.if level
+                OUTH    40
+.else
+                OUTL    40
+.endif
+                WAITX   delay
+                TESTP   41                                  :wc
+                MOV     value,          0
+                MUXC    value,          1
+                DIRL    aug(40 | (1 << 6))
+                WRPIN   0,              aug(40 | (1 << 6))
+                JMP     nrel(_end)
+var value:      LONG    0
+

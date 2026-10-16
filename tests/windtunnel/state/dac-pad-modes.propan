@@ -1,0 +1,365 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "r0-static32"
+//? const: config = 1318912
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "r0-static128"
+//? const: config = 1343488
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "r0-static224"
+//? const: config = 1368064
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "r1-static32"
+//? const: config = 1384448
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "r1-static128"
+//? const: config = 1409024
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "r1-static224"
+//? const: config = 1433600
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "r2-static32"
+//? const: config = 1449984
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "r2-static128"
+//? const: config = 1474560
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "r2-static224"
+//? const: config = 1499136
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "r3-static32"
+//? const: config = 1515520
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "r3-static128"
+//? const: config = 1540096
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "r3-static224"
+//? const: config = 1564672
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "channel0"
+//? const: config = 1441856
+//? const: dacs = 3772834016
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "channel1"
+//? const: config = 1442112
+//? const: dacs = 3772834016
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "channel7"
+//? const: config = 1443648
+//? const: dacs = 3772834016
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "channel8"
+//? const: config = 1443904
+//? const: dacs = 3772834016
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "channel15"
+//? const: config = 1445696
+//? const: dacs = 3772834016
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "bitdac-out0"
+//? const: config = 1483648
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "bitdac-other0"
+//? const: config = 1483712
+//? const: dacs = 0
+//? const: out = 0
+//? const: x = 0
+//? const: y = 0
+//? const: source = 41
+//? const: observer = 40
+//? const: observer_dir = 1
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bitdac-out1"
+//? const: config = 1483648
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 0
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bitdac-other1"
+//? const: config = 1483712
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 0
+//? const: y = 0
+//? const: source = 41
+//? const: observer = 40
+//? const: observer_dir = 1
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "smart1-y0"
+//? const: config = 1075183682
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 2
+//? run: "smart2-y0"
+//? const: config = 1075183684
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 2
+//? run: "smart2-y4660"
+//? const: config = 1075183684
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 4660
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 2
+//? run: "smart2-y57344"
+//? const: config = 1075183684
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 57344
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 6
+//? run: "smart2-y65535"
+//? const: config = 1075183684
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 65535
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 6
+//? run: "smart3-y0"
+//? const: config = 1075183686
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 0
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 2
+//? run: "smart3-y4660"
+//? const: config = 1075183686
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 4660
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 2
+//? run: "smart3-y57344"
+//? const: config = 1075183686
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 57344
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 6
+//? run: "smart3-y65535"
+//? const: config = 1075183686
+//? const: dacs = 0
+//? const: out = 1
+//? const: x = 256
+//? const: y = 65535
+//? const: source = 40
+//? const: observer = 41
+//? const: observer_dir = 0
+//? post: cog[0].reg[result] == 256
+//? post: cog[0].reg[flags] == 6
+
+                // Observe deterministic DAC levels with an adjacent, disabled comparator.
+                DIRL    aug(40 | (1 << 6))
+                WRPIN   0,              aug(40 | (1 << 6))
+                SETDACS aug(dacs)
+                WRPIN   aug(0x1c8000),  observer
+.if observer_dir
+                DIRH    observer
+.endif
+                WRPIN   aug(config),    source
+                WXPIN   aug(x),         source
+                WYPIN   aug(y),         source
+.if out
+                OUTH    40
+.else
+                OUTL    40
+.endif
+                DIRH    source
+                WAITX   aug(2000)
+                RQPIN   result,         source              :wc
+                MOV     flags,          0
+                MUXC    flags,          1
+                TESTP   source                              :wc
+                MUXC    flags,          2
+.if (config & 0x3e) != 2
+                TESTP   observer                            :wc
+                MUXC    flags,          4
+.endif
+                DIRL    aug(40 | (1 << 6))
+                WRPIN   0,              aug(40 | (1 << 6))
+                JMP     nrel(_end)
+var result:     LONG    0
+var flags:      LONG    0
+
