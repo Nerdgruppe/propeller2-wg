@@ -1903,3 +1903,65 @@ A defined-input sniffer probe confirms that upper GPIO and all three non-DAC
 repository encodings retain independent Z/IN when only the lower endpoint is
 USB. Lower USB buffer transfers do not raise an ordinary upper engine's IN.
 All four cases are retained in `usb-partial.propan`.
+
+## Serial boot ROM execution (2026-10-16)
+
+The recovered 16 KiB device ROM runs its serial loader in Windtunnel without
+simulator instruction or peripheral changes. Start cog zero with its image at
+hub `$FC000`; a 10 kOhm pullup on P59 selects serial before the flash/SD probes.
+The ROM first executes its ADC GIO calibration sampling and RNG seed loop,
+relocates cog/LUT code and builds its Base64 table. It configures P0/P1 to measure
+P63 high durations and falling-edge periods, then switches to UART reception
+through its autobaud/receiver interrupt routine. Consequently a byte-only UART
+endpoint cannot initiate this autobaud sequence: the host must drive physical
+P63, independently of the receiver's still-unconfigured X divider.
+
+Fresh EVN serial comparisons using compiled Propan/Turboprop at nominal RCFAST
+passed device identification (`Prop_Ver G`), checksummed `Prop_Txt` loading and a
+hello-world program using the ROM's retained TX divider at 9600, 115200, 230400
+and 2000000 baud. The simulator reproduced the same download and greeting with both
+ideal and realistic electrical profiles, including fractional bit periods.
+Raw comparison artifacts are outside the repository in `/tmp/p2-boot`.
+
+At an exact 174-system-clock host bit period, the simulator's unmodified ROM
+calibrated both UART X registers to `$00ADFE07`. The slight difference from
+`174 << 16 | 7` follows the ROM's fixed-point `65536/7` multiplication; software
+should retain this calibrated value rather than substitute a nominal divider.
+The ROM clears smart-pin modes and serial DIR contributions before relaunching
+cog zero, retaining X. The deterministic ADC simulation seeds a repeatable RNG;
+this does not establish physical startup entropy or reset/power timing.
+
+## Unaligned cog images and TAQOZ entry (2026-10-16)
+
+COGINIT image loading preserves all source byte-address bits, rather than rounding
+the image down to a long boundary. A fresh bounded hardware probe copied the same
+504-long image byte by byte to offsets 0, 1, 2 and 3; all four launched its first
+instructions and wrote the expected mailbox value. The retained fixture is
+`tests/windtunnel/state/coginit-unaligned.propan`. Fifty fresh hardware comparisons
+including this fixture and existing loaded/no-load startup, paired startup and
+self-restart fixtures passed. Raw captures remain in `/tmp/p2-boot`.
+
+This is required by the silicon ROM's TAQOZ image at `$FED42`. Its first instruction
+is an absolute call to unaligned hub address `$FE9D6`; rounding the image to `$FED40`
+loads different instruction words. Retaining the source alignment allows the
+unmodified ROM to enter TAQOZ and evaluate `1 2 + .` through serial input. The EVN's
+serial ROM also entered its normal `TAQOZ#` prompt before this simulator correction.
+
+A physical UART host must hold P63 idle high before firmware enables reception.
+Leaving the pad floating low until the first keyboard byte can create a spurious
+start bit and corrupt a terminal packet. CLI startup now attaches the idle host
+before launching the application; its byte period remains independent of the
+firmware's RX divider, including during ROM autobaud.
+
+
+## External scope check of RCFAST pulse timing (2026-10-17)
+
+A P2AAS P22 GPIO stimulus used nominal 20 MHz RCFAST (`HUBSET 0xf0`), a REP loop
+and absolute CT1 deadlines: 5,000 clocks high, 15,000 clocks low. The STO1104C CH2
+CSV measured approximately 1,291.28 Hz and 24.9993% duty (193.600 µs high,
+774.424 µs period), implying approximately 25.826 MHz RCFAST on this board in this
+session. This is a measurement, not a replacement nominal clock or a general calibration.
+The exported CSV has 80 ns spacing, 40 times fewer samples than the displayed
+500 MSa/s/3.5M record; it is suitable evidence for this pulse period/duty ratio, not
+full-resolution transient fidelity. Source, CSV receipt, plot and limits are recorded in
+`src/scopecreep/diagnostics/p2-stimulus-2026-10-17/README.md`.

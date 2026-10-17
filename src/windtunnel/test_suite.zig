@@ -15,6 +15,10 @@ const oracle = @import("oracle.zig");
 const p2aas = @import("p2aas.zig");
 const p2aas_server = @import("p2aas_server.zig");
 const serial_boot = @import("serial_boot.zig");
+const Terminal = @import("Terminal.zig");
+comptime {
+    _ = Terminal;
+}
 
 pub const std_options: std.Options = .{ .log_level = .err };
 
@@ -907,7 +911,7 @@ fn runOne(
         });
     const hub = try allocator.create(Hub);
     try hub.init(.ideal);
-    serial_boot.prepare(hub);
+    serial_boot.prepare(hub, serial_boot.baudrate);
     const virtual_terminal = ctx.options.@"fast-io" and list.fast_io_off == null;
     @memcpy(hub.memory[0..compiled.image.len], compiled.image);
     var stdout: std.Io.Writer.Allocating = .init(allocator);
@@ -1599,6 +1603,42 @@ fn serveTestConnections(listener: *std.Io.net.Server, count: usize, configuratio
     }
 }
 
+test "real serial boot ROM downloads and launches RCFAST hello world at multiple baud rates" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const path = "examples/hello-world-no-pll.propan";
+    const source = try std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, std.testing.allocator, .limited(1 << 20));
+    defer std.testing.allocator.free(source);
+
+    var compiled = try propan.assemble(std.testing.allocator, std.testing.io, path, source, &errors.writer);
+    defer compiled.deinit();
+
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]Hub.SystemConfiguration{ .ideal, .realistic }) |configuration| {
+        for ([_]u32{ 115_200, 230_400, 2_000_000 }) |rate| {
+            try hub.init(configuration);
+            var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+            defer output.deinit();
+
+            var sink: smart_pin.DataSink = .{ .writer = &output.writer };
+            hub.io.pins[62].smart.tx_mode = .{ .emulated = &sink };
+            try serial_boot.load(std.testing.io, hub, compiled.image, rate);
+            for (0..100_000) |_| {
+                if (output.written().len == "Hello world!\r\n".len)
+                    break;
+                try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
+            }
+            try std.testing.expectEqualStrings("Hello world!\r\n", output.written());
+            try std.testing.expectEqualSlices(u8, compiled.image, hub.memory[0..compiled.image.len]);
+            try std.testing.expectEqual(@as(u32, 0), @as(u32, @bitCast(hub.io.pins[0].configuration)));
+            try std.testing.expectEqual(@as(u32, 0), @as(u32, @bitCast(hub.io.pins[1].configuration)));
+        }
+    }
+}
+
 test "RCFAST hello world preserves inherited ROM baud timing and drains UART without WAITX" {
     var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer errors.deinit();
@@ -1618,7 +1658,7 @@ test "RCFAST hello world preserves inherited ROM baud timing and drains UART wit
     // Model serial ROM handoff at three RCFAST rates, including a fractional divider.
     for ([_]u32{ 0x000a_0007, 0x000b_8007, 0x000f_0007 }) |divider| {
         try hub.init(.ideal);
-        serial_boot.prepare(hub);
+        serial_boot.prepare(hub, serial_boot.baudrate);
         try std.testing.expectEqual(@as(u32, 0x000a_0007), hub.io.pins[63].smart.registers.x);
         @memcpy(hub.memory[0..compiled.image.len], compiled.image);
         var output: std.Io.Writer.Allocating = .init(std.testing.allocator);

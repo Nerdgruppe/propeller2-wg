@@ -141,13 +141,22 @@ retain their sampled shift register. COGSTOP clears that cog's DIR contributions
 other enabled cogs can keep a pin running. Runners do not drain pending output after
 shutdown or a fixture checkpoint, so programs must wait for required TX completion.
 
-CLI/server/test runners explicitly attach terminal output to P62. The server attaches
+CLI/server/test runners explicitly attach terminal output to P62. The CLI drives
+physical P63 from uncooked terminal input, retaining an independent host baud rate.
+The server attaches
 its receive Reader to P63 and refills it from the WebSocket queue outside simulation
 steps. The test harness attaches input after its readiness marker. The P2AAS baudrate
 query does not override smart-pin X timing.
 
-`windtunnel --fast-io`, including server mode, selects virtual terminal transfers on
-P62/P63 only. It preserves cog execution, routing, command delays and explicit waits.
+Serial ROM boot (`--boot`, the no-image default, or `--boot --image`) drives
+physical P63 with an independent
+fixed-baud 8N1 host. This lets the ROM's P0/P1 measurement pins perform autobaud
+before enabling the UART receiver. It does not use a byte-level RX endpoint or
+preload the baud registers. See [serial boot](core.md) for the CLI and embedded API.
+
+`windtunnel --fast-io` selects virtual image-run TX; CLI input and standalone ROM
+sessions retain physical UART timing. Server mode selects virtual RX/TX on P62/P63
+only. It preserves cog execution, routing, command delays and explicit waits.
 Other pins keep their independently selected modes. Embedded users select the tagged
 unions directly; there is no global `IO.fast_io`. Fixtures can retain timed terminal
 behavior with `fast-io: off "reason"`.

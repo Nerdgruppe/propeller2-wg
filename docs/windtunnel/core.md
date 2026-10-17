@@ -44,6 +44,67 @@ pins, counter and clock configuration. It detaches host tracing, terminal and
 debugger links. Hosts may explicitly attach them again; boot ROM execution is not
 restarted automatically.
 
+The CLI behaves as a raw serial terminal on P63/P62. Startup options are independent:
+
+| Options | Startup |
+| --- | --- |
+| No image, with or without `--boot` | Regular serial ROM session |
+| `--image program.bin` | Load hub RAM and launch the application directly |
+| `--boot --image program.bin` | Download and launch through the real ROM serial loader |
+
+For example:
+
+```sh
+zig-out/bin/propan -o /tmp/hello.bin examples/hello-world-no-pll.propan
+zig-out/bin/windtunnel --boot --baudrate 115200 --image /tmp/hello.bin
+zig-out/bin/windtunnel --boot
+```
+
+In a ROM session, press **Esc** to enter TAQOZ or **Ctrl-D** to enter the ROM
+monitor. Startup sends `> ` to calibrate autobaud at the selected terminal rate.
+Input is uncooked: no local echo, line editing, signal handling, CR/LF conversion
+or software flow control. Control characters reach the P2 directly, except for
+the terminal menu prefix:
+
+| Sequence | Action |
+| --- | --- |
+| Ctrl-A, Ctrl-A | Send byte `$01` |
+| Ctrl-A, Ctrl-H | Show the available commands |
+| Ctrl-A, Ctrl-Q | Quit and restore the original TTY settings |
+
+The quit command also interrupts an upload in progress. Redirected input is
+supported; EOF disconnects input while queued bytes and the application continue.
+Serial bytes go to stdout; the menu and diagnostics go to stderr. The optional
+POSIX integration check is `python tests/windtunnel/terminal.py` after building.
+
+ROM startup loads cog zero from `$FC000`, with a 10 kOhm pullup on P59 selecting
+serial boot. The external host drives 8N1 waveforms onto physical P63, including
+fractional bit periods. The ROM performs its own ADC-based RNG seeding, cog/LUT
+setup, autobaud measurements through P0/P1, interrupt-driven reception,
+`Prop_Chk` identification, Base64 decoding, checksum validation and application
+launch. ROM sessions and interactive input retain UART timing. `--fast-io`
+selects virtual application TX after image loading; server RX/TX remain virtual
+when requested. `--vcd` also works without an image and includes the boot process.
+
+Uploads accept whole-long, nonempty images up to 512 KiB minus the four-byte
+checksum, at 9600..2000000 baud (default 115200). The P59 source is restored after
+the upload; the serial host leaves P63 idle high. Applications inherit the baud
+dividers calibrated by the ROM; direct loads initialize nominal dividers at the
+selected terminal baud rate. The loader consumes its version/checksum replies.
+The P2AAS server retains its existing direct-load path.
+
+Embedded callers can use `serial_boot.start()` to enter serial boot,
+`serial_boot.Host.write()` to send raw UART commands, or `serial_boot.load(io, ...)`
+for the complete checksummed download. Call `Hub.init()` first; these operations
+do not model a RESN pulse or launch automatically on HUBSET reset. Flash and SD
+boot remain unsupported. The ADC model supplies deterministic calibration bits,
+so executing the ROM's seed loop does not add physical entropy.
+
+Loaded COGINIT images retain their source byte alignment. This matters for the
+ROM's TAQOZ image at `$FED42`; rounding its source down would load different
+instructions. The unaligned-load fixture verifies all four alignments against
+hardware, alongside the existing startup/restart timing fixtures.
+
 WFBYTE, WFWORD and WFLONG write the low 1/2/4 operand bytes into the shared FIFO
 in little-endian order. GETPTR advances on enqueue; hub memory changes only when
 the two-clock write-eligibility stage and rotating RAM-slice grant permit it.

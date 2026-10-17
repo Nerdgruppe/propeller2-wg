@@ -634,7 +634,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
         checksum -%= std.mem.readInt(u32, word[0..4], .little);
     }
     hub.write_memory(@intCast(payload.len), checksum, 4, false);
-    serial_boot.prepare(hub);
+    serial_boot.prepare(hub, serial_boot.baudrate);
     try hub.start_cog(0, .{});
     connection.running = true;
     var input_buffer: [65536]u8 = undefined;

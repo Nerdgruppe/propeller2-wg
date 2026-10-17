@@ -394,7 +394,8 @@ pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {
     const cog = &hub.cogs[index];
     cog.reset();
     const command_clock = options.command_clock orelse hub.counter;
-    const base = options.hub_address & 0xffffc;
+    // Loaded cog images retain byte alignment; the ROM's TAQOZ image starts at $FED42.
+    const base = options.hub_address & 0xfffff;
     if (options.load_image) {
         if (options.clocked) {
             cog.startup = .{

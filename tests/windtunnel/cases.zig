@@ -1,5 +1,6 @@
 /// Assembly fixtures registered in the software suite; exploratory probes stay outside the build.
 pub const fixtures = [_][]const u8{
+    "tests/windtunnel/state/coginit-unaligned.propan",
     "tests/windtunnel/state/usb-partial.propan",
     "tests/windtunnel/state/usb-slow.propan",
     "tests/windtunnel/state/usb-packets.propan",

@@ -30,7 +30,8 @@ pub const SmartPin = smart_pin.SmartPin;
 pub const smart_pin = @import("sim/smart_pin.zig");
 
 const p2aas_server = @import("p2aas_server.zig");
-const serial_boot = @import("serial_boot.zig");
+pub const serial_boot = @import("serial_boot.zig");
+const Terminal = @import("Terminal.zig");
 
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{},
@@ -44,6 +45,8 @@ const CliArgs = struct {
     help: bool = false,
     verbose: bool = false,
     serve: bool = false,
+    boot: bool = false,
+    baudrate: u32 = 115_200,
     sim: SimulationProfile = .ideal,
     oversample: u32 = 1,
     url: []const u8 = "ws://127.0.0.1:21591/",
@@ -59,7 +62,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--oversample N] [--fast-io] [--trace-pipeline] [--vcd PATH] [-i IMAGE | --serve [--url URL]]",
+        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--oversample N] [--fast-io] [--trace-pipeline] [--vcd PATH] [--boot] [--baudrate N] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -69,13 +72,15 @@ const CliArgs = struct {
             .help = "Prints this help text",
             .verbose = "Enables debug logging",
             .serve = "Serve the P2AAS upload and terminal protocol",
+            .boot = "Start the ROM; with --image, download the image through its serial loader",
+            .baudrate = "Serial terminal/upload baud rate, 9600..2000000 (default 115200)",
             .sim = "Select the initialization-time electrical model: ideal (default) or realistic",
             .oversample = "Analog samples per system clock (positive integer, default 1); VCD records intermediate pads",
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
-            .@"fast-io" = "Use virtual serial transfers on terminal pins P62/P63",
+            .@"fast-io" = "Use virtual image-run TX (server: RX/TX); interactive input and ROM sessions retain UART timing",
             .image = "The image file which contains the hub data.",
-            .vcd = "Export digital and analog signals with physical simulation timestamps (image runs)",
+            .vcd = "Export digital and analog signals with physical simulation timestamps",
         },
     };
 };
@@ -112,8 +117,13 @@ pub fn main(init: std.process.Init) !u8 {
         return 1;
     }
 
-    if (cli.options.vcd.len != 0 and (cli.options.serve or cli.options.image.len == 0)) {
-        std.log.err("--vcd requires --image and cannot be combined with --serve", .{});
+    if (cli.options.vcd.len != 0 and cli.options.serve) {
+        std.log.err("--vcd cannot be combined with --serve", .{});
+        return 1;
+    }
+
+    if (cli.options.boot and cli.options.serve) {
+        std.log.err("--boot cannot be combined with --serve", .{});
         return 1;
     }
 
@@ -143,16 +153,24 @@ pub fn main(init: std.process.Init) !u8 {
         return 0;
     }
 
+    if (cli.options.baudrate < 9_600 or cli.options.baudrate > 2_000_000) {
+        std.log.err("--baudrate must be between 9600 and 2000000", .{});
+        return 1;
+    }
+    const boot = cli.options.boot or cli.options.image.len == 0;
+
     var stdout_buffer: [4096]u8 = undefined;
     var stdout = std.Io.File.stdout().writer(init.io, &stdout_buffer);
     defer stdout.interface.flush() catch {};
 
     var hub: Hub = undefined;
     try hub.init(system_configuration);
-    serial_boot.prepare(&hub);
+    if (!boot) {
+        serial_boot.prepare(&hub, cli.options.baudrate);
+    }
 
     var terminal_sink: smart_pin.DataSink = .{ .live_writer = &stdout.interface };
-    hub.io.pins[62].smart.tx_mode = if (cli.options.@"fast-io")
+    hub.io.pins[62].smart.tx_mode = if (cli.options.@"fast-io" and cli.options.image.len != 0)
         .{ .virtual = &terminal_sink }
     else
         .{ .emulated = &terminal_sink };
@@ -165,22 +183,39 @@ pub fn main(init: std.process.Init) !u8 {
         hub.trace_writer = &trace.interface;
     }
 
+    // Serial boot must retain the image outside RAM while the ROM builds its lookup table there.
+    const image_buffer = if (boot and cli.options.image.len != 0)
+        try init.gpa.alloc(u8, hub.memory.len)
+    else
+        &hub.memory;
+    defer {
+        if (boot and cli.options.image.len != 0) {
+            init.gpa.free(image_buffer);
+        }
+    }
+
+    var image_length: usize = 0;
     if (cli.options.image.len != 0) {
         var file = try std.Io.Dir.cwd().openFile(init.io, cli.options.image, .{});
         defer file.close(init.io);
 
         const stat = try file.stat(init.io);
 
-        const count = try file.readPositionalAll(init.io, &hub.memory, 0);
+        const count = try file.readPositionalAll(init.io, image_buffer, 0);
         std.debug.assert(count <= hub.memory.len);
+        image_length = count;
 
         if (stat.size > count) {
+            if (boot) {
+                std.log.err("serial boot image exceeds hub RAM", .{});
+                return 1;
+            }
             std.log.warn("hub image exceeds hub size. expected {Bi:.3} or less bytes, but got {Bi:.3}", .{
                 hub.memory.len,
                 stat.size,
             });
         } else {
-            std.log.info("loaded {Bi:.2} into hub memory", .{
+            std.log.info("read {Bi:.2} image", .{
                 count,
             });
         }
@@ -208,29 +243,45 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
-    try hub.start_cog(0, .{});
     if (vcd_file != null) {
         try hub.attachVcd(&vcd);
     }
+    const raw = try Terminal.Raw.init();
+    defer raw.deinit();
 
-    // One final edge aggregates stopped cogs' DIR/OUT and aborts their smart transfers.
-    var final_edge = false;
-    while (hub.is_any_cog_active() or !final_edge) {
-        const inactive = !hub.is_any_cog_active();
-        switch (hub.step()) {
-            .normal => {},
-            .trap => {
-                if (hub.fault) |fault| {
-                    std.log.err("cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{
-                        fault.cog, fault.pc, fault.instruction, fault.reason(),
-                    });
-                }
-                return 1;
-            },
-            .breakpoint, .reset => break,
-        }
-        final_edge = inactive;
-    }
+    var terminal: Terminal = .{ .io = init.io, .allocator = init.gpa };
+    defer terminal.deinit();
+
+    const Select = std.Io.Select(union(enum) {
+        input: anyerror!Terminal.InputEnd,
+        simulation: anyerror!u8,
+    });
+    var events: [2]Select.Union = undefined;
+    var select = Select.init(init.io, &events);
+    defer select.cancelDiscard();
+
+    try select.concurrent(.input, Terminal.read, .{&terminal});
+    try select.concurrent(.simulation, Terminal.simulate, .{ &terminal, &hub, Terminal.Session{
+        .boot = boot,
+        .image = if (cli.options.image.len != 0)
+            image_buffer[0..image_length]
+        else
+            null,
+        .rate = cli.options.baudrate,
+    } });
+    const result = switch (try select.await()) {
+        .simulation => |result| try result,
+        .input => |ended| blk: {
+            if (try ended == .quit)
+                return 0;
+            // EOF disconnects host input; let queued bytes and the application finish.
+            break :blk switch (try select.await()) {
+                .simulation => |result| try result,
+                .input => unreachable,
+            };
+        },
+    };
+    select.cancelDiscard();
 
     if (vcd_file != null) {
         try vcd.finish();
@@ -245,7 +296,7 @@ pub fn main(init: std.process.Init) !u8 {
         hub.counter,
     });
 
-    return 0;
+    return result;
 }
 
 var global_log_level: std.log.Level = .info;
