@@ -4937,7 +4937,7 @@ test "HUBSET delegates shared configuration and completes unsupported values" {
 
     cog.write_reg(@enumFromInt(24), 0x0100_09fb);
     try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
-    try std.testing.expectEqual(@as(u64, 200_000_000), hub.io.clock_frequency);
+    try std.testing.expectEqual(@as(f64, 200_000_000), hub.io.clock.frequency());
 
     cog.write_reg(@enumFromInt(24), 0x8000_1234);
     try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
@@ -4947,7 +4947,7 @@ test "HUBSET delegates shared configuration and completes unsupported values" {
     cog.write_reg(@enumFromInt(24), 3);
     try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
     try std.testing.expectEqual(@as(u32, 0x0100_09fb), hub.io.clock_mode);
-    try std.testing.expectEqual(@as(u64, 200_000_000), hub.io.clock_frequency);
+    try std.testing.expectEqual(@as(f64, 200_000_000), hub.io.clock.frequency());
     try std.testing.expectEqualDeep(random, hub.random);
 }
 

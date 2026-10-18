@@ -446,7 +446,7 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
     defer trace.interface.flush() catch {};
 
     const started = std.Io.Timestamp.now(connection.io, .awake).toNanoseconds();
-    var virtual_fixed: u128 = 0;
+    const initial_time = hub.io.clock.elapsed.femtoseconds;
     while (true) {
         try connection.io.checkCancel();
         // Refill buffered input outside the simulation; smart pins never block on the host.
@@ -459,10 +459,8 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
         };
         reader.end += count;
         // Bound each scheduling batch to one millisecond of simulated time.
-        const ceiling = hub.counter + @max(1, hub.io.clock_frequency / 1000);
+        const ceiling = hub.io.clock.seconds + 0.001;
         for (0..4096) |_| {
-            const before = hub.counter;
-            const frequency = hub.io.clock_frequency;
             // Hub edges still reset pin directions and service queued cog starts after self-stop.
             switch (hub.step()) {
                 .normal => {},
@@ -482,13 +480,12 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
                     return;
                 },
             }
-            virtual_fixed += @as(u128, hub.counter -% before) * (@as(u128, std.time.ns_per_s) << 32) / frequency;
-            if (hub.counter >= ceiling or output.end != 0) {
+            if (hub.io.clock.seconds >= ceiling or output.end != 0) {
                 break;
             }
         }
         const elapsed: u128 = @intCast(std.Io.Timestamp.now(connection.io, .awake).toNanoseconds() - started);
-        const virtual_ns = virtual_fixed >> 32;
+        const virtual_ns = (hub.io.clock.elapsed.femtoseconds - initial_time) / 1_000_000;
         if (virtual_ns > elapsed) {
             try std.Io.sleep(connection.io, .fromNanoseconds(@intCast(virtual_ns - elapsed)), .awake);
         }

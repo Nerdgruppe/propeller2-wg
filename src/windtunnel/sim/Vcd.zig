@@ -181,31 +181,17 @@ fn emitRegister(vcd: *Vcd, id: usize, value: u32, previous: ?u32) !void {
 
 const Time = struct { elapsed: u128, fraction: u64 };
 
-/// Compute a rounded Q64 half-period, preserving the original one-sample clock timing.
-fn halfPeriod(frequency: u64) u128 {
-    const numerator = @as(u128, 500_000_000_000_000) << 64;
-    return (numerator + frequency / 2) / frequency;
-}
-
 /// Add an interval offset without shifting the large whole-femtosecond timestamp into Q64.
 fn timeAt(vcd: *const Vcd, offset: u128) Time {
     const sum = @addWithOverflow(vcd.fraction, @as(u64, @truncate(offset)));
     return .{ .elapsed = vcd.elapsed + (offset >> 64) + sum[1], .fraction = sum[0] };
 }
 
-/// Advance one half-period, carrying fractional femtoseconds across frequency changes.
-fn halfCycle(vcd: *Vcd, frequency: u64, high: bool) !void {
-    const next = vcd.timeAt(halfPeriod(frequency));
-    vcd.elapsed = next.elapsed;
-    vcd.fraction = next.fraction;
-    try vcd.writer.print("#{d}\n{d}clk\n", .{ vcd.elapsed, @intFromBool(high) });
-}
-
 /// Open an oversampled interval; failures are deferred until the completed-clock capture.
-pub fn beginClock(vcd: *Vcd, counter: u64, frequency: u64) void {
+pub fn beginClock(vcd: *Vcd, counter: u64, period: u128) void {
     if (vcd.pending_error != null)
         return;
-    if (frequency == 0) {
+    if (period == 0) {
         vcd.pending_error = error.InvalidClockFrequency;
         return;
     }
@@ -214,7 +200,7 @@ pub fn beginClock(vcd: *Vcd, counter: u64, frequency: u64) void {
         return;
     }
     vcd.clock_open = true;
-    vcd.clock_period = halfPeriod(frequency) * 2;
+    vcd.clock_period = period;
     vcd.midpoint_emitted = false;
     vcd.last_substep = 0;
 }
@@ -275,11 +261,9 @@ fn endClock(vcd: *Vcd) !void {
 /// Emit the initial snapshot or the next completed clock using the frequency consumed by I/O.
 /// Unchanged duplicate snapshots are ignored; skipped clocks are rejected. Host-only changes
 /// at the same counter are recorded at the existing timestamp without inventing clock edges.
-pub fn capture(vcd: *Vcd, hub: *const Hub, clock_frequency: u64) !void {
+pub fn capture(vcd: *Vcd, hub: *const Hub, period: u128) !void {
     if (vcd.pending_error) |err|
         return err;
-    if (clock_frequency == 0)
-        return error.InvalidClockFrequency;
     const current = snapshot(hub);
     const previous = vcd.previous;
     if (previous == null) {
@@ -289,12 +273,14 @@ pub fn capture(vcd: *Vcd, hub: *const Hub, clock_frequency: u64) !void {
         if (delta > 1)
             return error.NonConsecutiveClock;
         if (delta == 1) {
-            if (vcd.clock_open) {
-                try vcd.endClock();
-            } else {
-                try vcd.halfCycle(clock_frequency, false);
-                try vcd.halfCycle(clock_frequency, true);
+            if (!vcd.clock_open) {
+                if (period == 0)
+                    return error.InvalidClockFrequency;
+                vcd.clock_open = true;
+                vcd.clock_period = period;
+                vcd.midpoint_emitted = false;
             }
+            try vcd.endClock();
         } else {
             if (std.meta.eql(previous.?, current))
                 return;
@@ -338,6 +324,17 @@ pub fn capture(vcd: *Vcd, hub: *const Hub, clock_frequency: u64) !void {
     vcd.last_clock = hub.counter;
 }
 
+/// Advance physical trace time while CT and the system clock remain held during acquisition.
+pub fn advanceQuiet(vcd: *Vcd, hub: *const Hub, interval: u128) !void {
+    const next = vcd.timeAt(interval);
+    vcd.elapsed = next.elapsed;
+    vcd.fraction = next.fraction;
+    try vcd.writer.print("#{d}\n", .{vcd.elapsed});
+    const current = padSnapshot(&hub.io, hub.io.pads);
+    try vcd.emitPads(&current, &vcd.previous.?.pads);
+    vcd.previous.?.pads = current;
+}
+
 /// Flush the VCD output stream without advancing simulation time.
 pub fn finish(vcd: *Vcd) !void {
     try vcd.writer.flush();
@@ -362,7 +359,9 @@ test "hierarchy, physical clock phases, consecutive capture and CT rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    try hub.init(.ideal);
+    var configuration: SystemConfiguration = .ideal;
+    configuration.clocks.rcfast.frequency = 20e6;
+    try hub.init(configuration);
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
@@ -370,7 +369,7 @@ test "hierarchy, physical clock phases, consecutive capture and CT rollover" {
     hub.counter = std.math.maxInt(u64) - 1;
     try hub.attachVcd(&vcd);
     const initial_length = output.written().len;
-    try vcd.capture(hub, hub.io.clock_frequency);
+    try vcd.capture(hub, hub.io.clock.last_interval.period);
     try std.testing.expectEqual(initial_length, output.written().len);
     try hub.io.setExternal(@enumFromInt(63), .high);
     try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
@@ -391,8 +390,10 @@ test "hierarchy, physical clock phases, consecutive capture and CT rollover" {
 
     const length = output.written().len;
     hub.counter = 2;
-    try std.testing.expectError(error.NonConsecutiveClock, vcd.capture(hub, hub.io.clock_frequency));
+    try std.testing.expectError(error.NonConsecutiveClock, vcd.capture(hub, hub.io.clock.last_interval.period));
+    hub.counter = vcd.last_clock +% 1;
     try std.testing.expectError(error.InvalidClockFrequency, vcd.capture(hub, 0));
+    hub.counter = vcd.last_clock;
     try std.testing.expectEqual(length, output.written().len);
     try vcd.finish();
     try std.testing.expectEqual(length, output.written().len);
@@ -406,7 +407,9 @@ test "first completed clock, frequency changes and fractional time accumulation"
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    try hub.init(.ideal);
+    var configuration: SystemConfiguration = .ideal;
+    configuration.clocks.rcfast.frequency = 20e6;
+    try hub.init(configuration);
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
@@ -414,10 +417,10 @@ test "first completed clock, frequency changes and fractional time accumulation"
     try hub.attachVcd(&vcd);
     _ = hub.step();
     try std.testing.expect(std.mem.endsWith(u8, output.written(), "#50000000\n1clk\nb1 ct\n"));
-    hub.io.clock_frequency = 200_000_000;
+    hub.io.clock.rcfast.specification.frequency = @floatFromInt(200_000_000);
     _ = hub.step();
     try std.testing.expect(std.mem.endsWith(u8, output.written(), "#52500000\n0clk\n#55000000\n1clk\nb10 ct\n"));
-    hub.io.clock_frequency = 200_000_001;
+    hub.io.clock.rcfast.specification.frequency = @floatFromInt(200_000_001);
     for (0..1000) |_| {
         _ = hub.step();
     }
@@ -425,7 +428,7 @@ test "first completed clock, frequency changes and fractional time accumulation"
     try std.testing.expectEqual(expected, vcd.elapsed);
     try std.testing.expect(vcd.fraction != 0);
     // Carry the existing remainder into a new, very different frequency.
-    hub.io.clock_frequency = 3;
+    hub.io.clock.rcfast.specification.frequency = @floatFromInt(3);
     for (0..3) |_| {
         _ = hub.step();
     }
@@ -449,7 +452,7 @@ test "register bits have independent identifiers and emit only changed bits" {
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "1b3_0\n") != null);
     const start = output.written().len;
     hub.cogs[0].write_reg(.DIRA, 1 << 10);
-    try vcd.capture(hub, hub.io.clock_frequency);
+    try vcd.capture(hub, hub.io.clock.last_interval.period);
     try std.testing.expectEqualStrings("#0\nb10000000000 v2\n1b2_10\n", output.written()[start..]);
     for (0..8) |_| {
         _ = hub.step();
@@ -474,7 +477,7 @@ test "pad state follows committed drive while voltage is independent and unclipp
         var source = IO.Pad.Source.high;
         source.voltage = 5;
         try hub.io.setExternal(@enumFromInt(0), source);
-        try vcd.capture(hub, hub.io.clock_frequency);
+        try vcd.capture(hub, hub.io.clock.last_interval.period);
         try std.testing.expectEqual(initial_length, output.written().len);
         _ = hub.step();
         try std.testing.expect(std.mem.indexOf(u8, output.written(), "1p0s\n") != null);
@@ -483,7 +486,7 @@ test "pad state follows committed drive while voltage is independent and unclipp
 
         const driven_length = output.written().len;
         try hub.io.setExternal(@enumFromInt(0), .float);
-        try vcd.capture(hub, hub.io.clock_frequency);
+        try vcd.capture(hub, hub.io.clock.last_interval.period);
         try std.testing.expectEqual(driven_length, output.written().len);
         _ = hub.step();
         try std.testing.expect(std.mem.indexOf(u8, output.written()[driven_length..], "zp0s\n") != null);
@@ -594,7 +597,7 @@ test "cog liveness covers startup and waits, with no fabricated paused clocks" {
     try std.testing.expectEqual(Hub.StepResult.breakpoint, hub.step());
     try std.testing.expectEqual(counter, hub.counter);
     try std.testing.expect(vcd.previous.?.alive[0]);
-    try vcd.capture(hub, hub.io.clock_frequency);
+    try vcd.capture(hub, hub.io.clock.last_interval.period);
     try std.testing.expectEqual(length, output.written().len);
     hub.debugger = null;
     hub.cogs[0].reset();
@@ -622,7 +625,7 @@ test "writer failures reject attachment and propagate from subsequent capture" {
     hub.vcd = null;
     _ = hub.step();
     vcd.writer = &tiny;
-    try std.testing.expectError(error.WriteFailed, vcd.capture(hub, hub.io.clock_frequency));
+    try std.testing.expectError(error.WriteFailed, vcd.capture(hub, hub.io.clock.last_interval.period));
 }
 
 test "tracing does not change shared command timing or electrical evolution under either preset" {
@@ -671,6 +674,7 @@ test "oversampling emits charging samples and merges odd and even clock midpoint
     for ([_]u32{ 1, 3, 8 }) |count| {
         var configuration: SystemConfiguration = .ideal;
         configuration.oversample = count;
+        configuration.clocks.rcfast.frequency = 20e6;
         try hub.init(configuration);
         var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
         defer output.deinit();
@@ -724,7 +728,7 @@ test "oversampling emits charging samples and merges odd and even clock midpoint
             try std.testing.expect(std.mem.indexOf(u8, output.written(), "#37500000\n1p0s\n") != null);
         }
         const length = output.written().len;
-        try vcd.capture(hub, hub.io.clock_frequency);
+        try vcd.capture(hub, hub.io.clock.last_interval.period);
         try vcd.finish();
         try std.testing.expectEqual(length, output.written().len);
     }
@@ -758,8 +762,8 @@ test "oversampled time carries fractional periods across frequency changes and c
                 1 => 200_000_001,
                 else => 3,
             };
-            normal.io.clock_frequency = frequency;
-            sampled.io.clock_frequency = frequency;
+            normal.io.clock.rcfast.specification.frequency = @floatFromInt(frequency);
+            sampled.io.clock.rcfast.specification.frequency = @floatFromInt(frequency);
             try std.testing.expectEqual(normal.step(), sampled.step());
             try std.testing.expectEqual(normal.counter, sampled.counter);
             try std.testing.expectEqual(normal_vcd.elapsed, sampled_vcd.elapsed);
@@ -782,7 +786,7 @@ test "intermediate writer errors are deferred without stopping analog substeps" 
     var vcd: Vcd = .{ .writer = &output.writer };
     try hub.attachVcd(&vcd);
     try hub.io.setExternal(@enumFromInt(0), .high);
-    vcd.beginClock(hub.counter, hub.io.clock_frequency);
+    vcd.beginClock(hub.counter, IO.Clock.duration(1 / hub.io.clock.frequency()));
     hub.io.analog_pads.step(&configuration, 50e-9 / 8.0);
     var bytes: [1]u8 = undefined;
     var broken = std.Io.Writer.fixed(&bytes);
@@ -793,7 +797,7 @@ test "intermediate writer errors are deferred without stopping analog substeps" 
     try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
     try std.testing.expect(hub.io.getExternal(@enumFromInt(0)).?.voltage > 3.29);
-    try std.testing.expectError(error.WriteFailed, vcd.capture(hub, hub.io.clock_frequency));
+    try std.testing.expectError(error.WriteFailed, vcd.capture(hub, hub.io.clock.last_interval.period));
 }
 
 test "trace distinguishes Schmitt receiver history from voltage and raw ADC bits" {
@@ -868,9 +872,12 @@ test "USB pair isolation and turnaround preserve physical drivers and VCD electr
             _ = hub.step();
         }
         const after = snapshot(hub);
-        try std.testing.expectEqualDeep(before.pads[10], after.pads[10]);
-        try std.testing.expectEqualDeep(before.pads[11], after.pads[11]);
-        try std.testing.expectEqualDeep(before.pads[12], after.pads[12]);
+        for (10..13) |pin| {
+            try std.testing.expectEqual(before.pads[pin].state, after.pads[pin].state);
+            try std.testing.expectEqual(before.pads[pin].receiver, after.pads[pin].receiver);
+            try std.testing.expectEqual(before.pads[pin].adc, after.pads[pin].adc);
+            try std.testing.expectApproxEqAbs(before.pads[pin].voltage, after.pads[pin].voltage, 1e-12);
+        }
         try std.testing.expectEqual(.floating, after.pads[8].state);
         try std.testing.expectEqual(.floating, after.pads[9].state);
         try vcd.finish();

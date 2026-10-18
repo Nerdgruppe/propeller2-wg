@@ -24,6 +24,7 @@ pub const Pad = @import("sim/Pad.zig");
 pub const Pads = @import("sim/Pads.zig");
 const Vcd = @import("sim/Vcd.zig");
 pub const SystemConfiguration = @import("sim/SystemConfiguration.zig");
+pub const ClockConfiguration = @import("sim/ClockConfiguration.zig");
 
 pub const SmartPin = smart_pin.SmartPin;
 
@@ -39,7 +40,8 @@ pub const std_options: std.Options = .{
     .logFn = writeLog,
 };
 
-const SimulationProfile = enum { ideal, realistic };
+pub const SimulationProfile = enum { ideal, realistic };
+const Oscillator = ClockConfiguration.Oscillator;
 
 const CliArgs = struct {
     help: bool = false,
@@ -48,6 +50,10 @@ const CliArgs = struct {
     boot: bool = false,
     baudrate: u32 = 115_200,
     sim: SimulationProfile = .ideal,
+    rcfast: ?Oscillator = null,
+    rcslow: ?Oscillator = null,
+    crystal: ?Oscillator = null,
+    seed: ?u64 = null,
     oversample: u32 = 1,
     url: []const u8 = "ws://127.0.0.1:21591/",
     @"trace-pipeline": bool = false,
@@ -62,7 +68,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--oversample N] [--fast-io] [--trace-pipeline] [--vcd PATH] [--boot] [--baudrate N] [-i IMAGE | --serve [--url URL]]",
+        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N] [--oversample N] [--fast-io] [--trace-pipeline] [--vcd PATH] [--boot] [--baudrate N] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -74,7 +80,11 @@ const CliArgs = struct {
             .serve = "Serve the P2AAS upload and terminal protocol",
             .boot = "Start the ROM; with --image, download the image through its serial loader",
             .baudrate = "Serial terminal/upload baud rate, 9600..2000000 (default 115200)",
-            .sim = "Select the initialization-time electrical model: ideal (default) or realistic",
+            .sim = "Electrical and clock model: ideal typical values (default), or realistic bounded drift/measured PLL profiles",
+            .rcfast = "RCFAST: MHz[-LOW+HIGH|+RANGE]; ppm/ppb/%/Hz/kHz/MHz accepted (typical 24 MHz, realistic 20..30)",
+            .rcslow = "RCSLOW: same syntax, bare values in MHz (typical 0.020 MHz, realistic 12..30 kHz)",
+            .crystal = "XI frequency: same syntax (default fixed 20 MHz; specify its actual tolerance explicitly)",
+            .seed = "Drift RNG seed; omitted generates entropy, selected seed is printed to stderr",
             .oversample = "Analog samples per system clock (positive integer, default 1); VCD records intermediate pads",
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
@@ -84,6 +94,28 @@ const CliArgs = struct {
         },
     };
 };
+
+pub const ClockOptions = struct {
+    rcfast: ?Oscillator,
+    rcslow: ?Oscillator,
+    crystal: ?Oscillator,
+    seed: ?u64,
+};
+
+/// Resolve source overrides and entropy once at process startup; always disclose the replay seed.
+pub fn configureClocks(init: std.process.Init, configuration: *SystemConfiguration, options: ClockOptions) void {
+    inline for (.{ "rcfast", "rcslow", "crystal" }) |name| {
+        if (@field(options, name)) |value| {
+            @field(configuration.clocks, name) = value;
+        }
+    }
+    configuration.clocks.seed = options.seed orelse blk: {
+        var seed: u64 = undefined;
+        std.Io.random(init.io, std.mem.asBytes(&seed));
+        break :blk seed;
+    };
+    std.log.info("clock seed: {d} (--seed {d})", .{ configuration.clocks.seed, configuration.clocks.seed });
+}
 
 /// Parse CLI options and run the simulator, test suite, or WebSocket server.
 pub fn main(init: std.process.Init) !u8 {
@@ -136,6 +168,12 @@ pub fn main(init: std.process.Init) !u8 {
         .realistic => .realistic,
     };
     system_configuration.oversample = cli.options.oversample;
+    configureClocks(init, &system_configuration, .{
+        .rcfast = cli.options.rcfast,
+        .rcslow = cli.options.rcslow,
+        .crystal = cli.options.crystal,
+        .seed = cli.options.seed,
+    });
 
     if (cli.options.serve) {
         if (cli.options.image.len != 0) {

@@ -92,7 +92,7 @@ pub fn init(hub: *Hub, configuration: SystemConfiguration) error{InvalidConfigur
             .init(hub, 6),
             .init(hub, 7),
         },
-        .io = .{},
+        .io = .{ .clock = .init(configuration.clocks) },
         .system_configuration = configuration,
     };
     hub.io.connect();
@@ -119,14 +119,23 @@ pub fn configure(hub: *Hub, mode: u32) void {
             };
     } else if (mode & 0xf000_0000 == 0x4000_0000) {
         hub.io.configureFilter(mode);
-    } else if (!hub.io.setClock(mode)) {
-        std.log.warn("unsupported HUBSET value 0x{x:0>8}", .{mode});
+    } else {
+        const previous_coverage = hub.io.clock.coverage;
+        const previous_unsafe = hub.io.clock.unsafe_postdivider_up;
+        if (!hub.io.setClock(mode)) {
+            std.log.warn("unsupported HUBSET value 0x{x:0>8}", .{mode});
+        } else if (previous_coverage != hub.io.clock.coverage and hub.io.clock.coverage == .uncharacterized) {
+            std.log.warn("PLL configuration 0x{x:0>8} has no measured response; using ideal rate fallback", .{mode});
+        }
+        if (!previous_unsafe and hub.io.clock.unsafe_postdivider_up) {
+            std.log.warn("direct PLL postdivider-up matched a measured unsafe sequence; execution errors are not simulated", .{});
+        }
     }
 }
 
 /// Attach a caller-owned trace writer and capture the initial state.
 pub fn attachVcd(hub: *Hub, vcd: *Vcd) !void {
-    try vcd.capture(hub, hub.io.clock_frequency);
+    try vcd.capture(hub, 0);
     hub.vcd = vcd;
 }
 
@@ -237,6 +246,19 @@ pub fn step(hub: *Hub) StepResult {
     }
     if (hub.fault != null)
         return .trap;
+    const interval = hub.io.clock.step();
+    if (interval.quiet != 0) {
+        hub.io.advanceQuiet(hub, IO.Clock.secondsOf(interval.quiet));
+        if (hub.vcd) |vcd| {
+            vcd.advanceQuiet(hub, interval.quiet) catch {
+                hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
+                return .trap;
+            };
+        }
+    }
+    if (interval.period == 0) {
+        return .normal;
+    }
     hub.clocking = true;
     defer {
         hub.clocking = false;
@@ -335,7 +357,6 @@ pub fn step(hub: *Hub) StepResult {
         cog.streamer.step(cog);
         cog.dacs = cog.converter.step(cog.raw_dacs);
     }
-    const io_clock_frequency = hub.io.clock_frequency;
     hub.io.step(hub);
     if (hub.fault == null) {
         for (&hub.cogs) |*cog| {
@@ -357,7 +378,7 @@ pub fn step(hub: *Hub) StepResult {
     hub.random.step();
     hub.counter +%= 1;
     if (hub.vcd) |vcd| {
-        vcd.capture(hub, io_clock_frequency) catch |err| {
+        vcd.capture(hub, interval.period) catch |err| {
             std.log.err("VCD export failed: {t}", .{err});
             hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
         };
@@ -986,7 +1007,7 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     hub.configure(0x1fff_ffff);
     try std.testing.expectEqual(StepResult.reset, hub.step());
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
-    try std.testing.expectEqual(@as(u64, 20_000_000), hub.io.clock_frequency);
+    try std.testing.expectEqual(@as(f64, 24_000_000), hub.io.clock.frequency());
     try std.testing.expectEqual(@as(u8, 0), hub.debug.enables);
     try std.testing.expect(!hub.debug.protected and !hub.debug.locked);
     try std.testing.expectEqualDeep(Random{}, hub.random);
@@ -1064,4 +1085,34 @@ test "system configuration initializes atomically and survives firmware reset" {
     try std.testing.expectEqualDeep(IO.Pad.Source.float, hub.io.external[10]);
     try hub.init(.ideal);
     try std.testing.expectEqualDeep(SystemConfiguration.ideal, hub.system_configuration);
+}
+
+test "an unready empirical PLL advances shared physical time and pads without CT or synchronous work" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    var configuration: SystemConfiguration = .realistic;
+    configuration.clocks.rcfast = IO.Clock.Configuration.ideal.rcfast;
+    try hub.init(configuration);
+    try hub.io.setExternal(@enumFromInt(2), .{ .voltage = 3.3, .resistance = 1000, .capacitance = 1e-8 });
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+    var vcd: Vcd = .{ .writer = &output.writer };
+    try hub.attachVcd(&vcd);
+    hub.configure(0x010007fb);
+    const random_before = hub.random;
+    for (0..100) |_| {
+        try std.testing.expectEqual(StepResult.normal, hub.step());
+        try std.testing.expectEqual(@as(u64, 0), hub.counter);
+        try std.testing.expectEqualDeep(random_before, hub.random);
+    }
+    try std.testing.expect(hub.io.getExternal(@enumFromInt(2)).?.voltage > 1);
+    try std.testing.expect(hub.io.clock.elapsed.femtoseconds > 9_000_000_000);
+    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, vcd.elapsed);
+    var iterations: usize = 100;
+    while (hub.counter == 0 and iterations < 10000) : (iterations += 1) {
+        _ = hub.step();
+    }
+    try std.testing.expectEqual(@as(u64, 1), hub.counter);
+    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, vcd.elapsed);
+    try std.testing.expectEqual(hub.io.clock.elapsed.fraction, vcd.fraction);
 }

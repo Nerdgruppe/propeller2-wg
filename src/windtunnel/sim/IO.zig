@@ -19,6 +19,7 @@ const DriveSignal = smart_pin.DriveSignal;
 pub const DataSource = smart_pin.DataSource;
 pub const DataSink = smart_pin.DataSink;
 const IO = @This();
+pub const Clock = @import("Clock.zig");
 
 /// Deterministic first-order delta/sigma source; density is a fraction of one bits, not a voltage.
 pub const DeltaSigma = struct {
@@ -237,8 +238,7 @@ routed_inputs: u64 = 0,
 outputs: u64 = 0,
 drives: u64 = 0,
 clock_mode: u32 = 0,
-clock_frequency: u64 = 20_000_000,
-crystal_frequency: u64 = 20_000_000,
+clock: Clock = .init(.ideal),
 /// Current shared output, latched by step; physical pad tap numbering is approximate.
 random_bits: u64 = 0,
 last_clock: u64 = 0,
@@ -267,8 +267,8 @@ pub fn configureFilter(io: *IO, value: u32) void {
 
 /// Apply a supported HUBSET clock operation; the hub owns random seeding.
 pub fn setClock(io: *IO, mode: u32) bool {
-    const config: types.ClockMode = @bitCast(mode);
-    io.clock_frequency = config.get_frequency(io.crystal_frequency) catch return false;
+    if (!io.clock.configure(mode))
+        return false;
     io.clock_mode = mode;
     return true;
 }
@@ -425,7 +425,7 @@ pub fn step(io: *IO, hub: *Hub) void {
         const sync_pipeline = &io.pins[i].sync_output_pipeline;
         state.* = sync_pipeline.step(.{ .level = io.outputState(@enumFromInt(i)), .strength = io.pins[i].strength });
     }
-    io.resolvePads(hub);
+    io.resolvePads(hub, Clock.secondsOf(io.clock.last_interval.period), true);
     io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
     io.samples.receivers[hub.counter % io.samples.receivers.len] = io.receiver_inputs;
     io.samples.out[hub.counter % io.samples.out.len] = io.drives;
@@ -693,13 +693,12 @@ fn selected(io: *const IO, index: PinIndex, selector: PinConfiguration.Selector)
 }
 
 /// Advance simultaneous RC substeps, updating asynchronous feedback between electrical solves.
-fn resolvePads(io: *IO, hub: *Hub) void {
+fn resolvePads(io: *IO, hub: *Hub, seconds: f64, clocked: bool) void {
     const system = &hub.system_configuration;
-    const frequency = io.clock_frequency;
-    const dt = 1 / @as(f64, @floatFromInt(frequency)) / @as(f64, @floatFromInt(system.oversample));
+    const dt = seconds / @as(f64, @floatFromInt(system.oversample));
     if (hub.vcd) |vcd| {
-        if (system.oversample > 1) {
-            vcd.beginClock(hub.counter, frequency);
+        if (clocked and system.oversample > 1) {
+            vcd.beginClock(hub.counter, io.clock.last_interval.period);
         }
     }
     var all_logic = true;
@@ -751,14 +750,21 @@ fn resolvePads(io: *IO, hub: *Hub) void {
             }
         }
         if (hub.vcd) |vcd| {
-            if (substep + 1 < system.oversample) {
+            if (clocked and substep + 1 < system.oversample) {
                 vcd.capturePads(io, system, @intCast(substep + 1));
             }
         }
     }
     const next = io.analog_pads.digital(system);
     io.pads = next;
-    io.sync_in = io.receiver_inputs;
+    if (clocked) {
+        io.sync_in = io.receiver_inputs;
+    }
+}
+
+/// Integrate asynchronous electrical state during a clock-not-ready interval without clocking ADCs or smart pins.
+pub fn advanceQuiet(io: *IO, hub: *Hub, seconds: f64) void {
+    io.resolvePads(hub, seconds, false);
 }
 
 /// Compute SmartA/SmartB from the previous pad samples without advancing smart logic.
@@ -864,7 +870,9 @@ test "external RC snapshots are staged, clocked and sampled through the existing
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    try hub.init(.ideal);
+    var configuration: Hub.SystemConfiguration = .ideal;
+    configuration.clocks.rcfast.frequency = 20e6;
+    try hub.init(configuration);
     const pad: PadIndex = @enumFromInt(10);
     try std.testing.expect(hub.io.getExternal(pad) == null);
     const source: Pad.Source = .{ .voltage = 3.3, .resistance = 1_000, .capacitance = 95e-12 };
@@ -878,7 +886,7 @@ test "external RC snapshots are staged, clocked and sampled through the existing
     for (0..64) |index| {
         try std.testing.expect(hub.io.getExternal(@enumFromInt(index)) != null);
     }
-    hub.io.clock_frequency = 10_000_000;
+    hub.io.clock.rcfast.specification.frequency = @floatFromInt(10_000_000);
     _ = hub.step();
     const second = hub.io.getExternal(pad).?;
     try std.testing.expectApproxEqAbs(@as(f64, 2.2), second.voltage, 1e-12);
@@ -912,7 +920,9 @@ test "adjacent feedback uses the previous complete snapshot and advances each pa
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    try hub.init(.ideal);
+    var configuration: Hub.SystemConfiguration = .ideal;
+    configuration.clocks.rcfast.frequency = 20e6;
+    try hub.init(configuration);
     try hub.io.setExternal(@enumFromInt(0), .high);
     _ = hub.step();
     try hub.io.setExternal(@enumFromInt(0), .float);
@@ -943,9 +953,9 @@ test "clock fields and reader-backed UART input are independent of terminal pin 
     try hub.init(.ideal);
     const io = &hub.io;
     try std.testing.expect(io.setClock(0x0100_09fb));
-    try std.testing.expectEqual(@as(u64, 200_000_000), io.clock_frequency);
+    try std.testing.expectEqual(@as(f64, 200_000_000), io.clock.frequency());
     try std.testing.expect(!io.setClock(3));
-    try std.testing.expectEqual(@as(u64, 200_000_000), io.clock_frequency);
+    try std.testing.expectEqual(@as(f64, 200_000_000), io.clock.frequency());
     try std.testing.expectEqual(@as(u32, 0x0100_09fb), io.clock_mode);
 
     var reader = std.Io.Reader.fixed("ab");
@@ -1021,7 +1031,7 @@ test "GPIO pad pipeline has fixed cycle timing at every clock frequency" {
 
     for ([_]u64{ 20_000_000, 167_000_000, 170_000_000, 200_000_000 }) |frequency| {
         try hub.init(.ideal);
-        hub.io.clock_frequency = frequency;
+        hub.io.clock.rcfast.specification.frequency = @floatFromInt(frequency);
         hub.cogs[0].registers.set(.DIRA, 1);
         hub.cogs[0].registers.set(.OUTA, 1);
         for (0..3) |_| {
@@ -1055,9 +1065,9 @@ test "frequency changes preserve in-flight GPIO timing and history" {
     for (expected, 0..) |level, clock| {
         switch (clock) {
             0 => hub.cogs[0].registers.set(.OUTA, 1 << 4),
-            3 => hub.io.clock_frequency = 200_000_000,
+            3 => hub.io.clock.rcfast.specification.frequency = 200_000_000,
             5 => hub.cogs[0].registers.set(.OUTA, 0),
-            8 => hub.io.clock_frequency = 20_000_000,
+            8 => hub.io.clock.rcfast.specification.frequency = 20_000_000,
             else => {},
         }
         _ = hub.step();
@@ -1088,7 +1098,7 @@ test "synchronous output retains pending transitions while deselected across clo
                 hub.cogs[0].registers.set(.OUTA, 0);
             },
             7 => {
-                hub.io.clock_frequency = 200_000_000;
+                hub.io.clock.rcfast.specification.frequency = @floatFromInt(200_000_000);
                 hub.io.editConfiguration(@enumFromInt(4), 1 << 16);
             },
             else => {},
@@ -1734,6 +1744,7 @@ test "analog oversampling converges toward RC behavior while clocked feedback re
     for ([_]u32{ 1, 3, 8 }) |count| {
         var configuration: Hub.SystemConfiguration = .ideal;
         configuration.oversample = count;
+        configuration.clocks.rcfast.frequency = 20e6;
         try hub.init(configuration);
         try hub.io.setExternal(@enumFromInt(0), .{ .voltage = 3.3, .resistance = 1_000, .capacitance = 95e-12 });
         var expected = hub.io.analog_pads;

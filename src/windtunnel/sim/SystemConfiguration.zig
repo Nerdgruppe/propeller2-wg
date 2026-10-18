@@ -1,6 +1,7 @@
 //! Host-selected electrical parameters, fixed from Hub initialization until the next initialization.
 const std = @import("std");
 const SystemConfiguration = @This();
+pub const ClockConfiguration = @import("ClockConfiguration.zig");
 
 /// Select constant-resistance fast GPIO drivers or the measured piecewise I–V curve.
 pub const FastDriveModel = enum { linear, piecewise };
@@ -16,6 +17,8 @@ pub const CurvePoint = struct {
 
 /// Number of analog integration substeps per completed system clock; fixed at initialization.
 oversample: u32,
+/// Oscillator ranges and deterministic seed; zero ranges imply ideal clock behavior.
+clocks: ClockConfiguration,
 
 /// I/O supply voltage in volts; sets GPIO high rail and ADC/comparator references.
 /// Pad.dacDriver uses VIO for the nominal 3.3 V ranges and VIO * 2.0 / 3.3 for the 2.0 V ranges.
@@ -82,6 +85,7 @@ max_pin_current: f64,
 
 pub const ideal: SystemConfiguration = .{
     .oversample = 1,
+    .clocks = .ideal,
     .vio_voltage = 3.3,
     .threshold_ratio = 0.5,
     .schmitt_low_ratio = 0.35,
@@ -121,6 +125,7 @@ pub const ideal: SystemConfiguration = .{
 pub const realistic: SystemConfiguration = blk: {
     var configuration = ideal;
     configuration.fast_model = .piecewise;
+    configuration.clocks = .realistic;
     configuration.leakage_enabled = true;
     configuration.receiver_delay = 3e-9;
     configuration.comparator_delay = 10e-9;
@@ -130,6 +135,7 @@ pub const realistic: SystemConfiguration = blk: {
 
 /// Reject invalid parameters before replacing a simulation, including currently inactive settings.
 pub fn validate(configuration: SystemConfiguration) error{InvalidConfiguration}!void {
+    try configuration.clocks.validate();
     if (configuration.oversample == 0)
         return error.InvalidConfiguration;
     inline for (std.meta.fields(SystemConfiguration)) |field| {
@@ -193,9 +199,11 @@ pub fn validate(configuration: SystemConfiguration) error{InvalidConfiguration}!
 
 /// Identify unchanged presets for display; customized configurations have no hidden preset behavior.
 pub fn name(configuration: SystemConfiguration) [:0]const u8 {
-    if (std.meta.eql(configuration, ideal))
+    var parameters = configuration;
+    parameters.clocks.seed = 0;
+    if (std.meta.eql(parameters, ideal))
         return "Ideal";
-    if (std.meta.eql(configuration, realistic))
+    if (std.meta.eql(parameters, realistic))
         return "Realistic";
     return "Custom";
 }

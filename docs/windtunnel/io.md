@@ -294,7 +294,7 @@ floating charge indefinitely. Configured leakage remains active with output disa
 
 For each analog substep, the module solves the piecewise-linear backward-Euler equation
 `Ctotal * (Vnew - Vold) / dt = Iinternal(Vnew) + Iexternal(Vnew) - Ileakage(Vnew)`,
-where `dt = 1 / clock_frequency / oversample`. Linear branches follow
+where `dt = actual_clock_period / oversample` (see [clock sources](clocks.md)). Linear branches follow
 `I = clamp((Vs - Vpad) / R, -Imax, +Imax)`; piecewise fast branches use the configured
 curves. Transients continue with unchanged digital outputs; settled pads skip redundant
 solves. This is stable for short RC constants, but coarse clocks distort the continuous
@@ -700,8 +700,10 @@ errors during a substep are reported when that hub clock completes.
 
 Hub performs full and intermediate captures automatically when attached with
 `attachVcd`. Direct callers of
-`vcd.capture(hub, clock_frequency)` must supply every consecutive completed clock
-and the frequency used for that clock. Skipping clocks returns
+`vcd.capture(hub, period)` must supply every consecutive completed clock
+and its actual period as Q64 femtoseconds (`u128`). Use zero for an initial or
+same-counter snapshot. `advanceQuiet` advances physical time and pads without
+emitting CPU clock edges or incrementing CT. Skipping clocks returns
 `error.NonConsecutiveClock`; repeating an unchanged snapshot emits nothing.
 Host-only changes at the same counter are emitted at the existing timestamp
 without clock transitions. There are no fabricated transitions while paused.

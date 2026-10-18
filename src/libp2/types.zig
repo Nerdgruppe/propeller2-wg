@@ -31,7 +31,7 @@ pub const ClockMode = packed struct(u32) {
     _padding: u3 = 0,
     tag: u4 = 0b0000,
 
-    /// Return the nominal system frequency in Hz; RCFAST/RCSLOW use 20 MHz/20 kHz.
+    /// Return datasheet-typical system frequency in Hz; RCFAST/RCSLOW use 24 MHz/20 kHz.
     /// Reject non-clock HUBSET operations, disabled clock sources, and unrepresentable frequencies.
     /// Crystal/PLL settling and RC oscillator drift are not modeled.
     pub fn get_frequency(mode: ClockMode, crystal_freq: u64) error{InvalidClockMode}!u64 {
@@ -39,7 +39,7 @@ pub const ClockMode = packed struct(u32) {
         if ((mode.clock_src == .xi or mode.clock_src == .pll) and mode.crystal == .float) return error.InvalidClockMode;
         if (mode.clock_src == .pll and !mode.pll_on) return error.InvalidClockMode;
         const frequency: u64 = switch (mode.clock_src) {
-            .rcfast => 20_000_000,
+            .rcfast => 24_000_000,
             .rcslow => 20_000,
             .xi => crystal_freq,
             .pll => blk: {
@@ -56,7 +56,7 @@ pub const ClockMode = packed struct(u32) {
 
 test "clock mode frequencies follow HUBSET encodings" {
     inline for (.{
-        .{ 0xf0, 20_000_000 },
+        .{ 0xf0, 24_000_000 },
         .{ 0xf1, 20_000 },
         .{ 0xfe, 20_000_000 },
         .{ 0x0100_09fb, 200_000_000 },

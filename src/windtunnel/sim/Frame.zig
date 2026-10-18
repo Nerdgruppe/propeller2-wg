@@ -37,7 +37,7 @@ pub fn advance(hub: *Hub, mode: Mode, clock: Clock) Frame {
             result.running = false;
             break;
         }
-        if (mode == .step)
+        if (mode == .step and result.clocks != 0)
             break;
     }
     result.nanoseconds = clock.now(clock.context) - start;

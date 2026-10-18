@@ -1,0 +1,497 @@
+// Bounded physical-characterization monitor. UART always reports from RCFAST using the ROM divider.
+.cogexec
+                HUBSET  0xf0
+                CALL    cleanup
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                DIRH    62
+                WRPIN   P_ASYNC_RX,             63
+                DIRH    63
+                MOV     PA,                     '!'
+                CALL    write_byte
+// Receive complete parameters before changing the system clock or acquiring analog data.
+main:
+                CALL    read_byte
+                CMP     PA, 'F'             :wz
+    if(Z)       JMP     finish
+                CMP     PA, 'K'             :wz
+    if(Z)       JMP     static_trial
+                CMP     PA, 'T'             :wz
+    if(Z)       JMP     transition_trial
+                CMP     PA, 'O'             :wz
+    if(Z)       JMP     observe
+                CMP     PA, 'A'             :wz
+    if(Z)       JMP     adc_capture
+                CMP     PA, 'D'             :wz
+    if(Z)       JMP     dac_pattern
+                CMP     PA, 'E'             :wz
+    if(Z)       JMP     dac_engine
+                CMP     PA, 'G'             :wz
+    if(Z)       JMP     load_trial
+                JMP     main
+// Return every connected experiment output to plain GPIO input.
+cleanup:
+                XINIT   0,  0
+                SETDACS 0
+                DIRL    aug(0 | (1 << 6))
+                WRPIN   0,  aug(0 | (1 << 6))
+                DIRL    aug(8 | (1 << 6))
+                WRPIN   0,  aug(8 | (1 << 6))
+                DIRL    aug(22 | (1 << 6))
+                WRPIN   0,  aug(22 | (1 << 6))
+                DIRL    18
+                WRPIN   0,  18
+                RET
+finish:
+                CALL    cleanup
+                MOV     PA, '.'
+                CALL    write_byte
+                JMP     main
+// Export slow clock on P0/P8, faster clock on P22, and a trial window on P1/P23.
+static_trial:
+                MOV     from_mode,      0
+                MOV     settle_ticks,   aug(1000000)
+                JMP     clock_trial
+// Read live-transition parameters before the usual target-clock parameters.
+transition_trial:
+                CALL    read_long
+                MOV     from_mode,      word
+                CALL    read_long
+                MOV     from_ticks,     word
+                CALL    read_long
+                MOV     settle_ticks,   word
+clock_trial:
+                CALL    read_long
+                MOV     clock_mode,             word
+                CALL    read_long
+                MOV     hold_ticks,             word
+                CALL    read_long
+                MOV     increment,              word
+                CALL    read_long
+                MOV     work_count,             word
+                CALL    cleanup
+                WRPIN   P_TT_01 | P_NCO_FREQ,   0
+                WRPIN   P_TT_01 | P_NCO_FREQ,   8
+                WRPIN   P_TT_01 | P_NCO_FREQ,   22
+                WXPIN   1,                      0
+                WXPIN   1,                      8
+                WXPIN   1,                      22
+                WYPIN   increment,              0
+                WYPIN   increment,              8
+                WYPIN   aug(0x10000000),        22
+                DIRH    0
+                DIRH    8
+                DIRH    22
+                DRVL    1
+                DRVL    9
+                DRVL    23
+                // Enable the requested crystal/PLL while still on RCFAST; allow a conservative startup wait.
+                MOV     safe_mode,              clock_mode
+                ANDN    safe_mode,              3
+                MOV     prepare_mode,           safe_mode
+                CMP     from_mode,              0               :wz
+    if(!Z)      MOV     prepare_mode,           from_mode
+                ANDN    prepare_mode,           3
+                HUBSET  prepare_mode
+                WAITX   settle_ticks
+                CMP     from_mode,              0               :wz
+    if(Z)       JMP     .mark
+                HUBSET  from_mode
+                WAITX   from_ticks
+.mark:          DRVH    1
+                DRVH    9
+                DRVH    23
+                HUBSET  clock_mode
+                GETCT   started
+                // Exercise cog arithmetic and hub writes/reads against a host-computed signature.
+                MOV     signature,              aug(0x12345678)
+                MOV     failures,               0
+                MOV     remaining,              work_count
+                CMP     remaining,              0               :wz
+    if(Z)       JMP     .hold
+.work:          ROL     signature,              5
+                XOR     signature,              aug(0x9e3779b9)
+                ADD     signature,              aug(0x7f4a7c15)
+                WRLONG  signature,              aug(0x40000)
+                RDLONG  temporary,              aug(0x40000)
+                CMP     temporary,              signature       :wz
+    if(!Z)      ADD     failures,               1
+                ADD     signature,              temporary
+                DJNZ    remaining,              .work
+.hold:          WAITX   hold_ticks
+                GETCT   elapsed
+                SUB     elapsed,                started
+                // Leave PLL through RCFAST while retaining its divider/crystal fields, then disable it.
+                HUBSET  safe_mode
+                WAITX   16
+                HUBSET  0xf0
+                OUTL    1
+                OUTL    9
+                OUTL    23
+                CALL    cleanup
+                MOV     PA,                     'K'
+                CALL    write_byte
+                MOV     PA,                     signature
+                CALL    write_long
+                MOV     PA,                     failures
+                CALL    write_long
+                MOV     PA,                     elapsed
+                CALL    write_long
+                MOV     checksum,               signature
+                ADD     checksum,               failures
+                ADD     checksum,               elapsed
+                XOR     checksum,               aug(0x5a5a5a5a)
+                MOV     PA,                     checksum
+                CALL    write_long
+                JMP     main
+// Measure P8 rising-edge periods in the direct crystal clock domain, with a whole-record timeout.
+observe:
+                CALL    read_long
+                MOV     periods,    word
+                CALL    cleanup
+                HUBSET  0xf8
+                WAITX   aug(1000000)
+                HUBSET  0xfa
+                GETCT   deadline
+                ADD     deadline,   aug(10000000)
+// P9 excludes preparatory RCFAST edges from the independent measurement.
+.gate_low:      CALL    check_deadline
+                TESTP   9                           :wc
+    if(C)       JMP     .gate_low
+.gate_high:     CALL    check_deadline
+                TESTP   9                           :wc
+    if(!C)      JMP     .gate_high
+                CALL    rising_edge
+                GETCT   started
+                MOV     remaining,  periods
+.loop:          CALL    rising_edge
+                DJNZ    remaining,  .loop
+                GETCT   elapsed
+                SUB     elapsed,    started
+                MOV     failures,   0
+                JMP     observer_done
+// Poll complete low/high transitions, bounding a missing or too-slow stimulus independently of host I/O.
+rising_edge:
+.low:           CALL    check_deadline
+                TESTP   8               :wc
+    if(C)       JMP     .low
+.high:          CALL    check_deadline
+                TESTP   8               :wc
+    if(!C)      JMP     .high
+                RET
+check_deadline:
+                GETCT   temporary
+                SUB     temporary,  deadline
+                TESTB   temporary,  31          :wc
+    if(!C)      JMP     observer_timeout
+                RET
+observer_timeout:
+                MOV     failures,   1
+                MOV     elapsed,    0
+// Recover UART baud by returning to the same RCFAST oscillator before reporting.
+observer_done:
+                HUBSET  0xf8
+                WAITX   16
+                HUBSET  0xf0
+                CALL    cleanup
+                MOV     PA, 'O'
+                CALL    write_byte
+                MOV     PA, elapsed
+                CALL    write_long
+                MOV     PA, failures
+                CALL    write_long
+                // A timeout exits nested CALL frames, so reset the hardware return stack before the next command.
+                REP     1,  8
+                POP     temporary
+                JMP     main
+// Capture internal GIO/VIO/floating calibration-source results with no UART traffic during acquisition.
+adc_capture:
+                CALL    read_long
+                MOV     configuration,  word
+                CALL    read_long
+                MOV     sample_period,  word
+                CALL    read_long
+                MOV     total,          word
+                CALL    cleanup
+                WRPIN   configuration,  22
+                WXPIN   sample_period,  22
+                DIRH    22
+                MOV     remaining,      5
+.warm:          TESTP   22                              :wc
+    if(!C)      JMP     .warm
+                RDPIN   temporary,      22
+                DJNZ    remaining,      .warm
+                MOV     pointer,        aug(0x10000)
+                MOV     remaining,      total
+                MOV     checksum,       0
+                GETCT   started
+.loop:          TESTP   22                              :wc
+    if(!C)      JMP     .loop
+                RDPIN   temporary,      22
+                ADD     checksum,       temporary
+                WRLONG  temporary,      pointer
+                ADD     pointer,        4
+                DJNZ    remaining,      .loop
+                GETCT   elapsed
+                SUB     elapsed,        started
+                CALL    cleanup
+                MOV     PA,             'A'
+                CALL    write_byte
+                MOV     PA,             elapsed
+                CALL    write_long
+                ADD     checksum,       elapsed
+                ADD     checksum,       total
+                XOR     checksum,       aug(0x5a5a5a5a)
+                MOV     PA,             checksum
+                CALL    write_long
+                MOV     pointer,        aug(0x10000)
+                MOV     remaining,      total
+.send:          RDLONG  PA,             pointer
+                ADD     pointer,        4
+                CALL    write_long
+                DJNZ    remaining,      .send
+                JMP     main
+// Repeat a finite externally observed DAC pattern; all values are stimulus, not voltage references.
+dac_pattern:
+                CALL    read_long
+                MOV     configuration,  word
+                CALL    read_long
+                MOV     hold_ticks,     word
+                CALL    read_long
+                MOV     total,          word
+                CALL    read_long
+                MOV     pattern,        word
+                CALL    cleanup
+                DRVL    23
+                MOV     remaining,      total
+                DIRH    22
+                CMP     pattern,        2           :wz
+    if(Z)       JMP     .ramp
+                CMP     pattern,        3           :wz
+    if(Z)       JMP     .ramp
+                CMP     pattern,        4           :wz
+    if(Z)       JMP     .ramp
+.loop:          MOV     value,          0
+                CMP     pattern,        1           :wz
+    if(Z)       MOV     value,          127
+                CALL    dac_level
+                DRVH    23
+                MOV     value,          64
+                CMP     pattern,        1           :wz
+    if(Z)       MOV     value,          128
+                CALL    dac_level
+                DRVL    23
+                MOV     value,          128
+                CMP     pattern,        1           :wz
+    if(Z)       MOV     value,          127
+                CALL    dac_level
+                MOV     value,          255
+                CMP     pattern,        1           :wz
+    if(Z)       MOV     value,          128
+                CALL    dac_level
+                DJNZ    remaining,      .loop
+.done:          CALL    cleanup
+                MOV     PA,             'D'
+                CALL    write_byte
+                JMP     main
+// Hold every static code equally; ascending, descending and a full odd-multiplier permutation.
+.ramp:          MOV     code_index,     0
+.code:          MOV     value,          code_index
+                CMP     pattern,        3           :wz
+    if(Z)       XOR     value,          255
+                CMP     pattern,        4           :wz
+    if(Z)       MUL     value,          73
+    if(Z)       ADD     value,          19
+    if(Z)       AND     value,          255
+                CALL    dac_level
+                ADD     code_index,     1
+                CMP     code_index,     256         :wz
+    if(!Z)      JMP     .code
+                DJNZ    remaining,      .ramp
+                JMP     .done
+// Commit a static DAC code then hold it long enough for independent observation.
+dac_level:
+                SHL     value,  8
+                OR      value,  configuration
+                WRPIN   value,  22
+                WAITX   hold_ticks
+                RET
+// Exercise independent DAC update engines for a finite RCFAST interval, without UART activity.
+dac_engine:
+                CALL    read_long
+                MOV     configuration,                                      word
+                CALL    read_long
+                MOV     pattern,                                            word
+                CALL    read_long
+                MOV     increment,                                          word
+                CALL    read_long
+                MOV     hold_ticks,                                         word
+                CALL    read_long
+                MOV     value,                                              word
+                CALL    cleanup
+                OUTL    22
+                CMP     pattern,                                            2                   :wcz
+    if(!C)      JMP     .smart
+                // P22 selects DAC2 of this cog; the streamer can override its SETDACS background.
+                COGID   temporary
+                SHL     temporary,                                          8
+                OR      configuration,                                      temporary
+                OR      configuration,                                      P_CHANNEL
+                WRPIN   configuration,                                      22
+                DIRH    22
+                CMP     pattern,                                            1                   :wz
+    if(Z)       JMP     .stream
+                MOV     temporary,                                          value
+                AND     temporary,                                          255
+                SHL     temporary,                                          16
+                SHR     value,                                              24
+                SHL     value,                                              16
+                MOV     remaining,                                          hold_ticks
+                SHR     remaining,                                          2
+                // Two 2-clock instructions give a full low/high cycle every four system clocks.
+                REP     2,                                                  remaining
+                SETDACS temporary
+                SETDACS value
+                JMP     .done
+.stream:        MOV     pointer,                                            aug(0x10000)
+                MOV     remaining,                                          16
+// A circular 64-byte FIFO block supplies a repeating, independently recognizable pattern.
+.fill:          WRLONG  value,                                              pointer
+                ADD     pointer,                                            4
+                DJNZ    remaining,                                          .fill
+                RDFAST  1,                                                  aug(0x10000)
+                SETXFRQ increment
+                XINIT   aug(X_RFBYTE_8P_1DAC8 | X_DACS_X_0_X_X | 0xffff),   0
+                WAITX   hold_ticks
+                JMP     .done
+// Smart-pin modes require output-enable TT=01; Y is initialized while DIR is low.
+.smart:         OR      configuration,                                      P_OE
+                CMP     pattern,                                            2                   :wz
+    if(Z)       OR      configuration,                                      P_DAC_DITHER_PWM
+    if(!Z)      OR      configuration,                                      P_DAC_DITHER_RND
+                WRPIN   configuration,                                      22
+                WXPIN   256,                                                22
+                WYPIN   value,                                              22
+                DIRH    22
+                WAITX   hold_ticks
+.done:          CALL    cleanup
+                MOV     PA,                                                 'E'
+                CALL    write_byte
+                JMP     main
+// Observe a capacitor on P22 with the confirmed external 4.7k series resistor from P18.
+load_trial:
+                CALL    read_long
+                MOV     configuration,  word
+                CALL    read_long
+                MOV     hold_ticks,     word
+                CALL    read_long
+                MOV     total,          word
+                CALL    read_long
+                MOV     pattern,        word
+                CALL    cleanup
+                // Discharge only through the external series resistor, never strong GPIO on P22.
+                DRVL    18
+                WAITX   aug(10000000)
+                MOV     pointer,        18
+                CMP     pattern,        0       :wz
+    if(Z)       JMP     .cycles
+                DIRL    18
+                CMP     pattern,        2       :wz
+    if(Z)       JMP     .float
+                // With no capacitor, toggle the resistor's far end around a static DAC output.
+                CMP     pattern,        3       :wz
+    if(Z)       WRPIN   configuration,  22
+    if(Z)       DIRH    22
+    if(Z)       JMP     .cycles
+                MOV     pointer,        22
+                WRPIN   configuration,  22
+.cycles:        DRVL    pointer
+                WAITX   hold_ticks
+                DRVH    pointer
+                WAITX   hold_ticks
+                DJNZ    total,          .cycles
+                JMP     .discharge
+// The float control combines cap/probe/pad leakage and dielectric relaxation.
+.float:         DRVH    18
+                WAITX   aug(10000000)
+                DIRL    18
+                WAITX   hold_ticks
+.discharge:     CALL    cleanup
+                DRVL    18
+                WAITX   aug(10000000)
+                CALL    cleanup
+                MOV     PA,             'G'
+                CALL    write_byte
+                JMP     main
+// Release experiment pins after host inactivity; this cannot recover a stopped PLL/CPU clock.
+read_byte:
+                GETCT   deadline
+                ADD     deadline,   aug(40000000)
+.wait:          TESTP   63                          :wc
+    if(C)       JMP     .ready
+                GETCT   temporary
+                SUB     temporary,  deadline
+                TESTB   temporary,  31              :wc
+    if(C)       JMP     .wait
+                CALL    cleanup
+                GETCT   deadline
+                ADD     deadline,   aug(40000000)
+                JMP     .wait
+.ready:         RDPIN   PA,         63
+                SHR     PA,         24
+                RET
+// Wait for each calibrated UART transmit to complete.
+write_byte:
+                WYPIN   PA, 62
+                WAITX   1
+.wait:          TESTP   62      :wc
+    if(!C)      JMP     .wait
+                RET
+// Return a little-endian word, preserving the shared protocol scratch register.
+write_long:
+                MOV     bytes,  4
+.loop:          CALL    write_byte
+                SHR     PA,     8
+                DJNZ    bytes,  .loop
+                RET
+// Read a complete little-endian parameter before the experiment begins.
+read_long:
+                MOV     word,   0
+                MOV     bytes,  4
+.loop:          CALL    read_byte
+                SHR     word,   8
+                SHL     PA,     24
+                OR      word,   PA
+                DJNZ    bytes,  .loop
+                RET
+var clock_mode: LONG    0
+var safe_mode:  LONG    0
+var hold_ticks: LONG    0
+var increment:  LONG    0
+var work_count: LONG    0
+var signature:  LONG    0
+var failures:   LONG    0
+var remaining:  LONG    0
+var periods:    LONG    0
+var deadline:   LONG    0
+var started:    LONG    0
+var elapsed:    LONG    0
+var temporary:  LONG    0
+var configuration:
+                LONG    0
+var sample_period:
+                LONG    0
+var total:      LONG    0
+var pointer:    LONG    0
+var pattern:    LONG    0
+var value:      LONG    0
+var word:       LONG    0
+var bytes:      LONG    0
+var from_mode:  LONG    0
+var from_ticks: LONG    0
+var settle_ticks:
+                LONG    0
+var prepare_mode:
+                LONG    0
+var checksum:   LONG    0
+var code_index: LONG    0
+

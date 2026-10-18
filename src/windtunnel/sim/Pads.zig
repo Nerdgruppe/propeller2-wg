@@ -245,16 +245,18 @@ fn solve(pads: *const Pads, a: Vector, leakage: Vector, active: Mask, comptime l
     if (linear_shortcut and !@reduce(.Or, active & (pads.fast | internal_limited | external_limited))) {
         const i = pads.internal_regions[1];
         const e = pads.external_regions[1];
-        return (a * pads.voltage + i.offset + e.offset) / (a + leakage + i.conductance + e.conductance);
+        const g = leakage + i.conductance + e.conductance;
+        // Solve the voltage increment to avoid a timestep-dependent ulp bias at DC thresholds.
+        return pads.voltage + (i.offset + e.offset - g * pads.voltage) / (a + g);
     }
     var best = pads.voltage;
     var error_distance = infinity;
-    const history = a * pads.voltage;
     for (&pads.internal_regions) |*i| {
         for (&pads.external_regions) |*e| {
             const lower = @max(i.lower, e.lower);
             const upper = @min(i.upper, e.upper);
-            const candidate = (history + i.offset + e.offset) / (a + leakage + i.conductance + e.conductance);
+            const g = leakage + i.conductance + e.conductance;
+            const candidate = pads.voltage + (i.offset + e.offset - g * pads.voltage) / (a + g);
             const distance = @max(zero, @max(lower - candidate, candidate - upper));
             const choose = i.valid & e.valid & (lower <= upper) & (distance < error_distance);
             best = @select(f64, choose, candidate, best);

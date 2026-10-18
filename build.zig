@@ -269,11 +269,13 @@ pub fn build(b: *std.Build) !void {
 
     // Hardware capture goldens are test data; named embeds keep them outside src.
     const usb_vectors = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/usb-vectors.json") });
+    const clock_vectors = b.createModule(.{ .root_source_file = b.path("tests/windtunnel/clock-vectors.json") });
     const usb_transmit_vectors = b.createModule(.{
         .root_source_file = b.path("tests/windtunnel/usb-transmit-vectors.json"),
     });
     for ([_]*std.Build.Module{ windtunnel_mod, windtunnel_suite, debugger_module }) |module| {
         module.addImport("usb-vectors", usb_vectors);
+        module.addImport("clock-vectors", clock_vectors);
         module.addImport("usb-transmit-vectors", usb_transmit_vectors);
     }
 

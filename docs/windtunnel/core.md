@@ -44,6 +44,11 @@ pins, counter and clock configuration. It detaches host tracing, terminal and
 debugger links. Hosts may explicitly attach them again; boot ROM execution is not
 restarted automatically.
 
+The [clock model](clocks.md) supplies shared physical time for CPU edges, pads,
+VCD and server pacing. `--sim ideal` uses exact typical values; `--sim realistic`
+uses bounded oscillator variation and the characterized PLL responses.
+`--rcfast`, `--rcslow`, `--crystal` and `--seed` override these defaults.
+
 The CLI behaves as a raw serial terminal on P63/P62. Startup options are independent:
 
 | Options | Startup |

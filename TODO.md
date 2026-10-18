@@ -140,6 +140,11 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 
 ### Random Task Collection
 
+- Validate hub execution below `$400`: wraparound behavior makes this possible.
+  Is relative branching possible in this area?
+- Prove or disprove that every kind of branch (relative or absolute) restores
+  the PC rules and execution behavior, including cogexec with PC ≥ `$400`
+  and hubexec with PC < `$400`.
 - Verify the software FIFO write path's cycle claim: `write_fifo` currently
   makes newly queued bytes eligible after two clocks, but actual visibility in
   hub RAM is governed by the cog's rotating hub RAM slice, partial-long

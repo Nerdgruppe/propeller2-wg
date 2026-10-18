@@ -1965,3 +1965,316 @@ The exported CSV has 80 ns spacing, 40 times fewer samples than the displayed
 500 MSa/s/3.5M record; it is suitable evidence for this pulse period/duty ratio, not
 full-resolution transient fidelity. Source, CSV receipt, plot and limits are recorded in
 `src/scopecreep/diagnostics/p2-stimulus-2026-10-17/README.md`.
+
+## Physical clock and analog characterization (2026-10-17)
+
+These are observations of the connected primary/P2-EVAL specimens at nominal rails,
+without calibrated temperature, voltage or absolute time references. Full per-trial
+records and corrections: [physical findings](measurements/physical-findings.md).
+Equipment exclusions: [physical limitations](measurements/physical-limitations.md).
+
+- Crystal-referenced gated ratios put primary RCFAST at25.82817..25.82887MHz and
+  RCSLOW at20.2756..20.2935kHz; secondary RCFAST25.57113..25.62337MHz and
+  RCSLOW20.5368..20.5484kHz. These use nominal20MHz board crystals, not an
+  absolute-frequency calibration. An earlier ungated run was invalidated.
+- Primary: all64 PLL input dividers at nominal160/320MHz VCO, and all16
+  postdivider settings at selected D=1/8/64, passed independent divided-clock
+  rate checks and short host-known arithmetic/hub trials. This does not prove
+  every D/M/P combination. Analyzer timebase accuracy is unknown.
+- Nominal20MHz VCO worked in selected configurations; this is not a lower bound.
+  Some nominal390/400MHz VCO configurations instead produced~192.14..192.31MHz
+  system clocks with P=2. Multiplying the output by programmedP suggests
+  ~384.27..384.63MHz VCO, conditional on correct postdivision; no internal PLL
+  saturation mechanism or production frequency limit is established.
+- Short settled CPU trials passed nominal40..360MHz, then a returned signature
+  failed at380MHz while the independently observed clock continued. That initial
+  trial lacked a UART payload checksum. A fresh checksummed360/380MHz repeat
+  again passed360MHz and failed380MHz (297205926 instead of4005496316), with
+  the expected physical output clock still present and both cleanup replies
+  acknowledged. This is not an isolated CPU failure limit.
+- Live retuning P=2→1 at nominal320MHz VCO produced56 incorrect nominally-zero
+  counters (two also wrong signatures) and a subsequent hang. All340 completed
+  live-transition replies had additive checksums verified; all reached the
+  expected final output rate. There was no hub workload in these transitions,
+  so the nonzero counters are not counts of detected hub-memory mismatches.
+  Settled320MHz success cannot justify this live transition. Host reset/reload
+  recovered both boards. Retuning through RCFAST remains the default approach.
+- Consecutive16-period averages of exported clock/1024 reached/stayed within1%
+  of the final rate by~410µs for D-only160→80MHz and~53..108µs for other tested
+  live transitions. These coarse output-rate bounds are not internal lock times,
+  individual-period settling, jitter or proof of correct transient execution.
+- Both boards returned32768-sample internal ADC-source records at SINC2 X=12
+  with additive checksums. Their RMS counts combine internal source, modulator,
+  filtering and clock behavior; neither voltage accuracy nor ADC ENOB follows.
+- P22 static DAC ramps resolve all256 plateaus with the scope in all4range
+  configurations. Approximate slopes are13.25/8.00/13.09/7.97mV per code for
+  range-field values0/1/2/3. Combined fitted residuals are~18..20mV with the
+  scope at1V/div,10×. These include unqualified8-bit scope nonlinearity,
+  quantization, gain, offset and probe effects; they are not certified DAC INL/DNL.
+
+Single-channel scope records can retain7000samples at1ns spacing at500ns/div;
+two-channel records retained3500samples at2ns. The100MHz analog bandwidth remains
+unchanged. At10ms/div the CSV retained87500points at1.6µs despite a200MSa/s display;
+that slow export supports DAC plateaus, not fast settling/glitch measurements.
+
+Primary PLL enable-wait pilot:24checksummed work=0 replies/final-rate checks passed,
+three trials at each programmed wait0..524288RCticks, with50ms source-disabled
+spacing. Zero-wait cases needed~1.03..1.08ms for retained16-period averages to
+stay within1%of final output frequency; a wait32768RCticks (~1.269ms here) already
+met that criterion in the first~106µs block. This does not establish a minimum
+safe startup wait, cold power-on performance, or CPU workload correctness.
+
+P22 range-field2 static four-level DAC sequence retained7000samples at1ns. Two
+full-scale90→10%falling observations were~4.93ns; four-code frame~3.87194µs.
+The edge includes100MHzscope,passive10×probe and pad/load response; it does not
+certify intrinsic DAC settling,glitch energy,SETDACS/streamer rate or jitter.
+
+### Supply-path measurement control (2026-10-17)
+
+With CH1 on P22 and CH2 on VCCIO20–23, fast four-level DAC activity produced
+synchronized CH2 transients. Large transients also persisted when the user shorted
+CH2's tip to its ground clamp on a ground pad. Therefore the rail-channel spikes
+cannot be assigned to P2 supply ripple alone: the probe, ground or instrument path
+contributes. This is a measurement limitation, not evidence of a defective reference
+or a quiet supply. Quantitative grounded-control analysis awaits retrieval of the
+on-scope CSV files after an MTP transfer fault. See the physical findings and
+limitations for evidence status; the accepted control screen is retained locally.
+
+The saved grounded-control samples were retrieved after reconnecting the USB data
+cable. At CH2 AC 20 mV/div, 10×, 500 MS/s, the grounded path had 6.605 mV RMS
+and a 130.28 mV peak-to-peak averaged DAC falling-edge response; the VCCIO path
+had 6.251 mV RMS and 127.54 mV respectively. This supports a substantial
+measurement-path contribution, not a calibrated estimate of supply-only noise.
+Different probe termination/geometry prevents treating waveform subtraction as
+correction. CH1 display-off left visible CH2 disturbances at 500 MS/s; that setting
+does not establish analog-front-end shutdown or isolate the responsible path.
+
+### Independent DAC engine observations (2026-10-17)
+
+On primary P22 at RCFAST, a 64-byte circular hub FIFO feeding the streamer
+produced the expected repeating codes0/85/170/255. Qualified CH1-only captures
+retain7000samples at1ns. Observed update rates for NCO fractions1,1/2,1/4:
+25.82225,12.91797,6.45742MS/s, respectively. Separate two-instruction SETDACS
+REP produced6.458759MHz full-scale cycles (12.917518Mupdates/s). These establish
+observable waveforms at selected rates, not silicon maximum rates or intrinsic
+settling. Scope timebase, passive-probe loading and100MHz bandwidth remain.
+Immediate streamer source data shifts out and then holds its last value; use an
+explicit circular FIFO for a continuously repeating pattern.
+
+At AC20mV/div, a140µs capture of PWM half-code0x8080 has an approximately101kHz
+periodic component, Hann-window sine amplitude8.15mV, versus0.39mV at the same
+frequency for integer PWM0x8000 and0.51mV for random dither0x8080. This is a
+combined instrument/pad observation consistent with the documentedFclk/256
+PWM component. It does not establish16-bit linearity, DC accuracy, ENOB or
+intrinsic DAC noise. See physical-findings.md and preserved CSV/analysis sources.
+
+### DAC shunt-loading model and resolution limit (2026-10-17)
+
+Matching256-code sweeps with a marked4.7kΩ±1%shunt and then no shunt give
+conditional global slope-ratio resistance estimates~931/511/122Ωforfields0/1/2.
+These are coarse measured-path Thevenin fits, with scope INL/gain and inter-run
+rail/temperature errors unresolved. Field3is unresolved: its21Ωglobal fit is
+smaller than the47Ωsensitivity to a hypothetical1%ratio error and must not be
+reported as physical output resistance or a contradiction of nominal75Ω.
+Within-record cycle-pair spreads are repeatability only, not uncertainty bounds.
+Local64-code fit variability cannot establish a silicon I–V curve. A more
+sensitive alternating-load fixture is prepared; see physical-findings.md.
+
+### Differential DAC loading observations (2026-10-17)
+
+With4.7kΩbetweenP18andP22, staticDACcode128onP22 and alternatingP18drive,
+independent pairedscopeCSVs give conditionalThevenin estimates~948.9/567.8Ω
+forfields0/1at~1.076kHz,117.92/117.14Ωforfield2at~1.076/4.296kHz,
+and70.86/72.02Ωforfield3atthesamerates. Central25..75%plateaus exclude
+fastpickup;1%externalresistor,scopecross-channelgain/linearity,ACresponseand
+probecontributionsremain. Frequencycomparisons agreewithin~0.7%/1.6%for
+fields2/3;thisisnotanabsoluteaccuracybound. A groundedCH1tipcontrolis
+requestedbutnotyetperformed,soanalog attributionremainsconditional. This
+methodresolvestheearliershuntfit'sfield3ambiguity;donotuseits21Ωfitas
+siliconresistance. SeephysicalfindingsforeachrawCSV/SHAandcyclemin/mean/max.
+
+## 2026-10-18 Saleae 100 MS/s: pilot
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.005053 MHz, final 160.004769 MHz. UART checksum=False, host-known workload=False. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/pilot/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: control-160-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004637 MHz, final 160.004358 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/control-160-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-up-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004840 MHz, final 200.005503 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 16.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-up-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-down-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 200.005848 MHz, final 160.004621 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 16.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-down-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: D-only-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004974 MHz, final 80.002465 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 24.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/D-only-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: D-M-same-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004195 MHz, final 160.004424 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/D-M-same-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: P-down-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 320.008839 MHz, final 160.004641 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/P-down-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-up-r2
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.005252 MHz, final 200.005763 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 16.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-up-r2/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-down-r2
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 200.006001 MHz, final 160.004555 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 16.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-down-r2/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: D-only-r2
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004124 MHz, final 80.002522 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 24.0 µs; 0.5% 24.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/D-only-r2/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-cold-w0-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source unqualified MHz, final 160.004912 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 951.9999999999999 µs; 0.5% 951.9999999999999 µs. Enable-to-select marker interval 0.310 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-cold-w0-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-cold-w0-r2
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.828938 MHz, final 160.004967 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 927.9999999999999 µs; 0.5% 936.0 µs. Enable-to-select marker interval 0.470 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-cold-w0-r2/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-warm-w0-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.822830 MHz, final 160.004271 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 32.0 µs; 0.5% 32.0 µs. Enable-to-select marker interval 0.310 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-warm-w0-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-cold-w0-r3
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.831223 MHz, final 160.004996 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 951.9999999999999 µs; 0.5% 951.9999999999999 µs. Enable-to-select marker interval 0.470 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-cold-w0-r3/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-warm-w0-r2
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.824973 MHz, final 160.004770 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 32.0 µs; 0.5% 32.0 µs. Enable-to-select marker interval 0.310 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-warm-w0-r2/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-warm-w0-r3
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.819499 MHz, final 160.005037 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 32.0 µs; 0.5% 32.0 µs. Enable-to-select marker interval 0.310 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-warm-w0-r3/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-cold-w0-div16-r1
+
+**Independent divided-clock observation.** P0 PWM/16, P1 marker; source 25.824864 MHz, final 160.004485 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 936.0 µs; 0.5% 936.0 µs. Enable-to-select marker interval 0.460 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-cold-w0-div16-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-warm-w0-div16-r1
+
+**Independent divided-clock observation.** P0 PWM/16, P1 marker; source 25.816800 MHz, final 160.004856 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 32.0 µs; 0.5% 32.0 µs. Enable-to-select marker interval 0.310 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-warm-w0-div16-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-xi-cold-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.829426 MHz, final 20.000609 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 3976.0000000000005 µs; 0.5% 3976.0000000000005 µs. Enable-to-select marker interval 0.470 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-xi-cold-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-up-div8-r1
+
+**Independent divided-clock observation.** P0 PWM/8, P1 marker; source 160.005062 MHz, final 200.006163 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 16.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-up-div8-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-down-div8-r1
+
+**Independent divided-clock observation.** P0 PWM/8, P1 marker; source 200.005449 MHz, final 160.004323 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 16.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-down-div8-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: D-only-div8-r1
+
+**Independent divided-clock observation.** P0 PWM/8, P1 marker; source 160.004608 MHz, final 80.002471 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 16.0 µs; 0.5% 24.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/D-only-div8-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: D-M-same-r2
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004728 MHz, final 160.004363 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/D-M-same-r2/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: P-down-r2
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 320.009610 MHz, final 160.005066 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/P-down-r2/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: P-up-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004991 MHz, final 320.009363 MHz. UART checksum=True, host-known workload=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/P-up-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: P-up-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 160.004991 MHz, final 320.009363 MHz. UART checksum=True, seed/workload+elapsed=False, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/P-up-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: vco380-D1-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 190.005708 MHz, final 190.005703 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/vco380-D1-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: vco390-D2-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 193.226797 MHz, final 192.821225 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/vco390-D2-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: vco400-D1-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 193.303441 MHz, final 192.856931 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/vco400-D1-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: vco400-D8-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 193.294675 MHz, final 192.872741 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/vco400-D8-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: vco400-D32-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 193.294398 MHz, final 192.837402 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 8.0 µs; 0.5% 8.0 µs. Enable-to-select marker interval 0.000 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/vco400-D32-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-cold-w32768-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.822194 MHz, final 160.004911 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 7.999999999999978 µs; 0.5% 7.999999999999978 µs. Enable-to-select marker interval 1269.410 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-cold-w32768-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-xi-nco-cold-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.832060 MHz, final 20.000569 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 712.0 µs; 0.5% 712.0 µs. Enable-to-select marker interval 0.470 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-xi-nco-cold-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-cold-nco-w0-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.832003 MHz, final 160.004803 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 927.9999999999999 µs; 0.5% 927.9999999999999 µs. Enable-to-select marker interval 0.470 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-cold-nco-w0-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: startup-warm-nco-w0-r1
+
+**Independent divided-clock observation.** P0 PWM/32, P1 marker; source 25.823118 MHz, final 160.004982 MHz. UART checksum=True, seed/workload+elapsed=True, PWM cycle-count consistency=True. Conservative 8 µs-block settling-end bounds after source-select marker: 1% 32.0 µs; 0.5% 32.0 µs. Enable-to-select marker interval 0.310 µs. 8us PWM output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/startup-warm-nco-w0-r1/analysis.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-up-div8-r1
+
+**Independent divided-clock observation.** P0 PWM/8, P1 marker; source 160.005062 MHz, final 200.006163 MHz. UART checksum=True, seed/workload+elapsed=True, exported-clock cycle-count consistency=True. Conservative 2 µs-block settling-end bounds after source-select marker: 1% 4055.9999999999995 µs; 0.5% None µs. Enable-to-select marker interval 0.000 µs. 2us divided-clock output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-up-div8-r1/analysis-2us.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: M-down-div8-r1
+
+**Independent divided-clock observation.** P0 PWM/8, P1 marker; source 200.005449 MHz, final 160.004323 MHz. UART checksum=True, seed/workload+elapsed=True, exported-clock cycle-count consistency=True. Conservative 2 µs-block settling-end bounds after source-select marker: 1% 3877.9999999999995 µs; 0.5% None µs. Enable-to-select marker interval 0.000 µs. 2us divided-clock output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/M-down-div8-r1/analysis-2us.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## 2026-10-18 Saleae 100 MS/s: D-only-div8-r1
+
+**Independent divided-clock observation.** P0 PWM/8, P1 marker; source 160.004608 MHz, final 80.002471 MHz. UART checksum=True, seed/workload+elapsed=True, exported-clock cycle-count consistency=True. Conservative 2 µs-block settling-end bounds after source-select marker: 1% 4350.0 µs; 0.5% None µs. Enable-to-select marker interval 0.000 µs. 2us divided-clock output-rate fits, quantization bounded; uncalibrated timebase, threshold, marker pipeline and divided-clock averaging remain; not internal VCO lock, phase noise or runt-pulse qualification. Evidence `captures/physical/2026-10-18/pll-100ms/D-only-div8-r1/analysis-2us.json`, raw CSV, exact firmware, UART response and hashes. A complete UART response occurs only after explicit P0/P1 cleanup.
+
+## PLL physical model evidence, Saleae100MS/s — 2026-10-18
+
+Detailed accepted results and exclusions: [PLL remeasurement](measurements/pll-100ms.md); [stateful VCO implementation plan](windtunnel/vco-simulation-plan.md). PrimaryP0/P1 only; scopeprobesdisconnected; secondary/interboard/analogpinsuntouched.32clockprofilecapturespasschecksum+commandedPWM/NCOcounts;31alsofunctional/elapsedpasses.8µs fits with exact slope-quantization interval comparisons: M-up/down1%end16µs(3each),D-only16/24/16µs,Pdown+samefreqD/M8µs(2each),Pup8µsbutelapsed2992210vs~1280012wrong(checksum/seed/zero valid). Newboundsreplaceold53..410µs temporalresolution,not internal lock measurement. PWM/8Mup2µs rate205.176MHzover4..6µs,conservativequantization~0.761%,actualovershootresolved.2µsprofilescannotcertify1%settling. Firstorder/criticalmonotoniccandidatesmissovershootandD-onlyphase(RMS~75/56ns),sooneexponential/universallocktimerinsufficient;fittedlagnotphysicaldeadtime.
+
+Crystal+PLLsoftware-enablezero-wait5qualifiedcapturesPWM32/16,NCO32:1%end928..952µs(mean939.2),8µs-ratepeak385.75..387.11MHz(mean386.34)for160MHztarget. CrystalprewarmedPLL-only5captures1%end32µs. Wait32768RCticksmeasured1269.410µs=>first8µsblockalreadysettled/work1000PASS. AcquisitionmustprogresswhileCPUstillRCFAST. No universal crystalreadydelay/power-onclaim; divided-outputquietgaps535.88..670.56µsnotdirectzeroVCOproof. NCO-onlyXIstartup712µsonecontrolqualified;PWMXIrecordshort2048pulsesexcluded;dualexporterXIcontrolnoUARTexcluded,mechanismunknown. No fabricatedPWM-siliconunderflowclaim.
+
+VCO380D1M19/P2tracks380.0114MHzderived.390/400targetsD2/1/8/32yield386.45..386.61MHzbeforemarkerand385.64..385.75MHztail;withintrialdrift~.81..93MHzplusprior~384.44MHzprecludesidentifieduniversal384MHzclamp. Specimen/PVT/currentunknown. Planonly: explicitclockstate+integratedphysicaltime,backgroundacquisition,Ppreservesloop,empiricalmeasuredprofilesorqualifiedslew/dampedmodel,coveragewarnandholdoutforward100MSsamplingvalidation. NoWTsourcechanged.
+
+Allnewstimuliended;auxfailurefollowedfreshROMuploadRCFAST+explicitDIRL/WRPIN0P0/P1andUART'R'. Idlecaptureconfigured1msactuallyretained199.557ms/noedges. Utilityfixtureformatted+assembledusingexistingcompiledPropan;analysisstdlibselftest/ruffpass. NoZigcompilerused.
+
+## Datasheet RC oscillator nominal clarification — 2026-10-18
+
+The checked-in [datasheet](p2/datasheet.md#system-clock) describes RCFAST as20MHz+ (minimum20MHz), nominally~24MHz; AC characteristics give20/24/30MHz min/typ/max, and RCSLOW12/20/30kHz. Thus20MHz was a conservative simulator/test assumption, not the current datasheet's typical RCFAST. The2022-11-01change-log explicitly changed~20MHz to20+MHz. Userrequested25MHzroom-temperature simulation point is plausible within that range; this session's specimens were~25.6–25.83MHz. None establishes25MHzasapopulationguarantee or temperaturelaw.
+
+
+## Windtunnel clock model scope (2026-10-18)
+
+Implementation uses datasheet typical RCFAST24MHz/RCSLOW20kHz in ideal mode;
+realistic initial ranges20..30MHz/12..30kHz. Seeded bounded random-walk drift is
+an uncertainty assumption, not measured phase noise or a temperature law. Crystal
+20MHz default has no invented tolerance. See [clock options and quality](windtunnel/clocks.md).
+
+Frozen empirical integrated-phase profiles cover measured primary-board20MHz/
+15pF-reference startup, M8↔10/D1, and M8/D1→2. Three training and six independent
+repeat/faster-exporter records predict external divided phase within6.1nsRMS/
+20.9nspeak after initial/tail scale normalization and constant phase alignment;
+chosen gates10nsRMS/30nspeak. Actual PWM/32 firmware→VCD→100MS/s sampling gives
+M-up16µs1%block-end settling and204.33MHz2µspeak versus205.18MHzhardware control.
+Startup coverage is weaker; no universal transfer function, single-cycle jitter,
+analog loop parameters or instruction-failure model is identified. Unsupported
+transitions fall back explicitly to ideal arithmetic; nontracking tails remain
+specimen points, not a universal VCO clamp. No new hardware run performed for
+implementation validation.

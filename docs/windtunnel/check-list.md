@@ -182,8 +182,9 @@ and `\\` escapes. Nonempty stdin requires `stdin-after`, which must be a prefix 
 the expected stdout. Program fixtures support symbol patches and serial checks;
 cog fixtures support state checks and reserve serial I/O for the reporter.
 
-Loaded images receive the serial ROM's nominal RCFAST handoff: 20 MHz, cleared
-UART modes and DIR, and retained 2 Mbaud 8N1 dividers in pins 62 and 63. Program
+Loaded images receive the serial ROM's RCFAST handoff: configured RCFAST (24 MHz
+typical in ideal mode), cleared UART modes and DIR, and retained 2 Mbaud 8N1
+dividers derived from the initial actual RCFAST sample in pins 62 and 63. Program
 fixtures can restore TX/RX mode without WXPIN or a startup delay. The hardware
 ROM calibrates those dividers against the upload stream. Keep the host at
 2 Mbaud to avoid a runtime baud change. Cog reporters use this same handoff.

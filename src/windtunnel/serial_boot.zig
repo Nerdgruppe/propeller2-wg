@@ -5,13 +5,14 @@ const smart_pin = @import("sim/smart_pin.zig");
 
 pub const baudrate: u32 = 2_000_000;
 
-/// Prepare nominal 8N1 RX/TX dividers for a directly loaded image at 20 MHz RCFAST.
+/// Prepare 8N1 RX/TX dividers for the configured initial RCFAST sample.
 /// Real ROM boot calibrates these from the upload waveform instead, retaining them across handoff.
 pub fn prepare(hub: *Hub, rate: u32) void {
     const configured = hub.io.setClock(0xf0);
     std.debug.assert(configured);
     std.debug.assert(rate != 0);
-    const divider: u32 = @intCast(((@as(u64, 20_000_000) << 16) / rate) & 0xffff_ff00 | 7);
+    const ticks: u64 = @intFromFloat(hub.io.clock.frequency() * 65536 / @as(f64, @floatFromInt(rate)));
+    const divider: u32 = @intCast(ticks & 0xffff_ff00 | 7);
     hub.io.pins[62].smart.registers.x = divider;
     hub.io.pins[63].smart.registers.x = divider;
 }
@@ -36,12 +37,13 @@ pub fn start(hub: *Hub) !void {
 pub const Host = struct {
     io: std.Io,
     rate: u32,
-    remainder: u64 = 0,
+    next_bit_seconds: f64 = 0,
 
     /// Send complete UART frames, carrying fractional system clocks across bits and calls.
     pub fn write(host: *Host, hub: *Hub, bytes: []const u8) !void {
-        if (host.rate == 0 or host.rate > hub.io.clock_frequency)
+        if (host.rate == 0)
             return error.InvalidBaudrate;
+        host.next_bit_seconds = @max(host.next_bit_seconds, hub.io.clock.seconds);
         for (bytes) |byte| {
             const frame = (@as(u10, byte) << 1) | 0x200;
             for (0..10) |bit| {
@@ -53,10 +55,12 @@ pub const Host = struct {
                         0,
                     .resistance = 1,
                 });
-                host.remainder += hub.io.clock_frequency;
-                const clocks = host.remainder / host.rate;
-                host.remainder %= host.rate;
-                try advance(host.io, hub, clocks);
+                host.next_bit_seconds += 1 / @as(f64, @floatFromInt(host.rate));
+                while (hub.io.clock.seconds < host.next_bit_seconds) {
+                    try host.io.checkCancel();
+                    if (hub.step() != .normal)
+                        return error.BootInterrupted;
+                }
             }
         }
     }
@@ -79,7 +83,9 @@ fn advance(io: std.Io, hub: *Hub, clocks: u64) !void {
 
 /// Wait for a complete ROM reply and reject checksum errors or unexpected firmware responses.
 fn reply(io: std.Io, hub: *Hub, output: *std.Io.Writer, expected: []const u8, rate: u32) !void {
-    const timeout = hub.io.clock_frequency / 100 + 256 * hub.io.clock_frequency / rate;
+    const timeout: u64 = @intFromFloat(
+        hub.io.clock.frequency() * (0.01 + 256 / @as(f64, @floatFromInt(rate))),
+    );
     for (0..timeout) |_| {
         if (output.buffered().len >= expected.len) {
             if (!std.mem.eql(u8, expected, output.buffered()))
@@ -113,7 +119,7 @@ pub fn load(io: std.Io, hub: *Hub, image: []const u8, rate: u32) !void {
     hub.io.pins[62].smart.tx_mode = .{ .emulated = &sink };
     try start(hub);
     // Match the hardware loader's 20 ms reset-to-autobaud allowance, in simulated time.
-    try advance(io, hub, hub.io.clock_frequency / 50);
+    try advance(io, hub, @intFromFloat(hub.io.clock.frequency() / 50));
     var host: Host = .{ .io = io, .rate = rate };
     try host.write(hub, "> Prop_Chk 0 0 0 0\r");
     try reply(io, hub, &response, "\r\nProp_Ver G\r\n", rate);

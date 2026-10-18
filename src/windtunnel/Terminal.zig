@@ -161,7 +161,8 @@ pub fn simulate(terminal: *Terminal, hub: *Hub, session: Session) anyerror!u8 {
         } else {
             try serial_boot.start(hub);
             // Give the ROM the same reset allowance as an upload, then calibrate its UART.
-            for (0..hub.io.clock_frequency / 50) |clock| {
+            const settle_clocks: u64 = @intFromFloat(hub.io.clock.frequency() / 50);
+            for (0..settle_clocks) |clock| {
                 if (clock % 256 == 0) {
                     try terminal.io.checkCancel();
                 }

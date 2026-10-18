@@ -7,19 +7,30 @@ const zgui = @import("zgui");
 const gl = zopengl.bindings;
 const windtunnel = @import("windtunnel");
 const args_parser = @import("args");
+const Oscillator = windtunnel.ClockConfiguration.Oscillator;
 
 const CliArgs = struct {
     help: bool = false,
     image: ?[]const u8 = null,
+    sim: windtunnel.SimulationProfile = .ideal,
+    rcfast: ?Oscillator = null,
+    rcslow: ?Oscillator = null,
+    crystal: ?Oscillator = null,
+    seed: ?u64 = null,
 
     pub const shorthands = .{ .h = "help" };
 
     pub const meta = .{
-        .usage_summary = "[--help] [--image <file>]",
+        .usage_summary = "[--help] [--image <file>] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N]",
         .full_text = "Windtunnel's graphical interface for the Parallax Propeller 2 simulator.",
         .option_docs = .{
             .help = "Prints this help text",
             .image = "Loads the initial hub image from a file",
+            .sim = "Typical ideal values or realistic bounded clocks and empirical PLL profiles",
+            .rcfast = "RCFAST in MHz: 24-4+6 or 25.23+3.2ppm (default follows --sim)",
+            .rcslow = "RCSLOW in MHz or with Hz/kHz/MHz; ranges accept ppm, ppb, % and absolute units",
+            .crystal = "XI clock with the same syntax (default 20 MHz, unspecified tolerance is fixed)",
+            .seed = "Clock drift RNG seed; omitted uses entropy, selected seed is printed",
         },
     };
 };
@@ -47,7 +58,17 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     var host_io = init.io;
-    try gui.hub.init(.ideal);
+    gui.configuration_draft = switch (cli.options.sim) {
+        .ideal => .ideal,
+        .realistic => .realistic,
+    };
+    windtunnel.configureClocks(init, &gui.configuration_draft, .{
+        .rcfast = cli.options.rcfast,
+        .rcslow = cli.options.rcslow,
+        .crystal = cli.options.crystal,
+        .seed = cli.options.seed,
+    });
+    try gui.hub.init(gui.configuration_draft);
     gui.hub.debugger = &gui.debugger;
 
     if (cli.options.image) |path| {
@@ -555,7 +576,12 @@ const GUI = struct {
 
         gui.logWindowSize("Hub", zgui.getWindowSize());
         const hub = &gui.hub;
-        zgui.text("CT {} | clock 0x{X:0>8} | {} Hz", .{ hub.counter, hub.io.clock_mode, hub.io.clock_frequency });
+        zgui.text("CT {} | clock 0x{X:0>8} | {d:.3} Hz", .{
+            hub.counter,
+            hub.io.clock_mode,
+            hub.io.clock.frequency(),
+        });
+        zgui.text("Clock seed {} | {t} | acquiring {} | unsafe P-up {}", .{ hub.io.clock.configuration.seed, hub.io.clock.coverage, hub.io.clock.acquiring(), hub.io.clock.unsafe_postdivider_up });
         if (header("Random generator", .{})) {
             if (zgui.beginTable("Random generator", .{
                 .column = 2,
@@ -589,9 +615,7 @@ const GUI = struct {
                 gui.step_requested = true;
             }
         }
-        if (zgui.inputScalar("Crystal frequency Hz", u64, .{ .v = &hub.io.crystal_frequency })) {
-            _ = hub.io.setClock(hub.io.clock_mode);
-        }
+        zgui.text("Crystal {:.3} Hz; edit clocks in System Configuration and reinitialize", .{hub.io.clock.crystal.specification.frequency});
         _ = hexInput("Random seed", &gui.seed, false);
         if (zgui.button("Seed random", .{})) {
             hub.configure(gui.seed | 0x80000000);
@@ -681,6 +705,20 @@ const GUI = struct {
         zgui.text("Active analog oversampling: {d}x", .{gui.hub.system_configuration.oversample});
         _ = zgui.inputScalar("Analog samples per clock (>= 1)", u32, .{ .v = &draft.oversample });
         zgui.textUnformatted("Analog substeps only; cogs and smart pins keep the system clock.");
+        if (header("Clock sources", .{})) {
+            _ = zgui.inputScalar("Drift RNG seed", u64, .{ .v = &draft.clocks.seed });
+            const clock_behavior = if (draft.clocks.isIdeal())
+                "ideal"
+            else
+                "measured profiles";
+            zgui.text("PLL behavior: {s}", .{clock_behavior});
+            inline for (.{ "rcfast", "rcslow", "crystal" }) |name| {
+                const spec = &@field(draft.clocks, name);
+                quantityInput(name ++ " nominal (MHz)", &spec.frequency, 1e-6);
+                quantityInput(name ++ " minus (MHz)", &spec.below, 1e-6);
+                quantityInput(name ++ " plus (MHz)", &spec.above, 1e-6);
+            }
+        }
         quantityInput("VIO (V)", &draft.vio_voltage, 1);
         quantityInput("Digital threshold / VIO", &draft.threshold_ratio, 1);
         quantityInput("Schmitt low / VIO", &draft.schmitt_low_ratio, 1);

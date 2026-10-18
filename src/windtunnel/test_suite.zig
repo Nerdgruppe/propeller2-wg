@@ -1659,7 +1659,7 @@ test "RCFAST hello world preserves inherited ROM baud timing and drains UART wit
     for ([_]u32{ 0x000a_0007, 0x000b_8007, 0x000f_0007 }) |divider| {
         try hub.init(.ideal);
         serial_boot.prepare(hub, serial_boot.baudrate);
-        try std.testing.expectEqual(@as(u32, 0x000a_0007), hub.io.pins[63].smart.registers.x);
+        try std.testing.expectEqual(@as(u32, 0x000c_0007), hub.io.pins[63].smart.registers.x);
         @memcpy(hub.memory[0..compiled.image.len], compiled.image);
         var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
         defer output.deinit();
