@@ -1,0 +1,769 @@
+//? WINDTUNNEL CHECK LIST
+//? timeout-ms: 3000
+//? post: cog[*].c == false
+//? post: cog[*].z == true
+//? const: short_offset = 0
+//? run: "cog-00400-calld-pointer-abs-00180"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 0
+//? const: target = 384
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x181
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00400-calld-pointer-abs-00380"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 0
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00400-calld-pointer-abs-00480"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 0
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00400-calld-pointer-rel-00180"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 1
+//? const: target = 384
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x181
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00400-calld-pointer-rel-00380"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 1
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00400-calld-pointer-rel-00480"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 1
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00400-calld-register-abs-00180"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 2
+//? const: target = 384
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x181
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00400-calld-register-abs-00380"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 2
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00400-calld-register-abs-00480"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 2
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00400-calld-register-rel-00380"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 3
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? const: short_offset = -129
+//? run: "cog-00400-calld-register-rel-00480"
+//? const: domain = 1
+//? const: probe_pc = 1024
+//? const: form = 3
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000401
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? const: short_offset = 127
+//? run: "cog-00401-calld-pointer-abs-00380"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 0
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00401-calld-pointer-abs-00480"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 0
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00401-calld-pointer-rel-00380"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 1
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00401-calld-pointer-rel-00480"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 1
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00401-calld-register-abs-00380"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 2
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00401-calld-register-abs-00480"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 2
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00401-calld-register-rel-00380"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 3
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? const: short_offset = -130
+//? run: "cog-00401-calld-register-rel-00480"
+//? const: domain = 1
+//? const: probe_pc = 1025
+//? const: form = 3
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000402
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? const: short_offset = 126
+//? run: "cog-00404-calld-pointer-abs-00380"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 0
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00404-calld-pointer-abs-00480"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 0
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00404-calld-pointer-rel-00380"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 1
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00404-calld-pointer-rel-00480"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 1
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00404-calld-register-abs-00380"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 2
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "cog-00404-calld-register-abs-00480"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 2
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "cog-00404-calld-register-rel-00380"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 3
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? const: short_offset = -133
+//? run: "cog-00404-calld-register-rel-00480"
+//? const: domain = 1
+//? const: probe_pc = 1028
+//? const: form = 3
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000405
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? const: short_offset = 123
+//? run: "hub-00000-calld-pointer-abs-00380"
+//? const: domain = 0
+//? const: probe_pc = 0
+//? const: form = 0
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000004
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00000-calld-pointer-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 0
+//? const: form = 0
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000004
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-00000-calld-pointer-rel-00380"
+//? const: domain = 0
+//? const: probe_pc = 0
+//? const: form = 1
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000004
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00000-calld-pointer-rel-00480"
+//? const: domain = 0
+//? const: probe_pc = 0
+//? const: form = 1
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000004
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-00000-calld-register-abs-00380"
+//? const: domain = 0
+//? const: probe_pc = 0
+//? const: form = 2
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000004
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00000-calld-register-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 0
+//? const: form = 2
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000004
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-00000-calld-register-rel-00380"
+//? const: domain = 0
+//? const: probe_pc = 0
+//? const: form = 3
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000004
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? const: short_offset = 223
+//? run: "hub-00100-calld-pointer-abs-00180"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 0
+//? const: target = 384
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x181
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00100-calld-pointer-abs-00380"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 0
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00100-calld-pointer-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 0
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-00100-calld-pointer-rel-00180"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 1
+//? const: target = 384
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x181
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00100-calld-pointer-rel-00380"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 1
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00100-calld-pointer-rel-00480"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 1
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-00100-calld-register-abs-00180"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 2
+//? const: target = 384
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x181
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00100-calld-register-abs-00380"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 2
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-00100-calld-register-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 2
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-00100-calld-register-rel-00180"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 3
+//? const: target = 384
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x181
+//? post: cog[*].reg[landed] == 0x80
+//? const: short_offset = 31
+//? run: "hub-00100-calld-register-rel-00380"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 3
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? const: short_offset = 159
+//? run: "hub-00100-calld-register-rel-00480"
+//? const: domain = 0
+//? const: probe_pc = 256
+//? const: form = 3
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x40000104
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? const: short_offset = 223
+//? run: "hub-001f0-calld-pointer-abs-00380"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 0
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-001f0-calld-pointer-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 0
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-001f0-calld-pointer-rel-00380"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 1
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-001f0-calld-pointer-rel-00480"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 1
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-001f0-calld-register-abs-00380"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 2
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? run: "hub-001f0-calld-register-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 2
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "hub-001f0-calld-register-rel-00380"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 3
+//? const: target = 896
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x381
+//? post: cog[*].reg[landed] == 0x80
+//? const: short_offset = 99
+//? run: "hub-001f0-calld-register-rel-00480"
+//? const: domain = 0
+//? const: probe_pc = 496
+//? const: form = 3
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x400001f4
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? const: short_offset = 163
+//? run: "tail-hub-001f4-calld-pointer-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 500
+//? const: form = 0
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x400001f8
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+//? run: "tail-hub-001f4-calld-register-abs-00480"
+//? const: domain = 0
+//? const: probe_pc = 500
+//? const: form = 2
+//? const: target = 1152
+//? post: cog[*].reg[result] == 0x400001f8
+//? post: cog[*].reg[observed_pc] == 0x484
+//? post: cog[*].reg[landed] == 0x100
+
+                // Hardware-derived PC/mode checks. CALL and CALLPA exposed the same addresses and saved PCs as CALLD.
+                // Only the named native instructions below are probed; the final JMP is the checklist's mandatory exit.
+                CALLD   exit_link,  nrel(setup)
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+setup:
+// Initialize captured state while retaining nominal RCFAST and the oracle's UART configuration.
+                HUBSET  0xf0
+                MOV     PA,                             0
+                MOV     PB,                             0
+                MOV     link,                           0
+                MOV     landed,                         0
+                MOV     probe_address,                  aug(hubaddr(probe_table) + form * 4)
+.if domain == 0
+// Copy an explicitly unrolled NOP prefix, then wrap a hub FIFO through $FFFFC into low hub RAM.
+.if probe_pc > 0
+                SETQ    probe_pc / 4 - 1
+                RDLONG  register(256),                  aug(hubaddr(hub_prefix))
+                SETQ    probe_pc / 4 - 1
+                WRLONG  register(256),                  0
+.endif
+                RDLONG  word,                           probe_address
+                WRLONG  word,                           aug(probe_pc)
+                WRLONG  fallthrough_word,               aug(probe_pc + 4)
+                WRLONG  0,                              aug(0x7fffc)
+.elif   domain == 1
+// The canceled native MOVs select the physical source of each retained logical overflow PC.
+.if probe_pc >= 0x401
+                MOV     register(1),                    selector_2
+.endif
+.if probe_pc >= 0x402
+                MOV     register(2),                    selector_3
+.endif
+.if probe_pc >= 0x403
+                MOV     register(3),                    selector_4
+.endif
+.if probe_pc >= 0x404
+                MOV     register(4),                    selector_5
+.endif
+                RDLONG  word,                           probe_address
+                MOV     register(probe_pc - 0x400 + 1), word
+                MOV     register(0),                    exit_word
+                WRLUT   selector_1,                     aug(511)
+.else
+                // Ordinary hub execution at $400 is the control for the overflow-local JMPREL cases.
+                RDLONG  word,                           probe_address
+                WRLONG  word,                           aug(probe_pc)
+                WRLONG  fallthrough_word,               aug(probe_pc + 4)
+.endif
+                // Separate hub/local markers prove which instruction source the resolved destination selects.
+                WRLONG  landing_loc,                    aug(target)
+                WRLONG  hub_marker,                     aug(target + 4)
+                WRLONG  exit_word,                      aug(target + 8)
+.if target < 0x200
+                MOV     register(target),               landing_loc
+                MOV     register(target + 1),           local_marker
+                MOV     register(target + 2),           exit_word
+.elif   target < 0x400
+                WRLUT   landing_loc,                    aug(target - 0x200)
+                WRLUT   local_marker,                   aug(target - 0x200 + 1)
+                WRLUT   exit_word,                      aug(target - 0x200 + 2)
+.endif
+                // Z=1 cancels source selectors and deliberately remains present in saved CALLD link words.
+                CMP     zero,                           0                                       :wcz
+                CALLD   exit_link,                      entry_target
+fallthrough:
+// A missed CALLD/JMPREL branch must fail its destination-marker assertion.
+                MOV     landed,     3
+                CALLD   exit_link,  done_target
+done:
+// Capture the probe result before handing control to the existing reporter.
+.if form < 2
+                MOV     result,         PA
+.else
+                MOV     result,         link
+.endif
+                MOV     observed_pc,    PB
+                JMP     nrel(_end)
+
+var result:     LONG    0
+var observed_pc:
+                LONG    0
+var landed:     LONG    0
+var link:       LONG    0
+var exit_link:  LONG    0
+var word:       LONG    0
+var zero:       LONG    0
+var probe_address:
+                LONG    0
+var absolute_target:
+                LONG    target
+// These are ordinary assembled instructions, copied to the controlled execution sources above.
+var landing_loc:
+                LOC     PB, $ + 1
+var hub_marker:
+                MOV     landed, 0x100
+var local_marker:
+                MOV     landed, 0x80
+var exit_word:
+                CALLD   exit_link,  done_target
+var fallthrough_word:
+                CALLD   exit_link,  fallthrough_target
+var selector_1:
+    if(!Z)      MOV     register(0),    1
+var selector_2:
+    if(!Z)      MOV     register(0),    2
+var selector_3:
+    if(!Z)      MOV     register(0),    3
+var selector_4:
+    if(!Z)      MOV     register(0),    4
+var selector_5:
+    if(!Z)      MOV     register(0),    5
+var done_target:
+                LONG    pcaddr(done)
+var fallthrough_target:
+                LONG    pcaddr(fallthrough)
+.if domain == 0
+var entry_target:
+                LONG    0xffffc
+.elif   domain == 1
+var entry_target:
+                LONG    0x3ff
+.else
+var entry_target:
+                LONG    probe_pc
+.endif
+
+// The table is unrolled in checklist form order: pointer absolute/relative, register absolute/relative.
+// PA lets Propan select the native short/long CALLD encoding; the far relative cases select long naturally.
+// Relocate branch destinations with their byte displacement so copying preserves the measured runtime PC.
+.if domain == 1
+const relative_bytes = (target - probe_pc - 1) * 4
+.else
+const relative_bytes = target - probe_pc - 4
+.endif
+.hubexec    0x3000
+probe_table:
+.pic    avoid
+pointer_absolute:
+                CALLD   PA, nrel(target)
+.pic    force
+pointer_relative:
+                CALLD   PA, $ + 4 + relative_bytes
+register_absolute:
+                CALLD   link,   absolute_target
+register_relative:
+                CALLD   link,   $ + 4 + short_offset * 4
+.pic    default
+
+// Ownership declarations for runtime-installed local code; the source words are assembled above.
+.if target < 0x200
+.cogexec    0x3100, target
+.else
+.cogexec    0x3100, 0x180
+.endif
+cog_landing:
+                LOC     PB,         $ + 1
+                MOV     landed,     0x80
+                CALLD   exit_link,  done_target
+.lutexec    0x3200, 0x380
+lut_landing:
+                LOC     PB,         $ + 1
+                MOV     landed,     0x80
+                CALLD   exit_link,  done_target
+.lutexec    0x3300, 0x3ff
+lut_entry:
+    if(!Z)      MOV     register(0),    1
+.cogexec    0x3400, 128
+loc_positive_exit:
+                CALLD   exit_link,  done_target
+
+// This unrolled prefix supplies every low-hub instruction preceding the selected probe PC.
+.hubexec    0x3800
+hub_prefix:
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+                NOP
+

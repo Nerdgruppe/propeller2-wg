@@ -113,31 +113,6 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 
 ## Windtunnel
 
-### Local PC Overflow
-
-- **Status: implemented and hardware validated.**
-- Local execution preserves the full twenty-bit PC. Bit 9 selects LUT; an
-  overflowing cog fetch uses the preceding instruction's effective S read port.
-- Eleven `local-pc-*` fixtures cover 207 cases with three independent matching
-  hardware runs, including LOC, CALLD/returns, REP/SKIP/EXECF, higher carries,
-  complete rollover, interrupts, special registers and simultaneous RAM writes.
-- The retained crossing REP mismatch now matches silicon's one addition.
-  LOC relative offsets were also corrected to use unscaled PC units.
-- [Measured rules](docs/accumulated.md#local-pc-overflow-and-loc-2026-10-12).
-
-### Known Bugs
-
-#### Shared Random Generator
-
-- **Status: partial; deferred/known bug.**
-- Retain the shared xoroshiro approximation and measured cross-cog relations.
-  Exact tap numbering, absolute polarities, production seed lane and internal
-  delay remain open. This applies to `GETRND`, `BITRND`, `DIRRND`, `OUTRND`,
-  `FLTRND`, `DRVRND`, randomized `WAITX`, `HUBSET` seeding and physical noise paths.
-- Investigation aid if revisited: a reproducible seed/reset anchor or stronger
-  state-recovery constraints. Existing seed-hammer experiments did not resolve
-  the mapping; captures and analysis are retained in [data/random](data/random/).
-
 ### Random Task Collection
 
 - Validate hub execution below `$400`: wraparound behavior makes this possible.
@@ -173,6 +148,15 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Extend test runner to store/print the time per test fixture and test run to find outliers.
 - Create a concept for how to react to misbehavior/undefined behavior.
 - Refactor code to adapt to better coding standards.
+- Improve CLI user experience
+- Refactor test suit to enable `macro: name ...` which replaces `{{name}}` or `{{ name }}` with "..."
+- forbid things like `LONG 0xfe900000 | (operand & 0xfffff)` in the testsuite unless there's a really good reason for it.
+- Implement auto-indentation for `.if` ... `.endif` blocks
+- Use CLI seeding through electrical noise for RNG seed
+- GUI file dialog support via nfd-zig
+- New rule for test suite things:
+  - Allow empty `//?` lines
+  - `//? run:` must be prefixed by an empty line
 
 ### Analog Subsystem
 
@@ -180,10 +164,35 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
   - Consider how to handle floating pins.
   - Ingest actual P2 characteristics like voltage leaking, ...
 
-#### Clock Configuration
+### Virtual Device Support
 
-- **Status: partial; analog oscillator/PLL fidelity is deferred.**
-- Nominal frequency selection works; physical clock switching, settling and
-  jitter remain unmodeled.
-- Investigation aid if revisited: dedicated-board access, an independent timing
-  reference and clock-output captures with an oscilloscope/frequency counter.
+- SPI/DSPI/QSPI flash support
+- I²C EEPROM support
+- PAL/NTSC/SECAM/HDMI decoder with automatic sync/timing detection
+- Speaker / Audio Recorder
+- Microphone / Audio Playback
+- GUI: Virtual Scope / Logic Analyzer
+
+Stretch Goal:
+
+- PS/2 mouse/keyboard device emulation
+- USB mouse/keyboard device emulation?
+
+### Known Bugs
+
+#### Shared Random Generator
+
+- **Status: partial; deferred/known bug.**
+- Retain the shared xoroshiro approximation and measured cross-cog relations.
+  Exact tap numbering, absolute polarities, production seed lane and internal
+  delay remain open. This applies to `GETRND`, `BITRND`, `DIRRND`, `OUTRND`,
+  `FLTRND`, `DRVRND`, randomized `WAITX`, `HUBSET` seeding and physical noise paths.
+- Investigation aid if revisited: a reproducible seed/reset anchor or stronger
+  state-recovery constraints. Existing seed-hammer experiments did not resolve
+  the mapping; captures and analysis are retained in [data/random](data/random/).
+
+### Out Of Scope
+
+#### Overly detailled electrical sim
+
+No protection-diode I–V/clamping, inductance, supply-power/ground-network simulation, thermal behavior, ESD or cumulative damage model. Absolute-rating diagnostics report violations but do not implement these effects.

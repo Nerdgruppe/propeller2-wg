@@ -2278,3 +2278,57 @@ analog loop parameters or instruction-failure model is identified. Unsupported
 transitions fall back explicitly to ideal arithmetic; nontracking tails remain
 specimen points, not a universal VCO clamp. No new hardware run performed for
 implementation validation.
+
+## Out-of-range execution PCs: branch/address probes (2026-10-18)
+
+Physical P2AAS probes at nominal 20 MHz RCFAST compared LOC, CALL(A), CALL(register),
+CALLD(A), CALLD(S), and CALLPA at identical logical instruction PCs. Confirmed hub
+PCs were `$000`, `$100`, `$1F0`; confirmed local PCs were `$400`, `$401`, `$404`.
+The 210 complete runs included 150 distinct probes and 60 byte-identical repeats.
+
+Within that matrix, execution mode determines next-PC/displacement units even when
+its PC lies outside the usual range. Hub next PC is `PC+4`; local next PC is `PC+1`.
+All call forms and relative LOC with A=0 expose the same next-PC address. Local
+`$400` fetched from cog register 1 saves `$401`, not the physical source address.
+Return links include C/Z in bits 31/30; LOC does not. CALLPA puts its argument in
+PA and its return PC on the hardware stack, so PA alone is not a PC observation.
+
+Both absolute and relative calls selected cog execution at target `$180`, LUT
+execution at `$380`, and hub execution at `$480`, independently of their starting
+mode. Long relative CALL/CALLD used byte displacements in hub mode and signed A
+fields divided by four in local mode (the measured local fields were multiples
+of four). Unaugmented short relative CALLD/CALLPA used signed S9 scaled by four in
+hub mode and unscaled in local mode. Relative LOC added A directly in either
+mode; A=+128/-128 and absolute A=`$ABC80` agreed across the measured PCs.
+
+Do not extend this matrix into unmeasured source windows without further evidence.
+Four absolute call families at hub `$1F4` saved `$1F8`, but attempted calls at hub
+`$1F8` did not reach the reporter. LOC at `$1F0` with an exit at `$1F4` succeeded;
+LOC at `$1F4` with an exit at `$1F8` did not report. Longer hub streams to `$3FC`
+and a separate local `$600` stream also failed to report despite instruction
+setup readbacks. These failures do not establish alternate PC values or a ROM
+substitution mechanism. The local `$600` probe does not independently corroborate
+older higher-PC LUT-window findings above; its later watchdog saved `$BFA` with no
+captured LOC result. Preserve that distinction when reusing the earlier model.
+
+Session report, all complete source/binary/UART/hash records, verifier, and separate
+diagnostics are in `.tmp/pc-report.md` and `.tmp/pc-samples/` (ignored scratch
+artifacts, not durable regression fixtures). No implementation changes were made.
+
+### JMPREL next-PC base (2026-10-18 follow-up)
+
+Twelve further physical P2AAS probes with a relative LOC at each landing address
+confirmed JMPREL's base is the **next PC**. For an instruction at P, local mode
+resolves `(P + 1 + D) mod 2^20`; hub mode resolves `(P + 4 + 4*D) mod 2^20`.
+At logical `$400`, `JMPREL #4` lands at `$405` from local execution and `$414`
+from hub execution, both in hub mode. `JMPREL #3` produces `$404` and `$410`.
+The destination LOC returns `$409`/`$418` for D=4, confirming both the targets
+and the byte-oriented hub continuation, including the unaligned `$405` stream.
+
+Low hub PC `$100` with D=4 lands at `$114` in **cog** mode; its landing LOC returns
+`$115`. D=0 still branches: local `$400` enters hub `$401`, while hub `$100`
+enters cog `$104`. Register D=-129 from local `$400`, and D=-33 from hub `$400`,
+both enter LUT `$380` and the landing LOC returns `$381`. Immediate/register
+D=4 agreed in the repeated local `$400` and low-hub `$100` comparisons.
+Session samples/evidence/offline verifier: `.tmp/pc-jmprel/`; report appended to
+`.tmp/pc-report.md`. No implementation changes; existing compiled Propan used.
