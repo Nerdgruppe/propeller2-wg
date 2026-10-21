@@ -2370,3 +2370,68 @@ assertions must combine those pieces while rejecting overlapping lanes, differen
 instructions/producers, or a read sharing that long. All three byte alignments now
 have a regression checking the combined grant and final RAM contents. This is an
 audit of existing timing/model behavior, not a new physical measurement.
+
+## Speculative cog fetches and diagnostics (2026-10-21 simulator audit)
+
+A sequential cog prefetch can reach a data word beyond a pending taken jump while
+an older instruction writes that word. In `alu-crc.propan`, CRCNIB writes `crc`
+while the younger fetch reads its storage; the final JMP discards that fetch.
+The physical overlap does not make the discarded data an executed instruction.
+Windtunnel now retains the overlap clock and participants with the fetched word
+and emits `cog_fetch_write` only if that word executes. Cancellation and false
+conditions are silent; repeated attempts of a stalled instruction report once.
+The self-modifying local-PC write fixtures retain their executed collision reports.
+This is a simulator diagnostic policy change, not a new silicon measurement.
+
+Rejected hub reads now report the first blocked byte once per access and failure
+kind. One aligned RDLONG in the hole therefore emits one `memory_hole_read`, while
+readable lanes still return their values. A read crossing from protected RAM into
+the hole can report both distinct causes. Rejected writes remain byte-granular.
+
+## Hub RAM slices and unaligned COGINIT timing (2026-10-21)
+
+Fresh physical P2AAS captures at nominal 20 MHz RCFAST cover all eight target cogs,
+eight source slices, eight command phases and four byte alignments. There are
+6,144 startup timestamps: 2,048 loaded, 2,048 no-load cog and 2,048 no-load hub.
+For command grant `g`, source slice `b`, and target cog `c`, loaded startup's first
+GETCT is `g + 531 + ((b - g - 17 - c) & 7) + (source_byte_offset != 0)`.
+All 1,536 unaligned loaded measurements add exactly one clock; the 512 aligned
+loaded measurements and all no-load measurements retain their established timing.
+
+The simulator previously read two adjacent longs on one edge for an unaligned
+image, hiding that extra clock. Sequential aligned reads with a retained-word
+aligner model 505 physical reads for the 504 unaligned image words, versus 504
+for an aligned image. The corrected implementation and the existing all-alignment
+functional check passed 33 fresh hardware-oracle comparisons. The retained timing
+fixture is `tests/windtunnel/state/coginit-slice-timing.propan`; original timing
+vectors remain unchanged. Captured source, images, requests and replies are in
+`.tmp/hub-ram-refactor/startup-timing/`, with the independent timestamp analysis
+in `startup-timing-analysis.json` in its parent directory.
+
+A second independent capture swept forty source-write deadlines per target and
+alignment (1,280 cases). The observer was the next cog, allowing it to write the
+upper physical long on the edge when the target reads the lower long. The loaded
+register agreed with consecutive lower/upper sampling in every case: an upper
+write at the lower sampling edge was visible in the second sample, while the
+first sample retained its bytes. The same aligned register remained unaffected
+by neighboring-long writes. `coginit-sampling.propan` retains this controlled-write
+check; raw hardware captures are in `.tmp/hub-ram-refactor/sampling-hardware/`.
+
+
+## Split-read storage follows physical ownership (2026-10-21)
+
+This simulator refactor introduces no new silicon timing claim. Current single-port
+arbitration means that FIFO taking a cog's RAM slot also excludes another cog from
+writing that slice on the same edge. In the simulator, repeated FIFO grants can defer
+an ordinary split read's upper sample across several rotations; the regression has
+samples at clocks 0 and 25, with an interfering upper-byte write at clock 2, and
+reports at completion clock 30. A separate FIFO regression keeps its first sample
+at clock 0, its successor at 1001, and retains a write from clock 10 until consumption.
+
+Only unfinished reads need reconciliation against each edge's accepted writes.
+Completed diagnostics can follow return/FIFO/fetch ownership directly, without
+sampling history rings or generation counters. FIFO physical reads remain aligned
+32-bit transactions; byte selection belongs to consumers of the sampled data.
+The six possibly selected crossing-read positions are lower lanes 1..3 and upper
+lanes 0..2. Known-width reads keep separate earliest witnesses for the two halves,
+so an unreadable second sample cannot hide valid lower-half interference.

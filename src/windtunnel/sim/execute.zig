@@ -93,7 +93,7 @@ fn streamerCommand(cog: *Cog, args: encoding.Both_Dimm_Simm, start: Streamer.Sta
         if (command.fifoMode()) |mode| {
             if (cog.exec_mode == .hub)
                 return cog.reject(.hub_fifo_conflict);
-            if (cog.fifo_state.engine == null or cog.fifo_state.address == null or cog.fifo_state.engine.?.mode != mode)
+            if (cog.fifo_state.engine == null or cog.fifo_state.address == null or std.meta.activeTag(cog.fifo_state.engine.?.direction) != mode)
                 return cog.reject(.streamer_fifo_mismatch);
             if (cog.debug.state == .active) {
                 cog.debug.fifo_untouched = false;
@@ -152,7 +152,7 @@ fn readFifo(cog: *Cog, args: encoding.Only_D_Flags, size: u3) Cog.ExecResult {
         return cog.reject(.hub_fifo_conflict);
     if (cog.fifo_state.address == null or
         cog.fifo_state.engine == null or
-        cog.fifo_state.engine.?.mode != .read)
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) != .read)
         return cog.reject(.fifo_read_unconfigured);
     const value = cog.read_fifo(size) orelse return .wait;
     cog.write_result(args.d, value);
@@ -166,7 +166,7 @@ fn readFifoVariable(cog: *Cog, args: encoding.Only_D_Flags, signed: bool) Cog.Ex
         return cog.reject(.hub_fifo_conflict);
     if (cog.fifo_state.address == null or
         cog.fifo_state.engine == null or
-        cog.fifo_state.engine.?.mode != .read)
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) != .read)
         return cog.reject(.fifo_read_unconfigured);
     var value: u32 = 0;
     var size: u3 = 0;
@@ -217,7 +217,7 @@ fn writeFifo(cog: *Cog, args: encoding.Only_Dimm, size: u3) Cog.ExecResult {
         return cog.reject(.hub_fifo_conflict);
     if (cog.fifo_state.address == null or
         cog.fifo_state.engine == null or
-        cog.fifo_state.engine.?.mode != .write)
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) != .write)
         return cog.reject(.fifo_write_unconfigured);
     const state = if (cog.collecting_writes)
         &cog.pipeline[3].?
@@ -363,6 +363,7 @@ fn memoryAddress(cog: *Cog, reg: Cog.Register, immediate: bool, scale: u3, block
 /// Honor redirected/canceled results, underlying tail RAM, LUT destinations and final-beat flags.
 fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecResult {
     if (cog.memory_transfer == null) {
+        cog.read_bus.fragment = null;
         const block = size == 4 and cog.setq_pending;
         const state = cog.pipeline[3];
         cog.memory_transfer = .{
@@ -404,6 +405,10 @@ fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecRes
         transfer.direction.read.value orelse return .wait
     else
         cog.hub.read_memory(transfer.address, size);
+    if (transfer.timed) {
+        cog.report_read_race(transfer.direction.read.value_race);
+        transfer.direction.read.value_race = null;
+    }
     if (!transfer.direction.read.no_result) {
         if (transfer.lut) {
             cog.write_lut(transfer.reg, value);
@@ -552,6 +557,7 @@ fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
 /// Predecrement the selected hub stack, wait for its read, then restore the return address and requested flags.
 fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog.ExecResult {
     if (cog.memory_transfer == null) {
+        cog.read_bus.fragment = null;
         const address = cog.read_operand(pointer) -% 4;
         cog.memory_transfer = .{
             .provenance = cog.provenance(),
@@ -574,6 +580,9 @@ fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog
         transfer.direction.read.value orelse return .wait
     else
         cog.hub.read_memory(transfer.address, 4);
+    if (transfer.timed) {
+        cog.report_read_race(transfer.direction.read.value_race);
+    }
     cog.memory_transfer = null;
     jumpFlags(cog, args, value);
     return .next;
@@ -5418,7 +5427,7 @@ test "unaligned hub memory wraps, extended pointer indices are unscaled, and zer
     try hub.init(.ideal);
     hub.write_memory(0xffff_ffff, 0x1122_3344, 4, false);
     try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.read_memory(0xfffff, 4));
-    try std.testing.expectEqual(@as(u8, 0x33), hub.memory[0]);
+    try std.testing.expectEqual(@as(u8, 0x33), hub.ram.bytes()[0]);
     hub.write_memory(0xfffff, 0x0055_0066, 4, true);
     try std.testing.expectEqual(@as(u32, 0x1155_3366), hub.read_memory(0xfffff, 4));
     const cog = &hub.cogs[0];
@@ -5615,10 +5624,10 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
     try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
-    hub.memory[0] = 0xaa;
-    hub.memory[0x7ffff] = 0xbb;
-    hub.memory[0x7c000] = 0xcc;
-    hub.memory[0x7c001] = 0; // This test supplies its own bytes over the initialized ROM cache.
+    hub.ram.bytes()[0] = 0xaa;
+    hub.ram.bytes()[0x7ffff] = 0xbb;
+    hub.ram.bytes()[0x7c000] = 0xcc;
+    hub.ram.bytes()[0x7c001] = 0; // This test supplies its own bytes over the initialized ROM cache.
     const cases = [_]struct { address: u32, bytes: [2]u32 }{
         .{ .address = 0x80000, .bytes = .{ 0, 0 } },
         .{ .address = 0x7ffff, .bytes = .{ 0xbb, 0 } },
@@ -5665,6 +5674,8 @@ test "hub stack transfers retain their issue-time privilege through stalls and w
             try std.testing.expectEqual(origin, cog.hub_writeback.?.origin);
             cog.collecting_writes = false;
             cog.exec_mode = .stopped;
+            // The queued write commits at its following physical grant edge.
+            hub.counter +%= 1;
             _ = hub.step();
             try std.testing.expectEqual(if (debug) return_value else previous_value, hub.read_memory(0xff800, 4));
             try std.testing.expectEqual(@as(u32, 0xff804), cog.read_reg(pointer));

@@ -152,29 +152,87 @@ pub fn read(terminal: *Terminal) anyerror!InputEnd {
 fn warning(writer: *std.Io.Writer, issue: Issue) !void {
     try writer.writeByte('[');
     switch (issue.kind) {
-        .pc_domain => |value| try writer.print("PC outside execution domain ${X}", .{value.pc}),
-        .cog_fetch_write => |value| try writer.print("cog fetch/write at ${X}", .{value.reader.address}),
-        .lut_read_write => |value| try writer.print("LUT read/write at ${X}", .{value.reader.address}),
-        .reg_write_conflict => |value| try writer.print("register write conflict at ${X}", .{value.first.address}),
-        .lut_write_conflict => |value| try writer.print("LUT write conflict at ${X}", .{value.first.address}),
-        .pin_command_collision => |value| try writer.print("pin {d} command collision", .{value.pin}),
-        .pin_buffer_overwrite => |value| try writer.print("pin {d} transmit overwrite", .{value.pin}),
-        .usb_receive_error => |value| try writer.print("pin {d} USB receive error", .{value.pin}),
-        .smart_dac_clipped => |value| try writer.print("pin {d} DAC saturation", .{value.pin}),
-        .streamer_starvation => try writer.writeAll("streamer FIFO empty"),
-        .streamer_capture_dropped => try writer.writeAll("streamer capture dropped"),
-        .streamer_capture_displaced => try writer.writeAll("streamer capture displaced"),
-        .fifo_configuration_lost => try writer.writeAll("pending FIFO configuration replaced"),
-        .cog_start_replaced => |value| try writer.print("pending cog {d} start replaced", .{value.target}),
-        .memory_hole_read => |value| try writer.print("hub hole read at ${X}", .{value.address}),
-        .memory_hole_write => |value| try writer.print("hub hole write at ${X}", .{value.address}),
-        .pad_undervoltage => |value| try writer.print("pin {d} undervoltage", .{value.pin}),
-        .pad_overvoltage => |value| try writer.print("pin {d} overvoltage", .{value.pin}),
-        .pad_overcurrent => |value| try writer.print("pin {d} overcurrent", .{value.pin}),
-        .unsupported_hubset => |value| try writer.print("unsupported HUBSET ${X:0>8}", .{value}),
-        .uncharacterized_pll => try writer.writeAll("uncharacterized PLL configuration"),
-        .unsafe_postdivider => try writer.writeAll("unsafe PLL postdivider change"),
-        else => unreachable, // This renderer is only used for warning-severity issues.
+        .pc_domain => |value| {
+            try writer.print("PC outside execution domain ${X}", .{value.pc});
+        },
+        .cog_fetch_write => |value| {
+            try writer.print("cog fetch/write at ${X}", .{value.reader.address});
+        },
+        .lut_read_write => |value| {
+            try writer.print("LUT read/write at ${X}", .{value.reader.address});
+        },
+        .reg_write_conflict => |value| {
+            try writer.print("register write conflict at ${X}", .{value.first.address});
+        },
+        .lut_write_conflict => |value| {
+            try writer.print("LUT write conflict at ${X}", .{value.first.address});
+        },
+        .pin_command_collision => |value| {
+            try writer.print("pin {d} command collision", .{value.pin});
+        },
+        .pin_buffer_overwrite => |value| {
+            try writer.print("pin {d} transmit overwrite", .{value.pin});
+        },
+        .usb_receive_error => |value| {
+            try writer.print("pin {d} USB receive error", .{value.pin});
+        },
+        .smart_dac_clipped => |value| {
+            try writer.print("pin {d} DAC saturation", .{value.pin});
+        },
+        .streamer_starvation => {
+            try writer.writeAll("streamer FIFO empty");
+        },
+        .streamer_capture_dropped => {
+            try writer.writeAll("streamer capture dropped");
+        },
+        .streamer_capture_displaced => {
+            try writer.writeAll("streamer capture displaced");
+        },
+        .fifo_configuration_lost => {
+            try writer.writeAll("pending FIFO configuration replaced");
+        },
+        .cog_start_replaced => |value| {
+            try writer.print("pending cog {d} start replaced", .{value.target});
+        },
+        .memory_read_race => |value| {
+            try writer.print("split read race at ${x}", .{value.address});
+        },
+        .memory_hole_read => |value| {
+            try writer.print("hub hole read at ${X}", .{value.address});
+        },
+        .memory_hole_write => |value| {
+            try writer.print("hub hole write at ${X}", .{value.address});
+        },
+        .pad_undervoltage => |value| {
+            try writer.print("pin {d} undervoltage", .{value.pin});
+        },
+        .pad_overvoltage => |value| {
+            try writer.print("pin {d} overvoltage", .{value.pin});
+        },
+        .pad_overcurrent => |value| {
+            try writer.print("pin {d} overcurrent", .{value.pin});
+        },
+        .unsupported_hubset => |value| {
+            try writer.print("unsupported HUBSET ${X:0>8}", .{value});
+        },
+        .uncharacterized_pll => {
+            try writer.writeAll("uncharacterized PLL configuration");
+        },
+        .unsafe_postdivider => {
+            try writer.writeAll("unsafe PLL postdivider change");
+        },
+        .invalid_encoding,
+        .hub_fifo_conflict,
+        .fifo_read_unconfigured,
+        .fifo_write_unconfigured,
+        .streamer_fifo_mismatch,
+        .xbyte_fifo_unconfigured,
+        .hub_skipf,
+        .streamer_mode,
+        .streamer_fifo_lost,
+        .memory_protected_read,
+        .memory_protected_write,
+        => unreachable, // This renderer is only used for warning-severity issues.
     }
     try writer.writeByte(']');
 }
@@ -189,9 +247,12 @@ pub fn afterStep(terminal: *Terminal, hub: *const Hub) !void {
             return err;
     }
     var trapped = false;
-    for (hub.issues.items()) |issue| {
+    for (0..hub.issues.len) |issue_index| {
+        const issue = hub.issues.at(issue_index);
         switch (issue.severity()) {
-            .warning => try warning(terminal.output, issue),
+            .warning => {
+                try warning(terminal.output, issue);
+            },
             .trap => {
                 try terminal.output.print("\r\n{f}\r\n", .{issue});
                 trapped = true;
@@ -306,7 +367,7 @@ test "terminal settling warnings remain inline and the application runs to compl
     try std.testing.expect(std.mem.startsWith(u8, output.buffered(), "[pin 0 overvoltage]"));
     try std.testing.expect(std.mem.indexOfScalar(u8, output.buffered(), '\n') == null);
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqual(@as(u6, 0), hub.issues.items()[0].kind.pad_overvoltage.pin);
+    try std.testing.expectEqual(@as(u6, 0), hub.issues.at(0).kind.pad_overvoltage.pin);
     try std.testing.expect(hub.cogs[0].exec_mode == .stopped);
 }
 

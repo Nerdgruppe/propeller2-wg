@@ -1,6 +1,7 @@
 //! Bounded, allocation-free diagnostics for a completed simulation edge.
 const std = @import("std");
 const access_types = @import("access.zig");
+const reads = @import("read.zig");
 const Issue = @This();
 
 pub const Severity = enum { warning, trap };
@@ -85,6 +86,8 @@ pub const Kind = union(enum) {
     fifo_configuration_lost: WorkConflict,
     /// A pending cog start is replaced before its scheduled delivery.
     cog_start_replaced: WorkConflict,
+    /// A used split hub read overlaps a committed write to one of its selected byte lanes.
+    memory_read_race: reads.Race,
     /// A read touches the unmapped hub hole; report its first unreadable byte once per access.
     memory_hole_read: MemoryRead,
     /// A byte write targets the unmapped hub hole and is discarded.
@@ -144,38 +147,112 @@ pub fn format(issue: Issue, writer: *std.Io.Writer) std.Io.Writer.Error!void {
 }
 
 /// Producer bounds: 128 per cog, eight non-electrical reports per pin, three pad limits per pin,
-/// and three HUBSET reports per cog. Analog reports aggregate extrema rather than substeps.
+/// and three HUBSET reports per cog. Used split-read races share the 128/cog budget:
+/// ordinary/startup completion, software/streamer FIFO consumption and executed fetches.
+/// Analog reports aggregate extrema rather than substeps.
 pub const Collection = struct {
     pub const capacity = 8 * (128 + 3) + 64 * (8 + 3);
-    entries: [capacity]Issue = undefined,
+    const Tag = std.meta.Tag(Kind);
+    const Header = struct { clock: u64, provenance: access_types.Provenance, offset: u32, kind: Tag };
+    const payload_alignment = @alignOf(Kind);
+    const cog_payload_size = blk: {
+        var maximum: usize = 0;
+        for (@typeInfo(Kind).@"union".fields) |field| {
+            const tag = @field(Tag, field.name);
+            switch (tag) {
+                .pin_command_collision, .pin_buffer_overwrite, .usb_receive_error, .smart_dac_clipped, .pad_undervoltage, .pad_overvoltage, .pad_overcurrent => {},
+                else => {
+                    maximum = @max(maximum, @sizeOf(field.type));
+                },
+            }
+        }
+        break :blk maximum;
+    };
+    // One collision, overwrite and clipping report per pin; one USB report per pair.
+    // Electrical substeps coalesce to three extrema reports per pin.
+    pub const payload_capacity = 8 * (128 + 3) * cog_payload_size +
+        64 * (@sizeOf(PinCollision) + @sizeOf(PinOverwrite) + @sizeOf(PinProblem)) +
+        32 * @sizeOf(PinProblem) + 3 * 64 * @sizeOf(PadProblem) +
+        capacity * (payload_alignment - 1);
+    headers: [capacity]Header = undefined,
+    payloads: [payload_capacity]u8 align(payload_alignment) = undefined,
     len: usize = 0,
-    analog_epoch: u64 = 0,
-    analog_slots: [3][64]struct { epoch: u64 = std.math.maxInt(u64), index: usize = 0 } = @splat(@splat(.{})),
+    used: usize = 0,
+    analog_seen: [3]std.StaticBitSet(64) = @splat(.initEmpty()),
+    analog_slots: [3][64]std.math.IntFittingRange(0, capacity - 1) = undefined,
 
-    /// Expose only initialized reports in detection order.
-    pub fn items(collection: *const Collection) []const Issue {
-        return collection.entries[0..collection.len];
+    /// Decode one complete report from its actual-sized retained payload.
+    pub fn at(collection: *const Collection, index: usize) Issue {
+        std.debug.assert(index < collection.len);
+        const header = collection.headers[index];
+        const kind: Kind = switch (header.kind) {
+            inline else => |tag| blk: {
+                const Payload = @FieldType(Kind, @tagName(tag));
+                const payload: Payload = inner: {
+                    if (@sizeOf(Payload) == 0)
+                        break :inner {};
+                    break :inner @as(*const Payload, @ptrCast(@alignCast(&collection.payloads[header.offset]))).*;
+                };
+                break :blk @unionInit(Kind, @tagName(tag), payload);
+            },
+        };
+        return .{ .clock = header.clock, .provenance = header.provenance, .kind = kind };
     }
 
-    /// Begin a new edge without allocating or clearing unused storage.
+    /// Iterate reports in detection order, materializing only the current report.
+    pub fn iterator(collection: *const Collection) Iterator {
+        return .{ .collection = collection };
+    }
+
+    pub const Iterator = struct {
+        collection: *const Collection,
+        index: usize = 0,
+
+        /// Return the next report without allocating or exposing unused storage.
+        pub fn next(it: *Iterator) ?Issue {
+            if (it.index == it.collection.len)
+                return null;
+            const issue = it.collection.at(it.index);
+            it.index += 1;
+            return issue;
+        }
+    };
+
+    /// Begin a new edge without clearing unused payload bytes.
     pub fn clear(collection: *Collection) void {
         collection.len = 0;
-        collection.analog_epoch += 1;
-        if (collection.analog_epoch == std.math.maxInt(u64)) {
-            collection.analog_epoch = 0;
-            collection.analog_slots = @splat(@splat(.{}));
-        }
+        collection.used = 0;
+        collection.analog_seen = @splat(.initEmpty());
     }
 
-    /// Enforce the producer bound in every build; exceeding it is a simulator programming error.
+    /// Retain the complete payload and enforce both producer bounds in every build.
     pub fn append(collection: *Collection, issue: Issue) void {
         if (collection.len == capacity)
             @panic("simulation issue emission bound exceeded");
-        collection.entries[collection.len] = issue;
+        const offset = switch (issue.kind) {
+            inline else => |payload| blk: {
+                const Payload = @TypeOf(payload);
+                const offset = std.mem.alignForward(usize, collection.used, @alignOf(Payload));
+                const end = offset + @sizeOf(Payload);
+                if (end > collection.payloads.len)
+                    @panic("simulation issue payload bound exceeded");
+                if (@sizeOf(Payload) != 0) {
+                    @memcpy(collection.payloads[offset..end], std.mem.asBytes(&payload));
+                }
+                collection.used = end;
+                break :blk offset;
+            },
+        };
+        collection.headers[collection.len] = .{
+            .clock = issue.clock,
+            .provenance = issue.provenance,
+            .kind = std.meta.activeTag(issue.kind),
+            .offset = @intCast(offset),
+        };
         collection.len += 1;
     }
 
-    /// Coalesce repeated analog violations on one pin while retaining their complete extrema.
+    /// Update retained analog extrema in place, preserving every report's ordering and payload.
     pub fn analog(collection: *Collection, issue: Issue) void {
         const incoming = switch (issue.kind) {
             .pad_undervoltage, .pad_overvoltage, .pad_overcurrent => |value| value,
@@ -187,18 +264,15 @@ pub const Collection = struct {
             .pad_overcurrent => 2,
             else => unreachable,
         };
-        const slot = &collection.analog_slots[category][incoming.pin];
-        if (slot.epoch == collection.analog_epoch) {
-            switch (collection.entries[slot.index].kind) {
-                .pad_undervoltage, .pad_overvoltage, .pad_overcurrent => |*value| {
-                    value.minimum = @min(value.minimum, incoming.minimum);
-                    value.maximum = @max(value.maximum, incoming.maximum);
-                },
-                else => unreachable,
-            }
+        if (collection.analog_seen[category].isSet(incoming.pin)) {
+            const header = collection.headers[collection.analog_slots[category][incoming.pin]];
+            const value: *PadProblem = @ptrCast(@alignCast(&collection.payloads[header.offset]));
+            value.minimum = @min(value.minimum, incoming.minimum);
+            value.maximum = @max(value.maximum, incoming.maximum);
             return;
         }
-        slot.* = .{ .epoch = collection.analog_epoch, .index = collection.len };
+        collection.analog_seen[category].set(incoming.pin);
+        collection.analog_slots[category][incoming.pin] = @intCast(collection.len);
         collection.append(issue);
     }
 };

@@ -2,6 +2,22 @@
 const std = @import("std");
 const Hub = @import("sim/Hub.zig");
 const IO = @import("sim/IO.zig");
+const Cog = @import("sim/Cog.zig");
+const reads = @import("sim/read.zig");
+
+/// Stage an already-returned physical FIFO word using the same live ownership as production.
+pub fn bufferFifoWord(cog: *Cog, sample: reads.Sample, next: u20, value: u32) Cog.FifoSlot {
+    const fifo = &cog.fifo_state.engine.?;
+    const read = &fifo.direction.read;
+    if (read.pending) |previous| {
+        read.get(previous).window.close(sample);
+    }
+    const slot = read.allocate(sample, next, value);
+    read.pending = slot;
+    read.order[(fifo.head + fifo.count) % read.order.len] = slot;
+    fifo.count += 1;
+    return slot;
+}
 
 /// Apply the tests' strict issue and endpoint policy after a serial-host edge.
 pub const Strict = struct {
@@ -28,7 +44,8 @@ pub fn serviceFailed(hub: *const Hub) bool {
 
 /// Print all reports and service errors from the completed edge.
 pub fn diagnostics(hub: *const Hub, writer: *std.Io.Writer) std.Io.Writer.Error!void {
-    for (hub.issues.items()) |issue| {
+    for (0..hub.issues.len) |issue_index| {
+        const issue = hub.issues.at(issue_index);
         try writer.print("{f}\n", .{issue});
     }
     if (hub.vcd) |vcd| {

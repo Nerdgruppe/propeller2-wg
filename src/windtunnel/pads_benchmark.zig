@@ -6,7 +6,29 @@ const Pads = @import("sim/Pads.zig");
 const Reference = @import("sim/pad_reference.zig");
 const p2 = @import("p2");
 const signal = @import("sim/signal.zig");
-const Workload = enum { idle, one, many, eight, rc, limited, mixed };
+const Workload = enum {
+    idle,
+    one,
+    many,
+    eight,
+    rc,
+    limited,
+    mixed,
+    mem_local,
+    mem_read,
+    mem_fifo,
+    mem_contention,
+    mem_hub_exec,
+    mem_startup,
+
+    /// Identify complete-Hub memory workloads, which do not exercise isolated pad kernels.
+    fn isMemory(workload: Workload) bool {
+        return switch (workload) {
+            .mem_local, .mem_read, .mem_fifo, .mem_contention, .mem_hub_exec, .mem_startup => true,
+            .idle, .one, .many, .eight, .rc, .limited, .mixed => false,
+        };
+    }
+};
 const Kernel = enum { hub, scalar, scalar_small_sort, simd, simd_uniform };
 
 /// Copy the public source into the independent reference's descriptor type.
@@ -49,6 +71,56 @@ fn externalLoad(workload: Workload) Pad.Source {
         result.capacitance = 95e-12;
     }
     return result;
+}
+
+/// Install fixed eight-cog loops without including setup or assembly in measured execution.
+fn memoryWorkload(hub: *Hub, workload: Workload) void {
+    // ADD r21,#1; JMP r20.
+    const local = [_]u32{ 0xf1042a01, 0xfd60282c };
+    // RDLONG r21,PTRA; JMP r20.
+    const read = [_]u32{ 0xfb042b00, 0xfd60282c };
+    // RFLONG r21; JMP r20.
+    const fifo = [_]u32{ 0xfd602a12, 0xfd60282c };
+    // RFLONG r21; RDLONG r22,PTRA; JMP r20.
+    const contention = [_]u32{ 0xfd602a12, 0xfb042d00, 0xfd60282c };
+    const image: []const u32 = switch (workload) {
+        .mem_local, .mem_startup => &local,
+        .mem_read, .mem_hub_exec => &read,
+        .mem_fifo => &fifo,
+        .mem_contention => &contention,
+        .idle, .one, .many, .eight, .rc, .limited, .mixed => unreachable,
+    };
+    const base: usize = if (workload == .mem_hub_exec)
+        0x1000
+    else
+        0;
+    for (image, 0..) |word, index| {
+        std.mem.writeInt(u32, hub.ram.bytes()[base + index * 4 ..][0..4], word, .little);
+    }
+    for (&hub.cogs, 0..) |*cog, index| {
+        hub.start_cog(@intCast(index), .{
+            .hub_address = @intCast(base),
+            .load_image = workload != .mem_hub_exec,
+            .clocked = false,
+        });
+        cog.registers.set(@enumFromInt(20), @intCast(base));
+        cog.registers.set(.PTRA, 0x10003);
+        switch (workload) {
+            .mem_fifo, .mem_contention => {
+                cog.begin_fifo_read(0x20000);
+            },
+            .mem_local, .mem_read, .mem_hub_exec, .mem_startup => {},
+            .idle, .one, .many, .eight, .rc, .limited, .mixed => unreachable,
+        }
+    }
+}
+
+/// Include timed image loading by restarting one target every 75 simulated clocks.
+fn workloadClock(hub: *Hub, workload: Workload) Hub.StepResult {
+    if (workload == .mem_startup and hub.counter % 75 == 0) {
+        hub.start_cog(@intCast((hub.counter / 75) % 8), .{});
+    }
+    return hub.step();
 }
 
 /// Run just the electrical pass, including internal-driver collection, for one kernel variant.
@@ -99,7 +171,9 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
     defer std.heap.page_allocator.destroy(hub);
 
     try hub.init(configuration);
-    if (workload != .idle) {
+    if (workload.isMemory()) {
+        memoryWorkload(hub, workload);
+    } else if (workload != .idle) {
         // DIRH P0; loop: DRVNOT P0; JMP loop.
         const one = [_]u32{ 0xfd640041, 0xfd64005f, 0xfd9ffff8 };
         // NOT DIRA; NOT DIRB; loop: NOT OUTA; NOT OUTB; JMP loop.
@@ -109,7 +183,7 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
         else
             &many;
         for (image, 0..) |word, index| {
-            std.mem.writeInt(u32, hub.memory[index * 4 ..][0..4], word, .little);
+            std.mem.writeInt(u32, hub.ram.bytes()[index * 4 ..][0..4], word, .little);
         }
         const count: usize = if (workload == .eight)
             8
@@ -138,9 +212,10 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
         }
     }
     for (0..5000) |_| {
-        const notification = hub.step();
+        const notification = workloadClock(hub, workload);
         if (hub.issues.len != 0) {
-            for (hub.issues.items()) |issue| {
+            for (0..hub.issues.len) |issue_index| {
+                const issue = hub.issues.at(issue_index);
                 std.log.err("{f}", .{issue});
             }
             return error.SimulationFailed;
@@ -151,9 +226,10 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
     std.mem.doNotOptimizeAway(hub);
     const start = std.Io.Timestamp.now(io, .awake).toNanoseconds();
     for (0..steps) |_| {
-        const notification = hub.step();
+        const notification = workloadClock(hub, workload);
         if (hub.issues.len != 0) {
-            for (hub.issues.items()) |issue| {
+            for (0..hub.issues.len) |issue_index| {
+                const issue = hub.issues.at(issue_index);
                 std.log.err("{f}", .{issue});
             }
             return error.SimulationFailed;
@@ -178,6 +254,8 @@ pub fn main(init: std.process.Init) !void {
         return error.InvalidProfile;
     const workload = std.meta.stringToEnum(Workload, args[2]) orelse return error.InvalidWorkload;
     const kernel = std.meta.stringToEnum(Kernel, args[3]) orelse return error.InvalidKernel;
+    if (workload.isMemory() and kernel != .hub)
+        return error.MemoryWorkloadRequiresHubKernel;
     const steps = try std.fmt.parseInt(usize, args[4], 10);
     if (steps == 0)
         return error.InvalidSteps;

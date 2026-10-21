@@ -1058,7 +1058,8 @@ test "hardware repository command timing and OR-combined mixed command buses" {
     var recorded: ?Issue.PinCollision = null;
     for (0..4) |_| {
         _ = hub.step();
-        for (hub.issues.items()) |issue| {
+        for (0..hub.issues.len) |issue_index| {
+            const issue = hub.issues.at(issue_index);
             if (issue.kind == .pin_command_collision) {
                 recorded = issue.kind.pin_command_collision;
             }

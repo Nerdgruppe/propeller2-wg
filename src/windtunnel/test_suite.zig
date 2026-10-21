@@ -753,7 +753,7 @@ fn read(hub: *Hub, cog: u3, observation: Observation, out: *std.Io.Writer) !void
         .reg => try out.writeInt(u32, hub.cogs[cog].registers.get(@enumFromInt(observation.offset)), .little),
         .q => try out.writeInt(u32, hub.cogs[cog].q, .little),
         .dacs => try out.writeAll(&hub.cogs[cog].dacs),
-        .hub => try out.writeAll(hub.memory[observation.offset..][0..observation.len]),
+        .hub => try out.writeAll(hub.ram.bytes()[observation.offset..][0..observation.len]),
         .c => try out.writeByte(@intFromBool(hub.cogs[cog].c)),
         .z => try out.writeByte(@intFromBool(hub.cogs[cog].z)),
     }
@@ -912,7 +912,7 @@ fn runOne(
     try hub.init(.ideal);
     serial_boot.prepare(hub, serial_boot.baudrate);
     const virtual_terminal = ctx.options.@"fast-io" and list.fast_io_off == null;
-    @memcpy(hub.memory[0..compiled.image.len], compiled.image);
+    @memcpy(hub.ram.bytes()[0..compiled.image.len], compiled.image);
     var stdout: std.Io.Writer.Allocating = .init(allocator);
     defer stdout.deinit();
 
@@ -1011,7 +1011,8 @@ fn runOne(
         }
         const notification = hub.step();
         var unexpected = false;
-        for (hub.issues.items()) |issue| {
+        for (0..hub.issues.len) |issue_index| {
+            const issue = hub.issues.at(issue_index);
             const kind = std.meta.activeTag(issue.kind);
             observed_issues.getPtr(kind).* += 1;
             if (observed_issues.get(kind) > expected_issues.get(kind)) {
@@ -1651,7 +1652,7 @@ test "real serial boot ROM downloads and launches RCFAST hello world at multiple
                 try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
             }
             try std.testing.expectEqualStrings("Hello world!\r\n", output.written());
-            try std.testing.expectEqualSlices(u8, compiled.image, hub.memory[0..compiled.image.len]);
+            try std.testing.expectEqualSlices(u8, compiled.image, hub.ram.bytes()[0..compiled.image.len]);
             try std.testing.expectEqual(@as(u32, 0), @as(u32, @bitCast(hub.io.pins[0].configuration)));
             try std.testing.expectEqual(@as(u32, 0), @as(u32, @bitCast(hub.io.pins[1].configuration)));
         }
@@ -1679,7 +1680,7 @@ test "RCFAST hello world preserves inherited ROM baud timing and drains UART wit
         try hub.init(.ideal);
         serial_boot.prepare(hub, serial_boot.baudrate);
         try std.testing.expectEqual(@as(u32, 0x000c_0007), hub.io.pins[63].smart.registers.x);
-        @memcpy(hub.memory[0..compiled.image.len], compiled.image);
+        @memcpy(hub.ram.bytes()[0..compiled.image.len], compiled.image);
         var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
         defer output.deinit();
 

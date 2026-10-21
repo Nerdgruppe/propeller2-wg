@@ -41,6 +41,7 @@ pub const Host = struct {
     next_bit_seconds: f64 = 0,
 
     /// Send complete UART frames, carrying fractional system clocks across bits and calls.
+    /// The caller's observer.afterStep(hub) handles issues and any adapters it chooses to monitor.
     pub fn write(host: *Host, hub: *Hub, bytes: []const u8, observer: anytype) !void {
         if (host.rate == 0)
             return error.InvalidBaudrate;
@@ -104,8 +105,9 @@ fn reply(io: std.Io, hub: *Hub, output: *std.Io.Writer, expected: []const u8, ra
 /// Download through the unmodified ROM: autobaud, Prop_Chk, checksummed Prop_Txt, then cog-zero launch.
 /// The host stays idle-high on P63. The temporary P59 pullup and ROM reply sink are restored on return.
 /// Keep image outside hub RAM: the ROM overwrites its first 256 bytes during initialization.
+/// Check the upload-owned reply sink and call observer.afterStep(hub) after every simulated edge.
 pub fn load(io: std.Io, hub: *Hub, image: []const u8, rate: u32, observer: anytype) !void {
-    if (image.len == 0 or image.len % 4 != 0 or image.len > hub.memory.len - 4)
+    if (image.len == 0 or image.len % 4 != 0 or image.len > hub.ram.bytes().len - 4)
         return error.InvalidBootImage;
     if (rate < 9_600 or rate > 2_000_000)
         return error.InvalidBaudrate;
@@ -207,7 +209,7 @@ test "serial ROM loader rejects invalid input before running the chip" {
     try hub.init(.ideal);
     try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, "", 115_200, test_support.Strict{}));
     try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, "123", 115_200, test_support.Strict{}));
-    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, &hub.memory, 115_200, test_support.Strict{}));
+    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, hub.ram.bytes(), 115_200, test_support.Strict{}));
     try std.testing.expectError(error.InvalidBaudrate, load(std.testing.io, hub, "1234", 0, test_support.Strict{}));
     try std.testing.expectError(error.InvalidBaudrate, load(std.testing.io, hub, "1234", 2_000_001, test_support.Strict{}));
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
@@ -234,7 +236,8 @@ test "serial boot ROM enters TAQOZ" {
     var old_write_protection_commands: usize = 0;
     for (0..3_000_000) |_| {
         try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
-        for (hub.issues.items()) |issue| {
+        for (0..hub.issues.len) |issue_index| {
+            const issue = hub.issues.at(issue_index);
             // The shipped TAQOZ startup uses the obsolete %001P encoding for WP.
             // Current-silicon behavior is uncharacterized; do not silently alias it.
             try std.testing.expect(issue.kind == .unsupported_hubset);
@@ -270,5 +273,5 @@ test "physical UART host stops on a completed edge issue while sending a frame" 
     try std.testing.expectError(error.BootIssue, host.write(hub, "x", test_support.Strict{}));
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqual(@as(u6, 0), hub.issues.items()[0].kind.pad_overvoltage.pin);
+    try std.testing.expectEqual(@as(u6, 0), hub.issues.at(0).kind.pad_overvoltage.pin);
 }

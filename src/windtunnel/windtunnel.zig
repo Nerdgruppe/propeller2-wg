@@ -19,6 +19,7 @@ pub const Cordic = @import("sim/Cordic.zig");
 pub const Streamer = @import("sim/Streamer.zig");
 pub const ColorConverter = @import("sim/ColorConverter.zig");
 
+pub const HubRam = @import("sim/HubRam.zig");
 pub const Hub = @import("sim/Hub.zig");
 pub const Cog = @import("sim/Cog.zig");
 pub const IO = @import("sim/IO.zig");
@@ -215,9 +216,9 @@ pub fn main(init: std.process.Init) !u8 {
 
     // Serial boot must retain the image outside RAM while the ROM builds its lookup table there.
     const image_buffer = if (boot and cli.options.image.len != 0)
-        try init.gpa.alloc(u8, hub.memory.len)
+        try init.gpa.alloc(u8, hub.ram.bytes().len)
     else
-        &hub.memory;
+        hub.ram.bytes();
     defer {
         if (boot and cli.options.image.len != 0) {
             init.gpa.free(image_buffer);
@@ -232,7 +233,7 @@ pub fn main(init: std.process.Init) !u8 {
         const stat = try file.stat(init.io);
 
         const count = try file.readPositionalAll(init.io, image_buffer, 0);
-        std.debug.assert(count <= hub.memory.len);
+        std.debug.assert(count <= hub.ram.bytes().len);
         image_length = count;
 
         if (stat.size > count) {
@@ -241,7 +242,7 @@ pub fn main(init: std.process.Init) !u8 {
                 return 1;
             }
             std.log.warn("hub image exceeds hub size. expected {Bi:.3} or less bytes, but got {Bi:.3}", .{
-                hub.memory.len,
+                hub.ram.bytes().len,
                 stat.size,
             });
         } else {

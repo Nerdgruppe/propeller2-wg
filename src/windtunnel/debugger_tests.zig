@@ -81,12 +81,12 @@ test "execution stops precede the whole edge and acknowledge all simultaneous en
     try std.testing.expectEqual(Debugger.Stop.execution, debugger.stop);
     try std.testing.expectEqual(@as(usize, 2), debugger.encounters.items.len);
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
-    try std.testing.expectEqual(@as(u8, 0), hub.memory[8]);
+    try std.testing.expectEqual(@as(u8, 0), hub.ram.bytes()[8]);
     try std.testing.expectEqualDeep(random, hub.random);
     debugger.acknowledge(hub);
     try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
-    try std.testing.expectEqual(@as(u8, 99), hub.memory[8]);
+    try std.testing.expectEqual(@as(u8, 99), hub.ram.bytes()[8]);
     try std.testing.expectEqual(Debugger.Stop.none, debugger.stop);
     try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u32, 9), hub.cogs[0].registers.values[20]);
@@ -213,52 +213,67 @@ test "RAM watches use backing aliases and exclude holes protection and masked la
     defer debugger.deinit();
     hub.debugger = &debugger;
     try watch(&debugger, .hub, null, .data, .both);
-    const cog = &hub.cogs[2];
+    const cog = &hub.cogs[0];
     hub.counter = std.math.maxInt(u64);
     cog.hub_writeback = .{
-        .provenance = .{ .cog = 2, .pc = 10, .instruction = 7 },
+        .provenance = .{ .cog = 0, .pc = 10, .instruction = 7 },
         .address = 0xfffff,
-        .value = 0x11002233,
-        .size = 4,
+        .value = 0x33,
+        .size = 1,
         .masked = true,
         .origin = .application,
     };
     _ = hub.step();
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
-    try std.testing.expectEqual(@as(usize, 3), debugger.hits.items.len);
+    try std.testing.expectEqual(@as(usize, 1), debugger.hits.items.len);
     try std.testing.expectEqual(@as(u32, 0x7ffff), debugger.hits.items[0].address);
-    try std.testing.expectEqual(@as(u32, 0), debugger.hits.items[1].address);
-    try std.testing.expectEqual(@as(u32, 2), debugger.hits.items[2].address);
+    debugger.acknowledge(hub);
+    // The second physical slice commits on the next clock after address rollover.
+    cog.hub_writeback = .{
+        .provenance = .{ .cog = 0, .pc = 10, .instruction = 7 },
+        .address = 0,
+        .value = 0x00110022,
+        .size = 3,
+        .masked = true,
+        .origin = .application,
+    };
+    _ = hub.step();
+    try std.testing.expectEqual(@as(usize, 2), debugger.hits.items.len);
+    try std.testing.expectEqual(@as(u32, 0), debugger.hits.items[0].address);
+    try std.testing.expectEqual(@as(u32, 2), debugger.hits.items[1].address);
     debugger.acknowledge(hub);
     hub.debug.protected = true;
     cog.hub_writeback = .{
-        .provenance = .{ .cog = 2 },
+        .provenance = .{ .cog = 0 },
         .address = 0xfc000,
         .value = 1,
         .size = 1,
         .masked = false,
         .origin = .application,
     };
+    hub.counter = cog.memory_grant_after(cog.hub_writeback.?.address, 0);
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), debugger.hits.items.len);
     cog.hub_writeback = .{
-        .provenance = .{ .cog = 2 },
+        .provenance = .{ .cog = 0 },
         .address = 0x80000,
         .value = 1,
         .size = 1,
         .masked = false,
         .origin = .debug,
     };
+    hub.counter = cog.memory_grant_after(cog.hub_writeback.?.address, 0);
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), debugger.hits.items.len);
     cog.hub_writeback = .{
-        .provenance = .{ .cog = 2 },
+        .provenance = .{ .cog = 0 },
         .address = 0xfc000,
         .value = 1,
         .size = 1,
         .masked = false,
         .origin = .debug,
     };
+    hub.counter = cog.memory_grant_after(cog.hub_writeback.?.address, 0);
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 1), debugger.hits.items.len);
     try std.testing.expectEqual(@as(u32, 0x7c000), debugger.hits.items[0].address);
@@ -402,7 +417,7 @@ test "repeated inspection is pure and debugger without breakpoints preserves exe
     for (0..100) |_| {
         _ = detached.step();
         _ = attached.step();
-        try std.testing.expectEqualSlices(u8, &detached.memory, &attached.memory);
+        try std.testing.expectEqualSlices(u8, detached.ram.bytesConst(), attached.ram.bytesConst());
         try std.testing.expectEqualSlices(u32, &detached.cogs[0].registers.values, &attached.cogs[0].registers.values);
         try std.testing.expectEqualDeep(detached.cogs[0].pipeline, attached.cogs[0].pipeline);
         try std.testing.expectEqualDeep(detached.random, attached.random);

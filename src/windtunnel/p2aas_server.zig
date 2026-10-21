@@ -456,11 +456,14 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
             // Hub edges still reset pin directions and service queued cog starts after self-stop.
             const notification = hub.step();
             var trapped = false;
-            for (hub.issues.items()) |issue| {
+            for (0..hub.issues.len) |issue_index| {
+                const issue = hub.issues.at(issue_index);
                 switch (issue.severity()) {
-                    .warning => std.log.warn("{f}", .{issue}),
+                    .warning => {
+                        std.log.warn("{f}", .{issue});
+                    },
                     .trap => {
-                        std.log.err("{f}", .{issue});
+                        std.log.warn("simulation trap: {f}", .{issue});
                         trapped = true;
                     },
                 }
@@ -574,7 +577,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
     };
     const hub = try arena.allocator().create(Hub);
     try hub.init(connection.simulation.system_configuration);
-    const options = Options.parse(request.head.target, &hub.memory) catch |err| {
+    const options = Options.parse(request.head.target, hub.ram.bytes()) catch |err| {
         try request.respond(queryReason(err), .{
             .status = .bad_request,
             .keep_alive = false,
@@ -608,7 +611,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
             );
             return;
         }
-        const image = hub.memory[0..length];
+        const image = hub.ram.bytes()[0..length];
         connection.uploadRead(image) catch |err| {
             if (err == error.Canceled)
                 return err;

@@ -77,17 +77,17 @@ pub fn main(init: std.process.Init) !u8 {
         defer file.close(init.io);
 
         const stat = try file.stat(init.io);
-        const count = try file.readPositionalAll(init.io, &gui.hub.memory, 0);
+        const count = try file.readPositionalAll(init.io, gui.hub.ram.bytes(), 0);
         if (stat.size > count) {
             std.log.warn("hub image exceeds hub size. expected {Bi:.3} or less bytes, but got {Bi:.3}", .{
-                gui.hub.memory.len,
+                gui.hub.ram.bytes().len,
                 stat.size,
             });
         } else {
             std.log.info("loaded {Bi:.2} into hub memory", .{count});
         }
 
-        gui.initial_image = try init.gpa.dupe(u8, gui.hub.memory[0..count]);
+        gui.initial_image = try init.gpa.dupe(u8, gui.hub.ram.bytes()[0..count]);
         gui.hub.start_cog(0, .{});
         gui.cogs_visible[0] = true;
     }
@@ -423,7 +423,8 @@ const GUI = struct {
                 encounter.cog, encounter.domain, encounter.pc, gui.hub.counter,
             });
         }
-        for (gui.hub.issues.items()) |issue| {
+        for (0..gui.hub.issues.len) |issue_index| {
+            const issue = gui.hub.issues.at(issue_index);
             var buffer: [8192]u8 = undefined;
             var writer = std.Io.Writer.fixed(&buffer);
             writer.print("{f}", .{issue}) catch unreachable;
@@ -558,7 +559,13 @@ const GUI = struct {
     /// Advance on this thread using the monotonic host clock, with at most fourteen milliseconds per frame.
     fn advance(gui: *GUI, io: *std.Io) void {
         const advanced = gui.step_requested or gui.is_running;
-        gui.frame = windtunnel.Frame.advance(&gui.hub, if (gui.step_requested) .step else if (gui.is_running) .run else .paused, .{
+        const mode: windtunnel.Frame.Mode = if (gui.step_requested)
+            .step
+        else if (gui.is_running)
+            .run
+        else
+            .paused;
+        gui.frame = windtunnel.Frame.advance(&gui.hub, mode, .{
             .context = io,
             .now = monotonic,
         }, pauseOnIssue);
@@ -647,7 +654,14 @@ const GUI = struct {
         }
         gui.show("Debug configuration", hub.debug);
         gui.show("Pending starts", hub.pending_starts);
-        gui.show("Issues", hub.issues.items());
+        if (header("Issues", .{})) {
+            for (0..hub.issues.len) |issue_index| {
+                zgui.pushIntId(@intCast(issue_index));
+                defer zgui.popId();
+
+                gui.show("Issue", hub.issues.at(issue_index));
+            }
+        }
         zgui.beginDisabled(.{ .disabled = gui.is_running });
         defer zgui.endDisabled();
         _ = hexInput("HUBSET clock/debug", &gui.hubset, false);
@@ -717,7 +731,7 @@ const GUI = struct {
     fn reinitialize(gui: *GUI) !void {
         try gui.initializeChip(gui.configuration_draft);
         if (gui.initial_image) |image| {
-            @memcpy(gui.hub.memory[0..image.len], image);
+            @memcpy(gui.hub.ram.bytes()[0..image.len], image);
             gui.hub.start_cog(0, .{});
             gui.cogs_visible[0] = true;
         }
@@ -982,7 +996,7 @@ const GUI = struct {
                 var bytes: [47]u8 = undefined;
                 var writer = std.Io.Writer.fixed(&bytes);
                 var ascii: [16]u8 = undefined;
-                for (gui.hub.memory[address..][0..16], 0..) |byte, i| {
+                for (gui.hub.ram.bytes()[address..][0..16], 0..) |byte, i| {
                     if (i != 0) {
                         writer.writeByte(' ') catch unreachable;
                     }
@@ -1872,13 +1886,69 @@ fn showValue(label: [:0]const u8, value: anytype) void {
                             showValue("write", item);
                             zgui.popId();
                         }
-                    } else if (comptime std.mem.eql(u8, field.name, "write_bytes") or std.mem.eql(u8, field.name, "words")) {
+                    } else if (comptime std.mem.eql(u8, field.name, "slots") and @hasField(T, "used")) {
+                        if (header("Live read slots", .{})) {
+                            for (0..value.slots.len) |index| {
+                                if (!value.used.isSet(index))
+                                    continue;
+                                zgui.pushIntId(@intCast(index));
+                                defer zgui.popId();
+
+                                var buffer: [32]u8 = undefined;
+                                const title = std.fmt.bufPrintSentinel(&buffer, "Word {}", .{index}, 0) catch unreachable;
+                                showValue(title, value.slots[index]);
+                            }
+                        }
+                    } else if (comptime std.mem.eql(u8, field.name, "order") and @hasField(T, "used")) {
+                        // Only the parent FIFO knows which order positions are initialized.
+                    } else if (comptime std.mem.eql(u8, field.name, "witnesses") and @hasField(T, "window")) {
+                        const count = @typeInfo(field.type).array.len;
+                        for (0..count) |index| {
+                            const part = if (count == 6)
+                                index / 3
+                            else
+                                index;
+                            const mask = if (part == 0)
+                                value.window.boundary.written.lower
+                            else
+                                value.window.boundary.written.upper;
+                            const valid = if (count == 6)
+                                mask & (@as(u3, 1) << @intCast(index % 3)) != 0
+                            else
+                                mask != 0;
+                            if (!valid)
+                                continue;
+                            zgui.pushIntId(@intCast(index));
+                            defer zgui.popId();
+
+                            showValue("Writer", value.witnesses[index]);
+                        }
+                    } else if (comptime std.mem.eql(u8, field.name, "clocks") and @hasField(T, "boundary")) {
+                        showValue("First sample clock", value.clocks[0]);
+                        if (value.boundary.complete) {
+                            showValue("Second sample clock", value.clocks[1]);
+                        }
+                    } else if (comptime std.mem.eql(u8, field.name, "writers") and @hasField(T, "count")) {
+                        for (value.writers[0..value.count], 0..) |item, index| {
+                            zgui.pushIntId(@intCast(index));
+                            defer zgui.popId();
+
+                            showValue("Writer", item);
+                        }
+                    } else if (comptime @hasField(T, "writers") and
+                        (std.mem.eql(u8, field.name, "reader") or std.mem.eql(u8, field.name, "clock") or
+                            std.mem.eql(u8, field.name, "read_source")))
+                    {
+                        if (value.count != 0) {
+                            showValue(field.name, @field(value, field.name));
+                        }
+                    } else if (comptime @hasField(T, "pending_head") and
+                        (std.mem.eql(u8, field.name, "bytes") or std.mem.eql(u8, field.name, "provenance")))
+                    {
                         if (header(field.name, .{})) {
-                            const count = if (comptime std.mem.eql(u8, field.name, "words")) value.count else value.write_count;
-                            const head = if (comptime std.mem.eql(u8, field.name, "words")) value.head else value.write_head;
                             const storage = @field(value, field.name);
-                            for (0..count) |i| {
-                                const slot = (head + i) % storage.len;
+                            for (0..value.count) |i| {
+                                const slot = (value.head + i) % storage.len;
                                 var buffer: [32]u8 = undefined;
                                 const title = std.fmt.bufPrintSentinel(&buffer, "[{}]", .{slot}, 0) catch unreachable;
                                 showValue(title, storage[slot]);
@@ -2044,8 +2114,8 @@ test "GUI configuration drafts are isolated and reinitialization restores the im
         .end = 4,
         .access = .both,
     });
-    gui.hub.memory[0] = 0xaa;
-    gui.hub.memory[4096] = 0xbb;
+    gui.hub.ram.bytes()[0] = 0xaa;
+    gui.hub.ram.bytes()[4096] = 0xbb;
     try gui.hub.io.setExternal(@enumFromInt(10), .high);
     try std.testing.expectEqual(windtunnel.Hub.StepResult.normal, gui.hub.step());
     gui.debugger.stop = .data;
@@ -2056,7 +2126,7 @@ test "GUI configuration drafts are isolated and reinitialization restores the im
     gui.configuration_draft.pad_capacitance = 0;
     try std.testing.expectError(error.InvalidConfiguration, gui.reinitialize());
     try std.testing.expectEqualDeep(windtunnel.SystemConfiguration.ideal, gui.hub.system_configuration);
-    try std.testing.expectEqual(@as(u8, 0xaa), gui.hub.memory[0]);
+    try std.testing.expectEqual(@as(u8, 0xaa), gui.hub.ram.bytes()[0]);
     try std.testing.expectEqual(@as(u64, 1), gui.hub.counter);
     try std.testing.expect(gui.is_running and gui.step_requested);
     gui.configuration_draft = .realistic;
@@ -2068,8 +2138,8 @@ test "GUI configuration drafts are isolated and reinitialization restores the im
     try gui.reinitialize();
     try std.testing.expectEqualDeep(gui.configuration_draft, gui.hub.system_configuration);
     try std.testing.expectEqual(@as(u32, 8), gui.hub.system_configuration.oversample);
-    try std.testing.expectEqualSlices(u8, &image, gui.hub.memory[0..image.len]);
-    try std.testing.expectEqual(@as(u8, 0), gui.hub.memory[4096]);
+    try std.testing.expectEqualSlices(u8, &image, gui.hub.ram.bytes()[0..image.len]);
+    try std.testing.expectEqual(@as(u8, 0), gui.hub.ram.bytes()[4096]);
     try std.testing.expectEqual(@as(u64, 0), gui.hub.counter);
     try std.testing.expect(gui.hub.io.getExternal(@enumFromInt(10)) == null);
     try std.testing.expectEqualDeep(windtunnel.Pad.Source.float, gui.hub.io.external[10]);
@@ -2088,6 +2158,6 @@ test "GUI configuration drafts are isolated and reinitialization restores the im
     try std.testing.expectEqual(@as(f64, 3.3), gui.hub.system_configuration.vio_voltage);
     try gui.reinitialize();
     try std.testing.expect(!gui.hub.is_any_cog_active());
-    try std.testing.expectEqual(@as(u8, 0), gui.hub.memory[0]);
+    try std.testing.expectEqual(@as(u8, 0), gui.hub.ram.bytes()[0]);
     try std.testing.expectEqual(@as(f64, 3.2), gui.hub.system_configuration.vio_voltage);
 }

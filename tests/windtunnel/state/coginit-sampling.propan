@@ -1,0 +1,279 @@
+//? WINDTUNNEL CHECK LIST
+//? max-cycles: 4000000
+//? post: cog[*].reg[failures] == 0
+//? run: "target=0 alignment=0"
+//? cog: 1
+//? const: probe_target = 0
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=0 alignment=1"
+//? cog: 1
+//? const: probe_target = 0
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=0 alignment=2"
+//? cog: 1
+//? const: probe_target = 0
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=0 alignment=3"
+//? cog: 1
+//? const: probe_target = 0
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+//? run: "target=1 alignment=0"
+//? cog: 2
+//? const: probe_target = 1
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=1 alignment=1"
+//? cog: 2
+//? const: probe_target = 1
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=1 alignment=2"
+//? cog: 2
+//? const: probe_target = 1
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=1 alignment=3"
+//? cog: 2
+//? const: probe_target = 1
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+//? run: "target=2 alignment=0"
+//? cog: 3
+//? const: probe_target = 2
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=2 alignment=1"
+//? cog: 3
+//? const: probe_target = 2
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=2 alignment=2"
+//? cog: 3
+//? const: probe_target = 2
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=2 alignment=3"
+//? cog: 3
+//? const: probe_target = 2
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+//? run: "target=3 alignment=0"
+//? cog: 4
+//? const: probe_target = 3
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=3 alignment=1"
+//? cog: 4
+//? const: probe_target = 3
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=3 alignment=2"
+//? cog: 4
+//? const: probe_target = 3
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=3 alignment=3"
+//? cog: 4
+//? const: probe_target = 3
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+//? run: "target=4 alignment=0"
+//? cog: 5
+//? const: probe_target = 4
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=4 alignment=1"
+//? cog: 5
+//? const: probe_target = 4
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=4 alignment=2"
+//? cog: 5
+//? const: probe_target = 4
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=4 alignment=3"
+//? cog: 5
+//? const: probe_target = 4
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+//? run: "target=5 alignment=0"
+//? cog: 6
+//? const: probe_target = 5
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=5 alignment=1"
+//? cog: 6
+//? const: probe_target = 5
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=5 alignment=2"
+//? cog: 6
+//? const: probe_target = 5
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=5 alignment=3"
+//? cog: 6
+//? const: probe_target = 5
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+//? run: "target=6 alignment=0"
+//? cog: 7
+//? const: probe_target = 6
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=6 alignment=1"
+//? cog: 7
+//? const: probe_target = 6
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=6 alignment=2"
+//? cog: 7
+//? const: probe_target = 6
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=6 alignment=3"
+//? cog: 7
+//? const: probe_target = 6
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+//? run: "target=7 alignment=0"
+//? cog: 0
+//? const: probe_target = 7
+//? const: probe_alignment = 0
+//? const: probe_expected = 0x1020304
+//? issues: memory_read_race = 0
+//? run: "target=7 alignment=1"
+//? cog: 0
+//? const: probe_target = 7
+//? const: probe_alignment = 1
+//? const: probe_expected = 0xdd020304
+//? issues: memory_read_race = 8
+//? run: "target=7 alignment=2"
+//? cog: 0
+//? const: probe_target = 7
+//? const: probe_alignment = 2
+//? const: probe_expected = 0xccdd0304
+//? issues: memory_read_race = 8
+//? run: "target=7 alignment=3"
+//? cog: 0
+//? const: probe_target = 7
+//? const: probe_alignment = 3
+//? const: probe_expected = 0xbbccdd04
+//? issues: memory_read_race = 8
+
+                // A companion writes the upper physical long around the two sampling edges of loaded r100.
+                // Sweep forty adjacent deadlines: its eight-clock slice visits fall before, on, or after the low sample.
+                MOV     mailbox,    aug(hubaddr(stamp))
+                MOV     resultaddr, mailbox
+                ADD     resultaddr, 4
+                MOV     source,     aug(0x8000 + probe_alignment)
+                MOV     upperaddr,  aug(0x8000 + 404)
+                MOV     marker,     aug(0xaabbccdd)
+                MOV     delay,      0
+next_delay:
+                // Restore all bytes before each independent startup race.
+                MOV     PTRA,           aug(hubaddr(image))
+                MOV     PTRB,           source
+                REP     2,              aug(504 * 4)
+                RDBYTE  PA,             PTRA++
+                WRBYTE  PA,             PTRB++
+                WRLONG  0,              resultaddr
+                SETQ    mailbox
+                COGINIT probe_target,   source              :wc
+                GETCT   finish
+                // Returned GETCT is command grant + 4; the source's first slice is bank zero.
+                MOV     timer,          finish
+                SUB     timer,          4
+                ADD     timer,          17
+                MOV     delta,          0
+                SUB     delta,          timer
+                SUB     delta,          probe_target
+                AND     delta,          7
+                ADD     timer,          delta
+                ADD     timer,          100
+                MOV     sample_clock,   timer
+                SUB     timer,          30
+                ADD     timer,          delay
+                ADDCT1  timer,          0
+                WAITCT1
+                WRLONG  marker,         upperaddr
+                GETCT   write_clock
+                // Following GETCT is the physical WRLONG commit clock + 1.
+                SUB     write_clock,    sample_clock
+                SUB     write_clock,    1
+                WAITX   aug(1024)
+                RDLONG  actual,         resultaddr
+                MOV     expected,       aug(0x01020304)
+                CMP     write_clock,    0                   :wz
+    if(Z)       MOV     expected,       aug(probe_expected)
+                TESTB   write_clock,    31                  :wc
+    if(C)       MOV     expected,       aug(probe_expected)
+                CMP     actual,         expected            :wz
+    if(!Z)      ADD     failures,       1
+                ADD     delay,          1
+                CMP     delay,          40                  :wz
+    if(!Z)      JMP     next_delay
+                SETQ    0
+                JMP     nrel(_end)
+var mailbox:    LONG    0
+var resultaddr: LONG    0
+var source:     LONG    0
+var upperaddr:  LONG    0
+var marker:     LONG    0
+var delay:      LONG    0
+var finish:     LONG    0
+var timer:      LONG    0
+var delta:      LONG    0
+var sample_clock:
+                LONG    0
+var write_clock:
+                LONG    0
+var actual:     LONG    0
+var expected:   LONG    0
+var failures:   LONG    0
+.data
+stamp:          LONG    0,  0
+.cogexec    16384, 0
+image:
+                // Report the loaded data word only after startup has completely finished.
+                GETCT   register(20)
+                WRLONG  register(20),   PTRA
+                WRLONG  register(100),  PTRA[1]
+                COGID   register(21)
+                COGSTOP register(21)
+                LONG    [0] * 95
+                LONG    0x01020304
+                LONG    [0] * 403

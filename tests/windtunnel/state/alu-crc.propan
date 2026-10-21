@@ -14,4 +14,3 @@
                 JMP     nrel(_end)
 var crc:        LONG    0
 var polynomial: LONG    0xedb88320
-

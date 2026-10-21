@@ -3,6 +3,7 @@
 Windtunnel implements the deterministic ALU and these core operations:
 
 - Conditional branches, relative jumps, register jumps, calls through the hardware stack, calls through PTRA/PTRB hub stacks, and CALLD/LOC.
+- Eight interleaved single-port hub RAM slices with checked rotating ownership; see [hub RAM](memory.md).
 - Byte, word, and long hub access, unaligned access, masked writes, scaled and augmented pointer expressions, and SETQ/SETQ2 cog/LUT block transfers.
 - LUT access and sharing, including Q updates on RDLUT.
 - All ALTx register and lane prefixes, ALTI field modification, instruction substitution, and cancellation of result writes.

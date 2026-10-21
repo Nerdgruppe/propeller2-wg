@@ -17,4 +17,3 @@ _start:
                 MOV     result, 7
                 JMP     nrel(_end)
 var result:     LONG    0
-

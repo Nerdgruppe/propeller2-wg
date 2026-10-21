@@ -540,7 +540,7 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
         return;
     }
     if (command.fifoMode()) |mode| {
-        if (cog.exec_mode == .hub or cog.fifo_state.engine == null or cog.fifo_state.engine.?.mode != mode) {
+        if (cog.exec_mode == .hub or cog.fifo_state.engine == null or std.meta.activeTag(cog.fifo_state.engine.?.direction) != mode) {
             cog.hub.report(.{ .streamer_fifo_lost = .{ .control = command.control, .value = 0 } }, command.provenance);
             return;
         }

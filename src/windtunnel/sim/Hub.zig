@@ -4,6 +4,8 @@
 const std = @import("std");
 
 const access_types = @import("access.zig");
+pub const HubRam = @import("HubRam.zig");
+const reads = @import("read.zig");
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
 pub const SystemConfiguration = @import("SystemConfiguration.zig");
@@ -42,7 +44,7 @@ debugger: ?*Debugger = null,
 access_context: access_types.Provenance = .{},
 read_class: access_types.ReadClass = .data,
 
-memory: [512 * 1024]u8 = @splat(0),
+ram: HubRam = .{},
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
@@ -61,9 +63,11 @@ issues: Issue.Collection = .{},
 /// Actual committed writes for same-edge writer conflict detection.
 edge_writes: [8 * max_cog_edge_writes]Issue.Participant = undefined,
 edge_write_count: usize = 0,
-/// Startup, FIFO, memory grants and deferred writes: at most two longs per producer/cog.
-hub_transfers: [8 * 4 * 2]HubTransfer = undefined,
-hub_transfer_count: usize = 0,
+/// One single-port operation per physical slice on the current edge.
+ram_ports: [8]?HubTransfer = @splat(null),
+/// Accepted RAM byte writes on this edge, reconciled after every physical producer.
+ram_writes: [8 * 4]reads.CommittedWrite = undefined,
+ram_write_count: usize = 0,
 /// The shared command bus accepts one cog's command per edge.
 command_issuer: ?u3 = null,
 locks: [16]Lock = undefined,
@@ -72,6 +76,11 @@ clocking: bool = false,
 /// HUBSET reset is consumed at the next step boundary or immediately after its issuing cog.
 reset_requested: bool = false,
 pending_starts: [8]?struct { provenance: access_types.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
+
+comptime {
+    std.debug.assert(@sizeOf(Cog) <= 32 * 1024);
+    std.debug.assert(@sizeOf(Hub) <= 1280 * 1024);
+}
 
 pub const Lock = struct {
     allocated: bool = false,
@@ -94,6 +103,7 @@ const HubTransfer = struct {
     access: access_types.Access,
     address: u18,
     lanes: std.StaticBitSet(4),
+    accepted: HubRam.LaneMask,
 };
 
 /// Scheduled delays are below half the counter period. Compare modulo 2^64
@@ -121,7 +131,7 @@ pub fn init(hub: *Hub, configuration: SystemConfiguration) error{InvalidConfigur
     };
     hub.io.connect();
     hub.io.analog_pads.init(&hub.system_configuration);
-    @memcpy(hub.memory[0x7c000..], boot_rom);
+    @memcpy(hub.ram.bytes()[0x7c000..], boot_rom);
     for (&hub.locks, 0..) |*lock, i| {
         lock.* = .{ .id = @intCast(i) };
     }
@@ -189,114 +199,171 @@ pub fn send_attention(hub: *Hub, mask: u32) void {
     }
 }
 
-/// Resolve a physical read to a backing RAM byte, accounting for protection and the upper mirror.
-pub fn readBackingAddress(hub: *const Hub, address: u32) ?u19 {
-    const byte_address = address & 0xfffff;
-    if (byte_address < (if (hub.debug.protected) @as(u32, 0x7c000) else 0x80000) or byte_address >= 0xfc000)
-        return @truncate(byte_address);
-    return null;
-}
-
-/// Assert that physical transfers never share a long on one edge, including mirrored RAM.
-/// Disjoint pieces of one unaligned block-write grant combine into its byte enables.
-pub fn claim_hub_access(hub: *Hub, origin: TransferOrigin, access: access_types.Access, address: u32, size: u3) void {
+/// Reserve the rotating single-port slice; merge only disjoint pieces of one write beat.
+fn claim_hub_access(hub: *Hub, origin: TransferOrigin, access: access_types.Access, address: u32, size: u3) void {
     if (!hub.clocking)
         return;
-
-    var offset: usize = 0;
-    while (offset < size) {
-        const byte_address = (address +% @as(u32, @intCast(offset))) & 0xfffff;
-        const backing = if (byte_address >= 0xfc000)
-            byte_address & 0x7ffff
-        else
-            byte_address;
-        const long_address: u18 = @intCast(backing >> 2);
-        const lane: usize = byte_address & 3;
-        const count = @min(@as(usize, size) - offset, 4 - lane);
-        var lanes = std.StaticBitSet(4).initEmpty();
-        lanes.setRangeValue(.{ .start = lane, .end = lane + count }, true);
-        var merged = false;
-        for (hub.hub_transfers[0..hub.hub_transfer_count]) |*claimed| {
-            if (claimed.address != long_address)
-                continue;
-            std.debug.assert(origin == .memory and access == .write and claimed.access == .write and
-                std.meta.eql(origin, claimed.origin) and lanes.intersectWith(claimed.lanes).count() == 0);
-            claimed.lanes.setUnion(lanes);
-            merged = true;
-            break;
-        }
-        if (!merged) {
-            std.debug.assert(hub.hub_transfer_count < hub.hub_transfers.len);
-            hub.hub_transfers[hub.hub_transfer_count] = .{
-                .origin = origin,
-                .access = access,
-                .address = long_address,
-                .lanes = lanes,
-            };
-            hub.hub_transfer_count += 1;
-        }
-        offset += count;
+    const decoded = HubRam.Address.init(address);
+    std.debug.assert(size > 0 and @as(u3, decoded.lane) + size <= 4);
+    const requester = switch (origin) {
+        .startup, .fifo => |id| id,
+        .memory => |provenance| provenance.cog orelse @panic("RAM beat has no transport requester"),
+    };
+    std.debug.assert(decoded.slice == (hub.counter +% requester) % 8);
+    const backing: u20 = decoded.backing() orelse decoded.value();
+    const long_address: u18 = @intCast(backing / 4);
+    var lanes = HubRam.LaneMask.initEmpty();
+    lanes.setRangeValue(.{ .start = decoded.lane, .end = @as(usize, decoded.lane) + size }, true);
+    const port = &hub.ram_ports[decoded.slice];
+    if (port.*) |*claimed| {
+        std.debug.assert((origin == .memory or origin == .fifo) and access == .write and
+            claimed.access == .write and claimed.address == long_address and
+            std.meta.eql(origin, claimed.origin) and lanes.intersectWith(claimed.lanes).count() == 0);
+        claimed.lanes.setUnion(lanes);
+    } else {
+        port.* = .{ .origin = origin, .access = access, .address = long_address, .lanes = lanes, .accepted = .initEmpty() };
     }
 }
 
-/// Read little-endian bytes through the 20-bit RAM/hole/mirror map, wrapping each byte address.
+pub const ReadBeat = struct { origin: TransferOrigin, address: u32, size: u3 };
+pub const ReadResult = struct { value: u32, sample: reads.Sample };
+pub const WriteBeat = struct {
+    origin: TransferOrigin,
+    address: u32,
+    value: u32,
+    size: u3,
+    masked: bool,
+    authorization: WriteOrigin,
+};
+
+/// Issue one selected physical long; callers retain the returned sampling metadata.
+pub fn readHubBeat(hub: *Hub, request: ReadBeat) ReadResult {
+    const address = HubRam.Address.init(request.address);
+    std.debug.assert(@as(u3, address.lane) + request.size <= 4);
+    hub.claim_hub_access(request.origin, .read, request.address, request.size);
+    var failures: ReadFailures = .{};
+    return hub.readLong(address, request.size, &failures);
+}
+
+/// Commit one physical write with captured authorization and explicit byte enables.
+pub fn writeHubBeat(hub: *Hub, request: WriteBeat) void {
+    const address = HubRam.Address.init(request.address);
+    std.debug.assert(@as(u3, address.lane) + request.size <= 4);
+    hub.claim_hub_access(request.origin, .write, request.address, request.size);
+    hub.write_memory_from(request.address, request.value, request.size, request.masked, request.authorization);
+}
+
+const ReadFailures = struct { hole: bool = false, protected: bool = false };
+
+/// Sample selected lanes after one address/protection decode, coalescing logical read failures.
+fn readLong(hub: *Hub, address: HubRam.Address, size: u3, failures: *ReadFailures) ReadResult {
+    const resolution = HubRam.resolve(address, hub.debug.protected, .read, false);
+    var result: ReadResult = .{
+        .value = 0,
+        .sample = .{ .address = address.aligned().value(), .clock = hub.counter, .readable = .initEmpty() },
+    };
+    switch (resolution) {
+        .ram => |physical| {
+            result.sample.readable = .initFull();
+            const word = hub.ram.read(physical);
+            for (0..size) |i| {
+                const byte = word[address.lane + i];
+                result.value |= @as(u32, byte) << @intCast(i * 8);
+                hub.observe(.hub, null, physical.backing().? + @as(u19, @intCast(i)), .read, byte, hub.read_class, .ram);
+            }
+        },
+        .hole, .protected => {
+            const reported = switch (resolution) {
+                .hole => &failures.hole,
+                .protected => &failures.protected,
+                .ram => unreachable,
+            };
+            if (hub.clocking and !reported.*) {
+                reported.* = true;
+                const read: Issue.MemoryRead = .{ .address = address.value() };
+                hub.report(switch (resolution) {
+                    .hole => .{ .memory_hole_read = read },
+                    .protected => .{ .memory_protected_read = read },
+                    .ram => unreachable,
+                }, hub.access_context);
+            }
+        },
+    }
+    return result;
+}
+
+/// Compose an untimed logical span from decoded physical longs, wrapping the twenty address lines.
 pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
+    std.debug.assert(size <= 4);
     var value: u32 = 0;
-    var hole_reported = false;
-    var protection_reported = false;
-    for (0..size) |i| {
-        const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
-        if (hub.readBackingAddress(byte_address)) |backing| {
-            const byte = hub.memory[backing];
-            value |= @as(u32, byte) << @intCast(i * 8);
-            hub.observe(.hub, null, backing, .read, byte, hub.read_class, .ram);
-        } else if (hub.clocking) {
-            const reported = if (byte_address < 0x80000)
-                &protection_reported
-            else
-                &hole_reported;
-            if (reported.*)
-                continue;
-            reported.* = true;
-            const read: Issue.MemoryRead = .{ .address = @intCast(byte_address) };
-            const kind: Issue.Kind = if (byte_address < 0x80000)
-                .{ .memory_protected_read = read }
-            else
-                .{ .memory_hole_read = read };
-            hub.report(kind, hub.access_context);
-        }
+    var failures: ReadFailures = .{};
+    var offset: u3 = 0;
+    while (offset < size) {
+        const decoded = HubRam.Address.init(address +% offset);
+        const count: u3 = @min(size - offset, 4 - @as(u3, decoded.lane));
+        value |= hub.readLong(decoded, count, &failures).value << @intCast(@as(u5, offset) * 8);
+        offset += count;
     }
     return value;
 }
 
-/// Write through the 20-bit hub map; ignore holes and optionally preserve bytes where the source is zero.
+/// Write an application span through the decoded long and byte-enable interface.
 pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool) void {
     hub.write_memory_from(address, value, size, masked, .application);
 }
 
-/// Apply byte-level aliases and protection using the transfer's original authorization.
+/// Apply captured authorization once per long and zero-byte masking per selected lane.
 pub fn write_memory_from(hub: *Hub, address: u32, value: u32, size: u3, masked: bool, origin: WriteOrigin) void {
-    for (0..size) |i| {
-        const byte: u8 = @truncate(value >> @intCast(i * 8));
-        if (masked and byte == 0)
-            continue;
-        const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
-        const mapped = byte_address < 0x80000 or byte_address >= 0xfc000;
-        const authorized = !hub.debug.protected or
-            byte_address < 0x7c000 or
-            (byte_address >= 0xfc000 and
-                origin == .debug);
-        if (mapped and authorized) {
-            hub.memory[byte_address & 0x7ffff] = byte;
-            hub.observe(.hub, null, byte_address & 0x7ffff, .write, byte, .data, .ram);
-        } else if ((!mapped or !authorized) and hub.clocking) {
-            const write: Issue.MemoryWrite = .{ .address = @intCast(byte_address), .value = byte };
-            const kind: Issue.Kind = if (!mapped)
-                .{ .memory_hole_write = write }
-            else
-                .{ .memory_protected_write = write };
-            hub.report(kind, hub.access_context);
+    std.debug.assert(size <= 4);
+    var offset: u3 = 0;
+    while (offset < size) {
+        const decoded = HubRam.Address.init(address +% offset);
+        const count: u3 = @min(size - offset, 4 - @as(u3, decoded.lane));
+        const resolution = HubRam.resolve(decoded, hub.debug.protected, .write, origin == .debug);
+        var lanes = HubRam.LaneMask.initEmpty();
+        var word: HubRam.Long = @splat(0);
+        for (0..count) |i| {
+            const byte: u8 = @truncate(value >> @intCast((offset + i) * 8));
+            if (masked and byte == 0)
+                continue;
+            switch (resolution) {
+                .ram => |physical| {
+                    if (hub.clocking) {
+                        std.debug.assert(hub.ram_write_count < hub.ram_writes.len);
+                        hub.ram_writes[hub.ram_write_count] = .{
+                            .address = physical.backing().? + @as(u19, @intCast(i)),
+                            .value = byte,
+                            .provenance = hub.access_context,
+                        };
+                        hub.ram_write_count += 1;
+                        if (hub.ram_ports[decoded.slice]) |*port| {
+                            std.debug.assert(port.access == .write);
+                            port.accepted.set(decoded.lane + i);
+                        }
+                    }
+                    lanes.set(decoded.lane + i);
+                    word[decoded.lane + i] = byte;
+                    hub.observe(.hub, null, physical.backing().? + @as(u19, @intCast(i)), .write, byte, .data, .ram);
+                },
+                .hole, .protected => {
+                    if (hub.clocking) {
+                        const write: Issue.MemoryWrite = .{
+                            .address = decoded.value() + @as(u20, @intCast(i)),
+                            .value = byte,
+                        };
+                        hub.report(switch (resolution) {
+                            .hole => .{ .memory_hole_write = write },
+                            .protected => .{ .memory_protected_write = write },
+                            .ram => unreachable,
+                        }, hub.access_context);
+                    }
+                },
+            }
         }
+        if (resolution == .ram) {
+            hub.ram.write(resolution.ram, word, lanes);
+        }
+        offset += count;
     }
 }
 
@@ -355,7 +422,8 @@ pub fn observe(hub: *Hub, space: access_types.Space, cog: ?u3, address: u32, acc
 pub fn step(hub: *Hub) StepResult {
     hub.issues.clear();
     hub.edge_write_count = 0;
-    hub.hub_transfer_count = 0;
+    hub.ram_ports = @splat(null);
+    hub.ram_write_count = 0;
     hub.command_issuer = null;
     if (hub.reset_requested) {
         hub.firmwareReset();
@@ -451,8 +519,14 @@ pub fn step(hub: *Hub) StepResult {
     for (&hub.cogs) |*cog| {
         if (cog.hub_writeback) |write| {
             hub.access_context = write.provenance;
-            hub.claim_hub_access(.{ .memory = write.provenance }, .write, write.address, write.size);
-            hub.write_memory_from(write.address, write.value, write.size, write.masked, write.origin);
+            hub.writeHubBeat(.{
+                .origin = .{ .memory = write.provenance },
+                .address = write.address,
+                .value = write.value,
+                .size = write.size,
+                .masked = write.masked,
+                .authorization = write.origin,
+            });
             cog.hub_writeback = null;
         }
     }
@@ -485,6 +559,9 @@ pub fn step(hub: *Hub) StepResult {
         hub.access_context = cog.provenance();
         hub.read_class = .data;
         cog.clock_memory();
+    }
+    for (&hub.cogs) |*cog| {
+        cog.finish_reads();
     }
     if (hub.cordic.step()) |delivery| {
         hub.cogs[@intFromEnum(delivery.cog)].cordic_result.accept(delivery);
@@ -520,6 +597,7 @@ pub fn step(hub: *Hub) StepResult {
     for (&hub.cogs) |*cog| {
         cog.advance_fifo_write_ready();
         cog.advance_read_bus();
+        cog.assert_read_ownership();
     }
     hub.io.advance_delays();
 
@@ -618,6 +696,7 @@ pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) void {
             };
             if (cog.exec_mode == .hub)
                 cog.fifo_state.engine = .{
+                    .direction = .{ .read = .{} },
                     .byte_offset = @truncate(cog.pc),
                     .address = cog.pc & 0xffffc,
                     .ready_at = command_clock +% 22,
@@ -840,7 +919,7 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
         const read_address: u32 = @intCast(((hub.counter +% 1) & 7) * 4);
         hub.write_memory(fifo_address, 0x1122_3344, 4, false);
         hub.write_memory(read_address, 0x5566_7788, 4, false);
-        hub.cogs[0].fifo_state.engine = .{ .address = @intCast(fifo_address), .byte_offset = 0, .ready_at = hub.counter };
+        hub.cogs[0].fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = @intCast(fifo_address), .byte_offset = 0, .ready_at = hub.counter };
         hub.cogs[1].memory_transfer = .{
             .provenance = .{ .cog = 1 },
             .address = read_address,
@@ -859,7 +938,7 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
         }
         _ = hub.step();
         try std.testing.expectEqual(@as(usize, 1), hub.cogs[0].fifo_state.engine.?.count);
-        try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[0].fifo_state.engine.?.words[0]);
+        try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[0].peek_fifo(0).? | (@as(u32, hub.cogs[0].peek_fifo(1).?) << 8) | (@as(u32, hub.cogs[0].peek_fifo(2).?) << 16) | (@as(u32, hub.cogs[0].peek_fifo(3).?) << 24));
         try std.testing.expectEqual(@as(?u32, 0x5566_7788), hub.cogs[1].memory_transfer.?.direction.read.value);
     }
 }
@@ -1070,7 +1149,7 @@ test "ROM cache aliases, byte protection, masked wrapping and configuration lock
     defer std.testing.allocator.destroy(hub);
 
     try hub.init(.ideal);
-    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.ram.bytes()[0x7c000..]);
     try std.testing.expectEqual(hub.read_memory(0x7c000, 4), hub.read_memory(0xfc000, 4));
     hub.write_memory(0x7ffff, 0x1122_3344, 4, false);
     try std.testing.expectEqual(@as(u32, 0x44), hub.read_memory(0xfffff, 1));
@@ -1089,7 +1168,7 @@ test "ROM cache aliases, byte protection, masked wrapping and configuration lock
     try std.testing.expectEqual(Cog.InterruptState.pending, hub.cogs[0].debug.state);
     try hub.init(.ideal);
     try std.testing.expect(!hub.debug.locked);
-    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.ram.bytes()[0x7c000..]);
 }
 
 test "debug ROM saves and restores sixteen registers for all eight cogs" {
@@ -1134,10 +1213,12 @@ test "deferred write authorization survives a debug state transition" {
     const cog = &hub.cogs[0];
     cog.debug.state = .active;
     cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0xdead_beef, .size = 4, .masked = false, .origin = .application };
+    hub.counter = cog.memory_grant_after(0xfc000, 0);
     _ = hub.step();
     try std.testing.expectEqual(before, hub.read_memory(0xfc000, 4));
     cog.debug.state = .idle;
     cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0x1234_5678, .size = 4, .masked = false, .origin = .debug };
+    hub.counter = cog.memory_grant_after(0xfc000, 0);
     _ = hub.step();
     try std.testing.expectEqual(@as(u32, 0x1234_5678), hub.read_memory(0xfc000, 4));
 }
@@ -1147,7 +1228,7 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     defer std.testing.allocator.destroy(hub);
 
     try hub.init(.ideal);
-    @memset(&hub.memory, 0xaa);
+    @memset(hub.ram.bytes(), 0xaa);
     hub.counter = 123;
     hub.debug = .{ .enables = 0xff, .protected = true, .locked = true };
     hub.random.seed(0x87654321);
@@ -1184,8 +1265,8 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     try std.testing.expect(!hub.locks[0].allocated and !hub.locks[0].taken);
     try std.testing.expect(hub.debugger == null and hub.vcd == null);
     try std.testing.expect(hub.issues.len == 0 and !hub.reset_requested and !hub.clocking);
-    try std.testing.expect(std.mem.allEqual(u8, hub.memory[0..0x7c000], 0));
-    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    try std.testing.expect(std.mem.allEqual(u8, hub.ram.bytes()[0..0x7c000], 0));
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.ram.bytes()[0x7c000..]);
     for (&hub.cogs, 0..) |*cog, id| {
         try std.testing.expectEqual(Cog.ExecMode.stopped, cog.exec_mode);
         try std.testing.expect(cog.hub == hub and cog.id == id);
@@ -1230,7 +1311,7 @@ test "system configuration initializes atomically and survives firmware reset" {
     configuration.vio_voltage = 2.5;
     configuration.threshold_ratio = 0.25;
     try hub.init(configuration);
-    hub.memory[0] = 0xaa;
+    hub.ram.bytes()[0] = 0xaa;
     hub.counter = 7;
     try hub.io.setExternal(@enumFromInt(10), .{ .voltage = 1, .resistance = 1 });
     try std.testing.expectEqual(StepResult.normal, hub.step());
@@ -1240,14 +1321,14 @@ test "system configuration initializes atomically and survives firmware reset" {
     invalid.pad_capacitance = 0;
     try std.testing.expectError(error.InvalidConfiguration, hub.init(invalid));
     try std.testing.expectEqualDeep(configuration, hub.system_configuration);
-    try std.testing.expectEqual(@as(u8, 0xaa), hub.memory[0]);
+    try std.testing.expectEqual(@as(u8, 0xaa), hub.ram.bytes()[0]);
     try std.testing.expectEqual(@as(u64, 8), hub.counter);
     try std.testing.expectEqualDeep(state, hub.io.getExternal(@enumFromInt(10)).?);
     hub.configure(0x1000_0000);
     try std.testing.expectEqual(StepResult.reset, hub.step());
     try std.testing.expectEqualDeep(configuration, hub.system_configuration);
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
-    try std.testing.expectEqual(@as(u8, 0), hub.memory[0]);
+    try std.testing.expectEqual(@as(u8, 0), hub.ram.bytes()[0]);
     try std.testing.expect(hub.io.getExternal(@enumFromInt(10)) == null);
     try std.testing.expectEqualDeep(IO.Pad.Source.float, hub.io.external[10]);
     try hub.init(.ideal);

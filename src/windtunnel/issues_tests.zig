@@ -56,7 +56,7 @@ test "rejected streamer commands preserve idle active and full-buffer states" {
                     try std.testing.expectEqual(Cog.ExecResult.next, execute.execute_instruction(cog, cog.pipeline[3].?));
                     try std.testing.expectEqualDeep(saved, cog.streamer);
                     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-                    const issue = hub.issues.items()[0];
+                    const issue = hub.issues.at(0);
                     try std.testing.expectEqual(Issue.Severity.trap, issue.severity());
                     try std.testing.expectEqual(Issue.ModeReason.reserved_encoding, issue.kind.streamer_mode.reason);
                     try std.testing.expectEqual(mode | count, issue.kind.streamer_mode.control);
@@ -90,8 +90,8 @@ test "all cogs complete a hazardous edge and pause preserves the reports" {
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
     try std.testing.expectEqual(@as(u32, 7), hub.cogs[7].registers.values[42]);
     try std.testing.expectEqual(@as(usize, 2), hub.issues.len);
-    try std.testing.expectEqual(@as(?u3, 0), hub.issues.items()[0].provenance.cog);
-    try std.testing.expectEqual(@as(?u3, 4), hub.issues.items()[1].provenance.cog);
+    try std.testing.expectEqual(@as(?u3, 0), hub.issues.at(0).provenance.cog);
+    try std.testing.expectEqual(@as(?u3, 4), hub.issues.at(1).provenance.cog);
     try std.testing.expect(hub.cogs[0].exec_mode == .cog and hub.cogs[4].exec_mode == .cog);
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
@@ -114,10 +114,10 @@ test "actual fetch collisions retain different issuing instructions" {
         _ = hub.step();
     }
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    const conflict = hub.issues.items()[0].kind.cog_fetch_write;
+    const conflict = hub.issues.at(0).kind.cog_fetch_write;
     try std.testing.expectEqualDeep(writer, conflict.writer.provenance);
     try std.testing.expectEqual(@as(u64, 0), conflict.clock);
-    try std.testing.expectEqual(@as(u64, 3), hub.issues.items()[0].clock);
+    try std.testing.expectEqual(@as(u64, 3), hub.issues.at(0).clock);
     try std.testing.expectEqual(@as(?u20, 42), conflict.reader.provenance.pc);
     try std.testing.expectEqual(@as(?u32, 0), conflict.reader.provenance.instruction);
     try std.testing.expectEqual(@as(u32, 42), conflict.reader.address);
@@ -155,7 +155,8 @@ test "discarded and condition-false fetches stay silent and stalled execution re
         var reported: usize = 0;
         for (0..20) |_| {
             _ = hub.step();
-            for (hub.issues.items()) |issue| {
+            for (0..hub.issues.len) |issue_index| {
+                const issue = hub.issues.at(issue_index);
                 try std.testing.expect(issue.kind == .cog_fetch_write);
                 try std.testing.expectEqual(@as(u64, 0), issue.kind.cog_fetch_write.clock);
                 reported += 1;
@@ -177,19 +178,19 @@ test "unreadable long accesses report once per failure kind without hiding reada
     hub.clocking = true;
     try std.testing.expectEqual(@as(u32, 0), hub.read_memory(0x80000, 4));
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqual(@as(u20, 0x80000), hub.issues.items()[0].kind.memory_hole_read.address);
+    try std.testing.expectEqual(@as(u20, 0x80000), hub.issues.at(0).kind.memory_hole_read.address);
     hub.issues.clear();
-    hub.memory[0x7fffe] = 0x12;
-    hub.memory[0x7ffff] = 0x34;
+    hub.ram.bytes()[0x7fffe] = 0x12;
+    hub.ram.bytes()[0x7ffff] = 0x34;
     try std.testing.expectEqual(@as(u32, 0x3412), hub.read_memory(0x7fffe, 4));
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqual(@as(u20, 0x80000), hub.issues.items()[0].kind.memory_hole_read.address);
+    try std.testing.expectEqual(@as(u20, 0x80000), hub.issues.at(0).kind.memory_hole_read.address);
     hub.issues.clear();
     hub.debug.protected = true;
     try std.testing.expectEqual(@as(u32, 0), hub.read_memory(0x7fffe, 4));
     try std.testing.expectEqual(@as(usize, 2), hub.issues.len);
-    try std.testing.expectEqual(@as(u20, 0x7fffe), hub.issues.items()[0].kind.memory_protected_read.address);
-    try std.testing.expectEqual(@as(u20, 0x80000), hub.issues.items()[1].kind.memory_hole_read.address);
+    try std.testing.expectEqual(@as(u20, 0x7fffe), hub.issues.at(0).kind.memory_protected_read.address);
+    try std.testing.expectEqual(@as(u20, 0x80000), hub.issues.at(1).kind.memory_hole_read.address);
 }
 
 test "analog substeps aggregate extrema and firmware reset retains same-edge issues" {
@@ -202,7 +203,7 @@ test "analog substeps aggregate extrema and firmware reset retains same-edge iss
     try hub.io.setExternal(@enumFromInt(0), .{ .voltage = 5, .resistance = 1000 });
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    const pad = hub.issues.items()[0].kind.pad_overvoltage;
+    const pad = hub.issues.at(0).kind.pad_overvoltage;
     try std.testing.expectEqual(@as(u6, 0), pad.pin);
     try std.testing.expect(pad.maximum >= pad.minimum and pad.minimum > pad.limit);
 
@@ -240,8 +241,8 @@ test "analog substeps aggregate extrema and firmware reset retains same-edge iss
     hub.cogs[0].pipeline[3] = .{ .pc = 40, .instr = 0xfd60_2800 };
     try std.testing.expectEqual(Hub.StepResult.reset, hub.step());
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqual(@as(u20, 0x7c008), hub.issues.items()[0].kind.memory_protected_write.address);
-    try std.testing.expectEqualDeep(writer, hub.issues.items()[0].provenance);
+    try std.testing.expectEqual(@as(u20, 0x7c008), hub.issues.at(0).kind.memory_protected_write.address);
+    try std.testing.expectEqualDeep(writer, hub.issues.at(0).provenance);
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
     debugger.afterClock(hub);
     hub.debugger = &debugger;
@@ -304,7 +305,7 @@ test "issue storage holds its bound and coalesces repeated electrical limits" {
     for (0..Issue.Collection.capacity) |_| {
         collection.append(.{ .clock = 0, .provenance = .{}, .kind = .{ .invalid_encoding = {} } });
     }
-    try std.testing.expectEqual(Issue.Collection.capacity, collection.items().len);
+    try std.testing.expectEqual(Issue.Collection.capacity, collection.len);
     collection.clear();
     for (0..1024) |index| {
         collection.analog(.{ .clock = 0, .provenance = .{}, .kind = .{ .pad_overvoltage = .{
@@ -315,8 +316,18 @@ test "issue storage holds its bound and coalesces repeated electrical limits" {
         } } });
     }
     try std.testing.expectEqual(@as(usize, 1), collection.len);
-    try std.testing.expectEqual(@as(f64, 0), collection.items()[0].kind.pad_overvoltage.minimum);
-    try std.testing.expectEqual(@as(f64, 1023), collection.items()[0].kind.pad_overvoltage.maximum);
+    try std.testing.expectEqual(@as(f64, 0), collection.at(0).kind.pad_overvoltage.minimum);
+    try std.testing.expectEqual(@as(f64, 1023), collection.at(0).kind.pad_overvoltage.maximum);
+    collection.clear();
+    collection.analog(.{ .clock = 1, .provenance = .{}, .kind = .{ .pad_overvoltage = .{
+        .pin = 0,
+        .minimum = 7,
+        .maximum = 8,
+        .limit = 3.6,
+    } } });
+    try std.testing.expectEqual(@as(usize, 1), collection.len);
+    try std.testing.expectEqual(@as(f64, 7), collection.at(0).kind.pad_overvoltage.minimum);
+    try std.testing.expectEqual(@as(f64, 8), collection.at(0).kind.pad_overvoltage.maximum);
 }
 
 test "source sink and VCD failures complete the edge and stop retrying independently" {
@@ -442,8 +453,8 @@ test "late fetch address selection still finds the actual committed writer" {
     cog.step();
     try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
     const slot = cog.pipeline[1].?.fetch_conflict_slot.?;
-    const conflict = cog.fetch_conflicts[slot].items[0];
-    try std.testing.expectEqual(@as(?u20, 17), conflict.writer.provenance.pc);
+    const conflict = &cog.fetch_conflicts[slot];
+    try std.testing.expectEqual(@as(?u20, 17), conflict.writers[0].provenance.pc);
     try std.testing.expectEqual(@as(?u20, 42), conflict.reader.provenance.pc);
 }
 
@@ -464,8 +475,8 @@ test "register and LUT write conflicts retain distinct writer provenance and com
     hub.cogs[3].write_reg(@enumFromInt(42), 0xaabb_ccdd);
     hub.cogs[3].write_lut(17, 0xeeff_0011);
     try std.testing.expectEqual(@as(usize, 2), hub.issues.len);
-    const registers = hub.issues.items()[0].kind.reg_write_conflict;
-    const lut = hub.issues.items()[1].kind.lut_write_conflict;
+    const registers = hub.issues.at(0).kind.reg_write_conflict;
+    const lut = hub.issues.at(1).kind.lut_write_conflict;
     for ([_]Issue.Writers{ registers, lut }) |conflict| {
         try std.testing.expectEqualDeep(first, conflict.first.provenance);
         try std.testing.expectEqualDeep(second, conflict.second.provenance);
@@ -485,12 +496,10 @@ test "replacement of pending FIFO and startup work retains both original issuers
     try hub.init(.ideal);
     const cog = &hub.cogs[3];
     cog.fifo_state.engine = .{
-        .mode = .write,
+        .direction = .{ .write = .{ .count = 1, .pending = .{ 0, 1 } } },
         .byte_offset = 0,
         .address = 0x2000,
         .ready_at = null,
-        .write_count = 1,
-        .write_pending = .{ 0, 1 },
     };
     cog.pipeline[3] = .{ .pc = 17, .instr = 123 };
     const first = cog.provenance();
@@ -498,7 +507,7 @@ test "replacement of pending FIFO and startup work retains both original issuers
     cog.pipeline[3] = .{ .pc = 19, .instr = 456 };
     const second = cog.provenance();
     cog.begin_fifo(.read, 0, 0x4000);
-    const fifo = hub.issues.items()[0].kind.fifo_configuration_lost;
+    const fifo = hub.issues.at(0).kind.fifo_configuration_lost;
     try std.testing.expectEqualDeep(first, fifo.previous);
     try std.testing.expectEqualDeep(second, fifo.replacement);
     try std.testing.expectEqual(@as(u20, 0x4000), cog.fifo_state.request.?.block.address);
@@ -513,7 +522,7 @@ test "replacement of pending FIFO and startup work retains both original issuers
     hub.access_context = second;
     hub.start_cog(3, .{ .hub_address = 0x6000 });
     try std.testing.expectEqual(@as(usize, 2), hub.issues.len);
-    const start = hub.issues.items()[1].kind.cog_start_replaced;
+    const start = hub.issues.at(1).kind.cog_start_replaced;
     try std.testing.expectEqualDeep(first, start.previous);
     try std.testing.expectEqualDeep(second, start.replacement);
     try std.testing.expectEqual(@as(u20, 0x6000), cog.startup.?.address);
@@ -527,20 +536,20 @@ test "streamer capture loss and FIFO ownership loss preserve command provenance"
     const cog = &hub.cogs[2];
     const issuer: access_types.Provenance = .{ .cog = 2, .pc = 17, .instruction = 123 };
     cog.begin_fifo(.write, 0, 0x2000);
-    cog.fifo_state.engine.?.write_count = cog.fifo_state.engine.?.write_bytes.len;
-    cog.fifo_state.engine.?.write_pending[1] = cog.fifo_state.engine.?.write_count;
+    cog.fifo_state.engine.?.direction.write.count = cog.fifo_state.engine.?.direction.write.bytes.len;
+    cog.fifo_state.engine.?.direction.write.pending[1] = cog.fifo_state.engine.?.direction.write.count;
     const command = try Streamer.Command.init(0xf081_ffff, 0, 0x8000_0000, .immediate, issuer);
     cog.streamer.apply(cog, .{ .command = command });
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqualDeep(issuer, hub.issues.items()[0].provenance);
-    try std.testing.expectEqual(command.control, hub.issues.items()[0].kind.streamer_capture_dropped.control);
+    try std.testing.expectEqualDeep(issuer, hub.issues.at(0).provenance);
+    try std.testing.expectEqual(command.control, hub.issues.at(0).kind.streamer_capture_dropped.control);
     hub.issues.clear();
     cog.fifo_state.engine = null;
     cog.streamer.step(cog);
     cog.streamer.step(cog);
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqualDeep(issuer, hub.issues.items()[0].provenance);
-    try std.testing.expectEqual(command.control, hub.issues.items()[0].kind.streamer_fifo_lost.control);
+    try std.testing.expectEqualDeep(issuer, hub.issues.at(0).provenance);
+    try std.testing.expectEqual(command.control, hub.issues.at(0).kind.streamer_fifo_lost.control);
     try std.testing.expect(cog.streamer.active != null);
 }
 
@@ -555,8 +564,8 @@ test "clock fallback and unsafe postdivider transitions report the issuing confi
     hub.access_context = issuer;
     hub.configure(0x0100_07fb);
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqual(@as(u32, 0x0100_07fb), hub.issues.items()[0].kind.uncharacterized_pll);
-    try std.testing.expectEqualDeep(issuer, hub.issues.items()[0].provenance);
+    try std.testing.expectEqual(@as(u32, 0x0100_07fb), hub.issues.at(0).kind.uncharacterized_pll);
+    try std.testing.expectEqualDeep(issuer, hub.issues.at(0).provenance);
 
     try hub.init(.ideal);
     hub.access_context = issuer;
@@ -564,8 +573,8 @@ test "clock fallback and unsafe postdivider transitions report the issuing confi
     try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
     hub.configure(0x0100_0ffb);
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    try std.testing.expectEqual(@as(u32, 0x0100_0ffb), hub.issues.items()[0].kind.unsafe_postdivider);
-    try std.testing.expectEqualDeep(issuer, hub.issues.items()[0].provenance);
+    try std.testing.expectEqual(@as(u32, 0x0100_0ffb), hub.issues.at(0).kind.unsafe_postdivider);
+    try std.testing.expectEqualDeep(issuer, hub.issues.at(0).provenance);
 }
 
 test "electrical violations from different pins retain signed extrema across substeps" {
@@ -584,7 +593,8 @@ test "electrical violations from different pins retain signed extrema across sub
     var undervoltage = false;
     var overvoltage = false;
     var overcurrent: [2]bool = @splat(false);
-    for (hub.issues.items()) |issue| {
+    for (0..hub.issues.len) |issue_index| {
+        const issue = hub.issues.at(issue_index);
         switch (issue.kind) {
             .pad_undervoltage => |pad| {
                 try std.testing.expectEqual(@as(u6, 0), pad.pin);
@@ -631,7 +641,7 @@ test "overflow fetch reports the old cog RAM port value and its actual writer" {
     cog.pc = 0;
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    const conflict = hub.issues.items()[0].kind.cog_fetch_write;
+    const conflict = hub.issues.at(0).kind.cog_fetch_write;
     try std.testing.expectEqualDeep(writer, conflict.writer.provenance);
     try std.testing.expectEqual(@as(u32, 456), conflict.writer.value);
     try std.testing.expectEqual(@as(u32, 0), conflict.reader.value);
@@ -650,11 +660,7 @@ test "paired LUT write retains the delayed writer and original streamer sample s
     cog.lut_sharing = true;
     cog.lut[0] = 0x1122_3344;
     cog.begin_fifo(.read, 0, 0x2000);
-    const fifo = &cog.fifo_state.engine.?;
-    fifo.words[0] = 2; // LUT indices zero, then one, from consecutive source bits.
-    fifo.word_addresses[0] = 0x2000;
-    fifo.word_valid[0] = 0xf;
-    fifo.count = 1;
+    _ = test_support.bufferFifoWord(cog, .{ .address = 0x2000, .clock = 0, .readable = .initFull() }, 0x2004, 2);
     const reader: access_types.Provenance = .{ .cog = 0, .pc = 17, .instruction = 123 };
     const command = try Streamer.Command.init(0x7082_ffff, 0, 0x8000_0000, .immediate, reader);
     cog.streamer.apply(cog, .{ .command = command });
@@ -665,7 +671,7 @@ test "paired LUT write retains the delayed writer and original streamer sample s
     cog.pipeline[3] = .{ .pc = 99, .instr = 0 };
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    const conflict = hub.issues.items()[0].kind.lut_read_write;
+    const conflict = hub.issues.at(0).kind.lut_read_write;
     try std.testing.expectEqualDeep(writer, conflict.writer.provenance);
     try std.testing.expectEqualDeep(reader, conflict.reader.provenance);
     try std.testing.expectEqual(@as(?u3, 0), conflict.writer.cog);
@@ -726,13 +732,13 @@ test "memory map and protection failures distinguish access kind address and sev
         hub.debug.protected = case.protected;
         hub.access_context = issuer;
         const backing = case.address & 0x7ffff;
-        hub.memory[backing] = 0x33;
+        hub.ram.bytes()[backing] = 0x33;
         hub.clocking = true;
         const read = hub.read_memory(case.address, 1);
         if (case.read) |expected| {
             try std.testing.expectEqual(@as(u32, 0), read);
             try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-            const issue = hub.issues.items()[0];
+            const issue = hub.issues.at(0);
             try std.testing.expectEqual(expected.kind, std.meta.activeTag(issue.kind));
             try std.testing.expectEqual(expected.severity, issue.severity());
             try std.testing.expectEqualDeep(issuer, issue.provenance);
@@ -749,9 +755,9 @@ test "memory map and protection failures distinguish access kind address and sev
         hub.issues.clear();
         hub.write_memory_from(case.address, 0x5a, 1, false, case.origin);
         if (case.write) |expected| {
-            try std.testing.expectEqual(@as(u8, 0x33), hub.memory[backing]);
+            try std.testing.expectEqual(@as(u8, 0x33), hub.ram.bytes()[backing]);
             try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-            const issue = hub.issues.items()[0];
+            const issue = hub.issues.at(0);
             try std.testing.expectEqual(expected.kind, std.meta.activeTag(issue.kind));
             try std.testing.expectEqual(expected.severity, issue.severity());
             try std.testing.expectEqualDeep(issuer, issue.provenance);
@@ -763,7 +769,7 @@ test "memory map and protection failures distinguish access kind address and sev
                 else => return error.UnexpectedIssue,
             }
         } else {
-            try std.testing.expectEqual(@as(u8, 0x5a), hub.memory[backing]);
+            try std.testing.expectEqual(@as(u8, 0x5a), hub.ram.bytes()[backing]);
             try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
         }
         hub.clocking = false;
@@ -793,7 +799,7 @@ test "only dither DAC modes warn when a written fractional code exceeds full sca
                 const clipped = dac_mode and mode != .dac_noise and value == 0xffff;
                 try std.testing.expectEqual(@as(usize, @intFromBool(clipped)), hub.issues.len);
                 if (clipped) {
-                    const issue = hub.issues.items()[0];
+                    const issue = hub.issues.at(0);
                     try std.testing.expectEqual(Issue.Severity.warning, issue.severity());
                     try std.testing.expectEqual(value, issue.kind.smart_dac_clipped.value);
                 }
@@ -832,8 +838,9 @@ test "capture overflow requires drain gaps rather than steady full-rate sequenti
                 cog.fifo_block(1, next_address);
             }
             _ = hub.step();
-            maximum = @max(maximum, cog.fifo_state.engine.?.write_count);
-            for (hub.issues.items()) |issue| {
+            maximum = @max(maximum, cog.fifo_state.engine.?.direction.write.count);
+            for (0..hub.issues.len) |issue_index| {
+                const issue = hub.issues.at(issue_index);
                 try std.testing.expect(issue.kind == .streamer_capture_dropped);
                 try std.testing.expectEqualDeep(issuer, issue.provenance);
                 dropped += 1;
@@ -860,7 +867,7 @@ test "invalid HUBSET commands and clock modes remain warning diagnostics" {
         hub.access_context = issuer;
         hub.configure(mode);
         try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-        const issue = hub.issues.items()[0];
+        const issue = hub.issues.at(0);
         try std.testing.expectEqual(mode, issue.kind.unsupported_hubset);
         try std.testing.expectEqual(Issue.Severity.warning, issue.severity());
         try std.testing.expectEqualDeep(issuer, issue.provenance);
@@ -891,7 +898,7 @@ test "eight FIFO users arbitrate reads and writes to the same mirrored hub block
     var writes: usize = 0;
     for (0..512) |_| {
         for (&hub.cogs) |*cog| {
-            if (cog.fifo_state.engine.?.mode == .read) {
+            if (std.meta.activeTag(cog.fifo_state.engine.?.direction) == .read) {
                 _ = cog.read_fifo(4);
             } else {
                 _ = cog.write_fifo(0x1122_3344, 4);
@@ -903,13 +910,17 @@ test "eight FIFO users arbitrate reads and writes to the same mirrored hub block
         for (&hub.cogs) |*cog| {
             if (cog.fifo_state.granted_at == clock) {
                 grants += 1;
-                switch (cog.fifo_state.engine.?.mode) {
+                switch (std.meta.activeTag(cog.fifo_state.engine.?.direction)) {
                     .read => reads += 1,
                     .write => writes += 1,
                 }
             }
         }
-        try std.testing.expectEqual(grants, hub.hub_transfer_count);
+        var claimed: usize = 0;
+        for (hub.ram_ports) |port| {
+            claimed += @intFromBool(port != null);
+        }
+        try std.testing.expectEqual(grants, claimed);
         try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
     }
     try std.testing.expect(reads > 128 and writes > 128);
@@ -934,9 +945,14 @@ test "unaligned block-write byte lanes form one physical grant" {
         for (0..64) |_| {
             _ = hub.step();
             try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
-            for (hub.hub_transfers[0..hub.hub_transfer_count]) |transfer| {
+            for (hub.ram_ports) |port| {
+                const transfer = port orelse continue;
                 if (transfer.address == 0x2004 / 4 and transfer.lanes.count() == 4) {
-                    try std.testing.expectEqual(@as(usize, 1), hub.hub_transfer_count);
+                    for (hub.ram_ports, 0..) |other, slice| {
+                        if (slice != transfer.address % 8) {
+                            try std.testing.expect(other == null);
+                        }
+                    }
                     combined = true;
                 }
             }
@@ -969,8 +985,8 @@ test "shared commands use distinct cog slots across counter rollover" {
         try std.testing.expect(!seen.isSet(expected));
         seen.set(expected);
         try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-        try std.testing.expectEqual(@as(?u3, expected), hub.issues.items()[0].provenance.cog);
-        try std.testing.expectEqual(@as(u32, 0x7000_0000), hub.issues.items()[0].kind.unsupported_hubset);
+        try std.testing.expectEqual(@as(?u3, expected), hub.issues.at(0).provenance.cog);
+        try std.testing.expectEqual(@as(u32, 0x7000_0000), hub.issues.at(0).kind.unsupported_hubset);
     }
     try std.testing.expectEqual(@as(usize, 8), seen.count());
     _ = hub.step();
@@ -1010,4 +1026,347 @@ test "registered streamer delivery and pending cog startup survive counter rollo
         _ = hub.step();
     }
     try std.testing.expect(hub.cogs[1].startup == null);
+}
+
+test "ordinary split reads warn once at completion for either endpoint and selected lanes" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]bool{ false, true }) |lower_write| {
+        for (0..4) |lane| {
+            try hub.init(.ideal);
+            hub.write_memory(0, 0x1122_3344, 4, false);
+            hub.write_memory(4, 0x5566_7788, 4, false);
+            const cog = &hub.cogs[0];
+            cog.exec_mode = .cog;
+            const instruction = 0xfb04_0000 | (20 << 9) | 0x100; // RDLONG r20, PTRA.
+            cog.registers.set(.PTRA, 3);
+            cog.pipeline[3] = .{ .pc = 17, .instr = instruction };
+            cog.memory_transfer = .{
+                .provenance = .{ .cog = 0, .pc = 17, .instruction = instruction },
+                .address = 3,
+                .remaining = 1,
+                .reg = 20,
+                .lut = false,
+                .timed = true,
+                .size = 4,
+                .grant_at = 0,
+                .direction = .{ .read = .{ .grant_address = 3, .grants_left = 1 } },
+            };
+            const writer: access_types.Provenance = .{ .cog = if (lower_write) 7 else 1, .pc = 21, .instruction = 456 };
+            var reports: usize = 0;
+            for (0..12) |clock| {
+                if (clock == @intFromBool(lower_write)) {
+                    hub.cogs[writer.cog.?].hub_writeback = .{
+                        .provenance = writer,
+                        .address = @as(u32, if (lower_write) 0 else 4) + @as(u32, @intCast(lane)),
+                        .value = 0xaa,
+                        .size = 1,
+                        .masked = false,
+                        .origin = .application,
+                    };
+                }
+                _ = hub.step();
+                for (0..hub.issues.len) |issue_index| {
+                    const issue = hub.issues.at(issue_index);
+                    try std.testing.expect(issue.kind == .memory_read_race);
+                    try std.testing.expectEqual(Issue.Severity.warning, issue.severity());
+                    try std.testing.expectEqual(@as(u64, 6), issue.clock);
+                    try std.testing.expectEqualDeep(writer, issue.kind.memory_read_race.writer.provenance);
+                    try std.testing.expectEqual(@as(u64, 0), issue.kind.memory_read_race.samples[0].clock);
+                    try std.testing.expectEqual(@as(u64, 1), issue.kind.memory_read_race.samples[1].clock);
+                    reports += 1;
+                }
+            }
+            const selected = if (lower_write) lane == 3 else lane < 3;
+            try std.testing.expectEqual(@as(usize, @intFromBool(selected)), reports);
+        }
+    }
+}
+
+test "buffered FIFO split reads warn on consumption while separate byte reads remain atomic" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]bool{ false, true }) |separate_bytes| {
+        try hub.init(.ideal);
+        const cog = &hub.cogs[0];
+        cog.fifo_state.address = 3;
+        cog.fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = 0, .byte_offset = 3, .ready_at = 0 };
+        const writer: access_types.Provenance = .{ .cog = 1, .pc = 4, .instruction = 123 };
+        hub.cogs[1].hub_writeback = .{
+            .provenance = writer,
+            .address = 4,
+            .value = 0x55,
+            .size = 1,
+            .masked = false,
+            .origin = .application,
+        };
+        for (0..10) |_| {
+            _ = hub.step();
+            try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
+        }
+        if (separate_bytes) {
+            _ = cog.read_fifo(1).?;
+            _ = cog.read_fifo(1).?;
+            try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
+        } else {
+            try std.testing.expectEqual(@as(u32, 0x5500), cog.read_fifo(2).?);
+            try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
+            try std.testing.expectEqualDeep(writer, hub.issues.at(0).kind.memory_read_race.writer.provenance);
+            _ = cog.read_fifo(2).?;
+            try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
+        }
+    }
+}
+
+test "startup split read races report on load while aligned image words stay atomic" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for (0..4) |alignment| {
+        try hub.init(.ideal);
+        hub.start_cog(0, .{ .hub_address = @intCast(alignment) });
+        const first = hub.cogs[0].startup.?.grant_at;
+        var reports: usize = 0;
+        while (hub.counter <= first + 7) {
+            if (hub.counter == first) {
+                hub.cogs[1].hub_writeback = .{
+                    .provenance = .{ .cog = 1, .pc = 12, .instruction = 123 },
+                    .address = 4,
+                    .value = 0x1122_3344,
+                    .size = 4,
+                    .masked = false,
+                    .origin = .application,
+                };
+            }
+            _ = hub.step();
+            for (0..hub.issues.len) |issue_index| {
+                const issue = hub.issues.at(issue_index);
+                try std.testing.expect(issue.kind == .memory_read_race);
+                try std.testing.expectEqual(first + 6, issue.clock);
+                try std.testing.expectEqual(@as(?u3, 0), issue.provenance.cog);
+                reports += 1;
+            }
+        }
+        try std.testing.expectEqual(@as(usize, @intFromBool(alignment != 0)), reports);
+    }
+}
+
+test "hub fetch race warnings require execution and survive buffering without duplicate reports" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for (0..3) |scenario| {
+        try hub.init(.ideal);
+        const cog = &hub.cogs[0];
+        const instruction: u32 = if (scenario == 1) 0x8604_2807 else 0xf604_2807;
+        cog.fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = 0x408, .byte_offset = 3, .ready_at = null };
+        const lower = test_support.bufferFifoWord(cog, .{ .address = 0x400, .clock = 0, .readable = .initFull() }, 0x404, instruction << 24);
+        cog.fifo_state.engine.?.direction.read.get(lower).capture(.{
+            .address = 0x404,
+            .clock = 0,
+            .value = 0x28,
+            .provenance = .{ .cog = 1, .pc = 7, .instruction = 123 },
+        });
+        _ = test_support.bufferFifoWord(cog, .{ .address = 0x404, .clock = 1, .readable = .initFull() }, 0x408, instruction >> 8);
+        cog.pc = 0x403;
+        cog.exec_mode = .hub;
+        hub.counter = 10;
+        var reports: usize = 0;
+        for (0..8) |edge| {
+            if (scenario == 2 and edge == 1) {
+                cog.pipeline[3] = .{ .pc = 0x500, .instr = 0xfd80_0500 };
+            }
+            _ = hub.step();
+            for (0..hub.issues.len) |issue_index| {
+                const issue = hub.issues.at(issue_index);
+                try std.testing.expect(issue.kind == .memory_read_race);
+                try std.testing.expectEqual(@as(?u20, 0x403), issue.provenance.pc);
+                try std.testing.expectEqual(@as(u64, 0), issue.kind.memory_read_race.writer.clock);
+                reports += 1;
+            }
+        }
+        try std.testing.expectEqual(@as(usize, @intFromBool(scenario == 0)), reports);
+    }
+}
+
+test "FIFO owns the stolen upper slot and direct split interference survives multiple rotations" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    try hub.init(.ideal);
+    const cog = &hub.cogs[0];
+    const instruction: u32 = 0xfb04_0000 | (20 << 9) | 0x100;
+    cog.exec_mode = .cog;
+    cog.registers.set(.PTRA, 3);
+    cog.pipeline[3] = .{ .pc = 17, .instr = instruction };
+    cog.memory_transfer = .{
+        .provenance = .{ .cog = 0, .pc = 17, .instruction = instruction },
+        .address = 3,
+        .remaining = 1,
+        .reg = 20,
+        .lut = false,
+        .timed = true,
+        .size = 4,
+        .grant_at = 0,
+        .direction = .{ .read = .{ .grant_address = 3, .grants_left = 1 } },
+    };
+    cog.fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = 4, .byte_offset = 0, .ready_at = 1 };
+    var reports: usize = 0;
+    for (0..35) |clock| {
+        if (clock == 2) {
+            hub.cogs[7].hub_writeback = .{
+                .provenance = .{ .cog = 7, .pc = 21, .instruction = 456 },
+                .address = 4,
+                .value = 0,
+                .size = 1,
+                .masked = false,
+                .origin = .application,
+            };
+        }
+        _ = hub.step();
+        if (clock == 1) {
+            try std.testing.expect(hub.ram_ports[1].?.access == .read);
+            try std.testing.expect(hub.ram_ports[1].?.origin == .fifo);
+            try std.testing.expectEqual(@as(u3, 0), hub.ram_ports[1].?.origin.fifo);
+        }
+        for (0..hub.issues.len) |index| {
+            const issue = hub.issues.at(index);
+            try std.testing.expect(issue.kind == .memory_read_race);
+            const race = issue.kind.memory_read_race;
+            try std.testing.expectEqual(@as(u64, 0), race.samples[0].clock);
+            try std.testing.expectEqual(@as(u64, 25), race.samples[1].clock);
+            try std.testing.expectEqual(@as(u64, 2), race.writer.clock);
+            try std.testing.expectEqual(@as(u64, 30), issue.clock);
+            reports += 1;
+        }
+    }
+    try std.testing.expectEqual(@as(usize, 1), reports);
+}
+
+test "FIFO metadata survives thousands of clocks and reuse needs no generation" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    try hub.init(.ideal);
+    const cog = &hub.cogs[0];
+    cog.fifo_state.address = 3;
+    cog.fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = 0, .byte_offset = 3, .ready_at = 0 };
+    _ = hub.step();
+    cog.fifo_state.engine.?.ready_at = 1000;
+    while (hub.counter < 1007) {
+        if (hub.counter == 10) {
+            hub.cogs[7].hub_writeback = .{
+                .provenance = .{ .cog = 7, .pc = 21, .instruction = 456 },
+                .address = 4,
+                .value = 0x5a,
+                .size = 1,
+                .masked = false,
+                .origin = .application,
+            };
+        }
+        _ = hub.step();
+        try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
+    }
+    try std.testing.expectEqual(@as(u32, 0x5a00), cog.read_fifo(2).?);
+    const race = hub.issues.at(0).kind.memory_read_race;
+    try std.testing.expectEqual(@as(u64, 0), race.samples[0].clock);
+    try std.testing.expectEqual(@as(u64, 1001), race.samples[1].clock);
+    try std.testing.expectEqual(@as(u64, 10), race.writer.clock);
+
+    for (0..2000) |_| {
+        if (cog.peek_fifo(3) != null) {
+            _ = cog.read_fifo(4);
+        }
+        _ = hub.step();
+        cog.assert_read_ownership();
+    }
+    cog.begin_fifo(.write, 0, 0x2000);
+    try std.testing.expect(cog.fifo_state.engine.?.direction == .write);
+    for (hub.cogs[0].read_bus.responses) |response| {
+        try std.testing.expect(response != .fifo);
+    }
+}
+
+test "discarding a partial hub instruction immediately releases its sole metadata owner" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    try hub.init(.ideal);
+    const cog = &hub.cogs[0];
+    cog.exec_mode = .hub;
+    cog.pc = 0x403;
+    cog.fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = 0x404, .byte_offset = 3, .ready_at = 20 };
+    const old_slot = test_support.bufferFifoWord(cog, .{
+        .address = 0x400,
+        .clock = 0,
+        .readable = .initFull(),
+    }, 0x404, 0);
+    cog.step();
+    try std.testing.expectEqual(@as(?Cog.FifoSlot, old_slot), cog.pipeline[1].?.fifo_read_slot);
+    cog.assert_read_ownership();
+    cog.jump(0x100);
+    try std.testing.expectEqual(@as(usize, 0), cog.fifo_state.engine.?.direction.read.used.count());
+    try std.testing.expect(cog.fifo_state.engine.?.direction.read.pending == null);
+    const new_slot = test_support.bufferFifoWord(cog, .{
+        .address = 0x404,
+        .clock = 25,
+        .readable = .initFull(),
+    }, 0x408, 0x12345678);
+    try std.testing.expectEqual(old_slot, new_slot);
+    try std.testing.expectEqual(@as(u64, 25), cog.fifo_state.engine.?.direction.read.get(new_slot).window.clocks[0]);
+    cog.assert_read_ownership();
+}
+
+test "compact issue payloads round trip every kind and their maximum producer envelope" {
+    const collection = try std.testing.allocator.create(Issue.Collection);
+    defer std.testing.allocator.destroy(collection);
+
+    collection.* = .{};
+    const conflict: Issue.Conflict = .{
+        .clock = 123,
+        .writer = .{ .provenance = .{ .cog = 2, .pc = 3, .instruction = 4 }, .space = .registers, .cog = 2, .address = 17, .access = .write, .value = 0x1234abcd, .class = .data, .storage = .ram },
+        .reader = .{ .provenance = .{ .cog = 3, .pc = 5, .instruction = 6 }, .space = .registers, .cog = 3, .address = 17, .access = .read, .value = 0x9876fedc, .class = .physical, .storage = .ram },
+        .read_source = .{ .old_cog_ram = 17 },
+    };
+    inline for (@typeInfo(Issue.Kind).@"union".fields, 0..) |field, index| {
+        const payload = if (field.type == Issue.Conflict)
+            conflict
+        else
+            std.mem.zeroes(field.type);
+        const issue: Issue = .{
+            .clock = index,
+            .provenance = .{ .cog = 3, .pc = 123, .instruction = 456 },
+            .kind = @unionInit(Issue.Kind, field.name, payload),
+        };
+        collection.append(issue);
+        try std.testing.expectEqualDeep(issue, collection.at(index));
+    }
+    var it = collection.iterator();
+    var count: usize = 0;
+    while (it.next()) |issue| {
+        try std.testing.expectEqual(@as(u64, @intCast(count)), issue.clock);
+        count += 1;
+    }
+    try std.testing.expectEqual(collection.len, count);
+    collection.clear();
+    for (0..8 * (128 + 3)) |_| {
+        collection.append(.{ .clock = 0, .provenance = .{}, .kind = .{ .cog_fetch_write = conflict } });
+    }
+    for (0..64) |_| {
+        collection.append(.{ .clock = 0, .provenance = .{}, .kind = .{ .pin_command_collision = std.mem.zeroes(Issue.PinCollision) } });
+        collection.append(.{ .clock = 0, .provenance = .{}, .kind = .{ .pin_buffer_overwrite = std.mem.zeroes(Issue.PinOverwrite) } });
+        collection.append(.{ .clock = 0, .provenance = .{}, .kind = .{ .smart_dac_clipped = std.mem.zeroes(Issue.PinProblem) } });
+        for (0..3) |_| {
+            collection.append(.{ .clock = 0, .provenance = .{}, .kind = .{ .pad_overvoltage = std.mem.zeroes(Issue.PadProblem) } });
+        }
+    }
+    for (0..32) |_| {
+        collection.append(.{ .clock = 0, .provenance = .{}, .kind = .{ .usb_receive_error = std.mem.zeroes(Issue.PinProblem) } });
+    }
+    try std.testing.expect(collection.used <= Issue.Collection.payload_capacity);
+    try std.testing.expect(@sizeOf(Issue.Collection) <= 256 * 1024);
+    try std.testing.expect(@sizeOf(Cog) <= 32 * 1024);
+    try std.testing.expect(@sizeOf(Hub) <= 1280 * 1024);
 }

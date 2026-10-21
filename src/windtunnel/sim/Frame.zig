@@ -13,6 +13,7 @@ notification: Hub.StepResult = .normal,
 pub const budget_ns = 14_000_000;
 
 /// Advance whole hub edges until the deadline, a stop, or a fault; never catch up skipped host time.
+/// The caller chooses completed-edge stopping policy and checks its own adapters before calling.
 pub fn advance(hub: *Hub, mode: Mode, clock: Clock, stop_after_edge: *const fn (*const Hub) bool) Frame {
     var result: Frame = .{ .running = mode == .run };
     if (mode == .paused)

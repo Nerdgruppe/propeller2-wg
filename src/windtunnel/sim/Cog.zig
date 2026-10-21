@@ -7,6 +7,9 @@ const access_types = @import("access.zig");
 const Cog = @This();
 const Issue = @import("Issue.zig");
 const Debugger = @import("Debugger.zig");
+const test_support = @import("../test_support.zig");
+const reads = @import("read.zig");
+const HubRam = @import("HubRam.zig");
 const Hub = @import("Hub.zig");
 const Cordic = @import("Cordic.zig");
 const Streamer = @import("Streamer.zig");
@@ -121,8 +124,12 @@ exec_mode: ExecMode = .stopped,
 pipeline: [5]?PipelineState = @splat(null),
 /// At most one pending physical-read record per in-flight pipeline instruction.
 fetch_conflicts: [5]struct {
-    items: [Hub.max_cog_edge_writes]Issue.Conflict = undefined,
+    writers: [Hub.max_cog_edge_writes]Issue.Participant = undefined,
+    reader: Issue.Participant = undefined,
+    clock: u64 = undefined,
+    read_source: Issue.ReadSource = undefined,
     count: usize = 0,
+    hub_race: ?reads.Race = null,
 } = @splat(.{}),
 next_fetch_conflict: u3 = 0,
 issue_phase: bool = true,
@@ -258,13 +265,26 @@ pub const Startup = struct {
     remaining: u10,
     reg: u9 = 0,
     release_at: ?u64 = null,
-    responses: [8]?struct { reg: u9, value: u32 } = @splat(null),
+    partial: ?u32 = null,
+    partial_readable: HubRam.LaneMask = .initEmpty(),
 };
 
-/// Shared hub read-response phase and the value last driven on that bus.
+/// An owned index into the twenty live FIFO words, valid until its consumer releases it.
+pub const FifoSlot = enum(u5) { _ };
+
+/// Shared hub read-response schedule and the value last driven on the direct-read bus.
 pub const ReadBus = struct {
-    head: usize = 0,
+    pub const Response = union(enum) {
+        empty,
+        fifo: FifoSlot,
+        memory: struct { value: u32, race: ?reads.Race },
+        startup: struct { reg: u9, value: u32, address: u20, readable: HubRam.LaneMask, race: ?reads.Race },
+    };
+    head: u3 = 0,
     latch: u32 = 0,
+    responses: [8]Response = @splat(.empty),
+    fragment: ?reads.Split = null,
+    closing: ?u3 = null,
 };
 
 pub const MemoryTransfer = struct {
@@ -273,9 +293,10 @@ pub const MemoryTransfer = struct {
         no_result: bool = false,
         grant_address: u32 = 0,
         grants_left: u64 = 0,
-        responses: [8]?u32 = @splat(null),
         value: ?u32 = null,
         partial: ?u32 = null,
+        partial_readable: HubRam.LaneMask = .initEmpty(),
+        value_race: ?reads.Race = null,
     };
 
     /// State needed only while sending hub writes.
@@ -340,75 +361,126 @@ pub const FifoRequest = struct {
 
 /// The RAM return path holds five requests; the FIFO holds nineteen longs.
 /// Stop issuing at fifteen occupied words so returning reads cannot overflow.
+pub const FifoRead = struct {
+    slots: [20]reads.FifoWord = undefined,
+    used: std.StaticBitSet(20) = .initEmpty(),
+    order: [19]FifoSlot = undefined,
+    inflight: u5 = 0,
+    pending: ?FifoSlot = null,
+    closing: ?FifoSlot = null,
+    held: ?FifoSlot = null,
+
+    /// Reserve metadata for one actual physical read; unused witness bytes are untouched.
+    pub fn allocate(read: *FifoRead, sample: reads.Sample, next: u20, value: u32) FifoSlot {
+        const index = read.used.complement().findFirstSet() orelse @panic("FIFO live-read bound exceeded");
+        read.used.set(index);
+        read.slots[index].window = .init(sample, next);
+        read.slots[index].value = value;
+        return @enumFromInt(index);
+    }
+
+    /// Borrow a slot only while a return, buffered word or partial instruction owns it.
+    pub fn get(read: *FifoRead, slot: FifoSlot) *reads.FifoWord {
+        std.debug.assert(read.used.isSet(@intFromEnum(slot)));
+        return &read.slots[@intFromEnum(slot)];
+    }
+
+    /// Inspect a live slot without copying its retained diagnostic payloads.
+    pub fn getConst(read: *const FifoRead, slot: FifoSlot) *const reads.FifoWord {
+        std.debug.assert(read.used.isSet(@intFromEnum(slot)));
+        return &read.slots[@intFromEnum(slot)];
+    }
+
+    /// End ownership and discard a boundary that no future consumer can cross.
+    pub fn release(read: *FifoRead, slot: FifoSlot) void {
+        std.debug.assert(read.used.isSet(@intFromEnum(slot)));
+        std.debug.assert(read.closing != slot);
+        if (read.pending == slot) {
+            read.pending = null;
+        }
+        if (read.held == slot) {
+            read.held = null;
+        }
+        read.used.unset(@intFromEnum(slot));
+    }
+};
+
+pub const FifoWrite = struct {
+    bytes: [76]u8 = undefined,
+    provenance: [76]access_types.Provenance = @splat(.{}),
+    pending: [2]usize = @splat(0),
+    pending_head: usize = 0,
+    ready_count: usize = 0,
+    head: usize = 0,
+    count: usize = 0,
+};
+
 pub const HubFifo = struct {
     provenance: access_types.Provenance = .{},
-    mode: FifoMode = .read,
+    direction: union(FifoMode) { read: FifoRead, write: FifoWrite },
     initializing: bool = false,
     block: ?FifoBlock = null,
     remaining: u19 = 0x40000,
-    write_bytes: [76]u8 = undefined,
-    write_provenance: [76]access_types.Provenance = @splat(.{}),
-    /// Byte counts awaiting the fixed two-clock eligibility stage.
-    write_pending: [2]usize = @splat(0),
-    write_pending_head: usize = 0,
-    write_ready_count: usize = 0,
-    write_head: usize = 0,
-    write_count: usize = 0,
-    words: [19]u32 = undefined,
-    /// Physical source and readable lanes travel with each returned long through block reloads.
-    word_addresses: [19]u20 = @splat(0),
-    word_valid: [19]u4 = @splat(0),
-    response_addresses: [8]u20 = @splat(0),
-    response_valid: [8]u4 = @splat(0),
     head: usize = 0,
     count: usize = 0,
     byte_offset: u2,
     address: u20,
     ready_at: ?u64,
-    responses: [8]?u32 = @splat(null),
 
-    /// Check storage reservations and conservation of queued bytes across eligibility stages.
+    /// Check actual live ownership and conservation, rather than a historical allocation budget.
     pub fn assert_consistent(fifo: *const HubFifo) void {
         if (!std.debug.runtime_safety)
             return;
-        std.debug.assert(fifo.head < fifo.words.len);
-        std.debug.assert(fifo.count <= fifo.words.len);
-        var reserved = fifo.count;
-        for (fifo.responses) |response| {
-            reserved += @intFromBool(response != null);
+        switch (fifo.direction) {
+            .read => |*read| {
+                std.debug.assert(fifo.head < read.order.len);
+                std.debug.assert(fifo.count + read.inflight <= read.order.len);
+                std.debug.assert(read.used.count() == fifo.count + read.inflight + @intFromBool(read.held != null));
+                var buffered = std.StaticBitSet(20).initEmpty();
+                for (0..fifo.count) |i| {
+                    const index = @intFromEnum(read.order[(fifo.head + i) % read.order.len]);
+                    std.debug.assert(read.used.isSet(index) and !buffered.isSet(index));
+                    buffered.set(index);
+                }
+                if (read.held) |slot| {
+                    std.debug.assert(read.used.isSet(@intFromEnum(slot)) and !buffered.isSet(@intFromEnum(slot)));
+                }
+            },
+            .write => |*write| {
+                std.debug.assert(write.head < write.bytes.len);
+                std.debug.assert(write.pending_head < write.pending.len);
+                std.debug.assert(write.ready_count <= write.count);
+                std.debug.assert(write.count <= write.bytes.len);
+                var queued = write.ready_count;
+                for (write.pending) |pending| {
+                    queued += pending;
+                }
+                std.debug.assert(queued == write.count);
+            },
         }
-        std.debug.assert(reserved <= fifo.words.len);
-        std.debug.assert(fifo.write_head < fifo.write_bytes.len);
-        std.debug.assert(fifo.write_pending_head < fifo.write_pending.len);
-        std.debug.assert(fifo.write_ready_count <= fifo.write_count);
-        std.debug.assert(fifo.write_count <= fifo.write_bytes.len);
-        var queued = fifo.write_ready_count;
-        for (fifo.write_pending) |pending| {
-            queued += pending;
-        }
-        std.debug.assert(queued == fifo.write_count);
     }
 
-    /// Consume the next instruction slice; read/decode joins the adjacent slice for an unaligned word.
-    fn read(fifo: *HubFifo) ?u32 {
+    /// Transfer one buffered long's slot to its consumer without copying metadata.
+    fn take(fifo: *HubFifo) ?FifoSlot {
         if (fifo.count == 0)
             return null;
-        const low = fifo.words[fifo.head];
-        const value = low >> (@as(u5, fifo.byte_offset) * 8);
-        fifo.head = (fifo.head + 1) % fifo.words.len;
+        const slot = fifo.direction.read.order[fifo.head];
+        fifo.head = (fifo.head + 1) % fifo.direction.read.order.len;
         fifo.count -= 1;
-        return value;
+        return slot;
     }
 
-    /// Consume one software-FIFO byte, releasing its buffered long after the fourth byte.
+    /// Consume a byte, releasing the physical word when its final byte is used.
     pub fn read_byte(fifo: *HubFifo) ?u8 {
         if (fifo.count == 0)
             return null;
-        const value: u8 = @truncate(fifo.words[fifo.head] >> (@as(u5, fifo.byte_offset) * 8));
+        const read = &fifo.direction.read;
+        const slot = read.order[fifo.head];
+        const value: u8 = @truncate(read.get(slot).value >> (@as(u5, fifo.byte_offset) * 8));
         fifo.byte_offset +%= 1;
         if (fifo.byte_offset == 0) {
-            fifo.head = (fifo.head + 1) % fifo.words.len;
-            fifo.count -= 1;
+            _ = fifo.take();
+            read.release(slot);
         }
         return value;
     }
@@ -520,9 +592,21 @@ pub fn step(cog: *Cog) void {
     if (cog.pipeline[1]) |*state| {
         if (state.fifo_tail) {
             const fifo = &cog.fifo_state.engine.?;
+            const read = &fifo.direction.read;
+            if (state.fifo_read_slot) |slot| {
+                const word = read.get(slot);
+                if (word.window.boundary.complete) {
+                    if (word.race(state.pc, 4)) |race| {
+                        const record = cog.reserve_fetch_record(state);
+                        cog.fetch_conflicts[record].hub_race = race;
+                    }
+                    read.release(slot);
+                    state.fifo_read_slot = null;
+                }
+            }
             if (fifo.count == 0)
                 return;
-            state.instr |= fifo.words[fifo.head] << @intCast(32 - @as(u6, fifo.byte_offset) * 8);
+            state.instr |= read.get(read.order[fifo.head]).value << @intCast(32 - @as(u6, fifo.byte_offset) * 8);
             state.fifo_tail = false;
         }
     }
@@ -674,12 +758,19 @@ pub fn clock_startup(cog: *Cog) void {
         }
         return;
     }
-    const response = &startup.responses[cog.read_bus.head];
-    if (response.*) |beat| {
+    const response = &cog.read_bus.responses[cog.read_bus.head];
+    if (response.* == .startup) {
+        const beat = response.startup;
+        cog.report_read_race(beat.race);
+        for (0..4) |lane| {
+            if (beat.readable.isSet(lane)) {
+                const address = HubRam.Address.init(beat.address +% @as(u20, @intCast(lane)));
+                cog.hub.observe(.hub, null, address.backing().?, .read, @as(u8, @truncate(beat.value >> @intCast(lane * 8))), .consumed, .ram);
+            }
+        }
         cog.write_ram(beat.reg, beat.value);
         cog.read_bus.latch = beat.value;
-        response.* = null;
-        // The completed load passes through the startup/fetch handoff.
+        response.* = .empty;
         if (beat.reg == 503) {
             startup.release_at = cog.hub.counter +% 3;
         }
@@ -689,17 +780,67 @@ pub fn clock_startup(cog: *Cog) void {
     std.debug.assert(Hub.clock_reached(startup.grant_at, cog.hub.counter));
     if (cog.hub.counter != startup.grant_at)
         return;
-    cog.hub.claim_hub_access(.{ .startup = cog.id }, .read, startup.address, 4);
-    const target = &startup.responses[(cog.read_bus.head + 5) % startup.responses.len];
-    std.debug.assert(target.* == null);
-    target.* = .{
-        .reg = startup.reg,
-        .value = cog.hub.read_memory(startup.address, 4),
-    };
-    startup.reg += 1;
+    const alignment: u2 = @truncate(startup.address);
+    cog.hub.read_class = .physical;
+    defer cog.hub.read_class = .data;
+
+    const beat = cog.hub.readHubBeat(.{
+        .origin = .{ .startup = cog.id },
+        .address = HubRam.Address.init(startup.address).aligned().value(),
+        .size = 4,
+    });
+    const logical_address = HubRam.Address.init(startup.address -% @as(u32, if (alignment != 0) 4 else 0)).value();
+    const crossing = alignment != 0 and startup.partial != null;
+    if (crossing) {
+        cog.read_bus.fragment.?.window.close(beat.sample);
+    }
+    const value = if (alignment == 0)
+        beat.value
+    else if (startup.partial) |low|
+        (low >> (@as(u5, alignment) * 8)) | (beat.value << @intCast(32 - @as(u6, alignment) * 8))
+    else
+        null;
+    var readable = HubRam.LaneMask.initEmpty();
+    for (0..4) |lane| {
+        const source = HubRam.Address.init(logical_address +% @as(u32, @intCast(lane)));
+        const accepted = if (alignment != 0 and lane < 4 - @as(usize, alignment))
+            startup.partial_readable.isSet(source.lane)
+        else
+            beat.sample.readable.isSet(source.lane);
+        if (accepted) {
+            readable.set(lane);
+        }
+    }
+    if (alignment != 0) {
+        if (startup.partial == null) {
+            cog.read_bus.fragment = .{
+                .window = .init(beat.sample, HubRam.Address.init(beat.sample.address +% 4).value()),
+                .address = @truncate(startup.address),
+                .size = 4,
+            };
+        }
+        startup.partial = beat.value;
+        startup.partial_readable = beat.sample.readable;
+    }
     startup.address +%= 4;
-    startup.remaining -= 1;
     startup.grant_at +%= 1;
+    const assembled = value orelse return;
+    const index = cog.read_bus.head +% 5;
+    const target = &cog.read_bus.responses[index];
+    std.debug.assert(target.* == .empty);
+    target.* = .{ .startup = .{
+        .reg = startup.reg,
+        .value = assembled,
+        .address = logical_address,
+        .readable = readable,
+        .race = null,
+    } };
+    if (crossing) {
+        std.debug.assert(cog.read_bus.closing == null);
+        cog.read_bus.closing = index;
+    }
+    startup.reg += 1;
+    startup.remaining -= 1;
 }
 
 /// Issue cog-control, lock, HUBSET and CORDIC commands at their shared hub command slot.
@@ -769,7 +910,9 @@ pub fn clock_command(cog: *Cog) void {
 pub fn clock_fifo(cog: *Cog) void {
     cog.fifo_state.initial_response = false;
     if (cog.fifo_state.request) |request| {
-        if (cog.fifo_state.engine == null or cog.fifo_state.engine.?.write_count == 0) {
+        if (cog.fifo_state.engine == null or cog.fifo_state.engine.?.direction != .write or
+            cog.fifo_state.engine.?.direction.write.count == 0)
+        {
             cog.apply_fifo(request);
         }
     }
@@ -785,68 +928,70 @@ pub fn clock_fifo(cog: *Cog) void {
             fifo.ready_at = null;
         }
     }
-    if (fifo.mode == .read) {
-        const response = &fifo.responses[cog.read_bus.head];
-        if (response.*) |value| {
+    if (fifo.direction == .read) {
+        const read = &fifo.direction.read;
+        const response = &cog.read_bus.responses[cog.read_bus.head];
+        if (response.* == .fifo) {
             if (fifo.initializing) {
                 cog.fifo_state.initial_response = true;
                 fifo.initializing = false;
             }
-            std.debug.assert(fifo.count < fifo.words.len);
-            const slot = (fifo.head + fifo.count) % fifo.words.len;
-            fifo.words[slot] = value;
-            fifo.word_addresses[slot] = fifo.response_addresses[cog.read_bus.head];
-            fifo.word_valid[slot] = fifo.response_valid[cog.read_bus.head];
+            std.debug.assert(fifo.count < read.order.len and read.inflight > 0);
+            read.order[(fifo.head + fifo.count) % read.order.len] = response.fifo;
             fifo.count += 1;
-            response.* = null;
+            read.inflight -= 1;
+            response.* = .empty;
         }
     }
     if (!cog.fifo_grants(cog.hub.counter))
         return;
     cog.fifo_state.granted_at = cog.hub.counter;
-    if (fifo.mode == .read) {
+    if (fifo.direction == .read) {
+        const read = &fifo.direction.read;
         cog.hub.read_class = .physical;
         cog.hub.access_context = fifo.provenance;
         if (cog.hub.access_context.cog == null) {
             cog.hub.access_context = .{ .cog = cog.id };
         }
-        const response = (cog.read_bus.head + 5) % fifo.responses.len;
-        cog.hub.claim_hub_access(.{ .fifo = cog.id }, .read, fifo.address, 4);
-        std.debug.assert(fifo.responses[response] == null);
-        fifo.responses[response] = cog.hub.read_memory(fifo.address, 4);
-        fifo.response_addresses[response] = fifo.address;
-        fifo.response_valid[response] = 0;
-        for (0..4) |i| {
-            if (cog.hub.readBackingAddress(fifo.address +% @as(u20, @intCast(i))) != null) {
-                fifo.response_valid[response] |= @as(u4, 1) << @intCast(i);
-            }
-        }
+        const response = &cog.read_bus.responses[cog.read_bus.head +% 5];
+        std.debug.assert(response.* == .empty);
+        const beat = cog.hub.readHubBeat(.{ .origin = .{ .fifo = cog.id }, .address = fifo.address, .size = 4 });
         cog.hub.read_class = .data;
         fifo.address +%= 4;
         cog.advance_fifo_block();
+        if (read.pending) |slot| {
+            read.get(slot).window.close(beat.sample);
+            std.debug.assert(read.closing == null);
+            read.closing = slot;
+        }
+        const slot = read.allocate(beat.sample, fifo.address, beat.value);
+        read.pending = slot;
+        read.inflight += 1;
+        response.* = .{ .fifo = slot };
     } else {
-        // Drain only ready bytes in this physical long; later lanes can use a subsequent slice visit.
-        const size = @min(@as(usize, 4 - @as(u3, @as(u2, @truncate(fifo.address)))), fifo.write_count);
-        cog.hub.claim_hub_access(
-            .{ .fifo = cog.id },
-            .write,
-            fifo.address,
-            @intCast(@min(size, fifo.write_ready_count)),
-        );
+        const write = &fifo.direction.write;
+        const size = @min(@as(usize, 4 - @as(u3, @as(u2, @truncate(fifo.address)))), write.count);
         var consumed: usize = 0;
-        while (consumed < size and consumed < fifo.write_ready_count) : (consumed += 1) {
-            const index = (fifo.write_head + consumed) % fifo.write_bytes.len;
-            cog.hub.access_context = fifo.write_provenance[index];
-            cog.hub.write_memory(fifo.address, fifo.write_bytes[index], 1, false);
+        while (consumed < size and consumed < write.ready_count) : (consumed += 1) {
+            const index = (write.head + consumed) % write.bytes.len;
+            cog.hub.access_context = write.provenance[index];
+            cog.hub.writeHubBeat(.{
+                .origin = .{ .fifo = cog.id },
+                .address = fifo.address,
+                .value = write.bytes[index],
+                .size = 1,
+                .masked = false,
+                .authorization = .application,
+            });
             fifo.address +%= 1;
         }
-        fifo.write_head = (fifo.write_head + consumed) % fifo.write_bytes.len;
-        fifo.write_count -= consumed;
-        fifo.write_ready_count -= consumed;
+        write.head = (write.head + consumed) % write.bytes.len;
+        write.count -= consumed;
+        write.ready_count -= consumed;
         if (fifo.address & 3 == 0) {
             cog.advance_fifo_block();
         }
-        if (fifo.write_count == 0) {
+        if (write.count == 0) {
             if (cog.fifo_state.request) |request| {
                 cog.apply_fifo(request);
             }
@@ -871,19 +1016,23 @@ fn advance_fifo_block(cog: *Cog) void {
 
 /// Test current/next-clock grants, including returning reads and queued byte readiness.
 pub fn fifo_grants(cog: *const Cog, clock: u64) bool {
-    const fifo = cog.fifo_state.engine orelse return false;
+    const fifo = if (cog.fifo_state.engine) |*value|
+        value
+    else
+        return false;
     if (fifo.ready_at) |deadline| {
         if (!Hub.clock_reached(clock, deadline))
             return false;
     }
     if (((fifo.address >> 2) & 7) != ((clock +% cog.id) & 7))
         return false;
-    if (fifo.mode == .write)
-        return fifo.write_ready_count != 0 or
-            (clock != cog.hub.counter and
-                fifo.write_pending[fifo.write_pending_head] != 0);
+    if (fifo.direction == .write) {
+        const write = &fifo.direction.write;
+        return write.ready_count != 0 or
+            (clock != cog.hub.counter and write.pending[write.pending_head] != 0);
+    }
     const returning: usize = @intFromBool(clock != cog.hub.counter and
-        fifo.responses[(cog.read_bus.head + 1) % fifo.responses.len] != null);
+        cog.read_bus.responses[cog.read_bus.head +% 1] == .fifo);
     return fifo.count + returning < 15;
 }
 
@@ -961,7 +1110,13 @@ pub fn clock_memory(cog: *Cog) void {
     if (cog.fifo_state.initial_response and !transfer.isWrite()) {
         transfer.direction.read.value = cog.read_bus.latch;
         transfer.direction.read.grants_left = 0;
-        transfer.direction.read.responses = @splat(null);
+        for (&cog.read_bus.responses) |*response| {
+            if (response.* == .memory) {
+                response.* = .empty;
+            }
+        }
+        transfer.direction.read.value_race = null;
+        cog.read_bus.fragment = null;
         return;
     }
     if (transfer.timed and transfer.isWrite()) {
@@ -973,34 +1128,32 @@ pub fn clock_memory(cog: *Cog) void {
         if (cog.hub.counter == transfer.grant_at and (transfer.address & 3) + transfer.size > 4) {
             const low_size: u3 = @intCast(4 - (transfer.address & 3));
             const value = cog.transfer_source(transfer);
-            cog.hub.claim_hub_access(.{ .memory = transfer.provenance }, .write, transfer.address, low_size);
-            cog.hub.write_memory_from(
-                transfer.address,
-                value,
-                low_size,
-                transfer.direction.write.masked,
-                transfer.direction.write.origin,
-            );
+            cog.hub.writeHubBeat(.{
+                .origin = .{ .memory = transfer.provenance },
+                .address = transfer.address,
+                .value = value,
+                .size = low_size,
+                .masked = transfer.direction.write.masked,
+                .authorization = transfer.direction.write.origin,
+            });
         }
         return;
     }
-    if (!transfer.timed or transfer.direction.read.grants_left == 0) {
-        if (transfer.timed) {
-            const slot = &transfer.direction.read.responses[cog.read_bus.head];
-            transfer.direction.read.value = slot.*;
-            if (slot.*) |value| {
-                cog.read_bus.latch = value;
-            }
-            slot.* = null;
+    if (transfer.timed) {
+        const slot = &cog.read_bus.responses[cog.read_bus.head];
+        if (slot.* == .memory) {
+            const response = slot.memory;
+            transfer.direction.read.value = response.value;
+            transfer.direction.read.value_race = response.race;
+            cog.read_bus.latch = response.value;
+            slot.* = .empty;
+        } else {
+            transfer.direction.read.value = null;
+            transfer.direction.read.value_race = null;
         }
+    }
+    if (!transfer.timed or transfer.direction.read.grants_left == 0)
         return;
-    }
-    const slot = &transfer.direction.read.responses[cog.read_bus.head];
-    transfer.direction.read.value = slot.*;
-    if (slot.*) |value| {
-        cog.read_bus.latch = value;
-    }
-    slot.* = null;
     if (cog.hub.counter != transfer.grant_at)
         return;
     if (cog.fifo_state.granted_at == cog.hub.counter) {
@@ -1010,53 +1163,79 @@ pub fn clock_memory(cog: *Cog) void {
     const low_size: u3 = @intCast(@min(transfer.size, 4 - (transfer.direction.read.grant_address & 3)));
     const crossing = low_size < transfer.size;
     if (crossing and transfer.direction.read.partial == null) {
-        cog.hub.claim_hub_access(
-            .{ .memory = transfer.provenance },
-            .read,
-            transfer.direction.read.grant_address,
-            low_size,
-        );
-        transfer.direction.read.partial = cog.hub.read_memory(transfer.direction.read.grant_address, low_size);
+        const beat = cog.hub.readHubBeat(.{
+            .origin = .{ .memory = transfer.provenance },
+            .address = transfer.direction.read.grant_address,
+            .size = low_size,
+        });
+        transfer.direction.read.partial = beat.value;
+        transfer.direction.read.partial_readable = beat.sample.readable;
+        cog.read_bus.fragment = .{
+            .window = .init(beat.sample, HubRam.Address.init(beat.sample.address +% 4).value()),
+            .address = @truncate(transfer.direction.read.grant_address),
+            .size = transfer.size,
+        };
         transfer.grant_at +%= 1;
         return;
     }
-    const high_word = if (crossing) blk: {
-        cog.hub.claim_hub_access(
-            .{ .memory = transfer.provenance },
-            .read,
-            transfer.direction.read.grant_address +% low_size,
-            4,
-        );
-        break :blk cog.hub.read_memory(transfer.direction.read.grant_address +% low_size, 4);
-    } else 0;
+    const high_beat: ?Hub.ReadResult = if (crossing)
+        cog.hub.readHubBeat(.{
+            .origin = .{ .memory = transfer.provenance },
+            .address = transfer.direction.read.grant_address +% low_size,
+            .size = 4,
+        })
+    else
+        null;
+    const high_word = if (high_beat) |beat|
+        beat.value
+    else
+        0;
+    if (crossing) {
+        cog.read_bus.fragment.?.window.close(high_beat.?.sample);
+    }
     const high_size = transfer.size - low_size;
     const high_mask: u32 = if (crossing)
         (@as(u32, 1) << @intCast(@as(u6, high_size) * 8)) - 1
     else
         0;
+    const low_beat: ?Hub.ReadResult = if (!crossing)
+        cog.hub.readHubBeat(.{
+            .origin = .{ .memory = transfer.provenance },
+            .address = transfer.direction.read.grant_address,
+            .size = transfer.size,
+        })
+    else
+        null;
+    const low_readable = if (crossing)
+        transfer.direction.read.partial_readable
+    else
+        low_beat.?.sample.readable;
     const value = if (crossing)
         transfer.direction.read.partial.? | ((high_word & high_mask) << @intCast(@as(u6, low_size) * 8))
-    else blk: {
-        cog.hub.claim_hub_access(
-            .{ .memory = transfer.provenance },
-            .read,
-            transfer.direction.read.grant_address,
-            transfer.size,
-        );
-        break :blk cog.hub.read_memory(transfer.direction.read.grant_address, transfer.size);
-    };
-    if (crossing) {
+    else
+        low_beat.?.value;
+    if (high_beat) |beat| {
         transfer.direction.read.partial = high_word >> @intCast(@as(u6, high_size) * 8);
+        transfer.direction.read.partial_readable = beat.sample.readable;
     }
     for (0..transfer.size) |i| {
-        const address = (transfer.direction.read.grant_address +% @as(u32, @intCast(i))) & 0xfffff;
-        if (address < (if (cog.hub.debug.protected) @as(u32, 0x7c000) else 0x80000) or address >= 0xfc000) {
-            cog.hub.observe(.hub, null, address & 0x7ffff, .read, @as(u8, @truncate(value >> @intCast(i * 8))), .consumed, .ram);
+        const address = HubRam.Address.init(transfer.direction.read.grant_address +% @as(u32, @intCast(i)));
+        const readable = if (i < low_size)
+            low_readable.isSet(address.lane)
+        else
+            high_beat.?.sample.readable.isSet(address.lane);
+        if (readable) {
+            cog.hub.observe(.hub, null, address.backing().?, .read, @as(u8, @truncate(value >> @intCast(i * 8))), .consumed, .ram);
         }
     }
-    const response = &transfer.direction.read.responses[(cog.read_bus.head + 5) % transfer.direction.read.responses.len];
-    std.debug.assert(response.* == null);
-    response.* = value;
+    const index = cog.read_bus.head +% 5;
+    const response = &cog.read_bus.responses[index];
+    std.debug.assert(response.* == .empty);
+    response.* = .{ .memory = .{ .value = value, .race = null } };
+    if (crossing) {
+        std.debug.assert(cog.read_bus.closing == null);
+        cog.read_bus.closing = index;
+    }
     transfer.direction.read.grants_left -= 1;
     transfer.direction.read.grant_address +%= transfer.size;
     transfer.grant_at +%= 1;
@@ -1220,7 +1399,7 @@ pub fn return_stack(cog: *Cog) ExecResult {
         return .next;
     }
     if (cog.fifo_state.address == null or cog.fifo_state.engine == null or
-        cog.fifo_state.engine.?.mode != .read)
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) != .read)
         return cog.reject(.xbyte_fifo_unconfigured);
 
     cog.xbyte_mode = cog.xbyte_default_mode;
@@ -1242,7 +1421,7 @@ pub fn return_stack(cog: *Cog) ExecResult {
     cog.setq_pending = false;
     cog.q2 = false;
     cog.block_pointer_delta = false;
-    @memset(cog.pipeline[0..3], null);
+    cog.clear_young_pipeline();
     cog.branched = true;
     return .next;
 }
@@ -1290,7 +1469,7 @@ pub fn jump(cog: *Cog, target: u20) void {
             else
                 .hub;
             if (cog.exec_mode == .cog) {
-                @memset(cog.pipeline[0..3], null);
+                cog.clear_young_pipeline();
                 cog.issue_phase = false;
                 cog.branched = true;
                 return;
@@ -1322,8 +1501,8 @@ fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
             .accepted_at = cog.hub.counter,
         };
         if (cog.fifo_state.engine != null and
-            cog.fifo_state.engine.?.mode == .write and
-            cog.fifo_state.engine.?.write_count != 0)
+            std.meta.activeTag(cog.fifo_state.engine.?.direction) == .write and
+            cog.fifo_state.engine.?.direction.write.count != 0)
         {
             cog.queue_fifo(request);
         } else {
@@ -1334,7 +1513,7 @@ fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
         // longer consumes it, so it soon fills and stops granting RAM reads.
         cog.fifo_state.address = cog.dispatch_pc +% 8;
     }
-    @memset(cog.pipeline[0..3], null);
+    cog.clear_young_pipeline();
     // The target's fetch overlaps the branch's store on the next clock.
     cog.issue_phase = false;
     cog.branched = true;
@@ -1519,7 +1698,7 @@ pub fn interrupt_status(cog: *const Cog) u32 {
     value |= @as(u32, @intFromBool(cog.converter.active())) << 22;
     value |= @as(u32, @intFromBool(cog.interrupts.stalled)) << 1;
     if (cog.fifo_state.engine) |fifo| {
-        value |= @as(u32, @intFromBool(fifo.mode == .write)) << 20;
+        value |= @as(u32, @intFromBool(fifo.direction == .write)) << 20;
     }
     for (cog.interrupts.levels.values, 0..) |level, index| {
         value |= @as(u32, @intFromEnum(level.state)) << @intCast(2 + 2 * index);
@@ -1742,7 +1921,7 @@ pub fn return_debug(cog: *Cog, source: Register, immediate: bool, wcz: bool, tar
     if (target == cog.debug.return_pc and cog.debug.return_mode == .hub and cog.debug.fifo_untouched) {
         cog.pc = target;
         cog.exec_mode = .hub;
-        @memset(cog.pipeline[0..3], null);
+        cog.clear_young_pipeline();
         cog.issue_phase = false;
         cog.branched = true;
     } else {
@@ -1855,8 +2034,8 @@ pub fn begin_fifo(cog: *Cog, mode: FifoMode, config: u32, address: u32) void {
         .accepted_at = cog.hub.counter,
     };
     if (cog.fifo_state.engine != null and
-        cog.fifo_state.engine.?.mode == .write and
-        cog.fifo_state.engine.?.write_count != 0)
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) == .write and
+        cog.fifo_state.engine.?.direction.write.count != 0)
     {
         cog.queue_fifo(request);
     } else {
@@ -1889,9 +2068,13 @@ fn apply_fifo(cog: *Cog, request: FifoRequest) void {
         drained_ready
     else
         initial_ready;
+    cog.discard_fifo_reads();
     cog.fifo_state.engine = .{
         .provenance = request.provenance,
-        .mode = request.mode,
+        .direction = switch (request.mode) {
+            .read => .{ .read = .{} },
+            .write => .{ .write = .{} },
+        },
         .initializing = request.software and request.mode == .read,
         .block = if (request.software)
             request.block
@@ -1923,14 +2106,19 @@ pub fn fifo_block(cog: *Cog, config: u32, address: u32) void {
 
 /// Inspect a buffered byte without advancing the architectural pointer or releasing a long.
 pub fn peek_fifo(cog: *const Cog, offset: usize) ?u8 {
-    const fifo = cog.fifo_state.engine orelse return null;
+    const fifo = if (cog.fifo_state.engine) |*value|
+        value
+    else
+        return null;
     const position = @as(usize, fifo.byte_offset) + offset;
     if (position / 4 >= fifo.count)
         return null;
-    return @truncate(fifo.words[(fifo.head + position / 4) % fifo.words.len] >> @intCast((position % 4) * 8));
+    const read = &fifo.direction.read;
+    const word = read.getConst(read.order[(fifo.head + position / 4) % read.order.len]);
+    return @truncate(word.value >> @intCast((position % 4) * 8));
 }
 
-/// Consume one to four buffered bytes atomically; direct semantic execution uses the same pointer rules.
+/// Consume one to four bytes from aligned physical FIFO samples, selecting diagnostics at use.
 pub fn read_fifo(cog: *Cog, size: u3) ?u32 {
     const address = cog.fifo_state.address orelse return null;
     var value: u32 = 0;
@@ -1940,9 +2128,15 @@ pub fn read_fifo(cog: *Cog, size: u3) ?u32 {
     fifo.assert_consistent();
     defer fifo.assert_consistent();
 
+    const read = &fifo.direction.read;
+    if (@as(u3, fifo.byte_offset) + size > 4) {
+        const word = read.get(read.order[fifo.head]);
+        cog.report_read_race(word.race(word.window.boundary.first +% fifo.byte_offset, size));
+    }
     for (0..size) |index| {
-        const source = fifo.word_addresses[fifo.head] +% fifo.byte_offset;
-        const valid = fifo.word_valid[fifo.head] & (@as(u4, 1) << fifo.byte_offset) != 0;
+        const word = read.get(read.order[fifo.head]);
+        const source = word.window.boundary.first +% fifo.byte_offset;
+        const valid = word.window.readable.first;
         const byte = fifo.read_byte().?;
         value |= @as(u32, byte) << @intCast(index * 8);
         if (valid) {
@@ -1985,18 +2179,18 @@ pub fn write_fifo(cog: *Cog, value: u32, size: u3) bool {
     fifo.assert_consistent();
     defer fifo.assert_consistent();
 
-    if (fifo.write_count + size > fifo.write_bytes.len)
+    if (fifo.direction.write.count + size > fifo.direction.write.bytes.len)
         return false;
     for (0..size) |index| {
-        const slot = (fifo.write_head + fifo.write_count + index) % fifo.write_bytes.len;
-        fifo.write_provenance[slot] = if (cog.hub.access_context.cog != null)
+        const slot = (fifo.direction.write.head + fifo.direction.write.count + index) % fifo.direction.write.bytes.len;
+        fifo.direction.write.provenance[slot] = if (cog.hub.access_context.cog != null)
             cog.hub.access_context
         else
             cog.provenance();
-        fifo.write_bytes[slot] = @truncate(value >> @intCast(index * 8));
+        fifo.direction.write.bytes[slot] = @truncate(value >> @intCast(index * 8));
     }
-    fifo.write_pending[(fifo.write_pending_head + 1) % fifo.write_pending.len] += size;
-    fifo.write_count += size;
+    fifo.direction.write.pending[(fifo.direction.write.pending_head + 1) % fifo.direction.write.pending.len] += size;
+    fifo.direction.write.count += size;
     cog.fifo_state.address = address +% size;
     return true;
 }
@@ -2010,16 +2204,174 @@ pub fn advance_fifo_write_ready(cog: *Cog) void {
     fifo.assert_consistent();
     defer fifo.assert_consistent();
 
-    if (fifo.mode != .write)
+    if (fifo.direction != .write)
         return;
-    fifo.write_ready_count += fifo.write_pending[fifo.write_pending_head];
-    fifo.write_pending[fifo.write_pending_head] = 0;
-    fifo.write_pending_head = (fifo.write_pending_head + 1) % fifo.write_pending.len;
+    fifo.direction.write.ready_count += fifo.direction.write.pending[fifo.direction.write.pending_head];
+    fifo.direction.write.pending[fifo.direction.write.pending_head] = 0;
+    fifo.direction.write.pending_head = (fifo.direction.write.pending_head + 1) % fifo.direction.write.pending.len;
 }
 
 /// Advance the common five-clock hub response arrays after every hub edge.
 pub fn advance_read_bus(cog: *Cog) void {
-    cog.read_bus.head = (cog.read_bus.head + 1) % 8;
+    cog.read_bus.head +%= 1;
+}
+
+/// Release a lower FIFO word before discarding its unfinished instruction.
+fn clear_young_pipeline(cog: *Cog) void {
+    for (cog.pipeline[0..3]) |*stage| {
+        if (stage.*) |*state| {
+            if (state.fifo_read_slot) |slot| {
+                cog.fifo_state.engine.?.direction.read.release(slot);
+                state.fifo_read_slot = null;
+            }
+        }
+    }
+    @memset(cog.pipeline[0..3], null);
+}
+
+/// Abandon old FIFO returns and borrowed metadata before installing another stream.
+fn discard_fifo_reads(cog: *Cog) void {
+    for (&cog.pipeline) |*stage| {
+        if (stage.*) |*state| {
+            state.fifo_read_slot = null;
+        }
+    }
+    for (&cog.read_bus.responses) |*response| {
+        if (response.* == .fifo) {
+            response.* = .empty;
+        }
+    }
+}
+
+/// Check two current physical ports before looking up the cold writer payloads.
+fn capture_read(cog: *Cog, record: anytype) void {
+    const addresses = [2]u20{ record.window.boundary.first, record.window.boundary.next };
+    var affected = false;
+    for (addresses, 0..) |raw, part| {
+        if (part == 1 and !record.window.boundary.open)
+            continue;
+        const address = HubRam.Address.init(raw);
+        const backing = address.backing() orelse continue;
+        const port = cog.hub.ram_ports[address.slice] orelse continue;
+        if (port.access == .write and port.address == backing / 4 and port.accepted.count() != 0) {
+            affected = true;
+            break;
+        }
+    }
+    if (!affected)
+        return;
+    for (cog.hub.ram_writes[0..cog.hub.ram_write_count]) |write| {
+        record.capture(.{
+            .address = write.address,
+            .clock = cog.hub.counter,
+            .value = write.value,
+            .provenance = write.provenance,
+        });
+    }
+}
+
+/// Reconcile only unfinished reads and this edge's completions, never buffered history.
+pub fn finish_reads(cog: *Cog) void {
+    if (cog.read_bus.closing) |index| {
+        const split = &cog.read_bus.fragment.?;
+        cog.capture_read(split);
+        const race = split.race();
+        const next_sample: reads.Sample = .{
+            .address = split.window.boundary.next,
+            .clock = split.window.clocks[1],
+            .readable = if (split.window.readable.second)
+                .initFull()
+            else
+                .initEmpty(),
+        };
+        const next_address = split.address +% split.size;
+        const size = split.size;
+        const response = &cog.read_bus.responses[index];
+        const again = switch (response.*) {
+            .memory => |*value| blk: {
+                value.race = race;
+                break :blk cog.memory_transfer.?.direction.read.grants_left != 0;
+            },
+            .startup => |*value| blk: {
+                value.race = race;
+                break :blk cog.startup.?.remaining != 0;
+            },
+            .empty, .fifo => unreachable,
+        };
+        cog.read_bus.fragment = if (again)
+            .{
+                .window = .init(next_sample, HubRam.Address.init(next_sample.address +% 4).value()),
+                .address = next_address,
+                .size = size,
+            }
+        else
+            null;
+        cog.read_bus.closing = null;
+    }
+    if (cog.read_bus.fragment) |*fragment| {
+        cog.capture_read(fragment);
+    }
+    const fifo = if (cog.fifo_state.engine) |*value|
+        value
+    else
+        return;
+    if (fifo.direction != .read)
+        return;
+    const read = &fifo.direction.read;
+    if (read.pending) |slot| {
+        cog.capture_read(read.get(slot));
+    }
+    if (read.closing) |slot| {
+        cog.capture_read(read.get(slot));
+        read.closing = null;
+    }
+}
+
+/// Verify every live FIFO slot has exactly one owner across queues and the partial fetch.
+pub fn assert_read_ownership(cog: *const Cog) void {
+    if (!std.debug.runtime_safety)
+        return;
+    const fifo = if (cog.fifo_state.engine) |*value|
+        value
+    else
+        return;
+    fifo.assert_consistent();
+    if (fifo.direction != .read)
+        return;
+    const read = &fifo.direction.read;
+    var owners = std.StaticBitSet(20).initEmpty();
+    var inflight: usize = 0;
+    for (cog.read_bus.responses) |response| {
+        if (response == .fifo) {
+            const index = @intFromEnum(response.fifo);
+            std.debug.assert(read.used.isSet(index) and !owners.isSet(index));
+            owners.set(index);
+            inflight += 1;
+        }
+    }
+    std.debug.assert(inflight == read.inflight);
+    for (0..fifo.count) |i| {
+        const index = @intFromEnum(read.order[(fifo.head + i) % read.order.len]);
+        std.debug.assert(!owners.isSet(index));
+        owners.set(index);
+    }
+    var held: ?FifoSlot = null;
+    for (cog.pipeline) |stage| {
+        if (stage) |state| {
+            if (state.fifo_read_slot) |slot| {
+                std.debug.assert(held == null and !owners.isSet(@intFromEnum(slot)));
+                held = slot;
+                owners.set(@intFromEnum(slot));
+            }
+        }
+    }
+    std.debug.assert(held == read.held);
+    std.debug.assert(owners.eql(read.used));
+    if (read.pending) |slot| {
+        std.debug.assert(read.used.isSet(@intFromEnum(slot)));
+        std.debug.assert(read.getConst(slot).window.boundary.open);
+    }
+    std.debug.assert(read.closing == null);
 }
 
 /// Raise each selectable LUT/lock event matching this notification, leaving pin sensors independent.
@@ -2274,6 +2626,7 @@ pub fn resolve_operand(cog: *Cog, reg: Register, imm: bool) u32 {
 pub const PipelineState = struct {
     /// Index into the cog-owned collision records; avoid copying their payload with every pipeline shift.
     fetch_conflict_slot: ?u3 = null,
+    fifo_read_slot: ?FifoSlot = null,
     pc: u20,
     instr: u32,
     /// One encounter survives all execute stalls and command scheduling retries.
@@ -2311,33 +2664,62 @@ pub const PipelineState = struct {
     command_writeback: Writeback = .{},
 };
 
+/// Report an assembled read once at its consumer, using the captured physical window.
+pub fn report_read_race(cog: *Cog, race: ?reads.Race) void {
+    if (race) |value| {
+        cog.hub.report(.{ .memory_read_race = value }, cog.hub.access_context);
+    }
+}
+
 /// Report a fetched word's collisions once, including instructions whose execution later stalls.
 fn report_fetch_conflicts(cog: *Cog, state: *PipelineState) void {
     const slot = state.fetch_conflict_slot orelse return;
     const pending = &cog.fetch_conflicts[slot];
-    for (pending.items[0..pending.count]) |conflict| {
-        cog.hub.report(.{ .cog_fetch_write = conflict }, conflict.reader.provenance);
+    if (pending.hub_race) |race| {
+        cog.hub.report(.{ .memory_read_race = race }, .{ .cog = cog.id, .pc = state.pc, .instruction = state.instr });
+    }
+    for (pending.writers[0..pending.count]) |writer| {
+        cog.hub.report(.{ .cog_fetch_write = .{
+            .clock = pending.clock,
+            .writer = writer,
+            .reader = pending.reader,
+            .read_source = pending.read_source,
+        } }, pending.reader.provenance);
     }
     state.fetch_conflict_slot = null;
 }
 
-/// Reserve one of five collision records, never overwriting a fetched instruction still in flight.
-fn retain_fetch_conflict(cog: *Cog, state: *PipelineState, conflict: Issue.Conflict) void {
-    const slot = state.fetch_conflict_slot orelse slot: {
-        const next = cog.next_fetch_conflict;
-        for (cog.pipeline) |stage| {
-            if (stage) |instruction| {
-                std.debug.assert(instruction.fetch_conflict_slot != next);
-            }
+/// Reserve a record shared by local collisions and completed hub-read race diagnostics.
+fn reserve_fetch_record(cog: *Cog, state: *PipelineState) u3 {
+    if (state.fetch_conflict_slot) |slot|
+        return slot;
+    const next = cog.next_fetch_conflict;
+    for (cog.pipeline) |stage| {
+        if (stage) |instruction| {
+            std.debug.assert(instruction.fetch_conflict_slot != next);
         }
-        cog.next_fetch_conflict = @intCast((@as(usize, next) + 1) % cog.fetch_conflicts.len);
-        cog.fetch_conflicts[next].count = 0;
-        state.fetch_conflict_slot = next;
-        break :slot next;
-    };
-    const pending = &cog.fetch_conflicts[slot];
-    std.debug.assert(pending.count < pending.items.len);
-    pending.items[pending.count] = conflict;
+    }
+    cog.next_fetch_conflict = @intCast((@as(usize, next) + 1) % cog.fetch_conflicts.len);
+    cog.fetch_conflicts[next].count = 0;
+    cog.fetch_conflicts[next].hub_race = null;
+    state.fetch_conflict_slot = next;
+    return next;
+}
+
+/// Retain a collision until execution, avoiding large payloads in the shifting pipeline.
+fn retain_fetch_conflict(cog: *Cog, state: *PipelineState, conflict: Issue.Conflict) void {
+    const pending = &cog.fetch_conflicts[cog.reserve_fetch_record(state)];
+    std.debug.assert(pending.count < pending.writers.len);
+    if (pending.count == 0) {
+        pending.reader = conflict.reader;
+        pending.clock = conflict.clock;
+        pending.read_source = conflict.read_source;
+    } else {
+        std.debug.assert(std.meta.eql(pending.reader, conflict.reader));
+        std.debug.assert(pending.clock == conflict.clock);
+        std.debug.assert(std.meta.eql(pending.read_source, conflict.read_source));
+    }
+    pending.writers[pending.count] = conflict.writer;
     pending.count += 1;
 }
 
@@ -2442,23 +2824,36 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
         .hub => {
             if (cog.fifo_state.request != null or
                 (cog.fifo_state.engine != null and
-                    cog.fifo_state.engine.?.mode != .read))
+                    std.meta.activeTag(cog.fifo_state.engine.?.direction) != .read))
                 return null;
             if (cog.fifo_state.engine == null) {
                 cog.fifo_state.engine = .{
+                    .direction = .{ .read = .{} },
                     .byte_offset = @truncate(cog.pc),
                     .address = cog.pc & 0xffffc,
                     .ready_at = cog.hub.counter +% 5,
                 };
                 return null;
             }
-            const word = cog.fifo_state.engine.?.read() orelse return null;
+            const fifo = &cog.fifo_state.engine.?;
+            const read = &fifo.direction.read;
+            const slot = fifo.take() orelse return null;
+            const word = read.get(slot).value >> (@as(u5, fifo.byte_offset) * 8);
+            const retained: ?FifoSlot = if (fifo.byte_offset != 0) blk: {
+                std.debug.assert(read.held == null);
+                read.held = slot;
+                break :blk slot;
+            } else blk: {
+                read.release(slot);
+                break :blk null;
+            };
             if (cog.pc < 0x400) {
                 cog.hub.report(.{ .pc_domain = .{ .pc = cog.pc, .hub = true, .address = cog.pc, .storage = .ram } }, .{ .cog = cog.id, .pc = cog.pc, .instruction = word });
             }
             const instr: PipelineState = .{
                 .pc = cog.pc,
                 .instr = word,
+                .fifo_read_slot = retained,
                 .fifo_tail = cog.fifo_state.engine.?.byte_offset != 0,
             };
             cog.pc +%= 4;
@@ -2584,7 +2979,7 @@ test "illegal execution reports an issue and allows younger instructions to reti
     cog.pipeline[2] = .{ .pc = 0x1004, .instr = 0xF604_2807 };
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
-    const issue = hub.issues.items()[0];
+    const issue = hub.issues.at(0);
     try std.testing.expect(issue.kind == .hub_fifo_conflict);
     try std.testing.expectEqual(@as(?u20, 0x1000), issue.provenance.pc);
     try std.testing.expectEqual(ExecMode.hub, cog.exec_mode);
@@ -2606,7 +3001,7 @@ test "stop discards startup, FIFO, transfers and queued results but preserves RA
     cog.lut[100] = 88;
     cog.pipeline[3] = .{ .pc = 0, .instr = 0 };
     cog.writeback = .{ .count = 1 };
-    cog.fifo_state.engine = .{ .address = 0, .ready_at = 0, .byte_offset = 0 };
+    cog.fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = 0, .ready_at = 0, .byte_offset = 0 };
     cog.repeat = .{ .start = 10, .length = 3, .left = 2, .iterations = 0 };
     cog.skip = .{ .mode = .cancel, .pattern = 0xf0, .depth = 3 };
     cog.reset();
@@ -2882,7 +3277,7 @@ test "RDFAST clears block-wrap only on accepted initialization and not on stalle
     cog.events.insert(.FBW);
     try std.testing.expectEqual(ExecResult.wait, execute.execute_instruction(cog, read));
     try std.testing.expect(cog.events.contains(.FBW));
-    cog.fifo_state.engine.?.count = 1;
+    _ = test_support.bufferFifoWord(cog, .{ .address = 0, .clock = 0, .readable = .initFull() }, 4, 0);
     cog.fifo_state.engine.?.ready_at = null;
     try std.testing.expectEqual(ExecResult.next, execute.execute_instruction(cog, read));
     try std.testing.expect(cog.events.contains(.FBW));
@@ -2906,13 +3301,13 @@ test "FBLOCK replaces the descriptor of a configuration still draining prior wri
     try std.testing.expect(cog.write_fifo(0x11223344, 4));
     cog.begin_fifo(.read, 1, 0x2000);
     cog.fifo_block(2, 0x3000);
-    try std.testing.expectEqual(FifoMode.write, cog.fifo_state.engine.?.mode);
+    try std.testing.expectEqual(FifoMode.write, std.meta.activeTag(cog.fifo_state.engine.?.direction));
     try std.testing.expectEqual(@as(u20, 0x3000), cog.fifo_state.request.?.block.address);
     while (cog.fifo_state.request != null) {
         _ = hub.step();
     }
     try std.testing.expectEqual(@as(u32, 0x11223344), hub.read_memory(0x1000, 4));
-    try std.testing.expectEqual(FifoMode.read, cog.fifo_state.engine.?.mode);
+    try std.testing.expectEqual(FifoMode.read, std.meta.activeTag(cog.fifo_state.engine.?.direction));
     try std.testing.expectEqual(@as(u19, 32), cog.fifo_state.engine.?.remaining);
     try std.testing.expectEqual(@as(u20, 0x3000), cog.fifo_state.engine.?.block.?.address);
     try std.testing.expectEqual(@as(u19, 32), cog.fifo_state.engine.?.block.?.longs);
@@ -2935,9 +3330,8 @@ test "FIFO ring reads cross the physical end and full writes retain their augmen
     const cog = &hub.cogs[0];
     cog.begin_fifo(.read, 0, 0xfffff);
     cog.fifo_state.engine.?.head = 18;
-    cog.fifo_state.engine.?.count = 2;
-    cog.fifo_state.engine.?.words[18] = 0x12000000;
-    cog.fifo_state.engine.?.words[0] = 0x00563478;
+    _ = test_support.bufferFifoWord(cog, .{ .address = 0xffffc, .clock = 0, .readable = .initFull() }, 0, 0x12000000);
+    _ = test_support.bufferFifoWord(cog, .{ .address = 0, .clock = 1, .readable = .initFull() }, 4, 0x00563478);
     try std.testing.expectEqual(@as(u32, 0x56347812), cog.read_fifo(4).?);
     try std.testing.expectEqual(@as(u20, 3), cog.fifo_state.address.?);
     try std.testing.expectEqual(@as(usize, 1), cog.fifo_state.engine.?.count);
@@ -2957,9 +3351,9 @@ test "FIFO ring reads cross the physical end and full writes retain their augmen
     for (0..9) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(@as(usize, 72), cog.fifo_state.engine.?.write_count);
+    try std.testing.expectEqual(@as(usize, 72), cog.fifo_state.engine.?.direction.write.count);
     try std.testing.expectEqual(ExecResult.next, execute.execute_instruction(cog, cog.pipeline[3].?));
-    try std.testing.expectEqualSlices(u8, &.{ 0x78, 0x56, 0x34, 0x12 }, cog.fifo_state.engine.?.write_bytes[0..4]);
+    try std.testing.expectEqualSlices(u8, &.{ 0x78, 0x56, 0x34, 0x12 }, cog.fifo_state.engine.?.direction.write.bytes[0..4]);
     try std.testing.expectEqual(@as(u20, 0x1050), cog.fifo_state.address.?);
 }
 
@@ -3300,7 +3694,10 @@ test "interrupt injection holds the PC and FIFO and respects priority reservatio
     const cog = &hub.cogs[0];
     cog.exec_mode = .hub;
     cog.pc = 0x4003;
-    cog.fifo_state.engine = .{ .byte_offset = 3, .address = 0x4040, .ready_at = null, .count = 12 };
+    cog.fifo_state.engine = .{ .direction = .{ .read = .{} }, .byte_offset = 3, .address = 0x4040, .ready_at = null };
+    for (0..12) |i| {
+        _ = test_support.bufferFifoWord(cog, .{ .address = @intCast(0x4000 + i * 4), .clock = @intCast(i), .readable = .initFull() }, @intCast(0x4004 + i * 4), 0);
+    }
     hub.counter = std.math.maxInt(u64);
     for (std.enums.values(InterruptLevel)) |level| {
         cog.trigger_interrupt(level);
