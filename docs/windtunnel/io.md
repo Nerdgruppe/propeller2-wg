@@ -83,8 +83,8 @@ RX defaults to exact operation. TX defaults to emulated operation with a discard
 Attach caller-owned endpoint descriptors, independently of WRPIN:
 
 ```zig
-var source: IO.DataSource = .{ .reader = reader };
-const sink: IO.DataSink = .{ .writer = writer };
+var source: IO.DataSource = .{ .endpoint = .{ .reader = reader } };
+var sink: IO.DataSink = .{ .endpoint = .{ .writer = writer } };
 hub.io.pins[40].smart.tx_mode = .{ .emulated = &sink };
 hub.io.pins[41].smart.rx_mode = .exact;
 hub.io.pins[42].smart.rx_mode = .{ .emulated = &source };
@@ -95,7 +95,8 @@ Writer adapters truncate completed words to a byte; Reader adapters promote a by
 to a word. Callback endpoints preserve all 32 bits. A source returns `null` when no
 word is available. Readers consume only buffered bytes; the host owns refill and
 EOF handling outside simulation steps. Keep descriptors and their backing objects
-alive while attached. Endpoint errors stop execution with pin and instruction provenance.
+alive while attached. Endpoint errors latch on their adapter and stop further attempts until explicitly
+reset or rebound. The host pauses after the completed edge; see [issues and service errors](issues.md).
 No external process or library is needed to use the endpoint API.
 
 Timed receivers share their bit state between exact and emulated operation. Switching

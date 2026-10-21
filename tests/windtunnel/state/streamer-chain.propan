@@ -42,4 +42,3 @@
                 JMP     nrel(_end)
 var elapsed:    LONG    0
 var frequency:  LONG    0
-

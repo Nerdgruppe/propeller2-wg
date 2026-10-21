@@ -1,5 +1,7 @@
 //! Electrical pads, physical receivers, routing, and simultaneous cog-to-smart-pin commands.
 const std = @import("std");
+const test_support = @import("../test_support.zig");
+const access_types = @import("access.zig");
 const Hub = @import("Hub.zig");
 const smart_pin = @import("smart_pin.zig");
 pub const Pad = @import("Pad.zig");
@@ -19,6 +21,7 @@ const DriveSignal = smart_pin.DriveSignal;
 pub const DataSource = smart_pin.DataSource;
 pub const DataSink = smart_pin.DataSink;
 const IO = @This();
+const Issue = @import("Issue.zig");
 pub const Clock = @import("Clock.zig");
 
 /// Deterministic first-order delta/sigma source; density is a fraction of one bits, not a voltage.
@@ -245,9 +248,8 @@ last_clock: u64 = 0,
 /// Last input-routing edge, including the initial CT=0 reset state.
 input_clock: u64 = 0,
 commands: CommandPipeline = .{},
-owners: [64]struct { cog: u3 = 0, pc: u20 = 0, instruction: u32 = 0 } = @splat(.{}),
-collision: ?struct { clock: u64, pin: PinIndex, cogs: u8 } = null,
-failure: ?struct { pin: PinIndex, err: anyerror } = null,
+owners: [64][8]?access_types.Provenance = @splat(@splat(null)),
+pending_writers: [64][8]?access_types.Provenance = @splat(@splat(null)),
 
 /// Bind each smart-pin USB forwarder to the bank after IO reaches its final address.
 pub fn connect(io: *IO) void {
@@ -282,9 +284,8 @@ pub fn enqueue(io: *IO, hub: *Hub, command: Command) void {
 }
 
 /// Prepare one combined command without advancing its smart logic.
-fn apply(io: *IO, index: PinIndex, command: Command, inputs: *smart_pin.Inputs) !void {
+fn apply(io: *IO, index: PinIndex, command: Command, inputs: *smart_pin.Inputs) void {
     const i = @intFromEnum(index);
-    io.owners[i] = .{ .cog = command.cog, .pc = command.pc, .instruction = command.instruction };
     switch (command.kind) {
         .configure => {
             const configuration: PinConfiguration = @bitCast(command.value);
@@ -339,12 +340,21 @@ pub fn step(io: *IO, hub: *Hub) void {
         const mask = @as(u64, 1) << @intFromEnum(index);
         touched &= touched - 1;
         var combined: ?Command = null;
-        var cogs: u8 = 0;
+        var collision: Issue.PinCollision = .{ .pin = @intFromEnum(index), .count = 0, .commands = undefined };
+        io.owners[@intFromEnum(index)] = @splat(null);
         for (slot) |command| {
             if (command) |c| {
                 if (c.mask & mask == 0)
                     continue;
-                cogs |= @as(u8, 1) << c.cog;
+                const provenance: access_types.Provenance = .{ .cog = c.cog, .pc = c.pc, .instruction = c.instruction };
+                io.owners[@intFromEnum(index)][c.cog] = provenance;
+                collision.commands[collision.count] = .{ .provenance = provenance, .value = c.value, .kind = switch (c.kind) {
+                    .configure => .configure,
+                    .write_x => .write_x,
+                    .write_y => .write_y,
+                    .acknowledge => .acknowledge,
+                } };
+                collision.count += 1;
                 if (combined) |*merged| {
                     const bus: CommandBus = @enumFromInt(@intFromEnum(commandBus(merged.kind)) | @intFromEnum(commandBus(c.kind)));
                     merged.value |= c.value | @as(u32, @intFromBool(c.kind == .acknowledge));
@@ -356,21 +366,10 @@ pub fn step(io: *IO, hub: *Hub) void {
                 }
             }
         }
-        if (@popCount(cogs) > 1) {
-            io.collision = .{ .clock = hub.counter, .pin = index, .cogs = cogs };
-            std.log.warn("smart pin {d} command collision at clock {d}, cog mask 0x{x}", .{ @intFromEnum(index), hub.counter, cogs });
-            for (slot) |command| {
-                if (command) |c| {
-                    if (c.mask & mask != 0) {
-                        std.log.warn("  cog {d}, pc 0x{x}: {t} value 0x{x:0>8}", .{ c.cog, c.pc, c.kind, c.value });
-                    }
-                }
-            }
+        if (collision.count > 1) {
+            hub.report(.{ .pin_command_collision = collision }, .{});
         }
-        io.apply(index, combined.?, &inputs[@intFromEnum(index)]) catch |err| {
-            io.fail(hub, index, err);
-            return;
-        };
+        io.apply(index, combined.?, &inputs[@intFromEnum(index)]);
     }
     slot.* = @splat(null);
     io.routeInputs(&hub.system_configuration);
@@ -385,14 +384,36 @@ pub fn step(io: *IO, hub: *Hub) void {
     for (&io.pins, inputs) |*pin, sample| {
         pin.smart.sample(sample);
     }
-    for (&io.usb) |*usb| {
+    for (&io.usb, 0..) |*usb, index| {
+        const previous = usb.state;
         usb.clock();
+        if (usb.state.status.err and !previous.status.err and
+            (previous.packet or usb.state.packet or previous.status.sop))
+        {
+            hub.report(.{ .usb_receive_error = .{ .pin = @intCast(index * 2), .value = @as(u16, @bitCast(usb.state.status)) } }, .{});
+        }
     }
     for (&io.pins, next, 0..) |*pin, *state, i| {
-        state.* = pin.smart.clock() catch |err| {
-            io.fail(hub, @enumFromInt(i), err);
-            return;
-        };
+        state.* = pin.smart.clock();
+        if (state.discarded) |discarded| {
+            hub.report(.{
+                .pin_buffer_overwrite = .{
+                    .pin = @intCast(i),
+                    .value = pin.smart.registers.y,
+                    .discarded = discarded,
+                    .previous = io.pending_writers[i],
+                    .current = io.owners[i],
+                },
+            }, .{});
+        }
+        if (inputs[i].new_y != null) {
+            io.pending_writers[i] = io.owners[i];
+        }
+        if (pin.configuration.isDitherDac() and inputs[i].new_y != null and
+            (@as(u16, @truncate(pin.smart.registers.y)) > 0xff00))
+        {
+            hub.report(.{ .smart_dac_clipped = .{ .pin = @intCast(i), .value = pin.smart.registers.y } }, .{});
+        }
     }
     io.routed_inputs = 0;
     for (&io.pins, next, 0..) |*pin, next_state, i| {
@@ -452,19 +473,6 @@ pub fn readResult(io: *const IO, index: PinIndex, clock: u64) ReadResult {
 pub fn advance_delays(io: *IO) void {
     io.commands.head = (io.commands.head + 1) % io.commands.slots.len;
     io.direction_pipeline.head = (io.direction_pipeline.head + 1) % io.direction_pipeline.directions.len;
-}
-
-/// Record a pin I/O failure and fault the issuing cog.
-fn fail(io: *IO, hub: *Hub, index: PinIndex, err: anyerror) void {
-    io.failure = .{ .pin = index, .err = err };
-    const owner = io.owners[@intFromEnum(index)];
-    hub.fault = .{
-        .cog = owner.cog,
-        .pc = owner.pc,
-        .instruction = owner.instruction,
-        .result = .{ .illegal = "smart-pin I/O failure (see pin diagnostic)" },
-    };
-    std.log.warn("smart pin {d}: {t}", .{ @intFromEnum(index), err });
 }
 
 /// Aggregate all cog OUT/DIR registers once after the edge's writebacks.
@@ -732,6 +740,54 @@ fn resolvePads(io: *IO, hub: *Hub, seconds: f64, clocked: bool) void {
             }
         }
         io.analog_pads.step(system, dt);
+        var violations: u64 = @bitCast(io.analog_pads.undervoltage | io.analog_pads.overvoltage | io.analog_pads.overcurrent);
+        while (violations != 0) {
+            const index: u6 = @intCast(@ctz(violations));
+            violations &= violations - 1;
+            const state = io.analog_pads.get(index).?;
+            if (state.violations.undervoltage) {
+                hub.issues.analog(.{
+                    .clock = hub.counter,
+                    .provenance = .{},
+                    .kind = .{
+                        .pad_undervoltage = .{
+                            .pin = index,
+                            .minimum = state.voltage,
+                            .maximum = state.voltage,
+                            .limit = system.min_pad_voltage,
+                        },
+                    },
+                });
+            }
+            if (state.violations.overvoltage) {
+                hub.issues.analog(.{
+                    .clock = hub.counter,
+                    .provenance = .{},
+                    .kind = .{
+                        .pad_overvoltage = .{
+                            .pin = index,
+                            .minimum = state.voltage,
+                            .maximum = state.voltage,
+                            .limit = system.vio_voltage + system.max_pad_voltage_margin,
+                        },
+                    },
+                });
+            }
+            if (state.violations.overcurrent) {
+                hub.issues.analog(.{
+                    .clock = hub.counter,
+                    .provenance = .{},
+                    .kind = .{
+                        .pad_overcurrent = .{
+                            .pin = index,
+                            .minimum = state.pin_current,
+                            .maximum = state.pin_current,
+                            .limit = system.max_pin_current,
+                        },
+                    },
+                });
+            }
+        }
         const levels = io.analog_pads.digital(system);
         if (simple) {
             io.receiver_inputs = levels;
@@ -959,7 +1015,7 @@ test "clock fields and reader-backed UART input are independent of terminal pin 
     try std.testing.expectEqual(@as(u32, 0x0100_09fb), io.clock_mode);
 
     var reader = std.Io.Reader.fixed("ab");
-    var source: DataSource = .{ .reader = &reader };
+    var source: DataSource = .{ .endpoint = .{ .reader = &reader } };
     const pin = &io.pins[9].smart;
     pin.rx_mode = .{ .emulated = &source };
     testCommand(hub, @enumFromInt(9), .configure, 0x3e);
@@ -999,15 +1055,24 @@ test "hardware repository command timing and OR-combined mixed command buses" {
     hub.counter = 100;
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_x, .value = 0x155, .cog = 0, .pc = 1, .instruction = 0 });
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 40, .kind = .write_x, .value = 0xaa, .cog = 7, .pc = 2, .instruction = 0 });
+    var recorded: ?Issue.PinCollision = null;
     for (0..4) |_| {
         _ = hub.step();
+        for (hub.issues.items()) |issue| {
+            if (issue.kind == .pin_command_collision) {
+                recorded = issue.kind.pin_command_collision;
+            }
+        }
         try std.testing.expectEqual(@as(u32, 0), hub.io.readResult(@enumFromInt(40), hub.counter -% 1).value);
         try std.testing.expect(hub.io.get_in() & (@as(u64, 1) << 40) != 0);
     }
     _ = hub.step();
     try std.testing.expectEqual(@as(u32, 0x1ff), pin.registers.result);
     try std.testing.expect(hub.io.get_in() & (@as(u64, 1) << 40) == 0);
-    try std.testing.expectEqual(@as(u8, 0x81), hub.io.collision.?.cogs);
+    const collision = recorded.?;
+    try std.testing.expectEqual(@as(usize, 2), collision.count);
+    try std.testing.expectEqual(@as(?u3, 0), collision.commands[0].provenance.cog);
+    try std.testing.expectEqual(@as(?u3, 7), collision.commands[1].provenance.cog);
     _ = hub.step();
     try std.testing.expect(hub.io.get_in() & (@as(u64, 1) << 40) != 0);
     hub.cogs[0].write_reg(.DIRB, 0);
@@ -1180,7 +1245,7 @@ test "independent UART pins and endpoint errors identify their pin and issuing c
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
-    var sink: DataSink = .{ .writer = &output.writer };
+    var sink: DataSink = .{ .endpoint = .{ .writer = &output.writer } };
     for ([_]PinIndex{ @enumFromInt(4), @enumFromInt(33) }) |index| {
         hub.io.pins[@intFromEnum(index)].smart.tx_mode = .{ .virtual = &sink };
         testCommand(hub, index, .configure, 0x7c);
@@ -1196,21 +1261,22 @@ test "independent UART pins and endpoint errors identify their pin and issuing c
     try std.testing.expectEqualStrings("ab", output.written());
     const Broken = struct {
         /// Fail a test transmission to exercise instruction provenance.
-        fn write(_: *anyopaque, _: u32) anyerror!void {
-            return error.TestSinkFailure;
+        fn write(_: *anyopaque, _: u32) smart_pin.WriteError!void {
+            return error.WriteFailed;
         }
     };
     var context: u8 = 0;
-    var broken: DataSink = .{ .callback = .{ .context = &context, .write = Broken.write } };
+    var broken: DataSink = .{ .endpoint = .{ .callback = .{ .context = &context, .write = Broken.write } } };
     hub.io.pins[33].smart.tx_mode = .{ .virtual = &broken };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 33, .kind = .write_y, .value = 'c', .cog = 6, .pc = 123, .instruction = 456 });
     for (0..command_delay + 11) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(@as(PinIndex, @enumFromInt(33)), hub.io.failure.?.pin);
-    try std.testing.expectEqual(error.TestSinkFailure, hub.io.failure.?.err);
-    try std.testing.expectEqual(@as(u3, 6), hub.fault.?.cog);
-    try std.testing.expectEqual(@as(u20, 123), hub.fault.?.pc);
+    try std.testing.expectEqual(error.WriteFailed, broken.failure.?);
+    try std.testing.expect(test_support.serviceFailed(hub));
+    try std.testing.expectEqual(@as(?u3, 6), hub.io.owners[33][6].?.cog);
+    try std.testing.expectEqual(@as(?u20, 123), hub.io.owners[33][6].?.pc);
+    try std.testing.expectEqual(@as(usize, 0), hub.issues.len);
 }
 
 test "a primed USART exposes its first bit on enable and waits for B clocks" {
@@ -1270,13 +1336,13 @@ test "a partially configured USB pair starts with DIR low without a configuratio
     });
     for (0..command_delay) |_| {
         _ = hub.step();
-        try std.testing.expect(hub.fault == null);
+        try std.testing.expect(hub.issues.len == 0);
     }
     _ = hub.step();
     try std.testing.expect(hub.io.pins[9].smart.logic == .usb);
     try std.testing.expectEqual(@as(u64, 0), hub.io.directions);
-    try std.testing.expect(hub.io.failure == null);
-    try std.testing.expect(hub.fault == null);
+    try std.testing.expect(!test_support.serviceFailed(hub));
+    try std.testing.expect(hub.issues.len == 0);
     try std.testing.expectEqual(@as(u32, 0), hub.io.pins[9].outputs.y);
 }
 
@@ -1290,18 +1356,18 @@ test "each pin advances once per frame and outputs publish together after fixed 
         calls: usize = 0,
         published_in: u1 = 0,
         /// Observe the previous output snapshot while counting frame service calls.
-        fn read(context: *anyopaque) anyerror!?u32 {
+        fn read(context: *anyopaque) smart_pin.ReadError!?u32 {
             const device: *@This() = @ptrCast(@alignCast(context));
             for (&device.hub.io.pins) |*pin| {
-                try std.testing.expectEqual(device.published_in, pin.outputs.in);
+                std.debug.assert(device.published_in == pin.outputs.in);
             }
-            try std.testing.expectEqual(std.math.maxInt(u64), device.hub.io.directions);
+            std.debug.assert(device.hub.io.directions == std.math.maxInt(u64));
             device.calls += 1;
             return 1;
         }
     };
     var device: Device = .{ .hub = hub };
-    var source: DataSource = .{ .callback = .{ .context = &device, .read = Device.read } };
+    var source: DataSource = .{ .endpoint = .{ .callback = .{ .context = &device, .read = Device.read } } };
     for (&hub.io.pins) |*pin| {
         pin.smart.rx_mode = .{ .virtual = &source };
     }
@@ -1313,7 +1379,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
     try std.testing.expect(hub.io.pins[0].smart.logic == .gpio);
     for (0..command_delay) |_| {
         _ = hub.step();
-        try std.testing.expect(hub.fault == null);
+        try std.testing.expect(hub.issues.len == 0);
         try std.testing.expectEqual(@as(usize, 0), device.calls);
         // Even ordinary GPIO pins receive the aggregate DIR in their one frame update.
         for (&hub.io.pins) |*pin| {
@@ -1321,7 +1387,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
         }
     }
     _ = hub.step();
-    try std.testing.expect(hub.fault == null);
+    try std.testing.expect(hub.issues.len == 0);
     try std.testing.expectEqual(@as(usize, 64), device.calls);
     for (&hub.io.pins) |*pin| {
         try std.testing.expectEqual(@as(u1, 1), pin.outputs.in);
@@ -1334,7 +1400,7 @@ test "each pin advances once per frame and outputs publish together after fixed 
         try std.testing.expectEqual(@as(usize, 64), device.calls);
     }
     _ = hub.step();
-    try std.testing.expect(hub.fault == null);
+    try std.testing.expect(hub.issues.len == 0);
     try std.testing.expectEqual(@as(usize, 128), device.calls);
     // External updates and command queueing cannot invoke a pin between frames.
     try hub.io.setExternal(@enumFromInt(0), .low);
@@ -1351,7 +1417,7 @@ test "reused frame inputs do not replay writes or acknowledgements" {
     var bytes: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer bytes.deinit();
 
-    var sink: DataSink = .{ .writer = &bytes.writer };
+    var sink: DataSink = .{ .endpoint = .{ .writer = &bytes.writer } };
     hub.io.pins[10].smart.tx_mode = .{ .virtual = &sink };
     hub.cogs[0].write_reg(.DIRA, 1 << 10);
     const configuration: PinConfiguration = .{ .mode = .sync_tx };
@@ -1388,7 +1454,7 @@ test "WRPIN owns output routing and enable while smart outputs remain independen
     try std.testing.expectEqual(Signal.high, hub.io.pads[0]);
     const pin = &hub.io.pins[1];
     var reader = std.Io.Reader.fixed("x");
-    var source: DataSource = .{ .reader = &reader };
+    var source: DataSource = .{ .endpoint = .{ .reader = &reader } };
     pin.smart.rx_mode = .{ .virtual = &source };
     testCommand(hub, @enumFromInt(1), .configure, 0x7c); // UART TX, TT enables output with DIR low.
     try std.testing.expect(!pin.smart.registers.enabled);
@@ -1598,7 +1664,7 @@ test "switching to virtual TX preserves the ordinary output propagation delay" {
         _ = hub.step();
     }
     try std.testing.expectEqual(Signal.low, hub.io.pads[4]);
-    const discard: DataSink = .discard;
+    var discard: DataSink = .{ .endpoint = .discard };
     pin.smart.tx_mode = .{ .virtual = &discard };
     for (0..2) |clock| {
         _ = hub.step();

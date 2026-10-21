@@ -17,8 +17,7 @@ Implement the pipeline for the existing instruction coverage first.
 
 - The native runner's `--characterize` mode assembles and uploads without running
   the simulator, validates WTOR frames, and retains complete decoded register
-  snapshots and requested hub observations. `--trace-pipeline` retains edge traces
-  with failures and prepared oracle cases.
+  snapshots and requested hub observations. VCD provides physical-time signal capture.
 - Cog/LUT execution has five stage positions, two-clock issue, captured operands,
   deferred result/flag writes, stalls, and branch flush/refill. Hardware agrees on
   GETCT/NOP/cancellation, WAITX, RDLUT/pixel latency, dependencies, LUT execution,
@@ -110,13 +109,11 @@ holds each driven pattern through a mailbox acknowledgment and a settling wait;
 it makes no assertions about input/output propagation edges. I/O timing is
 unchanged.
 
-Execution results distinguish `not_implemented` (missing simulator support),
-`trap`, and `illegal` with an explanatory string. Illegal execution stops the
-cog, discards its pending pipeline writes, and stops the runner/CLI with that
-reason. Software FIFO configuration and RF/WF operations during hub execution
-are illegal because instruction fetching already uses the FIFO. RF/WF operations
-require the corresponding read/write mode;
-conditionally canceled instructions do not fault.
+Execution reports typed [issues](issues.md), including explicit trap-severity
+rejection of unsupported runtime streamer behavior and illegal FIFO use. Rejected
+operations retire without the rejected effect; the remaining edge completes.
+The host inspects all reports before advancing again. Condition-failed and
+cancelled instructions do not produce execution-illegality reports.
 
 Validation includes the complete project suite, hardware reruns of the
 consolidated fixtures, byte-aligned startup, hub address-map and boundary
@@ -286,11 +283,11 @@ add ISA entries merely to implement pipeline stages.
 
 1. **Make characterization independent of simulator success.** Retain source,
    uploaded image, device frame, CRC-checked decoded observations, and simulator
-   trace. Add a small explicit hardware-characterization mode to the existing
+   snapshots. Add a small explicit hardware-characterization mode to the existing
    runner which assembles/uploads without requiring the local simulation to
    satisfy postconditions first, and reports measurements rather than a
-   conformance pass. This is needed for currently trapped unaligned fetch and
-   unsupported LUT fixture layouts. Keep the normal oracle strict. Allow an
+   conformance pass. This also supports probes without established simulator
+   semantics or an existing LUT fixture layout. Keep the normal oracle strict. Allow an
    observation without inventing a simulator-baseline assertion if useful.
    Gate: a deliberately wrong local result does not prevent collecting hardware
    evidence in characterization mode; corrupt/truncated frames remain failures.
@@ -300,7 +297,7 @@ add ISA entries merely to implement pipeline stages.
    operands once; forward preceding results/flags at the appropriate boundary;
    queue result and side effects for their actual commit edge. Capture GETCT at
    its measured stage, including the two-instruction 64-bit capture form.
-   Gate: stage traces show isolated five-clock passage and steady two-clock
+   Gate: stage-state assertions show isolated five-clock passage and steady two-clock
    issue; dependent D/S/C/Z chains, conditions, augmentation, ALTx/ALTI, and all
    existing functional fixtures pass. NOP/canceled ADD/GETCT timings match hardware.
 
@@ -381,7 +378,7 @@ wall-clock startup. Compare modulo-32-bit timestamp differences and test wrap.
 CT deltas test timing but cannot independently identify every internal edge.
 Use self-modifying code, dependencies, poisoned fall-through, and a second cog's
 timed observations of writes/events to constrain side-effect placement. Local
-stage trace assertions then check the proposed microarchitecture. Successful
+stage-state assertions then check the proposed microarchitecture. Successful
 black-box probes establish externally observable equivalence for their coverage,
 not proof of every hidden stage or every unsupported instruction.
 
@@ -427,7 +424,7 @@ Commands grant at `CT & 7 == issuing_cog`; RAM slice access instead uses
 | Hub transfers, stacks, blocks and visible beats | `pipeline-hub-matrix`, `pipeline-hub-stack`, `pipeline-hub-block`, `pipeline-block-visibility` |
 | FIFO entry, alignment, buffering, contention and wrap | Hub entry/FIFO, software FIFO/prefetch, contention, mode transition, and hub wrap fixtures |
 | Shared edges, startup and lifecycle | Shared events, dual LUT writes, LUT source events, startup/pair/restart fixtures; stop-clearing and counter-wrap unit tests |
-| Generator and ordinary CLI | Executor regeneration comparison, CLI pipeline trace; trap/not-implemented/illegal diagnostics and cancellation tests |
+| Generator and ordinary CLI | Executor regeneration/placeholder guards; completed-edge issue diagnostics, service errors and cancellation tests |
 
 Acceptance used `zig-0.16.0 build install test --summary all`: all 19 build
 steps succeeded, 32 Windtunnel unit tests and 102 Propan tests passed, and two
@@ -442,7 +439,7 @@ remain recorded as historical investigation evidence.
 The [validation record](pipeline-probes/validation.json) lists every current
 fixture, source hash, run name, and hardware result, together with command
 summaries and evidence hashes. Executor regeneration is byte-identical after
-formatting. CLI tracing and illegal-execution diagnostics were exercised directly.
+formatting. CLI execution diagnostics were exercised directly.
 The [bug report](../../BUGREPORT.md) records seven review findings, their
 reproductions and fixes. Counter-rollover regressions additionally cover delayed
 events, FIFO/data responses, waits, UART and image startup.
@@ -466,18 +463,17 @@ address counter from `$FFFFF` continues reading real hub RAM at zero. A
 second-cog recovery probe and explicit data reads/writes verify both boundaries.
 Ordinary branches to low addresses still select cog/LUT execution.
 
-Cog debug ROM is outside the implemented instruction subset. Data block access
-still uses the underlying eight RAM words; instruction fetch marks the ROM and
-reports an explicit `not_implemented` fault at execution. Younger ROM fetches flushed
-by a branch do not fault. The [debug-ROM experiment](pipeline-probes/debug-rom-entry.propan.in)
-is deliberately excluded from the runnable characterization glob: it enters
-unsupported native debug context and cannot return a valid WTOR frame.
+Debug-ROM instruction fetches use the execute-only ROM while data accesses retain
+the underlying eight RAM words. ROM instructions use the ordinary executor;
+invalid encodings produce instruction issues only when executed. Flushed younger
+fetches do not produce execution-illegality reports. The retained debug-ROM probe
+is exploratory and does not establish complete native-debug coverage.
 
 Concurrent LUT writes to distinct addresses commit together. Same-address
 collisions produced different results for different cog pairs; the simulator
 records a collision and chooses a deterministic local-write result. Such
 collisions and simultaneous instruction-fetch/data-write collisions are exposed
-in traces, and their data values are outside the deterministic exactness claim.
+as issues with participant provenance, and their data values are outside the deterministic exactness claim.
 
 The original pipeline investigation excluded interrupts, REP/SKIP, CORDIC,
 streamer, debug execution, and general smart-pin timing. Subsequent extensions
@@ -518,7 +514,8 @@ pipeline entries. Arbitration chooses the highest pending level above any
 active handler, after the request's sampling edge and on an available issue
 slot. Fetch holds the PC and leaves hub FIFO bytes untouched. The marker
 changes return-PC packing to the held PC and exempts internal instructions
-from assembled-code/checkpoint validation; traces label them `injected=intN`.
+from assembled-code/checkpoint validation. The pipeline retains the interrupt level
+with the injected entry.
 The controller changes pending to active and raises INT when the CALLD executes.
 Taken branches can flush a reservation while leaving its request pending.
 
@@ -586,7 +583,7 @@ Writeback acknowledgement precedes delivery on the same edge. Therefore an old
 occurrence can be consumed while a newly delivered occurrence remains latched.
 Cog reset cancels its pending pulses and acknowledgements. Counter rearming also
 discards old-comparison latch pulses; selectable sensor reconfiguration retains
-samples already in flight. Event acknowledgement/delivery appears in pipeline traces.
+samples already in flight. Event acknowledgement/delivery is covered by the retained event-boundary fixtures.
 
 Variable reads decode up to four bytes with 7/14/21/29 payload bits. Startup
 response ordering reproduces the nonblocking RDFAST read-completion erratum.
@@ -616,11 +613,12 @@ refill. Its target selects the execution domain, including a wrapped target belo
 $400. Explicit taken branches clear REP; the hidden branch retains its context.
 
 A canceled slot retains its decoded word for existing prefix/decode errata, but
-cannot issue a shared command, incur an execution latency, fault on an unsupported
-opcode, write registers or take a branch. Fast stepping only changes fetched
+cannot issue a shared command, incur an execution latency, report execution illegality,
+write registers or take a branch. Fast stepping only changes fetched
 addresses: hub resources, events, RNG and CT continue advancing every clock.
-SKIPF uses cancellation while executing from the hub FIFO. EXECF replaces skip
-state and branches to a local address.
+Hub-executed SKIPF reports a trap-severity issue and retires without changing skip
+state. This explicit simulator policy has a separate regression from the hardware
+timing matrix. EXECF replaces skip state and branches to a local address.
 
 Skip suspension uses a four-bit CALL/RET counter independent of the eight-entry
 value stack. PUSH and POP do not change it. ISR execution pauses pattern
@@ -656,7 +654,7 @@ The harness validates local ownership using the physical source. Architectural
 special-register instruction values outside the assembler's executable PC range
 must match an instruction emitted as code elsewhere in the fixture. Exit detection
 also checks the instruction source domain, so a large local PC cannot be mistaken
-for the reporter's hub address. Pipeline traces include both PC and physical source.
+for the reporter's hub address. Fetch/write issues retain both PC and physical source.
 
 Eleven fixtures cover 207 independently repeated hardware cases: LOC, absolute
 and relative CALLD, explicit/implicit returns, REP, SKIP/SKIPF/EXECF, CT1 entry and

@@ -38,7 +38,6 @@ pub const Case = struct {
     original_image: []const u8,
     cycles: u64,
     stop_reason: []const u8,
-    trace: []const u8 = "",
 };
 
 /// Name a unique artifact directory for one fixture run.
@@ -63,7 +62,7 @@ pub fn retainLocalFailure(
     simulated: []const u8,
     stdout: []const u8,
     cycles: u64,
-    trace: []const u8,
+    diagnostics: []const u8,
     reason: anyerror,
 ) !void {
     const directory = try evidencePath(ctx, path, run_name);
@@ -72,8 +71,8 @@ pub fn retainLocalFailure(
 
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = source });
     try dir.writeFile(ctx.io, .{ .sub_path = "original.bin", .data = image });
-    if (trace.len != 0) {
-        try dir.writeFile(ctx.io, .{ .sub_path = "pipeline.txt", .data = trace });
+    if (diagnostics.len != 0) {
+        try dir.writeFile(ctx.io, .{ .sub_path = "issues.txt", .data = diagnostics });
     }
     var metadata: std.Io.Writer.Allocating = .init(ctx.allocator);
     defer metadata.deinit();
@@ -330,9 +329,6 @@ pub fn run(ctx: Context, case: Case) !Status {
 
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = case.source });
     try dir.writeFile(ctx.io, .{ .sub_path = "original.bin", .data = case.original_image });
-    if (case.trace.len != 0) {
-        try dir.writeFile(ctx.io, .{ .sub_path = "pipeline.txt", .data = case.trace });
-    }
     try dir.writeFile(ctx.io, .{ .sub_path = "uploaded.bin", .data = image });
     if (prepared) |p| {
         if (p.module.sources.len > 0) {

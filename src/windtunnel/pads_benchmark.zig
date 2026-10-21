@@ -116,7 +116,7 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
         else
             1;
         for (0..count) |index| {
-            try hub.start_cog(@intCast(index), .{ .clocked = false });
+            hub.start_cog(@intCast(index), .{ .clocked = false });
         }
         for (0..64) |index| {
             var pin = hub.io.pins[index].configuration;
@@ -138,13 +138,27 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
         }
     }
     for (0..5000) |_| {
-        if (hub.step() != .normal)
+        const notification = hub.step();
+        if (hub.issues.len != 0) {
+            for (hub.issues.items()) |issue| {
+                std.log.err("{f}", .{issue});
+            }
+            return error.SimulationFailed;
+        }
+        if (notification != .normal)
             return error.SimulationFailed;
     }
     std.mem.doNotOptimizeAway(hub);
     const start = std.Io.Timestamp.now(io, .awake).toNanoseconds();
     for (0..steps) |_| {
-        if (hub.step() != .normal)
+        const notification = hub.step();
+        if (hub.issues.len != 0) {
+            for (hub.issues.items()) |issue| {
+                std.log.err("{f}", .{issue});
+            }
+            return error.SimulationFailed;
+        }
+        if (notification != .normal)
             return error.SimulationFailed;
     }
     std.mem.doNotOptimizeAway(hub);

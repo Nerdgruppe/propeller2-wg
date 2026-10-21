@@ -1,4 +1,5 @@
                 //? WINDTUNNEL CHECK LIST
+                //? issues: pc_domain = 3
                 //? timeout-ms: 10000
                 //? max-cycles: 3000000
                 //? run: "phase16-cog0"
@@ -18,6 +19,7 @@
                 //? cog: 7
                 //? const: phase = 16
                 //? run: "phase2060-cog0"
+                //? issues: pc_domain = 1025
                 //? post: cog[*].reg[hits] == 0x100
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x600
@@ -26,6 +28,7 @@
                 //? cog: 0
                 //? const: phase = 2060
                 //? run: "phase2060-cog7"
+                //? issues: pc_domain = 1025
                 //? post: cog[*].reg[hits] == 0x100
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x600
@@ -34,6 +37,7 @@
                 //? cog: 7
                 //? const: phase = 2060
                 //? run: "phase4108-cog0"
+                //? issues: pc_domain = 2049
                 //? post: cog[*].reg[hits] == 0x200
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0xa00
@@ -42,6 +46,7 @@
                 //? cog: 0
                 //? const: phase = 4108
                 //? run: "phase4108-cog7"
+                //? issues: pc_domain = 2049
                 //? post: cog[*].reg[hits] == 0x200
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0xa00
@@ -50,6 +55,7 @@
                 //? cog: 7
                 //? const: phase = 4108
                 //? run: "phase65548-cog0"
+                //? issues: pc_domain = 32769
                 //? post: cog[*].reg[hits] == 0x2000
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x8200
@@ -58,6 +64,7 @@
                 //? cog: 0
                 //? const: phase = 65548
                 //? run: "phase65548-cog7"
+                //? issues: pc_domain = 32769
                 //? post: cog[*].reg[hits] == 0x2000
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x8200
@@ -66,6 +73,7 @@
                 //? cog: 7
                 //? const: phase = 65548
                 //? run: "phase1048588-cog0"
+                //? issues: pc_domain = 524289
                 //? post: cog[*].reg[hits] == 0x20000
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x80200
@@ -74,6 +82,7 @@
                 //? cog: 0
                 //? const: phase = 1048588
                 //? run: "phase1048588-cog7"
+                //? issues: pc_domain = 524289
                 //? post: cog[*].reg[hits] == 0x20000
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x80200
@@ -82,6 +91,7 @@
                 //? cog: 7
                 //? const: phase = 1048588
                 //? run: "phase2095112-cog0"
+                //? issues: pc_domain = 1047551
                 //? post: cog[*].reg[hits] == 0x3ff00
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0xffe00
@@ -90,6 +100,7 @@
                 //? cog: 0
                 //? const: phase = 2095112
                 //? run: "phase2095112-cog7"
+                //? issues: pc_domain = 1047551
                 //? post: cog[*].reg[hits] == 0x3ff00
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0xffe00
@@ -183,4 +194,3 @@ tail_template:
 
 
 .import "../local-pc-lut.propan"
-

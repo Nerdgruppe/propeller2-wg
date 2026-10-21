@@ -36,9 +36,10 @@ component, S-Video and composite modes. DDS/Goertzel consumes digital ADC bitstr
 the electrical frontend supports RC pads, comparators, feedback, DACs, ADC smart modes,
 and cog scope/streamer capture.
 
-`Hub.step()` returns `normal`, `breakpoint`, `reset`, or `trap`. Breakpoints stop
-before execution or after a complete edge for data watchpoints; traps retain the
-fault diagnostic. HUBSET with top nibble `$1` stops the simulation and returns
+`Hub.step()` returns `normal`, `breakpoint` or `reset`. Inspect its bounded issue
+collection and sticky service errors after every call. Breakpoints stop before
+execution or after a complete edge for data watchpoints. Issues retain diagnostics
+without stopping cogs. HUBSET with top nibble `$1` stops the simulation and returns
 `reset` after restoring the entire Hub through `init()`, including RAM, ROM, cogs,
 pins, counter and clock configuration. It detaches host tracing, terminal and
 debugger links. Hosts may explicitly attach them again; boot ROM execution is not
@@ -79,7 +80,7 @@ the terminal menu prefix:
 
 The quit command also interrupts an upload in progress. Redirected input is
 supported; EOF disconnects input while queued bytes and the application continue.
-Serial bytes go to stdout; the menu and diagnostics go to stderr. The optional
+Serial bytes and inline bracketed warnings go to stdout; traps start on a new line. The menu goes to stderr. Terminal attributes are restored before host logging, and stopping writes a final line break. The optional
 POSIX integration check is `python tests/windtunnel/terminal.py` after building.
 
 ROM startup loads cog zero from `$FC000`, with a 10 kOhm pullup on P59 selecting
@@ -117,9 +118,8 @@ Mixed widths preserve neighboring lanes and split unaligned writes across slices
 The existing `fifo-*` fixtures check these paths against hardware at RCFAST.
 
 Execution uses a five-stage pipeline with two-clock issue, operand capture, delayed writeback, stalls, and branch refill. Hub accesses use rotating RAM grants, five-clock read responses, boundary-crossing transfers, and streaming blocks. Hub instruction fetch uses a buffered FIFO; cog/lock commands have separate round-robin slots. Cog startup streams the 504-long image before fetching instructions. The existing
-RDFAST/WRFAST/FBLOCK and RF/WF instructions share the same clocked FIFO. Execution reports
-`not_implemented` for missing simulator support and `illegal` with a reason for
-prohibited use; both stop the runner/CLI. RDFAST/RFBYTE cannot use the instruction
+RDFAST/WRFAST/FBLOCK and RF/WF instructions share the same clocked FIFO. Execution collects typed [issues](issues.md) for rejected operations and hazards.
+The runner/CLI inspect all reports after the completed edge and stop. RDFAST/RFBYTE cannot use the instruction
 FIFO during hub execution, and RFBYTE requires a preceding RDFAST.
 
 Hardware probes validate local timing and prefetch, hub reads/writes and stacks

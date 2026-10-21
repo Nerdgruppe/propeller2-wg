@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: usb_receive_error = 0
 //? run: "zero-p0-x4096"
 //? const: pattern = 0
 //? const: phase = 0
@@ -420,6 +421,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 4
 //? run: "badstuff-p0-x4096"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 0
 //? const: x = 4096
@@ -427,6 +429,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p0-x4097"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 0
 //? const: x = 4097
@@ -434,6 +437,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p1-x4096"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 1
 //? const: x = 4096
@@ -441,6 +445,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p1-x4097"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 1
 //? const: x = 4097
@@ -448,6 +453,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p3-x4096"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 3
 //? const: x = 4096
@@ -455,6 +461,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p3-x4097"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 3
 //? const: x = 4097
@@ -462,6 +469,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p7-x4096"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 7
 //? const: x = 4096
@@ -469,6 +477,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p7-x4097"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 7
 //? const: x = 4097
@@ -476,6 +485,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p11-x4096"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 11
 //? const: x = 4096
@@ -483,6 +493,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p11-x4097"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 11
 //? const: x = 4097
@@ -490,6 +501,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p15-x4096"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 15
 //? const: x = 4096
@@ -497,6 +509,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 5
 //? run: "badstuff-p15-x4097"
+//? issues: usb_receive_error = 1
 //? const: pattern = 5
 //? const: phase = 15
 //? const: x = 4097
@@ -1634,4 +1647,3 @@
 var result:     LONG    0
 var upper:      LONG    0
 var flags:      LONG    0
-

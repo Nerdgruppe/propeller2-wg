@@ -1,5 +1,6 @@
 //! Physical serial ROM boot and the nominal handoff used by direct-image runners.
 const std = @import("std");
+const test_support = @import("test_support.zig");
 const Hub = @import("sim/Hub.zig");
 const smart_pin = @import("sim/smart_pin.zig");
 
@@ -30,7 +31,7 @@ pub fn start(hub: *Hub) !void {
         .voltage = hub.system_configuration.vio_voltage,
         .resistance = 1,
     });
-    try hub.start_cog(0, .{ .hub_address = 0xfc000 });
+    hub.start_cog(0, .{ .hub_address = 0xfc000 });
 }
 
 /// Fixed-baud external 8N1 host; drives the physical P63 pad so the ROM can measure autobaud.
@@ -40,7 +41,7 @@ pub const Host = struct {
     next_bit_seconds: f64 = 0,
 
     /// Send complete UART frames, carrying fractional system clocks across bits and calls.
-    pub fn write(host: *Host, hub: *Hub, bytes: []const u8) !void {
+    pub fn write(host: *Host, hub: *Hub, bytes: []const u8, observer: anytype) !void {
         if (host.rate == 0)
             return error.InvalidBaudrate;
         host.next_bit_seconds = @max(host.next_bit_seconds, hub.io.clock.seconds);
@@ -58,7 +59,9 @@ pub const Host = struct {
                 host.next_bit_seconds += 1 / @as(f64, @floatFromInt(host.rate));
                 while (hub.io.clock.seconds < host.next_bit_seconds) {
                     try host.io.checkCancel();
-                    if (hub.step() != .normal)
+                    const notification = hub.step();
+                    try observer.afterStep(hub);
+                    if (notification != .normal)
                         return error.BootInterrupted;
                 }
             }
@@ -67,14 +70,15 @@ pub const Host = struct {
 };
 
 /// Advance a bounded interval without hiding simulator faults, breakpoints or resets.
-fn advance(io: std.Io, hub: *Hub, clocks: u64) !void {
+fn advance(io: std.Io, hub: *Hub, clocks: u64, observer: anytype) !void {
     for (0..clocks) |index| {
         if (index % 256 == 0) {
             try io.checkCancel();
         }
-        switch (hub.step()) {
+        const notification = hub.step();
+        try observer.afterStep(hub);
+        switch (notification) {
             .normal => {},
-            .trap => return error.BootTrap,
             .breakpoint => return error.BootBreakpoint,
             .reset => return error.BootReset,
         }
@@ -82,7 +86,7 @@ fn advance(io: std.Io, hub: *Hub, clocks: u64) !void {
 }
 
 /// Wait for a complete ROM reply and reject checksum errors or unexpected firmware responses.
-fn reply(io: std.Io, hub: *Hub, output: *std.Io.Writer, expected: []const u8, rate: u32) !void {
+fn reply(io: std.Io, hub: *Hub, output: *std.Io.Writer, expected: []const u8, rate: u32, observer: anytype) !void {
     const timeout: u64 = @intFromFloat(
         hub.io.clock.frequency() * (0.01 + 256 / @as(f64, @floatFromInt(rate))),
     );
@@ -92,7 +96,7 @@ fn reply(io: std.Io, hub: *Hub, output: *std.Io.Writer, expected: []const u8, ra
                 return error.UnexpectedBootReply;
             return;
         }
-        try advance(io, hub, 1);
+        try advance(io, hub, 1, observer);
     }
     return error.BootTimeout;
 }
@@ -100,7 +104,7 @@ fn reply(io: std.Io, hub: *Hub, output: *std.Io.Writer, expected: []const u8, ra
 /// Download through the unmodified ROM: autobaud, Prop_Chk, checksummed Prop_Txt, then cog-zero launch.
 /// The host stays idle-high on P63. The temporary P59 pullup and ROM reply sink are restored on return.
 /// Keep image outside hub RAM: the ROM overwrites its first 256 bytes during initialization.
-pub fn load(io: std.Io, hub: *Hub, image: []const u8, rate: u32) !void {
+pub fn load(io: std.Io, hub: *Hub, image: []const u8, rate: u32, observer: anytype) !void {
     if (image.len == 0 or image.len % 4 != 0 or image.len > hub.memory.len - 4)
         return error.InvalidBootImage;
     if (rate < 9_600 or rate > 2_000_000)
@@ -115,14 +119,26 @@ pub fn load(io: std.Io, hub: *Hub, image: []const u8, rate: u32) !void {
 
     var response_buffer: [32]u8 = undefined;
     var response = std.Io.Writer.fixed(&response_buffer);
-    var sink: smart_pin.DataSink = .{ .writer = &response };
+    var sink: smart_pin.DataSink = .{ .endpoint = .{ .writer = &response } };
     hub.io.pins[62].smart.tx_mode = .{ .emulated = &sink };
+    const UploadObserver = struct {
+        caller: @TypeOf(observer),
+        response: *const smart_pin.DataSink,
+
+        /// Check the upload-owned response sink, then let the caller inspect the completed edge.
+        pub fn afterStep(upload: @This(), current: *const Hub) !void {
+            if (upload.response.failure) |err|
+                return err;
+            try upload.caller.afterStep(current);
+        }
+    };
+    const upload_observer: UploadObserver = .{ .caller = observer, .response = &sink };
     try start(hub);
     // Match the hardware loader's 20 ms reset-to-autobaud allowance, in simulated time.
-    try advance(io, hub, @intFromFloat(hub.io.clock.frequency() / 50));
+    try advance(io, hub, @intFromFloat(hub.io.clock.frequency() / 50), upload_observer);
     var host: Host = .{ .io = io, .rate = rate };
-    try host.write(hub, "> Prop_Chk 0 0 0 0\r");
-    try reply(io, hub, &response, "\r\nProp_Ver G\r\n", rate);
+    try host.write(hub, "> Prop_Chk 0 0 0 0\r", upload_observer);
+    try reply(io, hub, &response, "\r\nProp_Ver G\r\n", rate, upload_observer);
     response.end = 0;
 
     var checksum: u32 = 0x706f7250;
@@ -132,7 +148,7 @@ pub fn load(io: std.Io, hub: *Hub, image: []const u8, rate: u32) !void {
     }
     var checksum_bytes: [4]u8 = undefined;
     std.mem.writeInt(u32, &checksum_bytes, checksum, .little);
-    try host.write(hub, "Prop_Txt 0 0 0 0 ");
+    try host.write(hub, "Prop_Txt 0 0 0 0 ", upload_observer);
     var offset: usize = 0;
     while (offset < image.len + checksum_bytes.len) {
         var block: [3]u8 = undefined;
@@ -144,11 +160,11 @@ pub fn load(io: std.Io, hub: *Hub, image: []const u8, rate: u32) !void {
                 checksum_bytes[index - image.len];
         }
         var encoded: [4]u8 = undefined;
-        try host.write(hub, std.base64.standard_no_pad.Encoder.encode(&encoded, block[0..count]));
+        try host.write(hub, std.base64.standard_no_pad.Encoder.encode(&encoded, block[0..count]), upload_observer);
         offset += count;
     }
-    try host.write(hub, "?");
-    try reply(io, hub, &response, ".", rate);
+    try host.write(hub, "?", upload_observer);
+    try reply(io, hub, &response, ".", rate, upload_observer);
 }
 
 test "serial boot ROM identifies itself, rejects a checksum and retries a hex download" {
@@ -158,26 +174,26 @@ test "serial boot ROM identifies itself, rejects a checksum and retries a hex do
     try hub.init(.ideal);
     var output_buffer: [32]u8 = undefined;
     var output = std.Io.Writer.fixed(&output_buffer);
-    var sink: smart_pin.DataSink = .{ .writer = &output };
+    var sink: smart_pin.DataSink = .{ .endpoint = .{ .writer = &output } };
     hub.io.pins[62].smart.tx_mode = .{ .emulated = &sink };
     try start(hub);
-    try advance(std.testing.io, hub, 32_000);
+    try advance(std.testing.io, hub, 32_000, test_support.Strict{});
     var host: Host = .{ .io = std.testing.io, .rate = 115_200 };
-    try host.write(hub, "> Prop_Chk 0 0 0 0\r");
-    try reply(std.testing.io, hub, &output, "\r\nProp_Ver G\r\n", host.rate);
+    try host.write(hub, "> Prop_Chk 0 0 0 0\r", test_support.Strict{});
+    try reply(std.testing.io, hub, &output, "\r\nProp_Ver G\r\n", host.rate, test_support.Strict{});
     try std.testing.expect(hub.io.pins[63].smart.registers.x != 0);
     try std.testing.expectEqual(hub.io.pins[62].smart.registers.x, hub.io.pins[63].smart.registers.x);
 
     output.end = 0;
-    try host.write(hub, "Prop_Hex 0 0 0 0 00 00 00 00 ?");
-    try reply(std.testing.io, hub, &output, "!", host.rate);
+    try host.write(hub, "Prop_Hex 0 0 0 0 00 00 00 00 ?", test_support.Strict{});
+    try reply(std.testing.io, hub, &output, "!", host.rate, test_support.Strict{});
     try std.testing.expect(hub.is_any_cog_active());
 
     // COGSTOP #0 ($FD640003), followed by the little-endian checksum to sum to "Prop".
     output.end = 0;
-    try host.write(hub, "Prop_Hex 0 0 0 0 03 00 64 FD 4D 72 0B 73 ?");
-    try reply(std.testing.io, hub, &output, ".", host.rate);
-    try advance(std.testing.io, hub, 2048);
+    try host.write(hub, "Prop_Hex 0 0 0 0 03 00 64 FD 4D 72 0B 73 ?", test_support.Strict{});
+    try reply(std.testing.io, hub, &output, ".", host.rate, test_support.Strict{});
+    try advance(std.testing.io, hub, 2048, test_support.Strict{});
     try std.testing.expect(!hub.is_any_cog_active());
     try std.testing.expectEqual(@as(u32, 0xfd640003), hub.read_memory(0, 4));
     try std.testing.expectEqual(smart_pin.Mode.gpio, hub.io.pins[63].configuration.mode);
@@ -189,11 +205,11 @@ test "serial ROM loader rejects invalid input before running the chip" {
     defer std.testing.allocator.destroy(hub);
 
     try hub.init(.ideal);
-    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, "", 115_200));
-    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, "123", 115_200));
-    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, &hub.memory, 115_200));
-    try std.testing.expectError(error.InvalidBaudrate, load(std.testing.io, hub, "1234", 0));
-    try std.testing.expectError(error.InvalidBaudrate, load(std.testing.io, hub, "1234", 2_000_001));
+    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, "", 115_200, test_support.Strict{}));
+    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, "123", 115_200, test_support.Strict{}));
+    try std.testing.expectError(error.InvalidBootImage, load(std.testing.io, hub, &hub.memory, 115_200, test_support.Strict{}));
+    try std.testing.expectError(error.InvalidBaudrate, load(std.testing.io, hub, "1234", 0, test_support.Strict{}));
+    try std.testing.expectError(error.InvalidBaudrate, load(std.testing.io, hub, "1234", 2_000_001, test_support.Strict{}));
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
     try std.testing.expect(!hub.is_any_cog_active());
 }
@@ -206,28 +222,53 @@ test "serial boot ROM enters TAQOZ" {
     var output_buffer: [8192]u8 = undefined;
     var output = std.Io.Writer.fixed(&output_buffer);
     errdefer std.debug.print("TAQOZ output: {s}\n", .{output.buffered()});
-    var sink: smart_pin.DataSink = .{ .writer = &output };
+    var sink: smart_pin.DataSink = .{ .endpoint = .{ .writer = &output } };
     hub.io.pins[62].smart.tx_mode = .{ .emulated = &sink };
     try start(hub);
-    try advance(std.testing.io, hub, 32_000);
+    try advance(std.testing.io, hub, 32_000, test_support.Strict{});
     var host: Host = .{ .io = std.testing.io, .rate = 115_200 };
-    try host.write(hub, "> Prop_Chk 0 0 0 0\r");
-    try reply(std.testing.io, hub, &output, "\r\nProp_Ver G\r\n", host.rate);
+    try host.write(hub, "> Prop_Chk 0 0 0 0\r", test_support.Strict{});
+    try reply(std.testing.io, hub, &output, "\r\nProp_Ver G\r\n", host.rate, test_support.Strict{});
     output.end = 0;
-    try host.write(hub, "\x1b");
+    try host.write(hub, "\x1b", test_support.Strict{});
+    var old_write_protection_commands: usize = 0;
     for (0..3_000_000) |_| {
         try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
+        for (hub.issues.items()) |issue| {
+            // The shipped TAQOZ startup uses the obsolete %001P encoding for WP.
+            // Current-silicon behavior is uncharacterized; do not silently alias it.
+            try std.testing.expect(issue.kind == .unsupported_hubset);
+            try std.testing.expectEqual(@as(u32, 0x3000_0000), issue.kind.unsupported_hubset);
+            try std.testing.expectEqual(@as(?u3, 0), issue.provenance.cog);
+            old_write_protection_commands += 1;
+        }
+        try std.testing.expect(!test_support.serviceFailed(hub));
         if (std.mem.find(u8, output.buffered(), "TAQOZ# ") != null)
             break;
     }
     try std.testing.expect(std.mem.find(u8, output.buffered(), "TAQOZ# ") != null);
+    try std.testing.expectEqual(@as(usize, 1), old_write_protection_commands);
     output.end = 0;
-    try host.write(hub, "1 2 + .\r");
+    try host.write(hub, "1 2 + .\r", test_support.Strict{});
     for (0..2_000_000) |_| {
         try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
+        try std.testing.expect(!test_support.needsAttention(hub));
         if (std.mem.find(u8, output.buffered(), "TAQOZ# ") != null)
             break;
     }
     try std.testing.expect(std.mem.find(u8, output.buffered(), "3") != null);
     try std.testing.expect(std.mem.find(u8, output.buffered(), "TAQOZ# ") != null);
+}
+
+test "physical UART host stops on a completed edge issue while sending a frame" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    try hub.init(.ideal);
+    try hub.io.setExternal(@enumFromInt(0), .{ .voltage = 5, .resistance = 1000 });
+    var host: Host = .{ .io = std.testing.io, .rate = 2_000_000 };
+    try std.testing.expectError(error.BootIssue, host.write(hub, "x", test_support.Strict{}));
+    try std.testing.expectEqual(@as(u64, 1), hub.counter);
+    try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
+    try std.testing.expectEqual(@as(u6, 0), hub.issues.items()[0].kind.pad_overvoltage.pin);
 }

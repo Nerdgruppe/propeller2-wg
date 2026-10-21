@@ -11,9 +11,9 @@ zig-out/bin/windtunnel --serve --url=ws://127.0.0.1:21591/
 
 The default URL is `ws://127.0.0.1:21591/`. Listen URLs accept an IPv4/IPv6 address or `localhost`,
 a root path, and the `ws` scheme. An explicitly supplied URL without a port uses port 80.
-`--serve` cannot be combined with `--image`. Regular logs, including instruction logs, are printed
+`--serve` cannot be combined with `--image`. Regular host logs are printed
 in server mode; `--verbose` also enables debug logging.
-`--trace-pipeline` records up to 10000 stage events per request. Diagnostics go to stderr.
+Completed-edge issue and service diagnostics go to stderr; VCD remains the signal export format.
 Add `--sim realistic` to initialize every fresh session with datasheet-based pad and [clock](clocks.md)
 characteristics; the default is `--sim ideal`. The selected configuration survives
 firmware resets. Add `--fast-io` for single-clock serial endpoint throughput in every fresh session;
@@ -86,8 +86,8 @@ without CPU edges. Electrical UART effects, including baud mismatch corruption, 
 outside the functional terminal model.
 
 This is protocol compatibility for supported firmware, not complete coverage of the P2 instruction set
-or all smart-pin modes. A `.not_implemented`, `.illegal` or `.trap` result ends that request with 1011
-and prints the cog, PC, instruction and reason. The next request can execute normally.
+or all smart-pin modes. A completed edge with architectural issues or service errors ends that request with 1011
+and prints every diagnostic with its captured provenance. The next request can execute normally.
 
 ## Validation
 

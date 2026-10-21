@@ -1,5 +1,6 @@
 //! Minimal desktop shell for Windtunnel, using zig-gamedev's GLFW/OpenGL ImGui backend.
 const std = @import("std");
+const access_types = windtunnel.access;
 const builtin = @import("builtin");
 const glfw = @import("zglfw");
 const zopengl = @import("zopengl");
@@ -87,7 +88,7 @@ pub fn main(init: std.process.Init) !u8 {
         }
 
         gui.initial_image = try init.gpa.dupe(u8, gui.hub.memory[0..count]);
-        try gui.hub.start_cog(0, .{});
+        gui.hub.start_cog(0, .{});
         gui.cogs_visible[0] = true;
     }
 
@@ -177,7 +178,8 @@ const GUI = struct {
     window_sizes: [1 + 6 + 8 + 64]?WindowSize = @splat(null),
     hide_automatic_ui: bool = false,
     exit_requested: bool = false,
-    breakpoints_visible: bool = false,
+    debugger_visible: bool = false,
+    focus_debugger: bool = false,
     configuration_visible: bool = false,
     hub_visible: bool = true,
     io_visible: bool = true,
@@ -287,7 +289,7 @@ const GUI = struct {
             _ = zgui.menuItemPtr("I/O", .{ .selected = &gui.io_visible });
             _ = zgui.menuItemPtr("Memory", .{ .selected = &gui.memory_visible });
             _ = zgui.menuItemPtr("CORDIC", .{ .selected = &gui.cordic_visible });
-            _ = zgui.menuItemPtr("Breakpoints", .{ .selected = &gui.breakpoints_visible });
+            _ = zgui.menuItemPtr("Debugger", .{ .selected = &gui.debugger_visible });
             if (zgui.beginMenu("Cogs", true)) {
                 defer zgui.endMenu();
 
@@ -371,8 +373,13 @@ const GUI = struct {
     }
 
     /// Edit host breakpoints/watchpoints and inspect the matches responsible for the current stop.
-    fn breakpointsWindow(gui: *GUI) !void {
-        if (!gui.newWindow("Breakpoints", &gui.breakpoints_visible))
+    fn debuggerWindow(gui: *GUI) !void {
+        if (gui.focus_debugger) {
+            zgui.setNextWindowFocus();
+            zgui.setNextWindowCollapsed(.{ .collapsed = false });
+            gui.focus_debugger = false;
+        }
+        if (!gui.newWindow("Debugger", &gui.debugger_visible))
             return;
         defer zgui.end();
 
@@ -416,8 +423,33 @@ const GUI = struct {
                 encounter.cog, encounter.domain, encounter.pc, gui.hub.counter,
             });
         }
-        if (gui.hub.fault) |fault| {
-            gui.show("Fault", fault);
+        for (gui.hub.issues.items()) |issue| {
+            var buffer: [8192]u8 = undefined;
+            var writer = std.Io.Writer.fixed(&buffer);
+            writer.print("{f}", .{issue}) catch unreachable;
+            zgui.textUnformatted(writer.buffered());
+        }
+        if (gui.hub.vcd) |vcd| {
+            if (vcd.failure) |err| {
+                zgui.text("VCD service: {t}", .{err});
+            }
+        }
+        for (&gui.hub.io.pins, 0..) |*pin, index| {
+            const source = switch (pin.smart.rx_mode) {
+                .exact => null,
+                .emulated, .virtual => |value| value,
+            };
+            if (source) |endpoint| {
+                if (endpoint.failure) |err| {
+                    zgui.text("Pin {d} source service: {t}", .{ index, err });
+                }
+            }
+            const sink = switch (pin.smart.tx_mode) {
+                .emulated, .virtual => |value| value,
+            };
+            if (sink.failure) |err| {
+                zgui.text("Pin {d} sink service: {t}", .{ index, err });
+            }
         }
         if (header("Data stop matches", .{})) {
             for (gui.debugger.hits.items, 0..) |hit, i| {
@@ -459,11 +491,11 @@ const GUI = struct {
                 gui.frame.clocks,
                 @as(f64, @floatFromInt(gui.frame.nanoseconds)) / 1_000_000.0,
             });
-            if (gui.hub.fault != null) {
-                zgui.textColored(.{ 1, 0.3, 0.25, 1 }, "Fault", .{});
+            if (gui.hub.issues.len != 0) {
+                zgui.textColored(.{ 1, 0.3, 0.25, 1 }, "Issues", .{});
             }
             if (zgui.menuItem("Stop details", .{})) {
-                gui.breakpoints_visible = true;
+                gui.debugger_visible = true;
             }
         }
     }
@@ -499,7 +531,7 @@ const GUI = struct {
         const limit: u32 = if (gui.watch.space == .hub) 0x80000 else 512;
         zgui.beginDisabled(.{ .disabled = gui.watch.start >= gui.watch.end or gui.watch.end > limit });
         if (zgui.button("Add watchpoint", .{})) {
-            try gui.debugger.watches.append(gui.debugger.allocator, gui.watch);
+            try gui.debugger.addWatch(gui.watch);
         }
         zgui.endDisabled();
         var i: usize = 0;
@@ -511,22 +543,32 @@ const GUI = struct {
             const remove = zgui.button("Remove watch", .{});
             zgui.popId();
             if (remove) {
-                _ = gui.debugger.watches.orderedRemove(i);
+                gui.debugger.removeWatch(i);
             } else {
                 i += 1;
             }
         }
     }
 
+    /// The GUI pauses on all issues; adapter owners choose their own failure policies.
+    fn pauseOnIssue(hub: *const windtunnel.Hub) bool {
+        return hub.issues.len != 0;
+    }
+
     /// Advance on this thread using the monotonic host clock, with at most fourteen milliseconds per frame.
     fn advance(gui: *GUI, io: *std.Io) void {
+        const advanced = gui.step_requested or gui.is_running;
         gui.frame = windtunnel.Frame.advance(&gui.hub, if (gui.step_requested) .step else if (gui.is_running) .run else .paused, .{
             .context = io,
             .now = monotonic,
-        });
+        }, pauseOnIssue);
         if (gui.frame.notification == .reset) {
-            gui.debugger.acknowledge(&gui.hub);
+            gui.debugger.afterClock(&gui.hub);
             gui.hub.debugger = &gui.debugger;
+        }
+        if (advanced and gui.hub.issues.len != 0) {
+            gui.debugger_visible = true;
+            gui.focus_debugger = true;
         }
         gui.is_running = gui.frame.running;
         gui.step_requested = false;
@@ -556,8 +598,8 @@ const GUI = struct {
                 gui.pinWindow(@intCast(id));
             }
         }
-        if (gui.breakpoints_visible) {
-            try gui.breakpointsWindow();
+        if (gui.debugger_visible) {
+            try gui.debuggerWindow();
         }
         if (gui.configuration_visible) {
             gui.systemConfiguration();
@@ -605,7 +647,7 @@ const GUI = struct {
         }
         gui.show("Debug configuration", hub.debug);
         gui.show("Pending starts", hub.pending_starts);
-        gui.show("Fault", hub.fault);
+        gui.show("Issues", hub.issues.items());
         zgui.beginDisabled(.{ .disabled = gui.is_running });
         defer zgui.endDisabled();
         _ = hexInput("HUBSET clock/debug", &gui.hubset, false);
@@ -676,7 +718,7 @@ const GUI = struct {
         try gui.initializeChip(gui.configuration_draft);
         if (gui.initial_image) |image| {
             @memcpy(gui.hub.memory[0..image.len], image);
-            try gui.hub.start_cog(0, .{});
+            gui.hub.start_cog(0, .{});
             gui.cogs_visible[0] = true;
         }
     }
@@ -1155,7 +1197,7 @@ const GUI = struct {
                 zgui.separator();
                 for ([_]bool{ true, false }, [_][:0]const u8{ "Start", "Start without load" }) |load, label| {
                     if (zgui.menuItem(label, .{})) {
-                        try gui.hub.start_cog(id, .{
+                        gui.hub.start_cog(id, .{
                             .hub_address = gui.start_address[id],
                             .ptra = gui.start_ptra[id],
                             .load_image = load,
@@ -1281,7 +1323,6 @@ const GUI = struct {
         gui.show("Read bus", cog.read_bus);
         gui.show("CORDIC result ports", cog.cordic_result);
         gui.show("RAM collision", cog.ram_collision);
-        gui.show("LUT collision", cog.lut_collision);
         gui.show("Pending writeback", cog.writeback);
         gui.show("Pending hub write", cog.hub_writeback);
         gui.show("Wait deadline", cog.wait_until);
@@ -1612,16 +1653,6 @@ const GUI = struct {
             signalText("Synchronous OUT", io.sync_out[id].level);
             signalText("Synchronous IN", io.sync_in[id]);
         }
-        if (io.failure) |failure| {
-            if (@intFromEnum(failure.pin) == id) {
-                gui.show("Failure", failure);
-            }
-        }
-        if (io.collision) |collision| {
-            if (@intFromEnum(collision.pin) == id) {
-                gui.show("Command collision", collision);
-            }
-        }
     }
 
     /// Separate electrical pad state from smart logic, with WRPIN configuration in the local menu.
@@ -1900,14 +1931,14 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
     gui.configuration_draft = .realistic;
     gui.cogs_visible = @splat(true);
     gui.pins_visible = @splat(true);
-    gui.breakpoints_visible = true;
+    gui.debugger_visible = true;
     gui.configuration_visible = true;
     gui.memory_visible = true;
     gui.cordic_visible = true;
     gui.jump = 0x7fff0;
     gui.jump_pending = true;
-    for ([_]Debugger.Space{ .registers, .lut, .hub }) |space| {
-        try gui.debugger.watches.append(std.testing.allocator, .{
+    for ([_]access_types.Space{ .registers, .lut, .hub }) |space| {
+        try gui.debugger.addWatch(.{
             .space = space,
             .cog = null,
             .start = 0,
@@ -1963,12 +1994,12 @@ test "all pin and cog inspectors reopen and clip without modifying simulation or
         if (frame == 1) {
             gui.cogs_visible = @splat(false);
             gui.pins_visible = @splat(false);
-            gui.breakpoints_visible = false;
+            gui.debugger_visible = false;
             gui.configuration_visible = false;
         } else {
             gui.cogs_visible = @splat(true);
             gui.pins_visible = @splat(true);
-            gui.breakpoints_visible = true;
+            gui.debugger_visible = true;
             gui.configuration_visible = true;
         }
         zgui.newFrame();
@@ -2006,7 +2037,7 @@ test "GUI configuration drafts are isolated and reinitialization restores the im
     gui.initial_image = &image;
     const execution: Debugger.Execution = .{ .cog = 0, .domain = .cog, .pc = 0 };
     try gui.debugger.toggleExecution(execution);
-    try gui.debugger.watches.append(std.testing.allocator, .{
+    try gui.debugger.addWatch(.{
         .space = .hub,
         .cog = null,
         .start = 0,

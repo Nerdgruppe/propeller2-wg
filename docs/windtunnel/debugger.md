@@ -11,12 +11,12 @@ window prints its title and dimensions to the terminal, for example
 Run advances complete hub clocks for up to 14 ms of monotonic host time
 per frame. The deadline is checked between clocks; one clock can exceed the
 budget. Step acknowledges the current stop and requests one clock. A new
-execution breakpoint or an existing fault can prevent that edge. The bottom status
+execution breakpoint or a pending breakpoint can prevent that edge. The bottom status
 bar shows the current stop, clocks advanced and simulation host time. The toolbar
 below the main menu is ordered Reboot, Reset, Run/Stop, Step.
 Reset restores the original loaded image and initialized simulation settings;
 Reboot resets the virtual chip, clearing RAM and stopping all cogs. Both pause
-execution and preserve host debugger definitions. Windows → Breakpoints opens execution
+execution and preserve host debugger definitions. Windows → Debugger opens execution
 breakpoint and data watchpoint editors, with details of the current stop. Pin
 windows are grouped into eight submenus of eight pins. File contains Exit and
 placeholder Load image/Export VCD entries.
@@ -52,7 +52,7 @@ random state and seeds use hexadecimal only. Hex values use uppercase digits, a 
 word's full nibble width. Memory dump bytes use `AA BB CC` without prefixes;
 its resizable columns fit the address, sixteen bytes and sixteen ASCII characters.
 Memory starts at 565 × 435 with the dump filling its body. Its local Jump menu
-accepts a byte address; selected byte ranges are edited in Breakpoints → Data
+accepts a byte address; selected byte ranges are edited in Debugger → Data
 watchpoints. I/O starts at 260 × 290. Generic inspector blocks have bright
 magenta backgrounds. Options → Hide automatic UI hides all generic inspector
 blocks while retaining the curated layout. Cog windows start at 400 × 500 and
@@ -116,3 +116,5 @@ renders all 72 per-instance inspectors, closes/reopens them, expands inspection
 groups, closes/reopens the breakpoint and configuration windows, jumps to the
 last RAM row, and verifies that rendering preserves state and produces no watch hits. Desktop checks should also exercise actual mouse
 editing, scrolling, window close buttons and both pipeline views.
+
+The [issue collection](issues.md) retains every report from a completed edge. An issue stop opens, expands and focuses Debugger. Its reports remain visible with Hide automatic UI enabled. Run/Step acknowledges the stop; the next edge clears the reports. Service errors pause through the same host path while retaining their adapter state.

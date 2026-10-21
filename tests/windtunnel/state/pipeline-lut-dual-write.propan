@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: lut_write_conflict = 4
 //? post: hub[results] == u32 [ 1 2 1 2 1 2 1 2 ]
 //? run: "0"
 //? cog: 0

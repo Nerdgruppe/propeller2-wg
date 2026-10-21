@@ -2,9 +2,10 @@
 //! Hub services clock shared requests; the cog captures operands, stalls and redirects fetch.
 
 const std = @import("std");
-const logger = std.log.scoped(.cog);
 
+const access_types = @import("access.zig");
 const Cog = @This();
+const Issue = @import("Issue.zig");
 const Debugger = @import("Debugger.zig");
 const Hub = @import("Hub.zig");
 const Cordic = @import("Cordic.zig");
@@ -118,12 +119,17 @@ exec_mode: ExecMode = .stopped,
 
 /// Slots being processed on this edge: fetch, read/decode, latch, execute, store.
 pipeline: [5]?PipelineState = @splat(null),
+/// At most one pending physical-read record per in-flight pipeline instruction.
+fetch_conflicts: [5]struct {
+    items: [Hub.max_cog_edge_writes]Issue.Conflict = undefined,
+    count: usize = 0,
+} = @splat(.{}),
+next_fetch_conflict: u3 = 0,
 issue_phase: bool = true,
 collecting_writes: bool = false,
 writeback: Writeback = .{},
 retired: ?PipelineState = null,
 ram_collision: ?struct { clock: u64, address: u9, value: u32 } = null,
-lut_collision: ?struct { clock: u64, address: u9 } = null,
 dispatch_pc: u20 = 0,
 branched: bool = false,
 stack: [8]u32 = @splat(0),
@@ -141,7 +147,7 @@ pattern: ?Pattern = null,
 pixel_pivot: u8 = 0,
 pixel_mode: u6 = 0,
 memory_transfer: ?MemoryTransfer = null,
-hub_writeback: ?struct { provenance: Debugger.Provenance, address: u32, value: u32, size: u3, masked: bool, origin: Hub.WriteOrigin } = null,
+hub_writeback: ?struct { provenance: access_types.Provenance, address: u32, value: u32, size: u3, masked: bool, origin: Hub.WriteOrigin } = null,
 startup: ?Startup = null,
 
 pub const Pattern = struct {
@@ -208,7 +214,7 @@ const XbyteMode = enum(u9) { _ };
 
 /// Latches used only while the phantom bytecode dispatch owns the pipeline.
 const Xbyte = struct {
-    provenance: Debugger.Provenance,
+    provenance: access_types.Provenance,
     phase: enum { lookup, latch, execute, branch } = .lookup,
     address: u9 = 0,
     entry: u32 = 0,
@@ -246,7 +252,7 @@ pub const Interrupts = struct {
 };
 
 pub const Startup = struct {
-    provenance: Debugger.Provenance,
+    provenance: access_types.Provenance,
     address: u32,
     grant_at: u64,
     remaining: u10,
@@ -284,7 +290,7 @@ pub const MemoryTransfer = struct {
     /// Exactly one direction owns the transfer-specific latches.
     pub const Direction = union(enum) { read: Read, write: Write };
 
-    provenance: Debugger.Provenance,
+    provenance: access_types.Provenance,
     address: u32,
     remaining: u64,
     reg: u9,
@@ -324,7 +330,7 @@ pub const FifoBlock = struct {
 
 /// A requested configuration waits for the preceding write stream to drain.
 pub const FifoRequest = struct {
-    provenance: Debugger.Provenance,
+    provenance: access_types.Provenance,
     mode: FifoMode,
     block: FifoBlock,
     setup: u4,
@@ -335,13 +341,13 @@ pub const FifoRequest = struct {
 /// The RAM return path holds five requests; the FIFO holds nineteen longs.
 /// Stop issuing at fifteen occupied words so returning reads cannot overflow.
 pub const HubFifo = struct {
-    provenance: Debugger.Provenance = .{},
+    provenance: access_types.Provenance = .{},
     mode: FifoMode = .read,
     initializing: bool = false,
     block: ?FifoBlock = null,
     remaining: u19 = 0x40000,
     write_bytes: [76]u8 = undefined,
-    write_provenance: [76]Debugger.Provenance = @splat(.{}),
+    write_provenance: [76]access_types.Provenance = @splat(.{}),
     /// Byte counts awaiting the fixed two-clock eligibility stage.
     write_pending: [2]usize = @splat(0),
     write_pending_head: usize = 0,
@@ -360,6 +366,28 @@ pub const HubFifo = struct {
     address: u20,
     ready_at: ?u64,
     responses: [8]?u32 = @splat(null),
+
+    /// Check storage reservations and conservation of queued bytes across eligibility stages.
+    pub fn assert_consistent(fifo: *const HubFifo) void {
+        if (!std.debug.runtime_safety)
+            return;
+        std.debug.assert(fifo.head < fifo.words.len);
+        std.debug.assert(fifo.count <= fifo.words.len);
+        var reserved = fifo.count;
+        for (fifo.responses) |response| {
+            reserved += @intFromBool(response != null);
+        }
+        std.debug.assert(reserved <= fifo.words.len);
+        std.debug.assert(fifo.write_head < fifo.write_bytes.len);
+        std.debug.assert(fifo.write_pending_head < fifo.write_pending.len);
+        std.debug.assert(fifo.write_ready_count <= fifo.write_count);
+        std.debug.assert(fifo.write_count <= fifo.write_bytes.len);
+        var queued = fifo.write_ready_count;
+        for (fifo.write_pending) |pending| {
+            queued += pending;
+        }
+        std.debug.assert(queued == fifo.write_count);
+    }
 
     /// Consume the next instruction slice; read/decode joins the adjacent slice for an unaligned word.
     fn read(fifo: *HubFifo) ?u32 {
@@ -396,8 +424,8 @@ pub const FifoState = struct {
 };
 
 const Writeback = struct {
-    provenance: Debugger.Provenance = .{},
-    writes: [3]struct { reg: Register, value: u32, raw: bool = false, debug_overlay: bool = false } = undefined,
+    provenance: access_types.Provenance = .{},
+    writes: [3]struct { provenance: access_types.Provenance, reg: Register, value: u32, raw: bool = false, debug_overlay: bool = false } = undefined,
     count: u2 = 0,
     c: ?bool = null,
     z: ?bool = null,
@@ -520,16 +548,18 @@ pub fn step(cog: *Cog) void {
             state.ready_at = cog.hub.counter +% extra;
         }
         if (enabled and !state.execution_ready and !Hub.clock_reached(cog.hub.counter, state.ready_at.?)) {
-            cog.trace(.stall, state.*);
             return;
         }
         state.execution_ready = true;
+        if (enabled) {
+            cog.report_fetch_conflicts(state);
+        }
         const instr = state.*;
         late_q_write = enabled and switch (decode.decode(instr.instr)) {
             .setq, .setq2, .crcnib => true,
             else => false,
         };
-        cog.trace(.execute, instr);
+
         cog.dispatch_pc = instr.pc;
         cog.branched = false;
         const old_c = cog.c;
@@ -573,28 +603,14 @@ pub fn step(cog: *Cog) void {
         }
         cog.c = old_c;
         cog.z = old_z;
-        if (std.meta.activeTag(result) == .next and instr.instr != 0 and instr.instr >> 28 == 0 and !cog.branched) {
+        if (result == .next and instr.instr != 0 and instr.instr >> 28 == 0 and !cog.branched) {
             result = cog.return_stack();
         }
         switch (result) {
             .wait => {
-                cog.trace(.stall, instr);
                 return;
             },
             .next, .skip => {},
-            .trap, .not_implemented, .illegal => {
-                cog.hub.fault = .{
-                    .cog = cog.id,
-                    .pc = instr.pc,
-                    .instruction = instr.instr,
-                    .result = result,
-                    .debug_rom = instr.debug_rom,
-                };
-                cog.exec_mode = .stopped;
-                cog.pipeline = @splat(null);
-                cog.writeback = .{};
-                return;
-            },
         }
         if (!cog.branched) {
             if (instr.repeat_target) |target| {
@@ -626,20 +642,15 @@ pub fn step(cog: *Cog) void {
 
     if (cog.pipeline[2]) |*state| {
         cog.capture_operands(state);
-        cog.trace(.latch, state.*);
-    }
-    if (cog.pipeline[1]) |state| {
-        cog.trace(.read, state);
     }
     var fetched = false;
     if (cog.inject_interrupt()) |state| {
         cog.pipeline[0] = state;
-        cog.trace(.fetch, state);
+
         fetched = true;
     } else if (cog.issue_phase and cog.xbyte == null and !cog.debug_queued()) {
         cog.pipeline[0] = cog.fetch_instruction();
-        if (cog.pipeline[0]) |state| {
-            cog.trace(.fetch, state);
+        if (cog.pipeline[0] != null) {
             fetched = true;
         }
     }
@@ -657,6 +668,7 @@ pub fn clock_startup(cog: *Cog) void {
         return;
     cog.hub.access_context = startup.provenance;
     if (startup.release_at) |clock| {
+        std.debug.assert(Hub.clock_reached(clock, cog.hub.counter));
         if (cog.hub.counter == clock) {
             cog.startup = null;
         }
@@ -672,9 +684,15 @@ pub fn clock_startup(cog: *Cog) void {
             startup.release_at = cog.hub.counter +% 3;
         }
     }
-    if (startup.remaining == 0 or cog.hub.counter != startup.grant_at)
+    if (startup.remaining == 0)
         return;
-    startup.responses[(cog.read_bus.head + 5) % startup.responses.len] = .{
+    std.debug.assert(Hub.clock_reached(startup.grant_at, cog.hub.counter));
+    if (cog.hub.counter != startup.grant_at)
+        return;
+    cog.hub.claim_hub_access(.{ .startup = cog.id }, .read, startup.address, 4);
+    const target = &startup.responses[(cog.read_bus.head + 5) % startup.responses.len];
+    std.debug.assert(target.* == null);
+    target.* = .{
         .reg = startup.reg,
         .value = cog.hub.read_memory(startup.address, 4),
     };
@@ -719,8 +737,13 @@ pub fn clock_command(cog: *Cog) void {
         state.command_at = cog.hub.counter +% ((@as(u64, cog.id) -% cog.hub.counter) & 7);
         state.ready_at = state.command_at.? +% extra;
     }
+    std.debug.assert(Hub.clock_reached(state.command_at.?, cog.hub.counter));
     if (cog.hub.counter != state.command_at.?)
         return;
+    std.debug.assert(cog.hub.counter & 7 == cog.id);
+    std.debug.assert(cog.hub.command_issuer == null);
+    cog.hub.command_issuer = cog.id;
+    cog.report_fetch_conflicts(state);
     const old_c = cog.c;
     const old_z = cog.z;
     cog.collecting_writes = true;
@@ -754,6 +777,9 @@ pub fn clock_fifo(cog: *Cog) void {
         value
     else
         return;
+    fifo.assert_consistent();
+    defer fifo.assert_consistent();
+
     if (fifo.ready_at) |deadline| {
         if (Hub.clock_reached(cog.hub.counter, deadline)) {
             fifo.ready_at = null;
@@ -785,6 +811,8 @@ pub fn clock_fifo(cog: *Cog) void {
             cog.hub.access_context = .{ .cog = cog.id };
         }
         const response = (cog.read_bus.head + 5) % fifo.responses.len;
+        cog.hub.claim_hub_access(.{ .fifo = cog.id }, .read, fifo.address, 4);
+        std.debug.assert(fifo.responses[response] == null);
         fifo.responses[response] = cog.hub.read_memory(fifo.address, 4);
         fifo.response_addresses[response] = fifo.address;
         fifo.response_valid[response] = 0;
@@ -799,6 +827,12 @@ pub fn clock_fifo(cog: *Cog) void {
     } else {
         // Drain only ready bytes in this physical long; later lanes can use a subsequent slice visit.
         const size = @min(@as(usize, 4 - @as(u3, @as(u2, @truncate(fifo.address)))), fifo.write_count);
+        cog.hub.claim_hub_access(
+            .{ .fifo = cog.id },
+            .write,
+            fifo.address,
+            @intCast(@min(size, fifo.write_ready_count)),
+        );
         var consumed: usize = 0;
         while (consumed < size and consumed < fifo.write_ready_count) : (consumed += 1) {
             const index = (fifo.write_head + consumed) % fifo.write_bytes.len;
@@ -859,6 +893,7 @@ pub fn commit_results(cog: *Cog) void {
     // This edge completes the previous ALU result, including streaming beats
     // while an instruction holds the execute stage.
     for (cog.writeback.writes[0..cog.writeback.count]) |write| {
+        cog.hub.access_context = write.provenance;
         if (cog.issue_phase and cog.exec_mode == .cog and
             cog.local_fetch_address() < 504 and cog.local_fetch_address() == @intFromEnum(write.reg))
         {
@@ -867,7 +902,6 @@ pub fn commit_results(cog: *Cog) void {
                 .address = @intFromEnum(write.reg),
                 .value = cog.read_reg(write.reg),
             };
-            cog.trace_collision(@intFromEnum(write.reg), .cog_ram);
         }
         if (write.raw) {
             cog.write_ram(@intFromEnum(write.reg), write.value);
@@ -883,6 +917,7 @@ pub fn commit_results(cog: *Cog) void {
         }
     }
     if (cog.writeback.lut) |write| {
+        cog.hub.access_context = cog.writeback.provenance;
         cog.write_lut(write.address, write.value);
     }
     if (cog.writeback.c) |value| {
@@ -903,20 +938,11 @@ pub fn commit_results(cog: *Cog) void {
     }
     for (std.enums.values(EventId)) |event| {
         if (cog.writeback.acknowledged_events.contains(event)) {
-            if (cog.hub.trace_writer) |writer| {
-                if (cog.hub.trace_lines_left > 0) {
-                    writer.print("CT={d} cog={d} event={t} acknowledge\n", .{ cog.hub.counter, cog.id, event }) catch {};
-                    cog.hub.trace_lines_left -= 1;
-                }
-            }
             cog.events.remove(event);
         }
     }
     cog.writeback = .{};
     cog.retired = cog.pipeline[4];
-    if (cog.retired) |state| {
-        cog.trace(.store, state);
-    }
     cog.pipeline[4] = null;
 }
 
@@ -947,6 +973,7 @@ pub fn clock_memory(cog: *Cog) void {
         if (cog.hub.counter == transfer.grant_at and (transfer.address & 3) + transfer.size > 4) {
             const low_size: u3 = @intCast(4 - (transfer.address & 3));
             const value = cog.transfer_source(transfer);
+            cog.hub.claim_hub_access(.{ .memory = transfer.provenance }, .write, transfer.address, low_size);
             cog.hub.write_memory_from(
                 transfer.address,
                 value,
@@ -983,14 +1010,25 @@ pub fn clock_memory(cog: *Cog) void {
     const low_size: u3 = @intCast(@min(transfer.size, 4 - (transfer.direction.read.grant_address & 3)));
     const crossing = low_size < transfer.size;
     if (crossing and transfer.direction.read.partial == null) {
+        cog.hub.claim_hub_access(
+            .{ .memory = transfer.provenance },
+            .read,
+            transfer.direction.read.grant_address,
+            low_size,
+        );
         transfer.direction.read.partial = cog.hub.read_memory(transfer.direction.read.grant_address, low_size);
         transfer.grant_at +%= 1;
         return;
     }
-    const high_word = if (crossing)
-        cog.hub.read_memory(transfer.direction.read.grant_address +% low_size, 4)
-    else
-        0;
+    const high_word = if (crossing) blk: {
+        cog.hub.claim_hub_access(
+            .{ .memory = transfer.provenance },
+            .read,
+            transfer.direction.read.grant_address +% low_size,
+            4,
+        );
+        break :blk cog.hub.read_memory(transfer.direction.read.grant_address +% low_size, 4);
+    } else 0;
     const high_size = transfer.size - low_size;
     const high_mask: u32 = if (crossing)
         (@as(u32, 1) << @intCast(@as(u6, high_size) * 8)) - 1
@@ -998,8 +1036,15 @@ pub fn clock_memory(cog: *Cog) void {
         0;
     const value = if (crossing)
         transfer.direction.read.partial.? | ((high_word & high_mask) << @intCast(@as(u6, low_size) * 8))
-    else
-        cog.hub.read_memory(transfer.direction.read.grant_address, transfer.size);
+    else blk: {
+        cog.hub.claim_hub_access(
+            .{ .memory = transfer.provenance },
+            .read,
+            transfer.direction.read.grant_address,
+            transfer.size,
+        );
+        break :blk cog.hub.read_memory(transfer.direction.read.grant_address, transfer.size);
+    };
     if (crossing) {
         transfer.direction.read.partial = high_word >> @intCast(@as(u6, high_size) * 8);
     }
@@ -1176,7 +1221,7 @@ pub fn return_stack(cog: *Cog) ExecResult {
     }
     if (cog.fifo_state.address == null or cog.fifo_state.engine == null or
         cog.fifo_state.engine.?.mode != .read)
-        return .{ .illegal = "XBYTE requires a read FIFO initialized by RDFAST" };
+        return cog.reject(.xbyte_fifo_unconfigured);
 
     cog.xbyte_mode = cog.xbyte_default_mode;
     if (cog.pipeline[3]) |state| {
@@ -1263,9 +1308,6 @@ pub fn jump(cog: *Cog, target: u20) void {
 
 /// Flush and refill a branch target in its selected execution domain.
 fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
-    if (cog.pipeline[3]) |state| {
-        cog.trace(.flush, state);
-    }
     const was_hub = cog.exec_mode == .hub;
     cog.pc = target;
     cog.exec_mode = mode;
@@ -1283,7 +1325,7 @@ fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
             cog.fifo_state.engine.?.mode == .write and
             cog.fifo_state.engine.?.write_count != 0)
         {
-            cog.fifo_state.request = request;
+            cog.queue_fifo(request);
         } else {
             cog.apply_fifo(request);
         }
@@ -1296,34 +1338,6 @@ fn redirect_fetch(cog: *Cog, target: u20, mode: ExecMode) void {
     // The target's fetch overlaps the branch's store on the next clock.
     cog.issue_phase = false;
     cog.branched = true;
-}
-
-/// Write a bounded instruction-stage event when pipeline tracing is enabled.
-fn trace(cog: *Cog, stage: enum { fetch, read, latch, execute, store, stall, flush }, state: PipelineState) void {
-    const writer = cog.hub.trace_writer orelse return;
-    if (cog.hub.trace_lines_left == 0)
-        return;
-    cog.hub.trace_lines_left -= 1;
-    writer.print("CT={d} cog={d} stage={t} pc=0x{x} instruction=0x{x}", .{ cog.hub.counter, cog.id, stage, state.pc, state.instr }) catch {};
-    if (state.local_address) |address| {
-        writer.print(" local=0x{x}", .{address}) catch {};
-    }
-    if (state.interrupt) |level| {
-        writer.print(" injected={t}", .{level}) catch {};
-    }
-    writer.writeByte('\n') catch {};
-    if (cog.hub.trace_lines_left == 0) {
-        writer.writeAll("pipeline trace truncated after 10000 events\n") catch {};
-    }
-}
-
-/// Write a bounded collision diagnostic without turning ambiguous RAM data into an execution fault.
-pub fn trace_collision(cog: *Cog, address: u9, kind: enum { cog_ram, lut_write }) void {
-    const writer = cog.hub.trace_writer orelse return;
-    if (cog.hub.trace_lines_left == 0)
-        return;
-    cog.hub.trace_lines_left -= 1;
-    writer.print("CT={d} cog={d} stage=collision kind={t} address=0x{x}\n", .{ cog.hub.counter, cog.id, kind, address }) catch {};
 }
 
 /// Push a hardware-stack value, discarding the oldest of the eight entries.
@@ -1425,12 +1439,6 @@ pub fn acknowledge_event(cog: *Cog, event: EventId) void {
 
 /// Set the architectural event latch at its delivery stage.
 fn deliver_event(cog: *Cog, event: EventId) void {
-    if (cog.hub.trace_writer) |writer| {
-        if (cog.hub.trace_lines_left > 0) {
-            writer.print("CT={d} cog={d} event={t} deliver\n", .{ cog.hub.counter, cog.id, event }) catch {};
-            cog.hub.trace_lines_left -= 1;
-        }
-    }
     cog.events.insert(event);
 }
 
@@ -1850,10 +1858,18 @@ pub fn begin_fifo(cog: *Cog, mode: FifoMode, config: u32, address: u32) void {
         cog.fifo_state.engine.?.mode == .write and
         cog.fifo_state.engine.?.write_count != 0)
     {
-        cog.fifo_state.request = request;
+        cog.queue_fifo(request);
     } else {
         cog.apply_fifo(request);
     }
+}
+
+/// Record a replaced, undelivered FIFO configuration before accepting its successor.
+fn queue_fifo(cog: *Cog, request: FifoRequest) void {
+    if (cog.fifo_state.request) |previous| {
+        cog.hub.report(.{ .fifo_configuration_lost = .{ .previous = previous.provenance, .replacement = request.provenance, .target = cog.id } }, request.provenance);
+    }
+    cog.fifo_state.request = request;
 }
 
 /// Compatibility entry for the unbounded read configuration used by semantic tests.
@@ -1921,6 +1937,9 @@ pub fn read_fifo(cog: *Cog, size: u3) ?u32 {
     if (cog.fifo_state.request != null or cog.peek_fifo(size - 1) == null)
         return 0;
     const fifo = &cog.fifo_state.engine.?;
+    fifo.assert_consistent();
+    defer fifo.assert_consistent();
+
     for (0..size) |index| {
         const source = fifo.word_addresses[fifo.head] +% fifo.byte_offset;
         const valid = fifo.word_valid[fifo.head] & (@as(u4, 1) << fifo.byte_offset) != 0;
@@ -1954,8 +1973,18 @@ pub fn fifo_write_in_use(cog: *const Cog) bool {
 
 /// Enqueue one write; modeled eligibility precedes the actual hub RAM-slice grant.
 pub fn write_fifo(cog: *Cog, value: u32, size: u3) bool {
+    if (cog.streamer.displaced_capture) |capture| {
+        cog.hub.report(.{ .streamer_capture_displaced = .{
+            .first = .{ .provenance = cog.provenance(), .space = .hub, .cog = null, .address = capture.address, .access = .write, .value = value, .class = .data, .storage = .ram },
+            .second = capture,
+        } }, capture.provenance);
+        cog.streamer.displaced_capture = null;
+    }
     const address = cog.fifo_state.address orelse return false;
     const fifo = &cog.fifo_state.engine.?;
+    fifo.assert_consistent();
+    defer fifo.assert_consistent();
+
     if (fifo.write_count + size > fifo.write_bytes.len)
         return false;
     for (0..size) |index| {
@@ -1978,6 +2007,9 @@ pub fn advance_fifo_write_ready(cog: *Cog) void {
         value
     else
         return;
+    fifo.assert_consistent();
+    defer fifo.assert_consistent();
+
     if (fifo.mode != .write)
         return;
     fifo.write_ready_count += fifo.write_pending[fifo.write_pending_head];
@@ -2019,6 +2051,7 @@ pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
         cog.writeback.writes[cog.writeback.count] = .{
+            .provenance = cog.provenance(),
             .reg = reg,
             .value = value,
             .debug_overlay = cog.debug.state == .active and
@@ -2043,7 +2076,7 @@ pub fn write_reg(cog: *Cog, reg: Register, value: u32) void {
 }
 
 /// Capture the issuing instruction, or identify a cog-only service such as startup.
-pub fn provenance(cog: *const Cog) Debugger.Provenance {
+pub fn provenance(cog: *const Cog) access_types.Provenance {
     if (cog.pipeline[3]) |state| {
         return .{ .cog = cog.id, .pc = state.pc, .instruction = state.instr };
     }
@@ -2054,7 +2087,7 @@ pub fn provenance(cog: *const Cog) Debugger.Provenance {
 pub fn write_ram(cog: *Cog, address: u9, value: u32) void {
     if (cog.collecting_writes) {
         std.debug.assert(cog.writeback.count < cog.writeback.writes.len);
-        cog.writeback.writes[cog.writeback.count] = .{ .reg = @enumFromInt(address), .value = value, .raw = true };
+        cog.writeback.writes[cog.writeback.count] = .{ .provenance = cog.provenance(), .reg = @enumFromInt(address), .value = value, .raw = true };
         cog.writeback.provenance = cog.provenance();
         cog.writeback.count += 1;
     } else if (address >= 504) {
@@ -2084,7 +2117,7 @@ pub fn read_reg(cog: *Cog, reg: Register) u32 {
 /// Only execution reads use latched data; debugger/test reads see live state.
 pub fn read_operand(cog: *Cog, reg: Register) u32 {
     const value = cog.operand_value(reg);
-    const class: Debugger.ReadClass = if (cog.pipeline[3] != null and cog.pipeline[3].?.operands != null) .consumed else .data;
+    const class: access_types.ReadClass = if (cog.pipeline[3] != null and cog.pipeline[3].?.operands != null) .consumed else .data;
     cog.hub.observe(.registers, cog.id, @intFromEnum(reg), .read, value, class, .architectural);
     return value;
 }
@@ -2239,6 +2272,8 @@ pub fn resolve_operand(cog: *Cog, reg: Register, imm: bool) u32 {
 }
 
 pub const PipelineState = struct {
+    /// Index into the cog-owned collision records; avoid copying their payload with every pipeline shift.
+    fetch_conflict_slot: ?u3 = null,
     pc: u20,
     instr: u32,
     /// One encounter survives all execute stalls and command scheduling retries.
@@ -2275,6 +2310,36 @@ pub const PipelineState = struct {
     /// Register/flag writes held until step resumes ordinary writeback after the response delay.
     command_writeback: Writeback = .{},
 };
+
+/// Report a fetched word's collisions once, including instructions whose execution later stalls.
+fn report_fetch_conflicts(cog: *Cog, state: *PipelineState) void {
+    const slot = state.fetch_conflict_slot orelse return;
+    const pending = &cog.fetch_conflicts[slot];
+    for (pending.items[0..pending.count]) |conflict| {
+        cog.hub.report(.{ .cog_fetch_write = conflict }, conflict.reader.provenance);
+    }
+    state.fetch_conflict_slot = null;
+}
+
+/// Reserve one of five collision records, never overwriting a fetched instruction still in flight.
+fn retain_fetch_conflict(cog: *Cog, state: *PipelineState, conflict: Issue.Conflict) void {
+    const slot = state.fetch_conflict_slot orelse slot: {
+        const next = cog.next_fetch_conflict;
+        for (cog.pipeline) |stage| {
+            if (stage) |instruction| {
+                std.debug.assert(instruction.fetch_conflict_slot != next);
+            }
+        }
+        cog.next_fetch_conflict = @intCast((@as(usize, next) + 1) % cog.fetch_conflicts.len);
+        cog.fetch_conflicts[next].count = 0;
+        state.fetch_conflict_slot = next;
+        break :slot next;
+    };
+    const pending = &cog.fetch_conflicts[slot];
+    std.debug.assert(pending.count < pending.items.len);
+    pending.items[pending.count] = conflict;
+    pending.count += 1;
+}
 
 /// Fetches the last value set up by 'AUGS' and resets the value.
 pub fn fetch_augs(cog: *Cog) u32 {
@@ -2323,7 +2388,7 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
         .cog => {
             const address = cog.local_fetch_address();
             const rom = cog.pc >= 504 and cog.pc < 512;
-            const instr: PipelineState = .{
+            var instr: PipelineState = .{
                 .pc = cog.pc,
                 .local_address = address,
                 .debug_rom = rom,
@@ -2336,8 +2401,39 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
                 else
                     cog.registers.values[address],
             };
+            const reader: Issue.Participant = .{
+                .provenance = .{ .cog = cog.id, .pc = instr.pc, .instruction = instr.instr },
+                .space = if (address < 0x200) .registers else .lut,
+                .cog = cog.id,
+                .address = address & 0x1ff,
+                .access = .read,
+                .value = instr.instr,
+                .class = .physical,
+                .storage = if (rom) .execute_rom else .ram,
+            };
+            if (reader.space == .registers and address < 504 and !rom) {
+                for (cog.hub.edge_writes[0..cog.hub.edge_write_count]) |committed| {
+                    if (committed.space != .registers or committed.cog != cog.id or committed.address != address)
+                        continue;
+                    var writer = committed;
+                    writer.storage = .ram;
+                    const old_value = if (cog.ram_collision) |collision|
+                        collision.clock == cog.hub.counter and collision.address == address and cog.pc >= 0x400
+                    else
+                        false;
+                    cog.retain_fetch_conflict(&instr, .{
+                        .clock = cog.hub.counter,
+                        .writer = writer,
+                        .reader = reader,
+                        .read_source = if (old_value) .{ .old_cog_ram = @intCast(address) } else .{ .addressed = .ram },
+                    });
+                }
+            }
+            if (cog.pc >= 0x400) {
+                cog.hub.report(.{ .pc_domain = .{ .pc = instr.pc, .hub = false, .address = address, .storage = reader.storage } }, reader.provenance);
+            }
             const saved = cog.hub.access_context;
-            cog.hub.access_context = .{ .cog = cog.id, .pc = instr.pc, .instruction = instr.instr };
+            cog.hub.access_context = reader.provenance;
             cog.hub.observe(if (address < 0x200) .registers else .lut, cog.id, address & 0x1ff, .read, instr.instr, .physical, if (rom) .execute_rom else .ram);
             cog.hub.access_context = saved;
             cog.pc +%= 1;
@@ -2357,6 +2453,9 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
                 return null;
             }
             const word = cog.fifo_state.engine.?.read() orelse return null;
+            if (cog.pc < 0x400) {
+                cog.hub.report(.{ .pc_domain = .{ .pc = cog.pc, .hub = true, .address = cog.pc, .storage = .ram } }, .{ .cog = cog.id, .pc = cog.pc, .instruction = word });
+            }
             const instr: PipelineState = .{
                 .pc = cog.pc,
                 .instr = word,
@@ -2368,35 +2467,13 @@ fn fetch_instruction(cog: *Cog) ?PipelineState {
     }
 }
 
-pub const ExecResult = union(enum) {
-    wait,
-    next,
-    trap,
-    skip,
-    not_implemented,
-    illegal: []const u8,
-};
+pub const ExecResult = enum { wait, next, skip };
 
-pub const Fault = struct {
-    cog: u3,
-    pc: u20,
-    instruction: u32,
-    result: ExecResult,
-    debug_rom: bool = false,
-
-    /// Return the diagnostic text for a trap, missing implementation or reason-bearing illegal execution.
-    pub fn reason(fault: Fault) []const u8 {
-        return switch (fault.result) {
-            .trap => "execution trap",
-            .not_implemented => if (fault.debug_rom)
-                "debug ROM execution is not implemented"
-            else
-                "instruction is not implemented",
-            .illegal => |message| message,
-            else => unreachable,
-        };
-    }
-};
+/// Reject one operation while allowing ordinary retirement and the rest of the edge.
+pub fn reject(cog: *Cog, comptime kind: std.meta.Tag(Issue.Kind)) ExecResult {
+    cog.hub.report(@unionInit(Issue.Kind, @tagName(kind), {}), cog.provenance());
+    return .next;
+}
 
 test "XBYTE sentinel is exact, POP consumes it, and direct jumps still fetch debug ROM" {
     const hub = try std.testing.allocator.create(Hub);
@@ -2492,33 +2569,30 @@ test "execute-only ROM fetch differs from underlying tail RAM and discarded fetc
     for (0..12) |_| {
         _ = hub.step();
     }
-    try std.testing.expect(hub.fault == null);
+    try std.testing.expect(hub.issues.len == 0);
     try std.testing.expectEqual(ExecMode.cog, cog.exec_mode);
 }
 
-test "illegal execution stops the cog and discards pending pipeline writes" {
+test "illegal execution reports an issue and allows younger instructions to retire" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
     try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .hub;
-    // RFBYTE r20: the instruction FIFO cannot also serve software reads.
     cog.pipeline[3] = .{ .pc = 0x1000, .instr = 0xFD60_2810 };
     cog.pipeline[2] = .{ .pc = 0x1004, .instr = 0xF604_2807 };
     _ = hub.step();
-    const fault = hub.fault.?;
-    try std.testing.expectEqualStrings("hub execution uses the FIFO for instruction fetching", fault.result.illegal);
-    try std.testing.expectEqual(@as(u20, 0x1000), fault.pc);
-    try std.testing.expectEqual(ExecMode.stopped, cog.exec_mode);
-    for (cog.pipeline) |stage| {
-        try std.testing.expect(stage == null);
-    }
-    try std.testing.expectEqual(@as(usize, 0), cog.writeback.count);
+    try std.testing.expectEqual(@as(usize, 1), hub.issues.len);
+    const issue = hub.issues.items()[0];
+    try std.testing.expect(issue.kind == .hub_fifo_conflict);
+    try std.testing.expectEqual(@as(?u20, 0x1000), issue.provenance.pc);
+    try std.testing.expectEqual(ExecMode.hub, cog.exec_mode);
+    try std.testing.expect(cog.pipeline[3] != null);
     for (0..8) |_| {
         _ = hub.step();
     }
-    try std.testing.expectEqual(@as(u32, 0), cog.registers.values[20]);
+    try std.testing.expectEqual(@as(u32, 7), cog.registers.values[20]);
 }
 
 test "stop discards startup, FIFO, transfers and queued results but preserves RAM" {
@@ -2526,7 +2600,7 @@ test "stop discards startup, FIFO, transfers and queued results but preserves RA
     defer std.testing.allocator.destroy(hub);
 
     try hub.init(.ideal);
-    try hub.start_cog(1, .{});
+    hub.start_cog(1, .{});
     const cog = &hub.cogs[1];
     cog.registers.values[100] = 77;
     cog.lut[100] = 88;
@@ -2605,7 +2679,7 @@ test "COGINIT allocates free cogs and pairs, reports failure, and retains RAM on
     // Loading an image at the end of hub RAM wraps through the physical RAM.
     hub.write_memory(0xffffc, 0x1122_3344, 4, false);
     hub.write_memory(0, 0x5566_7788, 4, false);
-    try hub.start_cog(1, .{ .hub_address = 0xffffc, .clocked = false });
+    hub.start_cog(1, .{ .hub_address = 0xffffc, .clocked = false });
     try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[1].read_reg(@enumFromInt(0)));
     try std.testing.expectEqual(@as(u32, 0x5566_7788), hub.cogs[1].read_reg(@enumFromInt(1)));
 }
@@ -2879,9 +2953,13 @@ test "FIFO ring reads cross the physical end and full writes retain their augmen
     cog.collecting_writes = true;
     try std.testing.expectEqual(ExecResult.wait, execute.execute_instruction(cog, cog.pipeline[3].?));
     try std.testing.expect(!cog.augd_pending);
-    cog.fifo_state.engine.?.write_count -= 4;
+    // Eligibility and the next bank-zero visit must both occur before the retry.
+    for (0..9) |_| {
+        _ = hub.step();
+    }
+    try std.testing.expectEqual(@as(usize, 72), cog.fifo_state.engine.?.write_count);
     try std.testing.expectEqual(ExecResult.next, execute.execute_instruction(cog, cog.pipeline[3].?));
-    try std.testing.expectEqualSlices(u8, &.{ 0x78, 0x56, 0x34, 0x12 }, cog.fifo_state.engine.?.write_bytes[72..76]);
+    try std.testing.expectEqualSlices(u8, &.{ 0x78, 0x56, 0x34, 0x12 }, cog.fifo_state.engine.?.write_bytes[0..4]);
     try std.testing.expectEqual(@as(u20, 0x1050), cog.fifo_state.address.?);
 }
 

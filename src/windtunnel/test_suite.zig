@@ -1,4 +1,5 @@
 const std = @import("std");
+const test_support = @import("test_support.zig");
 const args = @import("args");
 const propan = @import("propan");
 const checklist = @import("check_list.zig");
@@ -30,7 +31,6 @@ const Options = struct {
     include: ?[]const u8 = null,
     exclude: ?[]const u8 = null,
     @"timing-report": ?[]const u8 = null,
-    @"trace-pipeline": bool = false,
     @"fast-io": bool = false,
     @"prepare-oracle": bool = false,
     @"artifact-dir": []const u8 = ".zig-cache/windtunnel-artifacts",
@@ -43,7 +43,6 @@ const Options = struct {
         .include = "Run files matching any comma-separated path substring (case-sensitive)",
         .exclude = "Skip files matching any comma-separated path substring; exclusions override includes",
         .@"timing-report" = "Write file totals, min/average/max run times and individual run times to a Markdown file",
-        .@"trace-pipeline" = "Retain up to 10000 pipeline events with prepared images and failure evidence",
         .@"fast-io" = "Transfer UART/USART endpoint words at single-clock throughput unless a fixture requires timing",
         .@"prepare-oracle" = "Generate oracle images and requests without uploading them",
         .@"artifact-dir" = "Directory for prepared images and failure evidence",
@@ -399,7 +398,7 @@ test "workers isolate cases, retain failures and finish every queued job" {
         "//? run: \"first\"\n//? pre: sym[value] = u32 [7]\n" ++
         "//? run: \"failure\"\n//? pre: sym[value] = u32 [8]\n" ++
         "//? run: \"last\"\n//? pre: sym[value] = u32 [7]\n" ++
-        "\nMOV result, value\nJMP nrel(_end)\nvar result: LONG 0\nvar value: LONG 0\n";
+        "\nMOV result, value\nJMP nrel(_end)\nNOP\nvar result: LONG 0\nvar value: LONG 0\n";
     try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "fixture.propan", .data = source });
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
@@ -917,20 +916,15 @@ fn runOne(
     var stdout: std.Io.Writer.Allocating = .init(allocator);
     defer stdout.deinit();
 
-    var terminal_sink: smart_pin.DataSink = .{ .writer = &stdout.writer };
+    try stdout.ensureTotalCapacity(@intCast(list.max_cycles));
+    var terminal_sink: smart_pin.DataSink = .{ .endpoint = .{ .writer = &stdout.writer } };
     hub.io.pins[62].smart.tx_mode = if (virtual_terminal)
         .{ .virtual = &terminal_sink }
     else
         .{ .emulated = &terminal_sink };
     var stdin = std.Io.Reader.fixed(list.stdin);
-    var terminal_source: smart_pin.DataSource = .{ .reader = &stdin };
-    var trace: std.Io.Writer.Allocating = .init(allocator);
-    defer trace.deinit();
-
-    if (ctx.options.@"trace-pipeline") {
-        hub.trace_writer = &trace.writer;
-    }
-    try hub.start_cog(0, .{});
+    var terminal_source: smart_pin.DataSource = .{ .endpoint = .{ .reader = &stdin } };
+    hub.start_cog(0, .{});
     var captured: std.Io.Writer.Allocating = .init(allocator);
     defer captured.deinit();
 
@@ -950,6 +944,10 @@ fn runOne(
                     read(hub, list.cog, o, &snapshot.writer) catch {};
                 }
             }
+            var diagnostics: std.Io.Writer.Allocating = .init(allocator);
+            defer diagnostics.deinit();
+
+            test_support.diagnostics(hub, &diagnostics.writer) catch {};
             oracle.retainLocalFailure(
                 .{ .allocator = allocator, .io = ctx.io, .errors = ctx.errors, .artifacts = ctx.options.@"artifact-dir" },
                 path,
@@ -961,10 +959,15 @@ fn runOne(
                 snapshot.written(),
                 stdout.written(),
                 hub.counter,
-                trace.written(),
+                diagnostics.written(),
                 err,
             ) catch {};
         }
+    }
+    var expected_issues = std.EnumArray(checklist.IssueKind, u64).initFill(0);
+    var observed_issues = std.EnumArray(checklist.IssueKind, u64).initFill(0);
+    for (list.issues) |expectation| {
+        expected_issues.set(expectation.kind, expectation.count);
     }
     var reached = false;
     var dut_started = false;
@@ -972,11 +975,13 @@ fn runOne(
     // Parallel workers use CPU time so scheduler contention cannot consume a case's execution budget.
     const simulation_clock: std.Io.Clock = if (ctx.options.jobs > 1) .cpu_thread else .awake;
     const started = std.Io.Timestamp.now(ctx.io, simulation_clock).toNanoseconds();
+    // Safe builds need about 75 CPU seconds for the ten-million-cycle FIFO matrix.
+    // Keep a host guard above that workload while retaining the deterministic cycle limit.
     // Complete program fixtures can intentionally run longer than isolated cog checks.
     const execution_limit_ns: i96 = (if (list.profile == .program)
         @as(i96, 600)
     else
-        30) * std.time.ns_per_s;
+        120) * std.time.ns_per_s;
     while (hub.is_any_cog_active() and hub.counter < list.max_cycles) {
         if (hub.counter & 1023 == 0 and
             std.Io.Timestamp.now(ctx.io, simulation_clock).toNanoseconds() - started > execution_limit_ns)
@@ -1004,24 +1009,25 @@ fn runOne(
                 try validateDispatch(compiled.module, dut_origin, instruction);
             }
         }
-        switch (hub.step()) {
+        const notification = hub.step();
+        var unexpected = false;
+        for (hub.issues.items()) |issue| {
+            const kind = std.meta.activeTag(issue.kind);
+            observed_issues.getPtr(kind).* += 1;
+            if (observed_issues.get(kind) > expected_issues.get(kind)) {
+                unexpected = true;
+            }
+        }
+        if (unexpected or test_support.serviceFailed(hub)) {
+            try ctx.errors.print("{s}: completed edge diagnostics\n", .{path});
+            try test_support.diagnostics(hub, ctx.errors);
+            return if (unexpected)
+                error.UnexpectedIssue
+            else
+                error.ServiceFailure;
+        }
+        switch (notification) {
             .normal => {},
-            .trap => {
-                const fault = hub.fault orelse return error.ExecutionTrap;
-                try ctx.errors.print("{s}: cog {d}, pc 0x{x}, {t}: {s}\n", .{
-                    path,
-                    fault.cog,
-                    fault.pc,
-                    decode.decode(fault.instruction),
-                    fault.reason(),
-                });
-                return switch (fault.result) {
-                    .not_implemented => error.NotImplementedInstruction,
-                    .illegal => error.IllegalInstruction,
-                    .trap => error.ExecutionTrap,
-                    else => unreachable,
-                };
-            },
             .reset => break,
             .breakpoint => return error.UnexpectedBreakpoint,
         }
@@ -1045,6 +1051,18 @@ fn runOne(
         if (stdout.written().len > 1 << 20)
             return error.OutputLimit;
     }
+    var counts_match = true;
+    for (std.enums.values(checklist.IssueKind)) |kind| {
+        if (observed_issues.get(kind) != expected_issues.get(kind)) {
+            try ctx.errors.print("{s}: issue {t}: expected {d}, observed {d}\n", .{
+                path, kind, expected_issues.get(kind), observed_issues.get(kind),
+            });
+            counts_match = false;
+        }
+    }
+    if (!counts_match)
+        return error.IssueCountMismatch;
+
     if (stop != null and !reached)
         return if (hub.is_any_cog_active())
             error.CycleLimit
@@ -1130,7 +1148,6 @@ fn runOne(
             "checkpoint"
         else
             "all cogs stopped",
-        .trace = trace.written(),
     });
 }
 
@@ -1349,11 +1366,11 @@ test "bounded imported fixtures reject wrong assertions, invalid state and missi
         ctx,
         "//? WINDTUNNEL CHECK LIST\n//? baudrate: 115200\n//? post: cog[0].c == false\n\nJMP nrel(_end)\n",
     ));
-    const code = "\nMOV result, 7\nJMP nrel(_end)\nvar result: LONG 0\n";
+    const code = "\nMOV result, 7\nJMP nrel(_end)\nNOP\nvar result: LONG 0\n";
     _ = try runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[result] == 7\n" ++ code);
     try std.testing.expectError(error.AssertionFailed, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[result] == 8\n" ++ code));
     try std.testing.expectError(error.CycleLimit, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? max-cycles: 1\n//? post: cog[0].reg[result] == 7\n" ++ code));
-    try std.testing.expectError(error.CycleLimit, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? max-cycles: 100\n//? post: cog[0].reg[value] == 0\n\nSETQ aug(0xffffffff)\nRDLONG value, PTRA\nJMP nrel(_end)\nvar value: LONG 0\n"));
+    try std.testing.expectError(error.CycleLimit, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? max-cycles: 100\n//? post: cog[0].reg[value] == 0\n\nSETQ aug(0xffffffff)\nRDLONG value, PTRA\nJMP nrel(_end)\nNOP\nvar value: LONG 0\n"));
     try std.testing.expectError(error.DuplicatePrecondition, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: cog[0].c = true\n//? pre: cog[0].c = false\n" ++ code));
     try std.testing.expectError(error.UnknownSymbol, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].reg[missing] == 7\n" ++ code));
     try std.testing.expectError(error.InvalidChecklist, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: cog[0].reg[1] = 0\n" ++ code));
@@ -1379,12 +1396,12 @@ test "illegal FIFO use reports its reason and respects conditional cancellation"
         const source = try std.mem.concat(ctx.allocator, u8, &.{ header, instruction, "COGSTOP 0\n" });
         defer ctx.allocator.free(source);
 
-        try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, source));
-        try std.testing.expect(std.mem.indexOf(u8, errors.written(), "hub execution uses the FIFO for instruction fetching") != null);
+        try std.testing.expectError(error.UnexpectedIssue, runTemporary(ctx, source));
+        try std.testing.expect(std.mem.indexOf(u8, errors.written(), "hub_fifo_conflict") != null);
     }
     errors.clearRetainingCapacity();
-    try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nRFBYTE register(20)\nCOGSTOP 0\n"));
-    try std.testing.expect(std.mem.indexOf(u8, errors.written(), "FIFO read requires RDFAST") != null);
+    try std.testing.expectError(error.UnexpectedIssue, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nRFBYTE register(20)\nCOGSTOP 0\n"));
+    try std.testing.expect(std.mem.indexOf(u8, errors.written(), "fifo_read_unconfigured") != null);
     _ = try runTemporary(ctx, header ++ "if(C) RFBYTE register(20)\nif(C) RDFAST 0, 0\nCOGSTOP 0\n");
 }
 
@@ -1418,16 +1435,17 @@ test "runs patch cog and hub initialization independently" {
         \\ADD value, 1
         \\WRLONG value, aug(hubaddr(buffer))
         \\JMP nrel(_end)
+        \\NOP
         \\var value: LONG 0xffffffff
         \\var loaded: LONG 0
         \\.data
         \\buffer: LONG 0x01020304
     );
-    const code = "\nJMP nrel(_end)\nvar value: LONG 0\n";
+    const code = "\nJMP nrel(_end)\nNOP\nvar value: LONG 0\n";
     try std.testing.expectError(error.UnknownSymbol, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[missing] = u32 [1]\n" ++ code));
     try std.testing.expectError(error.EmptyPatch, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[value] = u32 []\n" ++ code));
     try std.testing.expectError(error.ReservedMemory, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[_wt_reg_snapshot] = u32 [1]\n" ++ code));
-    try std.testing.expectError(error.UndefinedMemory, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[value] = u32 [1, 2]\n" ++ code));
+    try std.testing.expectError(error.ReservedMemory, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? pre: sym[value] = u32 [1, 2]\n" ++ code));
     // Program fixtures can patch initialization without the cog reporter.
     _ = try runTemporary(ctx,
         \\//? WINDTUNNEL CHECK LIST
@@ -1460,6 +1478,7 @@ test "oracle preparation applies patches to every run and records run identity" 
         \\//? run: "second"
         \\
         \\JMP nrel(_end)
+        \\NOP
         \\var value: LONG 0x01234567
         \\var next: LONG 0x89abcdef
     ));
@@ -1519,6 +1538,7 @@ test "characterization preparation does not require a supported local instructio
         \\WAITX 0 :wc
         \\MOV value, 7
         \\JMP nrel(_end)
+        \\NOP
         \\var value: LONG 0
     ));
 }
@@ -1540,7 +1560,7 @@ test "matrix runs assemble constants and select fresh cogs" {
             "//? cog: 7\n" ++
             "//? const: value = 8\n" ++
             "//? post: cog[*].reg[result] == 9\n" ++
-            "MOV result, value\nADD result, adjustment\nJMP nrel(_end)\nvar result: LONG 0\n",
+            "MOV result, value\nADD result, adjustment\nJMP nrel(_end)\nNOP\nvar result: LONG 0\n",
     );
 }
 
@@ -1596,7 +1616,6 @@ fn serveTestConnections(listener: *std.Io.net.Server, count: usize, configuratio
         defer stream.close(std.testing.io);
 
         try p2aas_server.handleConnection(std.testing.allocator, std.testing.io, stream, .{
-            .trace = false,
             .fast_io = false,
             .system_configuration = configuration,
         });
@@ -1623,9 +1642,9 @@ test "real serial boot ROM downloads and launches RCFAST hello world at multiple
             var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
             defer output.deinit();
 
-            var sink: smart_pin.DataSink = .{ .writer = &output.writer };
+            var sink: smart_pin.DataSink = .{ .endpoint = .{ .writer = &output.writer } };
             hub.io.pins[62].smart.tx_mode = .{ .emulated = &sink };
-            try serial_boot.load(std.testing.io, hub, compiled.image, rate);
+            try serial_boot.load(std.testing.io, hub, compiled.image, rate, test_support.Strict{});
             for (0..100_000) |_| {
                 if (output.written().len == "Hello world!\r\n".len)
                     break;
@@ -1664,11 +1683,11 @@ test "RCFAST hello world preserves inherited ROM baud timing and drains UART wit
         var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
         defer output.deinit();
 
-        var sink: smart_pin.DataSink = .{ .writer = &output.writer };
+        var sink: smart_pin.DataSink = .{ .endpoint = .{ .writer = &output.writer } };
         const tx = &hub.io.pins[62].smart;
         tx.registers.x = divider;
         tx.tx_mode = .{ .emulated = &sink };
-        try hub.start_cog(0, .{});
+        hub.start_cog(0, .{});
 
         while (hub.counter < 10_000) {
             if (hub.cogs[0].pipeline[3]) |instruction| {
@@ -1805,7 +1824,7 @@ test "streamer excluded modes and FIFO ownership fail explicitly, while cancella
 
         try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx, source));
     }
-    try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_RFLONG_32P_4DAC8 | 1), 0\nCOGSTOP 0\n"));
-    try std.testing.expectError(error.IllegalInstruction, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 1), 0\nCOGSTOP 0\n"));
+    try std.testing.expectError(error.UnexpectedIssue, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_RFLONG_32P_4DAC8 | 1), 0\nCOGSTOP 0\n"));
+    try std.testing.expectError(error.UnexpectedIssue, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 1), 0\nCOGSTOP 0\n"));
     try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx, header ++ "if(C) SETCMOD 0x120\nif(C) XINIT aug(X_DDS_GOERTZEL_SINC1 | 1), 0\nJMP nrel(_end)\n"));
 }

@@ -326,7 +326,6 @@ const Frames = struct {
 const Event = union(enum) { peer: Close, receive_error: anyerror, execution_error: anyerror, finished, timeout };
 /// Simulation behavior shared by every board session served by this listener.
 pub const SimulationOptions = struct {
-    trace: bool,
     fast_io: bool,
     system_configuration: Hub.SystemConfiguration,
 };
@@ -425,7 +424,7 @@ fn receive(connection: *Connection, input: *std.Io.Queue(u8), events: *std.Io.Qu
 fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void {
     var output_buffer: [4096]u8 = undefined;
     var output = std.Io.Writer.fixed(&output_buffer);
-    var terminal_sink: smart_pin.DataSink = .{ .writer = &output };
+    var terminal_sink: smart_pin.DataSink = .{ .endpoint = .{ .writer = &output } };
     hub.io.pins[62].smart.tx_mode = if (connection.simulation.fast_io)
         .{ .virtual = &terminal_sink }
     else
@@ -433,18 +432,11 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
     var input_buffer: [4096]u8 = undefined;
     var reader = std.Io.Reader.fixed(&input_buffer);
     reader.end = 0;
-    var terminal_source: smart_pin.DataSource = .{ .reader = &reader };
+    var terminal_source: smart_pin.DataSource = .{ .endpoint = .{ .reader = &reader } };
     hub.io.pins[63].smart.rx_mode = if (connection.simulation.fast_io)
         .{ .virtual = &terminal_source }
     else
         .{ .emulated = &terminal_source };
-    var trace_buffer: [4096]u8 = undefined;
-    var trace = std.Io.File.stderr().writer(connection.io, &trace_buffer);
-    if (connection.simulation.trace) {
-        hub.trace_writer = &trace.interface;
-    }
-    defer trace.interface.flush() catch {};
-
     const started = std.Io.Timestamp.now(connection.io, .awake).toNanoseconds();
     const initial_time = hub.io.clock.elapsed.femtoseconds;
     while (true) {
@@ -462,16 +454,25 @@ fn simulate(connection: *Connection, hub: *Hub, input: *std.Io.Queue(u8)) !void 
         const ceiling = hub.io.clock.seconds + 0.001;
         for (0..4096) |_| {
             // Hub edges still reset pin directions and service queued cog starts after self-stop.
-            switch (hub.step()) {
+            const notification = hub.step();
+            var trapped = false;
+            for (hub.issues.items()) |issue| {
+                switch (issue.severity()) {
+                    .warning => std.log.warn("{f}", .{issue}),
+                    .trap => {
+                        std.log.err("{f}", .{issue});
+                        trapped = true;
+                    },
+                }
+            }
+            if (trapped)
+                return error.SimulationFault;
+            if (terminal_sink.failure) |err|
+                return err;
+            if (terminal_source.failure) |err|
+                return err;
+            switch (notification) {
                 .normal => {},
-                .trap => {
-                    if (hub.fault) |fault| {
-                        std.log.warn("P2AAS cog {d}, pc 0x{x}, instruction 0x{x:0>8}: {s}", .{
-                            fault.cog, fault.pc, fault.instruction, fault.reason(),
-                        });
-                    }
-                    return error.SimulationFault;
-                },
                 .breakpoint, .reset => {
                     if (output.end != 0) {
                         try connection.send(output.buffered(), .binary);
@@ -632,7 +633,7 @@ fn process(connection: *Connection, http: *std.http.Server) !void {
     }
     hub.write_memory(@intCast(payload.len), checksum, 4, false);
     serial_boot.prepare(hub, serial_boot.baudrate);
-    try hub.start_cog(0, .{});
+    hub.start_cog(0, .{});
     connection.running = true;
     var input_buffer: [65536]u8 = undefined;
     var input = std.Io.Queue(u8).init(&input_buffer);

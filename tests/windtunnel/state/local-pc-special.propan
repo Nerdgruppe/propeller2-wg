@@ -1,4 +1,5 @@
                 //? WINDTUNNEL CHECK LIST
+                //? issues: pc_domain = 2
                 //? timeout-ms: 3000
                 //? run: "source495-cog0"
                 //? post: cog[*].reg[link] == 0x401
@@ -230,4 +231,3 @@ special_template:
                 CALLD   link,   target1
 .cogexec    0x3400, 503
                 CALLD   link,   target1
-

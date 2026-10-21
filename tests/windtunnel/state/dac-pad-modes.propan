@@ -275,6 +275,7 @@
 //? post: cog[0].reg[result] == 256
 //? post: cog[0].reg[flags] == 6
 //? run: "smart2-y65535"
+//? issues: smart_dac_clipped = 1
 //? const: config = 1075183684
 //? const: dacs = 0
 //? const: out = 1
@@ -319,6 +320,7 @@
 //? post: cog[0].reg[result] == 256
 //? post: cog[0].reg[flags] == 6
 //? run: "smart3-y65535"
+//? issues: smart_dac_clipped = 1
 //? const: config = 1075183686
 //? const: dacs = 0
 //? const: out = 1

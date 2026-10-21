@@ -1,5 +1,7 @@
 //! Headless debugger, inspector, disassembly and host-frame regression coverage.
 const std = @import("std");
+const test_support = @import("test_support.zig");
+const access_types = @import("sim/access.zig");
 const Hub = @import("sim/Hub.zig");
 const Cog = @import("sim/Cog.zig");
 const Debugger = @import("sim/Debugger.zig");
@@ -9,9 +11,11 @@ const disassembly = @import("sim/disassemble.zig");
 const decode = @import("sim/decode.zig");
 const encoding = @import("sim/encoding.zig");
 const smart_pin = @import("sim/smart_pin.zig");
+const issues_tests = @import("issues_tests.zig");
 
 comptime {
     _ = disassembly;
+    _ = issues_tests;
 }
 pub const std_options: std.Options = .{ .log_level = .err };
 
@@ -33,8 +37,8 @@ fn untilStop(hub: *Hub, limit: usize) !void {
 }
 
 /// Add a watch covering an entire selected domain, optionally restricted to one local cog.
-fn watch(debugger: *Debugger, space: Debugger.Space, cog: ?u3, scope: Debugger.Scope, access: Debugger.AccessMode) !void {
-    try debugger.watches.append(debugger.allocator, .{
+fn watch(debugger: *Debugger, space: access_types.Space, cog: ?u3, scope: Debugger.Scope, access: Debugger.AccessMode) !void {
+    try debugger.addWatch(.{
         .space = space,
         .cog = cog,
         .start = 0,
@@ -179,7 +183,7 @@ test "physical preloads see cancelled words while data reads see only consumed o
     try std.testing.expect(debugger.hits.items.len >= 6);
     for (debugger.hits.items) |hit| {
         try std.testing.expectEqual(@as(usize, 1), hit.watchpoint);
-        try std.testing.expectEqual(Debugger.ReadClass.physical, hit.class);
+        try std.testing.expectEqual(access_types.ReadClass.physical, hit.class);
     }
     debugger.acknowledge(hub);
     _ = hub.step(); // Cancelled execute consumes nothing.
@@ -196,7 +200,7 @@ test "physical preloads see cancelled words while data reads see only consumed o
             consumed = true;
             try std.testing.expectEqual(@as(u32, 20), hit.address);
             try std.testing.expectEqual(@as(u32, 123), hit.value);
-            try std.testing.expectEqual(Debugger.ReadClass.consumed, hit.class);
+            try std.testing.expectEqual(access_types.ReadClass.consumed, hit.class);
         }
     }
     try std.testing.expect(consumed);
@@ -269,7 +273,7 @@ test "startup reads and delayed RAM writes retain their issuer" {
     try watch(&debugger, .hub, null, .data, .read);
     try watch(&debugger, .registers, 1, .data, .write);
     hub.access_context = .{ .cog = 3, .pc = 44, .instruction = 99 };
-    try hub.start_cog(1, .{});
+    hub.start_cog(1, .{});
     hub.access_context = .{};
     try untilStop(hub, 30);
     try std.testing.expectEqual(@as(?u3, 3), debugger.hits.items[0].provenance.cog);
@@ -490,13 +494,13 @@ test "frame budget expires between edges Step is one edge and fault or break int
     const hub = try newHub();
     defer std.testing.allocator.destroy(hub);
     var clock: FakeClock = .{ .increment = 7_000_000 };
-    var frame = Frame.advance(hub, .run, clock.source());
+    var frame = Frame.advance(hub, .run, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(@as(u64, 1), frame.clocks);
     try std.testing.expect(frame.running);
     clock.increment = 20_000_000;
-    frame = Frame.advance(hub, .run, clock.source());
+    frame = Frame.advance(hub, .run, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(@as(u64, 0), frame.clocks);
-    frame = Frame.advance(hub, .step, clock.source());
+    frame = Frame.advance(hub, .step, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(@as(u64, 1), frame.clocks);
     try std.testing.expect(!frame.running);
     var debugger: Debugger = .{ .allocator = std.testing.allocator };
@@ -505,18 +509,19 @@ test "frame budget expires between edges Step is one edge and fault or break int
     encounter(&hub.cogs[0], 0, 0, .cog);
     try debugger.executions.append(debugger.allocator, .{ .cog = 0, .domain = .cog, .pc = 0 });
     clock.increment = 1;
-    frame = Frame.advance(hub, .run, clock.source());
+    frame = Frame.advance(hub, .run, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(@as(u64, 0), frame.clocks);
     try std.testing.expect(!frame.running);
     debugger.acknowledge(hub);
     hub.cogs[0].pipeline[3].?.instr = 0xfd600002; // Invalid encoding.
-    frame = Frame.advance(hub, .run, clock.source());
+    frame = Frame.advance(hub, .run, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(@as(u64, 1), frame.clocks);
-    try std.testing.expect(hub.fault != null);
-    try std.testing.expectEqual(Hub.StepResult.trap, frame.notification);
+    try std.testing.expect(hub.issues.len != 0);
+    try std.testing.expectEqual(Hub.StepResult.normal, frame.notification);
     try std.testing.expect(!frame.running);
-    frame = Frame.advance(hub, .step, clock.source());
+    frame = Frame.advance(hub, .paused, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(@as(u64, 0), frame.clocks);
+    try std.testing.expect(hub.issues.len != 0);
 }
 
 test "FIFO reloads retain actual backing read addresses while the architectural pointer advances" {
@@ -567,7 +572,7 @@ test "frame stops after a data-hit edge and host register edits preserve capture
     cog.write_reg(@enumFromInt(21), 789);
     try std.testing.expectEqual(@as(usize, 0), debugger.hits.items.len);
     var clock: FakeClock = .{ .increment = 1 };
-    const frame = Frame.advance(hub, .run, clock.source());
+    const frame = Frame.advance(hub, .run, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(@as(u64, 1), frame.clocks);
     try std.testing.expect(!frame.running);
     try std.testing.expectEqual(Debugger.Stop.data, debugger.stop);
@@ -609,7 +614,7 @@ test "HUBSET instruction returns reset and terminates its host frame at initial 
 
     // A reset on the command slot must not consume pending host RX data later on the same edge.
     var reader = std.Io.Reader.fixed("Z");
-    var source: smart_pin.DataSource = .{ .reader = &reader };
+    var source: smart_pin.DataSource = .{ .endpoint = .{ .reader = &reader } };
     hub.io.pins[63].smart.configure(.uart_rx);
     hub.io.pins[63].smart.rx_mode = .{ .virtual = &source };
     hub.io.pins[63].smart.registers.x = (8 << 16) | 7;
@@ -619,7 +624,7 @@ test "HUBSET instruction returns reset and terminates its host frame at initial 
     hub.cogs[0].augd = 0x1000_0000;
     hub.cogs[0].augd_pending = true;
     var clock: FakeClock = .{ .increment = 1_000_000 };
-    const frame = Frame.advance(hub, .run, clock.source());
+    const frame = Frame.advance(hub, .run, clock.source(), test_support.needsAttention);
     try std.testing.expectEqual(Hub.StepResult.reset, frame.notification);
     try std.testing.expectEqual(@as(usize, 1), reader.bufferedLen());
     try std.testing.expect(!frame.running);

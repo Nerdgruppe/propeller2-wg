@@ -3,6 +3,7 @@
 
 const std = @import("std");
 
+const access_types = @import("access.zig");
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
 pub const SystemConfiguration = @import("SystemConfiguration.zig");
@@ -11,6 +12,7 @@ const Random = @import("Random.zig");
 const Vcd = @import("Vcd.zig");
 const Hub = @This();
 pub const Debugger = @import("Debugger.zig");
+pub const Issue = @import("Issue.zig");
 const p2 = @import("p2");
 const EventId = p2.types.EventId;
 
@@ -33,12 +35,12 @@ comptime {
 /// Captured at the issuing instruction, never inferred from a later cog state.
 pub const WriteOrigin = enum { application, debug };
 
-/// Notify the host when execution continues, stops at a breakpoint, resets, or faults.
-pub const StepResult = enum { normal, breakpoint, reset, trap };
+/// Notify the host when execution continues, stops at a breakpoint, or resets; issues are inspected separately.
+pub const StepResult = enum { normal, breakpoint, reset };
 
 debugger: ?*Debugger = null,
-access_context: Debugger.Provenance = .{},
-read_class: Debugger.ReadClass = .data,
+access_context: access_types.Provenance = .{},
+read_class: access_types.ReadClass = .data,
 
 memory: [512 * 1024]u8 = @splat(0),
 cogs: [8]Cog,
@@ -54,22 +56,44 @@ debug: struct {
     locked: bool = false,
 } = .{},
 
-trace_writer: ?*std.Io.Writer = null,
 vcd: ?*Vcd = null,
-trace_lines_left: u32 = 10000,
-fault: ?Cog.Fault = null,
+issues: Issue.Collection = .{},
+/// Actual committed writes for same-edge writer conflict detection.
+edge_writes: [8 * max_cog_edge_writes]Issue.Participant = undefined,
+edge_write_count: usize = 0,
+/// Startup, FIFO, memory grants and deferred writes: at most two longs per producer/cog.
+hub_transfers: [8 * 4 * 2]HubTransfer = undefined,
+hub_transfer_count: usize = 0,
+/// The shared command bus accepts one cog's command per edge.
+command_issuer: ?u3 = null,
 locks: [16]Lock = undefined,
 /// True only while step() processes a clock edge; direct semantic calls apply shared effects immediately.
 clocking: bool = false,
 /// HUBSET reset is consumed at the next step boundary or immediately after its issuing cog.
 reset_requested: bool = false,
-pending_starts: [8]?struct { provenance: Debugger.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
+pending_starts: [8]?struct { provenance: access_types.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
 
 pub const Lock = struct {
     allocated: bool = false,
     taken: bool = false,
     owner: u3 = 0,
     id: u4,
+};
+
+/// Shared observation budget for writes from one cog on a completed edge.
+pub const max_cog_edge_writes = 32;
+
+/// Distinguish physical producers; consecutive beats of one memory instruction may share write lanes.
+pub const TransferOrigin = union(enum) {
+    startup: u3,
+    fifo: u3,
+    memory: access_types.Provenance,
+};
+const HubTransfer = struct {
+    origin: TransferOrigin,
+    access: access_types.Access,
+    address: u18,
+    lanes: std.StaticBitSet(4),
 };
 
 /// Scheduled delays are below half the counter period. Compare modulo 2^64
@@ -123,19 +147,19 @@ pub fn configure(hub: *Hub, mode: u32) void {
         const previous_coverage = hub.io.clock.coverage;
         const previous_unsafe = hub.io.clock.unsafe_postdivider_up;
         if (!hub.io.setClock(mode)) {
-            std.log.warn("unsupported HUBSET value 0x{x:0>8}", .{mode});
+            hub.report(.{ .unsupported_hubset = mode }, hub.access_context);
         } else if (previous_coverage != hub.io.clock.coverage and hub.io.clock.coverage == .uncharacterized) {
-            std.log.warn("PLL configuration 0x{x:0>8} has no measured response; using ideal rate fallback", .{mode});
+            hub.report(.{ .uncharacterized_pll = mode }, hub.access_context);
         }
         if (!previous_unsafe and hub.io.clock.unsafe_postdivider_up) {
-            std.log.warn("direct PLL postdivider-up matched a measured unsafe sequence; execution errors are not simulated", .{});
+            hub.report(.{ .unsafe_postdivider = mode }, hub.access_context);
         }
     }
 }
 
 /// Attach a caller-owned trace writer and capture the initial state.
-pub fn attachVcd(hub: *Hub, vcd: *Vcd) !void {
-    try vcd.capture(hub, 0);
+pub fn attachVcd(hub: *Hub, vcd: *Vcd) void {
+    vcd.capture(hub, 0);
     hub.vcd = vcd;
 }
 
@@ -173,15 +197,73 @@ pub fn readBackingAddress(hub: *const Hub, address: u32) ?u19 {
     return null;
 }
 
+/// Assert that physical transfers never share a long on one edge, including mirrored RAM.
+/// Disjoint pieces of one unaligned block-write grant combine into its byte enables.
+pub fn claim_hub_access(hub: *Hub, origin: TransferOrigin, access: access_types.Access, address: u32, size: u3) void {
+    if (!hub.clocking)
+        return;
+
+    var offset: usize = 0;
+    while (offset < size) {
+        const byte_address = (address +% @as(u32, @intCast(offset))) & 0xfffff;
+        const backing = if (byte_address >= 0xfc000)
+            byte_address & 0x7ffff
+        else
+            byte_address;
+        const long_address: u18 = @intCast(backing >> 2);
+        const lane: usize = byte_address & 3;
+        const count = @min(@as(usize, size) - offset, 4 - lane);
+        var lanes = std.StaticBitSet(4).initEmpty();
+        lanes.setRangeValue(.{ .start = lane, .end = lane + count }, true);
+        var merged = false;
+        for (hub.hub_transfers[0..hub.hub_transfer_count]) |*claimed| {
+            if (claimed.address != long_address)
+                continue;
+            std.debug.assert(origin == .memory and access == .write and claimed.access == .write and
+                std.meta.eql(origin, claimed.origin) and lanes.intersectWith(claimed.lanes).count() == 0);
+            claimed.lanes.setUnion(lanes);
+            merged = true;
+            break;
+        }
+        if (!merged) {
+            std.debug.assert(hub.hub_transfer_count < hub.hub_transfers.len);
+            hub.hub_transfers[hub.hub_transfer_count] = .{
+                .origin = origin,
+                .access = access,
+                .address = long_address,
+                .lanes = lanes,
+            };
+            hub.hub_transfer_count += 1;
+        }
+        offset += count;
+    }
+}
+
 /// Read little-endian bytes through the 20-bit RAM/hole/mirror map, wrapping each byte address.
 pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
     var value: u32 = 0;
+    var hole_reported = false;
+    var protection_reported = false;
     for (0..size) |i| {
         const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
         if (hub.readBackingAddress(byte_address)) |backing| {
             const byte = hub.memory[backing];
             value |= @as(u32, byte) << @intCast(i * 8);
             hub.observe(.hub, null, backing, .read, byte, hub.read_class, .ram);
+        } else if (hub.clocking) {
+            const reported = if (byte_address < 0x80000)
+                &protection_reported
+            else
+                &hole_reported;
+            if (reported.*)
+                continue;
+            reported.* = true;
+            const read: Issue.MemoryRead = .{ .address = @intCast(byte_address) };
+            const kind: Issue.Kind = if (byte_address < 0x80000)
+                .{ .memory_protected_read = read }
+            else
+                .{ .memory_hole_read = read };
+            hub.report(kind, hub.access_context);
         }
     }
     return value;
@@ -196,23 +278,61 @@ pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool)
 pub fn write_memory_from(hub: *Hub, address: u32, value: u32, size: u3, masked: bool, origin: WriteOrigin) void {
     for (0..size) |i| {
         const byte: u8 = @truncate(value >> @intCast(i * 8));
+        if (masked and byte == 0)
+            continue;
         const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
         const mapped = byte_address < 0x80000 or byte_address >= 0xfc000;
         const authorized = !hub.debug.protected or
             byte_address < 0x7c000 or
             (byte_address >= 0xfc000 and
                 origin == .debug);
-        if (mapped and authorized and (!masked or byte != 0)) {
+        if (mapped and authorized) {
             hub.memory[byte_address & 0x7ffff] = byte;
             hub.observe(.hub, null, byte_address & 0x7ffff, .write, byte, .data, .ram);
+        } else if ((!mapped or !authorized) and hub.clocking) {
+            const write: Issue.MemoryWrite = .{ .address = @intCast(byte_address), .value = byte };
+            const kind: Issue.Kind = if (!mapped)
+                .{ .memory_hole_write = write }
+            else
+                .{ .memory_protected_write = write };
+            hub.report(kind, hub.access_context);
         }
     }
 }
 
 /// Report simulator traffic only. Host inspection and edits run outside clocking.
-pub fn observe(hub: *Hub, space: Debugger.Space, cog: ?u3, address: u32, access: Debugger.Access, value: u32, class: Debugger.ReadClass, storage: Debugger.Storage) void {
+pub fn observe(hub: *Hub, space: access_types.Space, cog: ?u3, address: u32, access: access_types.Access, value: u32, class: access_types.ReadClass, storage: access_types.Storage) void {
     if (!hub.clocking)
         return;
+    if (access == .write and space != .hub) {
+        const participant: Issue.Participant = .{
+            .provenance = hub.access_context,
+            .space = space,
+            .cog = cog,
+            .address = address,
+            .access = access,
+            .value = value,
+            .class = class,
+            .storage = storage,
+        };
+        for (hub.edge_writes[0..hub.edge_write_count]) |previous| {
+            if (previous.space == space and previous.cog == cog and previous.address == address and
+                !std.meta.eql(previous.provenance, participant.provenance))
+            {
+                const writers: Issue.Writers = .{ .first = previous, .second = participant };
+                const kind: Issue.Kind = switch (space) {
+                    .registers => .{ .reg_write_conflict = writers },
+                    .lut => .{ .lut_write_conflict = writers },
+                    .hub => unreachable,
+                };
+                hub.report(kind, participant.provenance);
+            }
+        }
+        if (hub.edge_write_count == hub.edge_writes.len)
+            @panic("simulation physical write bound exceeded");
+        hub.edge_writes[hub.edge_write_count] = participant;
+        hub.edge_write_count += 1;
+    }
     if (hub.debugger) |debugger| {
         debugger.observe(.{
             .watchpoint = 0,
@@ -233,27 +353,23 @@ pub fn observe(hub: *Hub, space: Debugger.Space, cog: ?u3, address: u32, access:
 /// All cogs observe previous-edge writes before any cog executes on this edge.
 /// Reset returns only after init() has restored the entire hub and stopped every cog.
 pub fn step(hub: *Hub) StepResult {
+    hub.issues.clear();
+    hub.edge_write_count = 0;
+    hub.hub_transfer_count = 0;
+    hub.command_issuer = null;
     if (hub.reset_requested) {
-        hub.init(hub.system_configuration) catch unreachable;
+        hub.firmwareReset();
         return .reset;
     }
     if (hub.debugger) |debugger| {
         if (!debugger.beforeClock(hub))
-            return if (hub.fault != null or debugger.stop == .fault or debugger.stop == .allocation_failure)
-                .trap
-            else
-                .breakpoint;
+            return .breakpoint;
     }
-    if (hub.fault != null)
-        return .trap;
     const interval = hub.io.clock.step();
     if (interval.quiet != 0) {
         hub.io.advanceQuiet(hub, IO.Clock.secondsOf(interval.quiet));
         if (hub.vcd) |vcd| {
-            vcd.advanceQuiet(hub, interval.quiet) catch {
-                hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
-                return .trap;
-            };
+            vcd.advanceQuiet(hub, interval.quiet);
         }
     }
     if (interval.period == 0) {
@@ -267,9 +383,10 @@ pub fn step(hub: *Hub) StepResult {
     }
 
     var lut_writes: [8]@TypeOf(hub.cogs[0].writeback.lut) = undefined;
-    var lut_provenance: [8]Debugger.Provenance = undefined;
+    var lut_provenance: [8]access_types.Provenance = undefined;
     for (&hub.cogs, &lut_writes) |*cog, *write| {
         cog.streamer.lut_write = null;
+        cog.streamer.displaced_capture = null;
         write.* = cog.writeback.lut;
         lut_provenance[cog.id] = cog.writeback.provenance;
     }
@@ -287,12 +404,41 @@ pub fn step(hub: *Hub) StepResult {
         if (write) |value| {
             const other = cog.other();
             if (other.lut_sharing) {
-                other.streamer.lut_write = value.address;
+                other.streamer.lut_write = .{
+                    .provenance = lut_provenance[cog.id],
+                    .space = .lut,
+                    .cog = other.id,
+                    .address = value.address,
+                    .access = .write,
+                    .value = value.value,
+                    .class = .data,
+                    .storage = .ram,
+                };
             }
             const own = lut_writes[other.id];
             if (other.lut_sharing and own != null and own.?.address == value.address) {
-                other.lut_collision = .{ .clock = hub.counter, .address = value.address };
-                other.trace_collision(value.address, .lut_write);
+                hub.report(.{ .lut_write_conflict = .{
+                    .first = .{
+                        .provenance = lut_provenance[cog.id],
+                        .space = .lut,
+                        .cog = other.id,
+                        .address = value.address,
+                        .access = .write,
+                        .value = value.value,
+                        .class = .data,
+                        .storage = .ram,
+                    },
+                    .second = .{
+                        .provenance = lut_provenance[other.id],
+                        .space = .lut,
+                        .cog = other.id,
+                        .address = own.?.address,
+                        .access = .write,
+                        .value = own.?.value,
+                        .class = .data,
+                        .storage = .ram,
+                    },
+                } }, lut_provenance[cog.id]);
             }
             if (other.lut_sharing and (own == null or own.?.address != value.address)) {
                 other.lut[value.address] = value.value;
@@ -305,12 +451,14 @@ pub fn step(hub: *Hub) StepResult {
     for (&hub.cogs) |*cog| {
         if (cog.hub_writeback) |write| {
             hub.access_context = write.provenance;
+            hub.claim_hub_access(.{ .memory = write.provenance }, .write, write.address, write.size);
             hub.write_memory_from(write.address, write.value, write.size, write.masked, write.origin);
             cog.hub_writeback = null;
         }
     }
     for (&hub.pending_starts, 0..) |*pending, id| {
         if (pending.*) |start| {
+            std.debug.assert(clock_reached(start.at, hub.counter));
             if (start.at == hub.counter) {
                 pending.* = null;
                 hub.access_context = start.provenance;
@@ -319,7 +467,7 @@ pub fn step(hub: *Hub) StepResult {
                     .ptra = start.ptra,
                     .load_image = start.load,
                     .command_clock = start.command_clock,
-                }) catch unreachable;
+                });
             }
         }
     }
@@ -348,7 +496,7 @@ pub fn step(hub: *Hub) StepResult {
         hub.read_class = .data;
         cog.clock_command();
         if (hub.reset_requested) {
-            hub.init(hub.system_configuration) catch unreachable;
+            hub.firmwareReset();
             return .reset;
         }
     }
@@ -358,13 +506,13 @@ pub fn step(hub: *Hub) StepResult {
         cog.dacs = cog.converter.step(cog.raw_dacs);
     }
     hub.io.step(hub);
-    if (hub.fault == null) {
+    {
         for (&hub.cogs) |*cog| {
             hub.access_context = cog.provenance();
             hub.read_class = .data;
             cog.step();
             if (hub.reset_requested) {
-                hub.init(hub.system_configuration) catch unreachable;
+                hub.firmwareReset();
                 return .reset;
             }
         }
@@ -376,21 +524,34 @@ pub fn step(hub: *Hub) StepResult {
     hub.io.advance_delays();
 
     hub.random.step();
+    if (std.debug.runtime_safety) {
+        const pending = hub.cordic.pending_counts();
+        for (&hub.cogs, pending) |*cog, count| {
+            std.debug.assert(cog.cordic_result.pending == count);
+        }
+    }
     hub.counter +%= 1;
     if (hub.vcd) |vcd| {
-        vcd.capture(hub, interval.period) catch |err| {
-            std.log.err("VCD export failed: {t}", .{err});
-            hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
-        };
+        vcd.capture(hub, interval.period);
     }
     if (hub.debugger) |debugger| {
         debugger.afterClock(hub);
-        if (debugger.stop == .allocation_failure)
-            return .trap;
-        if (hub.fault == null and debugger.stop != .none)
+        if (debugger.stop != .none)
             return .breakpoint;
     }
-    return if (hub.fault != null) .trap else .normal;
+    return .normal;
+}
+
+/// Append an architectural issue without changing execution or allocating.
+pub fn report(hub: *Hub, kind: Issue.Kind, provenance: access_types.Provenance) void {
+    hub.issues.append(.{ .clock = hub.counter, .kind = kind, .provenance = provenance });
+}
+
+/// Reset chip state while retaining reports already detected on this edge.
+fn firmwareReset(hub: *Hub) void {
+    const issues = hub.issues;
+    hub.init(hub.system_configuration) catch unreachable;
+    hub.issues = issues;
 }
 
 /// Return whether any cog is executing or waiting for startup to complete.
@@ -411,7 +572,14 @@ pub const StartCogOptions = struct {
 };
 
 /// Only the low 20 source bits select memory/PC; PTRB receives all 32 bits.
-pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {
+pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) void {
+    if (hub.pending_starts[index]) |previous| {
+        hub.report(.{ .cog_start_replaced = .{
+            .previous = previous.provenance,
+            .replacement = hub.access_context,
+            .target = index,
+        } }, hub.access_context);
+    }
     const cog = &hub.cogs[index];
     cog.reset();
     const command_clock = options.command_clock orelse hub.counter;
@@ -495,9 +663,9 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     // On one edge, cog 0 releases the pin and cog 1 takes over. The OR stays
     // high; a sequential transient must not reset the smart pin.
     hub.cogs[1].writeback.count = 1;
-    hub.cogs[1].writeback.writes[0] = .{ .reg = .DIRB, .value = 1 << 30 };
+    hub.cogs[1].writeback.writes[0] = .{ .provenance = .{ .cog = 1 }, .reg = .DIRB, .value = 1 << 30 };
     hub.cogs[0].writeback.count = 1;
-    hub.cogs[0].writeback.writes[0] = .{ .reg = .DIRB, .value = 0 };
+    hub.cogs[0].writeback.writes[0] = .{ .provenance = .{ .cog = 0 }, .reg = .DIRB, .value = 0 };
     _ = hub.step();
     try std.testing.expect(hub.io.pins[62].outputs.scheduled);
     hub.cogs[1].write_reg(.DIRB, 0);
@@ -524,7 +692,7 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     hub.cogs[0].write_reg(.DIRB, 1 << 31);
     _ = hub.step();
     var reader = std.Io.Reader.fixed("z");
-    var source: IO.DataSource = .{ .reader = &reader };
+    var source: IO.DataSource = .{ .endpoint = .{ .reader = &reader } };
     hub.io.pins[63].smart.rx_mode = .{ .emulated = &source };
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), reader.bufferedLen());
@@ -543,7 +711,7 @@ test "COGSTOP aborts a UART frame before its completion edge" {
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
-    var sink: IO.DataSink = .{ .writer = &output.writer };
+    var sink: IO.DataSink = .{ .endpoint = .{ .writer = &output.writer } };
     const pin = &hub.io.pins[62];
     pin.smart.tx_mode = .{ .emulated = &sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
@@ -724,7 +892,7 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
-    var terminal_sink: IO.DataSink = .{ .writer = &output.writer };
+    var terminal_sink: IO.DataSink = .{ .endpoint = .{ .writer = &output.writer } };
     hub.io.pins[62].smart.tx_mode = .{ .emulated = &terminal_sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
@@ -753,7 +921,7 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     for (1..504) |i| {
         hub.write_memory(@intCast(0x1000 + i * 4), @intCast(i), 4, false);
     }
-    try hub.start_cog(1, .{ .hub_address = 0x1000 });
+    hub.start_cog(1, .{ .hub_address = 0x1000 });
     for (0..550) |_| {
         _ = hub.step();
     }
@@ -831,7 +999,7 @@ test "cog restart clears pending interrupts and controller state" {
 
     for (std.enums.values(Cog.InterruptLevel)) |level| {
         try hub.init(.ideal);
-        try hub.start_cog(3, .{ .hub_address = 0x4000, .load_image = false, .clocked = false });
+        hub.start_cog(3, .{ .hub_address = 0x4000, .load_image = false, .clocked = false });
         const cog = &hub.cogs[3];
         try std.testing.expect(cog.started_no_load);
         try std.testing.expectEqual(@as(u32, 1), cog.interrupt_status());
@@ -840,7 +1008,7 @@ test "cog restart clears pending interrupts and controller state" {
         _ = hub.step();
         cog.interrupts.stalled = true;
         cog.trigger_interrupt(level);
-        try hub.start_cog(3, .{ .clocked = false });
+        hub.start_cog(3, .{ .clocked = false });
         try std.testing.expect(!cog.started_no_load);
         try std.testing.expect(!cog.interrupts.stalled);
         try std.testing.expectEqual(Cog.InterruptState.idle, cog.interrupts.levels.get(level).state);
@@ -916,7 +1084,7 @@ test "ROM cache aliases, byte protection, masked wrapping and configuration lock
     hub.configure(0x2000_0000);
     try std.testing.expect(hub.debug.protected and hub.debug.locked);
     try std.testing.expectEqual(@as(u8, 255), hub.debug.enables);
-    try hub.start_cog(0, .{ .clocked = false });
+    hub.start_cog(0, .{ .clocked = false });
     try std.testing.expect(hub.debug.locked);
     try std.testing.expectEqual(Cog.InterruptState.pending, hub.cogs[0].debug.state);
     try hub.init(.ideal);
@@ -935,7 +1103,7 @@ test "debug ROM saves and restores sixteen registers for all eight cogs" {
         const base: u32 = 0xff800 + ((15 ^ @as(u32, @intCast(id))) << 7);
         hub.write_memory(base + 0x40, 0xFD64_2036, 4, false); // BRK #16.
         hub.write_memory(base + 0x44, 0xFD80_01fd, 4, false); // JMP #$1FD.
-        try hub.start_cog(@intCast(id), .{ .load_image = false, .clocked = false, .ptra = 0x1234 });
+        hub.start_cog(@intCast(id), .{ .load_image = false, .clocked = false, .ptra = 0x1234 });
         cog.registers.values[0] = 0xF604_2807; // MOV r20,#7.
         for (1..16) |reg| {
             cog.registers.values[reg] = 0;
@@ -946,7 +1114,7 @@ test "debug ROM saves and restores sixteen registers for all eight cogs" {
                 break;
             }
         }
-        try std.testing.expect(hub.fault == null);
+        try std.testing.expect(hub.issues.len == 0);
         try std.testing.expectEqual(Cog.InterruptState.idle, cog.debug.state);
         try std.testing.expectEqual(@as(u32, 7), cog.registers.values[20]);
         try std.testing.expectEqual(@as(u32, 0xF604_2807), hub.read_memory(base, 4));
@@ -1001,7 +1169,6 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     defer trace.deinit();
 
     var vcd: Vcd = .{ .writer = &trace.writer };
-    hub.trace_writer = &trace.writer;
     hub.vcd = &vcd;
     hub.debugger = &debugger;
     hub.configure(0x1fff_ffff);
@@ -1015,8 +1182,8 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     try std.testing.expect(hub.io.getExternal(@enumFromInt(0)) == null);
     try std.testing.expectEqual(@as(u32, 0), hub.io.pins[0].smart.registers.x);
     try std.testing.expect(!hub.locks[0].allocated and !hub.locks[0].taken);
-    try std.testing.expect(hub.debugger == null and hub.trace_writer == null and hub.vcd == null);
-    try std.testing.expect(hub.fault == null and !hub.reset_requested and !hub.clocking);
+    try std.testing.expect(hub.debugger == null and hub.vcd == null);
+    try std.testing.expect(hub.issues.len == 0 and !hub.reset_requested and !hub.clocking);
     try std.testing.expect(std.mem.allEqual(u8, hub.memory[0..0x7c000], 0));
     try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
     for (&hub.cogs, 0..) |*cog, id| {
@@ -1097,7 +1264,7 @@ test "an unready empirical PLL advances shared physical time and pads without CT
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     hub.configure(0x010007fb);
     const random_before = hub.random;
     for (0..100) |_| {

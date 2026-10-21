@@ -189,8 +189,9 @@ fixtures can restore TX/RX mode without WXPIN or a startup delay. The hardware
 ROM calibrates those dividers against the upload stream. Keep the host at
 2 Mbaud to avoid a runtime baud change. Cog reporters use this same handoff.
 
-Simulation also has a host-time guard: 30 seconds per cog run and 600 seconds
-per program run. `max-cycles` remains the
+Simulation also has a host-time guard: 120 seconds per cog run and 600 seconds
+per program run. The cog allowance covers the ten-million-cycle FIFO matrix in ReleaseSafe.
+`max-cycles` remains the
 simulated execution limit; `timeout-ms` controls hardware runs only.
 
 `zig-out/bin/windtunnel-tests --fast-io FILE.propan ...` accelerates serial endpoints
@@ -210,3 +211,13 @@ Program-profile `run:` sections may also override `stdin`, `stdout`, and `stdin-
 Omitted streams inherit the common value; an explicitly empty stream replaces it.
 Each effective run must still have a readiness marker for nonempty input, and that marker
 must be a prefix of its expected output. This allows terminal test matrices to share one source.
+
+## Expected simulation issues
+
+Use `//? issues: KIND = COUNT` for exact total counts across one run. `KIND` is a
+member of the typed issue kind (for example `streamer_mode`, `lut_read_write`, or
+`pad_overcurrent`). Counts are nonnegative. Common counts apply to each run;
+run-local counts override the same common kind. Unlisted kinds require zero.
+Unexpected issues fail immediately; expected ones permit continued execution and
+normal postcondition checks. Missing expected issues fail at the end of execution.
+Use `oracle: off` when testing simulator fallback policy for reserved encodings.

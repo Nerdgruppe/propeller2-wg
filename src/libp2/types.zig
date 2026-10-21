@@ -18,7 +18,7 @@ pub const ClockSource = enum(u2) {
     pll = 0b11,
 };
 
-/// HUBSET clock configuration: %0000_000E_DDDD_DDMM_MMMM_MMMM_PPPP_CCSS.
+/// HUBSET clock configuration: %0000_xxxE_DDDD_DDMM_MMMM_MMMM_PPPP_CCSS.
 /// XI division and VCO multiplication encode their factors minus one.
 /// VCO division is 2*(vco_div+1), except 15 selects division by one.
 pub const ClockMode = packed struct(u32) {
@@ -28,14 +28,14 @@ pub const ClockMode = packed struct(u32) {
     vco_mul: u10,
     xi_div: u6,
     pll_on: bool,
-    _padding: u3 = 0,
+    _ignored: u3 = 0,
     tag: u4 = 0b0000,
 
     /// Return datasheet-typical system frequency in Hz; RCFAST/RCSLOW use 24 MHz/20 kHz.
     /// Reject non-clock HUBSET operations, disabled clock sources, and unrepresentable frequencies.
     /// Crystal/PLL settling and RC oscillator drift are not modeled.
     pub fn get_frequency(mode: ClockMode, crystal_freq: u64) error{InvalidClockMode}!u64 {
-        if (mode.tag != 0 or mode._padding != 0) return error.InvalidClockMode;
+        if (mode.tag != 0) return error.InvalidClockMode;
         if ((mode.clock_src == .xi or mode.clock_src == .pll) and mode.crystal == .float) return error.InvalidClockMode;
         if (mode.clock_src == .pll and !mode.pll_on) return error.InvalidClockMode;
         const frequency: u64 = switch (mode.clock_src) {
@@ -64,14 +64,17 @@ test "clock mode frequencies follow HUBSET encodings" {
         .{ 0x019d_28fb, 148_500_000 },
         .{ 0x019d_280b, 74_250_000 },
     }) |case| {
-        const mode: ClockMode = @bitCast(@as(u32, case[0]));
-        try std.testing.expectEqual(@as(u64, case[1]), try mode.get_frequency(20_000_000));
+        for (0..8) |ignored| {
+            const ignored_bits = @as(u32, @intCast(ignored)) << 25;
+            const mode: ClockMode = @bitCast(@as(u32, case[0]) | ignored_bits);
+            try std.testing.expectEqual(@as(u64, case[1]), try mode.get_frequency(20_000_000));
+        }
     }
     const pll: ClockMode = @bitCast(@as(u32, 0x0100_09fb));
     try std.testing.expectEqual(@as(u64, 120_000_000), try pll.get_frequency(12_000_000));
     try std.testing.expectError(error.InvalidClockMode, pll.get_frequency(0));
     try std.testing.expectError(error.InvalidClockMode, pll.get_frequency(std.math.maxInt(u64)));
-    for ([_]u32{ 0x1000_00f0, 0x0200_00f0, 2, 3, 0xfb }) |raw| {
+    for ([_]u32{ 0x1000_00f0, 2, 3, 0xfb }) |raw| {
         const mode: ClockMode = @bitCast(raw);
         try std.testing.expectError(error.InvalidClockMode, mode.get_frequency(20_000_000));
     }
@@ -326,6 +329,14 @@ pub const PinConfiguration = packed struct(u32) {
     pub fn isSmartDac(configuration: PinConfiguration) bool {
         return configuration.isDac() and switch (configuration.mode) {
             .dac_noise, .dac_dither_rnd, .dac_dither_pwm => true,
+            else => false,
+        };
+    }
+
+    /// Identify DAC dither modes whose Y fractional code saturates at $FF00.
+    pub fn isDitherDac(configuration: PinConfiguration) bool {
+        return configuration.isDac() and switch (configuration.mode) {
+            .dac_dither_rnd, .dac_dither_pwm => true,
             else => false,
         };
     }

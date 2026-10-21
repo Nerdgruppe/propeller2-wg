@@ -1,5 +1,7 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: pin_buffer_overwrite = 2
 //? run: "p0-n1-d0"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -10,6 +12,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
 //? run: "p0-n1-d16"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -20,6 +23,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p0-n1-d128"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -30,6 +34,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p0-n1-d768"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -40,6 +45,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p0-n2-d0"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -50,6 +56,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 8
 //? run: "p0-n2-d16"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -60,6 +67,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p0-n2-d128"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -70,6 +78,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p0-n2-d768"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -160,6 +169,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p0-n5-d0"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -170,6 +180,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p0-n5-d16"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -180,6 +191,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p0-n5-d128"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -190,6 +202,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p0-n5-d768"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -200,6 +213,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p0-n6-d0"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -210,6 +224,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 8
 //? run: "p0-n6-d16"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -220,6 +235,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p0-n6-d128"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -230,6 +246,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p0-n6-d768"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -240,6 +257,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p3-n1-d0"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -250,6 +268,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
 //? run: "p3-n1-d16"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -260,6 +279,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p3-n1-d128"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -270,6 +290,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p3-n1-d768"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -280,6 +301,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p3-n2-d0"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -290,6 +312,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 8
 //? run: "p3-n2-d16"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -300,6 +323,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p3-n2-d128"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -310,6 +334,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p3-n2-d768"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -320,6 +345,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p3-n3-d0"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -330,6 +356,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
 //? run: "p3-n3-d16"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -340,6 +367,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p3-n3-d128"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -350,6 +378,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p3-n3-d768"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -400,6 +429,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p3-n5-d0"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -410,6 +440,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p3-n5-d16"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -420,6 +451,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 60
 //? run: "p3-n5-d128"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -430,6 +462,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p3-n5-d768"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -440,6 +473,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p3-n6-d0"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -450,6 +484,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 20
 //? run: "p3-n6-d16"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -460,6 +495,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 36
 //? run: "p3-n6-d128"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -470,6 +506,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p3-n6-d768"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -480,6 +517,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p7-n1-d0"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -490,6 +528,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
 //? run: "p7-n1-d16"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -500,6 +539,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p7-n1-d128"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -510,6 +550,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p7-n1-d768"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -520,6 +561,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p7-n2-d0"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -530,6 +572,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 8
 //? run: "p7-n2-d16"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -540,6 +583,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p7-n2-d128"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -550,6 +594,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p7-n2-d768"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -560,6 +605,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p7-n3-d0"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -570,6 +616,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p7-n3-d16"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -580,6 +627,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p7-n3-d128"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -590,6 +638,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p7-n3-d768"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -680,6 +729,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p7-n6-d0"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -690,6 +740,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 0
 //? run: "p7-n6-d16"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -700,6 +751,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 16
 //? run: "p7-n6-d128"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -710,6 +762,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p7-n6-d768"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -720,6 +773,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n1-d0"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -730,6 +784,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 8
 //? run: "p11-n1-d16"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -740,6 +795,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 60
 //? run: "p11-n1-d128"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -750,6 +806,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p11-n1-d768"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -760,6 +817,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n2-d0"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -770,6 +828,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 20
 //? run: "p11-n2-d16"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -780,6 +839,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 36
 //? run: "p11-n2-d128"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -790,6 +850,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n2-d768"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -800,6 +861,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n3-d0"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -810,6 +872,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 20
 //? run: "p11-n3-d16"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -820,6 +883,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 36
 //? run: "p11-n3-d128"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -830,6 +894,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n3-d768"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -880,6 +945,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n5-d0"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -890,6 +956,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 36
 //? run: "p11-n5-d16"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -900,6 +967,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 20
 //? run: "p11-n5-d128"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -910,6 +978,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n5-d768"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -920,6 +989,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p11-n6-d0"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -930,6 +1000,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 36
 //? run: "p11-n6-d16"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -940,6 +1011,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 20
 //? run: "p11-n6-d128"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -950,6 +1022,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p11-n6-d768"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -960,6 +1033,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p15-n1-d0"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -970,6 +1044,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
 //? run: "p15-n1-d16"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -980,6 +1055,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 24
 //? run: "p15-n1-d128"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -990,6 +1066,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p15-n1-d768"
+//? issues: pin_buffer_overwrite = 0
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1000,6 +1077,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p15-n2-d0"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1010,6 +1088,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 8
 //? run: "p15-n2-d16"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1020,6 +1099,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p15-n2-d128"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1030,6 +1110,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p15-n2-d768"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1120,6 +1201,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p15-n5-d0"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1130,6 +1212,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
 //? run: "p15-n5-d16"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1140,6 +1223,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p15-n5-d128"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1150,6 +1234,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p15-n5-d768"
+//? issues: pin_buffer_overwrite = 3
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1160,6 +1245,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p15-n6-d0"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1170,6 +1256,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 8
 //? run: "p15-n6-d16"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1180,6 +1267,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 12
 //? run: "p15-n6-d128"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1190,6 +1278,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 28
 //? run: "p15-n6-d768"
+//? issues: pin_buffer_overwrite = 4
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1257,4 +1346,3 @@
 var result:     LONG    0
 var upper:      LONG    0
 var flags:      LONG    0
-

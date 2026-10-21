@@ -1,4 +1,6 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: memory_protected_read = 3
+//? issues: memory_protected_write = 12
 //? profile: program
 //? stop: _end
 //? timeout-ms: 1000

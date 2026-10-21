@@ -38,4 +38,3 @@ var result:     LONG    0
 var duration:   LONG    0
 var status:     LONG    0
 var final:      LONG    0
-

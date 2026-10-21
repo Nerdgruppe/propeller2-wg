@@ -58,6 +58,7 @@
 - Plan to allow access to local labels somehow?
 - Enable "-Dx=y" on the CLI
 - Fully define the compatibility matrix for implicit jumping/referencing between segments.
+- Implement auto-indentation for `.if` ... `.endif` blocks
 
 ### New Features
 
@@ -151,7 +152,6 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Improve CLI user experience
 - Refactor test suit to enable `macro: name ...` which replaces `{{name}}` or `{{ name }}` with "..."
 - forbid things like `LONG 0xfe900000 | (operand & 0xfffff)` in the testsuite unless there's a really good reason for it.
-- Implement auto-indentation for `.if` ... `.endif` blocks
 - Use CLI seeding through electrical noise for RNG seed
 - GUI file dialog support via nfd-zig
 - New rule for test suite things:

@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: pc_domain = 2
 //? timeout-ms: 3000
 //? post: cog[*].c == false
 //? post: cog[*].z == true
@@ -94,6 +95,7 @@
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 127
 //? run: "cog-00401-calld-pointer-abs-00380"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 0
@@ -102,6 +104,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "cog-00401-calld-pointer-abs-00480"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 0
@@ -110,6 +113,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "cog-00401-calld-pointer-rel-00380"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 1
@@ -118,6 +122,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "cog-00401-calld-pointer-rel-00480"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 1
@@ -126,6 +131,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "cog-00401-calld-register-abs-00380"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 2
@@ -134,6 +140,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "cog-00401-calld-register-abs-00480"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 2
@@ -142,6 +149,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "cog-00401-calld-register-rel-00380"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 3
@@ -151,6 +159,7 @@
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = -130
 //? run: "cog-00401-calld-register-rel-00480"
+//? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
 //? const: form = 3
@@ -160,6 +169,7 @@
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 126
 //? run: "cog-00404-calld-pointer-abs-00380"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 0
@@ -168,6 +178,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "cog-00404-calld-pointer-abs-00480"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 0
@@ -176,6 +187,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "cog-00404-calld-pointer-rel-00380"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 1
@@ -184,6 +196,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "cog-00404-calld-pointer-rel-00480"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 1
@@ -192,6 +205,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "cog-00404-calld-register-abs-00380"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 2
@@ -200,6 +214,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "cog-00404-calld-register-abs-00480"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 2
@@ -208,6 +223,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "cog-00404-calld-register-rel-00380"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 3
@@ -217,6 +233,7 @@
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = -133
 //? run: "cog-00404-calld-register-rel-00480"
+//? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
 //? const: form = 3
@@ -283,6 +300,7 @@
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 223
 //? run: "hub-00100-calld-pointer-abs-00180"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 0
@@ -291,6 +309,7 @@
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-00100-calld-pointer-abs-00380"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 0
@@ -299,6 +318,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-00100-calld-pointer-abs-00480"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 0
@@ -307,6 +327,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "hub-00100-calld-pointer-rel-00180"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 1
@@ -315,6 +336,7 @@
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-00100-calld-pointer-rel-00380"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 1
@@ -323,6 +345,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-00100-calld-pointer-rel-00480"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 1
@@ -331,6 +354,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "hub-00100-calld-register-abs-00180"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 2
@@ -339,6 +363,7 @@
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-00100-calld-register-abs-00380"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 2
@@ -347,6 +372,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-00100-calld-register-abs-00480"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 2
@@ -355,6 +381,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "hub-00100-calld-register-rel-00180"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 3
@@ -364,6 +391,7 @@
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 31
 //? run: "hub-00100-calld-register-rel-00380"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 3
@@ -373,6 +401,7 @@
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 159
 //? run: "hub-00100-calld-register-rel-00480"
+//? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
 //? const: form = 3
@@ -382,6 +411,7 @@
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 223
 //? run: "hub-001f0-calld-pointer-abs-00380"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 0
@@ -390,6 +420,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-001f0-calld-pointer-abs-00480"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 0
@@ -398,6 +429,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "hub-001f0-calld-pointer-rel-00380"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 1
@@ -406,6 +438,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-001f0-calld-pointer-rel-00480"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 1
@@ -414,6 +447,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "hub-001f0-calld-register-abs-00380"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 2
@@ -422,6 +456,7 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? run: "hub-001f0-calld-register-abs-00480"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 2
@@ -430,6 +465,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "hub-001f0-calld-register-rel-00380"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 3
@@ -439,6 +475,7 @@
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 99
 //? run: "hub-001f0-calld-register-rel-00480"
+//? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
 //? const: form = 3
@@ -448,6 +485,7 @@
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 163
 //? run: "tail-hub-001f4-calld-pointer-abs-00480"
+//? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 500
 //? const: form = 0
@@ -456,6 +494,7 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? run: "tail-hub-001f4-calld-register-abs-00480"
+//? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 500
 //? const: form = 2
@@ -766,4 +805,3 @@ hub_prefix:
                 NOP
                 NOP
                 NOP
-

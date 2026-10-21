@@ -1,10 +1,12 @@
 //! Physical-time traces of digital registers, driver connectivity, and analog pad voltages.
 const std = @import("std");
+const test_support = @import("../test_support.zig");
 const Hub = @import("Hub.zig");
 const Debugger = @import("Debugger.zig");
 const IO = @import("IO.zig");
 const SystemConfiguration = @import("SystemConfiguration.zig");
 const Vcd = @This();
+pub const ExportError = std.Io.Writer.Error || error{ NonConsecutiveClock, InvalidClockFrequency, NonConsecutiveSample };
 
 writer: *std.Io.Writer,
 previous: ?Snapshot = null,
@@ -18,7 +20,7 @@ clock_period: u128 = 0,
 midpoint_emitted: bool = false,
 last_substep: u32 = 0,
 /// Mid-clock export errors are reported by capture after the hub clock completes.
-pending_error: ?anyerror = null,
+failure: ?ExportError = null,
 
 const names = [_][]const u8{ "OUTA", "OUTB", "DIRA", "DIRB", "INA", "INB" };
 const PadSnapshot = struct {
@@ -189,14 +191,14 @@ fn timeAt(vcd: *const Vcd, offset: u128) Time {
 
 /// Open an oversampled interval; failures are deferred until the completed-clock capture.
 pub fn beginClock(vcd: *Vcd, counter: u64, period: u128) void {
-    if (vcd.pending_error != null)
+    if (vcd.failure != null)
         return;
     if (period == 0) {
-        vcd.pending_error = error.InvalidClockFrequency;
+        vcd.failure = error.InvalidClockFrequency;
         return;
     }
     if (vcd.previous == null or vcd.last_clock != counter or vcd.clock_open) {
-        vcd.pending_error = error.NonConsecutiveClock;
+        vcd.failure = error.NonConsecutiveClock;
         return;
     }
     vcd.clock_open = true;
@@ -214,10 +216,10 @@ fn midpoint(vcd: *Vcd) !void {
 
 /// Stream one intermediate pad sample, retaining electrical execution on writer failure.
 pub fn capturePads(vcd: *Vcd, io: *const IO, configuration: *const SystemConfiguration, substep: u32) void {
-    if (vcd.pending_error != null)
+    if (vcd.failure != null)
         return;
     vcd.intermediate(io, configuration, substep) catch |err| {
-        vcd.pending_error = err;
+        vcd.failure = err;
     };
 }
 
@@ -261,9 +263,16 @@ fn endClock(vcd: *Vcd) !void {
 /// Emit the initial snapshot or the next completed clock using the frequency consumed by I/O.
 /// Unchanged duplicate snapshots are ignored; skipped clocks are rejected. Host-only changes
 /// at the same counter are recorded at the existing timestamp without inventing clock edges.
-pub fn capture(vcd: *Vcd, hub: *const Hub, period: u128) !void {
-    if (vcd.pending_error) |err|
-        return err;
+pub fn capture(vcd: *Vcd, hub: *const Hub, period: u128) void {
+    if (vcd.failure != null)
+        return;
+    vcd.captureOutput(hub, period) catch |err| {
+        vcd.failure = err;
+    };
+}
+
+/// Emit to the export boundary, where errors are latched by the public operation.
+fn captureOutput(vcd: *Vcd, hub: *const Hub, period: u128) ExportError!void {
     const current = snapshot(hub);
     const previous = vcd.previous;
     if (previous == null) {
@@ -325,7 +334,16 @@ pub fn capture(vcd: *Vcd, hub: *const Hub, period: u128) !void {
 }
 
 /// Advance physical trace time while CT and the system clock remain held during acquisition.
-pub fn advanceQuiet(vcd: *Vcd, hub: *const Hub, interval: u128) !void {
+pub fn advanceQuiet(vcd: *Vcd, hub: *const Hub, interval: u128) void {
+    if (vcd.failure != null)
+        return;
+    vcd.advanceQuietOutput(hub, interval) catch |err| {
+        vcd.failure = err;
+    };
+}
+
+/// Emit to the export boundary, where errors are latched by the public operation.
+fn advanceQuietOutput(vcd: *Vcd, hub: *const Hub, interval: u128) ExportError!void {
     const next = vcd.timeAt(interval);
     vcd.elapsed = next.elapsed;
     vcd.fraction = next.fraction;
@@ -336,7 +354,16 @@ pub fn advanceQuiet(vcd: *Vcd, hub: *const Hub, interval: u128) !void {
 }
 
 /// Flush the VCD output stream without advancing simulation time.
-pub fn finish(vcd: *Vcd) !void {
+pub fn finish(vcd: *Vcd) void {
+    if (vcd.failure != null)
+        return;
+    vcd.finishOutput() catch |err| {
+        vcd.failure = err;
+    };
+}
+
+/// Emit to the export boundary, where errors are latched by the public operation.
+fn finishOutput(vcd: *Vcd) ExportError!void {
     try vcd.writer.flush();
 }
 
@@ -367,9 +394,9 @@ test "hierarchy, physical clock phases, consecutive capture and CT rollover" {
 
     var vcd: Vcd = .{ .writer = &output.writer };
     hub.counter = std.math.maxInt(u64) - 1;
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     const initial_length = output.written().len;
-    try vcd.capture(hub, hub.io.clock.last_interval.period);
+    vcd.capture(hub, hub.io.clock.last_interval.period);
     try std.testing.expectEqual(initial_length, output.written().len);
     try hub.io.setExternal(@enumFromInt(63), .high);
     try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
@@ -390,12 +417,15 @@ test "hierarchy, physical clock phases, consecutive capture and CT rollover" {
 
     const length = output.written().len;
     hub.counter = 2;
-    try std.testing.expectError(error.NonConsecutiveClock, vcd.capture(hub, hub.io.clock.last_interval.period));
+    vcd.capture(hub, hub.io.clock.last_interval.period);
+    try std.testing.expectEqual(error.NonConsecutiveClock, vcd.failure.?);
+    vcd.failure = null;
     hub.counter = vcd.last_clock +% 1;
-    try std.testing.expectError(error.InvalidClockFrequency, vcd.capture(hub, 0));
+    vcd.capture(hub, 0);
+    try std.testing.expectEqual(error.InvalidClockFrequency, vcd.failure.?);
     hub.counter = vcd.last_clock;
     try std.testing.expectEqual(length, output.written().len);
-    try vcd.finish();
+    vcd.finish();
     try std.testing.expectEqual(length, output.written().len);
     hub.configure(0x1000_0000);
     try std.testing.expectEqual(Hub.StepResult.reset, hub.step());
@@ -414,7 +444,7 @@ test "first completed clock, frequency changes and fractional time accumulation"
     defer output.deinit();
 
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     _ = hub.step();
     try std.testing.expect(std.mem.endsWith(u8, output.written(), "#50000000\n1clk\nb1 ct\n"));
     hub.io.clock.rcfast.specification.frequency = @floatFromInt(200_000_000);
@@ -446,13 +476,13 @@ test "register bits have independent identifiers and emit only changed bits" {
     defer output.deinit();
 
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "$var wire 32 v2 DIRA $end\n$scope module DIRA $end") != null);
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "1b0_31\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "1b3_0\n") != null);
     const start = output.written().len;
     hub.cogs[0].write_reg(.DIRA, 1 << 10);
-    try vcd.capture(hub, hub.io.clock.last_interval.period);
+    vcd.capture(hub, hub.io.clock.last_interval.period);
     try std.testing.expectEqualStrings("#0\nb10000000000 v2\n1b2_10\n", output.written()[start..]);
     for (0..8) |_| {
         _ = hub.step();
@@ -471,13 +501,13 @@ test "pad state follows committed drive while voltage is independent and unclipp
         defer output.deinit();
 
         var vcd: Vcd = .{ .writer = &output.writer };
-        try hub.attachVcd(&vcd);
+        hub.attachVcd(&vcd);
         try std.testing.expectEqual(@as(f64, 0), try lastReal(output.written(), "p0v"));
         const initial_length = output.written().len;
         var source = IO.Pad.Source.high;
         source.voltage = 5;
         try hub.io.setExternal(@enumFromInt(0), source);
-        try vcd.capture(hub, hub.io.clock.last_interval.period);
+        vcd.capture(hub, hub.io.clock.last_interval.period);
         try std.testing.expectEqual(initial_length, output.written().len);
         _ = hub.step();
         try std.testing.expect(std.mem.indexOf(u8, output.written(), "1p0s\n") != null);
@@ -486,7 +516,7 @@ test "pad state follows committed drive while voltage is independent and unclipp
 
         const driven_length = output.written().len;
         try hub.io.setExternal(@enumFromInt(0), .float);
-        try vcd.capture(hub, hub.io.clock.last_interval.period);
+        vcd.capture(hub, hub.io.clock.last_interval.period);
         try std.testing.expectEqual(driven_length, output.written().len);
         _ = hub.step();
         try std.testing.expect(std.mem.indexOf(u8, output.written()[driven_length..], "zp0s\n") != null);
@@ -523,7 +553,7 @@ test "pad Z follows physical enable and independent high and low drive modes" {
     defer output.deinit();
 
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     hub.cogs[0].write_reg(.DIRA, 1);
     hub.cogs[0].write_reg(.OUTA, 1);
     for (0..3) |_| {
@@ -557,7 +587,7 @@ test "cog liveness covers startup and waits, with no fabricated paused clocks" {
     defer std.testing.allocator.destroy(hub);
 
     try hub.init(.ideal);
-    try hub.start_cog(0, .{ .load_image = false });
+    hub.start_cog(0, .{ .load_image = false });
     hub.pending_starts[1] = .{
         .provenance = .{ .cog = 0 },
         .at = 2,
@@ -570,7 +600,7 @@ test "cog liveness covers startup and waits, with no fabricated paused clocks" {
     defer output.deinit();
 
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "1a0\n1s0\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "0a1\n0s1\n") != null);
     for (0..2) |_| {
@@ -597,7 +627,7 @@ test "cog liveness covers startup and waits, with no fabricated paused clocks" {
     try std.testing.expectEqual(Hub.StepResult.breakpoint, hub.step());
     try std.testing.expectEqual(counter, hub.counter);
     try std.testing.expect(vcd.previous.?.alive[0]);
-    try vcd.capture(hub, hub.io.clock.last_interval.period);
+    vcd.capture(hub, hub.io.clock.last_interval.period);
     try std.testing.expectEqual(length, output.written().len);
     hub.debugger = null;
     hub.cogs[0].reset();
@@ -614,18 +644,21 @@ test "writer failures reject attachment and propagate from subsequent capture" {
     var tiny_buffer: [1]u8 = undefined;
     var tiny = std.Io.Writer.fixed(&tiny_buffer);
     var rejected: Vcd = .{ .writer = &tiny };
-    try std.testing.expectError(error.WriteFailed, hub.attachVcd(&rejected));
-    try std.testing.expect(hub.vcd == null);
+    hub.attachVcd(&rejected);
+    try std.testing.expectEqual(error.WriteFailed, rejected.failure.?);
+    try std.testing.expect(test_support.serviceFailed(hub));
+    hub.vcd = null;
 
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     hub.vcd = null;
     _ = hub.step();
     vcd.writer = &tiny;
-    try std.testing.expectError(error.WriteFailed, vcd.capture(hub, hub.io.clock.last_interval.period));
+    vcd.capture(hub, hub.io.clock.last_interval.period);
+    try std.testing.expectEqual(error.WriteFailed, vcd.failure.?);
 }
 
 test "tracing does not change shared command timing or electrical evolution under either preset" {
@@ -645,7 +678,7 @@ test "tracing does not change shared command timing or electrical evolution unde
             defer output.deinit();
 
             var vcd: Vcd = .{ .writer = &output.writer };
-            try traced.attachVcd(&vcd);
+            traced.attachVcd(&vcd);
             for ([_]*Hub{ plain, traced }) |hub| {
                 hub.cogs[0].write_reg(.DIRA, 1 << 8);
                 try hub.io.setExternal(@enumFromInt(8), .high);
@@ -680,7 +713,7 @@ test "oversampling emits charging samples and merges odd and even clock midpoint
         defer output.deinit();
 
         var vcd: Vcd = .{ .writer = &output.writer };
-        try hub.attachVcd(&vcd);
+        hub.attachVcd(&vcd);
         try hub.io.setExternal(@enumFromInt(0), .{ .voltage = 3.3, .resistance = 500, .capacitance = 95e-12 });
         try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
         try std.testing.expectEqual(@as(u64, 1), hub.counter);
@@ -728,8 +761,8 @@ test "oversampling emits charging samples and merges odd and even clock midpoint
             try std.testing.expect(std.mem.indexOf(u8, output.written(), "#37500000\n1p0s\n") != null);
         }
         const length = output.written().len;
-        try vcd.capture(hub, hub.io.clock.last_interval.period);
-        try vcd.finish();
+        vcd.capture(hub, hub.io.clock.last_interval.period);
+        vcd.finish();
         try std.testing.expectEqual(length, output.written().len);
     }
 }
@@ -754,8 +787,8 @@ test "oversampled time carries fractional periods across frequency changes and c
 
         var normal_vcd: Vcd = .{ .writer = &normal_output.writer };
         var sampled_vcd: Vcd = .{ .writer = &sampled_output.writer };
-        try normal.attachVcd(&normal_vcd);
-        try sampled.attachVcd(&sampled_vcd);
+        normal.attachVcd(&normal_vcd);
+        sampled.attachVcd(&sampled_vcd);
         for (0..100) |clock| {
             const frequency: u64 = switch (clock % 3) {
                 0 => 20_000_000,
@@ -784,7 +817,7 @@ test "intermediate writer errors are deferred without stopping analog substeps" 
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     try hub.io.setExternal(@enumFromInt(0), .high);
     vcd.beginClock(hub.counter, IO.Clock.duration(1 / hub.io.clock.frequency()));
     hub.io.analog_pads.step(&configuration, 50e-9 / 8.0);
@@ -792,12 +825,13 @@ test "intermediate writer errors are deferred without stopping analog substeps" 
     var broken = std.Io.Writer.fixed(&bytes);
     vcd.writer = &broken;
     vcd.capturePads(&hub.io, &configuration, 1);
-    try std.testing.expectEqual(error.WriteFailed, vcd.pending_error.?);
+    try std.testing.expectEqual(error.WriteFailed, vcd.failure.?);
     hub.vcd = null; // Check deferred propagation directly without an intentional error log in the test runner.
     try std.testing.expectEqual(Hub.StepResult.normal, hub.step());
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
     try std.testing.expect(hub.io.getExternal(@enumFromInt(0)).?.voltage > 3.29);
-    try std.testing.expectError(error.WriteFailed, vcd.capture(hub, hub.io.clock.last_interval.period));
+    vcd.capture(hub, hub.io.clock.last_interval.period);
+    try std.testing.expectEqual(error.WriteFailed, vcd.failure.?);
 }
 
 test "trace distinguishes Schmitt receiver history from voltage and raw ADC bits" {
@@ -814,7 +848,7 @@ test "trace distinguishes Schmitt receiver history from voltage and raw ADC bits
     defer output.deinit();
 
     var vcd: Vcd = .{ .writer = &output.writer };
-    try hub.attachVcd(&vcd);
+    hub.attachVcd(&vcd);
     try hub.io.setExternal(@enumFromInt(0), .high);
     for (0..8) |_| {
         _ = hub.step();
@@ -828,7 +862,7 @@ test "trace distinguishes Schmitt receiver history from voltage and raw ADC bits
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "1p0r\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "0p1a\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, output.written(), "1p1a\n") != null);
-    try vcd.finish();
+    vcd.finish();
 }
 
 test "USB pair isolation and turnaround preserve physical drivers and VCD electrical snapshots" {
@@ -841,7 +875,7 @@ test "USB pair isolation and turnaround preserve physical drivers and VCD electr
         defer trace.deinit();
 
         var vcd: Vcd = .{ .writer = &trace.writer };
-        try hub.attachVcd(&vcd);
+        hub.attachVcd(&vcd);
         // Two adjacent pairs run independently; an ordinary neighboring GPIO keeps its drive.
         for (8..12) |pin| {
             hub.io.editConfiguration(@enumFromInt(pin), 0x76);
@@ -880,7 +914,7 @@ test "USB pair isolation and turnaround preserve physical drivers and VCD electr
         }
         try std.testing.expectEqual(.floating, after.pads[8].state);
         try std.testing.expectEqual(.floating, after.pads[9].state);
-        try vcd.finish();
+        vcd.finish();
         try std.testing.expect(std.mem.indexOf(u8, trace.written(), "$enddefinitions") != null);
     }
 }

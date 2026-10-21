@@ -6,13 +6,15 @@ const std = @import("std");
 
 const args_parser = @import("args");
 
-pub const types = @import("p2").types;
+const p2 = @import("p2");
+pub const types = p2.types;
 
 const disassembly = @import("sim/disassemble.zig");
 pub const disassemble = disassembly.disassemble;
 pub const Frame = @import("sim/Frame.zig");
 pub const inspect = @import("sim/inspect.zig");
 pub const Debugger = @import("sim/Debugger.zig");
+pub const access = @import("sim/access.zig");
 pub const Cordic = @import("sim/Cordic.zig");
 pub const Streamer = @import("sim/Streamer.zig");
 pub const ColorConverter = @import("sim/ColorConverter.zig");
@@ -56,7 +58,6 @@ const CliArgs = struct {
     seed: ?u64 = null,
     oversample: u32 = 1,
     url: []const u8 = "ws://127.0.0.1:21591/",
-    @"trace-pipeline": bool = false,
     @"fast-io": bool = false,
     image: []const u8 = "",
     vcd: []const u8 = "",
@@ -68,7 +69,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N] [--oversample N] [--fast-io] [--trace-pipeline] [--vcd PATH] [--boot] [--baudrate N] [-i IMAGE | --serve [--url URL]]",
+        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N] [--oversample N] [--fast-io] [--vcd PATH] [--boot] [--baudrate N] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -87,7 +88,6 @@ const CliArgs = struct {
             .seed = "Drift RNG seed; omitted generates entropy, selected seed is printed to stderr",
             .oversample = "Analog samples per system clock (positive integer, default 1); VCD records intermediate pads",
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
-            .@"trace-pipeline" = "Write up to 10000 pipeline stage events to stderr",
             .@"fast-io" = "Use virtual image-run TX (server: RX/TX); interactive input and ROM sessions retain UART timing",
             .image = "The image file which contains the hub data.",
             .vcd = "Export digital and analog signals with physical simulation timestamps",
@@ -181,7 +181,6 @@ pub fn main(init: std.process.Init) !u8 {
             return 1;
         }
         p2aas_server.serve(init.gpa, init.io, cli.options.url, .{
-            .trace = cli.options.@"trace-pipeline",
             .fast_io = cli.options.@"fast-io",
             .system_configuration = system_configuration,
         }) catch |err| {
@@ -203,23 +202,16 @@ pub fn main(init: std.process.Init) !u8 {
 
     var hub: Hub = undefined;
     try hub.init(system_configuration);
+
     if (!boot) {
         serial_boot.prepare(&hub, cli.options.baudrate);
     }
 
-    var terminal_sink: smart_pin.DataSink = .{ .live_writer = &stdout.interface };
+    var terminal_sink: smart_pin.DataSink = .{ .endpoint = .{ .live_writer = &stdout.interface } };
     hub.io.pins[62].smart.tx_mode = if (cli.options.@"fast-io" and cli.options.image.len != 0)
         .{ .virtual = &terminal_sink }
     else
         .{ .emulated = &terminal_sink };
-
-    var trace_buffer: [4096]u8 = undefined;
-    var trace = std.Io.File.stderr().writer(init.io, &trace_buffer);
-    defer trace.interface.flush() catch {};
-
-    if (cli.options.@"trace-pipeline") {
-        hub.trace_writer = &trace.interface;
-    }
 
     // Serial boot must retain the image outside RAM while the ROM builds its lookup table there.
     const image_buffer = if (boot and cli.options.image.len != 0)
@@ -277,52 +269,80 @@ pub fn main(init: std.process.Init) !u8 {
     var vcd: Vcd = .{ .writer = &vcd_writer.interface };
     defer {
         if (vcd_file != null) {
-            vcd.finish() catch {};
+            vcd.finish();
         }
     }
 
     if (vcd_file != null) {
-        try hub.attachVcd(&vcd);
+        hub.attachVcd(&vcd);
+        if (vcd.failure) |err| {
+            std.log.err("VCD export failed: {t}", .{err});
+            return 1;
+        }
     }
-    const raw = try Terminal.Raw.init();
-    defer raw.deinit();
-
-    var terminal: Terminal = .{ .io = init.io, .allocator = init.gpa };
-    defer terminal.deinit();
-
-    const Select = std.Io.Select(union(enum) {
-        input: anyerror!Terminal.InputEnd,
-        simulation: anyerror!u8,
-    });
-    var events: [2]Select.Union = undefined;
-    var select = Select.init(init.io, &events);
-    defer select.cancelDiscard();
-
-    try select.concurrent(.input, Terminal.read, .{&terminal});
-    try select.concurrent(.simulation, Terminal.simulate, .{ &terminal, &hub, Terminal.Session{
-        .boot = boot,
-        .image = if (cli.options.image.len != 0)
-            image_buffer[0..image_length]
+    var terminal: Terminal = .{
+        .io = init.io,
+        .allocator = init.gpa,
+        .output = &stdout.interface,
+        .sink = &terminal_sink,
+        .vcd = if (vcd_file != null)
+            &vcd
         else
             null,
-        .rate = cli.options.baudrate,
-    } });
-    const result = switch (try select.await()) {
-        .simulation => |result| try result,
-        .input => |ended| blk: {
-            if (try ended == .quit)
-                return 0;
-            // EOF disconnects host input; let queued bytes and the application finish.
-            break :blk switch (try select.await()) {
-                .simulation => |result| try result,
-                .input => unreachable,
-            };
-        },
     };
-    select.cancelDiscard();
+    defer terminal.deinit();
+
+    const result: anyerror!u8 = session: {
+        const raw = try Terminal.Raw.init();
+        defer raw.deinit();
+        defer {
+            stdout.interface.writeAll("\r\n") catch {};
+            stdout.interface.flush() catch {};
+        }
+
+        const Select = std.Io.Select(union(enum) {
+            input: anyerror!Terminal.InputEnd,
+            simulation: anyerror!u8,
+        });
+        var events: [2]Select.Union = undefined;
+        var select = Select.init(init.io, &events);
+        defer select.cancelDiscard();
+
+        try select.concurrent(.input, Terminal.read, .{&terminal});
+        try select.concurrent(.simulation, Terminal.simulate, .{ &terminal, &hub, Terminal.Session{
+            .boot = boot,
+            .image = if (cli.options.image.len != 0)
+                image_buffer[0..image_length]
+            else
+                null,
+            .rate = cli.options.baudrate,
+        } });
+        const completed: anyerror!u8 = switch (try select.await()) {
+            .simulation => |result| result,
+            .input => |ended| blk: {
+                const end = ended catch |err| break :blk err;
+                if (end == .quit)
+                    break :blk @as(u8, 0);
+                // EOF disconnects host input; let queued bytes and the application finish.
+                break :blk switch (try select.await()) {
+                    .simulation => |result| result,
+                    .input => unreachable,
+                };
+            },
+        };
+        break :session completed;
+    };
+    const exit_code = result catch |err| {
+        std.log.err("simulation stopped: {t}", .{err});
+        return 1;
+    };
 
     if (vcd_file != null) {
-        try vcd.finish();
+        vcd.finish();
+        if (vcd.failure) |err| {
+            std.log.err("VCD export failed: {t}", .{err});
+            return 1;
+        }
     }
 
     stdout.interface.flush() catch |err| {
@@ -330,11 +350,11 @@ pub fn main(init: std.process.Init) !u8 {
         return 1;
     };
 
-    std.log.warn("all cogs stopped after {} clocks. halting...", .{
+    std.log.info("simulation stopped after {} clocks", .{
         hub.counter,
     });
 
-    return result;
+    return exit_code;
 }
 
 var global_log_level: std.log.Level = .info;

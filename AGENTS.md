@@ -131,6 +131,8 @@ Typical workflows (started from the workspace root):
 - `${zig} build install test`: Build the projects and run their test suites.
 - `${zig} build install -Dno-emit-bin`: Compile the projects, but don't write the output. This is a quick syntax check.
 
+- The GUI linker warning can be safely ignored and does not need fixing.
+
 - Instead of using `@tagName(v)` or `@errorName(v)` + `{s}` formatting, use `v` directly and `{t}` formatting.
 - Instead of `writer: anytype` use `writer: *std.Io.Writer`
 - Instead of `reader: anytype` use `reader: *std.Io.Reader`

@@ -2332,3 +2332,41 @@ both enter LUT `$380` and the landing LOC returns `$381`. Immediate/register
 D=4 agreed in the repeated local `$400` and low-hub `$100` comparisons.
 Session samples/evidence/offline verifier: `.tmp/pc-jmprel/`; report appended to
 `.tmp/pc-report.md`. No implementation changes; existing compiled Propan used.
+
+## Streamer variable mode bits (2026-10-19 documentation audit)
+
+The shipped silicon streamer table uses `p00a`, `p01a`, and `p10a` for the
+four-bit immediate/FIFO/pin formats. D[19] in those patterns selects pins;
+it must not turn low-nibble values `$8..$D` into reserved formats. DDS/Goertzel
+uses `pppp111`: D[19] is likewise part of its input pin-block selection, so
+both low nibbles `$7` and `$F` represent that documented mode. These are table
+interpretations, not new physical measurements. Independent exhaustive upper-word
+classification now checks those variable fields. Runtime rejection of unassigned
+streamer encodings is simulator policy and does not establish their silicon effects.
+
+The finite `$BD/$BE` vacant-primary-slot supervisor campaign is prepared in
+`utility/characterize-reserved.py`. The primary P2AAS endpoint refused connections
+on 2026-10-19; no new silicon observations or opcode semantics are claimed.
+
+## TAQOZ startup HUBSET encoding (2026-10-19 source audit)
+
+The shipped `docs/p2/bootrom/bootrom.spin2` startup executes TAQOZ's `WP` word.
+That word shifts literal 3 left by 28 and invokes HUBSET, issuing `$3000_0000`.
+Its adjacent source comment describes an older `%001P` write-protection encoding.
+The final silicon documentation instead lists `%0010_xxxx_xxxx_xxLW_DDDD_DDDD_DDDD_DDDD`,
+with W at bit 16 and lock L at bit 17; it does not document a `$3` command.
+The simulator's Escape-to-TAQOZ regression reproduces the old command. This source
+evidence does not establish how current silicon handles it; do not assume it is
+an alias for `$2001_0000`. Separately, clock-command bits 25..27 are explicitly
+`xxx` in the final documented mask, so their values must not reject a clock mode.
+
+## Unaligned block-write grant accounting (2026-10-19 simulator audit)
+
+In the simulator, a streamed unaligned WRLONG commits the previous beat's trailing
+bytes and the next beat's leading bytes on the same edge. Their disjoint byte lanes
+belong to one physical long-write grant. The existing block timing fixture adds
+one crossing clock to the entire block, rather than to every word. Hub arbitration
+assertions must combine those pieces while rejecting overlapping lanes, different
+instructions/producers, or a read sharing that long. All three byte alignments now
+have a regression checking the combined grant and final RAM contents. This is an
+audit of existing timing/model behavior, not a new physical measurement.

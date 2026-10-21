@@ -1,4 +1,5 @@
                 //? WINDTUNNEL CHECK LIST
+                //? issues: pc_domain = 2
                 //? timeout-ms: 3000
                 //? run: "length0-count1-cog0"
                 //? post: cog[*].reg[link] == 0x401
@@ -155,6 +156,7 @@
                 //? const: length = 2
                 //? const: count = 1
                 //? run: "length2-count2-cog0"
+                //? issues: pc_domain = 1
                 //? post: cog[*].reg[link] == 0x3ff
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x0
@@ -166,6 +168,7 @@
                 //? const: length = 2
                 //? const: count = 2
                 //? run: "length2-count2-cog7"
+                //? issues: pc_domain = 1
                 //? post: cog[*].reg[link] == 0x3ff
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x0
@@ -177,6 +180,7 @@
                 //? const: length = 2
                 //? const: count = 2
                 //? run: "length2-count3-cog0"
+                //? issues: pc_domain = 1
                 //? post: cog[*].reg[link] == 0x3ff
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x0
@@ -188,6 +192,7 @@
                 //? const: length = 2
                 //? const: count = 3
                 //? run: "length2-count3-cog7"
+                //? issues: pc_domain = 1
                 //? post: cog[*].reg[link] == 0x3ff
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x0
@@ -331,6 +336,7 @@
                 //? const: length = 4
                 //? const: count = 3
                 //? run: "via-zero-length0-count1-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -342,6 +348,7 @@
                 //? const: length = 0
                 //? const: count = 1
                 //? run: "via-zero-length0-count1-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -353,6 +360,7 @@
                 //? const: length = 0
                 //? const: count = 1
                 //? run: "via-zero-length0-count2-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -364,6 +372,7 @@
                 //? const: length = 0
                 //? const: count = 2
                 //? run: "via-zero-length0-count2-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -375,6 +384,7 @@
                 //? const: length = 0
                 //? const: count = 2
                 //? run: "via-zero-length0-count3-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -386,6 +396,7 @@
                 //? const: length = 0
                 //? const: count = 3
                 //? run: "via-zero-length0-count3-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -397,6 +408,7 @@
                 //? const: length = 0
                 //? const: count = 3
                 //? run: "via-zero-length1-count1-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -408,6 +420,7 @@
                 //? const: length = 1
                 //? const: count = 1
                 //? run: "via-zero-length1-count1-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -419,6 +432,7 @@
                 //? const: length = 1
                 //? const: count = 1
                 //? run: "via-zero-length1-count2-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -430,6 +444,7 @@
                 //? const: length = 1
                 //? const: count = 2
                 //? run: "via-zero-length1-count2-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -441,6 +456,7 @@
                 //? const: length = 1
                 //? const: count = 2
                 //? run: "via-zero-length1-count3-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -452,6 +468,7 @@
                 //? const: length = 1
                 //? const: count = 3
                 //? run: "via-zero-length1-count3-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -463,6 +480,7 @@
                 //? const: length = 1
                 //? const: count = 3
                 //? run: "via-zero-length2-count1-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -474,6 +492,7 @@
                 //? const: length = 2
                 //? const: count = 1
                 //? run: "via-zero-length2-count1-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -485,6 +504,7 @@
                 //? const: length = 2
                 //? const: count = 1
                 //? run: "via-zero-length2-count2-cog0"
+                //? issues: pc_domain = 4
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -496,6 +516,7 @@
                 //? const: length = 2
                 //? const: count = 2
                 //? run: "via-zero-length2-count2-cog7"
+                //? issues: pc_domain = 4
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -507,6 +528,7 @@
                 //? const: length = 2
                 //? const: count = 2
                 //? run: "via-zero-length2-count3-cog0"
+                //? issues: pc_domain = 5
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -518,6 +540,7 @@
                 //? const: length = 2
                 //? const: count = 3
                 //? run: "via-zero-length2-count3-cog7"
+                //? issues: pc_domain = 5
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -529,6 +552,7 @@
                 //? const: length = 2
                 //? const: count = 3
                 //? run: "via-zero-length3-count1-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -540,6 +564,7 @@
                 //? const: length = 3
                 //? const: count = 1
                 //? run: "via-zero-length3-count1-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -595,6 +620,7 @@
                 //? const: length = 3
                 //? const: count = 3
                 //? run: "via-zero-length4-count1-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -606,6 +632,7 @@
                 //? const: length = 4
                 //? const: count = 1
                 //? run: "via-zero-length4-count1-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -617,6 +644,7 @@
                 //? const: length = 4
                 //? const: count = 1
                 //? run: "via-zero-length4-count2-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -628,6 +656,7 @@
                 //? const: length = 4
                 //? const: count = 2
                 //? run: "via-zero-length4-count2-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -639,6 +668,7 @@
                 //? const: length = 4
                 //? const: count = 2
                 //? run: "via-zero-length4-count3-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -650,6 +680,7 @@
                 //? const: length = 4
                 //? const: count = 3
                 //? run: "via-zero-length4-count3-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x405
@@ -745,4 +776,3 @@ tail_template:
                 // Enter the final LUT words and continue with a retained logical PC.
                 REP     length, count
                 NOP
-

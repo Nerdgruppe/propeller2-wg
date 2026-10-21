@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: pin_buffer_overwrite = 0
 //? run: "a0-d0-active0"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -410,6 +411,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 24
 //? run: "a4-d32-active1"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -430,6 +432,7 @@
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 24
 //? run: "a4-d512-active1"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode0 = 118
 //? const: mode1 = 118
 //? const: x = 4096
@@ -1120,4 +1123,3 @@
 var result:     LONG    0
 var upper:      LONG    0
 var flags:      LONG    0
-
