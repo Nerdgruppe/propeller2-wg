@@ -1,5 +1,9 @@
 # Plan: stateful clock and VCO behavior for Windtunnel
 
+This historical plan describes the former live VCD path. The simulator now records
+native Scope captures; `windtunnel-export` owns VCD conversion. References to
+`sim/Vcd.zig` below document the earlier design and its validation.
+
 Status: implemented within the measured coverage, 18 October 2026. See the
 [clock model and CLI reference](clocks.md) for the shipped behavior and limits.
 The design below records the rationale and remaining identification work. Basis: [100 MS/s PLL characterization](../measurements/pll-100ms.md), its [portable aggregates](../measurements/pll-100ms-summary.json), and retained raw/firmware evidence.
@@ -27,7 +31,7 @@ Direct P-up has returned incorrect data despite correct final frequency. Report 
 | `src/windtunnel/sim/Hub.zig`, `configure` / `step` | Executes one system edge and increments CT | Own/advance a stateful clock source and consume a shared physical interval for that edge. Preserve existing instruction and smart-pin ordering. |
 | `src/windtunnel/sim/IO.zig`, `resolvePads` | Computes electrical dt as `1 / clock_frequency / oversample` | Consume the actual edge interval, split consistently over analog substeps. |
 | `src/windtunnel/sim/Vcd.zig` | Generates half-period timestamps from a frequency; rejects zero | Emit the same integrated intervals used by the simulation. Represent quiet intervals without invented system edges. |
-| `src/windtunnel/p2aas_server.zig` | Computes virtual time and scheduling batches from frequency/CT | Pace by accumulated physical time, including acquisition intervals without CPU edges. Avoid division by zero and CT-based busy loops. |
+| `src/windtunnel-p2aas/server.zig` | Computes virtual time and scheduling batches from frequency/CT | Pace by accumulated physical time, including acquisition intervals without CPU edges. Avoid division by zero and CT-based busy loops. |
 | Serial boot, terminal and GUI clock consumers | Read `clock_frequency` directly in several places | Audit consumers; distinguish nominal configuration, instantaneous/effective rate, and physical elapsed time. Keep ideal ROM handoff behavior deterministic. |
 
 Do not modify generated instruction dispatch merely to add physics: HUBSET already routes through shared Hub configuration. Inspect all callers before choosing the exact clock-state ownership and API.

@@ -1,96 +1,120 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "mode70010000 delay0"
 //? const: mode = 1879113728
 //? const: delay = 0
 //? post: cog[0].reg[elapsed] == 6
+//?
 //? run: "mode70010000 delay1"
 //? const: mode = 1879113728
 //? const: delay = 1
 //? post: cog[0].reg[elapsed] == 5
+//?
 //? run: "mode70010000 delay2"
 //? const: mode = 1879113728
 //? const: delay = 2
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay3"
 //? const: mode = 1879113728
 //? const: delay = 3
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay4"
 //? const: mode = 1879113728
 //? const: delay = 4
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay5"
 //? const: mode = 1879113728
 //? const: delay = 5
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay6"
 //? const: mode = 1879113728
 //? const: delay = 6
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay7"
 //? const: mode = 1879113728
 //? const: delay = 7
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay8"
 //? const: mode = 1879113728
 //? const: delay = 8
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay9"
 //? const: mode = 1879113728
 //? const: delay = 9
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay10"
 //? const: mode = 1879113728
 //? const: delay = 10
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "mode70010000 delay11"
 //? const: mode = 1879113728
 //? const: delay = 11
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay0"
 //? const: mode = 4026990592
 //? const: delay = 0
 //? post: cog[0].reg[elapsed] == 6
+//?
 //? run: "modef0070000 delay1"
 //? const: mode = 4026990592
 //? const: delay = 1
 //? post: cog[0].reg[elapsed] == 5
+//?
 //? run: "modef0070000 delay2"
 //? const: mode = 4026990592
 //? const: delay = 2
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay3"
 //? const: mode = 4026990592
 //? const: delay = 3
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay4"
 //? const: mode = 4026990592
 //? const: delay = 4
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay5"
 //? const: mode = 4026990592
 //? const: delay = 5
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay6"
 //? const: mode = 4026990592
 //? const: delay = 6
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay7"
 //? const: mode = 4026990592
 //? const: delay = 7
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay8"
 //? const: mode = 4026990592
 //? const: delay = 8
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay9"
 //? const: mode = 4026990592
 //? const: delay = 9
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay10"
 //? const: mode = 4026990592
 //? const: delay = 10
 //? post: cog[0].reg[elapsed] == 4
+//?
 //? run: "modef0070000 delay11"
 //? const: mode = 4026990592
 //? const: delay = 11

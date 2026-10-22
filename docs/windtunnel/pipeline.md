@@ -17,7 +17,7 @@ Implement the pipeline for the existing instruction coverage first.
 
 - The native runner's `--characterize` mode assembles and uploads without running
   the simulator, validates WTOR frames, and retains complete decoded register
-  snapshots and requested hub observations. VCD provides physical-time signal capture.
+  snapshots and requested hub observations. Scope records physical-time signals for standalone export.
 - Cog/LUT execution has five stage positions, two-clock issue, captured operands,
   deferred result/flag writes, stalls, and branch flush/refill. Hardware agrees on
   GETCT/NOP/cancellation, WAITX, RDLUT/pixel latency, dependencies, LUT execution,
@@ -266,7 +266,7 @@ a collision diagnostic rather than using it as a deterministic conformance test.
 | `Hub.zig:start_cog`, `Cog.zig:reset`                           | Loads/starts immediately                                           | Startup/load state and first-fetch timing; clear all in-flight work on stop/restart                                |
 | `test_suite.zig`                                               | Checkpoint on prefetched PC; validates local PC as a register      | Checkpoint after older writes drain; validate retired/dispatched code with cog/LUT/hub address mapping             |
 | `test_suite.zig` deadline shortcut                             | Jumps CT during a cog-0 wait                                       | Disable initially; restore only with a proof that no pipeline or resource action occurs before the deadline        |
-| `windtunnel.zig` logging                                       | Uses current/next instruction slots                                | Distinguish fetch, execute, and retirement events in tracing                                                       |
+| `windtunnel-cli/Terminal.zig` reporting                                       | Uses current/next instruction slots                                | Distinguish fetch, execute, and retirement events in tracing                                                       |
 
 Inspect all direct register/flag/state writes in the executor, not just ALU
 helpers. Existing call/return addresses based on `dispatch_pc` are a useful

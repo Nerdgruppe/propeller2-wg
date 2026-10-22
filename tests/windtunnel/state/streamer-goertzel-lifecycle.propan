@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "sinc0 frequency0"
 //? const: sinc = 0
 //? const: frequency = 0
@@ -12,6 +13,7 @@
 //? post: cog[0].reg[x3] == 3556
 //? post: cog[0].reg[y3] == 4294963712
 //? post: cog[0].reg[q3] == 4294963712
+//?
 //? run: "sinc0 frequency1000000"
 //? const: sinc = 0
 //? const: frequency = 16777216
@@ -25,6 +27,7 @@
 //? post: cog[0].reg[x3] == 3556
 //? post: cog[0].reg[y3] == 4294963712
 //? post: cog[0].reg[q3] == 4294963712
+//?
 //? run: "sinc0 frequency87654321"
 //? const: sinc = 0
 //? const: frequency = 2271560481
@@ -38,6 +41,7 @@
 //? post: cog[0].reg[x3] == 3556
 //? post: cog[0].reg[y3] == 4294963712
 //? post: cog[0].reg[q3] == 4294963712
+//?
 //? run: "sinc1 frequency0"
 //? const: sinc = 1
 //? const: frequency = 0
@@ -51,6 +55,7 @@
 //? post: cog[0].reg[x3] == 154686
 //? post: cog[0].reg[y3] == 4294811392
 //? post: cog[0].reg[q3] == 4294811392
+//?
 //? run: "sinc1 frequency1000000"
 //? const: sinc = 1
 //? const: frequency = 16777216
@@ -64,6 +69,7 @@
 //? post: cog[0].reg[x3] == 154686
 //? post: cog[0].reg[y3] == 4294811392
 //? post: cog[0].reg[q3] == 4294811392
+//?
 //? run: "sinc1 frequency87654321"
 //? const: sinc = 1
 //? const: frequency = 2271560481

@@ -55,7 +55,9 @@ The following projects are managed in this repository:
 - [Timing Data](data/timing-data/) - A project to extract reproducible timing data from the chip
 - [Propan](src/propan/) - A new, modern assembler for the Propeller 2
 - [Turboprop](src/turboprop/) - A tiny application loader that allows launching programs on the Propeller 2 over serial port
-- [Windtunnel](src/windtunnel/) - A clock cycle-exact simulator for the Propeller 2
+- [Windtunnel](src/windtunnel/) - A reusable clock cycle-exact simulator Zig module for the Propeller 2
+- [Windtunnel CLI](src/windtunnel-cli/) - The `windtunnel` terminal and image runner
+- [Windtunnel P2AAS](src/windtunnel-p2aas/) - The independent `windtunnel-p2aas` simulator server
 - [VsCode Extension](vscode-extension/) - A Visual Studio Code extension meant to support the other projects
 
 ## Propeller 2 Documentation
@@ -91,6 +93,9 @@ The following community documentation is available as well:
 ### General Rules
 
 Primary directive: Do not change code when only a question was asked. Questions are never an implicit request for changes.
+
+Keep Zig test code and fixture manifests in their owning source modules. Do not add Zig files
+under `tests/`.
 
 There's a `justfile` in the workspace root which has these recipies:
 

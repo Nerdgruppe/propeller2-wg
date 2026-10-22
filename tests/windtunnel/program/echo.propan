@@ -61,3 +61,4 @@ var first:      LONG    0
 var second:     LONG    0
 var third:      LONG    0
 ready:          BYTE    "READY\n",  0
+

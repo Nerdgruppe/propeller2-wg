@@ -1,95 +1,117 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[late_x] == 42
 //? post: cog[*].reg[late_y] == 0
+//? macro: rdlong default
+//? macro: cmp default
+//? macro: jmp default
+//? macro: wrlong default
+//? macro: selected_mode required
+//? macro: coginit default
+//?
 //? run: "mode 0 cog 0"
+//? macro: selected_mode set COGINIT (probe_cog | 0x20), restarted
 //? cog: 0
 //? const: probe_cog = 0
-//? const: mode = 0
 //? post: cog[*].reg[early_x] == 0
 //? post: cog[*].reg[early_qmt] == 1
 //? post: cog[*].reg[late_qmt] == 0
+//?
 //? run: "mode 0 cog 3"
+//? macro: selected_mode set COGINIT (probe_cog | 0x20), restarted
 //? cog: 3
 //? const: probe_cog = 3
-//? const: mode = 0
 //? post: cog[*].reg[early_x] == 0
 //? post: cog[*].reg[early_qmt] == 1
 //? post: cog[*].reg[late_qmt] == 0
+//?
 //? run: "mode 0 cog 7"
+//? macro: selected_mode set COGINIT (probe_cog | 0x20), restarted
 //? cog: 7
 //? const: probe_cog = 7
-//? const: mode = 0
 //? post: cog[*].reg[early_x] == 0
 //? post: cog[*].reg[early_qmt] == 1
 //? post: cog[*].reg[late_qmt] == 0
+//?
 //? run: "mode 1 cog 0"
+//? macro: selected_mode set WAITX 100
+//? macro: coginit override COGINIT (probe_cog | 0x20), restarted
 //? cog: 0
 //? const: probe_cog = 0
-//? const: mode = 1
 //? post: cog[*].reg[early_x] == 42
 //? post: cog[*].reg[early_qmt] == 1
 //? post: cog[*].reg[late_qmt] == 1
+//?
 //? run: "mode 1 cog 3"
+//? macro: selected_mode set WAITX 100
+//? macro: coginit override COGINIT (probe_cog | 0x20), restarted
 //? cog: 3
 //? const: probe_cog = 3
-//? const: mode = 1
 //? post: cog[*].reg[early_x] == 42
 //? post: cog[*].reg[early_qmt] == 1
 //? post: cog[*].reg[late_qmt] == 1
+//?
 //? run: "mode 1 cog 7"
+//? macro: selected_mode set WAITX 100
+//? macro: coginit override COGINIT (probe_cog | 0x20), restarted
 //? cog: 7
 //? const: probe_cog = 7
-//? const: mode = 1
 //? post: cog[*].reg[early_x] == 42
 //? post: cog[*].reg[early_qmt] == 1
 //? post: cog[*].reg[late_qmt] == 1
+//?
 //? run: "mode 2 cog 0"
+//? macro: rdlong override RDLONG state, aug(hubaddr(flag))
+//? macro: cmp override CMP state, 0 :wz
+//? macro: jmp override if(!Z) JMP restarted
+//? macro: wrlong override WRLONG 1, aug(hubaddr(flag))
+//? macro: selected_mode set COGINIT probe_cog, aug(hubaddr(_wt_start))
 //? cog: 0
 //? const: probe_cog = 0
-//? const: mode = 2
 //? post: cog[*].reg[early_x] == 42
 //? post: cog[*].reg[early_qmt] == 0
 //? post: cog[*].reg[late_qmt] == 1
+//?
 //? run: "mode 2 cog 3"
+//? macro: rdlong override RDLONG state, aug(hubaddr(flag))
+//? macro: cmp override CMP state, 0 :wz
+//? macro: jmp override if(!Z) JMP restarted
+//? macro: wrlong override WRLONG 1, aug(hubaddr(flag))
+//? macro: selected_mode set COGINIT probe_cog, aug(hubaddr(_wt_start))
 //? cog: 3
 //? const: probe_cog = 3
-//? const: mode = 2
 //? post: cog[*].reg[early_x] == 42
 //? post: cog[*].reg[early_qmt] == 0
 //? post: cog[*].reg[late_qmt] == 1
+//?
 //? run: "mode 2 cog 7"
+//? macro: rdlong override RDLONG state, aug(hubaddr(flag))
+//? macro: cmp override CMP state, 0 :wz
+//? macro: jmp override if(!Z) JMP restarted
+//? macro: wrlong override WRLONG 1, aug(hubaddr(flag))
+//? macro: selected_mode set COGINIT probe_cog, aug(hubaddr(_wt_start))
 //? cog: 7
 //? const: probe_cog = 7
-//? const: mode = 2
 //? post: cog[*].reg[early_x] == 42
 //? post: cog[*].reg[early_qmt] == 0
 //? post: cog[*].reg[late_qmt] == 1
 
 // Cog reset clears readiness/tracking, retains result words, and leaves hub computations running.
 // Reloading cog RAM also allows the older result to arrive during startup.
-.if mode == 2
-                RDLONG  state,              aug(hubaddr(flag))
-                CMP     state,              0                       :wz
-    if(!Z)      JMP     restarted
-                WRLONG  1,                  aug(hubaddr(flag))
-.endif
+                {{ rdlong }}
+                {{ cmp }}
+                {{ jmp }}
+                {{ wrlong }}
                 QMUL    6,                  7
-.if mode == 1
-                WAITX   100
-.endif
-.if mode == 2
-                COGINIT probe_cog,          aug(hubaddr(_wt_start))
-.else
-                COGINIT (probe_cog | 0x20), restarted
-.endif
+                {{ selected_mode }}
+                {{ coginit }}
 restarted:
                 GETQX   early_x
-                POLLQMT             :wc
+                POLLQMT :wc
                 WRC     early_qmt
                 WAITX   100
                 GETQX   late_x
                 GETQY   late_y
-                POLLQMT             :wc
+                POLLQMT :wc
                 WRC     late_qmt
                 JMP     nrel(_end)
 var state:      LONG    0

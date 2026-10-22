@@ -1,10 +1,12 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//? macro: wxpin default
+//? macro: wxpin_2 default
+//?
 //? run: "pll0-n8-to8-at0"
 //? const: old = 8
 //? const: new = 8
-//? const: at = 0
 //? post: cog[*].reg[completions] == 0x01010101
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -38,10 +40,10 @@
 //? post: cog[*].reg[result29] == 0xabcdef00
 //? post: cog[*].reg[result30] == 0xabcdef00
 //? post: cog[*].reg[result31] == 0x89abcdef
+//?
 //? run: "pll0-n1-to1-at0"
 //? const: old = 1
 //? const: new = 1
-//? const: at = 0
 //? post: cog[*].reg[completions] == 0xffffffff
 //? post: cog[*].reg[result0] == 0x80000000
 //? post: cog[*].reg[result1] == 0xc0000000
@@ -75,10 +77,10 @@
 //? post: cog[*].reg[result29] == 0x26af37bc
 //? post: cog[*].reg[result30] == 0x13579bde
 //? post: cog[*].reg[result31] == 0x89abcdef
+//?
 //? run: "pll0-n32-to32-at0"
 //? const: old = 32
 //? const: new = 32
-//? const: at = 0
 //? post: cog[*].reg[completions] == 0x00000001
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -112,10 +114,11 @@
 //? post: cog[*].reg[result29] == 0x00000000
 //? post: cog[*].reg[result30] == 0x00000000
 //? post: cog[*].reg[result31] == 0x89abcdef
+//?
 //? run: "pll0-n8-to4-at2"
+//? macro: wxpin override WXPIN new - 1, 4
 //? const: old = 8
 //? const: new = 4
-//? const: at = 2
 //? post: cog[*].reg[completions] == 0x11111111
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -149,10 +152,11 @@
 //? post: cog[*].reg[result29] == 0x9abcdef0
 //? post: cog[*].reg[result30] == 0x9abcdef0
 //? post: cog[*].reg[result31] == 0x89abcdef
+//?
 //? run: "pll0-n4-to8-at2"
+//? macro: wxpin override WXPIN new - 1, 4
 //? const: old = 4
 //? const: new = 8
-//? const: at = 2
 //? post: cog[*].reg[completions] == 0x01010101
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -186,10 +190,11 @@
 //? post: cog[*].reg[result29] == 0xabcdef00
 //? post: cog[*].reg[result30] == 0xabcdef00
 //? post: cog[*].reg[result31] == 0x89abcdef
+//?
 //? run: "pll0-n8-to2-at4"
+//? macro: wxpin_2 override WXPIN new - 1, 4
 //? const: old = 8
 //? const: new = 2
-//? const: at = 4
 //? post: cog[*].reg[completions] == 0x00000000
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -223,10 +228,11 @@
 //? post: cog[*].reg[result29] == 0x00000000
 //? post: cog[*].reg[result30] == 0x00000000
 //? post: cog[*].reg[result31] == 0x00000000
+//?
 //? run: "pll0-n8-to4-at4"
+//? macro: wxpin_2 override WXPIN new - 1, 4
 //? const: old = 8
 //? const: new = 4
-//? const: at = 4
 //? post: cog[*].reg[completions] == 0x00000000
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -260,10 +266,11 @@
 //? post: cog[*].reg[result29] == 0x00000000
 //? post: cog[*].reg[result30] == 0x00000000
 //? post: cog[*].reg[result31] == 0x00000000
+//?
 //? run: "pll0-n16-to8-at4"
+//? macro: wxpin_2 override WXPIN new - 1, 4
 //? const: old = 16
 //? const: new = 8
-//? const: at = 4
 //? post: cog[*].reg[completions] == 0x01010101
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -297,10 +304,11 @@
 //? post: cog[*].reg[result29] == 0xabcdef00
 //? post: cog[*].reg[result30] == 0xabcdef00
 //? post: cog[*].reg[result31] == 0x89abcdef
+//?
 //? run: "pll0-n8-to16-at4"
+//? macro: wxpin_2 override WXPIN new - 1, 4
 //? const: old = 8
 //? const: new = 16
-//? const: at = 4
 //? post: cog[*].reg[completions] == 0x00010001
 //? post: cog[*].reg[result0] == 0x00000000
 //? post: cog[*].reg[result1] == 0x00000000
@@ -348,9 +356,6 @@
                 MOV     data,                           aug(0x89abcdef)
 
 // Supply bit 0 and capture readiness before acknowledging the received result.
-.if at == 0 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -363,9 +368,6 @@
                 WAITX   8
 
 // Supply bit 1 and capture readiness before acknowledging the received result.
-.if at == 1 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -378,9 +380,7 @@
                 WAITX   8
 
 // Supply bit 2 and capture readiness before acknowledging the received result.
-.if at == 2 and at != 0
-                WXPIN   new - 1,                        4
-.endif
+                {{ wxpin }}
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -393,9 +393,6 @@
                 WAITX   8
 
 // Supply bit 3 and capture readiness before acknowledging the received result.
-.if at == 3 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -408,9 +405,7 @@
                 WAITX   8
 
 // Supply bit 4 and capture readiness before acknowledging the received result.
-.if at == 4 and at != 0
-                WXPIN   new - 1,                        4
-.endif
+                {{ wxpin_2 }}
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -423,9 +418,6 @@
                 WAITX   8
 
 // Supply bit 5 and capture readiness before acknowledging the received result.
-.if at == 5 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -438,9 +430,6 @@
                 WAITX   8
 
 // Supply bit 6 and capture readiness before acknowledging the received result.
-.if at == 6 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -453,9 +442,6 @@
                 WAITX   8
 
 // Supply bit 7 and capture readiness before acknowledging the received result.
-.if at == 7 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -468,9 +454,6 @@
                 WAITX   8
 
 // Supply bit 8 and capture readiness before acknowledging the received result.
-.if at == 8 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -483,9 +466,6 @@
                 WAITX   8
 
 // Supply bit 9 and capture readiness before acknowledging the received result.
-.if at == 9 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -498,9 +478,6 @@
                 WAITX   8
 
 // Supply bit 10 and capture readiness before acknowledging the received result.
-.if at == 10 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -513,9 +490,6 @@
                 WAITX   8
 
 // Supply bit 11 and capture readiness before acknowledging the received result.
-.if at == 11 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -528,9 +502,6 @@
                 WAITX   8
 
 // Supply bit 12 and capture readiness before acknowledging the received result.
-.if at == 12 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -543,9 +514,6 @@
                 WAITX   8
 
 // Supply bit 13 and capture readiness before acknowledging the received result.
-.if at == 13 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -558,9 +526,6 @@
                 WAITX   8
 
 // Supply bit 14 and capture readiness before acknowledging the received result.
-.if at == 14 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -573,9 +538,6 @@
                 WAITX   8
 
 // Supply bit 15 and capture readiness before acknowledging the received result.
-.if at == 15 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -588,9 +550,6 @@
                 WAITX   8
 
 // Supply bit 16 and capture readiness before acknowledging the received result.
-.if at == 16 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -603,9 +562,6 @@
                 WAITX   8
 
 // Supply bit 17 and capture readiness before acknowledging the received result.
-.if at == 17 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -618,9 +574,6 @@
                 WAITX   8
 
 // Supply bit 18 and capture readiness before acknowledging the received result.
-.if at == 18 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -633,9 +586,6 @@
                 WAITX   8
 
 // Supply bit 19 and capture readiness before acknowledging the received result.
-.if at == 19 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -648,9 +598,6 @@
                 WAITX   8
 
 // Supply bit 20 and capture readiness before acknowledging the received result.
-.if at == 20 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -663,9 +610,6 @@
                 WAITX   8
 
 // Supply bit 21 and capture readiness before acknowledging the received result.
-.if at == 21 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -678,9 +622,6 @@
                 WAITX   8
 
 // Supply bit 22 and capture readiness before acknowledging the received result.
-.if at == 22 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -693,9 +634,6 @@
                 WAITX   8
 
 // Supply bit 23 and capture readiness before acknowledging the received result.
-.if at == 23 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -708,9 +646,6 @@
                 WAITX   8
 
 // Supply bit 24 and capture readiness before acknowledging the received result.
-.if at == 24 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -723,9 +658,6 @@
                 WAITX   8
 
 // Supply bit 25 and capture readiness before acknowledging the received result.
-.if at == 25 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -738,9 +670,6 @@
                 WAITX   8
 
 // Supply bit 26 and capture readiness before acknowledging the received result.
-.if at == 26 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -753,9 +682,6 @@
                 WAITX   8
 
 // Supply bit 27 and capture readiness before acknowledging the received result.
-.if at == 27 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -768,9 +694,6 @@
                 WAITX   8
 
 // Supply bit 28 and capture readiness before acknowledging the received result.
-.if at == 28 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -783,9 +706,6 @@
                 WAITX   8
 
 // Supply bit 29 and capture readiness before acknowledging the received result.
-.if at == 29 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -798,9 +718,6 @@
                 WAITX   8
 
 // Supply bit 30 and capture readiness before acknowledging the received result.
-.if at == 30 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8
@@ -813,9 +730,6 @@
                 WAITX   8
 
 // Supply bit 31 and capture readiness before acknowledging the received result.
-.if at == 31 and at != 0
-                WXPIN   new - 1,                        4
-.endif
                 SHR     data,                           1                   :wc
                 DRVC    3
                 WAITX   8

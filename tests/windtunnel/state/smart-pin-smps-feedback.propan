@@ -1,6 +1,7 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//?
 //? run: "pll0-a0-b0"
 //? const: a = 0
 //? const: b = 0
@@ -9,6 +10,7 @@
 //? post: cog[*].reg[first_ready] == 0x00000001
 //? post: cog[*].reg[recovery] == 0xe318c718
 //? post: cog[*].reg[second_result] == 0x00070007
+//?
 //? run: "pll0-a0-b1"
 //? const: a = 0
 //? const: b = 1
@@ -17,6 +19,7 @@
 //? post: cog[*].reg[first_ready] == 0x00000001
 //? post: cog[*].reg[recovery] == 0xe318c718
 //? post: cog[*].reg[second_result] == 0x00070007
+//?
 //? run: "pll0-a1-b0"
 //? const: a = 1
 //? const: b = 0
@@ -25,6 +28,7 @@
 //? post: cog[*].reg[first_ready] == 0x00000000
 //? post: cog[*].reg[recovery] == 0x8c718c63
 //? post: cog[*].reg[second_result] == 0x00070007
+//?
 //? run: "pll0-a1-b1"
 //? const: a = 1
 //? const: b = 1

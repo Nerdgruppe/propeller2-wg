@@ -3,8 +3,10 @@
 //? oracle: off "HUBSET reset intentionally closes simulation; physical hardware reboots without a reporter"
 //? max-cycles: 10000
 //? timeout-ms: 1000
+//?
 //? run: "reset-selector"
 //? const: reset_mode = 0x10000000
+//?
 //? run: "reset-ignored-bits"
 //? const: reset_mode = 0x1fffffff
 

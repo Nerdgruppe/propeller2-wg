@@ -1,114 +1,140 @@
-                //? WINDTUNNEL CHECK LIST
-                //? issues: pc_domain = 2
-                //? timeout-ms: 3000
-                //? run: "kind0-cog0"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x3
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x3
-                //? cog: 0
-                //? const: kind = 0
-                //? run: "kind0-cog7"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x3
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x3
-                //? cog: 7
-                //? const: kind = 0
-                //? run: "kind1-cog0"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 0
-                //? const: kind = 1
-                //? run: "kind1-cog7"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 7
-                //? const: kind = 1
-                //? run: "kind2-cog0"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x202
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 0
-                //? const: kind = 2
-                //? run: "kind2-cog7"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x202
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 7
-                //? const: kind = 2
-                //? run: "kind3-cog0"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0xfb207234
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 0
-                //? const: kind = 3
-                //? run: "kind3-cog7"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0xfb207234
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 7
-                //? const: kind = 3
-                //? run: "kind4-cog0"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 0
-                //? const: kind = 4
-                //? run: "kind4-cog7"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 7
-                //? const: kind = 4
-                //? run: "kind5-cog0"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x2
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 0
-                //? const: kind = 5
-                //? run: "kind5-cog7"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x2
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0x14
-                //? post: cog[*].reg[landed] == 0x2
-                //? cog: 7
-                //? const: kind = 5
+//? WINDTUNNEL CHECK LIST
+//? issues: pc_domain = 2
+//? timeout-ms: 3000
+//? macro: selected_kind required
+//? macro: add required
+//?
+//? run: "kind0-cog0"
+//? macro: selected_kind set ALTS alternate, 0
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x3
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x3
+//? cog: 0
+//?
+//? run: "kind0-cog7"
+//? macro: selected_kind set ALTS alternate, 0
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x3
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x3
+//? cog: 7
+//?
+//? run: "kind1-cog0"
+//? macro: selected_kind set ALTD alternate, 0
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 0
+//?
+//? run: "kind1-cog7"
+//? macro: selected_kind set ALTD alternate, 0
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 7
+//?
+//? run: "kind2-cog0"
+//? macro: selected_kind set AUGS 512
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x202
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 0
+//?
+//? run: "kind2-cog7"
+//? macro: selected_kind set AUGS 512
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x202
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 7
+//?
+//? run: "kind3-cog0"
+//? macro: selected_kind set NOP
+//? macro: add set ADD hits, register(2)
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0xfb207234
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 0
+//?
+//? run: "kind3-cog7"
+//? macro: selected_kind set NOP
+//? macro: add set ADD hits, register(2)
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0xfb207234
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 7
+//?
+//? run: "kind4-cog0"
+//? macro: selected_kind set NOP
+//? macro: add set if(Z) ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 0
+//?
+//? run: "kind4-cog7"
+//? macro: selected_kind set NOP
+//? macro: add set if(Z) ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 7
+//?
+//? run: "kind5-cog0"
+//? macro: selected_kind set NOP
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x2
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 0
+//?
+//? run: "kind5-cog7"
+//? macro: selected_kind set NOP
+//? macro: add set ADD hits, 2
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x2
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0x14
+//? post: cog[*].reg[landed] == 0x2
+//? cog: 7
                 // Separate effective S addressing from D alteration, immediate values, augmentation and cancellation.
                 // Keep setup beyond the cog-zero template that it installs.
                 JMP     nrel(setup)
@@ -194,19 +220,5 @@ cog_template:
 .lutexec    0x3100, 0x3fe
 tail_template:
                 // Enter the final LUT words and continue with a retained logical PC.
-.if kind == 0
-                ALTS    alternate,  0
-.elif   kind == 1
-                ALTD    alternate,  0
-.elif   kind == 2
-                AUGS    512
-.else
-                NOP
-.endif
-.if kind == 3
-                ADD     hits,       register(2)
-.elif   kind == 4
-    if(Z)       ADD     hits,       2
-.else
-                ADD     hits,       2
-.endif
+                {{ selected_kind }}
+                {{ add }}

@@ -8,34 +8,42 @@
 //? post: cog[*].reg[reg_status] == 0
 //? post: cog[*].reg[aug_status] == 0
 //? post: cog[*].reg[cancelled] == 0x87654321
+//?
 //? run: "cog 0"
 //? cog: 0
 //? post: cog[*].reg[normal] == 0
 //? post: cog[*].reg[statuses] == 32768
+//?
 //? run: "cog 1"
 //? cog: 1
 //? post: cog[*].reg[normal] == 1
 //? post: cog[*].reg[statuses] == 16384
+//?
 //? run: "cog 2"
 //? cog: 2
 //? post: cog[*].reg[normal] == 2
 //? post: cog[*].reg[statuses] == 8192
+//?
 //? run: "cog 3"
 //? cog: 3
 //? post: cog[*].reg[normal] == 3
 //? post: cog[*].reg[statuses] == 4096
+//?
 //? run: "cog 4"
 //? cog: 4
 //? post: cog[*].reg[normal] == 4
 //? post: cog[*].reg[statuses] == 2048
+//?
 //? run: "cog 5"
 //? cog: 5
 //? post: cog[*].reg[normal] == 5
 //? post: cog[*].reg[statuses] == 1024
+//?
 //? run: "cog 6"
 //? cog: 6
 //? post: cog[*].reg[normal] == 6
 //? post: cog[*].reg[statuses] == 512
+//?
 //? run: "cog 7"
 //? cog: 7
 //? post: cog[*].reg[normal] == 7

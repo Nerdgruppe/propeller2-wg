@@ -1,6 +1,6 @@
 const std = @import("std");
 const propan = @import("propan.zig");
-const cases = @import("test-cases");
+const cases = @import("cases.zig");
 const test_options = @import("test-options");
 
 test "Flat output must use the configured byte for all padding." {
@@ -292,19 +292,29 @@ test "Render the stdlib documentation for testing" {
 
 test "formatter golden files and idempotence" {
     for (cases.formatter_tests) |fixture| {
+        const expected = try std.Io.Dir.cwd().readFileAlloc(
+            std.testing.io,
+            fixture.expected_path,
+            std.testing.allocator,
+            .limited(1 << 20),
+        );
+        defer std.testing.allocator.free(expected);
+
         var run: Run = .{};
         defer run.deinit();
+
         run.options.@"pretty-print" = fixture.input;
-        run.expectStdOutEqual(fixture.expected);
+        run.expectStdOutEqual(expected);
         run.expectStdErrEqual("");
         try run.check();
 
         var again: Run = .{};
         defer again.deinit();
+
         again.options.@"pretty-print" = "-";
 
-        again.source = fixture.expected;
-        again.expectStdOutEqual(fixture.expected);
+        again.source = expected;
+        again.expectStdOutEqual(expected);
         again.expectStdErrEqual("");
         try again.check();
     }

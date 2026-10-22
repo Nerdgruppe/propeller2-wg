@@ -2,212 +2,297 @@
 //? timeout-ms: 5000
 //? max-cycles: 10000000
 //? post: cog[*].reg[failures] == 0
+//? macro: probe_size required
+//?
 //? run: "writer0-observer1-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_observer = 1
 //? const: probe_size = 1
+//?
 //? run: "writer0-observer1-size2"
+//? macro: probe_size set WFWORD
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_observer = 1
 //? const: probe_size = 2
+//?
 //? run: "writer0-observer1-size4"
+//? macro: probe_size set WFLONG
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_observer = 1
 //? const: probe_size = 4
+//?
 //? run: "writer1-observer2-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 2
 //? const: probe_writer = 1
 //? const: probe_observer = 2
 //? const: probe_size = 1
+//?
 //? run: "writer1-observer2-size2"
+//? macro: probe_size set WFWORD
 //? cog: 2
 //? const: probe_writer = 1
 //? const: probe_observer = 2
 //? const: probe_size = 2
+//?
 //? run: "writer1-observer2-size4"
+//? macro: probe_size set WFLONG
 //? cog: 2
 //? const: probe_writer = 1
 //? const: probe_observer = 2
 //? const: probe_size = 4
+//?
 //? run: "writer2-observer3-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_observer = 3
 //? const: probe_size = 1
+//?
 //? run: "writer2-observer3-size2"
+//? macro: probe_size set WFWORD
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_observer = 3
 //? const: probe_size = 2
+//?
 //? run: "writer2-observer3-size4"
+//? macro: probe_size set WFLONG
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_observer = 3
 //? const: probe_size = 4
+//?
 //? run: "writer3-observer4-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 4
 //? const: probe_writer = 3
 //? const: probe_observer = 4
 //? const: probe_size = 1
+//?
 //? run: "writer3-observer4-size2"
+//? macro: probe_size set WFWORD
 //? cog: 4
 //? const: probe_writer = 3
 //? const: probe_observer = 4
 //? const: probe_size = 2
+//?
 //? run: "writer3-observer4-size4"
+//? macro: probe_size set WFLONG
 //? cog: 4
 //? const: probe_writer = 3
 //? const: probe_observer = 4
 //? const: probe_size = 4
+//?
 //? run: "writer4-observer5-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_observer = 5
 //? const: probe_size = 1
+//?
 //? run: "writer4-observer5-size2"
+//? macro: probe_size set WFWORD
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_observer = 5
 //? const: probe_size = 2
+//?
 //? run: "writer4-observer5-size4"
+//? macro: probe_size set WFLONG
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_observer = 5
 //? const: probe_size = 4
+//?
 //? run: "writer5-observer6-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 6
 //? const: probe_writer = 5
 //? const: probe_observer = 6
 //? const: probe_size = 1
+//?
 //? run: "writer5-observer6-size2"
+//? macro: probe_size set WFWORD
 //? cog: 6
 //? const: probe_writer = 5
 //? const: probe_observer = 6
 //? const: probe_size = 2
+//?
 //? run: "writer5-observer6-size4"
+//? macro: probe_size set WFLONG
 //? cog: 6
 //? const: probe_writer = 5
 //? const: probe_observer = 6
 //? const: probe_size = 4
+//?
 //? run: "writer6-observer7-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_observer = 7
 //? const: probe_size = 1
+//?
 //? run: "writer6-observer7-size2"
+//? macro: probe_size set WFWORD
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_observer = 7
 //? const: probe_size = 2
+//?
 //? run: "writer6-observer7-size4"
+//? macro: probe_size set WFLONG
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_observer = 7
 //? const: probe_size = 4
+//?
 //? run: "writer7-observer0-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 0
 //? const: probe_writer = 7
 //? const: probe_observer = 0
 //? const: probe_size = 1
+//?
 //? run: "writer7-observer0-size2"
+//? macro: probe_size set WFWORD
 //? cog: 0
 //? const: probe_writer = 7
 //? const: probe_observer = 0
 //? const: probe_size = 2
+//?
 //? run: "writer7-observer0-size4"
+//? macro: probe_size set WFLONG
 //? cog: 0
 //? const: probe_writer = 7
 //? const: probe_observer = 0
 //? const: probe_size = 4
+//?
 //? run: "writer0-observer2-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 2
 //? const: probe_writer = 0
 //? const: probe_observer = 2
 //? const: probe_size = 1
+//?
 //? run: "writer0-observer2-size2"
+//? macro: probe_size set WFWORD
 //? cog: 2
 //? const: probe_writer = 0
 //? const: probe_observer = 2
 //? const: probe_size = 2
+//?
 //? run: "writer0-observer2-size4"
+//? macro: probe_size set WFLONG
 //? cog: 2
 //? const: probe_writer = 0
 //? const: probe_observer = 2
 //? const: probe_size = 4
+//?
 //? run: "writer0-observer3-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 3
 //? const: probe_writer = 0
 //? const: probe_observer = 3
 //? const: probe_size = 1
+//?
 //? run: "writer0-observer3-size2"
+//? macro: probe_size set WFWORD
 //? cog: 3
 //? const: probe_writer = 0
 //? const: probe_observer = 3
 //? const: probe_size = 2
+//?
 //? run: "writer0-observer3-size4"
+//? macro: probe_size set WFLONG
 //? cog: 3
 //? const: probe_writer = 0
 //? const: probe_observer = 3
 //? const: probe_size = 4
+//?
 //? run: "writer0-observer4-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 4
 //? const: probe_writer = 0
 //? const: probe_observer = 4
 //? const: probe_size = 1
+//?
 //? run: "writer0-observer4-size2"
+//? macro: probe_size set WFWORD
 //? cog: 4
 //? const: probe_writer = 0
 //? const: probe_observer = 4
 //? const: probe_size = 2
+//?
 //? run: "writer0-observer4-size4"
+//? macro: probe_size set WFLONG
 //? cog: 4
 //? const: probe_writer = 0
 //? const: probe_observer = 4
 //? const: probe_size = 4
+//?
 //? run: "writer0-observer5-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 5
 //? const: probe_writer = 0
 //? const: probe_observer = 5
 //? const: probe_size = 1
+//?
 //? run: "writer0-observer5-size2"
+//? macro: probe_size set WFWORD
 //? cog: 5
 //? const: probe_writer = 0
 //? const: probe_observer = 5
 //? const: probe_size = 2
+//?
 //? run: "writer0-observer5-size4"
+//? macro: probe_size set WFLONG
 //? cog: 5
 //? const: probe_writer = 0
 //? const: probe_observer = 5
 //? const: probe_size = 4
+//?
 //? run: "writer0-observer6-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 6
 //? const: probe_writer = 0
 //? const: probe_observer = 6
 //? const: probe_size = 1
+//?
 //? run: "writer0-observer6-size2"
+//? macro: probe_size set WFWORD
 //? cog: 6
 //? const: probe_writer = 0
 //? const: probe_observer = 6
 //? const: probe_size = 2
+//?
 //? run: "writer0-observer6-size4"
+//? macro: probe_size set WFLONG
 //? cog: 6
 //? const: probe_writer = 0
 //? const: probe_observer = 6
 //? const: probe_size = 4
+//?
 //? run: "writer0-observer7-size1"
+//? macro: probe_size set WFBYTE
 //? cog: 7
 //? const: probe_writer = 0
 //? const: probe_observer = 7
 //? const: probe_size = 1
+//?
 //? run: "writer0-observer7-size2"
+//? macro: probe_size set WFWORD
 //? cog: 7
 //? const: probe_writer = 0
 //? const: probe_observer = 7
 //? const: probe_size = 2
+//?
 //? run: "writer0-observer7-size4"
+//? macro: probe_size set WFLONG
 //? cog: 7
 //? const: probe_writer = 0
 //? const: probe_observer = 7
@@ -376,13 +461,7 @@ worker_wait:
                 ADDCT1  register(300),  0
                 WAITCT1
                 GETCT   register(304)
-.if probe_size == 1
-                WFBYTE  register(303)
-.elif   probe_size == 2
-                WFWORD  register(303)
-.else
-                WFLONG  register(303)
-.endif
+                {{ probe_size }}    register(303)
                 WAITX   128
                 COGSTOP probe_writer
                 LONG    [0] * (504 - $)

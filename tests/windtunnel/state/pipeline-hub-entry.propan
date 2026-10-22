@@ -1,337 +1,723 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[failures] == 0
+//? macro: mov required
+//? macro: setq required
+//? macro: rdlong required
+//? macro: mov_2 required
+//? macro: probe_lut required
+//? macro: jmp required
+//?
 //? run: "0-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "0-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "0-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "0-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "0-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "0-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "0-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "0-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
+//?
 //? run: "1-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "1-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "1-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "1-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "1-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "1-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "1-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "1-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
+//?
 //? run: "2-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "2-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "2-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "2-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "2-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "2-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "2-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "2-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
+//?
 //? run: "3-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "3-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "3-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "3-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "3-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "3-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "3-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "3-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
+//?
 //? run: "4-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "4-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "4-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "4-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "4-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "4-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "4-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "4-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
+//?
 //? run: "5-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "5-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "5-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "5-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "5-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "5-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "5-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "5-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
+//?
 //? run: "6-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "6-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "6-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "6-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "6-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "6-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "6-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "6-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
+//?
 //? run: "7-0-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 0
-//? const: probe_lut = 0
+//?
 //? run: "7-0-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 0
-//? const: probe_lut = 1
+//?
 //? run: "7-1-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 1
-//? const: probe_lut = 0
+//?
 //? run: "7-1-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 1
-//? const: probe_lut = 1
+//?
 //? run: "7-2-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 2
-//? const: probe_lut = 0
+//?
 //? run: "7-2-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 2
-//? const: probe_lut = 1
+//?
 //? run: "7-3-cog"
+//? macro: mov set MOV return_pc, cogaddr(cog_measure_return)
+//? macro: setq set
+//? macro: rdlong set
+//? macro: mov_2 set
+//? macro: probe_lut set GETCT start
+//? macro: jmp set JMP target
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 3
-//? const: probe_lut = 0
+//?
 //? run: "7-3-lut"
+//? macro: mov set // Initialize the word fetched past the LUT return jump as well.
+//? macro: setq set SETQ2 4
+//? macro: rdlong set RDLONG register(0), aug(hubaddr(lut_measure))
+//? macro: mov_2 set MOV return_pc, aug(pcaddr(lut_return))
+//? macro: probe_lut set JMP lut_measure
+//? macro: jmp set
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 3
-//? const: probe_lut = 1
 
 // Measure cog/LUT-to-hub entry and the return to local execution.
 // Separate packed targets cover every bank and byte alignment without assembler alignment hiding unaligned entry.
 
-.if probe_lut == 1
-                // Initialize the word fetched past the LUT return jump as well.
-                SETQ2   4
-                RDLONG  register(0),    aug(hubaddr(lut_measure))
-                MOV     return_pc,      aug(pcaddr(lut_return))
-.else
-                MOV     return_pc,      cogaddr(cog_measure_return)
-.endif
+                {{ mov }}
+                {{ setq }}
+                {{ rdlong }}
+                {{ mov_2 }}
                 MOV     PTRA,           aug(hubaddr(targets))
                 MOV     bank,           0
 bank_loop:
@@ -345,12 +731,8 @@ phase_loop:
                 ADD     timer,      offset
                 ADDCT1  timer,      0
                 WAITCT1
-.if probe_lut == 1
-                JMP     lut_measure
-.else
-                GETCT   start
-                JMP     target
-.endif
+                {{ probe_lut }}
+                {{ jmp }}
                 ADD     failures,   1
 cog_measure_return:
                 GETCT   return_time

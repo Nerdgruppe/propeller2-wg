@@ -6,76 +6,125 @@
 //? post: cog[*].reg[saved_return] == 5
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[finished] == 5
+//? macro: interrupt_level required
+//?
 //? run: "int1-cog0"
+//? macro: interrupt_level set 1
 //? cog: 0
 //? const: irq_level = 1
+//?
 //? run: "int1-cog1"
+//? macro: interrupt_level set 1
 //? cog: 1
 //? const: irq_level = 1
+//?
 //? run: "int1-cog2"
+//? macro: interrupt_level set 1
 //? cog: 2
 //? const: irq_level = 1
+//?
 //? run: "int1-cog3"
+//? macro: interrupt_level set 1
 //? cog: 3
 //? const: irq_level = 1
+//?
 //? run: "int1-cog4"
+//? macro: interrupt_level set 1
 //? cog: 4
 //? const: irq_level = 1
+//?
 //? run: "int1-cog5"
+//? macro: interrupt_level set 1
 //? cog: 5
 //? const: irq_level = 1
+//?
 //? run: "int1-cog6"
+//? macro: interrupt_level set 1
 //? cog: 6
 //? const: irq_level = 1
+//?
 //? run: "int1-cog7"
+//? macro: interrupt_level set 1
 //? cog: 7
 //? const: irq_level = 1
+//?
 //? run: "int2-cog0"
+//? macro: interrupt_level set 2
 //? cog: 0
 //? const: irq_level = 2
+//?
 //? run: "int2-cog1"
+//? macro: interrupt_level set 2
 //? cog: 1
 //? const: irq_level = 2
+//?
 //? run: "int2-cog2"
+//? macro: interrupt_level set 2
 //? cog: 2
 //? const: irq_level = 2
+//?
 //? run: "int2-cog3"
+//? macro: interrupt_level set 2
 //? cog: 3
 //? const: irq_level = 2
+//?
 //? run: "int2-cog4"
+//? macro: interrupt_level set 2
 //? cog: 4
 //? const: irq_level = 2
+//?
 //? run: "int2-cog5"
+//? macro: interrupt_level set 2
 //? cog: 5
 //? const: irq_level = 2
+//?
 //? run: "int2-cog6"
+//? macro: interrupt_level set 2
 //? cog: 6
 //? const: irq_level = 2
+//?
 //? run: "int2-cog7"
+//? macro: interrupt_level set 2
 //? cog: 7
 //? const: irq_level = 2
+//?
 //? run: "int3-cog0"
+//? macro: interrupt_level set 3
 //? cog: 0
 //? const: irq_level = 3
+//?
 //? run: "int3-cog1"
+//? macro: interrupt_level set 3
 //? cog: 1
 //? const: irq_level = 3
+//?
 //? run: "int3-cog2"
+//? macro: interrupt_level set 3
 //? cog: 2
 //? const: irq_level = 3
+//?
 //? run: "int3-cog3"
+//? macro: interrupt_level set 3
 //? cog: 3
 //? const: irq_level = 3
+//?
 //? run: "int3-cog4"
+//? macro: interrupt_level set 3
 //? cog: 4
 //? const: irq_level = 3
+//?
 //? run: "int3-cog5"
+//? macro: interrupt_level set 3
 //? cog: 5
 //? const: irq_level = 3
+//?
 //? run: "int3-cog6"
+//? macro: interrupt_level set 3
 //? cog: 6
 //? const: irq_level = 3
+//?
 //? run: "int3-cog7"
+//? macro: interrupt_level set 3
 //? cog: 7
 //? const: irq_level = 3
 
@@ -83,13 +132,7 @@
                 // Locate the injected CALLD relative to instructions already in flight.
                 MOV     register(0x1f6 - 2 * irq_level),    vector
                 GETCT   start
-.if irq_level == 1
-                TRGINT1
-.elif   irq_level == 2
-                TRGINT2
-.else
-                TRGINT3
-.endif
+                TRGINT{{ interrupt_level }}
                 MOV     sequence,                           1
                 MOV     sequence,                           2
                 MOV     sequence,                           3
@@ -111,13 +154,7 @@ isr:
                 GETCT   stamp
                 MOV     observed,       sequence
                 MOV     saved_return,   register(0x1f7 - 2 * irq_level)
-.if irq_level == 1
-                RETI1
-.elif   irq_level == 2
-                RETI2
-.else
-                RETI3
-.endif
+                RETI{{ interrupt_level }}
 var vector:     LONG    pcaddr(isr)
 var start:      LONG    0
 var sequence:   LONG    0

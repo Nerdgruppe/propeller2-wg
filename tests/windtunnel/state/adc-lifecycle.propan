@@ -1,1441 +1,1727 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: wypin default
+//? macro: selected_action required
+//? macro: waitx default
+//? macro: dirh default
+//?
 //? run: "m24-x3-action0-d0"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 0
 //? const: delay = 0
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action0-d1"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 0
 //? const: delay = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action0-d2"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 0
 //? const: delay = 2
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action0-d8"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 0
 //? const: delay = 8
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action0-d40"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 0
 //? const: delay = 40
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action0-d100"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 0
 //? const: delay = 100
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action1-d0"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 1
 //? const: delay = 0
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action1-d1"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 1
 //? const: delay = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action1-d2"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 1
 //? const: delay = 2
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action1-d8"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 1
 //? const: delay = 8
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action1-d40"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 1
 //? const: delay = 40
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action1-d100"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 1
 //? const: delay = 100
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action2-d0"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 2
 //? const: delay = 0
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action2-d1"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 2
 //? const: delay = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action2-d2"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 2
 //? const: delay = 2
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action2-d8"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 2
 //? const: delay = 8
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action2-d40"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 2
 //? const: delay = 40
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action2-d100"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 2
 //? const: delay = 100
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action3-d0"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 3
 //? const: delay = 0
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action3-d1"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 3
 //? const: delay = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action3-d2"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 3
 //? const: delay = 2
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action3-d8"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 3
 //? const: delay = 8
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action3-d40"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 3
 //? const: delay = 40
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action3-d100"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 3
 //? const: delay = 100
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action4-d0"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 4
 //? const: delay = 0
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action4-d1"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 4
 //? const: delay = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action4-d2"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 4
 //? const: delay = 2
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x3-action4-d8"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 4
 //? const: delay = 8
 //? post: cog[0].reg[value] == 511
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action4-d40"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 4
 //? const: delay = 40
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x3-action4-d100"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 3
-//? const: action = 4
 //? const: delay = 100
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action0-d0"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 0
 //? const: delay = 0
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action0-d1"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 0
 //? const: delay = 1
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action0-d2"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 0
 //? const: delay = 2
 //? post: cog[0].reg[value] == 1284
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action0-d8"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 0
 //? const: delay = 8
 //? post: cog[0].reg[value] == 1284
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action0-d40"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 0
 //? const: delay = 40
 //? post: cog[0].reg[value] == 1540
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action0-d100"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 0
 //? const: delay = 100
 //? post: cog[0].reg[value] == 2052
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action1-d0"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 1
 //? const: delay = 0
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action1-d1"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 1
 //? const: delay = 1
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action1-d2"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 1
 //? const: delay = 2
 //? post: cog[0].reg[value] == 1284
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action1-d8"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 1
 //? const: delay = 8
 //? post: cog[0].reg[value] == 1284
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action1-d40"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 1
 //? const: delay = 40
 //? post: cog[0].reg[value] == 1540
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action1-d100"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 1
 //? const: delay = 100
 //? post: cog[0].reg[value] == 2052
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action2-d0"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 2
 //? const: delay = 0
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action2-d1"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 2
 //? const: delay = 1
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action2-d2"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 2
 //? const: delay = 2
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action2-d8"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 2
 //? const: delay = 8
 //? post: cog[0].reg[value] == 168
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action2-d40"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 2
 //? const: delay = 40
 //? post: cog[0].reg[value] == 200
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action2-d100"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 2
 //? const: delay = 100
 //? post: cog[0].reg[value] == 260
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action3-d0"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 3
 //? const: delay = 0
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action3-d1"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 3
 //? const: delay = 1
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action3-d2"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 3
 //? const: delay = 2
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action3-d8"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 3
 //? const: delay = 8
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action3-d40"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 3
 //? const: delay = 40
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action3-d100"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 3
 //? const: delay = 100
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action4-d0"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 4
 //? const: delay = 0
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action4-d1"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 4
 //? const: delay = 1
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action4-d2"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 4
 //? const: delay = 2
 //? post: cog[0].reg[value] == 1220
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x19-action4-d8"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 4
 //? const: delay = 8
 //? post: cog[0].reg[value] == 3262
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action4-d40"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 4
 //? const: delay = 40
 //? post: cog[0].reg[value] == 1572
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x19-action4-d100"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 19
-//? const: action = 4
 //? const: delay = 100
 //? post: cog[0].reg[value] == 2020
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action0-d0"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 0
 //? const: delay = 0
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action0-d1"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 0
 //? const: delay = 1
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action0-d2"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 0
 //? const: delay = 2
 //? post: cog[0].reg[value] == 102420
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action0-d8"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 0
 //? const: delay = 8
 //? post: cog[0].reg[value] == 102420
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action0-d40"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 0
 //? const: delay = 40
 //? post: cog[0].reg[value] == 147476
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action0-d100"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 0
 //? const: delay = 100
 //? post: cog[0].reg[value] == 262164
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action1-d0"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 1
 //? const: delay = 0
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action1-d1"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 1
 //? const: delay = 1
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action1-d2"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 1
 //? const: delay = 2
 //? post: cog[0].reg[value] == 102420
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action1-d8"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 1
 //? const: delay = 8
 //? post: cog[0].reg[value] == 102420
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action1-d40"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 1
 //? const: delay = 40
 //? post: cog[0].reg[value] == 147476
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action1-d100"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 1
 //? const: delay = 100
 //? post: cog[0].reg[value] == 262164
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action2-d0"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 2
 //? const: delay = 0
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action2-d1"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 2
 //? const: delay = 1
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action2-d2"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 2
 //? const: delay = 2
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action2-d8"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 2
 //? const: delay = 8
 //? post: cog[0].reg[value] == 14028
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action2-d40"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 2
 //? const: delay = 40
 //? post: cog[0].reg[value] == 19900
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action2-d100"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 2
 //? const: delay = 100
 //? post: cog[0].reg[value] == 33670
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action3-d0"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 3
 //? const: delay = 0
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action3-d1"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 3
 //? const: delay = 1
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action3-d2"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 3
 //? const: delay = 2
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action3-d8"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 3
 //? const: delay = 8
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action3-d40"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 3
 //? const: delay = 40
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action3-d100"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 3
 //? const: delay = 100
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action4-d0"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 4
 //? const: delay = 0
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action4-d1"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 4
 //? const: delay = 1
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action4-d2"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 4
 //? const: delay = 2
 //? post: cog[0].reg[value] == 92436
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x35-action4-d8"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 4
 //? const: delay = 8
 //? post: cog[0].reg[value] == 275614
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action4-d40"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 4
 //? const: delay = 40
 //? post: cog[0].reg[value] == 164180
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x35-action4-d100"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 35
-//? const: action = 4
 //? const: delay = 100
 //? post: cog[0].reg[value] == 264532
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action0-d0"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 0
 //? const: delay = 0
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action0-d1"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 0
 //? const: delay = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action0-d2"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 0
 //? const: delay = 2
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action0-d8"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 0
 //? const: delay = 8
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action0-d40"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 0
 //? const: delay = 40
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action0-d100"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 0
 //? const: delay = 100
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action1-d0"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 1
 //? const: delay = 0
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action1-d1"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 1
 //? const: delay = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action1-d2"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 1
 //? const: delay = 2
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action1-d8"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 1
 //? const: delay = 8
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action1-d40"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 1
 //? const: delay = 40
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action1-d100"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 1
 //? const: delay = 100
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action2-d0"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 2
 //? const: delay = 0
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action2-d1"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 2
 //? const: delay = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action2-d2"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 2
 //? const: delay = 2
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action2-d8"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 2
 //? const: delay = 8
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action2-d40"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 2
 //? const: delay = 40
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action2-d100"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 2
 //? const: delay = 100
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action3-d0"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 3
 //? const: delay = 0
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action3-d1"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 3
 //? const: delay = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action3-d2"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 3
 //? const: delay = 2
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action3-d8"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 3
 //? const: delay = 8
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action3-d40"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 3
 //? const: delay = 40
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action3-d100"
+//? macro: selected_action set DIRL 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 3
 //? const: delay = 100
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action4-d0"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 4
 //? const: delay = 0
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action4-d1"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 4
 //? const: delay = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action4-d2"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 4
 //? const: delay = 2
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-x51-action4-d8"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 4
 //? const: delay = 8
 //? post: cog[0].reg[value] == 4161273855
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action4-d40"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 4
 //? const: delay = 40
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-x51-action4-d100"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 24
 //? const: base = 0
 //? const: x = 51
-//? const: action = 4
 //? const: delay = 100
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m26-x2-action0-d0"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 0
 //? const: delay = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action0-d1"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 0
 //? const: delay = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action0-d2"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 0
 //? const: delay = 2
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action0-d8"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 0
 //? const: delay = 8
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action0-d40"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 0
 //? const: delay = 40
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action0-d100"
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 0
 //? const: delay = 100
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action1-d0"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 1
 //? const: delay = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action1-d1"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 1
 //? const: delay = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action1-d2"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 1
 //? const: delay = 2
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action1-d8"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 1
 //? const: delay = 8
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action1-d40"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 1
 //? const: delay = 40
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action1-d100"
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 1
 //? const: delay = 100
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action2-d0"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 2
 //? const: delay = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action2-d1"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 2
 //? const: delay = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action2-d2"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 2
 //? const: delay = 2
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action2-d8"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 2
 //? const: delay = 8
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action2-d40"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 2
 //? const: delay = 40
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action2-d100"
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 2
 //? const: delay = 100
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action3-d0"
+//? macro: selected_action set DIRL 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 3
 //? const: delay = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action3-d1"
+//? macro: selected_action set DIRL 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 3
 //? const: delay = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action3-d2"
+//? macro: selected_action set DIRL 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 3
 //? const: delay = 2
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action3-d8"
+//? macro: selected_action set DIRL 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 3
 //? const: delay = 8
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action3-d40"
+//? macro: selected_action set DIRL 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 3
 //? const: delay = 40
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action3-d100"
+//? macro: selected_action set DIRL 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 3
 //? const: delay = 100
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action4-d0"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 4
 //? const: delay = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action4-d1"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 4
 //? const: delay = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action4-d2"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 4
 //? const: delay = 2
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action4-d8"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 4
 //? const: delay = 8
 //? post: cog[0].reg[value] == 14
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action4-d40"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 4
 //? const: delay = 40
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-x2-action4-d100"
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 26
 //? const: base = 0
 //? const: x = 2
-//? const: action = 4
 //? const: delay = 100
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action0-d0"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 0
 //? const: delay = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action0-d1"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 0
 //? const: delay = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action0-d2"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 0
 //? const: delay = 2
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action0-d8"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 0
 //? const: delay = 8
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action0-d40"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 0
 //? const: delay = 40
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action0-d100"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WRPIN aug(0x40000000 | (mode << 1) | base), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 0
 //? const: delay = 100
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m3-x256-action1-d0"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 1
 //? const: delay = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action1-d1"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 1
 //? const: delay = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action1-d2"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 1
 //? const: delay = 2
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action1-d8"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 1
 //? const: delay = 8
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action1-d40"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 1
 //? const: delay = 40
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action1-d100"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WXPIN aug(x), 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 1
 //? const: delay = 100
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m3-x256-action2-d0"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 2
 //? const: delay = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action2-d1"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 2
 //? const: delay = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action2-d2"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 2
 //? const: delay = 2
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action2-d8"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 2
 //? const: delay = 8
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action2-d40"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 2
 //? const: delay = 40
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action2-d100"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set WYPIN 1, 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 2
 //? const: delay = 100
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m3-x256-action3-d0"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 3
 //? const: delay = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action3-d1"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 3
 //? const: delay = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action3-d2"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 3
 //? const: delay = 2
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action3-d8"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 3
 //? const: delay = 8
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action3-d40"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 3
 //? const: delay = 40
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action3-d100"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 3
 //? const: delay = 100
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action4-d0"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 4
 //? const: delay = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action4-d1"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 4
 //? const: delay = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action4-d2"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 4
 //? const: delay = 2
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action4-d8"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 4
 //? const: delay = 8
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action4-d40"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 4
 //? const: delay = 40
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m3-x256-action4-d100"
+//? macro: wypin override WYPIN aug(0x8000), 40
+//? macro: selected_action set DIRL 40
+//? macro: waitx override WAITX 4
+//? macro: dirh override DIRH 40
 //? const: mode = 3
 //? const: base = 1441856
 //? const: x = 256
-//? const: action = 4
 //? const: delay = 100
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flags] == 0
@@ -1444,29 +1730,13 @@
                 DIRL    40
                 WRPIN   aug(0x40000000 | (mode << 1) | base),   40
                 WXPIN   aug(x),                                 40
-.if mode < 4
-                WYPIN   aug(0x8000),                            40
-.endif
+                {{ wypin }}
                 OUTH    40
                 DIRH    40
                 WAITX   160
-.if action == 0
-                WRPIN   aug(0x40000000 | (mode << 1) | base),   40
-.endif
-.if action == 1
-                WXPIN   aug(x),                                 40
-.endif
-.if action == 2
-                WYPIN   1,                                      40
-.endif
-.if action == 3
-                DIRL    40
-.endif
-.if action == 4
-                DIRL    40
-                WAITX   4
-                DIRH    40
-.endif
+                {{ selected_action }}
+                {{ waitx }}
+                {{ dirh }}
                 WAITX   delay
                 RQPIN   value,                                  40  :wc
                 MOV     flags,                                  0

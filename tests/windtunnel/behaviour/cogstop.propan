@@ -10,6 +10,8 @@ _start:
                 COGSTOP id
                 // end of code
 
+                // Raw post-stop sentinel: condition 0, opcode $5E, CZI=7.
+                // Preserve these exact bits; canonical mnemonic output would change the sentinel.
                 LONG    0b0000_1011110_111_000000000_000000000      // Must never execute after self-stop.
 
 var id:         LONG    0

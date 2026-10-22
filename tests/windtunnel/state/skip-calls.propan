@@ -1,288 +1,355 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
+//? macro: skip required
+//? macro: call required
+//? macro: selected_kind required
+//?
 //? run: "kind0-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALL target
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind0-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALL target
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind1-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALL nrel(sub)
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 1
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind1-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALL nrel(sub)
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 1
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind2-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALLPA 123, target
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind2-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALLPA 123, target
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind3-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALLPB 123, target
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind3-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALLPB 123, target
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[inside_pattern] == 1
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind4-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALLA target
+//? macro: selected_kind set RETA
 //? cog: 0
-//? const: kind = 4
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind4-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALLA target
+//? macro: selected_kind set RETA
 //? cog: 7
-//? const: kind = 4
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind5-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALLB target
+//? macro: selected_kind set RETB
 //? cog: 0
-//? const: kind = 5
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind5-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALLB target
+//? macro: selected_kind set RETB
 //? cog: 7
-//? const: kind = 5
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind6-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALLD link, target
+//? macro: selected_kind set JMP link
 //? cog: 0
-//? const: kind = 6
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind6-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALLD link, target
+//? macro: selected_kind set JMP link
 //? cog: 7
-//? const: kind = 6
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind7-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: call set CALLD PA, nrel(sub)
+//? macro: selected_kind set JMP PA
 //? cog: 0
-//? const: kind = 7
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind7-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: call set CALLD PA, nrel(sub)
+//? macro: selected_kind set JMP PA
 //? cog: 7
-//? const: kind = 7
-//? const: fast = 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind0-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALL target
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind0-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALL target
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind1-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALL nrel(sub)
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 1
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind1-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALL nrel(sub)
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 1
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind2-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALLPA 123, target
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind2-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALLPA 123, target
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind3-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALLPB 123, target
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind3-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALLPB 123, target
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind4-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALLA target
+//? macro: selected_kind set RETA
 //? cog: 0
-//? const: kind = 4
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind4-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALLA target
+//? macro: selected_kind set RETA
 //? cog: 7
-//? const: kind = 4
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind5-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALLB target
+//? macro: selected_kind set RETB
 //? cog: 0
-//? const: kind = 5
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind5-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALLB target
+//? macro: selected_kind set RETB
 //? cog: 7
-//? const: kind = 5
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind6-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALLD link, target
+//? macro: selected_kind set JMP link
 //? cog: 0
-//? const: kind = 6
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind6-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALLD link, target
+//? macro: selected_kind set JMP link
 //? cog: 7
-//? const: kind = 6
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind7-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: call set CALLD PA, nrel(sub)
+//? macro: selected_kind set JMP PA
 //? cog: 0
-//? const: kind = 7
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[value] == 1
+//?
 //? run: "kind7-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: call set CALLD PA, nrel(sub)
+//? macro: selected_kind set JMP PA
 //? cog: 7
-//? const: kind = 7
-//? const: fast = 1
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
@@ -292,28 +359,8 @@
                 // Observe which call families change the skip suspension depth.
                 MOV     PTRA,   stack_address
                 MOV     PTRB,   stack_address
-.if fast
-                SKIPF   2
-.else
-                SKIP    2
-.endif
-.if kind == 0
-                CALL    target
-.elif   kind == 1
-                CALL    nrel(sub)
-.elif   kind == 2
-                CALLPA  123,    target
-.elif   kind == 3
-                CALLPB  123,    target
-.elif   kind == 4
-                CALLA   target
-.elif   kind == 5
-                CALLB   target
-.elif   kind == 6
-                CALLD   link,   target
-.else
-                CALLD   PA,     nrel(sub)
-.endif
+                {{ skip }}  2
+                {{ call }}
                 NOP
                 GETBRK  after                   :wc
                 GETBRK  after_pattern           :wz
@@ -325,17 +372,7 @@ sub:
                 GETBRK  inside          :wc
                 GETBRK  inside_pattern  :wz
                 ADD     value,  1
-.if kind == 4
-                RETA
-.elif   kind == 5
-                RETB
-.elif   kind == 6
-                JMP     link
-.elif   kind == 7
-                JMP     PA
-.else
-                RET
-.endif
+                {{ selected_kind }}
 var target:     LONG    pcaddr(sub)
 var stack_address:
                 LONG    hubaddr(stack_data)

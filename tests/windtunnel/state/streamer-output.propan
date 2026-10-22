@@ -1,279 +1,303 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[original] == 0
+//? macro: wrlut default
+//? macro: rdfast default
+//? macro: xinit_operand required
+//?
 //? run: "immediate 4000"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x4000
 //? const: width = 1
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "immediate alternate 4000"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x4001
 //? const: width = 1
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x0
+//?
 //? run: "immediate 5000"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x5000
 //? const: width = 2
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "immediate alternate 5000"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x5001
 //? const: width = 2
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x0
+//?
 //? run: "immediate 5002"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x5002
 //? const: width = 2
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "immediate alternate 5002"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x5003
 //? const: width = 2
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x0
+//?
 //? run: "immediate 6000"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6000
 //? const: width = 4
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "immediate alternate 6000"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6001
 //? const: width = 4
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x2
+//?
 //? run: "immediate 6002"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6002
 //? const: width = 4
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "immediate alternate 6002"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6003
 //? const: width = 4
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x2
+//?
 //? run: "immediate 6004"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6004
 //? const: width = 4
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "immediate alternate 6004"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6005
 //? const: width = 4
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x2
+//?
 //? run: "immediate 6006"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6006
 //? const: width = 8
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x21
+//?
 //? run: "immediate 6007"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x6007
 //? const: width = 8
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x21
+//?
 //? run: "immediate 600e"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x600e
 //? const: width = 8
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x21
+//?
 //? run: "immediate 600f"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x600f
 //? const: width = 16
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x4321
+//?
 //? run: "immediate 7000"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x7000
 //? const: width = 16
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x4321
+//?
 //? run: "immediate 7001"
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x7001
 //? const: width = 32
-//? const: fifo = 0
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x87654321
+//?
 //? run: "immediate LUT 1"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x0
 //? const: width = 1
-//? const: fifo = 0
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "immediate LUT 2"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x1000
 //? const: width = 2
-//? const: fifo = 0
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "immediate LUT 4"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x2000
 //? const: width = 4
-//? const: fifo = 0
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "immediate LUT 8"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: xinit_operand set aug(0x87654321)
 //? const: mode = 0x3000
 //? const: width = 8
-//? const: fifo = 0
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "FIFO 4000"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0x8000
 //? const: width = 1
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "FIFO 5000"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0x9000
 //? const: width = 2
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "FIFO 5002"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0x9002
 //? const: width = 2
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "FIFO 6000"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xa000
 //? const: width = 4
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "FIFO 6002"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xa002
 //? const: width = 4
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "FIFO 6004"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xa004
 //? const: width = 4
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x1
+//?
 //? run: "FIFO 6006"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xa006
 //? const: width = 8
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x21
+//?
 //? run: "FIFO 6007"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xa007
 //? const: width = 8
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x21
+//?
 //? run: "FIFO 600e"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xa00e
 //? const: width = 8
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x21
+//?
 //? run: "FIFO 600f"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xa00f
 //? const: width = 16
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x4321
+//?
 //? run: "FIFO 7000"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xb000
 //? const: width = 16
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x4321
+//?
 //? run: "FIFO 7001"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xb001
 //? const: width = 32
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x87654321
+//?
 //? run: "FIFO LUT 1"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0x7002
 //? const: width = 1
-//? const: fifo = 1
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "FIFO LUT 2"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0x7004
 //? const: width = 2
-//? const: fifo = 1
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "FIFO LUT 4"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0x7006
 //? const: width = 4
-//? const: fifo = 1
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "FIFO LUT 8"
+//? macro: wrlut override WRLUT aug(0xdeadbeef), aug(0x21 & ((1 << width) - 1))
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0x7008
 //? const: width = 8
-//? const: fifo = 1
-//? const: lut = 1
 //? post: cog[*].reg[result] == 0xdeadbeef
+//?
 //? run: "pixel b002"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xb002
 //? const: width = 8
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x21100000
+//?
 //? run: "pixel b003"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xb003
 //? const: width = 8
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x800
+//?
 //? run: "pixel b004"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xb004
 //? const: width = 8
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x24005500
+//?
 //? run: "pixel b005"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xb005
 //? const: width = 16
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x42650800
+//?
 //? run: "pixel b006"
+//? macro: rdfast override RDFAST 0, aug(hubaddr(data))
+//? macro: xinit_operand set 0
 //? const: mode = 0xb006
 //? const: width = 32
-//? const: fifo = 1
-//? const: lut = 0
 //? post: cog[*].reg[result] == 0x87654300
 
                 // Freeze the initial sample to inspect digital output without changing OUTA.
                 MOV     OUTA,                                   0
                 MOV     DIRA,                                   aug(0xffffffff)
-.if lut
-                WRLUT   aug(0xdeadbeef),                        aug(0x21 & ((1 << width) - 1))
-.endif
-.if fifo
-                RDFAST  0,                                      aug(hubaddr(data))
-.endif
+                {{ wrlut }}
+                {{ rdfast }}
                 SETXFRQ 0
-.if fifo
-                XINIT   aug((mode << 16) | X_PINS_ON | 0xffff), 0
-.else
-                XINIT   aug((mode << 16) | X_PINS_ON | 0xffff), aug(0x87654321)
-.endif
+                XINIT   aug((mode << 16) | X_PINS_ON | 0xffff), {{ xinit_operand }}
                 WAITX   20
                 MOV     result,                                 INA
                 MOV     original,                               OUTA

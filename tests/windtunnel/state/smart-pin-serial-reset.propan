@@ -1,7 +1,14 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//? macro: wrpin required
+//? macro: wrpin_2 default
+//? macro: wxpin default
+//? macro: wypin default
+//? macro: wypin_2 default
+//?
 //? run: "pll0-mode28"
+//? macro: wrpin set WRPIN aug(0x71000000 | P_TT_01 | (mode << 1)), 4
 //? const: mode = 28
 //? post: cog[*].reg[complete] == 0xff13579b
 //? post: cog[*].reg[carry] == 0x00000001
@@ -12,7 +19,9 @@
 //? post: cog[*].reg[restarted] == 0xff13579b
 //? post: cog[*].reg[reconfigured] == 0xff13579b
 //? post: cog[*].reg[count] == 0x00000000
+//?
 //? run: "pll0-mode29"
+//? macro: wrpin set WRPIN aug(0x71000000 | (mode << 1)), 4
 //? const: mode = 29
 //? post: cog[*].reg[complete] == 0xff000000
 //? post: cog[*].reg[carry] == 0x00000001
@@ -23,7 +32,10 @@
 //? post: cog[*].reg[restarted] == 0xff000000
 //? post: cog[*].reg[reconfigured] == 0xff000000
 //? post: cog[*].reg[count] == 0x00000000
+//?
 //? run: "pll0-mode30"
+//? macro: wrpin set WRPIN aug(0x71000000 | P_TT_01 | (mode << 1)), 4
+//? macro: wypin_2 override WYPIN aug(0x89abcdef), 4
 //? const: mode = 30
 //? post: cog[*].reg[complete] == 0xffc4d5e6
 //? post: cog[*].reg[carry] == 0x00000000
@@ -34,7 +46,12 @@
 //? post: cog[*].reg[restarted] == 0xffc4d5e6
 //? post: cog[*].reg[reconfigured] == 0xffc4d5e6
 //? post: cog[*].reg[count] == 0x00000000
+//?
 //? run: "pll0-mode31"
+//? macro: wrpin set WRPIN aug(0x71000000 | (mode << 1)), 4
+//? macro: wrpin_2 override WRPIN P_TT_01 | P_ASYNC_TX, 3
+//? macro: wxpin override WXPIN aug((8 << 16) | 7), 3
+//? macro: wypin override WYPIN aug(0x89abcdef), 3
 //? const: mode = 31
 //? post: cog[*].reg[complete] == 0xef000000
 //? post: cog[*].reg[carry] == 0x00000001
@@ -51,23 +68,15 @@
                 // P3 supplies UART data or a steady synchronous sample; P5 supplies B clocks.
                 DRVH    3
                 DRVL    5
-.if mode == 28 or mode == 30
-                WRPIN   aug(0x71000000 | P_TT_01 | (mode << 1)),    4
-.else
-                WRPIN   aug(0x71000000 | (mode << 1)),              4
-.endif
+                {{ wrpin }}
                 WXPIN   aug((8 << 16) | 7),                         4
                 WYPIN   aug(0x89abcdef),                            4
                 DIRH    4
                 WAITX   32
-.if mode == 31
-                WRPIN   P_TT_01 | P_ASYNC_TX,                       3
-                WXPIN   aug((8 << 16) | 7),                         3
-                WYPIN   aug(0x89abcdef),                            3
-.endif
-.if mode == 30
-                WYPIN   aug(0x89abcdef),                            4
-.endif
+                {{ wrpin_2 }}
+                {{ wxpin }}
+                {{ wypin }}
+                {{ wypin_2 }}
 .if mode == 28 or mode == 29
                 MOV     count,                                      8
 clocks:

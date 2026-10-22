@@ -2,6 +2,7 @@
                 //? issues: pc_domain = 3
                 //? timeout-ms: 10000
                 //? max-cycles: 3000000
+                //?
                 //? run: "source0"
                 //? issues: pc_domain = 1047552
                 //? post: cog[*].reg[link] == 0x2
@@ -13,6 +14,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 0
+                //?
                 //? run: "source1"
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x1
@@ -23,6 +25,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 1
+                //?
                 //? run: "source2"
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x2
@@ -33,6 +36,7 @@
                 //? post: cog[*].reg[landed] == 0x2
                 //? cog: 0
                 //? const: source = 2
+                //?
                 //? run: "source3"
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x3
@@ -43,6 +47,7 @@
                 //? post: cog[*].reg[landed] == 0x3
                 //? cog: 0
                 //? const: source = 3
+                //?
                 //? run: "source4"
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x4
@@ -53,6 +58,7 @@
                 //? post: cog[*].reg[landed] == 0x4
                 //? cog: 0
                 //? const: source = 4
+                //?
                 //? run: "source5"
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x5
@@ -63,6 +69,7 @@
                 //? post: cog[*].reg[landed] == 0x5
                 //? cog: 0
                 //? const: source = 5
+                //?
                 //? run: "source6"
                 //? post: cog[*].reg[link] == 0x402
                 //? post: cog[*].reg[hits] == 0x6
@@ -164,3 +171,4 @@ tail_template:
 
 
 .import "../local-pc-lut.propan"
+

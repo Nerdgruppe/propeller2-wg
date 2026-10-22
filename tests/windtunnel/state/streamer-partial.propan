@@ -1,13 +1,20 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: xcont required
+//?
 //? run: "partial stop"
+//? macro: xcont set
 //? post: cog[*].reg[amount] == 0
 //? post: hub[buffer] == u8 [204]
 //? const: second = 0
+//?
 //? run: "partial chained 3+5"
+//? macro: xcont set XCONT aug(X_1P_1DAC1_WFBYTE | X_WRITE_ON | second), 0
 //? post: cog[*].reg[amount] == 0
 //? post: hub[buffer] == u8 [204]
 //? const: second = 5
+//?
 //? run: "partial chained 3+8"
+//? macro: xcont set XCONT aug(X_1P_1DAC1_WFBYTE | X_WRITE_ON | second), 0
 //? post: cog[*].reg[amount] == 1
 //? post: hub[buffer] == u8 [255]
 //? const: second = 8
@@ -18,9 +25,7 @@
                 WRFAST  0,                                              aug(hubaddr(buffer))
                 SETXFRQ aug(0x10000000)
                 XINIT   aug(X_1P_1DAC1_WFBYTE | X_WRITE_ON | 3),        0
-.if second
-                XCONT   aug(X_1P_1DAC1_WFBYTE | X_WRITE_ON | second),   0
-.endif
+                {{ xcont }}
                 WAITXFI
                 GETPTR  amount
                 SUB     amount,                                         aug(hubaddr(buffer))

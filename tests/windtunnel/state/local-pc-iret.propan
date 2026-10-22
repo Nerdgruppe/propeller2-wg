@@ -2,10 +2,22 @@
 //? issues: pc_domain = 5
 //? timeout-ms: 3000
 //? const: phase = 20
+//? macro: mov_operand required
+//? macro: event_tracker required
+//? macro: setint_2 required
+//? macro: mov_2 required
+//? macro: event_tracker_2 required
+//? macro: mov_3_operand required
+//?
 //? run: "no-interrupt-cog0"
+//? macro: mov_operand set IJMP1
+//? macro: event_tracker set 1
+//? macro: setint_2 set SETINT1 0
+//? macro: mov_2 set
+//? macro: event_tracker_2 set 3
+//? macro: mov_3_operand set IRET3
 //? issues: pc_domain = 8
 //? cog: 0
-//? const: level = 0
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 21
@@ -15,10 +27,16 @@
 //? post: cog[*].reg[hub_pc] == 0
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "no-interrupt-cog7"
+//? macro: mov_operand set IJMP1
+//? macro: event_tracker set 1
+//? macro: setint_2 set SETINT1 0
+//? macro: mov_2 set
+//? macro: event_tracker_2 set 3
+//? macro: mov_3_operand set IRET3
 //? issues: pc_domain = 8
 //? cog: 7
-//? const: level = 0
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 21
@@ -28,9 +46,15 @@
 //? post: cog[*].reg[hub_pc] == 0
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int1-cog0"
+//? macro: mov_operand set IJMP1
+//? macro: event_tracker set 1
+//? macro: setint_2 set SETINT1 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET1
+//? macro: event_tracker_2 set 1
+//? macro: mov_3_operand set IRET1
 //? cog: 0
-//? const: level = 1
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 10
@@ -40,9 +64,15 @@
 //? post: cog[*].reg[hub_pc] == 0x40c
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int1-cog7"
+//? macro: mov_operand set IJMP1
+//? macro: event_tracker set 1
+//? macro: setint_2 set SETINT1 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET1
+//? macro: event_tracker_2 set 1
+//? macro: mov_3_operand set IRET1
 //? cog: 7
-//? const: level = 1
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 10
@@ -52,9 +82,15 @@
 //? post: cog[*].reg[hub_pc] == 0x40c
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int2-cog0"
+//? macro: mov_operand set IJMP2
+//? macro: event_tracker set 2
+//? macro: setint_2 set SETINT2 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET2
+//? macro: event_tracker_2 set 2
+//? macro: mov_3_operand set IRET2
 //? cog: 0
-//? const: level = 2
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 10
@@ -64,9 +100,15 @@
 //? post: cog[*].reg[hub_pc] == 0x40c
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int2-cog7"
+//? macro: mov_operand set IJMP2
+//? macro: event_tracker set 2
+//? macro: setint_2 set SETINT2 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET2
+//? macro: event_tracker_2 set 2
+//? macro: mov_3_operand set IRET2
 //? cog: 7
-//? const: level = 2
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 10
@@ -76,9 +118,15 @@
 //? post: cog[*].reg[hub_pc] == 0x40c
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int3-cog0"
+//? macro: mov_operand set IJMP3
+//? macro: event_tracker set 3
+//? macro: setint_2 set SETINT3 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET3
+//? macro: event_tracker_2 set 3
+//? macro: mov_3_operand set IRET3
 //? cog: 0
-//? const: level = 3
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 10
@@ -88,9 +136,15 @@
 //? post: cog[*].reg[hub_pc] == 0x40c
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int3-cog7"
+//? macro: mov_operand set IJMP3
+//? macro: event_tracker set 3
+//? macro: setint_2 set SETINT3 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET3
+//? macro: event_tracker_2 set 3
+//? macro: mov_3_operand set IRET3
 //? cog: 7
-//? const: level = 3
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
 //? post: cog[*].reg[hits] == 10
@@ -100,10 +154,16 @@
 //? post: cog[*].reg[hub_pc] == 0x40c
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int1-overflow-400-cog0"
+//? macro: mov_operand set IJMP1
+//? macro: event_tracker set 1
+//? macro: setint_2 set SETINT1 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET1
+//? macro: event_tracker_2 set 1
+//? macro: mov_3_operand set IRET1
 //? issues: pc_domain = 1
 //? cog: 0
-//? const: level = 1
 //? const: phase = 12
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
@@ -114,10 +174,16 @@
 //? post: cog[*].reg[hub_pc] == 0
 //? post: cog[*].c == true
 //? post: cog[*].z == true
+//?
 //? run: "int1-overflow-400-cog7"
+//? macro: mov_operand set IJMP1
+//? macro: event_tracker set 1
+//? macro: setint_2 set SETINT1 EVENT_CT1
+//? macro: mov_2 set MOV return_state, IRET1
+//? macro: event_tracker_2 set 1
+//? macro: mov_3_operand set IRET1
 //? issues: pc_domain = 1
 //? cog: 7
-//? const: level = 1
 //? const: phase = 12
 //? pre: cog[*].c = true
 //? pre: cog[*].z = true
@@ -151,63 +217,28 @@ setup:
 
                 // CT1 phase 12 saves $400; phase 20 saves $404. Only its deadline varies.
                 STALLI
-.if level <= 1
-                MOV     IJMP1,          vector
-                SETINT1 0
-.elif   level == 2
-                MOV     IJMP2,          vector
-                SETINT2 0
-.else
-                MOV     IJMP3,          vector
-                SETINT3 0
-.endif
+                MOV     {{ mov_operand }}, vector
+                SETINT{{ event_tracker }}   0
                 GETCT   timer
                 ADD     timer,          128
                 ADDCT2  timer,          0
                 ADD     timer,          phase
                 ADDCT1  timer,          0
-.if level == 0
-                SETINT1 0
-                NIXINT1
-.elif   level == 1
-                SETINT1 EVENT_CT1
-                NIXINT1
-.elif   level == 2
-                SETINT2 EVENT_CT1
-                NIXINT2
-.else
-                SETINT3 EVENT_CT1
-                NIXINT3
-.endif
+                {{ setint_2 }}
+                NIXINT{{ event_tracker }}
                 WAITCT2
                 ALLOWI
                 GETCT   start
                 JMP     nrel(tail_template)
 done:
     // Check the actual return register as well as the ISR's saved copy.
-.if level == 1
-                MOV     return_state,   IRET1
-.elif   level == 2
-                MOV     return_state,   IRET2
-.elif   level == 3
-                MOV     return_state,   IRET3
-.endif
+                {{ mov_2 }}
                 JMP     nrel(_end)
 isr:
     // Disable the event source, copy IRETx, and return without modifying it.
-.if level == 1
-                SETINT1 0
-                MOV     saved,  IRET1
-                RETI1
-.elif   level == 2
-                SETINT2 0
-                MOV     saved,  IRET2
-                RETI2
-.else
-                SETINT3 0
-                MOV     saved,  IRET3
-                RETI3
-.endif
+                SETINT{{ event_tracker_2 }} 0
+                MOV     saved, {{ mov_3_operand }}
+                RETI{{ event_tracker_2 }}
 var vector:     LONG    pcaddr(isr)
 var word:       LONG    0
 var timer:      LONG    0

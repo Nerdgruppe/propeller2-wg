@@ -1,39 +1,58 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//? macro: event_tracker required
+//?
 //? run: "int1-cog0"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: irq_level = 1
 //? const: probe_cog = 0
+//?
 //? run: "int1-cog3"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: irq_level = 1
 //? const: probe_cog = 3
+//?
 //? run: "int1-cog7"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: irq_level = 1
 //? const: probe_cog = 7
+//?
 //? run: "int2-cog0"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: irq_level = 2
 //? const: probe_cog = 0
+//?
 //? run: "int2-cog3"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: irq_level = 2
 //? const: probe_cog = 3
+//?
 //? run: "int2-cog7"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: irq_level = 2
 //? const: probe_cog = 7
+//?
 //? run: "int3-cog0"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: irq_level = 3
 //? const: probe_cog = 0
+//?
 //? run: "int3-cog3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: irq_level = 3
 //? const: probe_cog = 3
+//?
 //? run: "int3-cog7"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: irq_level = 3
 //? const: probe_cog = 7
@@ -47,53 +66,23 @@ const active_bits  = 3 << (2 * irq_level)
                 STALLI
                 COGATN  (1 << probe_cog)
                 WAITX   64
-.if irq_level == 1
-                SETINT1 14
-.elif   irq_level == 2
-                SETINT2 14
-.else
-                SETINT3 14
-.endif
+                SETINT{{ event_tracker }}   14
                 WAITX   64
                 GETBRK  enable_latched                                                          :wcz
                 POLLATN
                 GETBRK  after_poll                                                              :wcz
-.if irq_level == 1
-                NIXINT1
-.elif   irq_level == 2
-                NIXINT2
-.else
-                NIXINT3
-.endif
+                NIXINT{{ event_tracker }}
                 GETBRK  after_nix                                                               :wcz
                 COGATN  (1 << probe_cog)
                 WAITX   64
                 GETBRK  new_event                                                               :wcz
                 POLLATN
                 GETBRK  new_poll                                                                :wcz
-.if irq_level == 1
-                SETINT1 0
-.elif   irq_level == 2
-                SETINT2 0
-.else
-                SETINT3 0
-.endif
+                SETINT{{ event_tracker }}   0
                 GETBRK  disabled_pending                                                        :wcz
-.if irq_level == 1
-                TRGINT1
-.elif   irq_level == 2
-                TRGINT2
-.else
-                TRGINT3
-.endif
+                TRGINT{{ event_tracker }}
                 GETBRK  force_disabled                                                          :wcz
-.if irq_level == 1
-                SETINT1 14
-.elif   irq_level == 2
-                SETINT2 14
-.else
-                SETINT3 14
-.endif
+                SETINT{{ event_tracker }}   14
                 GETBRK  force_reconfigured                                                      :wcz
                 ALLOWI
                 WAITX   64
@@ -102,13 +91,7 @@ const active_bits  = 3 << (2 * irq_level)
                 NOP
                 GETBRK  after_return                                                            :wcz
                 STALLI
-.if irq_level == 1
-                SETINT1 0
-.elif   irq_level == 2
-                SETINT2 0
-.else
-                SETINT3 0
-.endif
+                SETINT{{ event_tracker }}   0
                 // Requests survive polling, source changes and duplicate triggers.
                 CMP     enable_latched,                     aug(source_bits | 2)                :wz
     if(!Z)      ADD     failures,                           1
@@ -140,29 +123,11 @@ const active_bits  = 3 << (2 * irq_level)
 isr:
                 ADD     count,  1
                 STALLI
-.if irq_level == 1
-                TRGINT1
-.elif   irq_level == 2
-                TRGINT2
-.else
-                TRGINT3
-.endif
+                TRGINT{{ event_tracker }}
                 GETBRK  force_active    :wcz
-.if irq_level == 1
-                NIXINT1
-.elif   irq_level == 2
-                NIXINT2
-.else
-                NIXINT3
-.endif
+                NIXINT{{ event_tracker }}
                 GETBRK  nix_active      :wcz
-.if irq_level == 1
-                RETI1
-.elif   irq_level == 2
-                RETI2
-.else
-                RETI3
-.endif
+                RETI{{ event_tracker }}
 var vector:     LONG    pcaddr(isr)
 var enable_latched:
                 LONG    0

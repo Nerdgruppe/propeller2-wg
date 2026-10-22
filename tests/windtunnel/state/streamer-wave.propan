@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "raw 7001"
 //? const: mode = 0x7001
 //? const: data = 0xff
@@ -14,6 +15,7 @@
 //? post: cog[*].reg[s9] == 0xff
 //? post: cog[*].reg[s10] == 0xff
 //? post: cog[*].reg[s11] == 0xff
+//?
 //? run: "raw 4000"
 //? const: mode = 0x4000
 //? const: data = 0xaaaaaaab

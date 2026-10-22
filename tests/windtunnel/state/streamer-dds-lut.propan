@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "dds-lut 0"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -10,6 +11,7 @@
 //? post: cog[0].reg[y] == 0xfffffc10
 //? post: cog[0].reg[again] == 0xfffffc00
 //? post: cog[0].reg[qval] == 0xfffffc10
+//?
 //? run: "dds-lut 1"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -21,6 +23,7 @@
 //? post: cog[0].reg[y] == 0xfffffc2f
 //? post: cog[0].reg[again] == 0xfffffc1f
 //? post: cog[0].reg[qval] == 0xfffffc2f
+//?
 //? run: "dds-lut 2"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -32,6 +35,7 @@
 //? post: cog[0].reg[y] == 0xfffffc6d
 //? post: cog[0].reg[again] == 0xfffffc5d
 //? post: cog[0].reg[qval] == 0xfffffc6d
+//?
 //? run: "dds-lut 3"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -43,6 +47,7 @@
 //? post: cog[0].reg[y] == 0xfffffe5b
 //? post: cog[0].reg[again] == 0xfffffe4b
 //? post: cog[0].reg[qval] == 0xfffffe5b
+//?
 //? run: "dds-lut 4"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -54,6 +59,7 @@
 //? post: cog[0].reg[y] == 0xfffffff0
 //? post: cog[0].reg[again] == 0x3e1
 //? post: cog[0].reg[qval] == 0xfffffff0
+//?
 //? run: "dds-lut 5"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -65,6 +71,7 @@
 //? post: cog[0].reg[y] == 0xfffffe00
 //? post: cog[0].reg[again] == 0xfffffe00
 //? post: cog[0].reg[qval] == 0xfffffe00
+//?
 //? run: "dds-lut 6"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -76,6 +83,7 @@
 //? post: cog[0].reg[y] == 0xfffffe1f
 //? post: cog[0].reg[again] == 0xfffffe1f
 //? post: cog[0].reg[qval] == 0xfffffe1f
+//?
 //? run: "dds-lut 7"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -87,6 +95,7 @@
 //? post: cog[0].reg[y] == 0xfffffe5d
 //? post: cog[0].reg[again] == 0xfffffe5d
 //? post: cog[0].reg[qval] == 0xfffffe5d
+//?
 //? run: "dds-lut 8"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -98,6 +107,7 @@
 //? post: cog[0].reg[y] == 0x4b
 //? post: cog[0].reg[again] == 0x4b
 //? post: cog[0].reg[qval] == 0x4b
+//?
 //? run: "dds-lut 9"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -109,6 +119,7 @@
 //? post: cog[0].reg[y] == 0xfffffe00
 //? post: cog[0].reg[again] == 0x1e1
 //? post: cog[0].reg[qval] == 0xfffffe00
+//?
 //? run: "dds-lut 10"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -120,6 +131,7 @@
 //? post: cog[0].reg[y] == 0x700
 //? post: cog[0].reg[again] == 0x700
 //? post: cog[0].reg[qval] == 0x700
+//?
 //? run: "dds-lut 11"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -131,6 +143,7 @@
 //? post: cog[0].reg[y] == 0x71f
 //? post: cog[0].reg[again] == 0x71f
 //? post: cog[0].reg[qval] == 0x71f
+//?
 //? run: "dds-lut 12"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -142,6 +155,7 @@
 //? post: cog[0].reg[y] == 0x75d
 //? post: cog[0].reg[again] == 0x75d
 //? post: cog[0].reg[qval] == 0x75d
+//?
 //? run: "dds-lut 13"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -153,6 +167,7 @@
 //? post: cog[0].reg[y] == 0x74b
 //? post: cog[0].reg[again] == 0x74b
 //? post: cog[0].reg[qval] == 0x74b
+//?
 //? run: "dds-lut 14"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -164,6 +179,7 @@
 //? post: cog[0].reg[y] == 0xfffff900
 //? post: cog[0].reg[again] == 0xfffff8e1
 //? post: cog[0].reg[qval] == 0xfffff900
+//?
 //? run: "dds-lut 15"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -175,6 +191,7 @@
 //? post: cog[0].reg[y] == 0x380
 //? post: cog[0].reg[again] == 0x380
 //? post: cog[0].reg[qval] == 0x380
+//?
 //? run: "dds-lut 16"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -186,6 +203,7 @@
 //? post: cog[0].reg[y] == 0x39f
 //? post: cog[0].reg[again] == 0x39f
 //? post: cog[0].reg[qval] == 0x39f
+//?
 //? run: "dds-lut 17"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -197,6 +215,7 @@
 //? post: cog[0].reg[y] == 0x3dd
 //? post: cog[0].reg[again] == 0x3dd
 //? post: cog[0].reg[qval] == 0x3dd
+//?
 //? run: "dds-lut 18"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -208,6 +227,7 @@
 //? post: cog[0].reg[y] == 0xbcb
 //? post: cog[0].reg[again] == 0xbcb
 //? post: cog[0].reg[qval] == 0xbcb
+//?
 //? run: "dds-lut 19"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -219,6 +239,7 @@
 //? post: cog[0].reg[y] == 0xfffffc80
 //? post: cog[0].reg[again] == 0xfffffc61
 //? post: cog[0].reg[qval] == 0xfffffc80
+//?
 //? run: "dds-lut 20"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -230,6 +251,7 @@
 //? post: cog[0].reg[y] == 0x1c0
 //? post: cog[0].reg[again] == 0x1c0
 //? post: cog[0].reg[qval] == 0x1c0
+//?
 //? run: "dds-lut 21"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -241,6 +263,7 @@
 //? post: cog[0].reg[y] == 0x1df
 //? post: cog[0].reg[again] == 0x1df
 //? post: cog[0].reg[qval] == 0x1df
+//?
 //? run: "dds-lut 22"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -252,6 +275,7 @@
 //? post: cog[0].reg[y] == 0x21d
 //? post: cog[0].reg[again] == 0x21d
 //? post: cog[0].reg[qval] == 0x21d
+//?
 //? run: "dds-lut 23"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -263,6 +287,7 @@
 //? post: cog[0].reg[y] == 0x98b
 //? post: cog[0].reg[again] == 0x98b
 //? post: cog[0].reg[qval] == 0x98b
+//?
 //? run: "dds-lut 24"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -274,6 +299,7 @@
 //? post: cog[0].reg[y] == 0xfffffe40
 //? post: cog[0].reg[again] == 0xfffffe21
 //? post: cog[0].reg[qval] == 0xfffffe40
+//?
 //? run: "dds-lut 25"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -285,6 +311,7 @@
 //? post: cog[0].reg[y] == 0xe0
 //? post: cog[0].reg[again] == 0xe0
 //? post: cog[0].reg[qval] == 0xe0
+//?
 //? run: "dds-lut 26"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -296,6 +323,7 @@
 //? post: cog[0].reg[y] == 0xff
 //? post: cog[0].reg[again] == 0xff
 //? post: cog[0].reg[qval] == 0xff
+//?
 //? run: "dds-lut 27"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -307,6 +335,7 @@
 //? post: cog[0].reg[y] == 0xfd
 //? post: cog[0].reg[again] == 0xfd
 //? post: cog[0].reg[qval] == 0xfd
+//?
 //? run: "dds-lut 28"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -318,6 +347,7 @@
 //? post: cog[0].reg[y] == 0xaab
 //? post: cog[0].reg[again] == 0xaab
 //? post: cog[0].reg[qval] == 0xaab
+//?
 //? run: "dds-lut 29"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -329,6 +359,7 @@
 //? post: cog[0].reg[y] == 0xffffff20
 //? post: cog[0].reg[again] == 0xffffff01
 //? post: cog[0].reg[qval] == 0xffffff20
+//?
 //? run: "dds-lut 30"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -340,6 +371,7 @@
 //? post: cog[0].reg[y] == 0x70
 //? post: cog[0].reg[again] == 0x70
 //? post: cog[0].reg[qval] == 0x70
+//?
 //? run: "dds-lut 31"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -351,6 +383,7 @@
 //? post: cog[0].reg[y] == 0x6f
 //? post: cog[0].reg[again] == 0x6f
 //? post: cog[0].reg[qval] == 0x6f
+//?
 //? run: "dds-lut 32"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -362,6 +395,7 @@
 //? post: cog[0].reg[y] == 0x6d
 //? post: cog[0].reg[again] == 0x6d
 //? post: cog[0].reg[qval] == 0x6d
+//?
 //? run: "dds-lut 33"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -373,6 +407,7 @@
 //? post: cog[0].reg[y] == 0xa1b
 //? post: cog[0].reg[again] == 0xa1b
 //? post: cog[0].reg[qval] == 0xa1b
+//?
 //? run: "dds-lut 34"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -384,6 +419,7 @@
 //? post: cog[0].reg[y] == 0xffffff90
 //? post: cog[0].reg[again] == 0xffffff71
 //? post: cog[0].reg[qval] == 0xffffff90
+//?
 //? run: "dds-lut 35"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -395,6 +431,7 @@
 //? post: cog[0].reg[y] == 0x30
 //? post: cog[0].reg[again] == 0x30
 //? post: cog[0].reg[qval] == 0x30
+//?
 //? run: "dds-lut 36"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -406,6 +443,7 @@
 //? post: cog[0].reg[y] == 0x2f
 //? post: cog[0].reg[again] == 0x2f
 //? post: cog[0].reg[qval] == 0x2f
+//?
 //? run: "dds-lut 37"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -417,6 +455,7 @@
 //? post: cog[0].reg[y] == 0x2d
 //? post: cog[0].reg[again] == 0x2d
 //? post: cog[0].reg[qval] == 0x2d
+//?
 //? run: "dds-lut 38"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -428,6 +467,7 @@
 //? post: cog[0].reg[y] == 0xa5b
 //? post: cog[0].reg[again] == 0xa5b
 //? post: cog[0].reg[qval] == 0xa5b
+//?
 //? run: "dds-lut 39"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004

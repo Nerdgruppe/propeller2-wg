@@ -1,76 +1,125 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//? macro: event_tracker required
+//?
 //? run: "int1-cog0"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: irq_level = 1
+//?
 //? run: "int1-cog1"
+//? macro: event_tracker set 1
 //? cog: 1
 //? const: irq_level = 1
+//?
 //? run: "int1-cog2"
+//? macro: event_tracker set 1
 //? cog: 2
 //? const: irq_level = 1
+//?
 //? run: "int1-cog3"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: irq_level = 1
+//?
 //? run: "int1-cog4"
+//? macro: event_tracker set 1
 //? cog: 4
 //? const: irq_level = 1
+//?
 //? run: "int1-cog5"
+//? macro: event_tracker set 1
 //? cog: 5
 //? const: irq_level = 1
+//?
 //? run: "int1-cog6"
+//? macro: event_tracker set 1
 //? cog: 6
 //? const: irq_level = 1
+//?
 //? run: "int1-cog7"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: irq_level = 1
+//?
 //? run: "int2-cog0"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: irq_level = 2
+//?
 //? run: "int2-cog1"
+//? macro: event_tracker set 2
 //? cog: 1
 //? const: irq_level = 2
+//?
 //? run: "int2-cog2"
+//? macro: event_tracker set 2
 //? cog: 2
 //? const: irq_level = 2
+//?
 //? run: "int2-cog3"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: irq_level = 2
+//?
 //? run: "int2-cog4"
+//? macro: event_tracker set 2
 //? cog: 4
 //? const: irq_level = 2
+//?
 //? run: "int2-cog5"
+//? macro: event_tracker set 2
 //? cog: 5
 //? const: irq_level = 2
+//?
 //? run: "int2-cog6"
+//? macro: event_tracker set 2
 //? cog: 6
 //? const: irq_level = 2
+//?
 //? run: "int2-cog7"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: irq_level = 2
+//?
 //? run: "int3-cog0"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: irq_level = 3
+//?
 //? run: "int3-cog1"
+//? macro: event_tracker set 3
 //? cog: 1
 //? const: irq_level = 3
+//?
 //? run: "int3-cog2"
+//? macro: event_tracker set 3
 //? cog: 2
 //? const: irq_level = 3
+//?
 //? run: "int3-cog3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: irq_level = 3
+//?
 //? run: "int3-cog4"
+//? macro: event_tracker set 3
 //? cog: 4
 //? const: irq_level = 3
+//?
 //? run: "int3-cog5"
+//? macro: event_tracker set 3
 //? cog: 5
 //? const: irq_level = 3
+//?
 //? run: "int3-cog6"
+//? macro: event_tracker set 3
 //? cog: 6
 //? const: irq_level = 3
+//?
 //? run: "int3-cog7"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: irq_level = 3
 
@@ -81,25 +130,13 @@
                 MOV     phase,                              0
 phase_loop:
                 STALLI
-.if irq_level == 1
-                SETINT1 0
-.elif   irq_level == 2
-                SETINT2 0
-.else
-                SETINT3 0
-.endif
+                SETINT{{ event_tracker }}   0
                 GETCT   target
                 ADD     target, 128
                 ADD     target, phase
                 ADDCT1  target, 0
                 MOV     marker, 0
-.if irq_level == 1
-                SETINT1 1
-.elif   irq_level == 2
-                SETINT2 1
-.else
-                SETINT3 1
-.endif
+                SETINT{{ event_tracker }}   1
                 ALLOWI
 // The stream outlasts the target and provides identifiable return PCs.
 stream:
@@ -200,13 +237,7 @@ stream:
                 ADD     marker,         1
                 ADD     marker,         1
                 STALLI
-.if irq_level == 1
-                SETINT1 0
-.elif   irq_level == 2
-                SETINT2 0
-.else
-                SETINT3 0
-.endif
+                SETINT{{ event_tracker }}   0
                 MOV     deltas,         stamp
                 SUB     deltas,         target
                 // Hardware entry is phase aligned: eight clocks, plus one on the odd phase.
@@ -238,13 +269,7 @@ isr:
                 GETCT   future
                 ADD     future,         aug(4096)
                 ADDCT1  future,         0
-.if irq_level == 1
-                RETI1
-.elif   irq_level == 2
-                RETI2
-.else
-                RETI3
-.endif
+                RETI{{ event_tracker }}
 var vector:     LONG    pcaddr(isr)
 var phase:      LONG    0
 var target:     LONG    0

@@ -1,91 +1,112 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//? macro: waitx default WAITX gap
+//?
 //? run: "rcfast-sync0-gap0"
+//? macro: waitx override
 //? const: sync = 0
 //? const: gap = 0
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync0-gap1"
 //? const: sync = 0
 //? const: gap = 1
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync0-gap2"
 //? const: sync = 0
 //? const: gap = 2
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync0-gap3"
 //? const: sync = 0
 //? const: gap = 3
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync0-gap4"
 //? const: sync = 0
 //? const: gap = 4
 //? post: cog[*].reg[rising] == 0x00000001
 //? post: cog[*].reg[falling] == 0x00000000
+//?
 //? run: "rcfast-sync0-gap5"
 //? const: sync = 0
 //? const: gap = 5
 //? post: cog[*].reg[rising] == 0x00000001
 //? post: cog[*].reg[falling] == 0x00000000
+//?
 //? run: "rcfast-sync0-gap6"
 //? const: sync = 0
 //? const: gap = 6
 //? post: cog[*].reg[rising] == 0x00000001
 //? post: cog[*].reg[falling] == 0x00000000
+//?
 //? run: "rcfast-sync0-gap7"
 //? const: sync = 0
 //? const: gap = 7
 //? post: cog[*].reg[rising] == 0x00000001
 //? post: cog[*].reg[falling] == 0x00000000
+//?
 //? run: "rcfast-sync0-gap8"
 //? const: sync = 0
 //? const: gap = 8
 //? post: cog[*].reg[rising] == 0x00000001
 //? post: cog[*].reg[falling] == 0x00000000
+//?
 //? run: "rcfast-sync1-gap0"
+//? macro: waitx override
 //? const: sync = 1
 //? const: gap = 0
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync1-gap1"
 //? const: sync = 1
 //? const: gap = 1
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync1-gap2"
 //? const: sync = 1
 //? const: gap = 2
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync1-gap3"
 //? const: sync = 1
 //? const: gap = 3
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync1-gap4"
 //? const: sync = 1
 //? const: gap = 4
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync1-gap5"
 //? const: sync = 1
 //? const: gap = 5
 //? post: cog[*].reg[rising] == 0x00000000
 //? post: cog[*].reg[falling] == 0x00000001
+//?
 //? run: "rcfast-sync1-gap6"
 //? const: sync = 1
 //? const: gap = 6
 //? post: cog[*].reg[rising] == 0x00000001
 //? post: cog[*].reg[falling] == 0x00000000
+//?
 //? run: "rcfast-sync1-gap7"
 //? const: sync = 1
 //? const: gap = 7
 //? post: cog[*].reg[rising] == 0x00000001
 //? post: cog[*].reg[falling] == 0x00000000
+//?
 //? run: "rcfast-sync1-gap8"
 //? const: sync = 1
 //? const: gap = 8
@@ -103,16 +124,12 @@
                 WRPIN   aug(0x70000000),    41
                 WAITX   32
                 OUTH    40
-.if gap
-                WAITX   gap
-.endif
+                {{ waitx }}
                 TESTP   41                      :wc
                 WRC     rising
                 WAITX   32
                 OUTL    40
-.if gap
-                WAITX   gap
-.endif
+                {{ waitx }}
                 TESTP   41                      :wc
                 WRC     falling
                 DIRL    40

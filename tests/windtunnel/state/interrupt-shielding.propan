@@ -1,113 +1,210 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//? macro: selected_kind required
+//? macro: selected_kind_2 required
+//? macro: cmp required
+//? macro: cmp_2_operand required
+//? macro: cmp_3_operand required
+//?
 //? run: "augs-cog0"
+//? macro: selected_kind set AUGS 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 0
+//?
 //? run: "augs-cog7"
+//? macro: selected_kind set AUGS 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 0
+//?
 //? run: "augd-cog0"
+//? macro: selected_kind set AUGD 0
+//? macro: selected_kind_2 set WAITX 0
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 1
+//?
 //? run: "augd-cog7"
+//? macro: selected_kind set AUGD 0
+//? macro: selected_kind_2 set WAITX 0
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 1
+//?
 //? run: "setq-cog0"
+//? macro: selected_kind set SETQ 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 2
+//?
 //? run: "setq-cog7"
+//? macro: selected_kind set SETQ 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 2
+//?
 //? run: "alts-cog0"
+//? macro: selected_kind set ALTS source, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 3
+//?
 //? run: "alts-cog7"
+//? macro: selected_kind set ALTS source, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 3
+//?
 //? run: "getct-wc-cog0"
+//? macro: selected_kind set GETCT value :wc
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 4
+//?
 //? run: "getct-wc-cog7"
+//? macro: selected_kind set GETCT value :wc
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 4
+//?
 //? run: "sca-cog0"
+//? macro: selected_kind set SCA value, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 5
+//?
 //? run: "sca-cog7"
+//? macro: selected_kind set SCA value, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 5
+//?
 //? run: "crcnib-cog0"
+//? macro: selected_kind set CRCNIB value, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 6
+//?
 //? run: "crcnib-cog7"
+//? macro: selected_kind set CRCNIB value, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 6
+//?
 //? run: "xoro32-cog0"
+//? macro: selected_kind set XORO32 value
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 7
+//?
 //? run: "xoro32-cog7"
+//? macro: selected_kind set XORO32 value
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 7
+//?
 //? run: "canceled-augs-cog0"
+//? macro: selected_kind set if(C) AUGS 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, (pcaddr(sequence_start) - 1) :wz
+//? macro: cmp_2_operand set 10
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 8
+//?
 //? run: "canceled-augs-cog7"
+//? macro: selected_kind set if(C) AUGS 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, (pcaddr(sequence_start) - 1) :wz
+//? macro: cmp_2_operand set 10
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 8
+//?
 //? run: "waitx-cog0"
+//? macro: selected_kind set WAITX 32
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, (pcaddr(sequence_start) - 1) :wz
+//? macro: cmp_2_operand set 42
+//? macro: cmp_3_operand set 64
 //? cog: 0
-//? const: kind = 9
+//?
 //? run: "waitx-cog7"
+//? macro: selected_kind set WAITX 32
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, (pcaddr(sequence_start) - 1) :wz
+//? macro: cmp_2_operand set 42
+//? macro: cmp_3_operand set 64
 //? cog: 7
-//? const: kind = 9
+//?
 //? run: "setq2-cog0"
+//? macro: selected_kind set SETQ2 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 10
+//?
 //? run: "setq2-cog7"
+//? macro: selected_kind set SETQ2 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 10
+//?
 //? run: "scas-cog0"
+//? macro: selected_kind set SCAS value, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 0
-//? const: kind = 11
+//?
 //? run: "scas-cog7"
+//? macro: selected_kind set SCAS value, 0
+//? macro: selected_kind_2 set MOV result, 7
+//? macro: cmp set CMP saved_return, pcaddr(sequence_start) :wz
+//? macro: cmp_2_operand set 12
+//? macro: cmp_3_operand set 32
 //? cog: 7
-//? const: kind = 11
 
                 // Prefix consumers must stay ahead of the synthetic CALLD. Canceled prefixes add no shield.
                 MOV     IJMP1,  vector
                 GETCT   start
                 TRGINT1
-.if kind == 0
-                AUGS    0
-.elif   kind == 1
-                AUGD    0
-.elif   kind == 2
-                SETQ    0
-.elif   kind == 3
-                ALTS    source, 0
-.elif   kind == 4
-                GETCT   value           :wc
-.elif   kind == 5
-                SCA     value,  0
-.elif   kind == 6
-                CRCNIB  value,  0
-.elif   kind == 7
-                XORO32  value
-.elif   kind == 8
-    if(C)       AUGS    0
-.elif   kind == 9
-                WAITX   32
-.elif   kind == 10
-                SETQ2   0
-.else
-                SCAS    value,  0
-.endif
-.if kind == 1
-                WAITX   0
-.else
-                MOV     result, 7
-.endif
+                {{ selected_kind }}
+                {{ selected_kind_2 }}
 sequence_start:
                 MOV     sequence,       1
                 MOV     sequence,       2
@@ -121,25 +218,11 @@ sequence_start:
                 // Assert the hardware-measured entry boundary, with no interrupted instruction lost.
                 CMP     observed,       0                               :wz
     if(!Z)      ADD     failures,       1
-.if kind == 8 or kind == 9
-                CMP     saved_return,   (pcaddr(sequence_start) - 1)    :wz
-.else
-                CMP     saved_return,   pcaddr(sequence_start)          :wz
-.endif
+                {{ cmp }}
     if(!Z)      ADD     failures,       1
-.if kind == 9
-                CMP     stamp,          42                              :wz
-.elif   kind == 8
-                CMP     stamp,          10                              :wz
-.else
-                CMP     stamp,          12                              :wz
-.endif
+                CMP     stamp, {{ cmp_2_operand }} :wz
     if(!Z)      ADD     failures,       1
-.if kind == 9
-                CMP     elapsed,        64                              :wz
-.else
-                CMP     elapsed,        32                              :wz
-.endif
+                CMP     elapsed, {{ cmp_3_operand }} :wz
     if(!Z)      ADD     failures,       1
                 CMP     sequence,       5                               :wz
     if(!Z)      ADD     failures,       1

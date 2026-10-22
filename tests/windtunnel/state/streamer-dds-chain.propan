@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "opcodefcb00000 size0 first1"
 //? const: opcode = 4239392768
 //? const: size = 0
@@ -9,6 +10,7 @@
 //? post: cog[0].reg[r3] == 6309
 //? post: cog[0].reg[r4] == 634
 //? post: cog[0].reg[r5] == 702
+//?
 //? run: "opcodefcb00000 size0 first8"
 //? const: opcode = 4239392768
 //? const: size = 0
@@ -19,6 +21,7 @@
 //? post: cog[0].reg[r3] == 7223
 //? post: cog[0].reg[r4] == 666
 //? post: cog[0].reg[r5] == 734
+//?
 //? run: "opcodefcb00000 size0 first65535"
 //? const: opcode = 4239392768
 //? const: size = 0
@@ -29,6 +32,7 @@
 //? post: cog[0].reg[r3] == 8337
 //? post: cog[0].reg[r4] == 738
 //? post: cog[0].reg[r5] == 806
+//?
 //? run: "opcodefcb00000 size3 first1"
 //? const: opcode = 4239392768
 //? const: size = 3
@@ -39,6 +43,7 @@
 //? post: cog[0].reg[r3] == 99465
 //? post: cog[0].reg[r4] == 10174
 //? post: cog[0].reg[r5] == 10176
+//?
 //? run: "opcodefcb00000 size3 first8"
 //? const: opcode = 4239392768
 //? const: size = 3
@@ -49,6 +54,7 @@
 //? post: cog[0].reg[r3] == 101881
 //? post: cog[0].reg[r4] == 10178
 //? post: cog[0].reg[r5] == 10180
+//?
 //? run: "opcodefcb00000 size3 first65535"
 //? const: opcode = 4239392768
 //? const: size = 3
@@ -59,6 +65,7 @@
 //? post: cog[0].reg[r3] == 99738
 //? post: cog[0].reg[r4] == 10188
 //? post: cog[0].reg[r5] == 10190
+//?
 //? run: "opcodefcb00000 size7 first1"
 //? const: opcode = 4239392768
 //? const: size = 7
@@ -69,6 +76,7 @@
 //? post: cog[0].reg[r3] == 90107
 //? post: cog[0].reg[r4] == 8182
 //? post: cog[0].reg[r5] == 8184
+//?
 //? run: "opcodefcb00000 size7 first8"
 //? const: opcode = 4239392768
 //? const: size = 7
@@ -79,6 +87,7 @@
 //? post: cog[0].reg[r3] == 92497
 //? post: cog[0].reg[r4] == 8182
 //? post: cog[0].reg[r5] == 8184
+//?
 //? run: "opcodefcb00000 size7 first65535"
 //? const: opcode = 4239392768
 //? const: size = 7
@@ -89,6 +98,7 @@
 //? post: cog[0].reg[r3] == 90107
 //? post: cog[0].reg[r4] == 8182
 //? post: cog[0].reg[r5] == 8184
+//?
 //? run: "opcodefcc00000 size0 first1"
 //? const: opcode = 4240441344
 //? const: size = 0
@@ -99,6 +109,7 @@
 //? post: cog[0].reg[r3] == 11369
 //? post: cog[0].reg[r4] == 1410
 //? post: cog[0].reg[r5] == 1478
+//?
 //? run: "opcodefcc00000 size0 first8"
 //? const: opcode = 4240441344
 //? const: size = 0
@@ -109,6 +120,7 @@
 //? post: cog[0].reg[r3] == 130
 //? post: cog[0].reg[r4] == 962
 //? post: cog[0].reg[r5] == 6
+//?
 //? run: "opcodefcc00000 size0 first65535"
 //? const: opcode = 4240441344
 //? const: size = 0
@@ -119,6 +131,7 @@
 //? post: cog[0].reg[r3] == 6293
 //? post: cog[0].reg[r4] == 4294966916
 //? post: cog[0].reg[r5] == 4294966984
+//?
 //? run: "opcodefcc00000 size3 first1"
 //? const: opcode = 4240441344
 //? const: size = 3
@@ -129,6 +142,7 @@
 //? post: cog[0].reg[r3] == 91074
 //? post: cog[0].reg[r4] == 9842
 //? post: cog[0].reg[r5] == 9844
+//?
 //? run: "opcodefcc00000 size3 first8"
 //? const: opcode = 4240441344
 //? const: size = 3
@@ -139,6 +153,7 @@
 //? post: cog[0].reg[r3] == 95690
 //? post: cog[0].reg[r4] == 10106
 //? post: cog[0].reg[r5] == 10108
+//?
 //? run: "opcodefcc00000 size3 first65535"
 //? const: opcode = 4240441344
 //? const: size = 3
@@ -149,6 +164,7 @@
 //? post: cog[0].reg[r3] == 85788
 //? post: cog[0].reg[r4] == 9638
 //? post: cog[0].reg[r5] == 9640
+//?
 //? run: "opcodefcc00000 size7 first1"
 //? const: opcode = 4240441344
 //? const: size = 7
@@ -159,6 +175,7 @@
 //? post: cog[0].reg[r3] == 82358
 //? post: cog[0].reg[r4] == 7842
 //? post: cog[0].reg[r5] == 7844
+//?
 //? run: "opcodefcc00000 size7 first8"
 //? const: opcode = 4240441344
 //? const: size = 7
@@ -169,6 +186,7 @@
 //? post: cog[0].reg[r3] == 84762
 //? post: cog[0].reg[r4] == 7842
 //? post: cog[0].reg[r5] == 7844
+//?
 //? run: "opcodefcc00000 size7 first65535"
 //? const: opcode = 4240441344
 //? const: size = 7
@@ -179,6 +197,7 @@
 //? post: cog[0].reg[r3] == 78608
 //? post: cog[0].reg[r4] == 7664
 //? post: cog[0].reg[r5] == 7666
+//?
 //? run: "opcodefcb00000 size0 first64"
 //? const: opcode = 4239392768
 //? const: size = 0
@@ -189,6 +208,7 @@
 //? post: cog[0].reg[r3] == 5717
 //? post: cog[0].reg[r4] == 602
 //? post: cog[0].reg[r5] == 670
+//?
 //? run: "opcodefcb00000 size3 first64"
 //? const: opcode = 4239392768
 //? const: size = 3
@@ -199,6 +219,7 @@
 //? post: cog[0].reg[r3] == 101628
 //? post: cog[0].reg[r4] == 10170
 //? post: cog[0].reg[r5] == 10172
+//?
 //? run: "opcodefcb00000 size7 first64"
 //? const: opcode = 4239392768
 //? const: size = 7
@@ -209,6 +230,7 @@
 //? post: cog[0].reg[r3] == 92496
 //? post: cog[0].reg[r4] == 8182
 //? post: cog[0].reg[r5] == 8184
+//?
 //? run: "opcodefcc00000 size0 first64"
 //? const: opcode = 4240441344
 //? const: size = 0
@@ -219,6 +241,7 @@
 //? post: cog[0].reg[r3] == 4294962212
 //? post: cog[0].reg[r4] == 4294965984
 //? post: cog[0].reg[r5] == 4294966052
+//?
 //? run: "opcodefcc00000 size3 first64"
 //? const: opcode = 4240441344
 //? const: size = 3
@@ -229,6 +252,7 @@
 //? post: cog[0].reg[r3] == 99662
 //? post: cog[0].reg[r4] == 10288
 //? post: cog[0].reg[r5] == 10290
+//?
 //? run: "opcodefcc00000 size7 first64"
 //? const: opcode = 4240441344
 //? const: size = 7

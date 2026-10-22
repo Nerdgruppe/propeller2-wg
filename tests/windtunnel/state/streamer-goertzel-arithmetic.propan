@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "goertzel-arithmetic 0"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -10,6 +11,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 1"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -21,6 +23,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 2"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -32,6 +35,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 3"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -43,6 +47,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 4"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -54,6 +59,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 5"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -65,6 +71,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 6"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -76,6 +83,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 7"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -87,6 +95,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 8"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -98,6 +107,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 9"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -109,6 +119,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 10"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -120,6 +131,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 11"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -131,6 +143,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 12"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -142,6 +155,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 13"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -153,6 +167,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 14"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -164,6 +179,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 15"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -175,6 +191,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 16"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -186,6 +203,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 17"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -197,6 +215,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 18"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -208,6 +227,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 19"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -219,6 +239,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 20"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -230,6 +251,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 21"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -241,6 +263,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 22"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -252,6 +275,7 @@
 //? post: cog[0].reg[y] == 0x2e80
 //? post: cog[0].reg[again] == 0xffffd1dd
 //? post: cog[0].reg[qval] == 0x2e80
+//?
 //? run: "goertzel-arithmetic 23"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -263,6 +287,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 24"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -274,6 +299,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 25"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -285,6 +311,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 26"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -296,6 +323,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 27"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -307,6 +335,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 28"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -318,6 +347,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 29"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -329,6 +359,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 30"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -340,6 +371,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 31"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -351,6 +383,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 32"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -362,6 +395,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 33"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -373,6 +407,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 34"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -384,6 +419,7 @@
 //? post: cog[0].reg[y] == 0x2e80
 //? post: cog[0].reg[again] == 0xffffd1dd
 //? post: cog[0].reg[qval] == 0x2e80
+//?
 //? run: "goertzel-arithmetic 35"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -395,6 +431,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 36"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -406,6 +443,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 37"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -417,6 +455,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 38"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -428,6 +467,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 39"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -439,6 +479,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 40"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -450,6 +491,7 @@
 //? post: cog[0].reg[y] == 0x2e80
 //? post: cog[0].reg[again] == 0xffffd1dd
 //? post: cog[0].reg[qval] == 0x2e80
+//?
 //? run: "goertzel-arithmetic 41"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -461,6 +503,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 42"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -472,6 +515,7 @@
 //? post: cog[0].reg[y] == 0xf80
 //? post: cog[0].reg[again] == 0xfffff09f
 //? post: cog[0].reg[qval] == 0xf80
+//?
 //? run: "goertzel-arithmetic 43"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -483,6 +527,7 @@
 //? post: cog[0].reg[y] == 0x2e80
 //? post: cog[0].reg[again] == 0xffffd1dd
 //? post: cog[0].reg[qval] == 0x2e80
+//?
 //? run: "goertzel-arithmetic 44"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -494,6 +539,7 @@
 //? post: cog[0].reg[y] == 0xfffff080
 //? post: cog[0].reg[again] == 0xf61
 //? post: cog[0].reg[qval] == 0xfffff080
+//?
 //? run: "goertzel-arithmetic 45"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -505,6 +551,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 46"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -516,6 +563,7 @@
 //? post: cog[0].reg[y] == 0x1f00
 //? post: cog[0].reg[again] == 0xffffe13e
 //? post: cog[0].reg[qval] == 0x1f00
+//?
 //? run: "goertzel-arithmetic 47"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0070004
@@ -527,6 +575,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 48"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -538,6 +587,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 49"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -549,6 +599,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 50"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -560,6 +611,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 51"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -571,6 +623,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 52"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -582,6 +635,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 53"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -593,6 +647,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 54"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -604,6 +659,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 55"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -615,6 +671,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 56"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -626,6 +683,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 57"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -637,6 +695,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 58"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -648,6 +707,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 59"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -659,6 +719,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 60"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -670,6 +731,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 61"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -681,6 +743,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 62"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -692,6 +755,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 63"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -703,6 +767,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 64"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -714,6 +779,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 65"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -725,6 +791,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 66"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -736,6 +803,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 67"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -747,6 +815,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 68"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -758,6 +827,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 69"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -769,6 +839,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 70"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -780,6 +851,7 @@
 //? post: cog[0].reg[y] == 0x2e800
 //? post: cog[0].reg[again] == 0xfffd1dd0
 //? post: cog[0].reg[qval] == 0x2e800
+//?
 //? run: "goertzel-arithmetic 71"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -791,6 +863,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 72"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -802,6 +875,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 73"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -813,6 +887,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 74"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -824,6 +899,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 75"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -835,6 +911,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 76"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -846,6 +923,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 77"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -857,6 +935,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 78"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -868,6 +947,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 79"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -879,6 +959,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 80"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -890,6 +971,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 81"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -901,6 +983,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 82"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -912,6 +995,7 @@
 //? post: cog[0].reg[y] == 0x2e800
 //? post: cog[0].reg[again] == 0xfffd1dd0
 //? post: cog[0].reg[qval] == 0x2e800
+//?
 //? run: "goertzel-arithmetic 83"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -923,6 +1007,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 84"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -934,6 +1019,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 85"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -945,6 +1031,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 86"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -956,6 +1043,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 87"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -967,6 +1055,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 88"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -978,6 +1067,7 @@
 //? post: cog[0].reg[y] == 0x2e800
 //? post: cog[0].reg[again] == 0xfffd1dd0
 //? post: cog[0].reg[qval] == 0x2e800
+//?
 //? run: "goertzel-arithmetic 89"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -989,6 +1079,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 90"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -1000,6 +1091,7 @@
 //? post: cog[0].reg[y] == 0xf800
 //? post: cog[0].reg[again] == 0xffff09f0
 //? post: cog[0].reg[qval] == 0xf800
+//?
 //? run: "goertzel-arithmetic 91"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -1011,6 +1103,7 @@
 //? post: cog[0].reg[y] == 0x2e800
 //? post: cog[0].reg[again] == 0xfffd1dd0
 //? post: cog[0].reg[qval] == 0x2e800
+//?
 //? run: "goertzel-arithmetic 92"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -1022,6 +1115,7 @@
 //? post: cog[0].reg[y] == 0xffff0800
 //? post: cog[0].reg[again] == 0xf610
 //? post: cog[0].reg[qval] == 0xffff0800
+//?
 //? run: "goertzel-arithmetic 93"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -1033,6 +1127,7 @@
 //? post: cog[0].reg[y] == 0x0
 //? post: cog[0].reg[again] == 0x0
 //? post: cog[0].reg[qval] == 0x0
+//?
 //? run: "goertzel-arithmetic 94"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004
@@ -1044,6 +1139,7 @@
 //? post: cog[0].reg[y] == 0x1f000
 //? post: cog[0].reg[again] == 0xfffe13e0
 //? post: cog[0].reg[qval] == 0x1f000
+//?
 //? run: "goertzel-arithmetic 95"
 //? const: frequency = 0x10000000
 //? const: control = 0xf0870004

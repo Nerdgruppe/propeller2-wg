@@ -5,337 +5,678 @@
 //? post: cog[*].reg[elapsed] == 24
 //? post: cog[*].c == true
 //? post: cog[*].z == false
+//? macro: pop required
+//? macro: sub required
+//? macro: domain required
+//? macro: domain_2 required
+//? macro: domain_3 required
+//?
 //? run: "cog-jmp--11-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = -11
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-jmp--10-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = -10
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-jmp--9-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-jmp--9-cog7"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 7
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-jmp--8-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = -8
 //? post: cog[*].reg[landed] == 101
+//?
 //? run: "cog-jmp-0-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 0
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-jmp-1-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-jmp-1-cog7"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 7
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-jmp-2-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 2
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-jmp-3-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 3
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-jmp-4-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 4
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "cog-jmp-5-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 5
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "cog-jmp-6-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 6
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "cog-jmp-7-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 0
 //? const: delta = 7
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "cog-call--11-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = -11
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-call--10-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = -10
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-call--9-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-call--9-cog7"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 7
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "cog-call--8-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = -8
 //? post: cog[*].reg[landed] == 101
+//?
 //? run: "cog-call-0-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 0
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-call-1-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-call-1-cog7"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 7
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-call-2-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 2
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-call-3-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 3
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "cog-call-4-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 4
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "cog-call-5-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 5
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "cog-call-6-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 6
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "cog-call-7-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set MOV register(cogaddr(site)), branch_word
+//? macro: domain_2 set NOP
+//? macro: domain_3 set NOP
 //? cog: 0
 //? const: domain = 0
 //? const: kind = 1
 //? const: delta = 7
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-jmp--11-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = -11
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-jmp--10-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = -10
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-jmp--9-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-jmp--9-cog7"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 7
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-jmp--8-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = -8
 //? post: cog[*].reg[landed] == 101
+//?
 //? run: "lut-jmp-0-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 0
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-jmp-1-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-jmp-1-cog7"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 7
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-jmp-2-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 2
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-jmp-3-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 3
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-jmp-4-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 4
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-jmp-5-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 5
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-jmp-6-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 6
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-jmp-7-cog0"
+//? macro: pop set
+//? macro: sub set
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 0
 //? const: delta = 7
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-call--11-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = -11
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-call--10-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = -10
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-call--9-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-call--9-cog7"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 7
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = -9
 //? post: cog[*].reg[landed] == 102
+//?
 //? run: "lut-call--8-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = -8
 //? post: cog[*].reg[landed] == 101
+//?
 //? run: "lut-call-0-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 0
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-call-1-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-call-1-cog7"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 7
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 1
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-call-2-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 2
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-call-3-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 3
 //? post: cog[*].reg[landed] == 0
+//?
 //? run: "lut-call-4-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 4
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-call-5-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 5
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-call-6-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
 //? const: delta = 6
 //? post: cog[*].reg[landed] == 1
+//?
 //? run: "lut-call-7-cog0"
+//? macro: pop set POP return_error
+//? macro: sub set SUB return_error, aug(0x80000000 | pcaddr(after))
+//? macro: domain set SETQ2 7
+//? macro: domain_2 set RDLONG register(0), aug(hubaddr(entry))
+//? macro: domain_3 set WRLUT branch_word, aug(pcaddr(site))
 //? cog: 0
 //? const: domain = 1
 //? const: kind = 1
@@ -363,30 +704,23 @@ hit_plus2:
 finish:
                 GETCT   elapsed
                 SUB     elapsed,        start
-.if kind == 1
-                POP     return_error
-                SUB     return_error,   aug(0x80000000 | pcaddr(after))
-.endif
+                {{ pop }}
+                {{ sub }}
                 MOV     completed,      1
                 JMP     nrel(_end)
 
 // Install the raw JMP/CALL word into a code-marked instruction slot.
 setup:
                 MODCZ   _SET,                       _CLR                :wcz
-.if domain == 0
-                MOV     register(cogaddr(site)),    branch_word
-                NOP
-                NOP
+                {{ domain }}
+                {{ domain_2 }}
+                {{ domain_3 }}
                 GETCT   start
                 JMP     nrel(entry)
-.else
-                SETQ2   7
-                RDLONG  register(0),                aug(hubaddr(entry))
-                WRLUT   branch_word,                aug(pcaddr(site))
-                GETCT   start
-                JMP     nrel(entry)
-.endif
 var branch_word:
+                // Raw relative JMP/CALL/CALLA/CALLB: kind selects opcode bits 22:21,
+                // and delta supplies A20 verbatim, including unaligned byte displacements.
+                // Native relocation scales or validates the field, hiding the low-bit probe.
                 LONG    (0xfd900000 + (kind << 21)) | (delta & 0xfffff)
 var landed:     LONG    99
 var completed:  LONG    0

@@ -2,62 +2,256 @@
 //? timeout-ms: 2000
 //? max-cycles: 100000
 //? post: cog[*].reg[failures] == 0
+//? macro: mov_operand required
+//? macro: mov_2_operand required
+//? macro: xor required
+//? macro: modcz required
+//? macro: modcz_2 required
+//? macro: modcz_3_operand required
+//? macro: setpat_operand required
+//? macro: xor_2_operand required
+//? macro: probe_equal required
+//? macro: mov required
+//? macro: call required
+//? macro: mov_2 required
+//? macro: pollpat required
+//? macro: add required
+//?
 //? run: "cog0-ina-different"
+//? macro: mov_operand set INA
+//? macro: mov_2_operand set 5
+//? macro: xor set XOR comparison, 1
+//? macro: modcz set MODCZ _CLR, _CLR :wcz
+//? macro: modcz_2 set MODCZ _SET, _SET :wcz
+//? macro: modcz_3_operand set _CLR
+//? macro: setpat_operand set aug(0x10005)
+//? macro: xor_2_operand set OUTA
+//? macro: probe_equal set // Changes between two unequal patterns do not produce a new mismatch edge.
+//? macro: mov set MOV command, 5
+//? macro: call set CALL exchange
+//? macro: mov_2 set MOV command, 1
+//? macro: pollpat set POLLPAT :wc
+//? macro: add set if(C) ADD failures, 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_port = 0
 //? const: probe_equal = 0
+//?
 //? run: "cog0-ina-equal"
+//? macro: mov_operand set INA
+//? macro: mov_2_operand set 5
+//? macro: xor set
+//? macro: modcz set MODCZ _CLR, _SET :wcz
+//? macro: modcz_2 set MODCZ _SET, _CLR :wcz
+//? macro: modcz_3_operand set _CLR
+//? macro: setpat_operand set aug(0x10005)
+//? macro: xor_2_operand set OUTA
+//? macro: probe_equal set
+//? macro: mov set
+//? macro: call set
+//? macro: mov_2 set
+//? macro: pollpat set
+//? macro: add set
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_port = 0
 //? const: probe_equal = 1
+//?
 //? run: "cog0-inb-different"
+//? macro: mov_operand set INB
+//? macro: mov_2_operand set 10
+//? macro: xor set XOR comparison, 1
+//? macro: modcz set MODCZ _SET, _CLR :wcz
+//? macro: modcz_2 set MODCZ _CLR, _SET :wcz
+//? macro: modcz_3_operand set _SET
+//? macro: setpat_operand set aug(0x1000a)
+//? macro: xor_2_operand set OUTB
+//? macro: probe_equal set // Changes between two unequal patterns do not produce a new mismatch edge.
+//? macro: mov set MOV command, 5
+//? macro: call set CALL exchange
+//? macro: mov_2 set MOV command, 1
+//? macro: pollpat set POLLPAT :wc
+//? macro: add set if(C) ADD failures, 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_port = 1
 //? const: probe_equal = 0
+//?
 //? run: "cog0-inb-equal"
+//? macro: mov_operand set INB
+//? macro: mov_2_operand set 10
+//? macro: xor set
+//? macro: modcz set MODCZ _SET, _SET :wcz
+//? macro: modcz_2 set MODCZ _CLR, _CLR :wcz
+//? macro: modcz_3_operand set _SET
+//? macro: setpat_operand set aug(0x1000a)
+//? macro: xor_2_operand set OUTB
+//? macro: probe_equal set
+//? macro: mov set
+//? macro: call set
+//? macro: mov_2 set
+//? macro: pollpat set
+//? macro: add set
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_port = 1
 //? const: probe_equal = 1
+//?
 //? run: "cog3-ina-different"
+//? macro: mov_operand set INA
+//? macro: mov_2_operand set 5
+//? macro: xor set XOR comparison, 1
+//? macro: modcz set MODCZ _CLR, _CLR :wcz
+//? macro: modcz_2 set MODCZ _SET, _SET :wcz
+//? macro: modcz_3_operand set _CLR
+//? macro: setpat_operand set aug(0x10005)
+//? macro: xor_2_operand set OUTA
+//? macro: probe_equal set // Changes between two unequal patterns do not produce a new mismatch edge.
+//? macro: mov set MOV command, 5
+//? macro: call set CALL exchange
+//? macro: mov_2 set MOV command, 1
+//? macro: pollpat set POLLPAT :wc
+//? macro: add set if(C) ADD failures, 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_port = 0
 //? const: probe_equal = 0
+//?
 //? run: "cog3-ina-equal"
+//? macro: mov_operand set INA
+//? macro: mov_2_operand set 5
+//? macro: xor set
+//? macro: modcz set MODCZ _CLR, _SET :wcz
+//? macro: modcz_2 set MODCZ _SET, _CLR :wcz
+//? macro: modcz_3_operand set _CLR
+//? macro: setpat_operand set aug(0x10005)
+//? macro: xor_2_operand set OUTA
+//? macro: probe_equal set
+//? macro: mov set
+//? macro: call set
+//? macro: mov_2 set
+//? macro: pollpat set
+//? macro: add set
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_port = 0
 //? const: probe_equal = 1
+//?
 //? run: "cog3-inb-different"
+//? macro: mov_operand set INB
+//? macro: mov_2_operand set 10
+//? macro: xor set XOR comparison, 1
+//? macro: modcz set MODCZ _SET, _CLR :wcz
+//? macro: modcz_2 set MODCZ _CLR, _SET :wcz
+//? macro: modcz_3_operand set _SET
+//? macro: setpat_operand set aug(0x1000a)
+//? macro: xor_2_operand set OUTB
+//? macro: probe_equal set // Changes between two unequal patterns do not produce a new mismatch edge.
+//? macro: mov set MOV command, 5
+//? macro: call set CALL exchange
+//? macro: mov_2 set MOV command, 1
+//? macro: pollpat set POLLPAT :wc
+//? macro: add set if(C) ADD failures, 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_port = 1
 //? const: probe_equal = 0
+//?
 //? run: "cog3-inb-equal"
+//? macro: mov_operand set INB
+//? macro: mov_2_operand set 10
+//? macro: xor set
+//? macro: modcz set MODCZ _SET, _SET :wcz
+//? macro: modcz_2 set MODCZ _CLR, _CLR :wcz
+//? macro: modcz_3_operand set _SET
+//? macro: setpat_operand set aug(0x1000a)
+//? macro: xor_2_operand set OUTB
+//? macro: probe_equal set
+//? macro: mov set
+//? macro: call set
+//? macro: mov_2 set
+//? macro: pollpat set
+//? macro: add set
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_port = 1
 //? const: probe_equal = 1
+//?
 //? run: "cog7-ina-different"
+//? macro: mov_operand set INA
+//? macro: mov_2_operand set 5
+//? macro: xor set XOR comparison, 1
+//? macro: modcz set MODCZ _CLR, _CLR :wcz
+//? macro: modcz_2 set MODCZ _SET, _SET :wcz
+//? macro: modcz_3_operand set _CLR
+//? macro: setpat_operand set aug(0x10005)
+//? macro: xor_2_operand set OUTA
+//? macro: probe_equal set // Changes between two unequal patterns do not produce a new mismatch edge.
+//? macro: mov set MOV command, 5
+//? macro: call set CALL exchange
+//? macro: mov_2 set MOV command, 1
+//? macro: pollpat set POLLPAT :wc
+//? macro: add set if(C) ADD failures, 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_port = 0
 //? const: probe_equal = 0
+//?
 //? run: "cog7-ina-equal"
+//? macro: mov_operand set INA
+//? macro: mov_2_operand set 5
+//? macro: xor set
+//? macro: modcz set MODCZ _CLR, _SET :wcz
+//? macro: modcz_2 set MODCZ _SET, _CLR :wcz
+//? macro: modcz_3_operand set _CLR
+//? macro: setpat_operand set aug(0x10005)
+//? macro: xor_2_operand set OUTA
+//? macro: probe_equal set
+//? macro: mov set
+//? macro: call set
+//? macro: mov_2 set
+//? macro: pollpat set
+//? macro: add set
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_port = 0
 //? const: probe_equal = 1
+//?
 //? run: "cog7-inb-different"
+//? macro: mov_operand set INB
+//? macro: mov_2_operand set 10
+//? macro: xor set XOR comparison, 1
+//? macro: modcz set MODCZ _SET, _CLR :wcz
+//? macro: modcz_2 set MODCZ _CLR, _SET :wcz
+//? macro: modcz_3_operand set _SET
+//? macro: setpat_operand set aug(0x1000a)
+//? macro: xor_2_operand set OUTB
+//? macro: probe_equal set // Changes between two unequal patterns do not produce a new mismatch edge.
+//? macro: mov set MOV command, 5
+//? macro: call set CALL exchange
+//? macro: mov_2 set MOV command, 1
+//? macro: pollpat set POLLPAT :wc
+//? macro: add set if(C) ADD failures, 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_port = 1
 //? const: probe_equal = 0
+//?
 //? run: "cog7-inb-equal"
+//? macro: mov_operand set INB
+//? macro: mov_2_operand set 10
+//? macro: xor set
+//? macro: modcz set MODCZ _SET, _SET :wcz
+//? macro: modcz_2 set MODCZ _CLR, _CLR :wcz
+//? macro: modcz_3_operand set _SET
+//? macro: setpat_operand set aug(0x1000a)
+//? macro: xor_2_operand set OUTB
+//? macro: probe_equal set
+//? macro: mov set
+//? macro: call set
+//? macro: mov_2 set
+//? macro: pollpat set
+//? macro: add set
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_port = 1
@@ -74,34 +268,15 @@
                 MOV     command,        1
                 CALL    exchange
                 // Verify the selected architectural input and leave the other port different.
-.if probe_port == 0
-                MOV     observed,       INA
-                MOV     expected,       5
-.else
-                MOV     observed,       INB
-                MOV     expected,       10
-.endif
+                MOV     observed, {{ mov_operand }}
+                MOV     expected, {{ mov_2_operand }}
                 AND     observed,       15
                 CMP     observed,       expected                :wz
     if(!Z)      ADD     failures,       1
                 MOV     comparison,     expected
-.if probe_equal == 0
-                XOR     comparison,     1
-.endif
+                {{ xor }}
                 // SETPAT captures C/Z and both operands without modifying them.
-.if probe_port == 0
-.if probe_equal == 0
-                MODCZ   _CLR,           _CLR                    :wcz
-.else
-                MODCZ   _CLR,           _SET                    :wcz
-.endif
-.else
-.if probe_equal == 0
-                MODCZ   _SET,           _CLR                    :wcz
-.else
-                MODCZ   _SET,           _SET                    :wcz
-.endif
-.endif
+                {{ modcz }}
                 SETPAT  mask,           comparison
                 WRC     saved_c
                 WRZ     saved_z
@@ -112,41 +287,27 @@
                 CMP     mask,           15                      :wz
     if(!Z)      ADD     failures,       1
                 // Later C/Z changes must not affect the captured configuration.
-.if probe_port == 0
-.if probe_equal == 0
-                MODCZ   _SET,           _SET                    :wcz
-.else
-                MODCZ   _SET,           _CLR                    :wcz
-.endif
-.else
-.if probe_equal == 0
-                MODCZ   _CLR,           _SET                    :wcz
-.else
-                MODCZ   _CLR,           _CLR                    :wcz
-.endif
-.endif
+                {{ modcz_2 }}
                 // An already-true condition at SETPAT does not generate an event.
-                POLLPAT                                         :wcz
+                POLLPAT :wcz
     if(C)       ADD     failures,       1
     if(Z)       ADD     failures,       1
-.if probe_equal == 0
-                // Changes between two unequal patterns do not produce a new mismatch edge.
-                MOV     command,        5
-                CALL    exchange
-                MOV     command,        1
-                CALL    exchange
-                POLLPAT                                         :wc
-    if(C)       ADD     failures,       1
-.endif
+                {{ probe_equal }}
+                {{ mov }}
+                {{ call }}
+                {{ mov_2 }}
+                {{ call }}
+                {{ pollpat }}
+                {{ add }}
                 // A false-to-true comparison transition produces one event, without level reassertion.
                 MOV     command,        2
                 CALL    exchange
                 MOV     command,        1
                 CALL    exchange
-                POLLPAT                                         :wcz
+                POLLPAT :wcz
     if(!C)      ADD     failures,       1
     if(!Z)      ADD     failures,       1
-                POLLPAT                                         :wc
+                POLLPAT :wc
     if(C)       ADD     failures,       1
                 // A later transition rearms PAT; JPAT consumes it and JNPAT sees it cleared.
                 MOV     command,        2
@@ -171,9 +332,9 @@ branch_done:
                 CALL    exchange
                 MOV     command,    2
                 CALL    exchange
-                POLLPAT                             :wc
+                POLLPAT :wc
     if(!C)      ADD     failures,   1
-                POLLPAT                             :wcz
+                POLLPAT :wcz
     if(C)       ADD     failures,   1
     if(Z)       ADD     failures,   1
                 // A delayed, held match wakes WAITPAT while the receiving cog is stalled.
@@ -182,11 +343,11 @@ branch_done:
                 GETCT   timer
                 ADD     timer,      aug(4096)
                 SETQ    timer
-                WAITPAT                             :wcz
+                WAITPAT :wcz
     if(C)       ADD     failures,   1
     if(Z)       ADD     failures,   1
                 CALL    await_ack
-                POLLPAT                             :wc
+                POLLPAT :wc
     if(C)       ADD     failures,   1
                 // Generate another latch, then verify that SETPAT clears it.
                 MOV     command,    2
@@ -195,42 +356,32 @@ branch_done:
                 CALL    exchange
                 MODCZ   _CLR,       _SET            :wcz
                 SETPAT  0,          1
-                POLLPAT                             :wcz
+                POLLPAT :wcz
     if(C)       ADD     failures,   1
     if(Z)       ADD     failures,   1
                 GETCT   timer
                 ADD     timer,      128
                 SETQ    timer
-                WAITPAT                             :wcz
+                WAITPAT :wcz
     if(!C)      ADD     failures,   1
     if(!Z)      ADD     failures,   1
                 // S is not masked: a high S bit makes equality impossible despite changing low inputs.
-.if probe_port == 0
-                MODCZ   _CLR,       _SET            :wcz
-                SETPAT  15,         aug(0x10005)
-.else
-                MODCZ   _SET,       _SET            :wcz
-                SETPAT  15,         aug(0x1000a)
-.endif
+                MODCZ   {{ modcz_3_operand }}, _SET :wcz
+                SETPAT  15, {{ setpat_operand }}
                 MOV     command,    2
                 CALL    exchange
                 MOV     command,    1
                 CALL    exchange
-                POLLPAT                             :wc
+                POLLPAT :wc
     if(C)       ADD     failures,   1
                 // An always-true mismatch also has no edges when S has unmasked high bits.
-.if probe_port == 0
-                MODCZ   _CLR,       _CLR            :wcz
-                SETPAT  15,         aug(0x10005)
-.else
-                MODCZ   _SET,       _CLR            :wcz
-                SETPAT  15,         aug(0x1000a)
-.endif
+                MODCZ   {{ modcz_3_operand }}, _CLR :wcz
+                SETPAT  15, {{ setpat_operand }}
                 MOV     command,    2
                 CALL    exchange
                 MOV     command,    1
                 CALL    exchange
-                POLLPAT                             :wc
+                POLLPAT :wc
     if(C)       ADD     failures,   1
                 // Reconfiguring false to always true establishes a baseline without a PAT edge.
                 MODCZ   _SET,       _SET            :wcz
@@ -241,7 +392,7 @@ branch_done:
                 CALL    exchange
                 MOV     command,    1
                 CALL    exchange
-                POLLPAT                             :wc
+                POLLPAT :wc
     if(C)       ADD     failures,   1
                 // Disable matching and stop the helper before the snapshot reporter runs.
                 MODCZ   _SET,       _SET            :wcz
@@ -291,17 +442,9 @@ writer_wait:
                 MOV     OUTA,           5
                 MOV     OUTB,           10
                 CMP     register(400),  2               :wz
-.if probe_port == 0
-    if(Z)       XOR     OUTA,           1
-.else
-    if(Z)       XOR     OUTB,           1
-.endif
+    if(Z)       XOR     {{ xor_2_operand }}, 1
                 CMP     register(400),  5               :wz
-.if probe_port == 0
-    if(Z)       XOR     OUTA,           2
-.else
-    if(Z)       XOR     OUTB,           2
-.endif
+    if(Z)       XOR     {{ xor_2_operand }}, 2
                 MOV     DIRA,           15
                 MOV     DIRB,           15
                 WAITX   64

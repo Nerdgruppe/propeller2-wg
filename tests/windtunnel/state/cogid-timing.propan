@@ -1,76 +1,126 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[timing_error] == 0
+//? macro: cogid required
+//? macro: add_operand required
+//?
 //? run: "kind0-phase0"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 0
+//?
 //? run: "kind0-phase1"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 1
+//?
 //? run: "kind0-phase2"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 2
+//?
 //? run: "kind0-phase3"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 3
+//?
 //? run: "kind0-phase4"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 4
+//?
 //? run: "kind0-phase5"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 5
+//?
 //? run: "kind0-phase6"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 6
+//?
 //? run: "kind0-phase7"
-//? const: kind = 0
+//? macro: cogid set COGID result
+//? macro: add_operand set 6
 //? const: phase = 7
+//?
 //? run: "kind1-phase0"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 0
+//?
 //? run: "kind1-phase1"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 1
+//?
 //? run: "kind1-phase2"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 2
+//?
 //? run: "kind1-phase3"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 3
+//?
 //? run: "kind1-phase4"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 4
+//?
 //? run: "kind1-phase5"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 5
+//?
 //? run: "kind1-phase6"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 6
+//?
 //? run: "kind1-phase7"
-//? const: kind = 1
+//? macro: cogid set COGID 0 :wc
+//? macro: add_operand set 6
 //? const: phase = 7
+//?
 //? run: "kind2-phase0"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 0
+//?
 //? run: "kind2-phase1"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 1
+//?
 //? run: "kind2-phase2"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 2
+//?
 //? run: "kind2-phase3"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 3
+//?
 //? run: "kind2-phase4"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 4
+//?
 //? run: "kind2-phase5"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 5
+//?
 //? run: "kind2-phase6"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 6
+//?
 //? run: "kind2-phase7"
-//? const: kind = 2
+//? macro: cogid set COGID 384
+//? macro: add_operand set 4
 //? const: phase = 7
 
                 // Sweep every phase of the eight-clock hub command round robin.
@@ -81,15 +131,7 @@
                 WAITCT1
                 WAITX   phase
                 GETCT   start
-.if kind == 0
-                COGID   result
-.endif
-.if kind == 1
-                COGID   0                           :wc
-.endif
-.if kind == 2
-                COGID   384
-.endif
+                {{ cogid }}
                 GETCT   elapsed
                 SUB     elapsed,        start
                 // WAITCT1 can resume at a different issue phase. Derive the grant from measured CT.
@@ -97,11 +139,7 @@
                 ADD     expected,       2
                 NEG     expected,       expected
                 AND     expected,       7
-.if kind == 2
-                ADD     expected,       4
-.else
-                ADD     expected,       6
-.endif
+                ADD     expected, {{ add_operand }}
                 MOV     timing_error,   elapsed
                 SUB     timing_error,   expected
                 JMP     nrel(_end)

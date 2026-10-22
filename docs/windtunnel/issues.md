@@ -2,7 +2,7 @@
 
 `Hub.step()` returns `normal`, `breakpoint` or `reset`. After every edge, including
 reset and breakpoint notifications, the caller inspects `Hub.issues.at(index)` or `Hub.issues.iterator()` and
-any failures in the endpoint or VCD objects it owns and chooses to monitor. Hub
+any failures in the endpoint objects it owns and chooses to monitor. Hub
 and IO do not choose a host policy, scan caller-owned adapters, or print diagnostics.
 An issue does not stop a cog or discard its pipeline. Rejected operations retire
 without their rejected effect; unrelated work completes normally.
@@ -18,7 +18,7 @@ The next step clears issues. A paused host must not call step to refresh the UI.
 Firmware reset retains issues collected earlier on its issuing edge; explicit
 host initialization starts a fresh collection. Execution breakpoints still stop
 before an edge. Data watchpoints retain every match from a completed edge, even
-when that edge also reports issues. There is no textual pipeline trace; VCD remains.
+when that edge also reports issues. Physical-time signal observation uses native Scope captures.
 
 ## Detector inventory
 
@@ -167,11 +167,12 @@ endpoint attempts. `reset()` or replacing the descriptor explicitly re-enables
 the adapter. Source readers only consume buffered data. Callback implementations
 and writer implementations supplied by callers must not allocate while stepping.
 Built-in file/socket writers use fixed buffers; the checklist runner prepares its
-output capacity before simulation. VCD capture, quiet-time emission and flushing
-likewise retain their first typed export error and stop further emission.
+output capacity before simulation. Scope sampling writes only preallocated
+in-memory blocks; file output runs outside simulator stepping.
 
-Service errors remain on adapters and VCD, separate from architectural issues.
-Callers select the adapters and exports they own and choose when to stop. The frame
+Service errors remain on adapters, separate from architectural issues.
+Callers select the adapters they own and choose when to stop. Native capture
+write errors belong to the saving host; VCD errors belong to `windtunnel-export`. The frame
 runner receives that policy explicitly. The GUI Debugger opens,
 expands and takes focus on an issue stop; diagnostics remain visible when automatic
 inspector UI is hidden.

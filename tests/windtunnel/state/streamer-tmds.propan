@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "TMDS 100 data d5455552"
 //? const: video = 0x100
 //? const: data = 0xd5455552
@@ -14,6 +15,7 @@
 //? post: cog[*].reg[s9] == 0xaa
 //? post: cog[*].reg[s10] == 0x99
 //? post: cog[*].reg[s11] == 0xaa
+//?
 //? run: "TMDS 100 data 12345600"
 //? const: video = 0x100
 //? const: data = 0x12345600
@@ -29,6 +31,7 @@
 //? post: cog[*].reg[s9] == 0x66
 //? post: cog[*].reg[s10] == 0xa5
 //? post: cog[*].reg[s11] == 0x9a
+//?
 //? run: "TMDS 180 data d5455552"
 //? const: video = 0x180
 //? const: data = 0xd5455552
@@ -44,6 +47,7 @@
 //? post: cog[*].reg[s9] == 0x55
 //? post: cog[*].reg[s10] == 0x99
 //? post: cog[*].reg[s11] == 0x55
+//?
 //? run: "TMDS 180 data 12345600"
 //? const: video = 0x180
 //? const: data = 0x12345600
@@ -59,6 +63,7 @@
 //? post: cog[*].reg[s9] == 0x66
 //? post: cog[*].reg[s10] == 0xa5
 //? post: cog[*].reg[s11] == 0x59
+//?
 //? run: "converter plus TMDS 100 data d5455552"
 //? const: video = 0x120
 //? const: data = 0xd5455552
@@ -74,6 +79,7 @@
 //? post: cog[*].reg[s9] == 0xaa
 //? post: cog[*].reg[s10] == 0x99
 //? post: cog[*].reg[s11] == 0xaa
+//?
 //? run: "converter plus TMDS 100 data 12345600"
 //? const: video = 0x120
 //? const: data = 0x12345600
@@ -89,6 +95,7 @@
 //? post: cog[*].reg[s9] == 0x66
 //? post: cog[*].reg[s10] == 0xa5
 //? post: cog[*].reg[s11] == 0x9a
+//?
 //? run: "converter plus TMDS 180 data d5455552"
 //? const: video = 0x1a0
 //? const: data = 0xd5455552
@@ -104,6 +111,7 @@
 //? post: cog[*].reg[s9] == 0x55
 //? post: cog[*].reg[s10] == 0x99
 //? post: cog[*].reg[s11] == 0x55
+//?
 //? run: "converter plus TMDS 180 data 12345600"
 //? const: video = 0x1a0
 //? const: data = 0x12345600

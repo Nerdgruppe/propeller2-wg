@@ -1,68 +1,151 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: nop required
+//? macro: nop_2 required
+//? macro: nop_3 required
+//? macro: nop_4 required
+//? macro: nop_5 default
+//? macro: nop_6 default
+//? macro: nop_7 default
+//?
 //? run: "logic0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 0
 //? const: logic = 0
-//? const: gap = 0
+//?
 //? run: "logic0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 0
 //? const: logic = 0
-//? const: gap = 1
+//?
 //? run: "logic0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 1
 //? const: logic = 0
-//? const: gap = 2
+//?
 //? run: "logic0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 1
 //? const: logic = 0
-//? const: gap = 3
+//?
 //? run: "logic0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 0
-//? const: gap = 4
+//?
 //? run: "logic0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 0
-//? const: gap = 5
+//?
 //? run: "logic0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 0
-//? const: gap = 6
+//?
 //? run: "logic0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 0
-//? const: gap = 7
+//?
 //? run: "logic4-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 0
 //? const: logic = 4
-//? const: gap = 0
+//?
 //? run: "logic4-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 0
 //? const: logic = 4
-//? const: gap = 1
+//?
 //? run: "logic4-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 0
 //? const: logic = 4
-//? const: gap = 2
+//?
 //? run: "logic4-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
 //? post: cog[*].reg[result] == 0
 //? const: logic = 4
-//? const: gap = 3
+//?
 //? run: "logic4-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 4
-//? const: gap = 4
+//?
 //? run: "logic4-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 4
-//? const: gap = 5
+//?
 //? run: "logic4-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 4
-//? const: gap = 6
+//?
 //? run: "logic4-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
 //? post: cog[*].reg[result] == 1
 //? const: logic = 4
-//? const: gap = 7
 
                 DIRH    8
                 OUTL    8
@@ -70,27 +153,13 @@
                 WRPIN   aug(0x40000000 | (logic << 21)),    8
                 WAITX   64
                 OUTH    8
-.if gap > 0
-                NOP
-.endif
-.if gap > 1
-                NOP
-.endif
-.if gap > 2
-                NOP
-.endif
-.if gap > 3
-                NOP
-.endif
-.if gap > 4
-                NOP
-.endif
-.if gap > 5
-                NOP
-.endif
-.if gap > 6
-                NOP
-.endif
+                {{ nop }}
+                {{ nop_2 }}
+                {{ nop_3 }}
+                {{ nop_4 }}
+                {{ nop_5 }}
+                {{ nop_6 }}
+                {{ nop_7 }}
                 TESTP   8                                       :wc
                 WRC     result
                 JMP     nrel(_end)

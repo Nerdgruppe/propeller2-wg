@@ -1,323 +1,663 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//? macro: cmp_operand required
+//? macro: cmp_2_operand required
+//? macro: selected_kind required
+//? macro: add default
+//?
 //? run: "cog0-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 0
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog0-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 0
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog0-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 0
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog0-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 0
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog0-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 0
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog0-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 0
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog0-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 0
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog0-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 0
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog0-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 0
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog0-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 0
 //? const: mode = 2
 //? const: kind = 3
+//?
 //? run: "cog1-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 1
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog1-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 1
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog1-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 1
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog1-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 1
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog1-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 1
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog1-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 1
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog1-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 1
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog1-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 1
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog1-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 1
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog1-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 1
 //? const: mode = 2
 //? const: kind = 3
+//?
 //? run: "cog2-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 2
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog2-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 2
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog2-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 2
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog2-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 2
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog2-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 2
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog2-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 2
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog2-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 2
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog2-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 2
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog2-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 2
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog2-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 2
 //? const: mode = 2
 //? const: kind = 3
+//?
 //? run: "cog3-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 3
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog3-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 3
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog3-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 3
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog3-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 3
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog3-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 3
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog3-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 3
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog3-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 3
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog3-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 3
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog3-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 3
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog3-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 3
 //? const: mode = 2
 //? const: kind = 3
+//?
 //? run: "cog4-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 4
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog4-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 4
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog4-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 4
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog4-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 4
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog4-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 4
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog4-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 4
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog4-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 4
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog4-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 4
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog4-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 4
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog4-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 4
 //? const: mode = 2
 //? const: kind = 3
+//?
 //? run: "cog5-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 5
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog5-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 5
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog5-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 5
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog5-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 5
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog5-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 5
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog5-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 5
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog5-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 5
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog5-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 5
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog5-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 5
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog5-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 5
 //? const: mode = 2
 //? const: kind = 3
+//?
 //? run: "cog6-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 6
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog6-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 6
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog6-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 6
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog6-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 6
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog6-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 6
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog6-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 6
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog6-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 6
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog6-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 6
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog6-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 6
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog6-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 6
 //? const: mode = 2
 //? const: kind = 3
+//?
 //? run: "cog7-mode0-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 7
 //? const: mode = 0
 //? const: kind = 0
+//?
 //? run: "cog7-mode0-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 7
 //? const: mode = 0
 //? const: kind = 1
+//?
 //? run: "cog7-mode0-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 7
 //? const: mode = 0
 //? const: kind = 2
+//?
 //? run: "cog7-mode0-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 7
 //? const: mode = 0
 //? const: kind = 3
+//?
 //? run: "cog7-mode1-kind0"
+//? macro: cmp_operand set 6
+//? macro: cmp_2_operand set 16
+//? macro: selected_kind set REP 2, 3
+//? macro: add override ADD value, 1
 //? cog: 7
 //? const: mode = 1
 //? const: kind = 0
+//?
 //? run: "cog7-mode1-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 7
 //? const: mode = 1
 //? const: kind = 1
+//?
 //? run: "cog7-mode1-kind2"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 10
+//? macro: selected_kind set SKIPF 255
 //? cog: 7
 //? const: mode = 1
 //? const: kind = 2
+//?
 //? run: "cog7-mode1-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 7
 //? const: mode = 1
 //? const: kind = 3
+//?
 //? run: "cog7-mode2-kind1"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 24
+//? macro: selected_kind set SKIP 255
 //? cog: 7
 //? const: mode = 2
 //? const: kind = 1
+//?
 //? run: "cog7-mode2-kind3"
+//? macro: cmp_operand set 2
+//? macro: cmp_2_operand set 12
+//? macro: selected_kind set EXECF exec_target
 //? cog: 7
 //? const: mode = 2
 //? const: kind = 3
@@ -328,27 +668,9 @@
                 JMP     target
 checked:
                 SUB     finish,     start
-.if kind == 0
-                CMP     value,      6       :wz
+                CMP     value, {{ cmp_operand }} :wz
     if(!Z)      ADD     failures,   1
-                CMP     finish,     16      :wz
-.elif   kind == 1
-                CMP     value,      2       :wz
-    if(!Z)      ADD     failures,   1
-                CMP     finish,     24      :wz
-.elif   kind == 2
-                CMP     value,      2       :wz
-    if(!Z)      ADD     failures,   1
-.if mode == 2
-                CMP     finish,     24      :wz
-.else
-                CMP     finish,     10      :wz
-.endif
-.else
-                CMP     value,      2       :wz
-    if(!Z)      ADD     failures,   1
-                CMP     finish,     12      :wz
-.endif
+                CMP     finish, {{ cmp_2_operand }} :wz
     if(!Z)      ADD     failures,   1
                 JMP     nrel(_end)
 var target:     LONG    pcaddr(probe)
@@ -363,26 +685,16 @@ var failures:   LONG    0
 lut_block:
 .if mode == 0
 .cogexec    0x440, 0x100
-.elif   mode == 1
+.elif mode == 1
 .lutexec    0x3000, 0x200
 .else
 .hubexec    0x4000
 .endif
 probe:
                 GETCT   start
-.if kind == 0
-                REP     2,      3
-                ADD     value,  1
-                ADD     value,  1
-.elif   kind == 1
-                SKIP    255
-.else
-.if kind == 2
-                SKIPF   255
-.else
-                EXECF   exec_target
-.endif
-.endif
+                {{ selected_kind }}
+                {{ add }}
+                {{ add }}
 .if kind != 0
                 ADD     value,  1
                 ADD     value,  1

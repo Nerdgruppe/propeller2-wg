@@ -1,960 +1,1081 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
+//? macro: selected_kind required
+//?
 //? run: "kind0-ones0-cog0"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 0
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones0-cog1"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 1
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones0-cog2"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 2
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones0-cog3"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 3
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones0-cog4"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 4
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones0-cog5"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 5
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones0-cog6"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 6
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones0-cog7"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 7
-//? const: kind = 0
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog0"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 0
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog1"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 1
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog2"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 2
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog3"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 3
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog4"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 4
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog5"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 5
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog6"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 6
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones1-cog7"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 7
-//? const: kind = 0
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog0"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 0
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog1"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 1
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog2"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 2
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog3"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 3
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog4"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 4
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog5"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 5
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog6"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 6
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones7-cog7"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 7
-//? const: kind = 0
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog0"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 0
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog1"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 1
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog2"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 2
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog3"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 3
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog4"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 4
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog5"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 5
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog6"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 6
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones8-cog7"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 7
-//? const: kind = 0
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog0"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 0
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog1"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 1
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog2"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 2
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog3"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 3
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog4"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 4
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog5"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 5
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog6"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 6
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones9-cog7"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 7
-//? const: kind = 0
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog0"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 0
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog1"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 1
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog2"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 2
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog3"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 3
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog4"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 4
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog5"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 5
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog6"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 6
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones16-cog7"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 7
-//? const: kind = 0
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog0"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 0
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog1"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 1
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog2"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 2
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog3"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 3
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog4"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 4
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog5"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 5
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog6"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 6
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-ones32-cog7"
+//? macro: selected_kind set SKIP aug(bits)
 //? cog: 7
-//? const: kind = 0
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog0"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 0
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog1"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 1
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog2"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 2
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog3"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 3
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog4"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 4
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog5"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 5
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog6"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 6
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones0-cog7"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 7
-//? const: kind = 1
 //? const: bits = 0
 //? post: cog[*].reg[value] == 32
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog0"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 0
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog1"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 1
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog2"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 2
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog3"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 3
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog4"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 4
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog5"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 5
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog6"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 6
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones1-cog7"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 7
-//? const: kind = 1
 //? const: bits = 1
 //? post: cog[*].reg[value] == 31
 //? post: cog[*].reg[elapsed] == 70
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog0"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 0
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog1"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 1
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog2"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 2
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog3"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 3
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog4"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 4
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog5"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 5
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog6"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 6
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones7-cog7"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 7
-//? const: kind = 1
 //? const: bits = 127
 //? post: cog[*].reg[value] == 25
 //? post: cog[*].reg[elapsed] == 58
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog0"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 0
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog1"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 1
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog2"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 2
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog3"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 3
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog4"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 4
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog5"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 5
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog6"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 6
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones8-cog7"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 7
-//? const: kind = 1
 //? const: bits = 255
 //? post: cog[*].reg[value] == 24
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog0"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 0
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog1"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 1
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog2"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 2
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog3"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 3
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog4"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 4
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog5"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 5
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog6"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 6
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones9-cog7"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 7
-//? const: kind = 1
 //? const: bits = 511
 //? post: cog[*].reg[value] == 23
 //? post: cog[*].reg[elapsed] == 56
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog0"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 0
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog1"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 1
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog2"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 2
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog3"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 3
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog4"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 4
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog5"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 5
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog6"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 6
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones16-cog7"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 7
-//? const: kind = 1
 //? const: bits = 65535
 //? post: cog[*].reg[value] == 16
 //? post: cog[*].reg[elapsed] == 42
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog0"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 0
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog1"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 1
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog2"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 2
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog3"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 3
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog4"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 4
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog5"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 5
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog6"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 6
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-ones32-cog7"
+//? macro: selected_kind set SKIPF aug(bits)
 //? cog: 7
-//? const: kind = 1
 //? const: bits = 4294967295
 //? post: cog[*].reg[value] == 0
 //? post: cog[*].reg[elapsed] == 14
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog0"
+//? macro: selected_kind set REP 1, 3
 //? cog: 0
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog1"
+//? macro: selected_kind set REP 1, 3
 //? cog: 1
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog2"
+//? macro: selected_kind set REP 1, 3
 //? cog: 2
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog3"
+//? macro: selected_kind set REP 1, 3
 //? cog: 3
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog4"
+//? macro: selected_kind set REP 1, 3
 //? cog: 4
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog5"
+//? macro: selected_kind set REP 1, 3
 //? cog: 5
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog6"
+//? macro: selected_kind set REP 1, 3
 //? cog: 6
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-ones0-cog7"
+//? macro: selected_kind set REP 1, 3
 //? cog: 7
-//? const: kind = 2
 //? const: bits = 0
 //? post: cog[*].reg[value] == 34
 //? post: cog[*].reg[elapsed] == 72
@@ -963,13 +1084,7 @@
 
                 // Measure canceled slots and PC stepping, without branch destinations in the pattern.
                 GETCT   start
-.if kind == 0
-                SKIP    aug(bits)
-.elif   kind == 1
-                SKIPF   aug(bits)
-.else
-                REP     1,          3
-.endif
+                {{ selected_kind }}
                 ADD     value,      1
                 ADD     value,      1
                 ADD     value,      1

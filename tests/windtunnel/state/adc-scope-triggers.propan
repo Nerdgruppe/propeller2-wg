@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "f0-a16-b48-v0"
 //? const: x = 49216
 //? const: level = 0
@@ -6,6 +7,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 13
+//?
 //? run: "f0-a48-b16-v0"
 //? const: x = 16576
 //? const: level = 0
@@ -13,6 +15,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 18
+//?
 //? run: "f0-a16-b16-v0"
 //? const: x = 16448
 //? const: level = 0
@@ -20,6 +23,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 13
+//?
 //? run: "f0-a0-b0-v0"
 //? const: x = 0
 //? const: level = 0
@@ -27,6 +31,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "f1-a16-b48-v0"
 //? const: x = 49217
 //? const: level = 0
@@ -34,6 +39,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 13
+//?
 //? run: "f1-a48-b16-v0"
 //? const: x = 16577
 //? const: level = 0
@@ -41,6 +47,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 18
+//?
 //? run: "f1-a16-b16-v0"
 //? const: x = 16449
 //? const: level = 0
@@ -48,6 +55,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 13
+//?
 //? run: "f1-a0-b0-v0"
 //? const: x = 1
 //? const: level = 0
@@ -55,6 +63,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "f2-a16-b48-v0"
 //? const: x = 49218
 //? const: level = 0
@@ -62,6 +71,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 13
+//?
 //? run: "f2-a48-b16-v0"
 //? const: x = 16578
 //? const: level = 0
@@ -69,6 +79,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 18
+//?
 //? run: "f2-a16-b16-v0"
 //? const: x = 16450
 //? const: level = 0
@@ -76,6 +87,7 @@
 //? post: cog[0].reg[high] == 255
 //? post: cog[0].reg[again] == 0
 //? post: cog[0].reg[flags] == 13
+//?
 //? run: "f2-a0-b0-v0"
 //? const: x = 2
 //? const: level = 0

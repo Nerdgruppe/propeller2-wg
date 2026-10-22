@@ -8,6 +8,14 @@ breakpoints for the current process. Resizing an inspector or the main desktop
 window prints its title and dimensions to the terminal, for example
 `Window "I/O": 260 x 290`. Initial window sizes are not logged.
 
+Use `zig-out/bin/windtunnel-gui --boot --image program.bin` to download the image
+through the physical ROM serial loader before opening the paused debugger.
+`--baudrate` selects 9600..2000000 baud (default 115200). For example, assemble
+`examples/hello-world-no-pll.propan` and launch its binary with `--boot` to retain
+the ROM-calibrated UART divider. `--boot` without an image starts cog zero at the
+ROM entry, ready to step. Reinitialization repeats the chosen startup path.
+Capture starts before ROM loading, retaining its pin activity as well as the application.
+
 Run advances complete hub clocks for up to 14 ms of monotonic host time
 per frame. The deadline is checked between clocks; one clock can exceed the
 budget. Step acknowledges the current stop and requests one clock. A new
@@ -19,7 +27,8 @@ Reboot resets the virtual chip, clearing RAM and stopping all cogs. Both pause
 execution and preserve host debugger definitions. Windows → Debugger opens execution
 breakpoint and data watchpoint editors, with details of the current stop. Pin
 windows are grouped into eight submenus of eight pins. File contains Exit and
-placeholder Load image/Export VCD entries.
+a placeholder Load image entry. Native capture saving is available in Scope;
+`windtunnel-export` converts saved captures to VCD.
 
 Architectural edits are available while paused. Raw RAM/register changes retain
 captured pipeline operands and pending writes; a later commit can overwrite an

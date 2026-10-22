@@ -1,6 +1,7 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//?
 //? run: "pll0-mode4-phase0"
 //? const: mode = 4
 //? const: phase = 0
@@ -13,6 +14,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode4-phase1"
 //? const: mode = 4
 //? const: phase = 1
@@ -25,6 +27,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode4-phase2"
 //? const: mode = 4
 //? const: phase = 2
@@ -37,6 +40,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode4-phase3"
 //? const: mode = 4
 //? const: phase = 3
@@ -49,6 +53,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode4-phase4"
 //? const: mode = 4
 //? const: phase = 4
@@ -61,6 +66,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode4-phase5"
 //? const: mode = 4
 //? const: phase = 5
@@ -73,6 +79,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode4-phase6"
 //? const: mode = 4
 //? const: phase = 6
@@ -85,6 +92,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode4-phase7"
 //? const: mode = 4
 //? const: phase = 7
@@ -97,6 +105,7 @@
 //? post: cog[*].reg[second_result] == 0x00000000
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase0"
 //? const: mode = 5
 //? const: phase = 0
@@ -109,6 +118,7 @@
 //? post: cog[*].reg[second_result] == 0x00000001
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase1"
 //? const: mode = 5
 //? const: phase = 1
@@ -121,6 +131,7 @@
 //? post: cog[*].reg[second_result] == 0x00000001
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase2"
 //? const: mode = 5
 //? const: phase = 2
@@ -133,6 +144,7 @@
 //? post: cog[*].reg[second_result] == 0x00000001
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase3"
 //? const: mode = 5
 //? const: phase = 3
@@ -145,6 +157,7 @@
 //? post: cog[*].reg[second_result] == 0x00000001
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase4"
 //? const: mode = 5
 //? const: phase = 4
@@ -157,6 +170,7 @@
 //? post: cog[*].reg[second_result] == 0x00000001
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase5"
 //? const: mode = 5
 //? const: phase = 5
@@ -169,6 +183,7 @@
 //? post: cog[*].reg[second_result] == 0x00000001
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase6"
 //? const: mode = 5
 //? const: phase = 6
@@ -181,6 +196,7 @@
 //? post: cog[*].reg[second_result] == 0x00000001
 //? post: cog[*].reg[second_pad] == 0x00000000
 //? post: cog[*].reg[irq_count] == 0x00000001
+//?
 //? run: "pll0-mode5-phase7"
 //? const: mode = 5
 //? const: phase = 7

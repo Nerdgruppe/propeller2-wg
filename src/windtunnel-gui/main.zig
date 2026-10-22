@@ -9,11 +9,16 @@ const gl = zopengl.bindings;
 const windtunnel = @import("windtunnel");
 const args_parser = @import("args");
 const Oscillator = windtunnel.ClockConfiguration.Oscillator;
+const Scope = @import("Scope.zig");
+
+const SimulationProfile = enum { ideal, realistic };
 
 const CliArgs = struct {
     help: bool = false,
     image: ?[]const u8 = null,
-    sim: windtunnel.SimulationProfile = .ideal,
+    boot: bool = false,
+    baudrate: u32 = 115_200,
+    sim: SimulationProfile = .ideal,
     rcfast: ?Oscillator = null,
     rcslow: ?Oscillator = null,
     crystal: ?Oscillator = null,
@@ -22,11 +27,13 @@ const CliArgs = struct {
     pub const shorthands = .{ .h = "help" };
 
     pub const meta = .{
-        .usage_summary = "[--help] [--image <file>] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N]",
+        .usage_summary = "[--help] [--boot] [--baudrate N] [--image <file>] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N]",
         .full_text = "Windtunnel's graphical interface for the Parallax Propeller 2 simulator.",
         .option_docs = .{
             .help = "Prints this help text",
             .image = "Loads the initial hub image from a file",
+            .boot = "Start the ROM; with --image, download the image through its serial loader",
+            .baudrate = "ROM serial upload baud rate, 9600..2000000 (default 115200)",
             .sim = "Typical ideal values or realistic bounded clocks and empirical PLL profiles",
             .rcfast = "RCFAST in MHz: 24-4+6 or 25.23+3.2ppm (default follows --sim)",
             .rcslow = "RCSLOW in MHz or with Hz/kHz/MHz; ranges accept ppm, ppb, % and absolute units",
@@ -50,8 +57,15 @@ pub fn main(init: std.process.Init) !u8 {
         return if (cli.options.help) 0 else 1;
     }
 
+    if (cli.options.baudrate < 9_600 or cli.options.baudrate > 2_000_000) {
+        std.log.err("--baudrate must be between 9600 and 2000000", .{});
+        return 1;
+    }
+
     var gui: GUI = .{ .hub = undefined, .debugger = .{ .allocator = init.gpa } };
     defer gui.debugger.deinit();
+    defer gui.scope.deinit(&gui.hub);
+    gui.host_io = init.io;
     defer {
         if (gui.initial_image) |image| {
             init.gpa.free(image);
@@ -63,14 +77,26 @@ pub fn main(init: std.process.Init) !u8 {
         .ideal => .ideal,
         .realistic => .realistic,
     };
-    windtunnel.configureClocks(init, &gui.configuration_draft, .{
-        .rcfast = cli.options.rcfast,
-        .rcslow = cli.options.rcslow,
-        .crystal = cli.options.crystal,
-        .seed = cli.options.seed,
+    inline for (.{ "rcfast", "rcslow", "crystal" }) |name| {
+        if (@field(cli.options, name)) |value| {
+            @field(gui.configuration_draft.clocks, name) = value;
+        }
+    }
+    gui.configuration_draft.clocks.seed = cli.options.seed orelse blk: {
+        var seed: u64 = undefined;
+        std.Io.random(init.io, std.mem.asBytes(&seed));
+        break :blk seed;
+    };
+    std.log.info("clock seed: {d} (--seed {d})", .{
+        gui.configuration_draft.clocks.seed,
+        gui.configuration_draft.clocks.seed,
     });
+
     try gui.hub.init(gui.configuration_draft);
     gui.hub.debugger = &gui.debugger;
+    try gui.scope.start(&gui.hub, init.gpa);
+    gui.boot = cli.options.boot;
+    gui.baudrate = cli.options.baudrate;
 
     if (cli.options.image) |path| {
         const file = try std.Io.Dir.cwd().openFile(init.io, path, .{});
@@ -88,9 +114,8 @@ pub fn main(init: std.process.Init) !u8 {
         }
 
         gui.initial_image = try init.gpa.dupe(u8, gui.hub.ram.bytes()[0..count]);
-        gui.hub.start_cog(0, .{});
-        gui.cogs_visible[0] = true;
     }
+    try gui.startImage();
 
     try glfw.init();
     defer glfw.terminate();
@@ -167,15 +192,19 @@ const LocalViewOptions = struct {
 
 const GUI = struct {
     hub: windtunnel.Hub,
+    scope: Scope = .{},
+    host_io: ?std.Io = null,
     debugger: Debugger,
     initial_image: ?[]const u8 = null,
+    boot: bool = false,
+    baudrate: u32 = 115_200,
     configuration_draft: windtunnel.SystemConfiguration = .ideal,
     configuration_error: ?anyerror = null,
     is_running: bool = false,
     step_requested: bool = false,
     frame: windtunnel.Frame = .{},
-    // Main window, six shared inspectors, eight cogs and sixty-four pins.
-    window_sizes: [1 + 6 + 8 + 64]?WindowSize = @splat(null),
+    // Main window, seven shared inspectors, eight cogs and sixty-four pins.
+    window_sizes: [1 + 7 + 8 + 64]?WindowSize = @splat(null),
     hide_automatic_ui: bool = false,
     exit_requested: bool = false,
     debugger_visible: bool = false,
@@ -276,7 +305,6 @@ const GUI = struct {
             defer zgui.endMenu();
 
             _ = zgui.menuItem("Load image (coming soon)", .{ .enabled = false });
-            _ = zgui.menuItem("Export VCD (coming soon)", .{ .enabled = false });
             zgui.separator();
             if (zgui.menuItem("Exit", .{})) {
                 gui.exit_requested = true;
@@ -287,6 +315,7 @@ const GUI = struct {
 
             _ = zgui.menuItemPtr("Hub", .{ .selected = &gui.hub_visible });
             _ = zgui.menuItemPtr("I/O", .{ .selected = &gui.io_visible });
+            _ = zgui.menuItemPtr("Scope", .{ .selected = &gui.scope.visible });
             _ = zgui.menuItemPtr("Memory", .{ .selected = &gui.memory_visible });
             _ = zgui.menuItemPtr("CORDIC", .{ .selected = &gui.cordic_visible });
             _ = zgui.menuItemPtr("Debugger", .{ .selected = &gui.debugger_visible });
@@ -430,11 +459,6 @@ const GUI = struct {
             writer.print("{f}", .{issue}) catch unreachable;
             zgui.textUnformatted(writer.buffered());
         }
-        if (gui.hub.vcd) |vcd| {
-            if (vcd.failure) |err| {
-                zgui.text("VCD service: {t}", .{err});
-            }
-        }
         for (&gui.hub.io.pins, 0..) |*pin, index| {
             const source = switch (pin.smart.rx_mode) {
                 .exact => null,
@@ -551,9 +575,9 @@ const GUI = struct {
         }
     }
 
-    /// The GUI pauses on all issues; adapter owners choose their own failure policies.
+    /// Pause on issues or a full owned recording; other adapter owners choose their failure policies.
     fn pauseOnIssue(hub: *const windtunnel.Hub) bool {
-        return hub.issues.len != 0;
+        return hub.issues.len != 0 or (hub.capture != null and hub.capture.?.metadataConst().status == .full);
     }
 
     /// Advance on this thread using the monotonic host clock, with at most fourteen milliseconds per frame.
@@ -611,7 +635,19 @@ const GUI = struct {
         if (gui.configuration_visible) {
             gui.systemConfiguration();
         }
+        if (gui.scope.visible) {
+            gui.scopeWindow();
+        }
         gui.status();
+    }
+
+    /// Open Scope through the shared inspector wrapper, including resize logging.
+    fn scopeWindow(gui: *GUI) void {
+        if (!gui.newWindow("Scope", &gui.scope.visible))
+            return;
+        defer zgui.end();
+
+        gui.scope.drawContents(&gui.hub, gui.debugger.allocator, gui.host_io);
     }
 
     /// Inspect shared resources and edit architectural hub settings only while paused.
@@ -717,7 +753,12 @@ const GUI = struct {
 
     /// Reset the chip with validated settings and pause while retaining host debugger definitions.
     fn initializeChip(gui: *GUI, configuration: windtunnel.SystemConfiguration) !void {
+        const capture = gui.hub.capture;
         try gui.hub.init(configuration);
+        if (capture) |recording| {
+            recording.reset(.reinitialize);
+            gui.hub.attachCapture(recording);
+        }
         gui.debugger.acknowledge(&gui.hub);
         gui.hub.debugger = &gui.debugger;
         gui.is_running = false;
@@ -727,14 +768,33 @@ const GUI = struct {
         gui.configuration_error = null;
     }
 
-    /// Apply draft settings and restore the original image, starting cog zero when an image was loaded.
-    fn reinitialize(gui: *GUI) !void {
-        try gui.initializeChip(gui.configuration_draft);
+    /// Stop serial upload on simulator issues or exhausted capture storage.
+    pub fn afterStep(gui: *GUI, hub: *const windtunnel.Hub) !void {
+        gui.debugger.afterClock(&gui.hub);
+        if (pauseOnIssue(hub))
+            return error.BootInterrupted;
+    }
+
+    /// Restore the selected direct-image or physical ROM serial boot startup path.
+    fn startImage(gui: *GUI) !void {
         if (gui.initial_image) |image| {
-            @memcpy(gui.hub.ram.bytes()[0..image.len], image);
-            gui.hub.start_cog(0, .{});
+            if (gui.boot) {
+                try windtunnel.serial_boot.load(gui.host_io.?, &gui.hub, image, gui.baudrate, gui);
+            } else {
+                @memcpy(gui.hub.ram.bytes()[0..image.len], image);
+                gui.hub.start_cog(0, .{});
+            }
+            gui.cogs_visible[0] = true;
+        } else if (gui.boot) {
+            try windtunnel.serial_boot.start(&gui.hub);
             gui.cogs_visible[0] = true;
         }
+    }
+
+    /// Apply draft settings and repeat the original startup path while retaining capture history.
+    fn reinitialize(gui: *GUI) !void {
+        try gui.initializeChip(gui.configuration_draft);
+        try gui.startImage();
     }
 
     /// Edit a host-only draft; the active chip changes only when explicitly reinitialized.
@@ -890,15 +950,14 @@ const GUI = struct {
             }
         }
         zgui.separator();
-        zgui.text("Pin {}", .{gui.selected_pin});
         const level: []const u8 = switch (io.pads[gui.selected_pin]) {
             .low => "low",
             .high => "high",
         };
         if (io.getExternal(@enumFromInt(gui.selected_pin))) |state| {
-            zgui.text("Voltage: {d:.2} V ({s})", .{ state.voltage, level });
+            zgui.text("Pin {d}: {d:.2} V ({s})", .{ gui.selected_pin, state.voltage, level });
         } else {
-            zgui.text("Voltage: pending first clock ({s})", .{level});
+            zgui.text("Pin {d}: pending ({s})", .{ gui.selected_pin, level });
         }
         zgui.textUnformatted("Drive:");
         const sources = [_]windtunnel.Pad.Source{ .low, .high, .float };
@@ -913,6 +972,9 @@ const GUI = struct {
         if (zgui.button("Inspect", .{})) {
             gui.pins_visible[gui.selected_pin] = true;
         }
+        zgui.textUnformatted("Scope:");
+        zgui.sameLine(.{});
+        gui.scope.pinControls(gui.selected_pin);
     }
 
     /// Inspect backing RAM directly, clipping rows and never calling watched access paths.
@@ -2160,4 +2222,60 @@ test "GUI configuration drafts are isolated and reinitialization restores the im
     try std.testing.expect(!gui.hub.is_any_cog_active());
     try std.testing.expectEqual(@as(u8, 0), gui.hub.ram.bytes()[0]);
     try std.testing.expectEqual(@as(f64, 3.2), gui.hub.system_configuration.vio_voltage);
+}
+
+test "Scope visibility and headless waveforms are observational and capture survives reinitialization" {
+    zgui.init(std.testing.allocator);
+    defer zgui.deinit();
+
+    zgui.io.setIniFilename(null);
+    zgui.io.setBackendFlags(.{ .renderer_has_textures = true });
+    zgui.io.setDisplaySize(1920, 1080);
+    const gui = try std.testing.allocator.create(GUI);
+    defer std.testing.allocator.destroy(gui);
+
+    gui.* = .{ .hub = undefined, .debugger = .{ .allocator = std.testing.allocator } };
+    defer gui.debugger.deinit();
+    defer gui.scope.deinit(&gui.hub);
+
+    try gui.hub.init(.ideal);
+    gui.hub.debugger = &gui.debugger;
+    gui.scope.memory_mib = 2;
+    gui.scope.visible = true;
+    try gui.scope.start(&gui.hub, std.testing.allocator);
+    for (0..600) |step| {
+        const source: windtunnel.Pad.Source = if (step % 2 == 0)
+            .high
+        else
+            .low;
+        try gui.hub.io.setExternal(@enumFromInt(0), source);
+        _ = gui.hub.step();
+    }
+    const end = gui.scope.recording.?.metadataConst().end;
+    const memory = gui.scope.recording.?.memoryUsed();
+    const counter = gui.hub.counter;
+    for (0..3) |frame| {
+        gui.scope.digital_visible = @splat(frame != 1);
+        gui.scope.analog_visible = @splat(frame != 1);
+        gui.scope.cursors = .{ 0, end / 2 };
+        zgui.newFrame();
+        gui.scopeWindow();
+        zgui.render();
+        try std.testing.expectEqual(end, gui.scope.recording.?.metadataConst().end);
+        try std.testing.expectEqual(memory, gui.scope.recording.?.memoryUsed());
+        try std.testing.expectEqual(counter, gui.hub.counter);
+    }
+    try gui.reinitialize();
+    try std.testing.expect(gui.hub.capture == &gui.scope.recording.?);
+    try std.testing.expectEqual(end, gui.scope.recording.?.metadataConst().end);
+    var resets = gui.scope.recording.?.iterator(windtunnel.Capture.ResetSample, gui.scope.recording.?.resetChannelConst().*);
+    try std.testing.expectEqual(windtunnel.Capture.ResetKind.reinitialize, resets.next().?.value);
+    _ = gui.hub.step();
+    try std.testing.expect(gui.scope.recording.?.metadataConst().end > end);
+    gui.scope.freeze(&gui.hub);
+    const frozen = gui.scope.recording.?.metadataConst().end;
+    _ = gui.hub.step();
+    try std.testing.expectEqual(frozen, gui.scope.recording.?.metadataConst().end);
+    try std.testing.expect(gui.hub.capture == null);
+    try std.testing.expectEqual(windtunnel.Capture.Status.frozen, gui.scope.recording.?.metadataConst().status);
 }

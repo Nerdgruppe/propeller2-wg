@@ -4,7 +4,26 @@
 //? post: cog[*].c == false
 //? post: cog[*].z == true
 //? const: short_offset = 0
+//? macro: setq required
+//? macro: rdlong required
+//? macro: wrlong required
+//? macro: mov default
+//? macro: mov_2 default
+//? macro: mov_3 default
+//? macro: mov_4 default
+//? macro: target required
+//? macro: target_2 required
+//? macro: target_3 required
+//? macro: mov_5_operand required
+//?
 //? run: "cog-00400-calld-pointer-abs-00180"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set MOV register(target), landing_loc
+//? macro: target_2 set MOV register(target + 1), local_marker
+//? macro: target_3 set MOV register(target + 2), exit_word
+//? macro: mov_5_operand set PA
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 0
@@ -12,7 +31,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00400-calld-pointer-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 0
@@ -20,7 +47,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00400-calld-pointer-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 0
@@ -28,7 +63,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00400-calld-pointer-rel-00180"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set MOV register(target), landing_loc
+//? macro: target_2 set MOV register(target + 1), local_marker
+//? macro: target_3 set MOV register(target + 2), exit_word
+//? macro: mov_5_operand set PA
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 1
@@ -36,7 +79,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00400-calld-pointer-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 1
@@ -44,7 +95,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00400-calld-pointer-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 1
@@ -52,7 +111,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00400-calld-register-abs-00180"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set MOV register(target), landing_loc
+//? macro: target_2 set MOV register(target + 1), local_marker
+//? macro: target_3 set MOV register(target + 2), exit_word
+//? macro: mov_5_operand set link
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 2
@@ -60,7 +127,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00400-calld-register-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 2
@@ -68,7 +143,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00400-calld-register-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 2
@@ -76,7 +159,15 @@
 //? post: cog[*].reg[result] == 0x40000401
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00400-calld-register-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 3
@@ -85,7 +176,15 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = -129
+//?
 //? run: "cog-00400-calld-register-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 3
@@ -94,7 +193,16 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 127
+//?
 //? run: "cog-00401-calld-pointer-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -103,7 +211,16 @@
 //? post: cog[*].reg[result] == 0x40000402
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00401-calld-pointer-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -112,7 +229,16 @@
 //? post: cog[*].reg[result] == 0x40000402
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00401-calld-pointer-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -121,7 +247,16 @@
 //? post: cog[*].reg[result] == 0x40000402
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00401-calld-pointer-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -130,7 +265,16 @@
 //? post: cog[*].reg[result] == 0x40000402
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00401-calld-register-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -139,7 +283,16 @@
 //? post: cog[*].reg[result] == 0x40000402
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00401-calld-register-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -148,7 +301,16 @@
 //? post: cog[*].reg[result] == 0x40000402
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00401-calld-register-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -158,7 +320,16 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = -130
+//?
 //? run: "cog-00401-calld-register-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 3
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -168,7 +339,19 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 126
+//?
 //? run: "cog-00404-calld-pointer-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -177,7 +360,19 @@
 //? post: cog[*].reg[result] == 0x40000405
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00404-calld-pointer-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -186,7 +381,19 @@
 //? post: cog[*].reg[result] == 0x40000405
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00404-calld-pointer-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -195,7 +402,19 @@
 //? post: cog[*].reg[result] == 0x40000405
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00404-calld-pointer-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -204,7 +423,19 @@
 //? post: cog[*].reg[result] == 0x40000405
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00404-calld-register-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -213,7 +444,19 @@
 //? post: cog[*].reg[result] == 0x40000405
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-00404-calld-register-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -222,7 +465,19 @@
 //? post: cog[*].reg[result] == 0x40000405
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-00404-calld-register-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -232,7 +487,19 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = -133
+//?
 //? run: "cog-00404-calld-register-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 6
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -242,7 +509,15 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 123
+//?
 //? run: "hub-00000-calld-pointer-abs-00380"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 0
@@ -250,7 +525,15 @@
 //? post: cog[*].reg[result] == 0x40000004
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00000-calld-pointer-abs-00480"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 0
@@ -258,7 +541,15 @@
 //? post: cog[*].reg[result] == 0x40000004
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-00000-calld-pointer-rel-00380"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 1
@@ -266,7 +557,15 @@
 //? post: cog[*].reg[result] == 0x40000004
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00000-calld-pointer-rel-00480"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 1
@@ -274,7 +573,15 @@
 //? post: cog[*].reg[result] == 0x40000004
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-00000-calld-register-abs-00380"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 2
@@ -282,7 +589,15 @@
 //? post: cog[*].reg[result] == 0x40000004
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00000-calld-register-abs-00480"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 2
@@ -290,7 +605,15 @@
 //? post: cog[*].reg[result] == 0x40000004
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-00000-calld-register-rel-00380"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 3
@@ -299,7 +622,15 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 223
+//?
 //? run: "hub-00100-calld-pointer-abs-00180"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set MOV register(target), landing_loc
+//? macro: target_2 set MOV register(target + 1), local_marker
+//? macro: target_3 set MOV register(target + 2), exit_word
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -308,7 +639,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00100-calld-pointer-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -317,7 +656,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00100-calld-pointer-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -326,7 +673,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-00100-calld-pointer-rel-00180"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set MOV register(target), landing_loc
+//? macro: target_2 set MOV register(target + 1), local_marker
+//? macro: target_3 set MOV register(target + 2), exit_word
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -335,7 +690,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00100-calld-pointer-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -344,7 +707,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00100-calld-pointer-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -353,7 +724,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-00100-calld-register-abs-00180"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set MOV register(target), landing_loc
+//? macro: target_2 set MOV register(target + 1), local_marker
+//? macro: target_3 set MOV register(target + 2), exit_word
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -362,7 +741,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00100-calld-register-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -371,7 +758,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-00100-calld-register-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -380,7 +775,15 @@
 //? post: cog[*].reg[result] == 0x40000104
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-00100-calld-register-rel-00180"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set MOV register(target), landing_loc
+//? macro: target_2 set MOV register(target + 1), local_marker
+//? macro: target_3 set MOV register(target + 2), exit_word
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -390,7 +793,15 @@
 //? post: cog[*].reg[observed_pc] == 0x181
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 31
+//?
 //? run: "hub-00100-calld-register-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -400,7 +811,15 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 159
+//?
 //? run: "hub-00100-calld-register-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -410,7 +829,15 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 223
+//?
 //? run: "hub-001f0-calld-pointer-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -419,7 +846,15 @@
 //? post: cog[*].reg[result] == 0x400001f4
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-001f0-calld-pointer-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -428,7 +863,15 @@
 //? post: cog[*].reg[result] == 0x400001f4
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-001f0-calld-pointer-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -437,7 +880,15 @@
 //? post: cog[*].reg[result] == 0x400001f4
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-001f0-calld-pointer-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -446,7 +897,15 @@
 //? post: cog[*].reg[result] == 0x400001f4
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-001f0-calld-register-abs-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -455,7 +914,15 @@
 //? post: cog[*].reg[result] == 0x400001f4
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-001f0-calld-register-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -464,7 +931,15 @@
 //? post: cog[*].reg[result] == 0x400001f4
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-001f0-calld-register-rel-00380"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 set WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 set WRLUT exit_word, aug(target - 0x200 + 2)
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -474,7 +949,15 @@
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
 //? const: short_offset = 99
+//?
 //? run: "hub-001f0-calld-register-rel-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 126
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -484,7 +967,15 @@
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
 //? const: short_offset = 163
+//?
 //? run: "tail-hub-001f4-calld-pointer-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set PA
 //? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 500
@@ -493,7 +984,15 @@
 //? post: cog[*].reg[result] == 0x400001f8
 //? post: cog[*].reg[observed_pc] == 0x484
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "tail-hub-001f4-calld-register-abs-00480"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: target set
+//? macro: target_2 set
+//? macro: target_3 set
+//? macro: mov_5_operand set link
 //? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 500
@@ -521,30 +1020,20 @@ setup:
                 MOV     probe_address,                  aug(hubaddr(probe_table) + form * 4)
 .if domain == 0
 // Copy an explicitly unrolled NOP prefix, then wrap a hub FIFO through $FFFFC into low hub RAM.
-.if probe_pc > 0
-                SETQ    probe_pc / 4 - 1
-                RDLONG  register(256),                  aug(hubaddr(hub_prefix))
-                SETQ    probe_pc / 4 - 1
-                WRLONG  register(256),                  0
-.endif
+                {{ setq }}
+                {{ rdlong }}
+                {{ setq }}
+                {{ wrlong }}
                 RDLONG  word,                           probe_address
                 WRLONG  word,                           aug(probe_pc)
                 WRLONG  fallthrough_word,               aug(probe_pc + 4)
                 WRLONG  0,                              aug(0x7fffc)
-.elif   domain == 1
+.elif domain == 1
 // The canceled native MOVs select the physical source of each retained logical overflow PC.
-.if probe_pc >= 0x401
-                MOV     register(1),                    selector_2
-.endif
-.if probe_pc >= 0x402
-                MOV     register(2),                    selector_3
-.endif
-.if probe_pc >= 0x403
-                MOV     register(3),                    selector_4
-.endif
-.if probe_pc >= 0x404
-                MOV     register(4),                    selector_5
-.endif
+                {{ mov }}
+                {{ mov_2 }}
+                {{ mov_3 }}
+                {{ mov_4 }}
                 RDLONG  word,                           probe_address
                 MOV     register(probe_pc - 0x400 + 1), word
                 MOV     register(0),                    exit_word
@@ -559,15 +1048,9 @@ setup:
                 WRLONG  landing_loc,                    aug(target)
                 WRLONG  hub_marker,                     aug(target + 4)
                 WRLONG  exit_word,                      aug(target + 8)
-.if target < 0x200
-                MOV     register(target),               landing_loc
-                MOV     register(target + 1),           local_marker
-                MOV     register(target + 2),           exit_word
-.elif   target < 0x400
-                WRLUT   landing_loc,                    aug(target - 0x200)
-                WRLUT   local_marker,                   aug(target - 0x200 + 1)
-                WRLUT   exit_word,                      aug(target - 0x200 + 2)
-.endif
+                {{ target }}
+                {{ target_2 }}
+                {{ target_3 }}
                 // Z=1 cancels source selectors and deliberately remains present in saved CALLD link words.
                 CMP     zero,                           0                                       :wcz
                 CALLD   exit_link,                      entry_target
@@ -577,11 +1060,7 @@ fallthrough:
                 CALLD   exit_link,  done_target
 done:
 // Capture the probe result before handing control to the existing reporter.
-.if form < 2
-                MOV     result,         PA
-.else
-                MOV     result,         link
-.endif
+                MOV     result, {{ mov_5_operand }}
                 MOV     observed_pc,    PB
                 JMP     nrel(_end)
 
@@ -625,7 +1104,7 @@ var fallthrough_target:
 .if domain == 0
 var entry_target:
                 LONG    0xffffc
-.elif   domain == 1
+.elif domain == 1
 var entry_target:
                 LONG    0x3ff
 .else

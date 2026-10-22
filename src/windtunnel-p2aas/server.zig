@@ -1,9 +1,10 @@
 //! P2AAS-compatible upload and live UART bridge, with one simulated board per request.
 //! The HTTP/WebSocket contract follows p2aas.cs; loader text and serial recovery are internal to hardware.
 const std = @import("std");
-const Hub = @import("sim/Hub.zig");
-const smart_pin = @import("sim/smart_pin.zig");
-const serial_boot = @import("serial_boot.zig");
+const windtunnel = @import("windtunnel");
+const Hub = windtunnel.Hub;
+const smart_pin = windtunnel.smart_pin;
+const serial_boot = windtunnel.serial_boot;
 const WebSocket = std.http.Server.WebSocket;
 const max_payload = 512 * 1024;
 const max_request_head = 768 * 1024;
@@ -862,7 +863,7 @@ pub fn serve(allocator: std.mem.Allocator, io: std.Io, address: []const u8, simu
     }
 }
 
-// Query and frame tests run without networking; the harness also exercises real TCP sessions.
+// Query and frame tests run without networking; the server integration suite also exercises real TCP sessions.
 test "P2AAS query matrix: defaults, URL uploads and validation before upgrade" {
     var memory: [16]u8 = undefined;
     const defaults = try Options.parse("/", &memory);

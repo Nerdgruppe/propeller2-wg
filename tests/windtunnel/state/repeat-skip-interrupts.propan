@@ -1,8 +1,13 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
+//? macro: selected_kind required
+//? macro: selected_kind_2 required
+//? macro: skip default
+//?
 //? run: "kind0-cog0"
+//? macro: selected_kind set REP 3, 3
+//? macro: selected_kind_2 set NOP
 //? cog: 0
-//? const: kind = 0
 //? post: cog[*].reg[count] == 3
 //? post: cog[*].reg[observed] == 3
 //? post: cog[*].reg[finish] == 52
@@ -14,9 +19,11 @@
 //? post: cog[*].reg[nested_pattern] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind0-cog7"
+//? macro: selected_kind set REP 3, 3
+//? macro: selected_kind_2 set NOP
 //? cog: 7
-//? const: kind = 0
 //? post: cog[*].reg[count] == 3
 //? post: cog[*].reg[observed] == 3
 //? post: cog[*].reg[finish] == 52
@@ -28,9 +35,11 @@
 //? post: cog[*].reg[nested_pattern] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind1-cog0"
+//? macro: selected_kind set SKIP aug(0x100)
+//? macro: selected_kind_2 set NOP
 //? cog: 0
-//? const: kind = 1
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 42
@@ -42,9 +51,11 @@
 //? post: cog[*].reg[nested_pattern] == 64
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind1-cog7"
+//? macro: selected_kind set SKIP aug(0x100)
+//? macro: selected_kind_2 set NOP
 //? cog: 7
-//? const: kind = 1
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 42
@@ -56,9 +67,11 @@
 //? post: cog[*].reg[nested_pattern] == 64
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind2-cog0"
+//? macro: selected_kind set SKIPF aug(0x100)
+//? macro: selected_kind_2 set NOP
 //? cog: 0
-//? const: kind = 2
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 42
@@ -70,9 +83,11 @@
 //? post: cog[*].reg[nested_pattern] == 64
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind2-cog7"
+//? macro: selected_kind set SKIPF aug(0x100)
+//? macro: selected_kind_2 set NOP
 //? cog: 7
-//? const: kind = 2
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 42
@@ -84,9 +99,12 @@
 //? post: cog[*].reg[nested_pattern] == 64
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind3-cog0"
+//? macro: selected_kind set SKIPF aug(0x100)
+//? macro: selected_kind_2 set NOP
+//? macro: skip override SKIP 0
 //? cog: 0
-//? const: kind = 3
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 44
@@ -98,9 +116,12 @@
 //? post: cog[*].reg[nested_pattern] == 64
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind3-cog7"
+//? macro: selected_kind set SKIPF aug(0x100)
+//? macro: selected_kind_2 set NOP
+//? macro: skip override SKIP 0
 //? cog: 7
-//? const: kind = 3
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 44
@@ -112,9 +133,11 @@
 //? post: cog[*].reg[nested_pattern] == 64
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind4-cog0"
+//? macro: selected_kind set REP 3, 0
+//? macro: selected_kind_2 set JMP nrel(finished)
 //? cog: 0
-//? const: kind = 4
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 42
@@ -126,9 +149,11 @@
 //? post: cog[*].reg[nested_pattern] == 0
 //? post: cog[*].reg[after_pattern] == 0
 //? post: cog[*].reg[sequence] == 1
+//?
 //? run: "kind4-cog7"
+//? macro: selected_kind set REP 3, 0
+//? macro: selected_kind_2 set JMP nrel(finished)
 //? cog: 7
-//? const: kind = 4
 //? post: cog[*].reg[count] == 1
 //? post: cog[*].reg[observed] == 1
 //? post: cog[*].reg[finish] == 42
@@ -144,26 +169,10 @@
                 // Pending IRQs must wait for REP, and ISR code must not consume the main skip pattern.
                 MOV     IJMP1,  vector
                 GETCT   start
-.if kind == 0
-                REP     3,      3
+                {{ selected_kind }}
                 TRGINT1
                 ADD     count,  1
-                NOP
-.elif   kind == 4
-                REP     3,      0
-                TRGINT1
-                ADD     count,  1
-                JMP     nrel(finished)
-.else
-.if kind == 1
-                SKIP    aug(0x100)
-.else
-                SKIPF   aug(0x100)
-.endif
-                TRGINT1
-                ADD     count,  1
-                NOP
-.endif
+                {{ selected_kind_2 }}
 finished:
                 GETCT   finish
                 MOV     sequence,   1
@@ -191,9 +200,7 @@ isr:
                 GETBRK  inside              :wc
                 GETBRK  inside_pattern      :wz
                 CALL    nrel(sub)
-.if kind == 3
-                SKIP    0
-.endif
+                {{ skip }}
                 RETI1
 sub:
                 GETBRK  nested          :wc

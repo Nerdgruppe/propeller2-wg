@@ -1,9 +1,16 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
+//? macro: push default
+//? macro: skip required
+//? macro: selected_kind required
+//? macro: wrc default
+//? macro: getbrk default
+//? macro: wrz default
+//?
 //? run: "kind0-fast0-bits0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -13,10 +20,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast0-bits0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -26,10 +34,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast0-bits8-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 0
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -39,10 +48,11 @@
 //? post: cog[*].reg[inside_pattern] == 4
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast0-bits8-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 0
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -52,10 +62,11 @@
 //? post: cog[*].reg[inside_pattern] == 4
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast0-bits10-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 0
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -65,10 +76,11 @@
 //? post: cog[*].reg[inside_pattern] == 5
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast0-bits10-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 0
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -78,10 +90,12 @@
 //? post: cog[*].reg[inside_pattern] == 5
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind1-fast0-bits0-cog0"
+//? macro: push override PUSH nrel(done)
+//? macro: skip set SKIP
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 1
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -91,10 +105,12 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind1-fast0-bits0-cog7"
+//? macro: push override PUSH nrel(done)
+//? macro: skip set SKIP
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 1
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -104,10 +120,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast0-bits0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 134217728
 //? post: cog[*].reg[b] == 0
@@ -117,10 +137,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast0-bits0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 134217728
 //? post: cog[*].reg[b] == 0
@@ -130,10 +154,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast0-bits8-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 0
 //? const: bits = 8
 //? post: cog[*].reg[a] == 134217728
 //? post: cog[*].reg[b] == 1
@@ -143,10 +171,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast0-bits8-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 0
 //? const: bits = 8
 //? post: cog[*].reg[a] == 134217728
 //? post: cog[*].reg[b] == 1
@@ -156,10 +188,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast0-bits10-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 0
 //? const: bits = 10
 //? post: cog[*].reg[a] == 134217728
 //? post: cog[*].reg[b] == 1
@@ -169,10 +205,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast0-bits10-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 0
 //? const: bits = 10
 //? post: cog[*].reg[a] == 134217728
 //? post: cog[*].reg[b] == 1
@@ -182,10 +222,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast0-bits0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -195,10 +236,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast0-bits0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 0
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -208,10 +250,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast0-bits8-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 0
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -221,10 +264,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast0-bits8-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 0
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -234,10 +278,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast0-bits10-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 0
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -247,10 +292,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast0-bits10-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 0
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -260,10 +306,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast1-bits0-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -273,10 +320,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast1-bits0-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -286,10 +334,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast1-bits8-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 1
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -299,10 +348,11 @@
 //? post: cog[*].reg[inside_pattern] == 4
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast1-bits8-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 1
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -312,10 +362,11 @@
 //? post: cog[*].reg[inside_pattern] == 4
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast1-bits10-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -325,10 +376,11 @@
 //? post: cog[*].reg[inside_pattern] == 2
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind0-fast1-bits10-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(sub)
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -338,10 +390,12 @@
 //? post: cog[*].reg[inside_pattern] == 2
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind1-fast1-bits0-cog0"
+//? macro: push override PUSH nrel(done)
+//? macro: skip set SKIPF
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 1
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -351,10 +405,12 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind1-fast1-bits0-cog7"
+//? macro: push override PUSH nrel(done)
+//? macro: skip set SKIPF
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 1
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -364,10 +420,12 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind1-fast1-bits10-cog0"
+//? macro: push override PUSH nrel(done)
+//? macro: skip set SKIPF
+//? macro: selected_kind set RET
 //? cog: 0
-//? const: kind = 1
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -377,10 +435,12 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind1-fast1-bits10-cog7"
+//? macro: push override PUSH nrel(done)
+//? macro: skip set SKIPF
+//? macro: selected_kind set RET
 //? cog: 7
-//? const: kind = 1
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -390,10 +450,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast1-bits0-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -403,10 +467,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast1-bits0-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -416,10 +484,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast1-bits8-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 1
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -429,10 +501,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast1-bits8-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 1
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -442,10 +518,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast1-bits10-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -455,10 +535,14 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind2-fast1-bits10-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set GETBRK a :wc
+//? macro: wrc override WRC cflag
+//? macro: getbrk override GETBRK b :wz
+//? macro: wrz override WRZ zflag
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -468,10 +552,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast1-bits0-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -481,10 +566,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast1-bits0-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 1
 //? const: bits = 0
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -494,10 +580,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast1-bits8-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 1
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -507,10 +594,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast1-bits8-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 1
 //? const: bits = 8
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -520,10 +608,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast1-bits10-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -533,10 +622,11 @@
 //? post: cog[*].reg[inside_pattern] == 0
 //? post: cog[*].reg[after] == 134217728
 //? post: cog[*].reg[after_pattern] == 0
+//?
 //? run: "kind3-fast1-bits10-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL nrel(reset_sub)
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 1
 //? const: bits = 10
 //? post: cog[*].reg[a] == 0
 //? post: cog[*].reg[b] == 0
@@ -548,26 +638,12 @@
 //? post: cog[*].reg[after_pattern] == 0
 
 // Probe empty patterns, return underflow and installation while suspended.
-.if kind == 1
-                PUSH    nrel(done)
-.endif
-.if fast
-                SKIPF   bits
-.else
-                SKIP    bits
-.endif
-.if kind == 0
-                CALL    nrel(sub)
-.elif   kind == 1
-                RET
-.elif   kind == 2
-                GETBRK  a               :wc
-                WRC     cflag
-                GETBRK  b               :wz
-                WRZ     zflag
-.else
-                CALL    nrel(reset_sub)
-.endif
+                {{ push }}
+                {{ skip }}  bits
+                {{ selected_kind }}
+                {{ wrc }}
+                {{ getbrk }}
+                {{ wrz }}
                 NOP
                 NOP
                 NOP

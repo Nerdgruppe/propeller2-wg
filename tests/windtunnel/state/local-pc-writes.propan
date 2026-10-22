@@ -2,6 +2,7 @@
                 //? issues: cog_fetch_write = 2
                 //? issues: pc_domain = 3
                 //? timeout-ms: 3000
+                //?
                 //? run: "phase16-cog0"
                 //? issues: cog_fetch_write = 0
                 //? post: cog[*].reg[hits] == 0x1
@@ -9,6 +10,7 @@
                 //? post: cog[*].reg[saved] == 0x402
                 //? cog: 0
                 //? const: phase = 16
+                //?
                 //? run: "phase16-cog7"
                 //? issues: cog_fetch_write = 0
                 //? post: cog[*].reg[hits] == 0x1
@@ -16,6 +18,7 @@
                 //? post: cog[*].reg[saved] == 0x402
                 //? cog: 7
                 //? const: phase = 16
+                //?
                 //? run: "phase24-cog0"
                 //? issues: pc_domain = 7
                 //? post: cog[*].reg[hits] == 0x3
@@ -23,6 +26,7 @@
                 //? post: cog[*].reg[saved] == 0x406
                 //? cog: 0
                 //? const: phase = 24
+                //?
                 //? run: "phase24-cog7"
                 //? issues: pc_domain = 7
                 //? post: cog[*].reg[hits] == 0x3
@@ -30,6 +34,7 @@
                 //? post: cog[*].reg[saved] == 0x406
                 //? cog: 7
                 //? const: phase = 24
+                //?
                 //? run: "phase32-cog0"
                 //? issues: pc_domain = 11
                 //? post: cog[*].reg[hits] == 0x7
@@ -37,6 +42,7 @@
                 //? post: cog[*].reg[saved] == 0x40a
                 //? cog: 0
                 //? const: phase = 32
+                //?
                 //? run: "phase32-cog7"
                 //? issues: pc_domain = 11
                 //? post: cog[*].reg[hits] == 0x7
@@ -44,6 +50,7 @@
                 //? post: cog[*].reg[saved] == 0x40a
                 //? cog: 7
                 //? const: phase = 32
+                //?
                 //? run: "phase48-cog0"
                 //? issues: pc_domain = 19
                 //? post: cog[*].reg[hits] == 0xf
@@ -51,6 +58,7 @@
                 //? post: cog[*].reg[saved] == 0x412
                 //? cog: 0
                 //? const: phase = 48
+                //?
                 //? run: "phase48-cog7"
                 //? issues: pc_domain = 19
                 //? post: cog[*].reg[hits] == 0xf
@@ -141,3 +149,4 @@ tail_template:
                 // Enter the final LUT words and continue with a retained logical PC.
                 NOP
                 NOP
+

@@ -1,98 +1,172 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[failures] == 0
+//? macro: probe_size required
+//? macro: probe_size_2 required
+//?
 //? run: "0-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_size = 1
+//?
 //? run: "0-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_size = 2
+//?
 //? run: "0"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_size = 4
+//?
 //? run: "1-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_size = 1
+//?
 //? run: "1-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_size = 2
+//?
 //? run: "1"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_size = 4
+//?
 //? run: "2-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_size = 1
+//?
 //? run: "2-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_size = 2
+//?
 //? run: "2"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_size = 4
+//?
 //? run: "3-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_size = 1
+//?
 //? run: "3-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_size = 2
+//?
 //? run: "3"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_size = 4
+//?
 //? run: "4-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_size = 1
+//?
 //? run: "4-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_size = 2
+//?
 //? run: "4"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_size = 4
+//?
 //? run: "5-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_size = 1
+//?
 //? run: "5-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_size = 2
+//?
 //? run: "5"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_size = 4
+//?
 //? run: "6-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_size = 1
+//?
 //? run: "6-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_size = 2
+//?
 //? run: "6"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_size = 4
+//?
 //? run: "7-1"
+//? macro: probe_size set RDBYTE
+//? macro: probe_size_2 set WRBYTE
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_size = 1
+//?
 //? run: "7-2"
+//? macro: probe_size set RDWORD
+//? macro: probe_size_2 set WRWORD
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_size = 2
+//?
 //? run: "7"
+//? macro: probe_size set RDLONG
+//? macro: probe_size_2 set WRLONG
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_size = 4
@@ -123,13 +197,7 @@ phase_loop:
                 ADDCT1  timer,          0
                 WAITCT1
                 GETCT   start
-.if probe_size == 1
-                RDBYTE  loaded,         address
-.elif   probe_size == 2
-                RDWORD  loaded,         address
-.else
-                RDLONG  loaded,         address
-.endif
+                {{ probe_size }}    loaded, address
                 GETCT   read_delta
                 SUB     read_delta,     start
                 AND     start,          7
@@ -158,13 +226,7 @@ phase_loop:
                 ADDCT1  timer,          0
                 WAITCT1
                 GETCT   start
-.if probe_size == 1
-                WRBYTE  loaded,         address
-.elif   probe_size == 2
-                WRWORD  loaded,         address
-.else
-                WRLONG  loaded,         address
-.endif
+                {{ probe_size_2 }}  loaded, address
                 GETCT   write_delta
                 SUB     write_delta,    start
                 AND     start,          7

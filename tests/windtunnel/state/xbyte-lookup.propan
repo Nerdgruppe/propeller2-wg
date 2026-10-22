@@ -2,34 +2,42 @@
 //? timeout-ms: 10000
 //? max-cycles: 10000000
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "cog0-modes0-63"
 //? cog: 0
 //? const: first_mode = 0
 //? post: cog[*].reg[digest] == 399201617
+//?
 //? run: "cog1-modes64-127"
 //? cog: 1
 //? const: first_mode = 64
 //? post: cog[*].reg[digest] == 1387079512
+//?
 //? run: "cog2-modes128-191"
 //? cog: 2
 //? const: first_mode = 128
 //? post: cog[*].reg[digest] == 1791361469
+//?
 //? run: "cog3-modes192-255"
 //? cog: 3
 //? const: first_mode = 192
 //? post: cog[*].reg[digest] == 2551307265
+//?
 //? run: "cog4-modes256-319"
 //? cog: 4
 //? const: first_mode = 256
 //? post: cog[*].reg[digest] == 2791802819
+//?
 //? run: "cog5-modes320-383"
 //? cog: 5
 //? const: first_mode = 320
 //? post: cog[*].reg[digest] == 2358945971
+//?
 //? run: "cog6-modes384-447"
 //? cog: 6
 //? const: first_mode = 384
 //? post: cog[*].reg[digest] == 2071484277
+//?
 //? run: "cog7-modes448-511"
 //? cog: 7
 //? const: first_mode = 448

@@ -1,506 +1,676 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: outh required
+//? macro: out required
+//?
 //? run: "f0-d0-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 0
-//? const: edge = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d0-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 0
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d3-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 3
-//? const: edge = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d3-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 3
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d4-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 4
-//? const: edge = 0
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d4-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 4
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d5-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 5
-//? const: edge = 0
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d5-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 5
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d7-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 7
-//? const: edge = 0
 //? post: cog[0].reg[value] == 253
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d7-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 7
-//? const: edge = 1
 //? post: cog[0].reg[value] == 1
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d10-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 10
-//? const: edge = 0
 //? post: cog[0].reg[value] == 249
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d10-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 10
-//? const: edge = 1
 //? post: cog[0].reg[value] == 5
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d17-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 17
-//? const: edge = 0
 //? post: cog[0].reg[value] == 226
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d17-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 17
-//? const: edge = 1
 //? post: cog[0].reg[value] == 28
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d25-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 25
-//? const: edge = 0
 //? post: cog[0].reg[value] == 187
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d25-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 25
-//? const: edge = 1
 //? post: cog[0].reg[value] == 67
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d31-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 31
-//? const: edge = 0
 //? post: cog[0].reg[value] == 157
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d31-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 31
-//? const: edge = 1
 //? post: cog[0].reg[value] == 97
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d37-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 37
-//? const: edge = 0
 //? post: cog[0].reg[value] == 127
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d37-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 37
-//? const: edge = 1
 //? post: cog[0].reg[value] == 127
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d48-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 48
-//? const: edge = 0
 //? post: cog[0].reg[value] == 72
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d48-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 48
-//? const: edge = 1
 //? post: cog[0].reg[value] == 182
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d68-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 68
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d68-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 68
-//? const: edge = 1
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d71-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 71
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d71-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 71
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d79-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 0
 //? const: delay = 79
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f0-d79-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 0
 //? const: delay = 79
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d0-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 0
-//? const: edge = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d0-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 0
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d3-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 3
-//? const: edge = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d3-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 3
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d4-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 4
-//? const: edge = 0
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d4-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 4
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d5-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 5
-//? const: edge = 0
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d5-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 5
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d7-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 7
-//? const: edge = 0
 //? post: cog[0].reg[value] == 251
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d7-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 7
-//? const: edge = 1
 //? post: cog[0].reg[value] == 3
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d10-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 10
-//? const: edge = 0
 //? post: cog[0].reg[value] == 243
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d10-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 10
-//? const: edge = 1
 //? post: cog[0].reg[value] == 11
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d17-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 17
-//? const: edge = 0
 //? post: cog[0].reg[value] == 199
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d17-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 17
-//? const: edge = 1
 //? post: cog[0].reg[value] == 55
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d25-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 25
-//? const: edge = 0
 //? post: cog[0].reg[value] == 131
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d25-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 25
-//? const: edge = 1
 //? post: cog[0].reg[value] == 123
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d31-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 31
-//? const: edge = 0
 //? post: cog[0].reg[value] == 80
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d31-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 31
-//? const: edge = 1
 //? post: cog[0].reg[value] == 174
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d37-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 37
-//? const: edge = 0
 //? post: cog[0].reg[value] == 33
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d37-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 37
-//? const: edge = 1
 //? post: cog[0].reg[value] == 222
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d48-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 48
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d48-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 48
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d68-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 68
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d68-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 68
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d71-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 71
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d71-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 71
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d79-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 1
 //? const: delay = 79
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f1-d79-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 1
 //? const: delay = 79
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d0-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 0
-//? const: edge = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d0-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 0
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d3-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 3
-//? const: edge = 0
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d3-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 3
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d4-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 4
-//? const: edge = 0
 //? post: cog[0].reg[value] == 254
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d4-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 4
-//? const: edge = 1
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d5-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 5
-//? const: edge = 0
 //? post: cog[0].reg[value] == 253
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d5-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 5
-//? const: edge = 1
 //? post: cog[0].reg[value] == 2
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d7-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 7
-//? const: edge = 0
 //? post: cog[0].reg[value] == 246
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d7-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 7
-//? const: edge = 1
 //? post: cog[0].reg[value] == 8
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d10-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 10
-//? const: edge = 0
 //? post: cog[0].reg[value] == 225
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d10-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 10
-//? const: edge = 1
 //? post: cog[0].reg[value] == 29
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d17-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 17
-//? const: edge = 0
 //? post: cog[0].reg[value] == 127
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d17-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 17
-//? const: edge = 1
 //? post: cog[0].reg[value] == 127
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d25-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 25
-//? const: edge = 0
 //? post: cog[0].reg[value] == 21
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d25-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 25
-//? const: edge = 1
 //? post: cog[0].reg[value] == 234
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d31-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 31
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d31-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 31
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d37-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 37
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d37-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 37
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d48-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 48
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d48-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 48
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d68-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 68
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d68-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 68
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d71-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 71
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d71-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 71
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d79-edge0"
+//? macro: outh set OUTH 40
+//? macro: out set OUTL
 //? const: f = 2
 //? const: delay = 79
-//? const: edge = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 0
+//?
 //? run: "f2-d79-edge1"
+//? macro: outh set
+//? macro: out set OUTH
 //? const: f = 2
 //? const: delay = 79
-//? const: edge = 1
 //? post: cog[0].reg[value] == 255
 //? post: cog[0].reg[flag] == 0
 
@@ -510,15 +680,9 @@
                 WRPIN   aug(0x40000034),    40
                 WXPIN   f,                  40
                 DIRH    40
-.if !edge
-                OUTH    40
-.endif
+                {{ outh }}
                 WAITX   160
-.if edge
-                OUTH    40
-.else
-                OUTL    40
-.endif
+                {{ out }}   40
                 WAITX   delay
                 RQPIN   value,              40  :wc
                 MOV     flag,               0

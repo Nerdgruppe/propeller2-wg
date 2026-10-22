@@ -1,33 +1,34 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
+//? macro: skip required
+//?
 //? run: "underflow-skip-cog0"
+//? macro: skip set SKIP
 //? cog: 0
-//? const: fast = 0
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 268435456
+//?
 //? run: "underflow-skip-cog7"
+//? macro: skip set SKIP
 //? cog: 7
-//? const: fast = 0
 //? post: cog[*].reg[status] == 134217728
 //? post: cog[*].reg[pattern_out] == 268435456
+//?
 //? run: "underflow-skipf-cog0"
+//? macro: skip set SKIPF
 //? cog: 0
-//? const: fast = 1
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 268435456
+//?
 //? run: "underflow-skipf-cog7"
+//? macro: skip set SKIPF
 //? cog: 7
-//? const: fast = 1
 //? post: cog[*].reg[status] == 0
 //? post: cog[*].reg[pattern_out] == 268435456
 
                 // A return with a live pattern but no CALL reveals the four-bit counter behavior.
                 PUSH    nrel(done)
-.if fast
-                SKIPF   aug(0x80000000)
-.else
-                SKIP    aug(0x80000000)
-.endif
+                {{ skip }}  aug(0x80000000)
                 RET
 done:
                 GETBRK  status                  :wc

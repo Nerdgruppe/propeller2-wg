@@ -1,578 +1,569 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: out required
+//? macro: testp default
+//? macro: muxc default
+//?
 //? run: "m4-tt0-out0"
+//? macro: out set OUTL
 //? const: config = 1483528
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m4-tt0-out1"
+//? macro: out set OUTH
 //? const: config = 1483528
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m4-tt1-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483592
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m4-tt1-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483592
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m4-tt2-out0"
+//? macro: out set OUTL
 //? const: config = 1483656
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m4-tt2-out1"
+//? macro: out set OUTH
 //? const: config = 1483656
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m4-tt3-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483720
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m4-tt3-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483720
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt0-out0"
+//? macro: out set OUTL
 //? const: config = 1483536
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt0-out1"
+//? macro: out set OUTH
 //? const: config = 1483536
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt1-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483600
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt1-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483600
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt2-out0"
+//? macro: out set OUTL
 //? const: config = 1483664
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt2-out1"
+//? macro: out set OUTH
 //? const: config = 1483664
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt3-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483728
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m8-tt3-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483728
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m24-tt0-out0"
+//? macro: out set OUTL
 //? const: config = 1483568
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-tt0-out1"
+//? macro: out set OUTH
 //? const: config = 1483568
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-tt1-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483632
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-tt1-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483632
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 6
+//?
 //? run: "m24-tt2-out0"
+//? macro: out set OUTL
 //? const: config = 1483696
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-tt2-out1"
+//? macro: out set OUTH
 //? const: config = 1483696
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-tt3-out0"
+//? macro: out set OUTL
 //? const: config = 1483760
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m24-tt3-out1"
+//? macro: out set OUTH
 //? const: config = 1483760
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 2
+//?
 //? run: "m26-tt0-out0"
+//? macro: out set OUTL
 //? const: config = 1483572
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-tt0-out1"
+//? macro: out set OUTH
 //? const: config = 1483572
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-tt1-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483636
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-tt1-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483636
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 4
+//?
 //? run: "m26-tt2-out0"
+//? macro: out set OUTL
 //? const: config = 1483700
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-tt2-out1"
+//? macro: out set OUTH
 //? const: config = 1483700
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-tt3-out0"
+//? macro: out set OUTL
 //? const: config = 1483764
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m26-tt3-out1"
+//? macro: out set OUTH
 //? const: config = 1483764
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 2
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m30-tt0-out0"
+//? macro: out set OUTL
 //? const: config = 1483580
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m30-tt0-out1"
+//? macro: out set OUTH
 //? const: config = 1483580
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m30-tt1-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483644
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 4
+//?
 //? run: "m30-tt1-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483644
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 4
+//?
 //? run: "m30-tt2-out0"
+//? macro: out set OUTL
 //? const: config = 1483708
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m30-tt2-out1"
+//? macro: out set OUTH
 //? const: config = 1483708
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m30-tt3-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483772
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 4
+//?
 //? run: "m30-tt3-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483772
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 4
+//?
 //? run: "m31-tt0-out0"
+//? macro: out set OUTL
 //? const: config = 1483582
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m31-tt0-out1"
+//? macro: out set OUTH
 //? const: config = 1483582
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m31-tt1-out0"
+//? macro: out set OUTL
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483646
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m31-tt1-out1"
+//? macro: out set OUTH
+//? macro: testp override TESTP observer :wc
+//? macro: muxc override MUXC flags, 4
 //? const: config = 1483646
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 1
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 4
+//?
 //? run: "m31-tt2-out0"
+//? macro: out set OUTL
 //? const: config = 1483710
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m31-tt2-out1"
+//? macro: out set OUTH
 //? const: config = 1483710
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m31-tt3-out0"
+//? macro: out set OUTL
 //? const: config = 1483774
 //? const: dacs = 0
-//? const: out = 0
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "m31-tt3-out1"
+//? macro: out set OUTH
 //? const: config = 1483774
 //? const: dacs = 0
-//? const: out = 1
 //? const: x = 3
 //? const: y = 0
 //? const: source = 40
 //? const: observer = 41
-//? const: observer_dir = 0
-//? const: compare = 0
 //? post: cog[0].reg[result] == 0
 //? post: cog[0].reg[flags] == 0
 
@@ -582,17 +573,10 @@
                 WRPIN   0,              aug(40 | (1 << 6))
                 SETDACS aug(dacs)
                 WRPIN   aug(0x1c8000),  observer
-.if observer_dir
-                DIRH    observer
-.endif
                 WRPIN   aug(config),    source
                 WXPIN   aug(x),         source
                 WYPIN   aug(y),         source
-.if out
-                OUTH    40
-.else
-                OUTL    40
-.endif
+                {{ out }}   40
                 DIRH    source
                 WAITX   aug(2000)
                 RQPIN   result,         source              :wc
@@ -600,10 +584,8 @@
                 MUXC    flags,          1
                 TESTP   source                              :wc
                 MUXC    flags,          2
-.if compare
-                TESTP   observer                            :wc
-                MUXC    flags,          4
-.endif
+                {{ testp }}
+                {{ muxc }}
                 DIRL    aug(40 | (1 << 6))
                 WRPIN   0,              aug(40 | (1 << 6))
                 JMP     nrel(_end)

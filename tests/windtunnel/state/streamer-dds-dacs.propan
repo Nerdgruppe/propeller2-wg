@@ -1,203 +1,237 @@
 //? WINDTUNNEL CHECK LIST
 //? oracle: off "DDS DAC bytes checked with the independent 160 MHz P2 observer; no digital readback"
+//?
 //? run: "DDS DAC route 0 vector 0"
 //? const: control = 4027056127
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 94 111]
+//?
 //? run: "DDS DAC route 1 vector 0"
 //? const: control = 4043833343
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 127 127 127]
+//?
 //? run: "DDS DAC route 2 vector 0"
 //? const: control = 4060610559
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 127 94 111]
+//?
 //? run: "DDS DAC route 3 vector 0"
 //? const: control = 4077387775
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 127 127]
+//?
 //? run: "DDS DAC route 4 vector 0"
 //? const: control = 4094164991
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 77 94 111]
+//?
 //? run: "DDS DAC route 5 vector 0"
 //? const: control = 4110942207
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 127 94 111]
+//?
 //? run: "DDS DAC route 6 vector 0"
 //? const: control = 4127719423
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 127 111]
+//?
 //? run: "DDS DAC route 7 vector 0"
 //? const: control = 4144496639
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 94 127]
+//?
 //? run: "DDS DAC route 8 vector 0"
 //? const: control = 4161273855
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 128 127 128]
+//?
 //? run: "DDS DAC route 9 vector 0"
 //? const: control = 4178051071
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 128 94 111]
+//?
 //? run: "DDS DAC route 10 vector 0"
 //? const: control = 4194828287
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 127 128]
+//?
 //? run: "DDS DAC route 11 vector 0"
 //? const: control = 4211605503
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 0 127 0]
+//?
 //? run: "DDS DAC route 12 vector 0"
 //? const: control = 4228382719
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 0 94 111]
+//?
 //? run: "DDS DAC route 13 vector 0"
 //? const: control = 4245159935
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 127 0]
+//?
 //? run: "DDS DAC route 14 vector 0"
 //? const: control = 4261937151
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 128 0 255]
+//?
 //? run: "DDS DAC route 15 vector 0"
 //? const: control = 4278714367
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [127 0 128 255]
+//?
 //? run: "DDS DAC route 0 vector 1"
 //? const: control = 4027056127
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 94 111]
+//?
 //? run: "DDS DAC route 1 vector 1"
 //? const: control = 4043833343
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 231 231 231]
+//?
 //? run: "DDS DAC route 2 vector 1"
 //? const: control = 4060610559
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 231 94 111]
+//?
 //? run: "DDS DAC route 3 vector 1"
 //? const: control = 4077387775
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 231 231]
+//?
 //? run: "DDS DAC route 4 vector 1"
 //? const: control = 4094164991
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 77 94 111]
+//?
 //? run: "DDS DAC route 5 vector 1"
 //? const: control = 4110942207
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 231 94 111]
+//?
 //? run: "DDS DAC route 6 vector 1"
 //? const: control = 4127719423
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 231 111]
+//?
 //? run: "DDS DAC route 7 vector 1"
 //? const: control = 4144496639
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 94 231]
+//?
 //? run: "DDS DAC route 8 vector 1"
 //? const: control = 4161273855
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 24 231 24]
+//?
 //? run: "DDS DAC route 9 vector 1"
 //? const: control = 4178051071
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 24 94 111]
+//?
 //? run: "DDS DAC route 10 vector 1"
 //? const: control = 4194828287
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 231 24]
+//?
 //? run: "DDS DAC route 11 vector 1"
 //? const: control = 4211605503
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 197 231 197]
+//?
 //? run: "DDS DAC route 12 vector 1"
 //? const: control = 4228382719
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 197 94 111]
+//?
 //? run: "DDS DAC route 13 vector 1"
 //? const: control = 4245159935
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [60 77 231 197]
+//?
 //? run: "DDS DAC route 14 vector 1"
 //? const: control = 4261937151
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 24 197 58]
+//?
 //? run: "DDS DAC route 15 vector 1"
 //? const: control = 4278714367
 //? const: lut_word = 19088743
 //? const: background = 1868451132
 //? const: stop = 0
 //? post: cog[0].dacs == u8 [231 197 163 129]
+//?
 //? run: "DDS restore route 0"
 //? const: control = 4027056127
 //? const: lut_word = 2130739455
 //? const: background = 1868451132
 //? const: stop = 1
 //? post: cog[0].dacs == u8 [60 77 94 111]
+//?
 //? run: "DDS restore route 15"
 //? const: control = 4278714367
 //? const: lut_word = 2130739455

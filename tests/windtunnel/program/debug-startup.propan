@@ -2,165 +2,198 @@
 //? profile: program
 //? timeout-ms: 1000
 //? max-cycles: 1_000_000
+//? macro: coginit required
+//?
 //? run: "kind=0 cog=0"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 0
 //? const: observer_cog = 7
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=0 cog=1"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 1
 //? const: observer_cog = 7
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=0 cog=2"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 2
 //? const: observer_cog = 7
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=0 cog=3"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 3
 //? const: observer_cog = 7
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=0 cog=4"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 4
 //? const: observer_cog = 7
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=0 cog=5"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 5
 //? const: observer_cog = 7
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=0 cog=6"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 6
 //? const: observer_cog = 7
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=0 cog=7"
+//? macro: coginit set COGINIT target_cog, aug(hubaddr(application))
 //? const: target_cog = 7
 //? const: observer_cog = 0
-//? const: start_kind = 0
 //? stdout: "\x00\x00\x00\x00\x00\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x40\x00\x00"
+//?
 //? run: "kind=1 cog=0"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 0
 //? const: observer_cog = 7
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=1 cog=1"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 1
 //? const: observer_cog = 7
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=1 cog=2"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 2
 //? const: observer_cog = 7
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=1 cog=3"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 3
 //? const: observer_cog = 7
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=1 cog=4"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 4
 //? const: observer_cog = 7
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=1 cog=5"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 5
 //? const: observer_cog = 7
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=1 cog=6"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 6
 //? const: observer_cog = 7
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=1 cog=7"
+//? macro: coginit set COGINIT 0x20 + target_cog, 0
 //? const: target_cog = 7
 //? const: observer_cog = 0
-//? const: start_kind = 1
 //? stdout: "\x00\x00\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "kind=2 cog=0"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 0
 //? const: observer_cog = 7
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=2 cog=1"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 1
 //? const: observer_cog = 7
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=2 cog=2"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 2
 //? const: observer_cog = 7
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=2 cog=3"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 3
 //? const: observer_cog = 7
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=2 cog=4"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 4
 //? const: observer_cog = 7
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=2 cog=5"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 5
 //? const: observer_cog = 7
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=2 cog=6"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 6
 //? const: observer_cog = 7
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=2 cog=7"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(0x200)
 //? const: target_cog = 7
 //? const: observer_cog = 0
-//? const: start_kind = 2
 //? stdout: "\x00\x02\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x02\x00\x00"
+//?
 //? run: "kind=3 cog=0"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 0
 //? const: observer_cog = 7
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//?
 //? run: "kind=3 cog=1"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 1
 //? const: observer_cog = 7
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//?
 //? run: "kind=3 cog=2"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 2
 //? const: observer_cog = 7
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//?
 //? run: "kind=3 cog=3"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 3
 //? const: observer_cog = 7
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//?
 //? run: "kind=3 cog=4"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 4
 //? const: observer_cog = 7
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//?
 //? run: "kind=3 cog=5"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 5
 //? const: observer_cog = 7
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//?
 //? run: "kind=3 cog=6"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 6
 //? const: observer_cog = 7
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
+//?
 //? run: "kind=3 cog=7"
+//? macro: coginit set COGINIT 0x20 + target_cog, aug(hubaddr(hub_application))
 //? const: target_cog = 7
 //? const: observer_cog = 0
-//? const: start_kind = 3
 //? stdout: "\x00\x60\x00\x00\x01\x00\x80\x00\xf8\x01\x00\x00\x00\x10\x00\x00\x00\x60\x00\x00"
 
 // Debug-enabled loaded, no-load cog, LUT and hub starts on all eight cogs.
@@ -184,19 +217,7 @@ controller:
                 WRLONG  register(0x100),    aug(0xff840 + ((15 ^ target_cog) << 7))
                 HUBSET  aug(0x20000000 | (1 << target_cog))
                 SETQ    aug(0x1000)
-.if start_kind == 0
-                COGINIT target_cog,         aug(hubaddr(application))
-.else
-.if start_kind == 1
-                COGINIT 0x20 + target_cog,  0
-.else
-.if start_kind == 2
-                COGINIT 0x20 + target_cog,  aug(0x200)
-.else
-                COGINIT 0x20 + target_cog,  aug(hubaddr(hub_application))
-.endif
-.endif
-.endif
+                {{ coginit }}
                 WAITX   aug(10000)
                 MOV     PTRB,               aug(0x1000)
                 MOV     register(0x90),     20

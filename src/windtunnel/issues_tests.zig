@@ -9,7 +9,6 @@ const Issue = @import("sim/Issue.zig");
 const Streamer = @import("sim/Streamer.zig");
 const Debugger = @import("sim/Debugger.zig");
 const execute = @import("sim/execute.zig");
-const Vcd = @import("sim/Vcd.zig");
 const Frame = @import("sim/Frame.zig");
 const smart_pin = @import("sim/smart_pin.zig");
 
@@ -280,14 +279,8 @@ test "maximum simultaneous breakpoint encounters and overlapping watches never a
     for (0..16) |_| {
         try debugger.addWatch(.{ .space = .registers, .cog = null, .start = 0, .end = 512, .access = .both, .scope = .physical });
     }
-    var exported: std.Io.Writer.Allocating = .init(std.testing.allocator);
-    defer exported.deinit();
-    try exported.ensureTotalCapacity(1 << 20);
-    var vcd: Vcd = .{ .writer = &exported.writer };
-    hub.attachVcd(&vcd);
     var failing = std.testing.FailingAllocator.init(std.testing.allocator, .{ .fail_index = 0, .resize_fail_index = 0 });
     debugger.allocator = failing.allocator();
-    exported.allocator = failing.allocator();
     try std.testing.expectEqual(Hub.StepResult.breakpoint, hub.step());
     try std.testing.expectEqual(@as(usize, 8), debugger.encounters.items.len);
     debugger.acknowledge(hub);
@@ -330,7 +323,7 @@ test "issue storage holds its bound and coalesces repeated electrical limits" {
     try std.testing.expectEqual(@as(f64, 8), collection.at(0).kind.pad_overvoltage.maximum);
 }
 
-test "source sink and VCD failures complete the edge and stop retrying independently" {
+test "source and sink failures complete the edge and stop retrying independently" {
     const Endpoints = struct {
         calls: usize = 0,
         broken: bool,
@@ -382,20 +375,11 @@ test "source sink and VCD failures complete the edge and stop retrying independe
         pin.registers.x = 7;
         hub.io.editSmartRegister(@enumFromInt(index + 2), .y, 42);
     }
-    var initial: std.Io.Writer.Allocating = .init(std.testing.allocator);
-    defer initial.deinit();
-
-    var vcd: Vcd = .{ .writer = &initial.writer };
-    hub.attachVcd(&vcd);
-    var tiny_buffer: [1]u8 = undefined;
-    var tiny = std.Io.Writer.fixed(&tiny_buffer);
-    vcd.writer = &tiny;
     _ = hub.step();
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
     try std.testing.expect(hub.issues.len == 0 and test_support.serviceFailed(hub));
     try std.testing.expectEqual(error.ReadFailed, sources[0].failure.?);
     try std.testing.expectEqual(error.WriteFailed, sinks[0].failure.?);
-    try std.testing.expectEqual(error.WriteFailed, vcd.failure.?);
     try std.testing.expectEqual(@as(usize, 1), reader.calls);
     try std.testing.expectEqual(@as(usize, 1), writer.calls);
     try std.testing.expect(hub.io.pins[1].smart.registers.ready);
@@ -406,24 +390,22 @@ test "source sink and VCD failures complete the edge and stop retrying independe
         }
     };
     var clock_context: u8 = 0;
-    const frame = if (vcd.failure == null and sources[0].failure == null and sinks[0].failure == null)
+    const frame = if (sources[0].failure == null and sinks[0].failure == null)
         Frame.advance(hub, .run, .{ .context = &clock_context, .now = StoppedClock.now }, test_support.needsAttention)
     else
         Frame{};
     try std.testing.expectEqual(@as(u64, 0), frame.clocks);
     try std.testing.expect(!frame.running);
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
-    const export_length = tiny.end;
     _ = hub.step();
     try std.testing.expectEqual(@as(u64, 2), hub.counter);
     try std.testing.expectEqual(@as(usize, 1), broken_reader.calls);
     try std.testing.expectEqual(@as(usize, 1), broken_writer.calls);
-    try std.testing.expectEqual(export_length, tiny.end);
     var diagnostic: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer diagnostic.deinit();
 
     try test_support.diagnostics(hub, &diagnostic.writer);
-    for ([_][]const u8{ "pin 0 source service: ReadFailed", "pin 2 sink service: WriteFailed", "VCD service: WriteFailed" }) |expected| {
+    for ([_][]const u8{ "pin 0 source service: ReadFailed", "pin 2 sink service: WriteFailed" }) |expected| {
         try std.testing.expect(std.mem.indexOf(u8, diagnostic.written(), expected) != null);
     }
 }

@@ -1,23 +1,28 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//? macro: drv required
+//?
 //? run: "pll0-initial0-phase0"
-//? const: initial = 0
+//? macro: drv set DRVL
 //? const: phase = 0
 //? post: cog[*].reg[enabled] == 0x00000000
 //? post: cog[*].reg[bypassed] == 0x00000000
+//?
 //? run: "pll0-initial0-phase1"
-//? const: initial = 0
+//? macro: drv set DRVL
 //? const: phase = 1
 //? post: cog[*].reg[enabled] == 0x00000000
 //? post: cog[*].reg[bypassed] == 0x00000000
+//?
 //? run: "pll0-initial1-phase0"
-//? const: initial = 1
+//? macro: drv set DRVH
 //? const: phase = 0
 //? post: cog[*].reg[enabled] == 0x0000ffff
 //? post: cog[*].reg[bypassed] == 0x0000ffff
+//?
 //? run: "pll0-initial1-phase1"
-//? const: initial = 1
+//? macro: drv set DRVH
 //? const: phase = 1
 //? post: cog[*].reg[enabled] == 0x0000ffff
 //? post: cog[*].reg[bypassed] == 0x0000ffff
@@ -34,11 +39,7 @@
                 WAITX   16
                 WRPIN   0,                  40
                 WAITX   16
-.if initial
-                DRVH    40
-.else
-                DRVL    40
-.endif
+                {{ drv }}   40
                 WRPIN   aug(0x70000000),    41
                 WAITX   64
                 DIRL    40

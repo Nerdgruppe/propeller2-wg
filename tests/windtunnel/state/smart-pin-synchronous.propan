@@ -1,48 +1,56 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//?
 //? run: "pll0-out0-in0-phase0"
 //? const: out_sync = 0
 //? const: in_sync = 0
 //? const: phase = 0
 //? post: cog[*].reg[rising] == 0x00003fff
 //? post: cog[*].reg[falling] == 0x0000c000
+//?
 //? run: "pll0-out0-in0-phase1"
 //? const: out_sync = 0
 //? const: in_sync = 0
 //? const: phase = 1
 //? post: cog[*].reg[rising] == 0x00003fff
 //? post: cog[*].reg[falling] == 0x0000c000
+//?
 //? run: "pll0-out0-in1-phase0"
 //? const: out_sync = 0
 //? const: in_sync = 1
 //? const: phase = 0
 //? post: cog[*].reg[rising] == 0x00003fff
 //? post: cog[*].reg[falling] == 0x0000c000
+//?
 //? run: "pll0-out0-in1-phase1"
 //? const: out_sync = 0
 //? const: in_sync = 1
 //? const: phase = 1
 //? post: cog[*].reg[rising] == 0x00003fff
 //? post: cog[*].reg[falling] == 0x0000c000
+//?
 //? run: "pll0-out1-in0-phase0"
 //? const: out_sync = 1
 //? const: in_sync = 0
 //? const: phase = 0
 //? post: cog[*].reg[rising] == 0x00003fff
 //? post: cog[*].reg[falling] == 0x0000c000
+//?
 //? run: "pll0-out1-in0-phase1"
 //? const: out_sync = 1
 //? const: in_sync = 0
 //? const: phase = 1
 //? post: cog[*].reg[rising] == 0x00003fff
 //? post: cog[*].reg[falling] == 0x0000c000
+//?
 //? run: "pll0-out1-in1-phase0"
 //? const: out_sync = 1
 //? const: in_sync = 1
 //? const: phase = 0
 //? post: cog[*].reg[rising] == 0x00003fff
 //? post: cog[*].reg[falling] == 0x0000c000
+//?
 //? run: "pll0-out1-in1-phase1"
 //? const: out_sync = 1
 //? const: in_sync = 1

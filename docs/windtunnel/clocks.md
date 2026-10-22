@@ -18,7 +18,7 @@ room-temperature RCFAST value of one board does not replace the datasheet typica
 
 ## CLI and reproducibility
 
-These options work in the CLI, GUI and `--serve` mode:
+These options work in the CLI, GUI and `windtunnel-p2aas`:
 
 ```sh
 windtunnel --sim realistic --seed 42 --rcfast 24-4+6 --image program.bin
@@ -97,7 +97,7 @@ warning; unsupported PLL commands also log a fallback diagnostic.
 
 ## Physical time
 
-Hub, electrical pad integration, VCD and server pacing consume the same Q64
+Hub, electrical pad integration, Scope capture and server pacing consume the same Q64
 femtosecond intervals, retaining fractional carry. During an empirically unready
 source, physical time and analog pads advance in bounded quiet steps (at most
 100 ns); CT, cogs, smart-pin engines and the P2 RNG receive no fabricated edges.
@@ -106,8 +106,7 @@ completed CPU edge.
 
 An output with no transitions only bounds source availability. Treating that gap
 as no usable CPU edges is an explicit empirical approximation. Internal clock
-duty, individual malformed pulses and phase noise were not measured; the VCD
-system-clock waveform retains its conventional 50% duty representation.
+duty, individual malformed pulses and phase noise were not measured.
 
 Loaded images inherit UART dividers calculated from the initial actual configured
 RCFAST rate. ROM upload drives host bits against accumulated physical time.
@@ -131,8 +130,8 @@ the live-retune controls; their block-end bounds remain the appropriate claim.
 
 Tests also cover deterministic seeds and bounds for all three oscillators,
 crystal-to-PLL drift propagation, background acquisition, postdivider state,
-quiet-time pad/CT/RNG behavior and agreement between VCD and clock elapsed time.
-A full firmware smoke check exports PWM/32 and a marker, writes VCD, samples
+quiet-time pad/CT/RNG behavior and agreement between Scope capture and clock elapsed time.
+An earlier firmware smoke check exported PWM/32 and a marker, wrote VCD, sampled
 the pad transitions on a 10 ns grid and uses the same external rate-fit helper:
 the 160→200 MHz step settles by the 16 µs block end and peaks at 204.33 MHz
 in a 2 µs window (hardware control: 205.18 MHz). This checks the exporter and
@@ -142,7 +141,8 @@ Broader silicon dynamics, analog loop constants, environmental dependencies and
 instruction failures remain open as described in the [implementation plan](vco-simulation-plan.md).
 
 
-Final verification used `zig-0.16.0`, ReleaseFast, coverage disabled:
+Historical clock-model verification used the former live VCD exporter and
+`zig-0.16.0`, ReleaseFast, coverage disabled:
 
 ```sh
 zig-0.16.0 build build-windtunnel test-windtunnel -Doptimize=ReleaseFast \

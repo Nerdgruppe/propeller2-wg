@@ -1,82 +1,285 @@
 //? WINDTUNNEL CHECK LIST
 //? max-cycles: 2000000
 //? post: cog[*].reg[failures] == 0
+//? macro: add_operand required
+//? macro: sub required
+//? macro: rdl required
+//? macro: mov_operand required
+//? macro: setq required
+//? macro: probe_write required
+//? macro: probe_write_2 required
+//? macro: mov required
+//? macro: shl required
+//? macro: add required
+//? macro: wrlong required
+//?
 //? run: "0"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_write = 0
 //? const: probe_worker = 1
+//?
 //? run: "1"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 1
 //? const: probe_observer = 1
 //? const: probe_write = 0
 //? const: probe_worker = 0
+//?
 //? run: "2"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 2
 //? const: probe_observer = 2
 //? const: probe_write = 0
 //? const: probe_worker = 3
+//?
 //? run: "3"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 3
 //? const: probe_observer = 3
 //? const: probe_write = 0
 //? const: probe_worker = 2
+//?
 //? run: "4"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 4
 //? const: probe_observer = 4
 //? const: probe_write = 0
 //? const: probe_worker = 5
+//?
 //? run: "5"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 5
 //? const: probe_observer = 5
 //? const: probe_write = 0
 //? const: probe_worker = 4
+//?
 //? run: "6"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 6
 //? const: probe_observer = 6
 //? const: probe_write = 0
 //? const: probe_worker = 7
+//?
 //? run: "7"
+//? macro: add_operand set 9
+//? macro: sub set
+//? macro: rdl set RDLUT loaded, sample_index
+//? macro: mov_operand set bank
+//? macro: setq set SETQ2
+//? macro: probe_write set RDLONG
+//? macro: probe_write_2 set WRLUT 0, sample_index
+//? macro: mov set
+//? macro: shl set
+//? macro: add set
+//? macro: wrlong set
 //? cog: 7
 //? const: probe_observer = 7
 //? const: probe_write = 0
 //? const: probe_worker = 6
+//?
 //? run: "pipeline-block-write-visibility-0"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_write = 1
 //? const: probe_worker = 1
+//?
 //? run: "pipeline-block-write-visibility-1"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 1
 //? const: probe_observer = 1
 //? const: probe_write = 1
 //? const: probe_worker = 0
+//?
 //? run: "pipeline-block-write-visibility-2"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 2
 //? const: probe_observer = 2
 //? const: probe_write = 1
 //? const: probe_worker = 3
+//?
 //? run: "pipeline-block-write-visibility-3"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 3
 //? const: probe_observer = 3
 //? const: probe_write = 1
 //? const: probe_worker = 2
+//?
 //? run: "pipeline-block-write-visibility-4"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 4
 //? const: probe_observer = 4
 //? const: probe_write = 1
 //? const: probe_worker = 5
+//?
 //? run: "pipeline-block-write-visibility-5"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 5
 //? const: probe_observer = 5
 //? const: probe_write = 1
 //? const: probe_worker = 4
+//?
 //? run: "pipeline-block-write-visibility-6"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 6
 //? const: probe_observer = 6
 //? const: probe_write = 1
 //? const: probe_worker = 7
+//?
 //? run: "pipeline-block-write-visibility-7"
+//? macro: add_operand set 3
+//? macro: sub set SUB threshold, (probe_observer - probe_worker) & 7
+//? macro: rdl set RDLONG loaded, sample_address
+//? macro: mov_operand set 0
+//? macro: setq set SETQ
+//? macro: probe_write set WRLONG
+//? macro: probe_write_2 set MOV sample_address, source
+//? macro: mov set MOV temporary, position
+//? macro: shl set SHL temporary, 2
+//? macro: add set ADD sample_address, temporary
+//? macro: wrlong set WRLONG 0, sample_address
 //? cog: 7
 //? const: probe_observer = 7
 //? const: probe_write = 1
@@ -113,15 +316,11 @@ sample_loop:
                 // Sample five edges around the predicted first-visible clock for each selected beat.
                 MOV     delta,          aug(-2)
 delta_loop:
-.if probe_write == 1
-                MOV     sample_address, source
-                MOV     temporary,      position
-                SHL     temporary,      2
-                ADD     sample_address, temporary
-                WRLONG  0,              sample_address
-.else
-                WRLUT   0,              sample_index
-.endif
+                {{ probe_write_2 }}
+                {{ mov }}
+                {{ shl }}
+                {{ add }}
+                {{ wrlong }}
                 WRLONG  0,              PTRA
                 MOV     temporary,      PTRA
                 ADD     temporary,      4
@@ -139,12 +338,8 @@ delta_loop:
                 SUB     threshold,      probe_worker
                 SUB     threshold,      2
                 AND     threshold,      7
-.if probe_write == 1
-                ADD     threshold,      3
-                SUB     threshold,      (probe_observer - probe_worker) & 7
-.else
-                ADD     threshold,      9
-.endif
+                ADD     threshold, {{ add_operand }}
+                {{ sub }}
                 ADD     threshold,      position
                 MOV     local_timer,    timer
                 ADD     local_timer,    threshold
@@ -152,11 +347,7 @@ delta_loop:
                 ADDCT1  local_timer,    0
                 WAITCT1
                 GETCT   sample_clock
-.if probe_write == 1
-                RDLONG  loaded,         sample_address
-.else
-                RDLUT   loaded,         sample_index
-.endif
+                {{ rdl }}
                 SUB     sample_clock,   timer
                 MOV     expected,       threshold
                 ADD     expected,       delta
@@ -165,11 +356,7 @@ delta_loop:
     if(!Z)      ADD     failures,       1
                 MOV     expected,       0
                 CMPS    delta,          0                                   :wcz
-.if probe_write == 1
-    if(>=)      MOV     expected,       0
-.else
-    if(>=)      MOV     expected,       bank
-.endif
+    if(>=)      MOV     expected, {{ mov_operand }}
     if(>=)      ADD     expected,       position
     if(>=)      ADD     expected,       1
                 CMP     loaded,         expected                            :wz
@@ -239,13 +426,8 @@ worker_wait:
                 ADDCT1  register(300),  0
                 WAITCT1
                 GETCT   register(304)
-.if probe_write == 1
-                SETQ    register(303)
-                WRLONG  register(100),  register(302)
-.else
-                SETQ2   register(303)
-                RDLONG  register(100),  register(302)
-.endif
+                {{ setq }}  register(303)
+                {{ probe_write }}   register(100), register(302)
                 COGSTOP probe_worker
 .org    100
                 LONG    1,              2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64

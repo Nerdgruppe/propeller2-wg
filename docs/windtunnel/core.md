@@ -27,7 +27,7 @@ CORDIC execution support. Code that needs Q preserved should initialize the
 word fetched past a local return jump, for example with a NOP guard.
 
 The [I/O subsystem](io.md) implements pin instructions, digital pads and routing,
-long repository, UART and functional USART modes, plus VCD export. Software FIFO,
+long repository, UART and functional USART modes, plus native Scope capture. Software FIFO,
 CORDIC, interrupts, debugging, skipping, REP and shared RNG behavior are documented
 in the [pipeline notes](pipeline.md) and [hardware findings](../accumulated.md).
 The [digital streamer](streamer.md) supports timed pin output/capture, FIFO/LUT
@@ -42,12 +42,12 @@ collection and sticky service errors after every call. Breakpoints stop before
 execution or after a complete edge for data watchpoints. Issues retain diagnostics
 without stopping cogs. HUBSET with top nibble `$1` stops the simulation and returns
 `reset` after restoring the entire Hub through `init()`, including RAM, ROM, cogs,
-pins, counter and clock configuration. It detaches host tracing, terminal and
-debugger links. Hosts may explicitly attach them again; boot ROM execution is not
-restarted automatically.
+pins, counter and clock configuration. Firmware reset retains the active Scope
+capture and adds a reset marker. It detaches terminal and debugger links; hosts
+may explicitly attach them again. Boot ROM execution is not restarted automatically.
 
 The [clock model](clocks.md) supplies shared physical time for CPU edges, pads,
-VCD and server pacing. `--sim ideal` uses exact typical values; `--sim realistic`
+Scope capture and server pacing. `--sim ideal` uses exact typical values; `--sim realistic`
 uses bounded oscillator variation and the characterized PLL responses.
 `--rcfast`, `--rcslow`, `--crystal` and `--seed` override these defaults.
 
@@ -91,7 +91,8 @@ setup, autobaud measurements through P0/P1, interrupt-driven reception,
 `Prop_Chk` identification, Base64 decoding, checksum validation and application
 launch. ROM sessions and interactive input retain UART timing. `--fast-io`
 selects virtual application TX after image loading; server RX/TX remain virtual
-when requested. `--vcd` also works without an image and includes the boot process.
+when requested. `--scope` also works without an image and includes the boot process;
+`windtunnel-export` converts the saved recording to VCD.
 
 Uploads accept whole-long, nonempty images up to 512 KiB minus the four-byte
 checksum, at 9600..2000000 baud (default 115200). The P59 source is restored after

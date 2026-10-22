@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "v0 phase0 dataaaaaaaab"
 //? const: video = 0
 //? const: mode = 16384
@@ -28,6 +29,7 @@
 //? post: cog[*].reg[s21] == 0x1
 //? post: cog[*].reg[s22] == 0x1
 //? post: cog[*].reg[s23] == 0x1
+//?
 //? run: "v0 phase1 dataaaaaaaab"
 //? const: video = 0
 //? const: mode = 16384
@@ -57,6 +59,7 @@
 //? post: cog[*].reg[s21] == 0x1
 //? post: cog[*].reg[s22] == 0x1
 //? post: cog[*].reg[s23] == 0x0
+//?
 //? run: "v100 phase0 datad5455552"
 //? const: video = 256
 //? const: mode = 28673
@@ -86,6 +89,7 @@
 //? post: cog[*].reg[s21] == 0xaa
 //? post: cog[*].reg[s22] == 0xaa
 //? post: cog[*].reg[s23] == 0xa9
+//?
 //? run: "v100 phase1 datad5455552"
 //? const: video = 256
 //? const: mode = 28673
@@ -115,6 +119,7 @@
 //? post: cog[*].reg[s21] == 0x56
 //? post: cog[*].reg[s22] == 0x55
 //? post: cog[*].reg[s23] == 0x55
+//?
 //? run: "v100 phase0 data12345600"
 //? const: video = 256
 //? const: mode = 28673
@@ -144,6 +149,7 @@
 //? post: cog[*].reg[s21] == 0x9a
 //? post: cog[*].reg[s22] == 0x66
 //? post: cog[*].reg[s23] == 0x59
+//?
 //? run: "v100 phase1 data12345600"
 //? const: video = 256
 //? const: mode = 28673

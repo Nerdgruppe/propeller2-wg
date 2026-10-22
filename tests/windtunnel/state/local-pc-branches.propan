@@ -1,114 +1,131 @@
-                //? WINDTUNNEL CHECK LIST
-                //? issues: pc_domain = 2
-                //? timeout-ms: 3000
-                //? run: "kind0-cog0"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 0
-                //? const: kind = 0
-                //? run: "kind0-cog7"
-                //? post: cog[*].reg[link] == 0x401
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 7
-                //? const: kind = 0
-                //? run: "kind1-cog0"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x401
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 0
-                //? const: kind = 1
-                //? run: "kind1-cog7"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x401
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 7
-                //? const: kind = 1
-                //? run: "kind2-cog0"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x401
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 0
-                //? const: kind = 2
-                //? run: "kind2-cog7"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x401
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 7
-                //? const: kind = 2
-                //? run: "kind3-cog0"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 0
-                //? const: kind = 3
-                //? run: "kind3-cog7"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 7
-                //? const: kind = 3
-                //? run: "kind4-cog0"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x1
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 0
-                //? const: kind = 4
-                //? run: "kind4-cog7"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x1
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 7
-                //? const: kind = 4
-                //? run: "kind5-cog0"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x401
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 0
-                //? const: kind = 5
-                //? run: "kind5-cog7"
-                //? post: cog[*].reg[link] == 0x0
-                //? post: cog[*].reg[hits] == 0x0
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x401
-                //? post: cog[*].reg[elapsed] == 0xe
-                //? post: cog[*].reg[landed] == 0x0
-                //? cog: 7
-                //? const: kind = 5
+//? WINDTUNNEL CHECK LIST
+//? issues: pc_domain = 2
+//? timeout-ms: 3000
+//? macro: selected_kind required
+//?
+//? run: "kind0-cog0"
+//? macro: selected_kind set CALLD link, target
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 0
+//?
+//? run: "kind0-cog7"
+//? macro: selected_kind set CALLD link, target
+//? post: cog[*].reg[link] == 0x401
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 7
+//?
+//? run: "kind1-cog0"
+//? macro: selected_kind set CALLD PA, nrel(done)
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x401
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 0
+//?
+//? run: "kind1-cog7"
+//? macro: selected_kind set CALLD PA, nrel(done)
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x401
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 7
+//?
+//? run: "kind2-cog0"
+//? macro: selected_kind set LONG 0xfe100000 | (((pcaddr(done) - 0x401) * 4) & 0xfffff)
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x401
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 0
+//?
+//? run: "kind2-cog7"
+//? macro: selected_kind set LONG 0xfe100000 | (((pcaddr(done) - 0x401) * 4) & 0xfffff)
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x401
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 7
+//?
+//? run: "kind3-cog0"
+//? macro: selected_kind set RET
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 0
+//?
+//? run: "kind3-cog7"
+//? macro: selected_kind set RET
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 7
+//?
+//? run: "kind4-cog0"
+//? macro: selected_kind set return ADD hits, 1
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x1
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 0
+//?
+//? run: "kind4-cog7"
+//? macro: selected_kind set return ADD hits, 1
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x1
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 7
+//?
+//? run: "kind5-cog0"
+//? macro: selected_kind set CALLD PB, nrel(done)
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x401
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 0
+//?
+//? run: "kind5-cog7"
+//? macro: selected_kind set CALLD PB, nrel(done)
+//? post: cog[*].reg[link] == 0x0
+//? post: cog[*].reg[hits] == 0x0
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x401
+//? post: cog[*].reg[elapsed] == 0xe
+//? post: cog[*].reg[landed] == 0x0
+//? cog: 7
+
+// Raw CALLD PA, relative A20, is retained for the kind2 runs. Its displacement
+// is relative to the overflow execution PC $400, not the emitted template PC.
+// Native CALLD can select the short form and cannot request this exact A20 form.
                 // Compare absolute/relative CALLD and stack returns from the first overflow instruction.
                 // Keep setup beyond the cog-zero template that it installs.
                 JMP     nrel(setup)
@@ -184,19 +201,7 @@ var elapsed:    LONG    0
 .cogexec    0x3000, 0
 cog_template:
                 // These words are loaded into the physical cog instruction slots above.
-.if kind == 0
-                CALLD   link,   target
-.elif   kind == 1
-                CALLD   PA,     nrel(done)
-.elif   kind == 2
-                LONG    0xfe100000 | (((pcaddr(done) - 0x401) * 4) & 0xfffff)
-.elif   kind == 3
-                RET
-.elif   kind == 4
-    return      ADD     hits,   1
-.else
-                CALLD   PB,     nrel(done)
-.endif
+                {{ selected_kind }}
                 CALLD   link,   target1
                 CALLD   link,   target2
                 CALLD   link,   target3

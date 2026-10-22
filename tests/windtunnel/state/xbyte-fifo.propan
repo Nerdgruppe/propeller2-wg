@@ -1,128 +1,211 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 3000
+//? macro: nop required
+//? macro: nop_2 required
+//? macro: nop_3 required
+//? macro: nop_4 required
+//? macro: nop_5 default
+//? macro: nop_6 default
+//? macro: nop_7 default
+//?
 //? run: "cog7-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? cog: 7
-//? const: gap = 0
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 16
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog7-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
 //? cog: 7
-//? const: gap = 7
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 30
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? cog: 0
-//? const: gap = 2
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 20
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? cog: 0
-//? const: gap = 0
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 16
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
 //? cog: 0
-//? const: gap = 7
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 30
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog7-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
 //? cog: 7
-//? const: gap = 3
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 22
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
 //? cog: 0
-//? const: gap = 5
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 26
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog7-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
 //? cog: 7
-//? const: gap = 4
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 24
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
 //? cog: 0
-//? const: gap = 4
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 24
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog7-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? cog: 7
-//? const: gap = 2
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 20
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? cog: 0
-//? const: gap = 1
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 18
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog7-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
 //? cog: 7
-//? const: gap = 6
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 28
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
 //? cog: 0
-//? const: gap = 6
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 28
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
 //? cog: 0
-//? const: gap = 3
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 22
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog7-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
 //? cog: 7
-//? const: gap = 5
 //? post: cog[*].reg[pa_out] == 1
 //? post: cog[*].reg[pb_out] == 16385
 //? post: cog[*].reg[elapsed] == 26
 //? post: cog[*].reg[status] == 33554432
 //? post: cog[*].reg[q_out] == 0
+//?
 //? run: "cog7-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
 //? cog: 7
-//? const: gap = 1
 //? post: cog[*].reg[pa_out] == 0
 //? post: cog[*].reg[pb_out] == 16384
 //? post: cog[*].reg[elapsed] == 18
@@ -135,27 +218,13 @@
                 PUSH    0x1ff
                 GETCT   start
                 RDFAST  aug(0x80000000),    aug(hubaddr(bytecodes))
-.if gap >= 1
-                NOP
-.endif
-.if gap >= 2
-                NOP
-.endif
-.if gap >= 3
-                NOP
-.endif
-.if gap >= 4
-                NOP
-.endif
-.if gap >= 5
-                NOP
-.endif
-.if gap >= 6
-                NOP
-.endif
-.if gap >= 7
-                NOP
-.endif
+                {{ nop }}
+                {{ nop_2 }}
+                {{ nop_3 }}
+                {{ nop_4 }}
+                {{ nop_5 }}
+                {{ nop_6 }}
+                {{ nop_7 }}
     return      SETQ    0
 handler:
                 GETCT   elapsed

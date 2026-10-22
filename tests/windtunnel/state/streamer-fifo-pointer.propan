@@ -1,33 +1,35 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[amount] == 256
+//? macro: write required
+//? macro: xinit required
+//?
 //? run: "read full rate"
-//? const: write = 0
+//? macro: write set RDFAST
+//? macro: xinit set XINIT aug(X_RFLONG_32P_4DAC8 | 64), 0
 //? const: freq = 0x80000000
+//?
 //? run: "read slow"
-//? const: write = 0
+//? macro: write set RDFAST
+//? macro: xinit set XINIT aug(X_RFLONG_32P_4DAC8 | 64), 0
 //? const: freq = 0x10000000
+//?
 //? run: "write full rate"
-//? const: write = 1
+//? macro: write set WRFAST
+//? macro: xinit set XINIT aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 64), 0
 //? const: freq = 0x80000000
+//?
 //? run: "write slow"
-//? const: write = 1
+//? macro: write set WRFAST
+//? macro: xinit set XINIT aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 64), 0
 //? const: freq = 0x10000000
 
                 // Inspect consumed/enqueued bytes separately from physical FIFO grants.
                 MOV     OUTA,                                       0
                 MOV     DIRA,                                       aug(0xffffffff)
                 WAITX   20
-.if write
-                WRFAST  0,                                          aug(hubaddr(buffer))
-.else
-                RDFAST  0,                                          aug(hubaddr(buffer))
-.endif
+                {{ write }} 0, aug(hubaddr(buffer))
                 SETXFRQ aug(freq)
-.if write
-                XINIT   aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 64),  0
-.else
-                XINIT   aug(X_RFLONG_32P_4DAC8 | 64),               0
-.endif
+                {{ xinit }}
                 WAITXFI
                 GETPTR  amount
                 SUB     amount,                                     aug(hubaddr(buffer))

@@ -1,7 +1,7 @@
 const std = @import("std");
-const cases = @import("tests/propan/cases.zig");
+const cases = @import("src/propan/cases.zig");
 
-const windtunnel_cases = @import("tests/windtunnel/cases.zig");
+const windtunnel_cases = @import("src/windtunnel/cases.zig");
 
 const FastBuild = struct {
     b: *std.Build,
@@ -107,7 +107,6 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .imports = &.{
             .{ .name = "p2", .module = mod_p2 },
-            .{ .name = "args", .module = args_mod },
         },
     });
 
@@ -145,10 +144,42 @@ pub fn build(b: *std.Build) !void {
         break :blk exe;
     };
 
+    const windtunnel_cli_mod = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel-cli/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "windtunnel", .module = windtunnel_mod },
+            .{ .name = "args", .module = args_mod },
+        },
+    });
+
+    const windtunnel_p2aas_mod = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel-p2aas/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "windtunnel", .module = windtunnel_mod },
+            .{ .name = "args", .module = args_mod },
+        },
+    });
+    const windtunnel_p2aas = b.addExecutable(.{
+        .name = "windtunnel-p2aas",
+        .root_module = windtunnel_p2aas_mod,
+        .use_llvm = true,
+    });
+    fb.installArtifact(windtunnel_p2aas);
+    const build_p2aas = b.step("build-windtunnel-p2aas", "Build and install Windtunnel's P2AAS server");
+    if (no_emit_bin) {
+        build_p2aas.dependOn(&windtunnel_p2aas.step);
+    } else {
+        build_p2aas.dependOn(&b.addInstallArtifact(windtunnel_p2aas, .{}).step);
+    }
+
     const windtunnel_exe = blk: {
         const exe = b.addExecutable(.{
             .name = "windtunnel",
-            .root_module = windtunnel_mod,
+            .root_module = windtunnel_cli_mod,
             .use_llvm = true,
         });
 
@@ -156,6 +187,33 @@ pub fn build(b: *std.Build) !void {
 
         break :blk exe;
     };
+
+    const windtunnel_export_mod = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel-export/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "windtunnel", .module = windtunnel_mod },
+            .{ .name = "args", .module = args_mod },
+        },
+    });
+    const windtunnel_export = b.addExecutable(.{
+        .name = "windtunnel-export",
+        .root_module = windtunnel_export_mod,
+        .use_llvm = true,
+    });
+    fb.installArtifact(windtunnel_export);
+    const export_build = b.step("build-windtunnel-export", "Build and install the Scope inspection and VCD conversion tool");
+    if (no_emit_bin) {
+        export_build.dependOn(&windtunnel_export.step);
+    } else {
+        export_build.dependOn(&b.addInstallArtifact(windtunnel_export, .{}).step);
+    }
+    const export_tests = b.addTest(.{ .name = "windtunnel-export-tests", .root_module = windtunnel_export_mod, .use_llvm = true });
+    const export_test_run = b.addRunArtifact(export_tests);
+    const export_test_step = b.step("test-windtunnel-export", "Test Scope metadata inspection");
+    export_test_step.dependOn(&export_test_run.step);
+    windtunnel_test_step.dependOn(&export_test_run.step);
 
     if (!no_gui) {
         const zglfw = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
@@ -179,6 +237,8 @@ pub fn build(b: *std.Build) !void {
         });
         gui_mod.linkLibrary(zglfw.artifact("glfw"));
         gui_mod.linkLibrary(zgui.artifact("imgui"));
+        gui_mod.addIncludePath(zgui.path("libs/imgui"));
+        gui_mod.addCSourceFile(.{ .file = b.path("src/windtunnel-gui/imgui.cpp"), .flags = &.{} });
 
         const exe = b.addExecutable(.{
             .name = "windtunnel-gui",
@@ -305,6 +365,52 @@ pub fn build(b: *std.Build) !void {
     windtunnel_test_step.dependOn(&harness_run.step);
     const windtunnel_unit_step = b.step("test-windtunnel-unit", "Run Windtunnel harness and simulator unit tests");
     windtunnel_unit_step.dependOn(&harness_run.step);
+    const cli_tests = b.addTest(.{
+        .name = "windtunnel-cli-tests",
+        .root_module = windtunnel_cli_mod,
+        .use_llvm = true,
+    });
+    const cli_test_run = b.addRunArtifact(cli_tests);
+    const cli_test_step = b.step("test-windtunnel-cli", "Run terminal adapter regressions");
+    cli_test_step.dependOn(&cli_test_run.step);
+    windtunnel_unit_step.dependOn(cli_test_step);
+    windtunnel_test_step.dependOn(cli_test_step);
+
+    const server_test_module = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel-p2aas/tests.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "windtunnel", .module = windtunnel_mod },
+            .{ .name = "propan", .module = propan_mod },
+            .{ .name = "p2aas-client", .module = b.createModule(.{
+                .root_source_file = b.path("src/windtunnel/p2aas.zig"),
+                .target = target,
+                .optimize = optimize,
+            }) },
+        },
+    });
+    const server_tests = b.addTest(.{
+        .name = "windtunnel-p2aas-tests",
+        .root_module = server_test_module,
+        .use_llvm = true,
+    });
+    const server_test_run = b.addRunArtifact(server_tests);
+    server_test_run.setCwd(b.path("."));
+    const server_test_step = b.step("test-windtunnel-p2aas", "Run P2AAS protocol and loopback regressions");
+    server_test_step.dependOn(&server_test_run.step);
+    windtunnel_unit_step.dependOn(server_test_step);
+    windtunnel_test_step.dependOn(server_test_step);
+
+    const module_tests = b.addTest(.{
+        .name = "windtunnel-module-tests",
+        .root_module = windtunnel_mod,
+        .use_llvm = true,
+    });
+    const module_test_run = b.addRunArtifact(module_tests);
+    windtunnel_unit_step.dependOn(&module_test_run.step);
+    windtunnel_test_step.dependOn(&module_test_run.step);
+
     const fixture_run = addRunArtifactWithCoverage(b, kcov_path, windtunnel_tests, "windtunnel-fixtures");
     fixture_run.setCwd(b.path("."));
     fixture_run.expectExitCode(0); // Capture stdio so Zig forwards progress updates.
@@ -399,7 +505,6 @@ pub fn build(b: *std.Build) !void {
 
         propan_mod.addImport("fuzz-corpus", fuzz_corpus_mod);
 
-        propan_mod.addImport("test-cases", b.createModule(.{ .root_source_file = b.path("tests/propan/cases.zig") }));
         const options = b.addOptions();
         if (with_flexspin) {
             const dep = b.lazyDependency("p2devsuite", .{}) orelse return;
@@ -441,7 +546,10 @@ pub fn build(b: *std.Build) !void {
             cases.compare_diagnostic_tests,
             cases.support_files,
         }) |paths| for (paths) |path| run.addFileInput(b.path(path));
-        for (cases.formatter_tests) |fixture| run.addFileInput(b.path(fixture.input));
+        for (cases.formatter_tests) |fixture| {
+            run.addFileInput(b.path(fixture.input));
+            run.addFileInput(b.path(fixture.expected_path));
+        }
         run.setCwd(b.path("."));
         test_step.dependOn(&run.step);
     }

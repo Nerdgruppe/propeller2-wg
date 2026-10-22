@@ -19,14 +19,16 @@ unexpected_lut_wrap:
                 JMP     done
 var wrapped:    LONG    0
 var lut_wrap:   LONG    0
-var last_word:  LONG    0xf6040001 | (cogaddr(wrapped) << 9)
+var last_word:
+                MOV     wrapped,    1
 var cog_fallback:
-                LONG    0xfd800000 | pcaddr(done)
+                JMP     nrel(done)
 var lut_fallback:
-                LONG    0xfd800000 | pcaddr(unexpected_lut_wrap)
+                JMP     nrel(unexpected_lut_wrap)
 .lutexec    0x4000, 0x3ff
 lut_last:
                 MOV     wrapped,    1
 .lutexec    0x4100, 0x200
                 JMP     nrel(unexpected_lut_wrap)
 .data
+

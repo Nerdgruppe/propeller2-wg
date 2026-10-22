@@ -1,221 +1,242 @@
-                //? WINDTUNNEL CHECK LIST
-                //? issues: pc_domain = 3
-                //? timeout-ms: 2000
-                //? run: "kind0-phase16"
-                //? post: cog[*].reg[hits] == 0x1
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x20
-                //? post: cog[*].reg[saved] == 0x402
-                //? cog: 0
-                //? const: phase = 16
-                //? const: kind = 0
-                //? run: "kind0-phase24"
-                //? issues: pc_domain = 7
-                //? post: cog[*].reg[hits] == 0x3
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x28
-                //? post: cog[*].reg[saved] == 0x406
-                //? cog: 0
-                //? const: phase = 24
-                //? const: kind = 0
-                //? run: "kind0-phase32"
-                //? issues: pc_domain = 11
-                //? post: cog[*].reg[hits] == 0x5
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x30
-                //? post: cog[*].reg[saved] == 0x40a
-                //? cog: 0
-                //? const: phase = 32
-                //? const: kind = 0
-                //? run: "kind0-phase48"
-                //? issues: pc_domain = 19
-                //? post: cog[*].reg[hits] == 0x9
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x40
-                //? post: cog[*].reg[saved] == 0x412
-                //? cog: 0
-                //? const: phase = 48
-                //? const: kind = 0
-                //? run: "kind1-phase16"
-                //? post: cog[*].reg[hits] == 0x1
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x20
-                //? post: cog[*].reg[saved] == 0x402
-                //? cog: 0
-                //? const: phase = 16
-                //? const: kind = 1
-                //? run: "kind1-phase24"
-                //? issues: pc_domain = 7
-                //? post: cog[*].reg[hits] == 0x3
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x28
-                //? post: cog[*].reg[saved] == 0x406
-                //? cog: 0
-                //? const: phase = 24
-                //? const: kind = 1
-                //? run: "kind1-phase32"
-                //? issues: pc_domain = 11
-                //? post: cog[*].reg[hits] == 0x5
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x30
-                //? post: cog[*].reg[saved] == 0x40a
-                //? cog: 0
-                //? const: phase = 32
-                //? const: kind = 1
-                //? run: "kind1-phase48"
-                //? issues: pc_domain = 19
-                //? post: cog[*].reg[hits] == 0x9
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x40
-                //? post: cog[*].reg[saved] == 0x412
-                //? cog: 0
-                //? const: phase = 48
-                //? const: kind = 1
-                //? run: "kind2-phase16"
-                //? post: cog[*].reg[hits] == 0x1
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x402
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x20
-                //? post: cog[*].reg[saved] == 0x402
-                //? cog: 0
-                //? const: phase = 16
-                //? const: kind = 2
-                //? run: "kind2-phase24"
-                //? issues: pc_domain = 7
-                //? post: cog[*].reg[hits] == 0x3
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x406
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x28
-                //? post: cog[*].reg[saved] == 0x406
-                //? cog: 0
-                //? const: phase = 24
-                //? const: kind = 2
-                //? run: "kind2-phase32"
-                //? issues: pc_domain = 11
-                //? post: cog[*].reg[hits] == 0x5
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x40a
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x30
-                //? post: cog[*].reg[saved] == 0x40a
-                //? cog: 0
-                //? const: phase = 32
-                //? const: kind = 2
-                //? run: "kind2-phase48"
-                //? issues: pc_domain = 19
-                //? post: cog[*].reg[hits] == 0x9
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x412
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x40
-                //? post: cog[*].reg[saved] == 0x412
-                //? cog: 0
-                //? const: phase = 48
-                //? const: kind = 2
-                //? run: "kind3-phase16"
-                //? post: cog[*].reg[hits] == 0x1
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x402
-                //? post: cog[*].reg[elapsed] == 0x20
-                //? post: cog[*].reg[saved] == 0x402
-                //? cog: 0
-                //? const: phase = 16
-                //? const: kind = 3
-                //? run: "kind3-phase24"
-                //? issues: pc_domain = 7
-                //? post: cog[*].reg[hits] == 0x3
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x406
-                //? post: cog[*].reg[elapsed] == 0x28
-                //? post: cog[*].reg[saved] == 0x406
-                //? cog: 0
-                //? const: phase = 24
-                //? const: kind = 3
-                //? run: "kind3-phase32"
-                //? issues: pc_domain = 11
-                //? post: cog[*].reg[hits] == 0x5
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x40a
-                //? post: cog[*].reg[elapsed] == 0x30
-                //? post: cog[*].reg[saved] == 0x40a
-                //? cog: 0
-                //? const: phase = 32
-                //? const: kind = 3
-                //? run: "kind3-phase48"
-                //? issues: pc_domain = 19
-                //? post: cog[*].reg[hits] == 0x9
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x412
-                //? post: cog[*].reg[elapsed] == 0x40
-                //? post: cog[*].reg[saved] == 0x412
-                //? cog: 0
-                //? const: phase = 48
-                //? const: kind = 3
-                //? run: "kind4-phase16"
-                //? post: cog[*].reg[hits] == 0x11
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x20
-                //? post: cog[*].reg[saved] == 0x402
-                //? cog: 0
-                //? const: phase = 16
-                //? const: kind = 4
-                //? run: "kind4-phase24"
-                //? issues: pc_domain = 7
-                //? post: cog[*].reg[hits] == 0x22
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x28
-                //? post: cog[*].reg[saved] == 0x406
-                //? cog: 0
-                //? const: phase = 24
-                //? const: kind = 4
-                //? run: "kind4-phase32"
-                //? issues: pc_domain = 11
-                //? post: cog[*].reg[hits] == 0x34
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x30
-                //? post: cog[*].reg[saved] == 0x40a
-                //? cog: 0
-                //? const: phase = 32
-                //? const: kind = 4
-                //? run: "kind4-phase48"
-                //? issues: pc_domain = 19
-                //? post: cog[*].reg[hits] == 0x66
-                //? post: cog[*].reg[stamp_a] == 0x0
-                //? post: cog[*].reg[stamp_b] == 0x0
-                //? post: cog[*].reg[stamp_c] == 0x3108
-                //? post: cog[*].reg[elapsed] == 0x40
-                //? post: cog[*].reg[saved] == 0x412
-                //? cog: 0
-                //? const: phase = 48
-                //? const: kind = 4
+//? WINDTUNNEL CHECK LIST
+//? issues: pc_domain = 3
+//? timeout-ms: 2000
+//? macro: selected_kind required
+//?
+//? run: "kind0-phase16"
+//? macro: selected_kind set NOP
+//? post: cog[*].reg[hits] == 0x1
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x20
+//? post: cog[*].reg[saved] == 0x402
+//? cog: 0
+//? const: phase = 16
+//?
+//? run: "kind0-phase24"
+//? macro: selected_kind set NOP
+//? issues: pc_domain = 7
+//? post: cog[*].reg[hits] == 0x3
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x28
+//? post: cog[*].reg[saved] == 0x406
+//? cog: 0
+//? const: phase = 24
+//?
+//? run: "kind0-phase32"
+//? macro: selected_kind set NOP
+//? issues: pc_domain = 11
+//? post: cog[*].reg[hits] == 0x5
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x30
+//? post: cog[*].reg[saved] == 0x40a
+//? cog: 0
+//? const: phase = 32
+//?
+//? run: "kind0-phase48"
+//? macro: selected_kind set NOP
+//? issues: pc_domain = 19
+//? post: cog[*].reg[hits] == 0x9
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x40
+//? post: cog[*].reg[saved] == 0x412
+//? cog: 0
+//? const: phase = 48
+//?
+//? run: "kind1-phase16"
+//? macro: selected_kind set LOC PB, nrel(0)
+//? post: cog[*].reg[hits] == 0x1
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x20
+//? post: cog[*].reg[saved] == 0x402
+//? cog: 0
+//? const: phase = 16
+//?
+//? run: "kind1-phase24"
+//? macro: selected_kind set LOC PB, nrel(0)
+//? issues: pc_domain = 7
+//? post: cog[*].reg[hits] == 0x3
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x28
+//? post: cog[*].reg[saved] == 0x406
+//? cog: 0
+//? const: phase = 24
+//?
+//? run: "kind1-phase32"
+//? macro: selected_kind set LOC PB, nrel(0)
+//? issues: pc_domain = 11
+//? post: cog[*].reg[hits] == 0x5
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x30
+//? post: cog[*].reg[saved] == 0x40a
+//? cog: 0
+//? const: phase = 32
+//?
+//? run: "kind1-phase48"
+//? macro: selected_kind set LOC PB, nrel(0)
+//? issues: pc_domain = 19
+//? post: cog[*].reg[hits] == 0x9
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x40
+//? post: cog[*].reg[saved] == 0x412
+//? cog: 0
+//? const: phase = 48
+//?
+//? run: "kind2-phase16"
+//? macro: selected_kind set LOC PB, $ + 1
+//? post: cog[*].reg[hits] == 0x1
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x402
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x20
+//? post: cog[*].reg[saved] == 0x402
+//? cog: 0
+//? const: phase = 16
+//?
+//? run: "kind2-phase24"
+//? macro: selected_kind set LOC PB, $ + 1
+//? issues: pc_domain = 7
+//? post: cog[*].reg[hits] == 0x3
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x406
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x28
+//? post: cog[*].reg[saved] == 0x406
+//? cog: 0
+//? const: phase = 24
+//?
+//? run: "kind2-phase32"
+//? macro: selected_kind set LOC PB, $ + 1
+//? issues: pc_domain = 11
+//? post: cog[*].reg[hits] == 0x5
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x40a
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x30
+//? post: cog[*].reg[saved] == 0x40a
+//? cog: 0
+//? const: phase = 32
+//?
+//? run: "kind2-phase48"
+//? macro: selected_kind set LOC PB, $ + 1
+//? issues: pc_domain = 19
+//? post: cog[*].reg[hits] == 0x9
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x412
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x40
+//? post: cog[*].reg[saved] == 0x412
+//? cog: 0
+//? const: phase = 48
+//?
+//? run: "kind3-phase16"
+//? macro: selected_kind set LOC PTRA, $ + 1
+//? post: cog[*].reg[hits] == 0x1
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x402
+//? post: cog[*].reg[elapsed] == 0x20
+//? post: cog[*].reg[saved] == 0x402
+//? cog: 0
+//? const: phase = 16
+//?
+//? run: "kind3-phase24"
+//? macro: selected_kind set LOC PTRA, $ + 1
+//? issues: pc_domain = 7
+//? post: cog[*].reg[hits] == 0x3
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x406
+//? post: cog[*].reg[elapsed] == 0x28
+//? post: cog[*].reg[saved] == 0x406
+//? cog: 0
+//? const: phase = 24
+//?
+//? run: "kind3-phase32"
+//? macro: selected_kind set LOC PTRA, $ + 1
+//? issues: pc_domain = 11
+//? post: cog[*].reg[hits] == 0x5
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x40a
+//? post: cog[*].reg[elapsed] == 0x30
+//? post: cog[*].reg[saved] == 0x40a
+//? cog: 0
+//? const: phase = 32
+//?
+//? run: "kind3-phase48"
+//? macro: selected_kind set LOC PTRA, $ + 1
+//? issues: pc_domain = 19
+//? post: cog[*].reg[hits] == 0x9
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x412
+//? post: cog[*].reg[elapsed] == 0x40
+//? post: cog[*].reg[saved] == 0x412
+//? cog: 0
+//? const: phase = 48
+//?
+//? run: "kind4-phase16"
+//? macro: selected_kind set ADD hits, 16
+//? post: cog[*].reg[hits] == 0x11
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x20
+//? post: cog[*].reg[saved] == 0x402
+//? cog: 0
+//? const: phase = 16
+//?
+//? run: "kind4-phase24"
+//? macro: selected_kind set ADD hits, 16
+//? issues: pc_domain = 7
+//? post: cog[*].reg[hits] == 0x22
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x28
+//? post: cog[*].reg[saved] == 0x406
+//? cog: 0
+//? const: phase = 24
+//?
+//? run: "kind4-phase32"
+//? macro: selected_kind set ADD hits, 16
+//? issues: pc_domain = 11
+//? post: cog[*].reg[hits] == 0x34
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x30
+//? post: cog[*].reg[saved] == 0x40a
+//? cog: 0
+//? const: phase = 32
+//?
+//? run: "kind4-phase48"
+//? macro: selected_kind set ADD hits, 16
+//? issues: pc_domain = 19
+//? post: cog[*].reg[hits] == 0x66
+//? post: cog[*].reg[stamp_a] == 0x0
+//? post: cog[*].reg[stamp_b] == 0x0
+//? post: cog[*].reg[stamp_c] == 0x3108
+//? post: cog[*].reg[elapsed] == 0x40
+//? post: cog[*].reg[saved] == 0x412
+//? cog: 0
+//? const: phase = 48
                 // Capture the full overflow return PC and non-branching register/LOC results at CT1 phases.
                 // Keep setup beyond the cog-zero template that it installs.
                 JMP     nrel(setup)
@@ -286,17 +307,7 @@ var elapsed:    LONG    0
 cog_template:
                 // These words are loaded into the physical cog instruction slots above.
                 ADD     hits,   1
-.if kind == 0
-                NOP
-.elif   kind == 1
-                LOC     PB,     nrel(0)
-.elif   kind == 2
-                LONG    0xfeb00000
-.elif   kind == 3
-                LONG    0xfed00000
-.else
-                ADD     hits,   16
-.endif
+                {{ selected_kind }}
                 JMP     nrel(done)
                 NOP
                 NOP

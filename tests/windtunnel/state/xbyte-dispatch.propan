@@ -1,5 +1,6 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 3000
+//?
 //? run: "mode12"
 //? cog: 0
 //? const: mode = 12
@@ -11,6 +12,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 12
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode9"
 //? cog: 0
 //? const: mode = 9
@@ -22,6 +24,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 9
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode15"
 //? cog: 0
 //? const: mode = 15
@@ -33,6 +36,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 15
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode2"
 //? cog: 0
 //? const: mode = 2
@@ -44,6 +48,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 2
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode48"
 //? cog: 0
 //? const: mode = 48
@@ -55,6 +60,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 48
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode1"
 //? cog: 0
 //? const: mode = 1
@@ -66,6 +72,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 1
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode3"
 //? cog: 0
 //? const: mode = 3
@@ -77,6 +84,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 3
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode256"
 //? cog: 0
 //? const: mode = 256
@@ -88,6 +96,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 256
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode14"
 //? cog: 0
 //? const: mode = 14
@@ -99,6 +108,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 14
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode0"
 //? cog: 0
 //? const: mode = 0
@@ -110,6 +120,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 0
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode7"
 //? cog: 0
 //? const: mode = 7
@@ -121,6 +132,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 7
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode32"
 //? cog: 0
 //? const: mode = 32
@@ -132,6 +144,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 32
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode8"
 //? cog: 0
 //? const: mode = 8
@@ -143,6 +156,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 8
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode511"
 //? cog: 0
 //? const: mode = 511
@@ -154,6 +168,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 511
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode11"
 //? cog: 0
 //? const: mode = 11
@@ -165,6 +180,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 11
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode13"
 //? cog: 0
 //? const: mode = 13
@@ -176,6 +192,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 13
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode10"
 //? cog: 0
 //? const: mode = 10
@@ -187,6 +204,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 10
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode4"
 //? cog: 0
 //? const: mode = 4
@@ -198,6 +216,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 4
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode6"
 //? cog: 0
 //? const: mode = 6
@@ -209,6 +228,7 @@
 //? post: cog[*].reg[elapsed] == 10
 //? post: cog[*].reg[q_out] == 6
 //? post: cog[*].reg[stack_out] == 511
+//?
 //? run: "mode5"
 //? cog: 0
 //? const: mode = 5
