@@ -37,10 +37,6 @@
 //? cog: 0
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog0-mode2-kind2"
-//? cog: 0
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog0-mode2-kind3"
 //? cog: 0
 //? const: mode = 2
@@ -81,10 +77,6 @@
 //? cog: 1
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog1-mode2-kind2"
-//? cog: 1
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog1-mode2-kind3"
 //? cog: 1
 //? const: mode = 2
@@ -125,10 +117,6 @@
 //? cog: 2
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog2-mode2-kind2"
-//? cog: 2
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog2-mode2-kind3"
 //? cog: 2
 //? const: mode = 2
@@ -169,10 +157,6 @@
 //? cog: 3
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog3-mode2-kind2"
-//? cog: 3
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog3-mode2-kind3"
 //? cog: 3
 //? const: mode = 2
@@ -213,10 +197,6 @@
 //? cog: 4
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog4-mode2-kind2"
-//? cog: 4
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog4-mode2-kind3"
 //? cog: 4
 //? const: mode = 2
@@ -257,10 +237,6 @@
 //? cog: 5
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog5-mode2-kind2"
-//? cog: 5
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog5-mode2-kind3"
 //? cog: 5
 //? const: mode = 2
@@ -301,10 +277,6 @@
 //? cog: 6
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog6-mode2-kind2"
-//? cog: 6
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog6-mode2-kind3"
 //? cog: 6
 //? const: mode = 2
@@ -345,10 +317,6 @@
 //? cog: 7
 //? const: mode = 2
 //? const: kind = 1
-//? run: "cog7-mode2-kind2"
-//? cog: 7
-//? const: mode = 2
-//? const: kind = 2
 //? run: "cog7-mode2-kind3"
 //? cog: 7
 //? const: mode = 2
@@ -445,4 +413,3 @@ payload:
                 GETCT   finish
                 JMP     nrel(checked)
                 NOP
-

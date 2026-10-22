@@ -1,0 +1,1649 @@
+//? WINDTUNNEL CHECK LIST
+//? issues: usb_receive_error = 0
+//? run: "zero-p0-x4096"
+//? const: pattern = 0
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p0-x4097"
+//? const: pattern = 0
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p1-x4096"
+//? const: pattern = 0
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p1-x4097"
+//? const: pattern = 0
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p3-x4096"
+//? const: pattern = 0
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p3-x4097"
+//? const: pattern = 0
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p7-x4096"
+//? const: pattern = 0
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p7-x4097"
+//? const: pattern = 0
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p11-x4096"
+//? const: pattern = 0
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p11-x4097"
+//? const: pattern = 0
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p15-x4096"
+//? const: pattern = 0
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "zero-p15-x4097"
+//? const: pattern = 0
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 137
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p0-x4096"
+//? const: pattern = 1
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p0-x4097"
+//? const: pattern = 1
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p1-x4096"
+//? const: pattern = 1
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p1-x4097"
+//? const: pattern = 1
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p3-x4096"
+//? const: pattern = 1
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p3-x4097"
+//? const: pattern = 1
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p7-x4096"
+//? const: pattern = 1
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p7-x4097"
+//? const: pattern = 1
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p11-x4096"
+//? const: pattern = 1
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p11-x4097"
+//? const: pattern = 1
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p15-x4096"
+//? const: pattern = 1
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "ff-p15-x4097"
+//? const: pattern = 1
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p0-x4096"
+//? const: pattern = 2
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p0-x4097"
+//? const: pattern = 2
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p1-x4096"
+//? const: pattern = 2
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p1-x4097"
+//? const: pattern = 2
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p3-x4096"
+//? const: pattern = 2
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p3-x4097"
+//? const: pattern = 2
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p7-x4096"
+//? const: pattern = 2
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p7-x4097"
+//? const: pattern = 2
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p11-x4096"
+//? const: pattern = 2
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p11-x4097"
+//? const: pattern = 2
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p15-x4096"
+//? const: pattern = 2
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "55-p15-x4097"
+//? const: pattern = 2
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p0-x4096"
+//? const: pattern = 3
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p0-x4097"
+//? const: pattern = 3
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p1-x4096"
+//? const: pattern = 3
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p1-x4097"
+//? const: pattern = 3
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p3-x4096"
+//? const: pattern = 3
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p3-x4097"
+//? const: pattern = 3
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p7-x4096"
+//? const: pattern = 3
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p7-x4097"
+//? const: pattern = 3
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p11-x4096"
+//? const: pattern = 3
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p11-x4097"
+//? const: pattern = 3
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p15-x4096"
+//? const: pattern = 3
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "cross-p15-x4097"
+//? const: pattern = 3
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p0-x4096"
+//? const: pattern = 4
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p0-x4097"
+//? const: pattern = 4
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p1-x4096"
+//? const: pattern = 4
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p1-x4097"
+//? const: pattern = 4
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p3-x4096"
+//? const: pattern = 4
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p3-x4097"
+//? const: pattern = 4
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p7-x4096"
+//? const: pattern = 4
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p7-x4097"
+//? const: pattern = 4
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p11-x4096"
+//? const: pattern = 4
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p11-x4097"
+//? const: pattern = 4
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p15-x4096"
+//? const: pattern = 4
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "pair-p15-x4097"
+//? const: pattern = 4
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 39433
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "badstuff-p0-x4096"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p0-x4097"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p1-x4096"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p1-x4097"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p3-x4096"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p3-x4097"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p7-x4096"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p7-x4097"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p11-x4096"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p11-x4097"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p15-x4096"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "badstuff-p15-x4097"
+//? issues: usb_receive_error = 1
+//? const: pattern = 5
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "short-p0-x4096"
+//? const: pattern = 6
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p0-x4097"
+//? const: pattern = 6
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p1-x4096"
+//? const: pattern = 6
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p1-x4097"
+//? const: pattern = 6
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p3-x4096"
+//? const: pattern = 6
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p3-x4097"
+//? const: pattern = 6
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p7-x4096"
+//? const: pattern = 6
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p7-x4097"
+//? const: pattern = 6
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p11-x4096"
+//? const: pattern = 6
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p11-x4097"
+//? const: pattern = 6
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p15-x4096"
+//? const: pattern = 6
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "short-p15-x4097"
+//? const: pattern = 6
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p0-x4096"
+//? const: pattern = 7
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p0-x4097"
+//? const: pattern = 7
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p1-x4096"
+//? const: pattern = 7
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p1-x4097"
+//? const: pattern = 7
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p3-x4096"
+//? const: pattern = 7
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p3-x4097"
+//? const: pattern = 7
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p7-x4096"
+//? const: pattern = 7
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p7-x4097"
+//? const: pattern = 7
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p11-x4096"
+//? const: pattern = 7
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p11-x4097"
+//? const: pattern = 7
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p15-x4096"
+//? const: pattern = 7
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "three-p15-x4097"
+//? const: pattern = 7
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23177
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "four-p0-x4096"
+//? const: pattern = 8
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p0-x4097"
+//? const: pattern = 8
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p1-x4096"
+//? const: pattern = 8
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p1-x4097"
+//? const: pattern = 8
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p3-x4096"
+//? const: pattern = 8
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p3-x4097"
+//? const: pattern = 8
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p7-x4096"
+//? const: pattern = 8
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p7-x4097"
+//? const: pattern = 8
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p11-x4096"
+//? const: pattern = 8
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p11-x4097"
+//? const: pattern = 8
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p15-x4096"
+//? const: pattern = 8
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "four-p15-x4097"
+//? const: pattern = 8
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 23241
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p0-x4096"
+//? const: pattern = 9
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p0-x4097"
+//? const: pattern = 9
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p1-x4096"
+//? const: pattern = 9
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p1-x4097"
+//? const: pattern = 9
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p3-x4096"
+//? const: pattern = 9
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p3-x4097"
+//? const: pattern = 9
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p7-x4096"
+//? const: pattern = 9
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p7-x4097"
+//? const: pattern = 9
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p11-x4096"
+//? const: pattern = 9
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p11-x4097"
+//? const: pattern = 9
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p15-x4096"
+//? const: pattern = 9
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "se1-p15-x4097"
+//? const: pattern = 9
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 73
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 5
+//? run: "bad-sync-p0-x4096"
+//? const: pattern = 10
+//? const: phase = 0
+//? const: x = 4096
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p0-x4097"
+//? const: pattern = 10
+//? const: phase = 0
+//? const: x = 4097
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p1-x4096"
+//? const: pattern = 10
+//? const: phase = 1
+//? const: x = 4096
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p1-x4097"
+//? const: pattern = 10
+//? const: phase = 1
+//? const: x = 4097
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p3-x4096"
+//? const: pattern = 10
+//? const: phase = 3
+//? const: x = 4096
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p3-x4097"
+//? const: pattern = 10
+//? const: phase = 3
+//? const: x = 4097
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p7-x4096"
+//? const: pattern = 10
+//? const: phase = 7
+//? const: x = 4096
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p7-x4097"
+//? const: pattern = 10
+//? const: phase = 7
+//? const: x = 4097
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p11-x4096"
+//? const: pattern = 10
+//? const: phase = 11
+//? const: x = 4096
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p11-x4097"
+//? const: pattern = 10
+//? const: phase = 11
+//? const: x = 4097
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p15-x4096"
+//? const: pattern = 10
+//? const: phase = 15
+//? const: x = 4096
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+//? run: "bad-sync-p15-x4097"
+//? const: pattern = 10
+//? const: phase = 15
+//? const: x = 4097
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 4
+
+                // Route the lower receiver through cog OUT; the upper receiver remains an actual GPIO pad.
+                // This is independently measured USB input routing, so malformed traffic needs no external device.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                WRPIN   aug(0x40000036),    40
+                WRPIN   aug(0x60000000),    aug(42 | (1 << 6))
+                WXPIN   aug(x),             40
+                MOV     OUTB,               aug(1 << 8)
+                DIRH    aug(40 | (1 << 6))
+                WAITX   aug(256)
+                WAITX   aug(phase)
+.if pattern == 0
+                // zero: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 1
+                // ff: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 2
+                // 55: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 3
+                // cross: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 4
+                // pair: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 5
+                // badstuff: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 6
+                // short: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 7
+                // three: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 8
+                // four: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 9
+                // se1: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(3 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(3 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(3 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(3 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+.if pattern == 10
+                // bad-sync: NRZI/stuffing stimulus, one state per sixteen system clocks.
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(2 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(0 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+                MOV     OUTB,               aug(1 << 8)
+                WAITX   10
+.endif
+                // Preserve result, carry, both engine handshakes and paired physical input aliases.
+                RQPIN   result,             40                  :wc
+                MOV     flags,              0
+                MUXC    flags,              1
+                RQPIN   upper,              41                  :wc
+                MUXC    flags,              2
+                TESTP   40                                      :wc
+                MUXC    flags,              4
+                TESTP   41                                      :wc
+                MUXC    flags,              8
+                // The lower physical pad floats: its routed A input comes from cog OUT.
+                TESTP   43                                      :wc
+                MUXC    flags,              32
+                // Release every experiment pin before the oracle reporter.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                JMP     nrel(_end)
+var result:     LONG    0
+var upper:      LONG    0
+var flags:      LONG    0

@@ -1,0 +1,134 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "x2-width1"
+//? const: x = 2
+//? const: width = 1
+//? post: hub[buffer] == u32 [0 0 0 5 5 5 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+//? run: "x2-width5"
+//? const: x = 2
+//? const: width = 5
+//? post: hub[buffer] == u32 [0 5 5 8 8 5 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+//? run: "x18-width1"
+//? const: x = 18
+//? const: width = 1
+//? post: hub[buffer] == u32 [0 0 0 10 10 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20]
+//? run: "x18-width5"
+//? const: x = 18
+//? const: width = 5
+//? post: hub[buffer] == u32 [0 10 10 26 26 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36]
+//? run: "x3-width1"
+//? const: x = 3
+//? const: width = 1
+//? post: hub[buffer] == u32 [0 0 0 3 3 3 3 8 8 8 8 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+//? run: "x3-width5"
+//? const: x = 3
+//? const: width = 5
+//? post: hub[buffer] == u32 [0 3 3 3 3 13 13 13 13 3 3 3 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+//? run: "x19-width1"
+//? const: x = 19
+//? const: width = 1
+//? post: hub[buffer] == u32 [0 0 0 10 10 10 10 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40]
+//? run: "x19-width5"
+//? const: x = 19
+//? const: width = 5
+//? post: hub[buffer] == u32 [0 10 10 10 10 62 62 62 62 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72 72]
+//? run: "x5-width1"
+//? const: x = 5
+//? const: width = 1
+//? post: hub[buffer] == u32 [0 0 0 0 0 0 0 0 0 0 0 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 6 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+//? run: "x5-width5"
+//? const: x = 5
+//? const: width = 5
+//? post: hub[buffer] == u32 [0 0 0 0 0 0 0 0 0 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+//? run: "x21-width1"
+//? const: x = 21
+//? const: width = 1
+//? post: hub[buffer] == u32 [0 0 0 0 0 0 0 0 0 0 0 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160 160]
+//? run: "x21-width5"
+//? const: x = 21
+//? const: width = 5
+//? post: hub[buffer] == u32 [0 0 0 0 0 0 0 0 0 144 144 144 144 144 144 144 144 144 144 144 144 144 144 144 144 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288 288]
+
+                // Keep the same program timing in sample/filter modes and capture 64 result snapshots.
+                DIRL    40
+                OUTL    40
+                WRPIN   aug(0x40000030),                    40
+                WXPIN   x,                                  40
+                DIRH    40
+                WAITX   100
+                OUTH    40
+                WAITX   width
+                OUTL    40
+                RQPIN   register(localaddr(results) + 0),   40
+                RQPIN   register(localaddr(results) + 1),   40
+                RQPIN   register(localaddr(results) + 2),   40
+                RQPIN   register(localaddr(results) + 3),   40
+                RQPIN   register(localaddr(results) + 4),   40
+                RQPIN   register(localaddr(results) + 5),   40
+                RQPIN   register(localaddr(results) + 6),   40
+                RQPIN   register(localaddr(results) + 7),   40
+                RQPIN   register(localaddr(results) + 8),   40
+                RQPIN   register(localaddr(results) + 9),   40
+                RQPIN   register(localaddr(results) + 10),  40
+                RQPIN   register(localaddr(results) + 11),  40
+                RQPIN   register(localaddr(results) + 12),  40
+                RQPIN   register(localaddr(results) + 13),  40
+                RQPIN   register(localaddr(results) + 14),  40
+                RQPIN   register(localaddr(results) + 15),  40
+                RQPIN   register(localaddr(results) + 16),  40
+                RQPIN   register(localaddr(results) + 17),  40
+                RQPIN   register(localaddr(results) + 18),  40
+                RQPIN   register(localaddr(results) + 19),  40
+                RQPIN   register(localaddr(results) + 20),  40
+                RQPIN   register(localaddr(results) + 21),  40
+                RQPIN   register(localaddr(results) + 22),  40
+                RQPIN   register(localaddr(results) + 23),  40
+                RQPIN   register(localaddr(results) + 24),  40
+                RQPIN   register(localaddr(results) + 25),  40
+                RQPIN   register(localaddr(results) + 26),  40
+                RQPIN   register(localaddr(results) + 27),  40
+                RQPIN   register(localaddr(results) + 28),  40
+                RQPIN   register(localaddr(results) + 29),  40
+                RQPIN   register(localaddr(results) + 30),  40
+                RQPIN   register(localaddr(results) + 31),  40
+                RQPIN   register(localaddr(results) + 32),  40
+                RQPIN   register(localaddr(results) + 33),  40
+                RQPIN   register(localaddr(results) + 34),  40
+                RQPIN   register(localaddr(results) + 35),  40
+                RQPIN   register(localaddr(results) + 36),  40
+                RQPIN   register(localaddr(results) + 37),  40
+                RQPIN   register(localaddr(results) + 38),  40
+                RQPIN   register(localaddr(results) + 39),  40
+                RQPIN   register(localaddr(results) + 40),  40
+                RQPIN   register(localaddr(results) + 41),  40
+                RQPIN   register(localaddr(results) + 42),  40
+                RQPIN   register(localaddr(results) + 43),  40
+                RQPIN   register(localaddr(results) + 44),  40
+                RQPIN   register(localaddr(results) + 45),  40
+                RQPIN   register(localaddr(results) + 46),  40
+                RQPIN   register(localaddr(results) + 47),  40
+                RQPIN   register(localaddr(results) + 48),  40
+                RQPIN   register(localaddr(results) + 49),  40
+                RQPIN   register(localaddr(results) + 50),  40
+                RQPIN   register(localaddr(results) + 51),  40
+                RQPIN   register(localaddr(results) + 52),  40
+                RQPIN   register(localaddr(results) + 53),  40
+                RQPIN   register(localaddr(results) + 54),  40
+                RQPIN   register(localaddr(results) + 55),  40
+                RQPIN   register(localaddr(results) + 56),  40
+                RQPIN   register(localaddr(results) + 57),  40
+                RQPIN   register(localaddr(results) + 58),  40
+                RQPIN   register(localaddr(results) + 59),  40
+                RQPIN   register(localaddr(results) + 60),  40
+                RQPIN   register(localaddr(results) + 61),  40
+                RQPIN   register(localaddr(results) + 62),  40
+                RQPIN   register(localaddr(results) + 63),  40
+                SETQ    63
+                WRLONG  results,                            aug(hubaddr(buffer))
+                DIRL    40
+                WRPIN   0,                                  40
+                JMP     nrel(_end)
+var results:    LONG    [0] * 64
+.data
+.align  4
+var buffer:     LONG    [0] * 64
+

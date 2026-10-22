@@ -1,0 +1,101 @@
+//? WINDTUNNEL CHECK LIST
+//? oracle: off "Reserved mode rejection is simulator policy"
+//? issues: streamer_mode = 1
+//? pre: cog[*].c = false
+//? post: cog[*].reg[marker] == 23
+//? run: "reserved F/8 start 0 count 0"
+//? const: mode = 4027056128
+//? const: start_kind = 0
+//? const: cancelled = 0
+//? run: "reserved F/8 start 0 count 1"
+//? const: mode = 4027056129
+//? const: start_kind = 0
+//? const: cancelled = 0
+//? run: "reserved F/8 start 0 count 65535"
+//? const: mode = 4027121663
+//? const: start_kind = 0
+//? const: cancelled = 0
+//? run: "reserved F/8 start 1 count 0"
+//? const: mode = 4027056128
+//? const: start_kind = 1
+//? const: cancelled = 0
+//? run: "reserved F/8 start 1 count 1"
+//? const: mode = 4027056129
+//? const: start_kind = 1
+//? const: cancelled = 0
+//? run: "reserved F/8 start 1 count 65535"
+//? const: mode = 4027121663
+//? const: start_kind = 1
+//? const: cancelled = 0
+//? run: "reserved F/8 start 2 count 0"
+//? const: mode = 4027056128
+//? const: start_kind = 2
+//? const: cancelled = 0
+//? run: "reserved F/8 start 2 count 1"
+//? const: mode = 4027056129
+//? const: start_kind = 2
+//? const: cancelled = 0
+//? run: "reserved F/8 start 2 count 65535"
+//? const: mode = 4027121663
+//? const: start_kind = 2
+//? const: cancelled = 0
+//? run: "reserved F/9 start 0 count 0"
+//? const: mode = 4027121664
+//? const: start_kind = 0
+//? const: cancelled = 0
+//? run: "reserved F/9 start 0 count 1"
+//? const: mode = 4027121665
+//? const: start_kind = 0
+//? const: cancelled = 0
+//? run: "reserved F/9 start 0 count 65535"
+//? const: mode = 4027187199
+//? const: start_kind = 0
+//? const: cancelled = 0
+//? run: "reserved F/9 start 1 count 0"
+//? const: mode = 4027121664
+//? const: start_kind = 1
+//? const: cancelled = 0
+//? run: "reserved F/9 start 1 count 1"
+//? const: mode = 4027121665
+//? const: start_kind = 1
+//? const: cancelled = 0
+//? run: "reserved F/9 start 1 count 65535"
+//? const: mode = 4027187199
+//? const: start_kind = 1
+//? const: cancelled = 0
+//? run: "reserved F/9 start 2 count 0"
+//? const: mode = 4027121664
+//? const: start_kind = 2
+//? const: cancelled = 0
+//? run: "reserved F/9 start 2 count 1"
+//? const: mode = 4027121665
+//? const: start_kind = 2
+//? const: cancelled = 0
+//? run: "reserved F/9 start 2 count 65535"
+//? const: mode = 4027187199
+//? const: start_kind = 2
+//? const: cancelled = 0
+//? run: "cancelled mode is silent"
+//? issues: streamer_mode = 0
+//? const: mode = 4027056129
+//? const: start_kind = 0
+//? const: cancelled = 1
+
+    // A rejected command must retire and allow the following marker write.
+.if cancelled
+    if(C)       XINIT   aug(mode),  0
+.else
+.if start_kind == 0
+                XINIT   aug(mode),  0
+.elif   start_kind == 1
+                XZERO   aug(mode),  0
+.else
+                XCONT   aug(mode),  0
+.endif
+.endif
+                MOV     marker,     23
+                JMP     nrel(_end)
+                // Keep marker data outside the jump prefetch window.
+                NOP
+var marker:     LONG    0
+

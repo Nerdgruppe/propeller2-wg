@@ -464,7 +464,6 @@ def render_executor_stub(
             //! Generated dispatch/signatures wrap preserved runtime, ALU and instruction bodies.
 
             const std = @import("std");
-            const logger = std.log.scoped(.execute);
 
             const decode = @import("decode.zig");
             const encoding = @import("encoding.zig");
@@ -501,7 +500,7 @@ def render_executor_stub(
                 const enc: encoding.Instruction = .{ .raw = raw };
 
                 switch (opcode) {
-                    .invalid => return .trap,
+                    .invalid => return cog.reject(.invalid_encoding),
             """
         )
     )
@@ -510,7 +509,7 @@ def render_executor_stub(
         opcode = snakecase(instr.id)
         if opcode.upper() not in alu_functions:
             if opcode == "bitrnd" or "simple_exec" in instr.tags:
-                stream.write(f".{zig_id(opcode)} => return .not_implemented,\n")
+                stream.write(f'.{zig_id(opcode)} => @compileError("missing instruction handler: {opcode}"),\n')
             continue
         assert instr.register_access in (None, "D"), instr.id
         grp_key = str(instr.encoding).replace("1", "_").replace("0", "_")
@@ -528,7 +527,6 @@ def render_executor_stub(
                         const field = comptime decode.instruction_type.get(opc);
                         const params = @field(enc, field);
 
-                        logger.info("0x{X:0>5}: 0x{X:0>8} {t}: {f}", .{ state.pc, state.instr, opc, params });
 
                         return @field(@This(), @tagName(opc))(cog, params);
                     },
@@ -585,7 +583,7 @@ def render_executor_stub(
         stream.write(f"    // codegen: begin:{zig_id(opcode)}\n")
         stream.write("    _ = cog;\n")
         stream.write("    _ = args;\n")
-        stream.write('    return .not_implemented;\n')
+        stream.write(f'    @compileError("missing instruction body: {opcode}");\n')
         stream.write("    // return .next;\n")
         stream.write(f"    // codegen: end:{zig_id(opcode)}\n")
         stream.write("}\n")

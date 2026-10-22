@@ -1,4 +1,7 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: memory_hole_read = 1307
+//? issues: memory_hole_write = 4
+//? issues: pc_domain = 0
 //? post: cog[0].reg[touched] == 42
 //? post: cog[0].reg[hole] == 0
 //? post: cog[0].reg[ignored_write] == 99
@@ -7,6 +10,8 @@
 //? const: entry_pc = 0x7fffc
 //? post: cog[0].reg[result] == 0
 //? run: "20-bit boundary"
+//? issues: memory_hole_read = 1
+//? issues: pc_domain = 3
 //? const: entry_pc = 0xffffc
 //? post: cog[0].reg[result] == 7
 
@@ -68,4 +73,3 @@ template:
                 MOV     result,     7
                 JMP     nrel(_end)
 .data
-

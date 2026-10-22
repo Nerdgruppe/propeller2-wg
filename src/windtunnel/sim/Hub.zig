@@ -3,13 +3,18 @@
 
 const std = @import("std");
 
+const access_types = @import("access.zig");
+pub const HubRam = @import("HubRam.zig");
+const reads = @import("read.zig");
 const Cog = @import("Cog.zig");
 const IO = @import("IO.zig");
+pub const SystemConfiguration = @import("SystemConfiguration.zig");
 const Cordic = @import("Cordic.zig");
 const Random = @import("Random.zig");
 const Vcd = @import("Vcd.zig");
 const Hub = @This();
 pub const Debugger = @import("Debugger.zig");
+pub const Issue = @import("Issue.zig");
 const p2 = @import("p2");
 const EventId = p2.types.EventId;
 
@@ -32,17 +37,19 @@ comptime {
 /// Captured at the issuing instruction, never inferred from a later cog state.
 pub const WriteOrigin = enum { application, debug };
 
-/// Notify the host when execution continues, stops at a breakpoint, resets, or faults.
-pub const StepResult = enum { normal, breakpoint, reset, trap };
+/// Notify the host when execution continues, stops at a breakpoint, or resets; issues are inspected separately.
+pub const StepResult = enum { normal, breakpoint, reset };
 
 debugger: ?*Debugger = null,
-access_context: Debugger.Provenance = .{},
-read_class: Debugger.ReadClass = .data,
+access_context: access_types.Provenance = .{},
+read_class: access_types.ReadClass = .data,
 
-memory: [512 * 1024]u8 = @splat(0),
+ram: HubRam = .{},
 cogs: [8]Cog,
 counter: u64 = 0,
 io: IO,
+/// Host configuration is fixed for this initialized simulation, including across firmware resets.
+system_configuration: SystemConfiguration,
 cordic: Cordic = .{},
 random: Random = .{},
 debug: struct {
@@ -51,16 +58,29 @@ debug: struct {
     locked: bool = false,
 } = .{},
 
-trace_writer: ?*std.Io.Writer = null,
 vcd: ?*Vcd = null,
-trace_lines_left: u32 = 10000,
-fault: ?Cog.Fault = null,
+issues: Issue.Collection = .{},
+/// Actual committed writes for same-edge writer conflict detection.
+edge_writes: [8 * max_cog_edge_writes]Issue.Participant = undefined,
+edge_write_count: usize = 0,
+/// One single-port operation per physical slice on the current edge.
+ram_ports: [8]?HubTransfer = @splat(null),
+/// Accepted RAM byte writes on this edge, reconciled after every physical producer.
+ram_writes: [8 * 4]reads.CommittedWrite = undefined,
+ram_write_count: usize = 0,
+/// The shared command bus accepts one cog's command per edge.
+command_issuer: ?u3 = null,
 locks: [16]Lock = undefined,
 /// True only while step() processes a clock edge; direct semantic calls apply shared effects immediately.
 clocking: bool = false,
 /// HUBSET reset is consumed at the next step boundary or immediately after its issuing cog.
 reset_requested: bool = false,
-pending_starts: [8]?struct { provenance: Debugger.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
+pending_starts: [8]?struct { provenance: access_types.Provenance, at: u64, address: u32, ptra: u32, load: bool, command_clock: u64 } = @splat(null),
+
+comptime {
+    std.debug.assert(@sizeOf(Cog) <= 32 * 1024);
+    std.debug.assert(@sizeOf(Hub) <= 1280 * 1024);
+}
 
 pub const Lock = struct {
     allocated: bool = false,
@@ -69,14 +89,32 @@ pub const Lock = struct {
     id: u4,
 };
 
+/// Shared observation budget for writes from one cog on a completed edge.
+pub const max_cog_edge_writes = 32;
+
+/// Distinguish physical producers; consecutive beats of one memory instruction may share write lanes.
+pub const TransferOrigin = union(enum) {
+    startup: u3,
+    fifo: u3,
+    memory: access_types.Provenance,
+};
+const HubTransfer = struct {
+    origin: TransferOrigin,
+    access: access_types.Access,
+    address: u18,
+    lanes: std.StaticBitSet(4),
+    accepted: HubRam.LaneMask,
+};
+
 /// Scheduled delays are below half the counter period. Compare modulo 2^64
 /// so a deadline after rollover remains in the future until its clock arrives.
 pub fn clock_reached(clock: u64, deadline: u64) bool {
     return clock -% deadline < (@as(u64, 1) << 63);
 }
 
-/// Initialize all shared resources and stopped cogs, binding each cog back to this hub.
-pub fn init(hub: *Hub) void {
+/// Initialize all shared resources and stopped cogs, binding cogs and I/O ports to this hub.
+pub fn init(hub: *Hub, configuration: SystemConfiguration) error{InvalidConfiguration}!void {
+    try configuration.validate();
     hub.* = .{
         .cogs = .{
             .init(hub, 0),
@@ -88,9 +126,12 @@ pub fn init(hub: *Hub) void {
             .init(hub, 6),
             .init(hub, 7),
         },
-        .io = .{},
+        .io = .{ .clock = .init(configuration.clocks) },
+        .system_configuration = configuration,
     };
-    @memcpy(hub.memory[0x7c000..], boot_rom);
+    hub.io.connect();
+    hub.io.analog_pads.init(&hub.system_configuration);
+    @memcpy(hub.ram.bytes()[0x7c000..], boot_rom);
     for (&hub.locks, 0..) |*lock, i| {
         lock.* = .{ .id = @intCast(i) };
     }
@@ -112,14 +153,23 @@ pub fn configure(hub: *Hub, mode: u32) void {
             };
     } else if (mode & 0xf000_0000 == 0x4000_0000) {
         hub.io.configureFilter(mode);
-    } else if (!hub.io.setClock(mode)) {
-        std.log.warn("unsupported HUBSET value 0x{x:0>8}", .{mode});
+    } else {
+        const previous_coverage = hub.io.clock.coverage;
+        const previous_unsafe = hub.io.clock.unsafe_postdivider_up;
+        if (!hub.io.setClock(mode)) {
+            hub.report(.{ .unsupported_hubset = mode }, hub.access_context);
+        } else if (previous_coverage != hub.io.clock.coverage and hub.io.clock.coverage == .uncharacterized) {
+            hub.report(.{ .uncharacterized_pll = mode }, hub.access_context);
+        }
+        if (!previous_unsafe and hub.io.clock.unsafe_postdivider_up) {
+            hub.report(.{ .unsafe_postdivider = mode }, hub.access_context);
+        }
     }
 }
 
 /// Attach a caller-owned trace writer and capture the initial state.
-pub fn attachVcd(hub: *Hub, vcd: *Vcd) !void {
-    try vcd.capture(hub);
+pub fn attachVcd(hub: *Hub, vcd: *Vcd) void {
+    vcd.capture(hub, 0);
     hub.vcd = vcd;
 }
 
@@ -149,54 +199,207 @@ pub fn send_attention(hub: *Hub, mask: u32) void {
     }
 }
 
-/// Resolve a physical read to a backing RAM byte, accounting for protection and the upper mirror.
-pub fn readBackingAddress(hub: *const Hub, address: u32) ?u19 {
-    const byte_address = address & 0xfffff;
-    if (byte_address < (if (hub.debug.protected) @as(u32, 0x7c000) else 0x80000) or byte_address >= 0xfc000)
-        return @truncate(byte_address);
-    return null;
+/// Reserve the rotating single-port slice; merge only disjoint pieces of one write beat.
+fn claim_hub_access(hub: *Hub, origin: TransferOrigin, access: access_types.Access, address: u32, size: u3) void {
+    if (!hub.clocking)
+        return;
+    const decoded = HubRam.Address.init(address);
+    std.debug.assert(size > 0 and @as(u3, decoded.lane) + size <= 4);
+    const requester = switch (origin) {
+        .startup, .fifo => |id| id,
+        .memory => |provenance| provenance.cog orelse @panic("RAM beat has no transport requester"),
+    };
+    std.debug.assert(decoded.slice == (hub.counter +% requester) % 8);
+    const backing: u20 = decoded.backing() orelse decoded.value();
+    const long_address: u18 = @intCast(backing / 4);
+    var lanes = HubRam.LaneMask.initEmpty();
+    lanes.setRangeValue(.{ .start = decoded.lane, .end = @as(usize, decoded.lane) + size }, true);
+    const port = &hub.ram_ports[decoded.slice];
+    if (port.*) |*claimed| {
+        std.debug.assert((origin == .memory or origin == .fifo) and access == .write and
+            claimed.access == .write and claimed.address == long_address and
+            std.meta.eql(origin, claimed.origin) and lanes.intersectWith(claimed.lanes).count() == 0);
+        claimed.lanes.setUnion(lanes);
+    } else {
+        port.* = .{ .origin = origin, .access = access, .address = long_address, .lanes = lanes, .accepted = .initEmpty() };
+    }
 }
 
-/// Read little-endian bytes through the 20-bit RAM/hole/mirror map, wrapping each byte address.
+pub const ReadBeat = struct { origin: TransferOrigin, address: u32, size: u3 };
+pub const ReadResult = struct { value: u32, sample: reads.Sample };
+pub const WriteBeat = struct {
+    origin: TransferOrigin,
+    address: u32,
+    value: u32,
+    size: u3,
+    masked: bool,
+    authorization: WriteOrigin,
+};
+
+/// Issue one selected physical long; callers retain the returned sampling metadata.
+pub fn readHubBeat(hub: *Hub, request: ReadBeat) ReadResult {
+    const address = HubRam.Address.init(request.address);
+    std.debug.assert(@as(u3, address.lane) + request.size <= 4);
+    hub.claim_hub_access(request.origin, .read, request.address, request.size);
+    var failures: ReadFailures = .{};
+    return hub.readLong(address, request.size, &failures);
+}
+
+/// Commit one physical write with captured authorization and explicit byte enables.
+pub fn writeHubBeat(hub: *Hub, request: WriteBeat) void {
+    const address = HubRam.Address.init(request.address);
+    std.debug.assert(@as(u3, address.lane) + request.size <= 4);
+    hub.claim_hub_access(request.origin, .write, request.address, request.size);
+    hub.write_memory_from(request.address, request.value, request.size, request.masked, request.authorization);
+}
+
+const ReadFailures = struct { hole: bool = false, protected: bool = false };
+
+/// Sample selected lanes after one address/protection decode, coalescing logical read failures.
+fn readLong(hub: *Hub, address: HubRam.Address, size: u3, failures: *ReadFailures) ReadResult {
+    const resolution = HubRam.resolve(address, hub.debug.protected, .read, false);
+    var result: ReadResult = .{
+        .value = 0,
+        .sample = .{ .address = address.aligned().value(), .clock = hub.counter, .readable = .initEmpty() },
+    };
+    switch (resolution) {
+        .ram => |physical| {
+            result.sample.readable = .initFull();
+            const word = hub.ram.read(physical);
+            for (0..size) |i| {
+                const byte = word[address.lane + i];
+                result.value |= @as(u32, byte) << @intCast(i * 8);
+                hub.observe(.hub, null, physical.backing().? + @as(u19, @intCast(i)), .read, byte, hub.read_class, .ram);
+            }
+        },
+        .hole, .protected => {
+            const reported = switch (resolution) {
+                .hole => &failures.hole,
+                .protected => &failures.protected,
+                .ram => unreachable,
+            };
+            if (hub.clocking and !reported.*) {
+                reported.* = true;
+                const read: Issue.MemoryRead = .{ .address = address.value() };
+                hub.report(switch (resolution) {
+                    .hole => .{ .memory_hole_read = read },
+                    .protected => .{ .memory_protected_read = read },
+                    .ram => unreachable,
+                }, hub.access_context);
+            }
+        },
+    }
+    return result;
+}
+
+/// Compose an untimed logical span from decoded physical longs, wrapping the twenty address lines.
 pub fn read_memory(hub: *Hub, address: u32, size: u3) u32 {
+    std.debug.assert(size <= 4);
     var value: u32 = 0;
-    for (0..size) |i| {
-        const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
-        if (hub.readBackingAddress(byte_address)) |backing| {
-            const byte = hub.memory[backing];
-            value |= @as(u32, byte) << @intCast(i * 8);
-            hub.observe(.hub, null, backing, .read, byte, hub.read_class, .ram);
-        }
+    var failures: ReadFailures = .{};
+    var offset: u3 = 0;
+    while (offset < size) {
+        const decoded = HubRam.Address.init(address +% offset);
+        const count: u3 = @min(size - offset, 4 - @as(u3, decoded.lane));
+        value |= hub.readLong(decoded, count, &failures).value << @intCast(@as(u5, offset) * 8);
+        offset += count;
     }
     return value;
 }
 
-/// Write through the 20-bit hub map; ignore holes and optionally preserve bytes where the source is zero.
+/// Write an application span through the decoded long and byte-enable interface.
 pub fn write_memory(hub: *Hub, address: u32, value: u32, size: u3, masked: bool) void {
     hub.write_memory_from(address, value, size, masked, .application);
 }
 
-/// Apply byte-level aliases and protection using the transfer's original authorization.
+/// Apply captured authorization once per long and zero-byte masking per selected lane.
 pub fn write_memory_from(hub: *Hub, address: u32, value: u32, size: u3, masked: bool, origin: WriteOrigin) void {
-    for (0..size) |i| {
-        const byte: u8 = @truncate(value >> @intCast(i * 8));
-        const byte_address = (address +% @as(u32, @intCast(i))) & 0xfffff;
-        const mapped = byte_address < 0x80000 or byte_address >= 0xfc000;
-        const authorized = !hub.debug.protected or
-            byte_address < 0x7c000 or
-            (byte_address >= 0xfc000 and
-                origin == .debug);
-        if (mapped and authorized and (!masked or byte != 0)) {
-            hub.memory[byte_address & 0x7ffff] = byte;
-            hub.observe(.hub, null, byte_address & 0x7ffff, .write, byte, .data, .ram);
+    std.debug.assert(size <= 4);
+    var offset: u3 = 0;
+    while (offset < size) {
+        const decoded = HubRam.Address.init(address +% offset);
+        const count: u3 = @min(size - offset, 4 - @as(u3, decoded.lane));
+        const resolution = HubRam.resolve(decoded, hub.debug.protected, .write, origin == .debug);
+        var lanes = HubRam.LaneMask.initEmpty();
+        var word: HubRam.Long = @splat(0);
+        for (0..count) |i| {
+            const byte: u8 = @truncate(value >> @intCast((offset + i) * 8));
+            if (masked and byte == 0)
+                continue;
+            switch (resolution) {
+                .ram => |physical| {
+                    if (hub.clocking) {
+                        std.debug.assert(hub.ram_write_count < hub.ram_writes.len);
+                        hub.ram_writes[hub.ram_write_count] = .{
+                            .address = physical.backing().? + @as(u19, @intCast(i)),
+                            .value = byte,
+                            .provenance = hub.access_context,
+                        };
+                        hub.ram_write_count += 1;
+                        if (hub.ram_ports[decoded.slice]) |*port| {
+                            std.debug.assert(port.access == .write);
+                            port.accepted.set(decoded.lane + i);
+                        }
+                    }
+                    lanes.set(decoded.lane + i);
+                    word[decoded.lane + i] = byte;
+                    hub.observe(.hub, null, physical.backing().? + @as(u19, @intCast(i)), .write, byte, .data, .ram);
+                },
+                .hole, .protected => {
+                    if (hub.clocking) {
+                        const write: Issue.MemoryWrite = .{
+                            .address = decoded.value() + @as(u20, @intCast(i)),
+                            .value = byte,
+                        };
+                        hub.report(switch (resolution) {
+                            .hole => .{ .memory_hole_write = write },
+                            .protected => .{ .memory_protected_write = write },
+                            .ram => unreachable,
+                        }, hub.access_context);
+                    }
+                },
+            }
         }
+        if (resolution == .ram) {
+            hub.ram.write(resolution.ram, word, lanes);
+        }
+        offset += count;
     }
 }
 
 /// Report simulator traffic only. Host inspection and edits run outside clocking.
-pub fn observe(hub: *Hub, space: Debugger.Space, cog: ?u3, address: u32, access: Debugger.Access, value: u32, class: Debugger.ReadClass, storage: Debugger.Storage) void {
+pub fn observe(hub: *Hub, space: access_types.Space, cog: ?u3, address: u32, access: access_types.Access, value: u32, class: access_types.ReadClass, storage: access_types.Storage) void {
     if (!hub.clocking)
         return;
+    if (access == .write and space != .hub) {
+        const participant: Issue.Participant = .{
+            .provenance = hub.access_context,
+            .space = space,
+            .cog = cog,
+            .address = address,
+            .access = access,
+            .value = value,
+            .class = class,
+            .storage = storage,
+        };
+        for (hub.edge_writes[0..hub.edge_write_count]) |previous| {
+            if (previous.space == space and previous.cog == cog and previous.address == address and
+                !std.meta.eql(previous.provenance, participant.provenance))
+            {
+                const writers: Issue.Writers = .{ .first = previous, .second = participant };
+                const kind: Issue.Kind = switch (space) {
+                    .registers => .{ .reg_write_conflict = writers },
+                    .lut => .{ .lut_write_conflict = writers },
+                    .hub => unreachable,
+                };
+                hub.report(kind, participant.provenance);
+            }
+        }
+        if (hub.edge_write_count == hub.edge_writes.len)
+            @panic("simulation physical write bound exceeded");
+        hub.edge_writes[hub.edge_write_count] = participant;
+        hub.edge_write_count += 1;
+    }
     if (hub.debugger) |debugger| {
         debugger.observe(.{
             .watchpoint = 0,
@@ -217,19 +420,29 @@ pub fn observe(hub: *Hub, space: Debugger.Space, cog: ?u3, address: u32, access:
 /// All cogs observe previous-edge writes before any cog executes on this edge.
 /// Reset returns only after init() has restored the entire hub and stopped every cog.
 pub fn step(hub: *Hub) StepResult {
+    hub.issues.clear();
+    hub.edge_write_count = 0;
+    hub.ram_ports = @splat(null);
+    hub.ram_write_count = 0;
+    hub.command_issuer = null;
     if (hub.reset_requested) {
-        hub.init();
+        hub.firmwareReset();
         return .reset;
     }
     if (hub.debugger) |debugger| {
         if (!debugger.beforeClock(hub))
-            return if (hub.fault != null or debugger.stop == .fault or debugger.stop == .allocation_failure)
-                .trap
-            else
-                .breakpoint;
+            return .breakpoint;
     }
-    if (hub.fault != null)
-        return .trap;
+    const interval = hub.io.clock.step();
+    if (interval.quiet != 0) {
+        hub.io.advanceQuiet(hub, IO.Clock.secondsOf(interval.quiet));
+        if (hub.vcd) |vcd| {
+            vcd.advanceQuiet(hub, interval.quiet);
+        }
+    }
+    if (interval.period == 0) {
+        return .normal;
+    }
     hub.clocking = true;
     defer {
         hub.clocking = false;
@@ -238,9 +451,10 @@ pub fn step(hub: *Hub) StepResult {
     }
 
     var lut_writes: [8]@TypeOf(hub.cogs[0].writeback.lut) = undefined;
-    var lut_provenance: [8]Debugger.Provenance = undefined;
+    var lut_provenance: [8]access_types.Provenance = undefined;
     for (&hub.cogs, &lut_writes) |*cog, *write| {
         cog.streamer.lut_write = null;
+        cog.streamer.displaced_capture = null;
         write.* = cog.writeback.lut;
         lut_provenance[cog.id] = cog.writeback.provenance;
     }
@@ -258,12 +472,41 @@ pub fn step(hub: *Hub) StepResult {
         if (write) |value| {
             const other = cog.other();
             if (other.lut_sharing) {
-                other.streamer.lut_write = value.address;
+                other.streamer.lut_write = .{
+                    .provenance = lut_provenance[cog.id],
+                    .space = .lut,
+                    .cog = other.id,
+                    .address = value.address,
+                    .access = .write,
+                    .value = value.value,
+                    .class = .data,
+                    .storage = .ram,
+                };
             }
             const own = lut_writes[other.id];
             if (other.lut_sharing and own != null and own.?.address == value.address) {
-                other.lut_collision = .{ .clock = hub.counter, .address = value.address };
-                other.trace_collision(value.address, .lut_write);
+                hub.report(.{ .lut_write_conflict = .{
+                    .first = .{
+                        .provenance = lut_provenance[cog.id],
+                        .space = .lut,
+                        .cog = other.id,
+                        .address = value.address,
+                        .access = .write,
+                        .value = value.value,
+                        .class = .data,
+                        .storage = .ram,
+                    },
+                    .second = .{
+                        .provenance = lut_provenance[other.id],
+                        .space = .lut,
+                        .cog = other.id,
+                        .address = own.?.address,
+                        .access = .write,
+                        .value = own.?.value,
+                        .class = .data,
+                        .storage = .ram,
+                    },
+                } }, lut_provenance[cog.id]);
             }
             if (other.lut_sharing and (own == null or own.?.address != value.address)) {
                 other.lut[value.address] = value.value;
@@ -276,12 +519,20 @@ pub fn step(hub: *Hub) StepResult {
     for (&hub.cogs) |*cog| {
         if (cog.hub_writeback) |write| {
             hub.access_context = write.provenance;
-            hub.write_memory_from(write.address, write.value, write.size, write.masked, write.origin);
+            hub.writeHubBeat(.{
+                .origin = .{ .memory = write.provenance },
+                .address = write.address,
+                .value = write.value,
+                .size = write.size,
+                .masked = write.masked,
+                .authorization = write.origin,
+            });
             cog.hub_writeback = null;
         }
     }
     for (&hub.pending_starts, 0..) |*pending, id| {
         if (pending.*) |start| {
+            std.debug.assert(clock_reached(start.at, hub.counter));
             if (start.at == hub.counter) {
                 pending.* = null;
                 hub.access_context = start.provenance;
@@ -290,7 +541,7 @@ pub fn step(hub: *Hub) StepResult {
                     .ptra = start.ptra,
                     .load_image = start.load,
                     .command_clock = start.command_clock,
-                }) catch unreachable;
+                });
             }
         }
     }
@@ -309,6 +560,9 @@ pub fn step(hub: *Hub) StepResult {
         hub.read_class = .data;
         cog.clock_memory();
     }
+    for (&hub.cogs) |*cog| {
+        cog.finish_reads();
+    }
     if (hub.cordic.step()) |delivery| {
         hub.cogs[@intFromEnum(delivery.cog)].cordic_result.accept(delivery);
     }
@@ -319,7 +573,7 @@ pub fn step(hub: *Hub) StepResult {
         hub.read_class = .data;
         cog.clock_command();
         if (hub.reset_requested) {
-            hub.init();
+            hub.firmwareReset();
             return .reset;
         }
     }
@@ -329,13 +583,13 @@ pub fn step(hub: *Hub) StepResult {
         cog.dacs = cog.converter.step(cog.raw_dacs);
     }
     hub.io.step(hub);
-    if (hub.fault == null) {
+    {
         for (&hub.cogs) |*cog| {
             hub.access_context = cog.provenance();
             hub.read_class = .data;
             cog.step();
             if (hub.reset_requested) {
-                hub.init();
+                hub.firmwareReset();
                 return .reset;
             }
         }
@@ -343,24 +597,39 @@ pub fn step(hub: *Hub) StepResult {
     for (&hub.cogs) |*cog| {
         cog.advance_fifo_write_ready();
         cog.advance_read_bus();
+        cog.assert_read_ownership();
     }
     hub.io.advance_delays();
 
-    if (hub.vcd) |vcd|
-        vcd.capture(hub) catch |err| {
-            std.log.err("VCD export failed: {t}", .{err});
-            hub.fault = .{ .cog = 0, .pc = 0, .instruction = 0, .result = .{ .illegal = "VCD export failed" } };
-        };
     hub.random.step();
+    if (std.debug.runtime_safety) {
+        const pending = hub.cordic.pending_counts();
+        for (&hub.cogs, pending) |*cog, count| {
+            std.debug.assert(cog.cordic_result.pending == count);
+        }
+    }
     hub.counter +%= 1;
+    if (hub.vcd) |vcd| {
+        vcd.capture(hub, interval.period);
+    }
     if (hub.debugger) |debugger| {
         debugger.afterClock(hub);
-        if (debugger.stop == .allocation_failure)
-            return .trap;
-        if (hub.fault == null and debugger.stop != .none)
+        if (debugger.stop != .none)
             return .breakpoint;
     }
-    return if (hub.fault != null) .trap else .normal;
+    return .normal;
+}
+
+/// Append an architectural issue without changing execution or allocating.
+pub fn report(hub: *Hub, kind: Issue.Kind, provenance: access_types.Provenance) void {
+    hub.issues.append(.{ .clock = hub.counter, .kind = kind, .provenance = provenance });
+}
+
+/// Reset chip state while retaining reports already detected on this edge.
+fn firmwareReset(hub: *Hub) void {
+    const issues = hub.issues;
+    hub.init(hub.system_configuration) catch unreachable;
+    hub.issues = issues;
 }
 
 /// Return whether any cog is executing or waiting for startup to complete.
@@ -381,11 +650,19 @@ pub const StartCogOptions = struct {
 };
 
 /// Only the low 20 source bits select memory/PC; PTRB receives all 32 bits.
-pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {
+pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) void {
+    if (hub.pending_starts[index]) |previous| {
+        hub.report(.{ .cog_start_replaced = .{
+            .previous = previous.provenance,
+            .replacement = hub.access_context,
+            .target = index,
+        } }, hub.access_context);
+    }
     const cog = &hub.cogs[index];
     cog.reset();
     const command_clock = options.command_clock orelse hub.counter;
-    const base = options.hub_address & 0xffffc;
+    // Loaded cog images retain byte alignment; the ROM's TAQOZ image starts at $FED42.
+    const base = options.hub_address & 0xfffff;
     if (options.load_image) {
         if (options.clocked) {
             cog.startup = .{
@@ -419,6 +696,7 @@ pub fn start_cog(hub: *Hub, index: u3, options: StartCogOptions) !void {
             };
             if (cog.exec_mode == .hub)
                 cog.fifo_state.engine = .{
+                    .direction = .{ .read = .{} },
                     .byte_offset = @truncate(cog.pc),
                     .address = cog.pc & 0xffffc,
                     .ready_at = command_clock +% 22,
@@ -436,7 +714,7 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
         _ = hub.step();
@@ -464,9 +742,9 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     // On one edge, cog 0 releases the pin and cog 1 takes over. The OR stays
     // high; a sequential transient must not reset the smart pin.
     hub.cogs[1].writeback.count = 1;
-    hub.cogs[1].writeback.writes[0] = .{ .reg = .DIRB, .value = 1 << 30 };
+    hub.cogs[1].writeback.writes[0] = .{ .provenance = .{ .cog = 1 }, .reg = .DIRB, .value = 1 << 30 };
     hub.cogs[0].writeback.count = 1;
-    hub.cogs[0].writeback.writes[0] = .{ .reg = .DIRB, .value = 0 };
+    hub.cogs[0].writeback.writes[0] = .{ .provenance = .{ .cog = 0 }, .reg = .DIRB, .value = 0 };
     _ = hub.step();
     try std.testing.expect(hub.io.pins[62].outputs.scheduled);
     hub.cogs[1].write_reg(.DIRB, 0);
@@ -493,7 +771,7 @@ test "UART DIR changes once per edge across register writes, reset and simultane
     hub.cogs[0].write_reg(.DIRB, 1 << 31);
     _ = hub.step();
     var reader = std.Io.Reader.fixed("z");
-    var source: IO.DataSource = .{ .reader = &reader };
+    var source: IO.DataSource = .{ .endpoint = .{ .reader = &reader } };
     hub.io.pins[63].smart.rx_mode = .{ .emulated = &source };
     _ = hub.step();
     try std.testing.expectEqual(@as(usize, 0), reader.bufferedLen());
@@ -508,11 +786,11 @@ test "COGSTOP aborts a UART frame before its completion edge" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
-    var sink: IO.DataSink = .{ .writer = &output.writer };
+    var sink: IO.DataSink = .{ .endpoint = .{ .writer = &output.writer } };
     const pin = &hub.io.pins[62];
     pin.smart.tx_mode = .{ .emulated = &sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
@@ -553,7 +831,7 @@ test "event delivery coalesces without crossing cogs and reset cancels queued la
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const events = std.enums.values(EventId);
     for (events) |event| {
         hub.cogs[0].signal_event(event);
@@ -597,7 +875,7 @@ test "pending events arrive during a timed wait" {
     defer std.testing.allocator.destroy(hub);
 
     for (std.enums.values(EventId)) |event| {
-        hub.init();
+        try hub.init(.ideal);
         const cog = &hub.cogs[0];
         cog.exec_mode = .cog;
         cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_161F }; // WAITX #11.
@@ -617,7 +895,7 @@ test "pending events keep their two-clock delay across counter rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 1;
     hub.clocking = true;
     hub.cogs[0].signal_event(.QMT);
@@ -635,13 +913,13 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
     defer std.testing.allocator.destroy(hub);
 
     for (0..8) |offset| {
-        hub.init();
+        try hub.init(.ideal);
         hub.counter = std.math.maxInt(u64) - offset;
         const fifo_address: u32 = @intCast((hub.counter & 7) * 4);
         const read_address: u32 = @intCast(((hub.counter +% 1) & 7) * 4);
         hub.write_memory(fifo_address, 0x1122_3344, 4, false);
         hub.write_memory(read_address, 0x5566_7788, 4, false);
-        hub.cogs[0].fifo_state.engine = .{ .address = @intCast(fifo_address), .byte_offset = 0, .ready_at = hub.counter };
+        hub.cogs[0].fifo_state.engine = .{ .direction = .{ .read = .{} }, .address = @intCast(fifo_address), .byte_offset = 0, .ready_at = hub.counter };
         hub.cogs[1].memory_transfer = .{
             .provenance = .{ .cog = 1 },
             .address = read_address,
@@ -660,7 +938,7 @@ test "FIFO and hub reads keep five-clock responses across counter rollover" {
         }
         _ = hub.step();
         try std.testing.expectEqual(@as(usize, 1), hub.cogs[0].fifo_state.engine.?.count);
-        try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[0].fifo_state.engine.?.words[0]);
+        try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.cogs[0].peek_fifo(0).? | (@as(u32, hub.cogs[0].peek_fifo(1).?) << 8) | (@as(u32, hub.cogs[0].peek_fifo(2).?) << 16) | (@as(u32, hub.cogs[0].peek_fifo(3).?) << 24));
         try std.testing.expectEqual(@as(?u32, 0x5566_7788), hub.cogs[1].memory_transfer.?.direction.read.value);
     }
 }
@@ -669,7 +947,7 @@ test "wait deadlines remain future across counter rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 4;
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
@@ -688,12 +966,12 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 10;
     var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer output.deinit();
 
-    var terminal_sink: IO.DataSink = .{ .writer = &output.writer };
+    var terminal_sink: IO.DataSink = .{ .endpoint = .{ .writer = &output.writer } };
     hub.io.pins[62].smart.tx_mode = .{ .emulated = &terminal_sink };
     hub.io.enqueue(hub, .{ .mask = @as(u64, 1) << 62, .kind = .configure, .value = 0x7c, .cog = 0, .pc = 0, .instruction = 0 });
     for (0..IO.command_delay + 1) |_| {
@@ -715,14 +993,14 @@ test "UART and image startup finish at their scheduled clocks across rollover" {
     _ = hub.step();
     try std.testing.expectEqualStrings("x", output.written());
 
-    hub.init();
+    try hub.init(.ideal);
     hub.counter = std.math.maxInt(u64) - 4;
     // The first loaded instruction stops cog 1; the other words are data.
     hub.write_memory(0x1000, 0xFD64_0203, 4, false);
     for (1..504) |i| {
         hub.write_memory(@intCast(0x1000 + i * 4), @intCast(i), 4, false);
     }
-    try hub.start_cog(1, .{ .hub_address = 0x1000 });
+    hub.start_cog(1, .{ .hub_address = 0x1000 });
     for (0..550) |_| {
         _ = hub.step();
     }
@@ -738,7 +1016,7 @@ test "pattern conditions are sampled while a cog waits" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
@@ -758,7 +1036,7 @@ test "selectable pin samples retain delayed notifications during waits" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.pipeline[3] = .{ .pc = 0, .instr = 0xFD64_C81F }; // WAITX #100.
@@ -799,8 +1077,8 @@ test "cog restart clears pending interrupts and controller state" {
     defer std.testing.allocator.destroy(hub);
 
     for (std.enums.values(Cog.InterruptLevel)) |level| {
-        hub.init();
-        try hub.start_cog(3, .{ .hub_address = 0x4000, .load_image = false, .clocked = false });
+        try hub.init(.ideal);
+        hub.start_cog(3, .{ .hub_address = 0x4000, .load_image = false, .clocked = false });
         const cog = &hub.cogs[3];
         try std.testing.expect(cog.started_no_load);
         try std.testing.expectEqual(@as(u32, 1), cog.interrupt_status());
@@ -809,7 +1087,7 @@ test "cog restart clears pending interrupts and controller state" {
         _ = hub.step();
         cog.interrupts.stalled = true;
         cog.trigger_interrupt(level);
-        try hub.start_cog(3, .{ .clocked = false });
+        hub.start_cog(3, .{ .clocked = false });
         try std.testing.expect(!cog.started_no_load);
         try std.testing.expect(!cog.interrupts.stalled);
         try std.testing.expectEqual(Cog.InterruptState.idle, cog.interrupts.levels.get(level).state);
@@ -821,7 +1099,7 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     var expected = hub.random;
     hub.counter = std.math.maxInt(u64) - 3;
     for (0..16) |_| {
@@ -842,7 +1120,7 @@ test "one shared RNG advances through stopped clocks, rollover and slotted HUBSE
 
     for (0..8) |id| {
         for (0..8) |phase| {
-            hub.init();
+            try hub.init(.ideal);
             for (0..16) |_| {
                 _ = hub.step();
             }
@@ -870,8 +1148,8 @@ test "ROM cache aliases, byte protection, masked wrapping and configuration lock
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
-    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    try hub.init(.ideal);
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.ram.bytes()[0x7c000..]);
     try std.testing.expectEqual(hub.read_memory(0x7c000, 4), hub.read_memory(0xfc000, 4));
     hub.write_memory(0x7ffff, 0x1122_3344, 4, false);
     try std.testing.expectEqual(@as(u32, 0x44), hub.read_memory(0xfffff, 1));
@@ -885,12 +1163,12 @@ test "ROM cache aliases, byte protection, masked wrapping and configuration lock
     hub.configure(0x2000_0000);
     try std.testing.expect(hub.debug.protected and hub.debug.locked);
     try std.testing.expectEqual(@as(u8, 255), hub.debug.enables);
-    try hub.start_cog(0, .{ .clocked = false });
+    hub.start_cog(0, .{ .clocked = false });
     try std.testing.expect(hub.debug.locked);
     try std.testing.expectEqual(Cog.InterruptState.pending, hub.cogs[0].debug.state);
-    hub.init();
+    try hub.init(.ideal);
     try std.testing.expect(!hub.debug.locked);
-    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.ram.bytes()[0x7c000..]);
 }
 
 test "debug ROM saves and restores sixteen registers for all eight cogs" {
@@ -898,13 +1176,13 @@ test "debug ROM saves and restores sixteen registers for all eight cogs" {
     defer std.testing.allocator.destroy(hub);
 
     for (0..8) |id| {
-        hub.init();
+        try hub.init(.ideal);
         hub.configure(0x2000_00ff);
         const cog = &hub.cogs[id];
         const base: u32 = 0xff800 + ((15 ^ @as(u32, @intCast(id))) << 7);
         hub.write_memory(base + 0x40, 0xFD64_2036, 4, false); // BRK #16.
         hub.write_memory(base + 0x44, 0xFD80_01fd, 4, false); // JMP #$1FD.
-        try hub.start_cog(@intCast(id), .{ .load_image = false, .clocked = false, .ptra = 0x1234 });
+        hub.start_cog(@intCast(id), .{ .load_image = false, .clocked = false, .ptra = 0x1234 });
         cog.registers.values[0] = 0xF604_2807; // MOV r20,#7.
         for (1..16) |reg| {
             cog.registers.values[reg] = 0;
@@ -915,7 +1193,7 @@ test "debug ROM saves and restores sixteen registers for all eight cogs" {
                 break;
             }
         }
-        try std.testing.expect(hub.fault == null);
+        try std.testing.expect(hub.issues.len == 0);
         try std.testing.expectEqual(Cog.InterruptState.idle, cog.debug.state);
         try std.testing.expectEqual(@as(u32, 7), cog.registers.values[20]);
         try std.testing.expectEqual(@as(u32, 0xF604_2807), hub.read_memory(base, 4));
@@ -929,16 +1207,18 @@ test "deferred write authorization survives a debug state transition" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.configure(0x2001_0001);
     const before = hub.read_memory(0xfc000, 4);
     const cog = &hub.cogs[0];
     cog.debug.state = .active;
     cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0xdead_beef, .size = 4, .masked = false, .origin = .application };
+    hub.counter = cog.memory_grant_after(0xfc000, 0);
     _ = hub.step();
     try std.testing.expectEqual(before, hub.read_memory(0xfc000, 4));
     cog.debug.state = .idle;
     cog.hub_writeback = .{ .provenance = cog.provenance(), .address = 0xfc000, .value = 0x1234_5678, .size = 4, .masked = false, .origin = .debug };
+    hub.counter = cog.memory_grant_after(0xfc000, 0);
     _ = hub.step();
     try std.testing.expectEqual(@as(u32, 0x1234_5678), hub.read_memory(0xfc000, 4));
 }
@@ -947,12 +1227,12 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
-    @memset(&hub.memory, 0xaa);
+    try hub.init(.ideal);
+    @memset(hub.ram.bytes(), 0xaa);
     hub.counter = 123;
     hub.debug = .{ .enables = 0xff, .protected = true, .locked = true };
     hub.random.seed(0x87654321);
-    hub.io.setExternal(@enumFromInt(0), .one);
+    try hub.io.setExternal(@enumFromInt(0), .high);
     hub.io.pins[0].smart.registers.x = 99;
     hub.locks[0].allocated = true;
     hub.locks[0].taken = true;
@@ -970,23 +1250,23 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     defer trace.deinit();
 
     var vcd: Vcd = .{ .writer = &trace.writer };
-    hub.trace_writer = &trace.writer;
     hub.vcd = &vcd;
     hub.debugger = &debugger;
     hub.configure(0x1fff_ffff);
     try std.testing.expectEqual(StepResult.reset, hub.step());
     try std.testing.expectEqual(@as(u64, 0), hub.counter);
-    try std.testing.expectEqual(@as(u64, 20_000_000), hub.io.clock_frequency);
+    try std.testing.expectEqual(@as(f64, 24_000_000), hub.io.clock.frequency());
     try std.testing.expectEqual(@as(u8, 0), hub.debug.enables);
     try std.testing.expect(!hub.debug.protected and !hub.debug.locked);
     try std.testing.expectEqualDeep(Random{}, hub.random);
-    try std.testing.expectEqual(IO.Signal.z, hub.io.external[0]);
+    try std.testing.expectEqualDeep(IO.Pad.Source.float, hub.io.external[0]);
+    try std.testing.expect(hub.io.getExternal(@enumFromInt(0)) == null);
     try std.testing.expectEqual(@as(u32, 0), hub.io.pins[0].smart.registers.x);
     try std.testing.expect(!hub.locks[0].allocated and !hub.locks[0].taken);
-    try std.testing.expect(hub.debugger == null and hub.trace_writer == null and hub.vcd == null);
-    try std.testing.expect(hub.fault == null and !hub.reset_requested and !hub.clocking);
-    try std.testing.expect(std.mem.allEqual(u8, hub.memory[0..0x7c000], 0));
-    try std.testing.expectEqualSlices(u8, boot_rom, hub.memory[0x7c000..]);
+    try std.testing.expect(hub.debugger == null and hub.vcd == null);
+    try std.testing.expect(hub.issues.len == 0 and !hub.reset_requested and !hub.clocking);
+    try std.testing.expect(std.mem.allEqual(u8, hub.ram.bytes()[0..0x7c000], 0));
+    try std.testing.expectEqualSlices(u8, boot_rom, hub.ram.bytes()[0x7c000..]);
     for (&hub.cogs, 0..) |*cog, id| {
         try std.testing.expectEqual(Cog.ExecMode.stopped, cog.exec_mode);
         try std.testing.expect(cog.hub == hub and cog.id == id);
@@ -1000,7 +1280,7 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
 
 test "converter clocks independently of execution and cog reset clears only its own DAC state" {
     var hub: Hub = undefined;
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.streamer.apply(cog, .{ .dacs = 0x7856_3412 });
     cog.converter.apply(.{ .cy = 0x8000_0001 });
@@ -1020,4 +1300,67 @@ test "converter clocks independently of execution and cog reset clears only its 
     try std.testing.expectEqual([4]u8{ 0, 0, 0, 0 }, cog.raw_dacs);
     try std.testing.expect(!cog.converter.active());
     try std.testing.expectEqualDeep(adjacent, hub.cogs[1].converter);
+}
+
+test "system configuration initializes atomically and survives firmware reset" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    var configuration: SystemConfiguration = .realistic;
+    configuration.oversample = 8;
+    configuration.vio_voltage = 2.5;
+    configuration.threshold_ratio = 0.25;
+    try hub.init(configuration);
+    hub.ram.bytes()[0] = 0xaa;
+    hub.counter = 7;
+    try hub.io.setExternal(@enumFromInt(10), .{ .voltage = 1, .resistance = 1 });
+    try std.testing.expectEqual(StepResult.normal, hub.step());
+    try std.testing.expectEqual(IO.Signal.high, hub.io.pads[10]);
+    const state = hub.io.getExternal(@enumFromInt(10)).?;
+    var invalid = configuration;
+    invalid.pad_capacitance = 0;
+    try std.testing.expectError(error.InvalidConfiguration, hub.init(invalid));
+    try std.testing.expectEqualDeep(configuration, hub.system_configuration);
+    try std.testing.expectEqual(@as(u8, 0xaa), hub.ram.bytes()[0]);
+    try std.testing.expectEqual(@as(u64, 8), hub.counter);
+    try std.testing.expectEqualDeep(state, hub.io.getExternal(@enumFromInt(10)).?);
+    hub.configure(0x1000_0000);
+    try std.testing.expectEqual(StepResult.reset, hub.step());
+    try std.testing.expectEqualDeep(configuration, hub.system_configuration);
+    try std.testing.expectEqual(@as(u64, 0), hub.counter);
+    try std.testing.expectEqual(@as(u8, 0), hub.ram.bytes()[0]);
+    try std.testing.expect(hub.io.getExternal(@enumFromInt(10)) == null);
+    try std.testing.expectEqualDeep(IO.Pad.Source.float, hub.io.external[10]);
+    try hub.init(.ideal);
+    try std.testing.expectEqualDeep(SystemConfiguration.ideal, hub.system_configuration);
+}
+
+test "an unready empirical PLL advances shared physical time and pads without CT or synchronous work" {
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+    var configuration: SystemConfiguration = .realistic;
+    configuration.clocks.rcfast = IO.Clock.Configuration.ideal.rcfast;
+    try hub.init(configuration);
+    try hub.io.setExternal(@enumFromInt(2), .{ .voltage = 3.3, .resistance = 1000, .capacitance = 1e-8 });
+    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer output.deinit();
+    var vcd: Vcd = .{ .writer = &output.writer };
+    hub.attachVcd(&vcd);
+    hub.configure(0x010007fb);
+    const random_before = hub.random;
+    for (0..100) |_| {
+        try std.testing.expectEqual(StepResult.normal, hub.step());
+        try std.testing.expectEqual(@as(u64, 0), hub.counter);
+        try std.testing.expectEqualDeep(random_before, hub.random);
+    }
+    try std.testing.expect(hub.io.getExternal(@enumFromInt(2)).?.voltage > 1);
+    try std.testing.expect(hub.io.clock.elapsed.femtoseconds > 9_000_000_000);
+    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, vcd.elapsed);
+    var iterations: usize = 100;
+    while (hub.counter == 0 and iterations < 10000) : (iterations += 1) {
+        _ = hub.step();
+    }
+    try std.testing.expectEqual(@as(u64, 1), hub.counter);
+    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, vcd.elapsed);
+    try std.testing.expectEqual(hub.io.clock.elapsed.fraction, vcd.fraction);
 }

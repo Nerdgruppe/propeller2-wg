@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "description": "Micsig STO1104C USB configuration, screen/GUI controls and read-only MTP retrieval; sample scaling unverified",
+  "name": "io.github.nerdgruppe/propeller2-scopecreep",
+  "version": "0.1.0-beta",
+  "packages": [
+    {
+      "registryType": "nuget",
+      "identifier": "Nerdgruppe.Propeller2.Scopecreep",
+      "version": "0.1.0-beta",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [],
+      "environmentVariables": []
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/Nerdgruppe/propeller2-wg",
+    "source": "github"
+  }
+}

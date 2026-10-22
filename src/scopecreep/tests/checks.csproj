@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../ScopeConfig.cs;../ScpiProtocol.cs;../ScopeDevice.cs;../IScpiTransport.cs;../UsbTmcTransport.cs;../RemoteDisplay.cs;../ScopeController.cs;../MtpDevice.cs;../CaptureFiles.cs" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <None Include="../diagnostics/mouse-drag-2026-10-17/before.png" Link="reference.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

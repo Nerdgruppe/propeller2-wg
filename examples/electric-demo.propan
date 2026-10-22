@@ -1,0 +1,30 @@
+//
+// This example demonstrates the different electrical models Windtunnel simulates.
+//
+
+.cogexec
+    HUBSET  aug(CLOCK_MODE_200MHZ)
+    DRVL 0
+    WAITX 6
+    DRVH 0
+    WAITX 6
+
+    WRPIN aug(P_LOW_1K5 | P_HIGH_100UA), 0
+
+    DRVL 0
+    WAITX 6
+    DRVH 0
+    WAITX 12
+
+    FLTL 0
+    WAITX 12
+    HUBSET aug(Hub.reboot())
+
+const CLOCK_MODE_200MHZ = Hub.clockMode(
+                       pll=#on,
+                       in_div=1,
+                       mul=10,
+                       out_div=1,
+                       xi=#15pF,
+                       sysclk=#pll,
+                   )

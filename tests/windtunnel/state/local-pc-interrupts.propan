@@ -1,4 +1,5 @@
                 //? WINDTUNNEL CHECK LIST
+                //? issues: pc_domain = 3
                 //? timeout-ms: 2000
                 //? run: "kind0-phase16"
                 //? post: cog[*].reg[hits] == 0x1
@@ -11,6 +12,7 @@
                 //? const: phase = 16
                 //? const: kind = 0
                 //? run: "kind0-phase24"
+                //? issues: pc_domain = 7
                 //? post: cog[*].reg[hits] == 0x3
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -21,6 +23,7 @@
                 //? const: phase = 24
                 //? const: kind = 0
                 //? run: "kind0-phase32"
+                //? issues: pc_domain = 11
                 //? post: cog[*].reg[hits] == 0x5
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -31,6 +34,7 @@
                 //? const: phase = 32
                 //? const: kind = 0
                 //? run: "kind0-phase48"
+                //? issues: pc_domain = 19
                 //? post: cog[*].reg[hits] == 0x9
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -51,6 +55,7 @@
                 //? const: phase = 16
                 //? const: kind = 1
                 //? run: "kind1-phase24"
+                //? issues: pc_domain = 7
                 //? post: cog[*].reg[hits] == 0x3
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -61,6 +66,7 @@
                 //? const: phase = 24
                 //? const: kind = 1
                 //? run: "kind1-phase32"
+                //? issues: pc_domain = 11
                 //? post: cog[*].reg[hits] == 0x5
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -71,6 +77,7 @@
                 //? const: phase = 32
                 //? const: kind = 1
                 //? run: "kind1-phase48"
+                //? issues: pc_domain = 19
                 //? post: cog[*].reg[hits] == 0x9
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -91,6 +98,7 @@
                 //? const: phase = 16
                 //? const: kind = 2
                 //? run: "kind2-phase24"
+                //? issues: pc_domain = 7
                 //? post: cog[*].reg[hits] == 0x3
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x406
@@ -101,6 +109,7 @@
                 //? const: phase = 24
                 //? const: kind = 2
                 //? run: "kind2-phase32"
+                //? issues: pc_domain = 11
                 //? post: cog[*].reg[hits] == 0x5
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x40a
@@ -111,6 +120,7 @@
                 //? const: phase = 32
                 //? const: kind = 2
                 //? run: "kind2-phase48"
+                //? issues: pc_domain = 19
                 //? post: cog[*].reg[hits] == 0x9
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x412
@@ -131,6 +141,7 @@
                 //? const: phase = 16
                 //? const: kind = 3
                 //? run: "kind3-phase24"
+                //? issues: pc_domain = 7
                 //? post: cog[*].reg[hits] == 0x3
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -141,6 +152,7 @@
                 //? const: phase = 24
                 //? const: kind = 3
                 //? run: "kind3-phase32"
+                //? issues: pc_domain = 11
                 //? post: cog[*].reg[hits] == 0x5
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -151,6 +163,7 @@
                 //? const: phase = 32
                 //? const: kind = 3
                 //? run: "kind3-phase48"
+                //? issues: pc_domain = 19
                 //? post: cog[*].reg[hits] == 0x9
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -171,6 +184,7 @@
                 //? const: phase = 16
                 //? const: kind = 4
                 //? run: "kind4-phase24"
+                //? issues: pc_domain = 7
                 //? post: cog[*].reg[hits] == 0x22
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -181,6 +195,7 @@
                 //? const: phase = 24
                 //? const: kind = 4
                 //? run: "kind4-phase32"
+                //? issues: pc_domain = 11
                 //? post: cog[*].reg[hits] == 0x34
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -191,6 +206,7 @@
                 //? const: phase = 32
                 //? const: kind = 4
                 //? run: "kind4-phase48"
+                //? issues: pc_domain = 19
                 //? post: cog[*].reg[hits] == 0x66
                 //? post: cog[*].reg[stamp_a] == 0x0
                 //? post: cog[*].reg[stamp_b] == 0x0
@@ -291,4 +307,3 @@ tail_template:
                 // Enter the final LUT words and continue with a retained logical PC.
                 NOP
                 NOP
-

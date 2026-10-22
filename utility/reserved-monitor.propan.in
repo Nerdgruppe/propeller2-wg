@@ -1,0 +1,127 @@
+// Finite independent supervisor. Nominal RCFAST; preserve ROM-calibrated UART divider.
+.cogexec 0
+    HUBSET 0xf0
+    WRPIN P_TT_01 | P_ASYNC_TX, 62
+    DIRH 62
+    MOV descriptor, aug(hubaddr(descriptors))
+    MOV remaining, {{COUNT}}
+trial:
+    // Capture one descriptor and patch only the not-yet-started DUT image.
+    SETQ 3
+    RDLONG raw_word, descriptor
+    ADD descriptor, 16
+    WRLONG raw_word, aug(hubaddr(dut_instruction))
+    WRLONG operand_d, aug(hubaddr(input_d))
+    WRLONG operand_s, aug(hubaddr(input_s))
+    WRLONG seed, aug(hubaddr(input_seed))
+    WRLONG 0, aug(hubaddr(done))
+    COGINIT 1, aug(hubaddr(dut))
+    GETCT started
+poll:
+    // Always recover the supervisor even if the DUT stalls or changes control flow.
+    RDLONG completed, aug(hubaddr(done))
+    CMP completed, 0 :wz
+    if(!Z) JMP report
+    GETCT elapsed
+    SUB elapsed, started
+    CMP elapsed, aug(20000) :wc
+    if(C) JMP poll
+report:
+    COGSTOP 1
+    MOV value, aug(0x52535644)
+    CALL write_long
+    MOV value, raw_word
+    CALL write_long
+    MOV value, operand_d
+    CALL write_long
+    MOV value, operand_s
+    CALL write_long
+    MOV value, seed
+    CALL write_long
+    MOV value, completed
+    CALL write_long
+    MOV result_address, aug(hubaddr(results))
+    MOV result_count, 7
+result_loop:
+    RDLONG value, result_address
+    ADD result_address, 4
+    CALL write_long
+    DJNZ result_count, result_loop
+    DJNZ remaining, trial
+drain:
+    // Drain UART before releasing its driver and stopping the supervisor.
+    RQPIN PA, 62 :wc
+    if(C) JMP drain
+    WRPIN 0, 62
+    DIRL 62
+    COGSTOP 0
+write_long:
+    // Transmit one complete little-endian long without changing the saved observations.
+    MOV byte_count, 4
+send_byte:
+    GETBYTE PA, value, 0
+    WYPIN PA, 62
+    WAITX 1
+wait_byte:
+    TESTP 62 :wc
+    if(!C) JMP wait_byte
+    SHR value, 8
+    DJNZ byte_count, send_byte
+    RET
+    NOP
+var descriptor: LONG 0
+var remaining: LONG 0
+var raw_word: LONG 0
+var operand_d: LONG 0
+var operand_s: LONG 0
+var seed: LONG 0
+var started: LONG 0
+var elapsed: LONG 0
+var completed: LONG 0
+var value: LONG 0
+var result_address: LONG 0
+var result_count: LONG 0
+var byte_count: LONG 0
+.cogexec 0x2000, 0
+dut:
+    // Keep observed operands in dedicated registers; the supervisor owns UART reporting.
+    MOV register(100), input_d
+    MOV register(101), input_s
+    TESTB input_seed, 0 :wc
+    TESTB input_seed, 1 :wz
+    WRC before_c
+    WRZ before_z
+    GETCT before_ct
+dut_instruction:
+    LONG 0
+    GETCT after_ct
+    WRC after_c
+    WRZ after_z
+    SUB after_ct, before_ct
+    // Publish all observations before signaling completion to the supervisor.
+    WRLONG before_c, aug(hubaddr(results))
+    WRLONG before_z, aug(hubaddr(results) + 4)
+    WRLONG after_c, aug(hubaddr(results) + 8)
+    WRLONG after_z, aug(hubaddr(results) + 12)
+    WRLONG register(100), aug(hubaddr(results) + 16)
+    WRLONG register(101), aug(hubaddr(results) + 20)
+    WRLONG after_ct, aug(hubaddr(results) + 24)
+    WRLONG 1, aug(hubaddr(done))
+    COGSTOP 1
+    NOP
+var input_d: LONG 0
+var input_s: LONG 0
+var input_seed: LONG 0
+var before_c: LONG 0
+var before_z: LONG 0
+var after_c: LONG 0
+var after_z: LONG 0
+var before_ct: LONG 0
+var after_ct: LONG 0
+.data
+.align 4
+done: LONG 0
+results: LONG [0] * 7
+descriptors:
+{{TABLE}}
+

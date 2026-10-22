@@ -11,10 +11,12 @@ zig-out/bin/windtunnel --serve --url=ws://127.0.0.1:21591/
 
 The default URL is `ws://127.0.0.1:21591/`. Listen URLs accept an IPv4/IPv6 address or `localhost`,
 a root path, and the `ws` scheme. An explicitly supplied URL without a port uses port 80.
-`--serve` cannot be combined with `--image`. Regular logs, including instruction logs, are printed
+`--serve` cannot be combined with `--image`. Regular host logs are printed
 in server mode; `--verbose` also enables debug logging.
-`--trace-pipeline` records up to 10000 stage events per request. Diagnostics go to stderr.
-Add `--fast-io` for single-clock serial endpoint throughput in every fresh session;
+Completed-edge issue and service diagnostics go to stderr; VCD remains the signal export format.
+Add `--sim realistic` to initialize every fresh session with datasheet-based pad and [clock](clocks.md)
+characteristics; the default is `--sim ideal`. The selected configuration survives
+firmware resets. Add `--fast-io` for single-clock serial endpoint throughput in every fresh session;
 normal sessions retain UART baud timing. See [serial endpoint behavior](io.md#smart-modes-and-endpoints).
 The server uses Zig's standard library and requires no external service, interpreter or package.
 
@@ -22,11 +24,11 @@ The server uses Zig's standard library and requires no external service, interpr
 
 One request owns the board at a time; later connections wait. Every accepted image starts with reset
 hub/cog/peripheral state and cog 0 loading the initial 504 longs from hub address zero.
-Other cogs start stopped. The serial-ROM handoff selects nominal 20 MHz RCFAST
-(`$F0`) and preserves 2 Mbaud 8N1 dividers in pins 62 and 63, with modes and DIR
-cleared. Restoring the UART modes reuses those dividers without WXPIN or a startup
-wait. The initial counter is zero; physical loader execution time, calibration
-error, and RC oscillator drift are not reproduced.
+Other cogs start stopped. The serial-ROM handoff selects RCFAST (`$F0`), normally
+24 MHz in ideal mode, and preserves 2 Mbaud 8N1 dividers derived from the initial
+configured RCFAST frequency in pins 62 and 63, with modes and DIR cleared. Restoring the UART modes reuses those dividers without WXPIN or a startup
+wait. The initial counter is zero; physical loader execution time and calibration
+error are not reproduced. Configured oscillator drift applies during execution.
 
 | Parameter | Default | Validation |
 |---|---|---|
@@ -76,13 +78,16 @@ clears the simulated Hub and closes the session immediately, preserving already-
 
 Use ReleaseFast for live sessions. Execution is paced so simulated time does not run ahead of wall time;
 every system clock is simulated. Heavy firmware can run slower than the physical board and time out
-before producing its complete output. Clock frequencies follow the documented HUBSET divider/multiplier
-fields, with nominal RCFAST=20 MHz, RCSLOW=20 kHz and a 20 MHz board crystal. PLL settling and electrical
-UART effects, including baud mismatch corruption, are outside the functional terminal model.
+before producing its complete output. [Clock configuration](clocks.md) controls RCFAST, RCSLOW,
+the crystal, bounded drift and seed. Ideal defaults are 24 MHz, 20 kHz and 20 MHz.
+Realistic mode includes measured PLL responses for the characterized transitions, with
+explicit fallback elsewhere. Pacing follows accumulated physical time, including acquisition
+without CPU edges. Electrical UART effects, including baud mismatch corruption, remain
+outside the functional terminal model.
 
 This is protocol compatibility for supported firmware, not complete coverage of the P2 instruction set
-or all smart-pin modes. A `.not_implemented`, `.illegal` or `.trap` result ends that request with 1011
-and prints the cog, PC, instruction and reason. The next request can execute normally.
+or all smart-pin modes. A completed edge with architectural issues or service errors ends that request with 1011
+and prints every diagnostic with its captured provenance. The next request can execute normally.
 
 ## Validation
 

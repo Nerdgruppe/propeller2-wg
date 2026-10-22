@@ -71,8 +71,14 @@ The `windtunnel-gui` desktop starter uses zig-gamedev's GLFW/OpenGL packages and
 zgui (Dear ImGui), with pinned dependencies managed by Zig's package manager.
 Run `zig-0.16.0 build run-windtunnel-gui`, or install just the GUI with
 `zig-0.16.0 build build-windtunnel-gui` and launch `zig-out/bin/windtunnel-gui`.
-It provides editable image-path, cog, step-size and fast-I/O controls; these are
-not yet connected to the simulator. A desktop session with OpenGL 3.3 is required.
+Load an image with `--image program.bin`, then step/run/pause and inspect cogs,
+memory and pins. The Hub inspector provides ideal/realistic system presets and
+editable electrical parameters; apply them by reinitializing the simulation.
+See [the I/O documentation](docs/windtunnel/io.md#initialization-time-system-configuration).
+A desktop session with OpenGL 3.3 is required.
+
+Use `windtunnel --sim ideal|realistic --image program.bin` to select an electrical
+profile (default: ideal). The same option applies to server sessions.
 
 `zig-out/bin/windtunnel --serve` exposes a compatible P2AAS endpoint at
 `ws://127.0.0.1:21591/`. See [the server documentation](docs/windtunnel/p2aas.md)

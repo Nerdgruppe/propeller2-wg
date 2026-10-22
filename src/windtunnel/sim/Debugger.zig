@@ -3,23 +3,14 @@ const std = @import("std");
 const Hub = @import("Hub.zig");
 const Cog = @import("Cog.zig");
 const Debugger = @This();
+const access_types = @import("access.zig");
 
 pub const Domain = enum { cog, lut, hub };
-pub const Space = enum { registers, lut, hub };
-pub const Storage = enum { architectural, ram, execute_rom };
-pub const Access = enum { read, write };
 pub const AccessMode = enum { read, write, both };
 pub const Scope = enum { data, physical };
-/// Consumed latched operands are logical reads; their physical read was the earlier preload.
-pub const ReadClass = enum { data, physical, consumed };
-pub const Provenance = struct {
-    cog: ?u3 = null,
-    pc: ?u20 = null,
-    instruction: ?u32 = null,
-};
 pub const Execution = struct { cog: u3, domain: Domain, pc: u20 };
 pub const Watchpoint = struct {
-    space: Space,
+    space: access_types.Space,
     cog: ?u3,
     /// Half-open range in the selected domain (bytes for hub RAM, longs for local RAM).
     start: u32,
@@ -31,30 +22,33 @@ pub const Watchpoint = struct {
 pub const Hit = struct {
     watchpoint: usize,
     clock: u64,
-    provenance: Provenance,
-    space: Space,
+    provenance: access_types.Provenance,
+    space: access_types.Space,
     cog: ?u3,
     address: u32,
-    access: Access,
+    access: access_types.Access,
     value: u32,
-    class: ReadClass,
-    storage: Storage,
+    class: access_types.ReadClass,
+    storage: access_types.Storage,
 };
-pub const Stop = enum { none, execution, data, fault, allocation_failure };
+pub const Stop = enum { none, execution, data };
 
 allocator: std.mem.Allocator,
 executions: std.ArrayList(Execution) = .empty,
 watches: std.ArrayList(Watchpoint) = .empty,
 hits: std.ArrayList(Hit) = .empty,
-encounters: std.ArrayList(Execution) = .empty,
+encounters: struct {
+    storage: [8]Execution = undefined,
+    items: []Execution = &.{},
+} = .{},
 stop: Stop = .none,
+observed_accesses: usize = 0,
 
 /// Release debugger-owned lists; detach from the hub before destroying it.
 pub fn deinit(debugger: *Debugger) void {
     debugger.executions.deinit(debugger.allocator);
     debugger.watches.deinit(debugger.allocator);
     debugger.hits.deinit(debugger.allocator);
-    debugger.encounters.deinit(debugger.allocator);
 }
 
 /// Resolve the execution domain from the actual fetch source, including local PC carry.
@@ -100,17 +94,14 @@ pub fn acknowledge(debugger: *Debugger, hub: *Hub) void {
     }
     debugger.stop = .none;
     debugger.hits.clearRetainingCapacity();
-    debugger.encounters.clearRetainingCapacity();
+    debugger.encounters.items = debugger.encounters.storage[0..0];
 }
 
 /// Collect every first-attempt execution stop before any work on the hub edge.
 pub fn beforeClock(debugger: *Debugger, hub: *Hub) bool {
     if (debugger.stop != .none)
         return false;
-    if (hub.fault != null) {
-        debugger.stop = .fault;
-        return false;
-    }
+    debugger.observed_accesses = 0;
     if (debugger.executions.items.len == 0)
         return true;
     for (&hub.cogs) |*cog| {
@@ -121,10 +112,9 @@ pub fn beforeClock(debugger: *Debugger, hub: *Hub) bool {
                 continue;
             const execution = location(cog, state);
             if (debugger.hasExecution(execution)) {
-                debugger.encounters.append(debugger.allocator, execution) catch {
-                    debugger.stop = .allocation_failure;
-                    return false;
-                };
+                const count = debugger.encounters.items.len;
+                debugger.encounters.storage[count] = execution;
+                debugger.encounters.items = debugger.encounters.storage[0 .. count + 1];
             }
         }
     }
@@ -137,6 +127,9 @@ pub fn beforeClock(debugger: *Debugger, hub: *Hub) bool {
 
 /// Match a committed access. Callers provide backing addresses and accepted byte lanes only.
 pub fn observe(debugger: *Debugger, hit: Hit) void {
+    debugger.observed_accesses += 1;
+    if (debugger.observed_accesses > max_accesses_per_edge)
+        @panic("debugger access emission bound exceeded");
     for (debugger.watches.items, 0..) |watch, index| {
         if (watch.space != hit.space or hit.address < watch.start or hit.address >= watch.end)
             continue;
@@ -144,23 +137,46 @@ pub fn observe(debugger: *Debugger, hit: Hit) void {
             continue;
         if (watch.issuer != null and watch.issuer != hit.provenance.cog)
             continue;
-        if (watch.access != .both and @intFromEnum(watch.access) != @intFromEnum(hit.access))
+        const access_matches = switch (watch.access) {
+            .both => true,
+            .read => hit.access == .read,
+            .write => hit.access == .write,
+        };
+        if (!access_matches)
             continue;
         if (hit.access == .read and ((watch.scope == .data and hit.class == .physical) or
             (watch.scope == .physical and hit.class == .consumed)))
             continue;
         var matched = hit;
         matched.watchpoint = index;
-        debugger.hits.append(debugger.allocator, matched) catch {
-            debugger.stop = .allocation_failure;
-            return;
-        };
+        if (debugger.hits.items.len == debugger.hits.capacity)
+            @panic("watchpoint storage was not reserved outside stepping");
+        debugger.hits.appendAssumeCapacity(matched);
     }
 }
 
 /// Data hits pause only after the complete edge; preserve every match even if a fault also occurred.
 pub fn afterClock(debugger: *Debugger, hub: *const Hub) void {
-    if (debugger.stop == .allocation_failure)
-        return;
-    debugger.stop = if (hub.fault != null) .fault else if (debugger.hits.items.len != 0) .data else .none;
+    _ = hub;
+    debugger.stop = if (debugger.hits.items.len != 0)
+        .data
+    else
+        .none;
+}
+
+/// Maximum observed byte lanes and local ports per edge: eight cogs times 128 accesses.
+/// Startup, writeback, block transfer, FIFO, streamer, operands and fetch fit within 128 per cog.
+pub const max_accesses_per_edge = 8 * 128;
+
+/// Reserve hit storage before publishing a new watchpoint; stepping never allocates.
+pub fn addWatch(debugger: *Debugger, watch: Watchpoint) !void {
+    const count = try std.math.add(usize, debugger.watches.items.len, 1);
+    const hits = try std.math.mul(usize, count, max_accesses_per_edge);
+    try debugger.hits.ensureTotalCapacity(debugger.allocator, hits);
+    try debugger.watches.append(debugger.allocator, watch);
+}
+
+/// Remove one watch while retaining the already reserved hit capacity.
+pub fn removeWatch(debugger: *Debugger, index: usize) void {
+    _ = debugger.watches.orderedRemove(index);
 }

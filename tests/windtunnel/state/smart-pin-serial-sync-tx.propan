@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: pin_buffer_overwrite = 0
 //? timeout-ms: 1000
 //? max-cycles: 500000
 //? run: "pll0-mode3-write0"
@@ -28,6 +29,7 @@
 //? post: cog[*].reg[result14] == 0x02468acf
 //? post: cog[*].reg[result15] == 0x02468acf
 //? run: "pll0-mode3-write1"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode = 3
 //? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -132,6 +134,7 @@
 //? post: cog[*].reg[result14] == 0xdf13579b
 //? post: cog[*].reg[result15] == 0xf02468ac
 //? run: "pll0-mode7-write1"
+//? issues: pin_buffer_overwrite = 1
 //? const: mode = 7
 //? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
@@ -454,4 +457,3 @@ var result12:   LONG    0
 var result13:   LONG    0
 var result14:   LONG    0
 var result15:   LONG    0
-

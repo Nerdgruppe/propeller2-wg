@@ -1,4 +1,5 @@
                 //? WINDTUNNEL CHECK LIST
+                //? issues: pc_domain = 2
                 //? timeout-ms: 3000
                 //? run: "mode0-pattern0-cog0"
                 //? post: cog[*].reg[link] == 0x401
@@ -177,6 +178,7 @@
                 //? const: mode = 1
                 //? const: pattern = 6
                 //? run: "mode1-pattern14-cog0"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x0
                 //? post: cog[*].reg[hits] == 0x1
                 //? post: cog[*].reg[elapsed] == 0x14
@@ -185,6 +187,7 @@
                 //? const: mode = 1
                 //? const: pattern = 14
                 //? run: "mode1-pattern14-cog7"
+                //? issues: pc_domain = 3
                 //? post: cog[*].reg[link] == 0x0
                 //? post: cog[*].reg[hits] == 0x1
                 //? post: cog[*].reg[elapsed] == 0x14
@@ -397,4 +400,3 @@ tail_template:
                 ADD     hits,   1
                 ADD     hits,   2
                 ADD     hits,   3
-

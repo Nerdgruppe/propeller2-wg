@@ -92,6 +92,30 @@ active: usize = 0,
 /// Read-side transport is separate from the 54 arithmetic cells. It calibrates GETQ timing.
 returns: Pipeline(?Delivery, 3) = .init(null),
 
+/// Count tracked commands by cog and verify the physical count, excluding the delivered output.
+pub fn pending_counts(cordic: *const Cordic) [8]usize {
+    var tracked: [8]usize = @splat(0);
+    var active: usize = 0;
+    if (cordic.input) |entry| {
+        active += 1;
+        tracked[@intFromEnum(entry.cog)] += @intFromBool(entry.tracked);
+    }
+    for (cordic.pipeline) |slot| {
+        if (slot) |entry| {
+            active += 1;
+            tracked[@intFromEnum(entry.cog)] += @intFromBool(entry.tracked);
+        }
+    }
+    for (cordic.returns.values[0..cordic.returns.length]) |slot| {
+        if (slot) |delivery| {
+            active += 1;
+            tracked[@intFromEnum(delivery.cog)] += @intFromBool(delivery.tracked);
+        }
+    }
+    std.debug.assert(cordic.active == active);
+    return tracked;
+}
+
 /// Accept at most one hub-slot command on this edge, retaining operands for the first stage.
 pub fn submit(cordic: *Cordic, cog: CogId, operation: Operation, d: u32, s: u32, q: u32) void {
     std.debug.assert(cordic.input == null);
@@ -102,6 +126,9 @@ pub fn submit(cordic: *Cordic, cog: CogId, operation: Operation, d: u32, s: u32,
 /// Clock every occupied arithmetic stage once, then return one tagged result to its cog.
 /// A grant enters stage 0 on the next edge, exits the solver at +55, and is readable at +58.
 pub fn step(cordic: *Cordic) ?Delivery {
+    if (std.debug.runtime_safety) {
+        _ = cordic.pending_counts();
+    }
     if (cordic.active == 0)
         return null;
     const delivery = cordic.returns.step(if (cordic.pipeline[stage_layout.len - 1]) |last|
@@ -518,6 +545,10 @@ test "reset abandons only one cog's tracking across input arithmetic and return 
         }
         cordic.forget(@enumFromInt(0));
         ports[0].reset();
+        const after_reset = cordic.pending_counts();
+        for (ports, after_reset[0..ports.len]) |port, pending| {
+            try std.testing.expectEqual(@as(usize, port.pending), pending);
+        }
         try std.testing.expect(!ports[0].busy());
         try std.testing.expect(cordic.in_flight());
         if (age == 0) {
@@ -529,6 +560,10 @@ test "reset abandons only one cog's tracking across input arithmetic and return 
         while (cordic.in_flight()) {
             if (cordic.step()) |delivery| {
                 ports[@intFromEnum(delivery.cog)].accept(delivery);
+            }
+            const pending = cordic.pending_counts();
+            for (ports, pending[0..ports.len]) |port, count| {
+                try std.testing.expectEqual(@as(usize, port.pending), count);
             }
         }
         try std.testing.expectEqual(@as(u32, 42), ports[0].result.x);

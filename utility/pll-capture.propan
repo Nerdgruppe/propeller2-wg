@@ -1,0 +1,112 @@
+// Independent Saleae PLL fixture: drive ONLY P0 PWM and P1 marker; UART retains ROM calibration.
+// Prepend constants FROM_MODE, TARGET_MODE, ENABLE_WAIT, SOURCE_TICKS, HOLD_TICKS,
+// FRAME, BASE, WARM_XI and WORK. FROM_MODE=0 selects startup; otherwise a direct live change.
+.cogexec
+                HUBSET  0xf0
+                CALL    cleanup
+                WRPIN   P_TT_01 | P_ASYNC_TX,       62
+                DIRH    62
+                WRPIN   P_TT_01 | P_PWM_SAWTOOTH,   0
+                WXPIN   aug((FRAME << 16) | BASE),  0
+                WYPIN   FRAME / 2,                  0
+                DIRH    0
+                DRVL    1
+                // Retain an independent RCFAST baseline before either enable or retune markers.
+                WAITX   aug(100000)
+                MOV     signature,                  aug(0x12345678)
+                MOV     failures,                   0
+                MOV     remaining,                  aug(WORK)
+                MOV     target,                     aug(TARGET_MODE)
+                MOV     safe,                       target
+                ANDN    safe,                       3
+                MOV     origin,                     aug(FROM_MODE)
+                CMP     origin,                     0                   :wz
+    if(Z)       JMP     startup
+                // Warm the origin PLL before selecting it; capture a settled source before changing fields.
+                MOV     prepare,                    origin
+                ANDN    prepare,                    3
+                HUBSET  prepare
+                WAITX   aug(1000000)
+                HUBSET  origin
+                WAITX   aug(SOURCE_TICKS)
+                DRVH    1
+                HUBSET  target
+                JMP     selected
+// Optional crystal-only prewarm distinguishes crystal+PLL enable from PLL-only restart.
+startup:
+                MOV     temporary,  WARM_XI
+                CMP     temporary,  0       :wz
+    if(Z)       JMP     .enable
+                HUBSET  0xf8
+                WAITX   aug(1000000)
+.enable:        DRVH    1
+                HUBSET  safe
+                WAITX   aug(ENABLE_WAIT)
+                OUTL    1
+                HUBSET  target
+// Check a host-known arithmetic/hub workload independently of the observed frequency.
+selected:
+                GETCT   started
+                CMP     remaining,  0               :wz
+    if(Z)       JMP     .hold
+.work:          ROL     signature,  5
+                XOR     signature,  aug(0x9e3779b9)
+                ADD     signature,  aug(0x7f4a7c15)
+                WRLONG  signature,  aug(0x40000)
+                RDLONG  temporary,  aug(0x40000)
+                CMP     temporary,  signature       :wz
+    if(!Z)      ADD     failures,   1
+                ADD     signature,  temporary
+                DJNZ    remaining,  .work
+.hold:          WAITX   aug(HOLD_TICKS)
+                GETCT   elapsed
+                SUB     elapsed,    started
+                // Explicit recovery and pin release precede the checksummed UART response.
+                HUBSET  safe
+                WAITX   16
+                HUBSET  0xf0
+                CALL    cleanup
+                MOV     checksum,   signature
+                ADD     checksum,   failures
+                ADD     checksum,   elapsed
+                XOR     checksum,   aug(0x5a5a5a5a)
+                MOV     PA,         signature
+                CALL    write_long
+                MOV     PA,         failures
+                CALL    write_long
+                MOV     PA,         elapsed
+                CALL    write_long
+                MOV     PA,         checksum
+                CALL    write_long
+                // TX-ready can precede the final stop bit; keep the UART-driving cog alive.
+                WAITX   aug(10000)
+                COGID   temporary
+                COGSTOP temporary
+// Clear smart-pin TT output as well as DIR so P0/P1 are physically released.
+cleanup:
+                DIRL    aug(0 | (1 << 6))
+                WRPIN   0,  aug(0 | (1 << 6))
+                RET
+// Transmit one little-endian result word at the inherited ROM-calibrated UART rate.
+write_long:
+                MOV     bytes,  4
+.loop:          WYPIN   PA,     62
+                WAITX   1
+.wait:          TESTP   62              :wc
+    if(!C)      JMP     .wait
+                SHR     PA,     8
+                DJNZ    bytes,  .loop
+                RET
+var signature:  LONG    0
+var failures:   LONG    0
+var remaining:  LONG    0
+var target:     LONG    0
+var safe:       LONG    0
+var origin:     LONG    0
+var prepare:    LONG    0
+var started:    LONG    0
+var elapsed:    LONG    0
+var temporary:  LONG    0
+var checksum:   LONG    0
+var bytes:      LONG    0
+

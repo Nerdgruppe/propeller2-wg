@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: pc_domain = 2
 //? post: cog[0].reg[wrapped] == 1
 //? post: cog[0].reg[lut_wrap] == 0
 
@@ -29,4 +30,3 @@ lut_last:
 .lutexec    0x4100, 0x200
                 JMP     nrel(unexpected_lut_wrap)
 .data
-

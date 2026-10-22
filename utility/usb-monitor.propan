@@ -1,0 +1,444 @@
+// Hardware-only USB monitor with timed scripts, packet sending and independent capture cogs. It starts at RCFAST and preserves the ROM-calibrated 2 Mbaud UART.
+
+.cogexec
+                HUBSET  0xf0
+                DIRL    aug(8 | (7 << 6))
+                WRPIN   0,                      aug(8 | (7 << 6))
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                DIRH    62
+                WRPIN   P_ASYNC_RX,             63
+                DIRH    63
+                MOV     PA,                     '!'
+                CALL    write_byte
+// Dispatch bounded host commands; experiment pins start floating.
+main:
+                CALL    read_byte
+                CMP     PA, 'F'         :wz
+    if(Z)       JMP     finish
+                CMP     PA, 'E'         :wz
+    if(Z)       JMP     execute
+                CMP     PA, 'P'         :wz
+    if(Z)       JMP     packet
+                CMP     PA, 'G'         :wz
+    if(Z)       JMP     arm
+                CMP     PA, 'H'         :wz
+    if(Z)       JMP     capture_read
+                CMP     PA, 'I'         :wz
+    if(Z)       JMP     inject
+                CMP     PA, 'D'         :wz
+    if(Z)       JMP     dacs
+                CMP     PA, 'C'         :wz
+    if(Z)       JMP     configure
+                CMP     PA, 'R'         :wz
+    if(Z)       JMP     read
+                CMP     PA, 'M'         :wz
+    if(Z)       JMP     measure
+                CMP     PA, 'X'         :wz
+    if(Z)       JMP     writex
+                CMP     PA, 'S'         :wz
+    if(Z)       JMP     scope
+                JMP     main
+// Set mode and parameters while holding the smart engine in reset.
+configure:
+                CALL    read_long
+                MOV     pin,    word
+                DIRL    pin
+                CALL    read_long
+                WRPIN   word,   pin
+                CALL    read_long
+                WXPIN   word,   pin
+                CALL    read_long
+                WYPIN   word,   pin
+                CALL    read_long
+                CMP     word,   0       :wz
+    if(Z)       OUTL    pin
+    if(!Z)      OUTH    pin
+                CALL    read_long
+                CMP     word,   0       :wz
+    if(!Z)      DIRH    pin
+                JMP     ack
+// Set the four background DAC bytes without restarting the monitor.
+dacs:
+                CALL    read_long
+                SETDACS word
+                JMP     ack
+// Return the result, carry and IN state without acknowledging the engine.
+read:
+                CALL    read_long
+                MOV     pin,    word
+                RQPIN   value,  pin     :wc
+                MOV     flags,  0
+                MUXC    flags,  1
+                TESTP   pin             :wc
+                MUXC    flags,  2
+                MOV     PA,     value
+                CALL    write_long
+                MOV     PA,     flags
+                CALL    write_long
+                JMP     main
+// Deliver a live X write, allowing repository and lifecycle probes.
+writex:
+                CALL    read_long
+                MOV     pin,    word
+                CALL    read_long
+                WXPIN   word,   pin
+                JMP     ack
+// Read the selected generic four-pin scope data pipe.
+scope:
+                CALL    read_long
+                SETSCP  word
+                WAITX   100
+                GETSCP  PA
+                CALL    write_long
+                JMP     main
+// Discard startup conversions, then average 64 automatic SINC2 results.
+measure:
+                CALL    read_long
+                MOV     pin,    word
+                MOV     count,  3
+                CALL    sample
+                MOV     sum,    0
+                MOV     count,  64
+                CALL    sample
+                MOV     PA,     sum
+                CALL    write_long
+                JMP     main
+// Accumulate completed conversions using IN as the conversion handshake.
+sample:
+                TESTP   pin             :wc
+    if(!C)      JMP     sample
+                RDPIN   value,  pin
+                ADD     sum,    value
+                DJNZ    count,  sample
+                RET
+// Release all connected experiment pins before acknowledging cleanup.
+finish:
+                COGSTOP 1
+                COGSTOP 2
+                DIRL    aug(8 | (7 << 6))
+                WRPIN   0,  aug(8 | (7 << 6))
+// Confirm command completion through the calibrated UART.
+ack:
+                MOV     PA, '.'
+                CALL    write_byte
+                JMP     main
+// Load a bounded operation script, then execute it without host timing in the loop.
+execute:
+                CALL    read_long
+                MOV     total,          word
+                MOV     pointer,        aug(0x6000)
+                MOV     count,          total
+                SHL     count,          2
+.load:          CALL    read_long
+                WRLONG  word,           pointer
+                ADD     pointer,        4
+                DJNZ    count,          .load
+                MOV     pointer,        aug(0x6000)
+                MOV     destination,    aug(0xc000)
+                MOV     count,          total
+                GETCT   started
+.loop:          RDLONG  operation,      pointer
+                ADD     pointer,        4
+                RDLONG  pin,            pointer
+                ADD     pointer,        4
+                RDLONG  value,          pointer
+                ADD     pointer,        4
+                RDLONG  delay,          pointer
+                ADD     pointer,        4
+                CMP     operation,      1           :wz
+    if(Z)       WRPIN   value,          pin
+                CMP     operation,      2           :wz
+    if(Z)       WXPIN   value,          pin
+                CMP     operation,      3           :wz
+    if(Z)       WYPIN   value,          pin
+                CMP     operation,      4           :wz
+    if(Z)       DIRL    pin
+                CMP     operation,      5           :wz
+    if(Z)       DIRH    pin
+                CMP     operation,      6           :wz
+    if(Z)       OUTL    pin
+                CMP     operation,      7           :wz
+    if(Z)       OUTH    pin
+                CMP     operation,      8           :wz
+    if(Z)       AKPIN   pin
+                WAITX   delay
+                CALL    snapshot
+                DJNZ    count,          .loop
+                MOV     pointer,        aug(0xc000)
+                MOV     count,          total
+                SHL     count,          2
+.send:          RDLONG  PA,             pointer
+                ADD     pointer,        4
+                CALL    write_long
+                DJNZ    count,          .send
+                JMP     main
+// Buffer a complete packet/state command sequence, respecting the upper IN handshake.
+packet:
+                CALL    read_long
+                MOV     total,          word
+                MOV     pointer,        aug(0x6000)
+                MOV     count,          total
+.load:          CALL    read_long
+                WRLONG  word,           pointer
+                ADD     pointer,        4
+                DJNZ    count,          .load
+                MOV     pointer,        aug(0x6000)
+                MOV     destination,    aug(0xc000)
+                MOV     count,          total
+                GETCT   started
+                OUTH    12
+                DIRH    12
+                WAITX   256
+.loop:          RDLONG  value,          pointer
+                ADD     pointer,        4
+                CMP     count,          total               :wz
+    if(Z)       JMP     .ready
+                GETCT   deadline
+                ADD     deadline,       aug(2000000)
+.wait:          TESTP   9                                   :wc
+    if(C)       JMP     .ready
+                GETCT   temporary
+                SUB     temporary,      deadline
+                TESTB   temporary,      31                  :wc
+    if(C)       JMP     .wait
+                JMP     finish
+.ready:         WYPIN   value,          aug(8 | (1 << 6))
+                DJNZ    count,          .loop
+                WAITX   aug(4096)
+                CALL    snapshot
+                OUTL    12
+                MOV     pointer,        aug(0xc000)
+                MOV     count,          4
+.send:          RDLONG  PA,             pointer
+                ADD     pointer,        4
+                CALL    write_long
+                DJNZ    count,          .send
+                JMP     main
+// Preserve timestamp, both result/carry words and raw/routed IN observations.
+snapshot:
+                GETCT   temporary
+                SUB     temporary,      started
+                WRLONG  temporary,      destination
+                ADD     destination,    4
+                RQPIN   temporary,      8           :wc
+                BITC    temporary,      31
+                WRLONG  temporary,      destination
+                ADD     destination,    4
+                RQPIN   temporary,      9           :wc
+                BITC    temporary,      31
+                WRLONG  temporary,      destination
+                ADD     destination,    4
+                MOV     temporary,      INA
+                SHR     temporary,      8
+                AND     temporary,      255
+                WRLONG  temporary,      destination
+                ADD     destination,    4
+                RET
+// Capture raw pair receivers through local GPIO aliases, independent of USB IN flags.
+arm:
+                COGSTOP 1
+                COGSTOP 2
+                DIRL    aug(10 | (1 << 6))
+                WRPIN   aug(0x60000000),    aug(10 | (1 << 6))
+                WRLONG  0,                  aug(0x5000)
+                WRLONG  0,                  aug(0x5004)
+                WRLONG  0,                  aug(0x5010)
+                WRLONG  0,                  aug(0x5014)
+                COGINIT 1,                  aug(hubaddr(capture_worker))
+                COGINIT 2,                  aug(hubaddr(status_worker))
+.wait:          RDLONG  temporary,          aug(0x5010)
+                RDLONG  value,              aug(0x5014)
+                AND     temporary,          value
+                CMP     temporary,          1                               :wz
+    if(!Z)      JMP     .wait
+                JMP     ack
+// Return the fixed-size capture, timestamp and status records once both workers finish.
+capture_read:
+                GETCT   deadline
+                ADD     deadline,   aug(200000000)
+.wait:          RDLONG  temporary,  aug(0x5000)
+                RDLONG  value,      aug(0x5004)
+                AND     temporary,  value
+                CMP     temporary,  1               :wz
+    if(Z)       JMP     .ready
+                GETCT   temporary
+                SUB     temporary,  deadline
+                TESTB   temporary,  31              :wc
+    if(C)       JMP     .wait
+                JMP     finish
+.ready:         RDLONG  PA,         aug(0x5008)
+                CALL    write_long
+                MOV     pointer,    aug(0x10000)
+                MOV     count,      aug(4096)
+.bytes:         RDBYTE  PA,         pointer
+                ADD     pointer,    1
+                CALL    write_byte
+                DJNZ    count,      .bytes
+                MOV     pointer,    aug(0x12000)
+                MOV     count,      aug(1024)
+.words:         RDLONG  PA,         pointer
+                ADD     pointer,    4
+                CALL    write_long
+                DJNZ    count,      .words
+                JMP     main
+// Play host-provided GPIO samples at one byte per system clock, preserving a trigger lead-in.
+inject:
+                CALL    read_long
+                MOV     total,      word
+                MOV     pointer,    aug(0x18000)
+                MOV     count,      total
+.load:          CALL    read_byte
+                WRBYTE  PA,         pointer
+                ADD     pointer,    1
+                DJNZ    count,      .load
+                SUB     pointer,    1
+                RDBYTE  value,      pointer
+                SHL     value,      8
+                AND     value,      aug(3 << 8)
+                ANDN    OUTA,       aug(3 << 8)
+                MOV     temporary,  value
+                WRPIN   0,          aug(8 | (1 << 6))
+                DIRH    aug(8 | (1 << 6))
+                OUTH    12
+                DIRH    12
+                WAITX   256
+                RDFAST  0,          aug(0x18000)
+                SETXFRQ aug(0x80000000)
+                MOV     value,      aug(X_RFBYTE_8P_1DAC8 | X_PINS_ON | (8 << 17))
+                OR      value,      total
+                XINIT   value,      0
+                WAITXFI
+                OR      OUTA,       temporary
+                WAITX   64
+                OUTL    12
+                JMP     ack
+var total:      LONG    0
+var pointer:    LONG    0
+var destination:
+                LONG    0
+var operation:  LONG    0
+var delay:      LONG    0
+var started:    LONG    0
+var deadline:   LONG    0
+var temporary:  LONG    0
+
+var pin:        LONG    0
+var value:      LONG    0
+var flags:      LONG    0
+var count:      LONG    0
+var sum:        LONG    0
+
+// Release every experiment pin after a lost host connection or canceled session.
+read_byte:
+                GETCT   timeout_start
+.wait:          TESTP   63                                  :wc
+    if(C)       JMP     .ready
+                GETCT   timeout_now
+                SUB     timeout_now,    timeout_start
+                CMP     timeout_now,    aug(200000000)      :wc
+    if(C)       JMP     .wait
+                DIRL    aug(8 | (7 << 6))
+                WRPIN   0,              aug(8 | (7 << 6))
+                GETCT   timeout_start
+                JMP     .wait
+.ready:         RDPIN   PA,             63
+                SHR     PA,             24
+                RET
+// Transmit one UART byte and wait for completion.
+write_byte:
+                WYPIN   PA, 62
+                WAITX   1
+.wait:          TESTP   62      :wc
+    if(!C)      JMP     .wait
+                RET
+// Transmit a little-endian 32-bit measurement.
+write_long:
+                MOV     bytes,  4
+.loop:          CALL    write_byte
+                SHR     PA,     8
+                DJNZ    bytes,  .loop
+                RET
+// Receive one little-endian host parameter.
+read_long:
+                MOV     word,   0
+                MOV     bytes,  4
+.loop:          CALL    read_byte
+                SHR     word,   8
+                SHL     PA,     24
+                OR      word,   PA
+                DJNZ    bytes,  .loop
+                RET
+var bytes:      LONG    0
+var word:       LONG    0
+
+var timeout_start:
+                LONG    0
+var timeout_now:
+                LONG    0
+
+// Record 4096 eight-pin samples at one sample per system clock after the shared trigger.
+.cogexec    0x4000, 0
+capture_worker:
+                WRLONG  1,                                                      aug(0x5010)
+                DIRL    12
+                GETCT   cap_timeout
+.wait:          TESTP   12                                                                      :wc
+    if(C)       JMP     .start
+                GETCT   cap_now
+                SUB     cap_now,                                                cap_timeout
+                CMP     cap_now,                                                aug(200000000)  :wc
+    if(C)       JMP     .wait
+                COGSTOP 1
+.start:         WRFAST  0,                                                      aug(0x10000)
+                SETXFRQ aug(0x80000000)
+                GETCT   cap_now
+                WRLONG  cap_now,                                                aug(0x5008)
+                XINIT   aug(X_8P_1DAC8_WFBYTE | X_WRITE_ON | (8 << 17) | 4096), 0
+                WAITXFI
+                WAITX   100
+                WRLONG  1,                                                      aug(0x5000)
+                COGSTOP 1
+var cap_timeout:
+                LONG    0
+var cap_now:    LONG    0
+
+// Sample both USB result words and flags on the same board as the raw wire capture.
+.cogexec    0x4800, 0
+status_worker:
+                WRLONG  1,          aug(0x5014)
+                DIRL    12
+                GETCT   rx_timeout
+.wait:          TESTP   12                          :wc
+    if(C)       JMP     .start
+                GETCT   rx_now
+                SUB     rx_now,     rx_timeout
+                CMP     rx_now,     aug(200000000)  :wc
+    if(C)       JMP     .wait
+                COGSTOP 2
+.start:         MOV     rx_pointer, aug(0x12000)
+                MOV     rx_count,   256
+.loop:          GETCT   rx_now
+                WRLONG  rx_now,     rx_pointer
+                ADD     rx_pointer, 4
+                RQPIN   rx_value,   8               :wc
+                BITC    rx_value,   31
+                WRLONG  rx_value,   rx_pointer
+                ADD     rx_pointer, 4
+                RQPIN   rx_value,   9               :wc
+                BITC    rx_value,   31
+                WRLONG  rx_value,   rx_pointer
+                ADD     rx_pointer, 4
+                MOV     rx_value,   INA
+                SHR     rx_value,   8
+                AND     rx_value,   255
+                WRLONG  rx_value,   rx_pointer
+                ADD     rx_pointer, 4
+                DJNZ    rx_count,   .loop
+                WRLONG  1,          aug(0x5004)
+                COGSTOP 2
+var rx_timeout: LONG    0
+var rx_now:     LONG    0
+var rx_pointer: LONG    0
+var rx_count:   LONG    0
+var rx_value:   LONG    0
+

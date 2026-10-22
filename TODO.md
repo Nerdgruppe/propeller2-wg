@@ -58,6 +58,7 @@
 - Plan to allow access to local labels somehow?
 - Enable "-Dx=y" on the CLI
 - Fully define the compatibility matrix for implicit jumping/referencing between segments.
+- Implement auto-indentation for `.if` ... `.endif` blocks
 
 ### New Features
 
@@ -113,33 +114,13 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 
 ## Windtunnel
 
-### Local PC Overflow
-
-- **Status: implemented and hardware validated.**
-- Local execution preserves the full twenty-bit PC. Bit 9 selects LUT; an
-  overflowing cog fetch uses the preceding instruction's effective S read port.
-- Eleven `local-pc-*` fixtures cover 207 cases with three independent matching
-  hardware runs, including LOC, CALLD/returns, REP/SKIP/EXECF, higher carries,
-  complete rollover, interrupts, special registers and simultaneous RAM writes.
-- The retained crossing REP mismatch now matches silicon's one addition.
-  LOC relative offsets were also corrected to use unscaled PC units.
-- [Measured rules](docs/accumulated.md#local-pc-overflow-and-loc-2026-10-12).
-
-### Known Bugs
-
-#### Shared Random Generator
-
-- **Status: partial; deferred/known bug.**
-- Retain the shared xoroshiro approximation and measured cross-cog relations.
-  Exact tap numbering, absolute polarities, production seed lane and internal
-  delay remain open. This applies to `GETRND`, `BITRND`, `DIRRND`, `OUTRND`,
-  `FLTRND`, `DRVRND`, randomized `WAITX`, `HUBSET` seeding and physical noise paths.
-- Investigation aid if revisited: a reproducible seed/reset anchor or stronger
-  state-recovery constraints. Existing seed-hammer experiments did not resolve
-  the mapping; captures and analysis are retained in [data/random](data/random/).
-
 ### Random Task Collection
 
+- Validate hub execution below `$400`: wraparound behavior makes this possible.
+  Is relative branching possible in this area?
+- Prove or disprove that every kind of branch (relative or absolute) restores
+  the PC rules and execution behavior, including cogexec with PC ≥ `$400`
+  and hubexec with PC < `$400`.
 - Verify the software FIFO write path's cycle claim: `write_fifo` currently
   makes newly queued bytes eligible after two clocks, but actual visibility in
   hub RAM is governed by the cog's rotating hub RAM slice, partial-long
@@ -156,17 +137,8 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - IO Interface Improvement
   - Configuration file support for I/O setup
     - Defaults to "stdio routed to pins 62/63"
-  - Input filtering
-  - Smart modes
-    - Physical U(S)ART encoding/decoding and exact serial waveform timing
   - Validate physical pad timing with a logic analyzer
   - Optional instruction-level pin logging (VCD and collision diagnostics exist)
-  - Analog subsystem
-    - ADC
-    - DACs
-    - Comparator
-    - `SETDACS`
-    - `SETSCP`, `GETSCP`
 - P2AAS server
   - Feature Parity with hw oracle
 - Validate/implement cog startup behavior
@@ -175,40 +147,52 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Cache `hub.random.word` to not compute it multiple times per clock
 - Implement Streamer FIFO bypass erratum
 - Extend test runner to store/print the time per test fixture and test run to find outliers.
+- Create a concept for how to react to misbehavior/undefined behavior.
+- Refactor code to adapt to better coding standards.
+- Improve CLI user experience
+- Refactor test suit to enable `macro: name ...` which replaces `{{name}}` or `{{ name }}` with "..."
+- forbid things like `LONG 0xfe900000 | (operand & 0xfffff)` in the testsuite unless there's a really good reason for it.
+- Use CLI seeding through electrical noise for RNG seed
+- GUI file dialog support via nfd-zig
+- New rule for test suite things:
+  - Allow empty `//?` lines
+  - `//? run:` must be prefixed by an empty line
 
-#### Clock Configuration
+### Analog Subsystem
 
-- **Status: partial; analog oscillator/PLL fidelity is deferred.**
-- Nominal frequency selection works; physical clock switching, settling and
-  jitter remain unmodeled.
-- Investigation aid if revisited: dedicated-board access, an independent timing
-  reference and clock-output captures with an oscilloscope/frequency counter.
+- Add controllable drift/noise to analog subsystem
+  - Consider how to handle floating pins.
+  - Ingest actual P2 characteristics like voltage leaking, ...
 
-### Pad Electrical Model
+### Virtual Device Support
 
-- **Status: partial; analog subsystem deferred.**
-- Keep the existing digital model. Resistance/current drive, thresholds,
-  hysteresis, comparators and analog routing remain unmodeled.
-- Investigation aid if revisited: known loads, voltage sweeps and oscilloscope
-  measurements. I/O propagation-delay corrections remain outside current scope.
+- SPI/DSPI/QSPI flash support
+- I²C EEPROM support
+- PAL/NTSC/SECAM/HDMI decoder with automatic sync/timing detection
+- Speaker / Audio Recorder
+- Microphone / Audio Playback
+- GUI: Virtual Scope / Logic Analyzer
 
-### Streamer
+Stretch Goal:
 
-- **Status: missing; deferred.**
-- Implement `XINIT`, `XZERO`, `XCONT`, `SETXFRQ`, `GETXACC` and the `XSTOP` alias;
-  command buffering, NCO, FIFO/LUT/pin/DAC paths, HDMI and DDS/Goertzel behavior.
-  Include FIFO consumption/arbitration, streamer event producers and related
-  interrupt/status interactions.
-- Add `XMT`, `XFI`,  `XRO` and `XRL` events
-- Investigation aid if revisited: deterministic digital patterns captured by a
-  second cog or logic analyzer, correlated with command/event timestamps and
-  second-cog hub writes. Analog paths remain deferred with the analog subsystems.
+- PS/2 mouse/keyboard device emulation
+- USB mouse/keyboard device emulation?
 
-### Colorspace Converter
+### Known Bugs
 
-- **Status: missing; deferred.**
-- Implement `SETCY`, `SETCI`, `SETCQ`, `SETCFRQ`, `SETCMOD`, per-clock matrix/IQ
-  processing, DAC overrides and pipeline behavior.
-- Investigation aid if revisited: known vectors with controlled streamer timing
-  and internal result capture if available; otherwise DAC captures through an
-  oscilloscope or external ADC.
+#### Shared Random Generator
+
+- **Status: partial; deferred/known bug.**
+- Retain the shared xoroshiro approximation and measured cross-cog relations.
+  Exact tap numbering, absolute polarities, production seed lane and internal
+  delay remain open. This applies to `GETRND`, `BITRND`, `DIRRND`, `OUTRND`,
+  `FLTRND`, `DRVRND`, randomized `WAITX`, `HUBSET` seeding and physical noise paths.
+- Investigation aid if revisited: a reproducible seed/reset anchor or stronger
+  state-recovery constraints. Existing seed-hammer experiments did not resolve
+  the mapping; captures and analysis are retained in [data/random](data/random/).
+
+### Out Of Scope
+
+#### Overly detailled electrical sim
+
+No protection-diode I–V/clamping, inductance, supply-power/ground-network simulation, thermal behavior, ESD or cumulative damage model. Absolute-rating diagnostics report violations but do not implement these effects.

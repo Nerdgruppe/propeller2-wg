@@ -1,4 +1,4 @@
-//! Smart engines only. WRPIN routing and pad configuration belong to IO.zig.
+//! Smart engines and their configuration/state retention; IO owns routing and electrical pad state.
 const std = @import("std");
 const p2 = @import("p2");
 const signal = @import("signal.zig");
@@ -6,17 +6,29 @@ const pipeline = @import("pipeline.zig");
 const Pipeline = pipeline.Pipeline;
 pub const Mode = p2.types.SmartPinMode;
 const Signal = signal.Signal;
+const Drive = p2.types.PinConfiguration.Drive;
 
-pub const DataSource = union(enum) {
-    reader: *std.Io.Reader,
-    callback: struct {
-        context: *anyopaque,
-        read: *const fn (*anyopaque) anyerror!?u32,
+/// A registered logic level and its optional engine-selected electrical drive.
+pub const DriveSignal = struct {
+    level: Signal = .low,
+    strength: ?Drive = null,
+};
+
+pub const ReadError = error{ReadFailed};
+pub const WriteError = std.Io.Writer.Error;
+
+pub const DataSource = struct {
+    endpoint: union(enum) {
+        reader: *std.Io.Reader,
+        callback: struct { context: *anyopaque, read: *const fn (*anyopaque) ReadError!?u32 },
     },
+    failure: ?ReadError = null,
 
-    /// Never asks a Reader to refill; the host owns refill and EOF handling.
-    pub fn read(source: *DataSource) anyerror!?u32 {
-        return switch (source.*) {
+    /// Consume buffered data; latch callback failures and disable further attempts until reset.
+    pub fn read(source: *DataSource) ?u32 {
+        if (source.failure != null)
+            return null;
+        return switch (source.endpoint) {
             .reader => |reader| blk: {
                 const bytes = reader.buffered();
                 if (bytes.len == 0)
@@ -25,20 +37,40 @@ pub const DataSource = union(enum) {
                 reader.toss(1);
                 break :blk byte;
             },
-            .callback => |cb| cb.read(cb.context),
+            .callback => |cb| cb.read(cb.context) catch |err| blk: {
+                source.failure = err;
+                break :blk null;
+            },
         };
+    }
+
+    /// Explicitly re-enable an endpoint after its host has handled the failure.
+    pub fn reset(source: *DataSource) void {
+        source.failure = null;
     }
 };
 
-pub const DataSink = union(enum) {
-    discard,
-    writer: *std.Io.Writer,
-    live_writer: *std.Io.Writer,
-    callback: struct { context: *anyopaque, write: *const fn (*anyopaque, u32) anyerror!void },
+pub const DataSink = struct {
+    endpoint: union(enum) {
+        discard,
+        writer: *std.Io.Writer,
+        live_writer: *std.Io.Writer,
+        callback: struct { context: *anyopaque, write: *const fn (*anyopaque, u32) WriteError!void },
+    },
+    failure: ?WriteError = null,
 
-    /// Deliver a word to the endpoint, truncating writer-backed words to a byte.
-    pub fn write(sink: *const DataSink, value: u32) anyerror!void {
-        switch (sink.*) {
+    /// Deliver one word and retain the first failure without interrupting simulation.
+    pub fn write(sink: *DataSink, value: u32) void {
+        if (sink.failure != null)
+            return;
+        sink.deliver(value) catch |err| {
+            sink.failure = err;
+        };
+    }
+
+    /// Adapt the closed endpoint error set at the I/O boundary.
+    fn deliver(sink: *DataSink, value: u32) WriteError!void {
+        switch (sink.endpoint) {
             .discard => {},
             .writer => |writer| try writer.writeByte(@truncate(value)),
             .live_writer => |writer| {
@@ -47,6 +79,11 @@ pub const DataSink = union(enum) {
             },
             .callback => |cb| try cb.write(cb.context, value),
         }
+    }
+
+    /// Explicitly re-enable an endpoint after its host has handled the failure.
+    pub fn reset(sink: *DataSink) void {
+        sink.failure = null;
     }
 };
 
@@ -59,11 +96,11 @@ pub const RxMode = union(enum) {
 
 /// Transmit fidelity; both modes report completed words to a sink.
 pub const TxMode = union(enum) {
-    emulated: *const DataSink,
-    virtual: *const DataSink,
+    emulated: *DataSink,
+    virtual: *DataSink,
 };
 
-const discard_sink: DataSink = .discard;
+var discard_sink: DataSink = .{ .endpoint = .discard };
 
 /// Registers shared by every smart-pin mode.
 pub const Registers = struct {
@@ -86,40 +123,52 @@ pub const SerialTiming = struct {
 };
 
 /// Fixed inputs for one smart-pin update in a simulation frame.
-/// IO combines commands and routes input signals before invoking SmartPin.step.
+/// IO combines commands and routes input signals before sampling the smart pins.
 pub const Inputs = struct {
     /// Mode-selected DIR level. NCOs receive raw cog DIR for their private pipelines;
     /// IO supplies the sampled enable/reset level to the other digital engines.
     dir: u1 = 0,
+    /// Physical DAC_MODE for this update; all three DAC encodings become repositories when false.
+    dac_mode: bool = false,
+    /// Approximate projection of the shared RNG, sampled without advancing it.
+    random: u8 = 0,
     /// OR of the cogs' OUT bits, before the physical pad's drive gating and delays.
     out: u1 = 0,
     /// SmartA after input selection, inversion, A/B logic and applicable sampling delays.
-    a: Signal = .z,
+    a: Signal = .low,
     /// SmartB after input selection, inversion and applicable sampling delays.
-    b: Signal = .z,
+    b: Signal = .low,
+    /// Local physical receiver before A/B selection; USB samples the upper endpoint here.
+    physical: Signal = .low,
     /// WXPIN value delivered this frame; null means no write, including no implicit ACK.
-    /// SmartPin.step stores a present value in Registers.x before running the logic.
+    /// SmartPin.sample stores a present value in Registers.x before running the logic.
     new_x: ?u32 = null,
     /// WYPIN value delivered this frame; null means no write, including no implicit ACK.
-    /// SmartPin.step stores a present value in Registers.y before running the logic.
+    /// SmartPin.sample stores a present value in Registers.y before running the logic.
     new_y: ?u32 = null,
     /// Acknowledgement delivered by AKPIN, RDPIN or WRPIN this frame.
     /// Clears ready before running the logic; X/Y writes also acknowledge implicitly.
     ack: bool = false,
     /// Current wrapping Hub counter identifying this simulation frame.
     clock: u64 = 0,
-    /// Falling DIR edge derived by SmartPin.step from Registers.enabled.
+    /// Falling DIR edge derived by SmartPin.sample from Registers.enabled.
     /// Caller-supplied values are overwritten before dispatch to the active logic.
     reset: bool = false,
 };
 
 /// Signals and scheduler state produced by one smart-pin update.
-/// SmartPin.step latches y into Registers.result and IN into Registers.ready.
+/// SmartPin.clock latches y into Registers.result and IN into Registers.ready.
 /// IO publishes every pin's outputs together, then applies pad routing and register delays.
 pub const Outputs = struct {
+    /// Word displaced by an accepted command on this update, consumed by IO issue reporting.
+    discarded: ?u32 = null,
     /// Logic drive before pad routing, inversion and electrical resolution.
     /// Emulated serial transmitters generate this level; virtual transmitters hold their reset level.
-    smart_out: Signal = .zero,
+    smart_out: Signal = .low,
+    /// Engine-selected drive; null selects the WRPIN high/low drive fields.
+    strength: ?Drive = null,
+    /// Smart-DAC code overrides the physical mode register's code for this clock.
+    dac: ?u8 = null,
     /// Signal sent toward the cog IN registers: routed SmartA for GPIO, ready for smart modes.
     in: u1 = 0,
     /// Current result (Z) returned through RDPIN/RQPIN, distinct from the WYPIN register.
@@ -129,9 +178,6 @@ pub const Outputs = struct {
     /// Enabled clocking can still change an output, result, or completion indication.
     scheduled: bool = false,
 };
-
-/// Endpoint callbacks may report their own errors, in addition to unsupported modes.
-pub const SmartPinError = anyerror;
 
 /// Construct the ordinary result and ready signals of a smart engine.
 fn outputs(regs: *const Registers, inputs: Inputs) Outputs {
@@ -157,7 +203,7 @@ fn receive(state: *Outputs, x: u32, value: u32) void {
 
 pub const Normal = struct {
     /// Route SmartA to IN and the cog OUT signal to SmartOut.
-    fn step(_: *Normal, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+    fn step(_: *Normal, regs: *Registers, inputs: Inputs) Outputs {
         return .{
             .in = @intFromBool(inputs.a.sample()),
             .smart_out = Signal.from(inputs.out != 0),
@@ -171,7 +217,7 @@ pub const Repository = struct {
     raise_next: bool = false,
 
     /// Retain Z through DIR reset and publish X with its measured completion delay.
-    fn step(logic: *Repository, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+    fn step(logic: *Repository, regs: *Registers, inputs: Inputs) Outputs {
         var state = outputs(regs, inputs);
         const raise_now = logic.raise_next and
             !inputs.ack and
@@ -188,6 +234,245 @@ pub const Repository = struct {
             state.in = @intFromBool(regs.enabled);
         }
         state.scheduled = logic.raise_next;
+        return state;
+    }
+};
+
+/// DAC noise/dither with a shared long-repository fallback when DAC_MODE is disabled.
+fn Dac(comptime mode: Mode) type {
+    return struct {
+        repository: Repository = .{},
+        /// DAC_MODE observed during the preceding engine update.
+        dac_mode: bool = false,
+        /// Resolve same-mode WRPIN retention when the next update supplies physical DAC_MODE.
+        reconfigure: bool = false,
+        count: u16 = 0,
+        accumulation: u16 = 0,
+        value: u16 = 0,
+
+        /// Use repository semantics without DAC_MODE; otherwise emit a DAC code and accumulate A.
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) Outputs {
+            if (logic.reconfigure and !(logic.dac_mode and inputs.dac_mode)) {
+                logic.* = .{};
+            }
+            logic.reconfigure = false;
+            logic.dac_mode = inputs.dac_mode;
+            if (!inputs.dac_mode)
+                return logic.repository.step(regs, inputs);
+
+            var state = outputs(regs, inputs);
+            if (!regs.enabled) {
+                logic.count = 0;
+                logic.accumulation = 0;
+                logic.value = @min(@as(u16, @truncate(regs.y)), 0xff00);
+                state.in = 0;
+            } else {
+                logic.accumulation +%= @intFromBool(inputs.a.sample());
+                logic.count +%= 1;
+                if (logic.count == @as(u16, @truncate(regs.x))) {
+                    state.y = logic.accumulation;
+                    state.in = 1;
+                    logic.count = 0;
+                    logic.accumulation = 0;
+                    logic.value = @min(@as(u16, @truncate(regs.y)), 0xff00);
+                }
+            }
+            state.dac = if (mode == .dac_noise)
+                inputs.random
+            else blk: {
+                const fraction: u8 = @truncate(logic.value);
+                const phase: u8 = if (mode == .dac_dither_rnd)
+                    inputs.random
+                else
+                    @truncate(logic.count);
+                break :blk @as(u8, @intCast(logic.value >> 8)) + @as(u8, @intFromBool(phase < fraction));
+            };
+            state.flag = false;
+            state.scheduled = regs.enabled;
+            return state;
+        }
+    };
+}
+
+/// Three wrapping silicon-width integrators, period differences and raw ADC snapshots.
+pub fn Adc(comptime external_clock: bool) type {
+    return struct {
+        const SamplingMode = enum(u2) { automatic, sinc2, sinc3, raw };
+
+        integrators: [3]u27 = @splat(0),
+        differences: [2]u27 = @splat(0),
+        raw: u32 = 0,
+        elapsed: u16 = 0,
+        period_override: ?u14 = null,
+        pending_period: ?u14 = null,
+        ready: bool = false,
+        previous_b: bool = false,
+
+        /// Apply X/Y strobes, integrate one selected A bit and publish completed sample periods.
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) Outputs {
+            var state = outputs(regs, inputs);
+            state.flag = false;
+            if (inputs.ack or inputs.new_x != null or inputs.new_y != null or !regs.enabled) {
+                logic.ready = false;
+            }
+            state.in = @intFromBool(logic.ready);
+            if (logic.pending_period) |period| {
+                logic.period_override = period;
+                logic.pending_period = null;
+                logic.elapsed = 0;
+            }
+            const b = inputs.b.sample();
+            const rising = b and !logic.previous_b;
+            logic.previous_b = b;
+            if (inputs.new_x != null) {
+                logic.period_override = null;
+            }
+            const mode: SamplingMode = @enumFromInt(@as(u2, @truncate(regs.x >> 4)));
+            if (inputs.new_y) |y| {
+                if (mode != .automatic) {
+                    logic.pending_period = @truncate(y);
+                }
+            }
+            state.scheduled = regs.enabled;
+            if (!regs.enabled) {
+                logic.elapsed = 0;
+                state.in = 0;
+            }
+            if (external_clock and !rising)
+                return state;
+            const bit: u27 = @intFromBool(inputs.a.sample());
+            const old = logic.integrators;
+            logic.integrators[0] +%= bit;
+            logic.integrators[1] +%= old[0];
+            logic.integrators[2] +%= old[1];
+            logic.raw = (logic.raw >> 1) | (@as(u32, @intCast(bit)) << 31);
+            if (!regs.enabled)
+                return state;
+            const period: u16 = if (logic.period_override) |value|
+                if (value == 0)
+                    0x4000
+                else
+                    value
+            else
+                @as(u16, 1) << @as(u4, @truncate(regs.x));
+            logic.elapsed +%= 1;
+            if (logic.elapsed == period) {
+                logic.elapsed = 0;
+                const stage: usize = if (mode == .sinc3)
+                    2
+                else
+                    1;
+                const accumulator = if (external_clock)
+                    old[stage]
+                else
+                    logic.integrators[stage];
+                const difference = accumulator -% logic.differences[0];
+                logic.differences[0] = accumulator;
+                state.y = switch (mode) {
+                    .automatic => blk: {
+                        const sample = difference -% logic.differences[1];
+                        logic.differences[1] = difference;
+                        const exponent: u4 = @truncate(regs.x);
+                        const rounding: u27 = if (exponent < 2)
+                            0
+                        else
+                            @as(u27, 1) << (exponent - 2);
+                        const rounded = sample +% rounding;
+                        break :blk if (exponent == 0)
+                            @as(u32, rounded) << 1
+                        else
+                            @as(u32, rounded) >> (exponent - 1);
+                    },
+                    .sinc2, .sinc3 => difference,
+                    .raw => logic.raw,
+                };
+                logic.ready = true;
+                state.in = 1;
+            }
+            state.flag = false;
+            return state;
+        }
+    };
+}
+
+/// Measured symmetric integer FIRs, normalized to 255 for a continuously high input.
+pub const Scope = struct {
+    pub const Filter = enum(u2) { tukey68, tukey45, hann28, hann28_alias };
+
+    history: u128 = 0,
+    armed: bool = false,
+
+    pub const tukey68 = [_]u8{
+        1,  2,  4,  6,  8,  11, 14, 17, 20, 23, 26, 29, 32, 34, 36, 38, 39,
+        40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
+        40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
+        39, 38, 36, 34, 32, 29, 26, 23, 20, 17, 14, 11, 8,  6,  4,  2,  1,
+    };
+    pub const tukey45 = [_]u8{
+        1,  2,  4,  6,  8,  11, 14, 17, 20, 23, 26, 28, 30, 32, 33,
+        34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34,
+        33, 32, 30, 28, 26, 23, 20, 17, 14, 11, 8,  6,  4,  2,  1,
+    };
+    pub const hann28 = [_]u8{
+        1,  3,  5,  8,  11, 14, 17, 20, 23, 26, 29, 31, 33, 34,
+        34, 33, 31, 29, 26, 23, 20, 17, 14, 11, 8,  5,  3,  1,
+    };
+
+    /// Sum the selected filter with exact measured fixed-point truncation.
+    pub fn sample(history: u128, filter: Filter) u8 {
+        const weights: []const u8 = switch (filter) {
+            .tukey68 => &tukey68,
+            .tukey45 => &tukey45,
+            .hann28, .hann28_alias => &hann28,
+        };
+        var sum: u16 = 0;
+        for (weights, 0..) |weight, index| {
+            if (history & (@as(u128, 1) << @intCast(index)) != 0) {
+                sum += weight;
+            }
+        }
+        const shift: u4 = switch (filter) {
+            .tukey68 => 3,
+            .tukey45 => 2,
+            .hann28, .hann28_alias => 1,
+        };
+        return @intCast(sum >> shift);
+    }
+
+    /// Publish each clock's filtered sample and apply the strict/inclusive hysteretic trigger.
+    fn step(logic: *Scope, regs: *Registers, inputs: Inputs) Outputs {
+        var state = outputs(regs, inputs);
+        if (!regs.enabled) {
+            logic.history = 0;
+            logic.armed = false;
+            state.in = 0;
+            state.y = 0;
+            state.flag = false;
+            return state;
+        }
+        const value = sample(logic.history, @enumFromInt(@as(u2, @truncate(regs.x))));
+        logic.history = (logic.history << 1) | @intFromBool(inputs.a.sample());
+        const a: u6 = @truncate(regs.x >> 2);
+        const b: u6 = @truncate(regs.x >> 10);
+        const compared = value >> 2;
+        if (logic.armed) {
+            const triggered = if (a > b)
+                compared < b
+            else
+                compared >= b;
+            if (triggered) {
+                logic.armed = false;
+                state.in = 1;
+            }
+        } else {
+            logic.armed = if (a > b)
+                compared >= a
+            else
+                compared < a;
+        }
+        state.y = value;
+        state.flag = logic.armed;
+        state.scheduled = regs.enabled;
         return state;
     }
 };
@@ -224,15 +509,15 @@ pub const UartTx = struct {
     shift: u32 = 0,
     position: u6 = 0,
     timer: BaudTimer = .{},
-    line: Signal = .one,
+    line: Signal = .high,
     a: Pipeline(bool, 1) = .init(false),
 
     /// Buffer writes, serialize start/data/stop, and deliver completed words to the current sink.
-    fn step(logic: *UartTx, regs: *Registers, inputs: Inputs, mode: TxMode) SmartPinError!Outputs {
+    fn step(logic: *UartTx, regs: *Registers, inputs: Inputs, mode: TxMode) Outputs {
         if (mode == .virtual) {
             logic.* = .{};
-            var state = try transmitImmediate(regs, inputs, mode.virtual);
-            state.smart_out = .one;
+            var state = transmitImmediate(regs, inputs, mode.virtual);
+            state.smart_out = .high;
             state.flag = false;
             if (regs.enabled and inputs.new_y != null) {
                 state.y = regs.y;
@@ -243,13 +528,14 @@ pub const UartTx = struct {
         const a = logic.a.step(inputs.a.sample());
         if (!regs.enabled) {
             logic.* = .{};
-            state.smart_out = .one;
+            state.smart_out = .high;
             state.flag = false;
             return state;
         }
         const active = logic.shifter != null;
         const buffered = logic.buffer != null;
         if (inputs.new_y != null) {
+            state.discarded = logic.buffer;
             logic.buffer = regs.y;
         }
         if (logic.shifter) |word| {
@@ -257,9 +543,9 @@ pub const UartTx = struct {
                 if (logic.position == SerialTiming.init(regs.x).bits + 1) {
                     logic.shift = (logic.shift >> 1) | (@as(u32, @intFromBool(a)) << 31);
                     state.y = logic.shift;
-                    try mode.emulated.write(word & wordMask(regs.x));
+                    mode.emulated.write(word & wordMask(regs.x));
                     logic.shifter = null;
-                    logic.line = .one;
+                    logic.line = .high;
                 } else {
                     if (logic.position != 0) {
                         logic.shift = (logic.shift >> 1) | (@as(u32, @intFromBool(a)) << 31);
@@ -269,7 +555,7 @@ pub const UartTx = struct {
                         logic.position += 1;
                     }
                     logic.line = if (logic.position == SerialTiming.init(regs.x).bits + 1)
-                        .one
+                        .high
                     else
                         Signal.from(logic.shift & 1 != 0);
                 }
@@ -284,7 +570,7 @@ pub const UartTx = struct {
                 if (!active) {
                     logic.timer.start(regs.x, false);
                 }
-                logic.line = .zero;
+                logic.line = .low;
                 state.y = word;
                 state.in = 1;
             }
@@ -302,16 +588,16 @@ pub const UsartTx = struct {
     shift: u32 = 0,
     count: u5 = 0,
     b: bool = false,
-    line: Signal = .zero,
+    line: Signal = .low,
     a: Pipeline(bool, 1) = .init(false),
     primed: bool = false,
 
     /// Prime in reset and shift data on routed B edges, delaying each output update two clocks.
-    fn step(logic: *UsartTx, regs: *Registers, inputs: Inputs, mode: TxMode) SmartPinError!Outputs {
+    fn step(logic: *UsartTx, regs: *Registers, inputs: Inputs, mode: TxMode) Outputs {
         if (mode == .virtual) {
             logic.* = .{ .a = .init(inputs.a.sample()), .b = inputs.b.sample() };
-            var state = try transmitImmediate(regs, inputs, mode.virtual);
-            state.smart_out = .zero;
+            var state = transmitImmediate(regs, inputs, mode.virtual);
+            state.smart_out = .low;
             return state;
         }
         var state = outputs(regs, inputs);
@@ -330,7 +616,7 @@ pub const UsartTx = struct {
             logic.shift = regs.y;
             logic.count = 0;
             logic.primed = true;
-            state.smart_out = .zero;
+            state.smart_out = .low;
             return state;
         }
         if (logic.primed) {
@@ -338,6 +624,7 @@ pub const UsartTx = struct {
             logic.primed = false;
         }
         if (inputs.new_y != null) {
+            state.discarded = logic.buffer;
             logic.buffer = regs.y;
             if (regs.x & 32 != 0 and logic.count == 0) {
                 logic.shifter = regs.y;
@@ -349,7 +636,7 @@ pub const UsartTx = struct {
         if (rising) {
             if (logic.count == @as(u5, @truncate(regs.x))) {
                 if (logic.shifter) |word| {
-                    try mode.emulated.write(word & wordMask(regs.x));
+                    mode.emulated.write(word & wordMask(regs.x));
                 }
                 state.y = logic.shift;
                 logic.shifter = regs.y;
@@ -394,7 +681,7 @@ pub const UartRx = struct {
     }
 
     /// Recover UART samples with live word length and divider reloads in both timed modes.
-    fn step(logic: *UartRx, regs: *Registers, inputs: Inputs, mode: RxMode) SmartPinError!Outputs {
+    fn step(logic: *UartRx, regs: *Registers, inputs: Inputs, mode: RxMode) Outputs {
         if (mode == .virtual) {
             logic.* = .{};
             return receiveImmediate(regs, inputs, mode.virtual);
@@ -411,7 +698,7 @@ pub const UartRx = struct {
             logic.received = null;
         }
         if (mode == .emulated and logic.source_word == null) {
-            logic.source_word = try mode.emulated.read();
+            logic.source_word = mode.emulated.read();
             if (logic.source_word == null and logic.phase != .idle and logic.phase != .start) {
                 state.scheduled = true;
                 return state;
@@ -498,7 +785,7 @@ pub const UsartRx = struct {
     source_word: ?u32 = null,
 
     /// Shift the previous or coincident A sample on routed B edges using the live terminal count.
-    fn step(logic: *UsartRx, regs: *Registers, inputs: Inputs, mode: RxMode) SmartPinError!Outputs {
+    fn step(logic: *UsartRx, regs: *Registers, inputs: Inputs, mode: RxMode) Outputs {
         if (mode == .virtual) {
             logic.* = .{ .a = .init(inputs.a.sample()), .b = inputs.b.sample() };
             return receiveImmediate(regs, inputs, mode.virtual);
@@ -514,7 +801,7 @@ pub const UsartRx = struct {
             logic.* = .{ .shift = logic.shift, .a = .init(a), .b = b };
         } else if (rising) {
             if (mode == .emulated and logic.source_word == null) {
-                logic.source_word = try mode.emulated.read();
+                logic.source_word = mode.emulated.read();
                 if (logic.source_word == null) {
                     state.scheduled = true;
                     return state;
@@ -538,20 +825,20 @@ pub const UsartRx = struct {
 };
 
 /// Deliver an enabled virtual WYPIN immediately without retaining any timed transmission state.
-fn transmitImmediate(regs: *const Registers, inputs: Inputs, sink: *const DataSink) SmartPinError!Outputs {
+fn transmitImmediate(regs: *const Registers, inputs: Inputs, sink: *DataSink) Outputs {
     var state = outputs(regs, inputs);
     if (regs.enabled and inputs.new_y != null) {
-        try sink.write(regs.y & wordMask(regs.x));
+        sink.write(regs.y & wordMask(regs.x));
         state.in = 1;
     }
     return state;
 }
 
 /// Receive at most one endpoint word per clock, preserving unread data until acknowledgement.
-fn receiveImmediate(regs: *Registers, inputs: Inputs, source: *DataSource) SmartPinError!Outputs {
+fn receiveImmediate(regs: *Registers, inputs: Inputs, source: *DataSource) Outputs {
     var state = outputs(regs, inputs);
     if (regs.enabled and !regs.ready) {
-        if (try source.read()) |word| {
+        if (source.read()) |word| {
             receive(&state, regs.x, word);
         }
     }
@@ -591,9 +878,9 @@ pub const Pulse = struct {
     active: bool = false,
 
     /// Start pulse trains at a base boundary and signal their finite completion.
-    fn step(logic: *Pulse, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+    fn step(logic: *Pulse, regs: *Registers, inputs: Inputs) Outputs {
         var state = outputs(regs, inputs);
-        state.smart_out = .zero;
+        state.smart_out = .low;
         if (!regs.enabled) {
             logic.divider.reset(regs.x);
             logic.remaining = 0;
@@ -625,9 +912,9 @@ pub const Transition = struct {
     level: bool = false,
 
     /// Toggle at free-running base boundaries and hold the final state until reset.
-    fn step(logic: *Transition, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+    fn step(logic: *Transition, regs: *Registers, inputs: Inputs) Outputs {
         var state = outputs(regs, inputs);
-        state.smart_out = .zero;
+        state.smart_out = .low;
         if (!regs.enabled) {
             logic.divider.reset(regs.x);
             logic.remaining = 0;
@@ -667,7 +954,7 @@ pub fn Nco(comptime duty: bool) type {
         }
 
         /// Advance the divider, registered accumulator and independently gated publication bus.
-        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) Outputs {
             var state = outputs(regs, inputs);
             const phase_enabled = logic.direction_pipeline.step(inputs.dir) != 0;
             const publish_enabled = logic.direction_pipeline.tap(1) != 0 and phase_enabled;
@@ -718,10 +1005,10 @@ pub fn Pwm(comptime mode: Mode) type {
         waiting: bool = false,
 
         /// Advance PWM frames, applying the SMPS digital voltage/current gates when selected.
-        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) Outputs {
             var state = outputs(regs, inputs);
             const frame = if (regs.x >> 16 == 0) @as(u32, 65536) else regs.x >> 16;
-            state.smart_out = .zero;
+            state.smart_out = .low;
             state.flag = false;
             if (!regs.enabled) {
                 logic.divider.reset(regs.x);
@@ -811,7 +1098,7 @@ pub fn Counter(comptime mode: Mode) type {
         }
 
         /// Accumulate continuously or publish completed windows without losing the boundary event.
-        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) Outputs {
             var state = outputs(regs, inputs);
             const a = inputs.a.sample();
             const b = inputs.b.sample();
@@ -850,7 +1137,7 @@ pub fn Duration(comptime high_only: bool) type {
         result_state: bool = false,
 
         /// Publish completed durations and, for state timing, the previous input state in C.
-        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) Outputs {
             var state = outputs(regs, inputs);
             const a = inputs.a.sample();
             const changed = a != logic.a;
@@ -883,7 +1170,7 @@ pub const Events = struct {
     timeout: u32 = 0,
 
     /// Measure event groups or continuously report elapsed clocks with periodic missing-event alarms.
-    fn step(logic: *Events, regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+    fn step(logic: *Events, regs: *Registers, inputs: Inputs) Outputs {
         var state = outputs(regs, inputs);
         const a = inputs.a.sample();
         const event = switch (@as(u2, @truncate(regs.y))) {
@@ -947,7 +1234,7 @@ pub fn Periods(comptime mode: Mode) type {
         periods: u64 = 0,
 
         /// Accumulate complete periods, retaining coincident starts for the next period.
-        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) SmartPinError!Outputs {
+        fn step(logic: *@This(), regs: *Registers, inputs: Inputs) Outputs {
             var state = outputs(regs, inputs);
             const a = inputs.a.sample();
             const b = inputs.b.sample();
@@ -1012,11 +1299,402 @@ pub fn Periods(comptime mode: Mode) type {
     };
 }
 
-pub const DummyMode = struct {
-    /// Reject unsupported smart logic through the simulator's ordinary fault path.
-    fn step(_: *DummyMode, _: *Registers, _: Inputs) SmartPinError!Outputs {
-        return error.UnsupportedSmartPinMode;
+/// One physical USB pair with two sampled ports and one shared hardware state.
+pub const Usb = struct {
+    /// Input refers to a pin's sampled frame; output is produced once by the shared block.
+    pub const Port = struct {
+        frame: ?*const SmartPin.Frame = null,
+        registers: ?*const Registers = null,
+        output: Outputs = .{},
+    };
+
+    /// USB smart-pin logic only forwards the selected pair endpoint's published signals.
+    pub const Forwarder = struct {
+        port: *const Port,
+
+        /// Read the pair output without owning or advancing any USB hardware state.
+        fn step(endpoint: *Forwarder, _: *Registers, _: Inputs) Outputs {
+            return endpoint.port.output;
+        }
+    };
+
+    ports: [2]Port = @splat(.{}),
+    state: State = .{},
+
+    /// Clock the shared hardware after both ports have sampled, without changing pin registers.
+    pub fn clock(usb: *Usb) void {
+        const lower = usb.ports[0].frame.?;
+        const upper = usb.ports[1].frame.?;
+        if (lower.mode != .usb and upper.mode != .usb) {
+            if (lower.mode_changed) {
+                usb.state = .{};
+            }
+            return;
+        }
+        if (lower.mode_changed or lower.mode != .usb) {
+            usb.state = .{};
+        }
+        var lower_registers = usb.ports[0].registers.?.*;
+        var upper_registers = usb.ports[1].registers.?.*;
+        const next = usb.state.advance(
+            &lower_registers,
+            &upper_registers,
+            .{ lower.signals, upper.signals },
+        );
+        usb.ports[0].output = next[0];
+        usb.ports[1].output = next[1];
+        if (!upper_registers.enabled) {
+            usb.ports[1].output.in = 0;
+        }
     }
+
+    /// Shared serializer/decoder state; configuration comes from the lower port.
+    const State = struct {
+        const Speed = enum(u1) { low, full };
+        const Role = enum(u1) { device, host };
+        const StateCommand = enum(u2) { idle, se0, k, j };
+        const Wire = struct { dm: bool = false, dp: bool = false };
+
+        const Configuration = packed struct(u16) {
+            increment: u14,
+            speed: Speed,
+            role: Role,
+        };
+
+        /// Silicon receiver result, low flags followed by the last completed byte.
+        pub const Status = packed struct(u16) {
+            j: bool = false,
+            k: bool = false,
+            se0: bool = false,
+            steady: bool = false,
+            sop: bool = false,
+            eop: bool = false,
+            err: bool = false,
+            toggle: bool = false,
+            byte: u8 = 0,
+        };
+
+        const Line = enum { se0, j, k, se1 };
+        const Tx = enum { idle, sync, data, eop_second, eop_j, release };
+
+        phase: u16 = 0,
+        tx_speed: Speed = .low,
+        rx_speed: Speed = .low,
+        /// Live speed and physical samples traverse the measured receiver input stages.
+        speed_pipeline: Pipeline(Speed, 2) = .init(.low),
+        receiver_input: Pipeline(Wire, 2) = .init(.{}),
+        /// Receiver reset visibility is independent of the transmitter's immediate DIR gate.
+        rx_enable: Pipeline(bool, 6) = .init(false),
+        pending: ?u8 = null,
+        tx: Tx = .idle,
+        drive: ?Line = null,
+        shift: u8 = 0,
+        bits: u4 = 0,
+        ones: u3 = 0,
+        previous: Line = .se0,
+        rx_phase: u16 = 0,
+        steady: u20 = 0,
+        se0: u20 = 0,
+        rx_last: Line = .j,
+        rx_shift: u8 = 0xff,
+        rx_bits: u4 = 0,
+        rx_ones: u3 = 0,
+        packet: bool = false,
+        eop: bool = false,
+        status: Status = .{},
+
+        /// Convert the measured wire polarity into normalized USB line states.
+        fn line(dm: bool, dp: bool, speed: Speed) Line {
+            if (dm == dp)
+                return if (dm) .se1 else .se0;
+            return if (dp == (speed == .full)) .j else .k;
+        }
+
+        /// Toggle an NRZI differential symbol; transitions encode zero bits.
+        fn invert(value: Line) Line {
+            return switch (value) {
+                .j => .k,
+                .k => .j,
+                else => .k,
+            };
+        }
+
+        /// Consume the one pending FIFO entry and latch the upper endpoint's notification.
+        fn take(usb: *State, upper: *Registers) ?u8 {
+            const value = usb.pending;
+            if (value != null) {
+                usb.pending = null;
+                if (upper.enabled) {
+                    upper.ready = true;
+                }
+            }
+            return value;
+        }
+
+        /// Emit one baud interval, retaining stuffing state across byte boundaries.
+        fn transmit(usb: *State, upper: *Registers) void {
+            switch (usb.tx) {
+                .idle => {
+                    if (usb.take(upper)) |command| {
+                        if (command & 0x80 != 0) {
+                            usb.tx = .sync;
+                            usb.shift = command;
+                            usb.bits = 8;
+                            usb.drive = .j;
+                            usb.transmit(upper);
+                        } else if (command & 4 != 0) {
+                            usb.drive = .se0;
+                            usb.tx = .eop_second;
+                        } else switch (@as(StateCommand, @enumFromInt(@as(u2, @truncate(command))))) {
+                            .idle => usb.drive = null,
+                            .se0 => usb.drive = .se0,
+                            .k => usb.drive = .k,
+                            .j => usb.drive = .j,
+                        }
+                    }
+                },
+                .sync => {
+                    if (usb.bits == 0) {
+                        usb.tx = .data;
+                        usb.ones = 1;
+                        usb.transmit(upper);
+                    } else {
+                        if (usb.shift & 1 == 0) {
+                            usb.drive = invert(usb.drive orelse .j);
+                        }
+                        usb.shift >>= 1;
+                        usb.bits -= 1;
+                    }
+                },
+                .data => {
+                    if (usb.ones == 6) {
+                        usb.drive = invert(usb.drive orelse .j);
+                        usb.ones = 0;
+                    } else {
+                        if (usb.bits == 0) {
+                            if (usb.take(upper)) |byte| {
+                                usb.shift = byte;
+                                usb.bits = 8;
+                            } else {
+                                usb.drive = .se0;
+                                usb.tx = .eop_second;
+                                return;
+                            }
+                        }
+                        if (usb.shift & 1 == 0) {
+                            usb.drive = invert(usb.drive orelse .j);
+                            usb.ones = 0;
+                        } else {
+                            usb.ones += 1;
+                        }
+                        usb.shift >>= 1;
+                        usb.bits -= 1;
+                    }
+                },
+                .eop_second => {
+                    usb.drive = .se0;
+                    usb.tx = .eop_j;
+                },
+                .release => {
+                    usb.drive = null;
+                    usb.tx = .idle;
+                },
+                .eop_j => {
+                    usb.drive = .j;
+                    usb.tx = .release;
+                },
+            }
+        }
+
+        /// Decode one centered differential sample, including SYNC and stuffed-zero validation.
+        fn sample(usb: *State, value: Line) void {
+            if (value != .j and value != .k)
+                return;
+            const bit = value == usb.rx_last;
+            usb.rx_last = value;
+            if (!usb.packet) {
+                usb.rx_shift = (usb.rx_shift >> 1) | (@as(u8, @intFromBool(bit)) << 7);
+                if (usb.rx_shift == 0x80) {
+                    usb.packet = true;
+                    usb.status.toggle = false;
+                    usb.status.err = false;
+                    usb.status.eop = false;
+                    usb.status.sop = true;
+                    usb.rx_bits = 0;
+                    usb.rx_ones = 1;
+                }
+                return;
+            }
+            if (usb.rx_ones == 6) {
+                usb.rx_ones = 0;
+                if (bit) {
+                    usb.status.err = true;
+                    usb.packet = false;
+                    usb.rx_shift = 0xff;
+                }
+                return;
+            }
+            usb.rx_ones = if (bit)
+                usb.rx_ones + 1
+            else
+                0;
+            usb.rx_shift = (usb.rx_shift >> 1) | (@as(u8, @intFromBool(bit)) << 7);
+            usb.rx_bits += 1;
+            if (usb.rx_bits == 8) {
+                usb.rx_bits = 0;
+                usb.status.byte = usb.rx_shift;
+                usb.status.toggle = !usb.status.toggle;
+            }
+        }
+
+        /// Qualify line status at centered baud samples; short SE1 skew is not an illegal symbol.
+        fn receive(usb: *State, value: Line, increment: u16) void {
+            if (value != usb.previous) {
+                usb.steady = 0;
+                usb.rx_phase = 0;
+                usb.previous = value;
+            }
+            usb.steady = @min(usb.steady + @as(u20, increment), 8 * 65536);
+            const old = usb.rx_phase;
+            usb.rx_phase +%= increment;
+            if (!(old < 0x8000 and usb.rx_phase >= 0x8000))
+                return;
+            if (value != .se0 and usb.se0 != 0) {
+                usb.eop = false;
+                usb.se0 = 0;
+            }
+            usb.status.j = value == .j;
+            usb.status.k = value == .k;
+            usb.status.se0 = value == .se0;
+            usb.status.steady = usb.steady >= 7 * 65536;
+            if (usb.status.steady) {
+                usb.status.sop = false;
+                usb.status.eop = false;
+            }
+            switch (value) {
+                .se1 => {
+                    usb.status.err = true;
+                    usb.packet = false;
+                    usb.rx_shift = 0xff;
+                },
+                .se0 => {
+                    usb.se0 = @min(usb.se0 + 1, 8);
+                    if (usb.packet) {
+                        usb.packet = false;
+                        usb.eop = true;
+                        usb.status.sop = false;
+                        usb.status.eop = true;
+                    }
+                    if (usb.eop and usb.se0 > 3) {
+                        usb.status.err = true;
+                    }
+                    usb.rx_last = .j;
+                    usb.rx_shift = 0xff;
+                },
+                .j, .k => usb.sample(value),
+            }
+        }
+
+        /// Advance independent TX/RX machines using the lower endpoint's shared fractional baud rate.
+        fn advance(usb: *State, lower: *Registers, upper: *Registers, inputs: [2]Inputs) [2]Outputs {
+            const old_status = usb.status;
+            var discarded: ?u32 = null;
+            const configuration: Configuration = @bitCast(@as(u16, @truncate(lower.x)));
+            const increment: u16 = configuration.increment;
+            const rx_enabled = usb.rx_enable.step(lower.enabled);
+            const physical = usb.receiver_input.step(.{
+                .dm = inputs[0].a.sample(),
+                .dp = inputs[1].physical.sample(),
+            });
+            const full_speed = configuration.speed == .full;
+            const rx_full_speed = usb.speed_pipeline.step(configuration.speed);
+            if (usb.rx_speed != rx_full_speed) {
+                if (usb.status.steady) {
+                    const j = usb.status.j;
+                    usb.status.j = usb.status.k;
+                    usb.status.k = j;
+                }
+                if (usb.previous == .j or usb.previous == .k) {
+                    usb.previous = invert(usb.previous);
+                }
+                usb.rx_last = invert(usb.rx_last);
+                usb.rx_speed = rx_full_speed;
+            }
+            if (!lower.enabled) {
+                usb.phase = increment;
+                usb.pending = null;
+                usb.tx = .idle;
+                usb.drive = null;
+                lower.ready = false;
+            } else {
+                const next = @as(u17, usb.phase) + increment;
+                usb.phase = @truncate(next);
+                if (next > 0xffff) {
+                    usb.tx_speed = configuration.speed;
+                    usb.transmit(upper);
+                }
+                if (inputs[0].new_y) |value| {
+                    discarded = if (usb.pending) |pending|
+                        @as(u32, pending)
+                    else
+                        null;
+                    usb.pending = @truncate(value);
+                }
+            }
+            if (rx_enabled) {
+                usb.receive(line(physical.dm, physical.dp, rx_full_speed), increment);
+                if (lower.enabled and !std.meta.eql(usb.status, old_status)) {
+                    lower.ready = true;
+                }
+            } else {
+                usb.status = .{};
+                usb.packet = false;
+                usb.eop = false;
+                usb.rx_shift = 0xff;
+                usb.rx_bits = 0;
+                usb.rx_ones = 0;
+                usb.previous = .se0;
+                usb.rx_phase = 0;
+                usb.steady = 0;
+                usb.se0 = 0;
+                usb.rx_last = .j;
+            }
+            // Upper acknowledgement wins a coincident FIFO-transfer notification.
+            if (inputs[1].ack or inputs[1].new_x != null or inputs[1].new_y != null) {
+                upper.ready = false;
+            }
+            var result = [2]Outputs{ outputs(lower, inputs[0]), outputs(upper, inputs[1]) };
+            result[0].y = @as(u16, @bitCast(usb.status));
+            result[0].flag = usb.status.err;
+            result[0].discarded = discarded;
+            result[1].y = 0;
+            result[1].flag = false;
+            for (&result, 0..) |*state, index| {
+                state.scheduled = lower.enabled;
+                state.strength = .float;
+                if (!lower.enabled)
+                    continue;
+                const j_high = (index == 1) == full_speed;
+                if (usb.drive) |value| {
+                    const driven_j_high = (index == 1) == (usb.tx_speed == .full);
+                    state.smart_out = Signal.from(switch (value) {
+                        .j => driven_j_high,
+                        .k => !driven_j_high,
+                        .se0 => false,
+                        .se1 => true,
+                    });
+                    state.strength = .fast;
+                } else if (configuration.role == .host) {
+                    state.smart_out = .low;
+                    state.strength = .resistor_15k;
+                } else if (j_high) {
+                    state.smart_out = .high;
+                    state.strength = .resistor_1k5;
+                }
+            }
+            return result;
+        }
+    };
 };
 
 /// Shared registers and a mode-specific payload containing only private logic state.
@@ -1028,13 +1706,18 @@ pub const SmartPin = struct {
     /// Cog OUT transport remains clocked while an engine overrides the output.
     out_pipeline: Pipeline(u1, 2) = .init(0),
     /// Output engines publish through a register; GPIO passes the registered cog OUT bus through.
-    output_register: Pipeline(Signal, 1) = .init(.zero),
+    output_register: Pipeline(DriveSignal, 1) = .init(.{}),
+    adc_ready_pipeline: Pipeline(u1, 3) = .init(0),
+    /// Stable attachment to a pair-bank port, retained through smart-mode changes.
+    usb_port: ?*Usb.Port = null,
+    frame: Frame = .{},
+    mode_changed: bool = false,
 
     pub const Logic = union(Mode) {
         gpio: Normal,
-        repository: Repository,
-        dac_dither_rnd: DummyMode,
-        dac_dither_pwm: DummyMode,
+        dac_noise: Dac(.dac_noise),
+        dac_dither_rnd: Dac(.dac_dither_rnd),
+        dac_dither_pwm: Dac(.dac_dither_pwm),
         pulse: Pulse,
         transition: Transition,
         nco_frequency: Nco(false),
@@ -1055,10 +1738,10 @@ pub const SmartPin = struct {
         counter_ticks: Periods(.counter_ticks),
         counter_highs: Periods(.counter_highs),
         counter_periods: Periods(.counter_periods),
-        adc: DummyMode,
-        adc_ext: DummyMode,
-        adc_scope: DummyMode,
-        usb_pair: DummyMode,
+        adc: Adc(false),
+        adc_ext: Adc(true),
+        adc_scope: Scope,
+        usb: Usb.Forwarder,
         sync_tx: UsartTx,
         sync_rx: UsartRx,
         uart_tx: UartTx,
@@ -1072,11 +1755,20 @@ pub const SmartPin = struct {
 
     /// Return the measured engine-to-cog result latency, including the shared two-clock return path.
     pub fn resultLatency(pin: *const SmartPin) u64 {
-        return if (pin.digitalLogic() and pin.logic != .events_ticks) 3 else 2;
+        return switch (pin.logic) {
+            .adc, .adc_ext => 4,
+            .adc_scope => 3,
+            else => if (pin.digitalLogic() and pin.logic != .events_ticks)
+                3
+            else
+                2,
+        };
     }
 
     /// Apply the digital engine's reset-release sampling; NCOs maintain their own internal DIR stages.
     pub fn directionInput(pin: *const SmartPin, raw: bool, registered: bool) u1 {
+        if (pin.logic == .adc_scope)
+            return @intFromBool(registered);
         const nco = pin.logic == .nco_frequency or pin.logic == .nco_duty;
         return @intFromBool(raw and (nco or !pin.digitalLogic() or registered));
     }
@@ -1086,18 +1778,48 @@ pub const SmartPin = struct {
         return std.meta.activeTag(pin.logic).digitalLogic();
     }
 
-    /// Retain running digital and serial logic on same-mode WRPIN; replace the payload when its mode changes.
+    /// Configure the engine mode; connectUsb must bind a physical port before selecting USB.
+    /// DAC aliases resolve retention using DAC_MODE in the next sample.
     pub fn configure(pin: *SmartPin, mode: Mode) void {
-        if (mode.retainsState() and std.meta.activeTag(pin.logic) == mode) {
-            return;
+        if (std.meta.activeTag(pin.logic) == mode) {
+            switch (pin.logic) {
+                inline .dac_noise, .dac_dither_rnd, .dac_dither_pwm => |*logic| {
+                    logic.reconfigure = true;
+                    return;
+                },
+                else => {
+                    if (mode.retainsState())
+                        return;
+                },
+            }
         }
+        pin.mode_changed = std.meta.activeTag(pin.logic) != mode;
+        pin.adc_ready_pipeline = .init(0);
         pin.logic = switch (mode) {
+            .usb => .{ .usb = .{ .port = pin.usb_port.? } },
             inline else => |tag| @unionInit(Logic, @tagName(tag), .{}),
         };
     }
 
-    /// Apply command inputs, dispatch the active logic, then latch its result and IN signal.
-    pub fn step(pin: *SmartPin, inputs: Inputs) SmartPinError!Outputs {
+    const Frame = struct {
+        signals: Inputs = .{},
+        out: u1 = 0,
+        mode: Mode = .gpio,
+        mode_changed: bool = false,
+    };
+
+    /// Bind this pin's USB forwarder to its fixed physical endpoint in the pair bank.
+    pub fn connectUsb(pin: *SmartPin, port: *Usb.Port) void {
+        pin.usb_port = port;
+        port.frame = &pin.frame;
+        port.registers = &pin.registers;
+        if (pin.logic == .usb) {
+            pin.logic.usb.port = port;
+        }
+    }
+
+    /// Sample fixed inputs and commands for this edge, before any smart engine is clocked.
+    pub fn sample(pin: *SmartPin, inputs: Inputs) void {
         var signals = inputs;
         signals.out = pin.out_pipeline.tap(0);
         const out = pin.out_pipeline.step(inputs.out);
@@ -1116,18 +1838,49 @@ pub const SmartPin = struct {
         if (inputs.ack or inputs.new_x != null or inputs.new_y != null or signals.reset) {
             pin.registers.ready = false;
         }
-        var state = try switch (pin.logic) {
+        pin.frame = .{
+            .signals = signals,
+            .out = out,
+            .mode = std.meta.activeTag(pin.logic),
+            .mode_changed = pin.mode_changed,
+        };
+        pin.mode_changed = false;
+    }
+
+    /// Run an individual engine without publishing its registered output yet.
+    fn dispatch(pin: *SmartPin, signals: Inputs) Outputs {
+        return switch (pin.logic) {
             .uart_rx => |*logic| logic.step(&pin.registers, signals, pin.rx_mode),
             .sync_rx => |*logic| logic.step(&pin.registers, signals, pin.rx_mode),
             .uart_tx => |*logic| logic.step(&pin.registers, signals, pin.tx_mode),
             .sync_tx => |*logic| logic.step(&pin.registers, signals, pin.tx_mode),
             inline else => |*logic| logic.step(&pin.registers, signals),
         };
-        const output = pin.output_register.step(state.smart_out);
-        state.smart_out = if (pin.overridesOutput()) output else Signal.from(out != 0);
+    }
+
+    /// Register the output drive together with its level and latch result/readiness.
+    fn publish(pin: *SmartPin, frame: Frame, next: Outputs) Outputs {
+        var state = next;
+        if (pin.logic == .adc or pin.logic == .adc_ext) {
+            state.in = pin.adc_ready_pipeline.step(state.in);
+        }
+        const output = pin.output_register.step(.{ .level = state.smart_out, .strength = state.strength });
+        if (pin.overridesOutput()) {
+            state.smart_out = output.level;
+            state.strength = output.strength;
+        } else {
+            state.smart_out = Signal.from(frame.out != 0);
+            state.strength = null;
+        }
         pin.registers.result = state.y;
         pin.registers.ready = state.in != 0;
         return state;
+    }
+
+    /// Clock the engine from sampled inputs and latch its output/result registers.
+    /// Shared USB pairs must be clocked between sample() and this operation.
+    pub fn clock(pin: *SmartPin) Outputs {
+        return pin.publish(pin.frame, pin.dispatch(pin.frame.signals));
     }
 };
 
@@ -1139,7 +1892,7 @@ const SerialDevice = struct {
     writes: usize = 0,
 
     /// Consume the next available word once.
-    fn read(context: *anyopaque) anyerror!?u32 {
+    fn read(context: *anyopaque) ReadError!?u32 {
         const device: *SerialDevice = @ptrCast(@alignCast(context));
         if (device.reads == device.values.len) {
             return null;
@@ -1150,7 +1903,7 @@ const SerialDevice = struct {
     }
 
     /// Retain completed words without truncating their high bits.
-    fn write(context: *anyopaque, value: u32) anyerror!void {
+    fn write(context: *anyopaque, value: u32) WriteError!void {
         const device: *SerialDevice = @ptrCast(@alignCast(context));
         device.written[device.writes] = value;
         device.writes += 1;
@@ -1158,14 +1911,28 @@ const SerialDevice = struct {
 
     /// Create the receive callback descriptor used by a test pin.
     fn source(device: *SerialDevice) DataSource {
-        return .{ .callback = .{ .context = device, .read = read } };
+        return .{ .endpoint = .{ .callback = .{ .context = device, .read = read } } };
     }
 
     /// Create the completion callback descriptor used by a test pin.
     fn sink(device: *SerialDevice) DataSink {
-        return .{ .callback = .{ .context = device, .write = write } };
+        return .{ .endpoint = .{ .callback = .{ .context = device, .write = write } } };
     }
 };
+
+/// Clock one independent test pin using the same sample/evaluate boundary as IO.
+fn clockPin(pin: *SmartPin, inputs: Inputs) Outputs {
+    pin.sample(inputs);
+    return pin.clock();
+}
+
+/// Clock two attached test endpoints with shared hardware between sampling and publication.
+fn clockUsb(lower: *SmartPin, upper: *SmartPin, usb: *Usb, inputs: [2]Inputs) [2]Outputs {
+    lower.sample(inputs[0]);
+    upper.sample(inputs[1]);
+    usb.clock();
+    return .{ lower.clock(), upper.clock() };
+}
 
 test "virtual serial modes acknowledge RX and deliver TX writes immediately without transitions" {
     for ([_]Mode{ .uart_rx, .sync_rx }) |mode| {
@@ -1173,39 +1940,39 @@ test "virtual serial modes acknowledge RX and deliver TX writes immediately with
         var source = device.source();
         var pin: SmartPin = .{ .rx_mode = .{ .virtual = &source } };
         pin.configure(mode);
-        _ = try pin.step(.{ .dir = 1, .new_x = 31 });
+        _ = clockPin(&pin, .{ .dir = 1, .new_x = 31 });
         try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
         for (0..32) |_| {
-            _ = try pin.step(.{ .dir = 1 });
+            _ = clockPin(&pin, .{ .dir = 1 });
         }
         try std.testing.expectEqual(@as(usize, 1), device.reads);
-        _ = try pin.step(.{ .dir = 1, .ack = true });
+        _ = clockPin(&pin, .{ .dir = 1, .ack = true });
         try std.testing.expectEqual(@as(u32, 0x12345678), pin.registers.result);
-        _ = try pin.step(.{ .dir = 1, .ack = true });
+        _ = clockPin(&pin, .{ .dir = 1, .ack = true });
         try std.testing.expect(!pin.registers.ready);
     }
     for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
         var device: SerialDevice = .{ .values = &.{} };
-        const sink = device.sink();
+        var sink = device.sink();
         var pin: SmartPin = .{ .tx_mode = .{ .virtual = &sink } };
         pin.configure(mode);
         // Let the output register publish the protocol's reset level before sending words.
-        _ = try pin.step(.{});
+        _ = clockPin(&pin, .{});
         for (0..32) |i| {
-            const state = try pin.step(.{ .dir = 1, .new_x = 31, .new_y = @as(u32, 0x80000000) + @as(u32, @intCast(i)) });
-            try std.testing.expectEqual(if (mode == .uart_tx) Signal.one else Signal.zero, state.smart_out);
+            const state = clockPin(&pin, .{ .dir = 1, .new_x = 31, .new_y = @as(u32, 0x80000000) + @as(u32, @intCast(i)) });
+            try std.testing.expectEqual(if (mode == .uart_tx) Signal.high else Signal.low, state.smart_out);
             try std.testing.expectEqual(i + 1, device.writes);
         }
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1 });
         try std.testing.expectEqual(@as(usize, 32), device.writes);
         try std.testing.expectEqual(@as(u32, 0x8000001f), device.written[31]);
-        _ = try pin.step(.{ .dir = 1, .new_y = 0xffffffff });
-        _ = try pin.step(.{});
+        _ = clockPin(&pin, .{ .dir = 1, .new_y = 0xffffffff });
+        _ = clockPin(&pin, .{});
         try std.testing.expectEqual(@as(usize, 33), device.writes);
         try std.testing.expectEqual(@as(u32, 0xffffffff), device.written[32]);
         // Writes while reset do not prime a virtual or subsequent timed transfer.
-        _ = try pin.step(.{ .new_y = 123 });
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .new_y = 123 });
+        _ = clockPin(&pin, .{ .dir = 1 });
         try std.testing.expectEqual(@as(usize, 33), device.writes);
     }
 }
@@ -1216,42 +1983,42 @@ test "virtual reception discards partial words and returns to a complete fresh t
         var source = device.source();
         var pin: SmartPin = .{ .rx_mode = .{ .emulated = &source } };
         pin.configure(mode);
-        _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 7 });
+        _ = clockPin(&pin, .{ .dir = 1, .new_x = (8 << 16) | 7 });
         if (mode == .uart_rx) {
             for (0..30) |_| {
-                _ = try pin.step(.{ .dir = 1 });
+                _ = clockPin(&pin, .{ .dir = 1 });
             }
         } else {
             for (0..4) |_| {
-                _ = try pin.step(.{ .dir = 1, .b = .one });
-                _ = try pin.step(.{ .dir = 1 });
+                _ = clockPin(&pin, .{ .dir = 1, .b = .high });
+                _ = clockPin(&pin, .{ .dir = 1 });
             }
         }
         try std.testing.expectEqual(@as(usize, 1), device.reads);
         try std.testing.expect(!pin.registers.ready);
         pin.rx_mode = .{ .virtual = &source };
         for (0..8) |clock| {
-            _ = try pin.step(.{ .dir = 1, .a = .one, .b = Signal.from(clock % 2 != 0) });
+            _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = Signal.from(clock % 2 != 0) });
         }
         try std.testing.expectEqual(@as(usize, 2), device.reads);
         try std.testing.expectEqual(@as(u32, 0x55000000), pin.registers.result);
         pin.rx_mode = .{ .emulated = &source };
-        _ = try pin.step(.{ .dir = 1, .ack = true, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .ack = true, .b = .high });
         if (mode == .uart_rx) {
             // A complete new UART frame must elapse; the discarded prefix cannot shorten it.
             for (0..70) |_| {
-                _ = try pin.step(.{ .dir = 1 });
+                _ = clockPin(&pin, .{ .dir = 1 });
                 try std.testing.expect(!pin.registers.ready);
             }
             for (0..20) |_| {
-                _ = try pin.step(.{ .dir = 1 });
+                _ = clockPin(&pin, .{ .dir = 1 });
             }
         } else {
             // The held-high clock is not an edge, and none of the old four bits survive.
             try std.testing.expectEqual(@as(usize, 2), device.reads);
             for (0..8) |bit| {
-                _ = try pin.step(.{ .dir = 1 });
-                _ = try pin.step(.{ .dir = 1, .b = .one });
+                _ = clockPin(&pin, .{ .dir = 1 });
+                _ = clockPin(&pin, .{ .dir = 1, .b = .high });
                 try std.testing.expectEqual(bit == 7, pin.registers.ready);
             }
         }
@@ -1264,35 +2031,35 @@ test "virtual reception discards partial words and returns to a complete fresh t
 test "virtual transmission abandons timed state and leaves no word to resume" {
     for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
         var device: SerialDevice = .{ .values = &.{} };
-        const sink = device.sink();
+        var sink = device.sink();
         var pin: SmartPin = .{ .tx_mode = .{ .emulated = &sink } };
         pin.configure(mode);
-        _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 39, .new_y = 0xff });
+        _ = clockPin(&pin, .{ .dir = 1, .new_x = (8 << 16) | 39, .new_y = 0xff });
         for (0..3) |_| {
-            _ = try pin.step(.{ .dir = 1 });
-            _ = try pin.step(.{ .dir = 1, .b = .one });
+            _ = clockPin(&pin, .{ .dir = 1 });
+            _ = clockPin(&pin, .{ .dir = 1, .b = .high });
         }
         pin.tx_mode = .{ .virtual = &sink };
-        _ = try pin.step(.{ .dir = 1, .new_y = 0xa5, .a = .one, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .new_y = 0xa5, .a = .high, .b = .high });
         try std.testing.expectEqual(@as(usize, 1), device.writes);
         try std.testing.expectEqual(@as(u32, 0xa5), device.written[0]);
         for (0..20) |_| {
-            _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+            _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = .high });
         }
         pin.tx_mode = .{ .emulated = &sink };
         for (0..100) |_| {
-            _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+            _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = .high });
         }
         try std.testing.expectEqual(@as(usize, 1), device.writes);
-        _ = try pin.step(.{ .dir = 1, .new_y = 0x3c, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .new_y = 0x3c, .b = .high });
         if (mode == .uart_tx) {
             for (0..100) |_| {
-                _ = try pin.step(.{ .dir = 1 });
+                _ = clockPin(&pin, .{ .dir = 1 });
             }
         } else {
             for (0..8) |_| {
-                _ = try pin.step(.{ .dir = 1 });
-                _ = try pin.step(.{ .dir = 1, .b = .one });
+                _ = clockPin(&pin, .{ .dir = 1 });
+                _ = clockPin(&pin, .{ .dir = 1, .b = .high });
             }
         }
         try std.testing.expectEqual(@as(usize, 2), device.writes);
@@ -1310,15 +2077,15 @@ test "USART exact and emulated receivers agree for every width and retain old sh
         exact.configure(.sync_rx);
         emulated.configure(.sync_rx);
         const x: u32 = @intCast(width - 1);
-        _ = try exact.step(.{ .new_x = x });
-        _ = try emulated.step(.{ .new_x = x });
+        _ = clockPin(&exact, .{ .new_x = x });
+        _ = clockPin(&emulated, .{ .new_x = x });
         for (0..width * 2) |bit| {
             const a = Signal.from(word >> @as(u5, @intCast(bit % width)) & 1 != 0);
-            const low: Inputs = .{ .dir = 1, .a = a, .b = .zero, .ack = true };
-            _ = try exact.step(low);
-            _ = try emulated.step(low);
-            const high: Inputs = .{ .dir = 1, .a = a, .b = .one };
-            try std.testing.expectEqualDeep(try exact.step(high), try emulated.step(high));
+            const low: Inputs = .{ .dir = 1, .a = a, .b = .low, .ack = true };
+            _ = clockPin(&exact, low);
+            _ = clockPin(&emulated, low);
+            const high: Inputs = .{ .dir = 1, .a = a, .b = .high };
+            try std.testing.expectEqualDeep(clockPin(&exact, high), clockPin(&emulated, high));
             try std.testing.expectEqual((bit + 1) % width == 0, exact.registers.ready);
         }
         try std.testing.expectEqual(@as(usize, 2), device.reads);
@@ -1329,11 +2096,11 @@ test "USART exact and emulated receivers agree for every width and retain old sh
 test "USART sample selection, live length changes, and handoff align the whole source word" {
     var pin: SmartPin = .{};
     pin.configure(.sync_rx);
-    _ = try pin.step(.{ .dir = 1, .new_x = 7, .a = .zero });
-    _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+    _ = clockPin(&pin, .{ .dir = 1, .new_x = 7, .a = .low });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = .high });
     try std.testing.expectEqual(@as(u32, 0), pin.logic.sync_rx.shift);
-    _ = try pin.step(.{ .dir = 1, .a = .one, .b = .zero, .new_x = 39 });
-    _ = try pin.step(.{ .dir = 1, .a = .zero, .b = .one });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = .low, .new_x = 39 });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .low, .b = .high });
     try std.testing.expectEqual(@as(u32, 0), pin.logic.sync_rx.shift);
 
     var device: SerialDevice = .{ .values = &.{0x89abcdef} };
@@ -1341,9 +2108,9 @@ test "USART sample selection, live length changes, and handoff align the whole s
     pin.rx_mode = .{ .emulated = &source };
     // Two physical zero bits are retained; the source supplies bits 2 through 31.
     for (2..32) |bit| {
-        const input: Inputs = .{ .dir = 1, .b = .zero, .new_x = if (bit == 4) 31 else null };
-        _ = try pin.step(input);
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        const input: Inputs = .{ .dir = 1, .b = .low, .new_x = if (bit == 4) 31 else null };
+        _ = clockPin(&pin, input);
+        _ = clockPin(&pin, .{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0x89abcdec), pin.registers.result);
     try std.testing.expectEqual(@as(usize, 1), device.reads);
@@ -1360,17 +2127,17 @@ test "UART receivers validate starts and agree with emulated data across all wor
         exact.configure(.uart_rx);
         emulated.configure(.uart_rx);
         const x: u32 = (8 << 16) | @as(u32, @intCast(width - 1));
-        _ = try exact.step(.{ .new_x = x, .a = .one });
-        _ = try emulated.step(.{ .new_x = x });
+        _ = clockPin(&exact, .{ .new_x = x, .a = .high });
+        _ = clockPin(&emulated, .{ .new_x = x });
         for (0..(width + 2) * 8) |clock| {
             const data_bit = if (clock >= 9 and clock < (width + 1) * 8 + 1)
                 Signal.from(word >> @as(u5, @intCast((clock - 9) / 8)) & 1 != 0)
             else if (clock >= 1 and clock < 9)
-                Signal.zero
+                Signal.low
             else
-                Signal.one;
-            const actual = try exact.step(.{ .dir = 1, .a = data_bit });
-            const synthesized = try emulated.step(.{ .dir = 1 });
+                Signal.high;
+            const actual = clockPin(&exact, .{ .dir = 1, .a = data_bit });
+            const synthesized = clockPin(&emulated, .{ .dir = 1 });
             try std.testing.expectEqualDeep(actual, synthesized);
         }
         try std.testing.expectEqual((word & wordMask(x)) << @as(u5, @intCast(32 - width)), exact.registers.result);
@@ -1378,10 +2145,10 @@ test "UART receivers validate starts and agree with emulated data across all wor
     }
     var pin: SmartPin = .{};
     pin.configure(.uart_rx);
-    _ = try pin.step(.{ .dir = 1, .new_x = (8 << 16) | 7, .a = .one });
-    _ = try pin.step(.{ .dir = 1, .a = .zero });
+    _ = clockPin(&pin, .{ .dir = 1, .new_x = (8 << 16) | 7, .a = .high });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .low });
     for (0..100) |_| {
-        _ = try pin.step(.{ .dir = 1, .a = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .a = .high });
     }
     try std.testing.expect(!pin.registers.ready);
 }
@@ -1389,28 +2156,28 @@ test "UART receivers validate starts and agree with emulated data across all wor
 test "entering virtual aborts partial RX and TX but retains completed RX until acknowledgement" {
     var device: SerialDevice = .{ .values = &.{0x12345678} };
     var source = device.source();
-    const sink = device.sink();
+    var sink = device.sink();
     for ([_]Mode{ .sync_rx, .uart_rx }) |mode| {
         var pin: SmartPin = .{};
         pin.configure(mode);
         pin.registers.result = 0x89abcdef;
         pin.registers.ready = true;
         pin.rx_mode = .{ .virtual = &source };
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1 });
         try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
         try std.testing.expectEqual(@as(usize, 0), device.reads);
         pin.rx_mode = .exact;
-        _ = try pin.step(.{ .dir = 1, .a = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .a = .high });
         try std.testing.expect(pin.registers.ready);
     }
     for ([_]Mode{ .sync_tx, .uart_tx }) |mode| {
         var pin: SmartPin = .{ .tx_mode = .{ .emulated = &sink } };
         pin.configure(mode);
-        _ = try pin.step(.{ .new_x = (8 << 16) | 31, .new_y = 0xffffffff });
-        _ = try pin.step(.{ .dir = 1, .new_y = 0xffffffff });
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .new_x = (8 << 16) | 31, .new_y = 0xffffffff });
+        _ = clockPin(&pin, .{ .dir = 1, .new_y = 0xffffffff });
+        _ = clockPin(&pin, .{ .dir = 1 });
         pin.tx_mode = .{ .virtual = &sink };
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1 });
         try std.testing.expectEqual(@as(usize, 0), device.writes);
     }
 }
@@ -1418,22 +2185,22 @@ test "entering virtual aborts partial RX and TX but retains completed RX until a
 test "emulated TX generates full UART waveforms and completes into the current sink" {
     var first: SerialDevice = .{ .values = &.{} };
     var second: SerialDevice = .{ .values = &.{} };
-    const first_sink = first.sink();
-    const second_sink = second.sink();
+    var first_sink = first.sink();
+    var second_sink = second.sink();
     var pin: SmartPin = .{ .tx_mode = .{ .emulated = &first_sink } };
     pin.configure(.uart_tx);
-    _ = try pin.step(.{ .new_x = (8 << 16) | 7 });
-    _ = try pin.step(.{ .dir = 1, .new_y = 0xa5 });
+    _ = clockPin(&pin, .{ .new_x = (8 << 16) | 7 });
+    _ = clockPin(&pin, .{ .dir = 1, .new_y = 0xa5 });
     for (0..81) |clock| {
-        const state = try pin.step(.{ .dir = 1 });
+        const state = clockPin(&pin, .{ .dir = 1 });
         const expected = if (clock == 0)
-            Signal.one
+            Signal.high
         else if (clock < 9)
-            Signal.zero
+            Signal.low
         else if (clock < 73)
             Signal.from(@as(u32, 0xa5) >> @as(u5, @intCast((clock - 9) / 8)) & 1 != 0)
         else
-            Signal.one;
+            Signal.high;
         try std.testing.expectEqual(expected, state.smart_out);
         if (clock == 40) {
             pin.tx_mode = .{ .emulated = &second_sink };
@@ -1449,7 +2216,7 @@ test "UART in-flight handoffs retain staged 32-bit data, timing and physical pre
     var source = device.source();
     var pin: SmartPin = .{};
     pin.configure(.uart_rx);
-    _ = try pin.step(.{ .new_x = (8 << 16) | 7 });
+    _ = clockPin(&pin, .{ .new_x = (8 << 16) | 7 });
     for (0..280) |clock| {
         if (clock == 31 or clock == 96) {
             pin.rx_mode = .{ .emulated = &source };
@@ -1460,10 +2227,10 @@ test "UART in-flight handoffs retain staged 32-bit data, timing and physical pre
         const a = if (clock >= 9 and clock < 265)
             Signal.from(word >> @as(u5, @intCast((clock - 9) / 8)) & 1 != 0)
         else if (clock >= 1 and clock < 9)
-            Signal.zero
+            Signal.low
         else
-            Signal.one;
-        _ = try pin.step(.{
+            Signal.high;
+        _ = clockPin(&pin, .{
             .dir = 1,
             .a = a,
             .new_x = if (clock == 31) (8 << 16) | 31 else null,
@@ -1479,16 +2246,16 @@ test "shortened USART words stall past 64 edges and reset recovers without clear
     pin.configure(.sync_rx);
     pin.registers.result = 0x12345678;
     for (0..80) |bit| {
-        _ = try pin.step(.{ .dir = 1, .a = .one, .new_x = if (bit == 0) 7 else if (bit == 5) 1 else null });
-        _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .a = .high, .new_x = if (bit == 0) 7 else if (bit == 5) 1 else null });
+        _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = .high });
     }
     try std.testing.expect(!pin.registers.ready);
     try std.testing.expectEqual(@as(u32, 0x12345678), pin.registers.result);
-    _ = try pin.step(.{ .a = .one });
+    _ = clockPin(&pin, .{ .a = .high });
     try std.testing.expectEqual(@as(u32, 0x12345678), pin.registers.result);
     for (0..2) |_| {
-        _ = try pin.step(.{ .dir = 1, .a = .one });
-        _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .a = .high });
+        _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0xffffffff), pin.registers.result);
     try std.testing.expect(pin.registers.ready);
@@ -1503,10 +2270,10 @@ test "emulated USART clocks, source starvation and endpoint replacement preserve
     var later_source = later.source();
     var pin: SmartPin = .{ .rx_mode = .{ .emulated = &empty_source } };
     pin.configure(.sync_rx);
-    _ = try pin.step(.{ .dir = 1, .new_x = 31 });
+    _ = clockPin(&pin, .{ .dir = 1, .new_x = 31 });
     for (0..8) |_| {
-        _ = try pin.step(.{ .dir = 1 });
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u6, 0), pin.logic.sync_rx.count);
     try std.testing.expect(!pin.registers.ready);
@@ -1515,91 +2282,98 @@ test "emulated USART clocks, source starvation and endpoint replacement preserve
         if (bit == 4) {
             pin.rx_mode = .{ .emulated = &later_source };
         }
-        _ = try pin.step(.{ .dir = 1 });
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
     try std.testing.expectEqual(@as(usize, 1), available.reads);
     try std.testing.expectEqual(@as(usize, 0), later.reads);
     // Timed reception overwrites unread Z. Virtual reception retains it until acknowledgement.
     for (0..32) |_| {
-        _ = try pin.step(.{ .dir = 1 });
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(u32, 0xffffffff), pin.registers.result);
     pin.rx_mode = .{ .virtual = &available_source };
-    _ = try pin.step(.{ .dir = 1 });
+    _ = clockPin(&pin, .{ .dir = 1 });
     try std.testing.expectEqual(@as(usize, 1), available.reads);
-    _ = try pin.step(.{ .dir = 1, .ack = true });
+    _ = clockPin(&pin, .{ .dir = 1, .ack = true });
     try std.testing.expectEqual(@as(u32, 0x12345678), pin.registers.result);
 }
 
 test "USART TX start-stop buffers after the first edge and reports completed words" {
     var device: SerialDevice = .{ .values = &.{} };
-    const sink = device.sink();
+    var sink = device.sink();
     var pin: SmartPin = .{ .tx_mode = .{ .emulated = &sink } };
     pin.configure(.sync_tx);
-    _ = try pin.step(.{ .new_x = 35, .new_y = 0x12345678 });
-    var state = try pin.step(.{ .dir = 1, .new_y = 0x89abcdef });
-    try std.testing.expectEqual(Signal.zero, state.smart_out);
-    state = try pin.step(.{ .dir = 1, .b = .one });
-    try std.testing.expectEqual(Signal.one, state.smart_out);
-    _ = try pin.step(.{ .dir = 1, .new_y = 0x76543210, .ack = true });
+    _ = clockPin(&pin, .{ .new_x = 35, .new_y = 0x12345678 });
+    var state = clockPin(&pin, .{ .dir = 1, .new_y = 0x89abcdef });
+    try std.testing.expectEqual(Signal.low, state.smart_out);
+    state = clockPin(&pin, .{ .dir = 1, .b = .high });
+    try std.testing.expectEqual(Signal.high, state.smart_out);
+    _ = clockPin(&pin, .{ .dir = 1, .new_y = 0x76543210, .ack = true });
     for (0..3) |_| {
-        _ = try pin.step(.{ .dir = 1, .b = .one });
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1, .b = .high });
+        _ = clockPin(&pin, .{ .dir = 1 });
     }
     try std.testing.expectEqual(@as(usize, 1), device.writes);
     try std.testing.expectEqual(@as(u32, 15), device.written[0]);
     try std.testing.expect(pin.registers.ready);
     for (0..4) |_| {
-        _ = try pin.step(.{ .dir = 1, .b = .one });
-        state = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1, .b = .high });
+        state = clockPin(&pin, .{ .dir = 1 });
     }
     try std.testing.expectEqual(@as(usize, 2), device.writes);
     try std.testing.expectEqual(@as(u32, 0), device.written[1]);
-    _ = try pin.step(.{});
+    _ = clockPin(&pin, .{});
     try std.testing.expectEqual(@as(usize, 2), device.writes);
 }
 
-test "WRPIN retains host modes and endpoint errors propagate through all serial engines" {
+test "endpoint failures are sticky across smart-pin reconfiguration" {
     const Broken = struct {
-        /// Exercise callback receive failures without converting them to idle data.
-        fn read(_: *anyopaque) anyerror!?u32 {
-            return error.TestSourceFailure;
+        /// Fail the host read adapter.
+        fn read(context: *anyopaque) ReadError!?u32 {
+            const count: *usize = @ptrCast(@alignCast(context));
+            count.* += 1;
+            return error.ReadFailed;
         }
-        /// Exercise completion failures without discarding them.
-        fn write(_: *anyopaque, _: u32) anyerror!void {
-            return error.TestSinkFailure;
+        /// Fail the host completion adapter.
+        fn write(context: *anyopaque, _: u32) WriteError!void {
+            const count: *usize = @ptrCast(@alignCast(context));
+            count.* += 1;
+            return error.WriteFailed;
         }
     };
-    var context: u8 = 0;
-    var source: DataSource = .{ .callback = .{ .context = &context, .read = Broken.read } };
-    const sink: DataSink = .{ .callback = .{ .context = &context, .write = Broken.write } };
-    var pin: SmartPin = .{ .rx_mode = .{ .emulated = &source }, .tx_mode = .{ .virtual = &sink } };
-    pin.configure(.uart_rx);
-    try std.testing.expectError(error.TestSourceFailure, pin.step(.{ .dir = 1, .new_x = (8 << 16) | 7 }));
-    pin.configure(.sync_rx);
-    _ = try pin.step(.{ .dir = 1 });
-    try std.testing.expectError(error.TestSourceFailure, pin.step(.{ .dir = 1, .b = .one }));
-    try std.testing.expect(pin.rx_mode.emulated == &source);
+    var attempts: usize = 0;
+    var source: DataSource = .{ .endpoint = .{ .callback = .{ .context = &attempts, .read = Broken.read } } };
+    var sink: DataSink = .{ .endpoint = .{ .callback = .{ .context = &attempts, .write = Broken.write } } };
+    var pin: SmartPin = .{ .rx_mode = .{ .virtual = &source }, .tx_mode = .{ .virtual = &sink } };
+    for ([_]Mode{ .uart_rx, .sync_rx }) |mode| {
+        pin.configure(mode);
+        _ = clockPin(&pin, .{ .dir = 1, .new_x = 7 });
+        try std.testing.expectEqual(error.ReadFailed, source.failure.?);
+    }
+    try std.testing.expectEqual(@as(usize, 1), attempts);
     for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
         pin.configure(mode);
-        try std.testing.expectError(error.TestSinkFailure, pin.step(.{ .dir = 1, .new_y = 0x12345678 }));
-        _ = try pin.step(.{ .dir = 1 });
-        try std.testing.expect(pin.tx_mode.virtual == &sink);
+        _ = clockPin(&pin, .{ .dir = 1, .new_y = 42 });
+        try std.testing.expectEqual(error.WriteFailed, sink.failure.?);
     }
+    try std.testing.expectEqual(@as(usize, 2), attempts);
+    source.reset();
+    try std.testing.expectEqual(@as(?u32, null), source.read());
+    try std.testing.expectEqual(@as(usize, 3), attempts);
 }
 
 test "buffered UART preserves fractional baud phase across odd-length frames" {
     var device: SerialDevice = .{ .values = &.{} };
-    const sink = device.sink();
+    var sink = device.sink();
     var pin: SmartPin = .{ .tx_mode = .{ .emulated = &sink } };
     pin.configure(.uart_tx);
-    _ = try pin.step(.{ .new_x = (7 << 16) | 0x4000 });
-    _ = try pin.step(.{ .dir = 1, .new_y = 0 });
+    _ = clockPin(&pin, .{ .new_x = (7 << 16) | 0x4000 });
+    _ = clockPin(&pin, .{ .dir = 1, .new_y = 0 });
     for (0..45) |clock| {
-        _ = try pin.step(.{ .dir = 1, .new_y = if (clock == 1) 1 else null });
+        _ = clockPin(&pin, .{ .dir = 1, .new_y = if (clock == 1) 1 else null });
         const expected: usize = @as(usize, @intFromBool(clock >= 21)) + @as(usize, @intFromBool(clock >= 43));
         try std.testing.expectEqual(expected, device.writes);
     }
@@ -1611,22 +2385,22 @@ test "returning from virtual USART waits for a new B edge" {
     var source = device.source();
     var pin: SmartPin = .{ .rx_mode = .{ .virtual = &source } };
     pin.configure(.sync_rx);
-    _ = try pin.step(.{ .dir = 1, .new_x = 7, .b = .one });
+    _ = clockPin(&pin, .{ .dir = 1, .new_x = 7, .b = .high });
     pin.rx_mode = .{ .emulated = &source };
     for (0..8) |_| {
-        _ = try pin.step(.{ .dir = 1, .b = .one });
+        _ = clockPin(&pin, .{ .dir = 1, .b = .high });
     }
     try std.testing.expectEqual(@as(usize, 1), device.reads);
     try std.testing.expectEqual(@as(u6, 0), pin.logic.sync_rx.count);
-    _ = try pin.step(.{ .dir = 1, .b = .zero });
-    _ = try pin.step(.{ .dir = 1, .b = .one });
+    _ = clockPin(&pin, .{ .dir = 1, .b = .low });
+    _ = clockPin(&pin, .{ .dir = 1, .b = .high });
     try std.testing.expectEqual(@as(usize, 2), device.reads);
     try std.testing.expectEqual(@as(u6, 1), pin.logic.sync_rx.count);
     // A real low-to-high transition on the first timed step must not be suppressed either.
     pin.rx_mode = .{ .virtual = &source };
-    _ = try pin.step(.{ .dir = 1, .a = .one });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .high });
     pin.rx_mode = .exact;
-    _ = try pin.step(.{ .dir = 1, .a = .one, .b = .one });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .high, .b = .high });
     try std.testing.expectEqual(@as(u6, 1), pin.logic.sync_rx.count);
     try std.testing.expectEqual(@as(u32, 0x80000000), pin.logic.sync_rx.shift);
 }
@@ -1634,19 +2408,19 @@ test "returning from virtual USART waits for a new B edge" {
 test "virtual transmitters do not invent words when enabled without WYPIN" {
     for ([_]Mode{ .uart_tx, .sync_tx }) |mode| {
         var device: SerialDevice = .{ .values = &.{} };
-        const sink = device.sink();
+        var sink = device.sink();
         var pin: SmartPin = .{ .tx_mode = .{ .virtual = &sink } };
         pin.configure(mode);
-        _ = try pin.step(.{ .new_x = 7 });
+        _ = clockPin(&pin, .{ .new_x = 7 });
         for (0..8) |_| {
-            _ = try pin.step(.{ .dir = 1 });
+            _ = clockPin(&pin, .{ .dir = 1 });
         }
         try std.testing.expectEqual(@as(usize, 0), device.writes);
-        _ = try pin.step(.{ .dir = 1, .new_y = 0xa5 });
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{ .dir = 1, .new_y = 0xa5 });
+        _ = clockPin(&pin, .{ .dir = 1 });
         try std.testing.expectEqual(@as(usize, 1), device.writes);
-        _ = try pin.step(.{});
-        _ = try pin.step(.{ .dir = 1 });
+        _ = clockPin(&pin, .{});
+        _ = clockPin(&pin, .{ .dir = 1 });
         try std.testing.expectEqual(@as(usize, 1), device.writes);
     }
 }
@@ -1656,11 +2430,11 @@ test "emulated UART keeps fractional frame cadence and arms while its source is 
     var source = device.source();
     var pin: SmartPin = .{ .rx_mode = .{ .emulated = &source } };
     pin.configure(.uart_rx);
-    _ = try pin.step(.{ .new_x = (7 << 16) | 0x4000 });
+    _ = clockPin(&pin, .{ .new_x = (7 << 16) | 0x4000 });
     var completions: [3]usize = undefined;
     var count: usize = 0;
     for (0..68) |clock| {
-        const state = try pin.step(.{ .dir = 1, .ack = true });
+        const state = clockPin(&pin, .{ .dir = 1, .ack = true });
         if (state.in != 0) {
             completions[count] = clock;
             count += 1;
@@ -1670,7 +2444,7 @@ test "emulated UART keeps fractional frame cadence and arms while its source is 
     try std.testing.expectEqualSlices(usize, &.{ 21, 42, 64 }, &completions);
     device.values = &.{ 0, 1, 0, 1 };
     try std.testing.expect(pin.logic.uart_rx.phase == .start);
-    _ = try pin.step(.{ .dir = 1 });
+    _ = clockPin(&pin, .{ .dir = 1 });
     try std.testing.expect(pin.logic.uart_rx.phase == .validate);
     try std.testing.expectEqual(@as(usize, 4), device.reads);
 }
@@ -1680,12 +2454,12 @@ test "UART width can extend after the nominal last sample and before capture" {
     var source = device.source();
     var pin: SmartPin = .{ .rx_mode = .{ .emulated = &source } };
     pin.configure(.uart_rx);
-    _ = try pin.step(.{ .new_x = (8 << 16) | 7 });
+    _ = clockPin(&pin, .{ .new_x = (8 << 16) | 7 });
     for (0..145) |clock| {
         if (clock == 72) {
             try std.testing.expect(pin.logic.uart_rx.phase == .finish);
         }
-        _ = try pin.step(.{ .dir = 1, .new_x = if (clock == 72) (8 << 16) | 15 else null });
+        _ = clockPin(&pin, .{ .dir = 1, .new_x = if (clock == 72) (8 << 16) | 15 else null });
     }
     try std.testing.expectEqual(@as(u32, 0x12ef0000), pin.registers.result);
     try std.testing.expect(pin.registers.ready);
@@ -1694,38 +2468,70 @@ test "UART width can extend after the nominal last sample and before capture" {
 
 test "step updates shared registers and latches repository outputs" {
     var pin: SmartPin = .{};
-    pin.configure(.repository);
-    const written = try pin.step(.{ .dir = 1, .new_x = 0x89abcdef, .new_y = 123, .clock = 10 });
+    pin.configure(.dac_noise);
+    const written = clockPin(&pin, .{ .dir = 1, .new_x = 0x89abcdef, .new_y = 123, .clock = 10 });
     try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.x);
     try std.testing.expectEqual(@as(u32, 123), pin.registers.y);
     try std.testing.expectEqual(written.y, pin.registers.result);
     try std.testing.expectEqual(written.in != 0, pin.registers.ready);
     try std.testing.expect(pin.registers.enabled and !pin.registers.ready);
-    const complete = try pin.step(.{ .dir = 1, .clock = 11 });
+    const complete = clockPin(&pin, .{ .dir = 1, .clock = 11 });
     try std.testing.expect(complete.in != 0 and pin.registers.ready);
-    _ = try pin.step(.{ .dir = 1, .ack = true, .clock = 12 });
+    _ = clockPin(&pin, .{ .dir = 1, .ack = true, .clock = 12 });
     try std.testing.expect(!pin.registers.ready);
-    _ = try pin.step(.{ .new_x = 456, .clock = 13 });
+    _ = clockPin(&pin, .{ .new_x = 456, .clock = 13 });
     try std.testing.expectEqual(@as(u32, 456), pin.registers.x);
     try std.testing.expectEqual(@as(u32, 0x89abcdef), pin.registers.result);
     try std.testing.expect(!pin.registers.enabled);
 }
 
-test "configuration replaces only logic and unsupported logic fails through step" {
+test "DAC configuration owns repository reset and running sample-period retention" {
+    for ([_]Mode{ .dac_noise, .dac_dither_rnd, .dac_dither_pwm }) |mode| {
+        var pin: SmartPin = .{};
+        pin.configure(mode);
+        _ = clockPin(&pin, .{ .dir = 1, .new_x = 123 });
+        pin.configure(mode);
+        const reset = clockPin(&pin, .{ .dir = 1 });
+        try std.testing.expectEqual(@as(u1, 0), reset.in);
+        try std.testing.expect(reset.dac == null);
+
+        pin.configure(mode);
+        _ = clockPin(&pin, .{ .dac_mode = true, .new_x = 4, .new_y = 0x8000 });
+        for (0..2) |_| {
+            _ = clockPin(&pin, .{ .dac_mode = true, .dir = 1, .a = .high });
+        }
+        try std.testing.expect(!pin.registers.ready);
+        pin.configure(mode);
+        for (0..2) |_| {
+            _ = clockPin(&pin, .{ .dac_mode = true, .dir = 1, .a = .high });
+        }
+        try std.testing.expect(pin.registers.ready);
+        try std.testing.expectEqual(@as(u32, 4), pin.registers.result);
+
+        pin.configure(mode);
+        const restored = clockPin(&pin, .{ .dir = 1, .new_x = 456 });
+        try std.testing.expect(restored.dac == null);
+        try std.testing.expectEqual(@as(u32, 456), restored.y);
+    }
+}
+
+test "configuration replaces only logic and preserves GPIO transport" {
     var pin: SmartPin = .{};
-    _ = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .new_x = 12, .new_y = 34 });
+    _ = clockPin(&pin, .{ .dir = 1, .out = 1, .a = .high, .new_x = 12, .new_y = 34 });
     const registers = pin.registers;
-    pin.configure(.usb_pair);
+    var usb: Usb = .{};
+    pin.connectUsb(&usb.ports[0]);
+    pin.configure(.usb);
     try std.testing.expectEqualDeep(registers, pin.registers);
-    try std.testing.expectError(error.UnsupportedSmartPinMode, pin.step(.{ .dir = 1, .clock = 1 }));
+    _ = clockPin(&pin, .{ .dir = 1, .clock = 1 });
     pin.configure(.gpio);
-    const state = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .clock = 2 });
-    try std.testing.expectEqual(Signal.one, state.smart_out);
+    const state = clockPin(&pin, .{ .dir = 1, .out = 1, .a = .high, .clock = 2 });
+    try std.testing.expectEqual(Signal.high, state.smart_out);
     try std.testing.expectEqual(@as(u1, 1), state.in);
-    const registered = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .clock = 3 });
-    try std.testing.expectEqual(Signal.zero, registered.smart_out);
-    const settled = try pin.step(.{ .dir = 1, .out = 1, .a = .one, .clock = 4 });
-    try std.testing.expectEqual(Signal.one, settled.smart_out);
+    const registered = clockPin(&pin, .{ .dir = 1, .out = 1, .a = .high, .clock = 3 });
+    try std.testing.expectEqual(Signal.low, registered.smart_out);
+    const settled = clockPin(&pin, .{ .dir = 1, .out = 1, .a = .high, .clock = 4 });
+    try std.testing.expectEqual(Signal.high, settled.smart_out);
 }
 
 test "digital engines ignore fast serial mode and absolute clock rollover" {
@@ -1735,7 +2541,7 @@ test "digital engines ignore fast serial mode and absolute clock rollover" {
         }
         var ordinary: SmartPin = .{};
         ordinary.configure(mode);
-        _ = try ordinary.step(.{ .new_x = 0x70003, .new_y = 3 });
+        _ = clockPin(&ordinary, .{ .new_x = 0x70003, .new_y = 3 });
         var accelerated = ordinary;
         for (0..256) |clock| {
             const input: Inputs = .{
@@ -1749,24 +2555,24 @@ test "digital engines ignore fast serial mode and absolute clock rollover" {
             fast.clock = std.math.maxInt(u64) -% 20 +% clock;
             accelerated.rx_mode = .exact;
             accelerated.tx_mode = .{ .virtual = &discard_sink };
-            try std.testing.expectEqualDeep(try ordinary.step(input), try accelerated.step(fast));
+            try std.testing.expectEqualDeep(clockPin(&ordinary, input), clockPin(&accelerated, fast));
         }
     }
 }
 
-test "continuous count wraps and unknown external levels do not invent rising edges" {
+test "continuous count wraps and held low inputs do not invent rising edges" {
     var pin: SmartPin = .{};
     pin.configure(.count_rises);
-    _ = try pin.step(.{});
+    _ = clockPin(&pin, .{});
     pin.logic.count_rises.accumulator = 0xffffffff;
-    var state = try pin.step(.{ .dir = 1, .a = .one });
+    var state = clockPin(&pin, .{ .dir = 1, .a = .high });
     try std.testing.expectEqual(@as(u32, 0xffffffff), state.y);
     try std.testing.expect(state.flag);
-    state = try pin.step(.{ .dir = 1, .a = .one });
+    state = clockPin(&pin, .{ .dir = 1, .a = .high });
     try std.testing.expectEqual(@as(u32, 0), state.y);
     try std.testing.expect(!state.flag);
-    _ = try pin.step(.{ .dir = 1, .a = .x });
-    state = try pin.step(.{ .dir = 1, .a = .z });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .low });
+    state = clockPin(&pin, .{ .dir = 1, .a = .low });
     try std.testing.expectEqual(@as(u32, 0), state.y);
 }
 
@@ -1775,9 +2581,9 @@ test "duration saturation preserves the previous-state carry instead of Z's sign
     pin.configure(.state_ticks);
     pin.registers.enabled = true;
     pin.logic.state_ticks.ticks = 0x7fffffff;
-    _ = try pin.step(.{ .dir = 1, .a = .zero });
-    _ = try pin.step(.{ .dir = 1, .a = .zero });
-    const state = try pin.step(.{ .dir = 1, .a = .one });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .low });
+    _ = clockPin(&pin, .{ .dir = 1, .a = .low });
+    const state = clockPin(&pin, .{ .dir = 1, .a = .high });
     try std.testing.expectEqual(@as(u32, 0x80000000), state.y);
     try std.testing.expect(!state.flag);
     try std.testing.expectEqual(@as(u1, 1), state.in);
@@ -1793,7 +2599,7 @@ test "zero minimum window and fixed-period count encode the full 32-bit range" {
         .elapsed = 0xffffffff,
         .accumulated = 0x7fffffff,
     };
-    var state = try pin.step(.{ .dir = 1, .b = .one });
+    var state = clockPin(&pin, .{ .dir = 1, .b = .high });
     try std.testing.expectEqual(@as(u32, 0x80000000), state.y);
     try std.testing.expectEqual(@as(u1, 1), state.in);
     pin.configure(.periods_ticks);
@@ -1803,7 +2609,166 @@ test "zero minimum window and fixed-period count encode the full 32-bit range" {
         .periods = 0xffffffff,
         .accumulated = 123,
     };
-    state = try pin.step(.{ .dir = 1, .b = .one });
+    state = clockPin(&pin, .{ .dir = 1, .b = .high });
     try std.testing.expectEqual(@as(u32, 124), state.y);
     try std.testing.expectEqual(@as(u1, 1), state.in);
+}
+
+test "scope FIR normalization and smart DAC clipping preserve measured full scales" {
+    for (0..4) |filter| {
+        try std.testing.expectEqual(@as(u8, 255), Scope.sample(std.math.maxInt(u128), @enumFromInt(filter)));
+        try std.testing.expectEqual(@as(u8, 0), Scope.sample(0, @enumFromInt(filter)));
+    }
+    var pin: SmartPin = .{};
+    pin.configure(.dac_dither_pwm);
+    _ = clockPin(&pin, .{ .dac_mode = true, .new_x = 256, .new_y = 0xffff });
+    for (0..512) |_| {
+        const state = clockPin(&pin, .{ .dac_mode = true, .dir = 1, .a = .high });
+        try std.testing.expectEqual(@as(?u8, 255), state.dac);
+    }
+    try std.testing.expectEqual(@as(u32, 256), pin.registers.result);
+}
+
+test "USB decodes independent two-board wire captures at held-out phases and both speed polarities" {
+    const Vector = struct {
+        name: []const u8,
+        rate: u16,
+        speed: bool,
+        wire: []const [2]u16,
+        bytes: []const u16,
+        final: u16,
+    };
+    const parsed = try std.json.parseFromSlice([]const Vector, std.testing.allocator, @embedFile("usb-vectors"), .{});
+    defer parsed.deinit();
+
+    for (parsed.value) |vector| {
+        const speed: Usb.State.Speed = if (vector.speed)
+            .full
+        else
+            .low;
+
+        for ([_]usize{ 0, 1, 3, 7, 11 }) |phase| {
+            var usb: Usb.State = .{};
+            var event: usize = 0;
+            for (vector.wire, 0..) |run, index| {
+                const extra = if (index == 0)
+                    phase
+                else
+                    0;
+                const duration = run[0] + extra;
+                const value = Usb.State.line(run[1] & 1 != 0, run[1] & 2 != 0, speed);
+                for (0..duration) |_| {
+                    usb.receive(value, vector.rate);
+                    if (event < vector.bytes.len and @as(u16, @bitCast(usb.status)) & 0xff80 == vector.bytes[event]) {
+                        event += 1;
+                    }
+                }
+            }
+            const last = vector.wire[vector.wire.len - 1][1];
+            for (0..8192) |_| {
+                usb.receive(Usb.State.line(last & 1 != 0, last & 2 != 0, speed), vector.rate);
+            }
+            std.testing.expectEqual(vector.final, @as(u16, @bitCast(usb.status))) catch |err| {
+                std.debug.print("USB captured vector {s}, phase {d}\n", .{ vector.name, phase });
+                return err;
+            };
+            try std.testing.expectEqual(vector.bytes.len, event);
+        }
+    }
+}
+
+test "USB upper acknowledgement is latched independently of lower reset and same-mode configuration" {
+    var lower: SmartPin = .{};
+    var upper: SmartPin = .{};
+    var usb: Usb = .{};
+    lower.connectUsb(&usb.ports[0]);
+    upper.connectUsb(&usb.ports[1]);
+    lower.configure(.usb);
+    upper.configure(.usb);
+    var input = [2]Inputs{ .{ .dir = 1, .new_x = 4096, .new_y = 3, .a = .high }, .{ .dir = 1 } };
+    for (0..256) |_| {
+        const states = clockUsb(&lower, &upper, &usb, input);
+        _ = states[0];
+        _ = states[1];
+        input[0].new_x = null;
+        input[0].new_y = null;
+    }
+    try std.testing.expect(upper.registers.ready);
+    try std.testing.expectEqual(@as(u32, 9), lower.registers.result);
+    lower.configure(.usb);
+    upper.configure(.usb);
+    input[1].ack = true;
+    for (0..128) |_| {
+        const states = clockUsb(&lower, &upper, &usb, input);
+        _ = states[0];
+        _ = states[1];
+        input[1].ack = false;
+        try std.testing.expect(!upper.registers.ready);
+    }
+    input[0].new_y = 2;
+    for (0..64) |_| {
+        const states = clockUsb(&lower, &upper, &usb, input);
+        _ = states[0];
+        _ = states[1];
+        input[0].new_y = null;
+    }
+    try std.testing.expect(upper.registers.ready);
+    input[0].dir = 0;
+    for (0..16) |_| {
+        const states = clockUsb(&lower, &upper, &usb, input);
+        _ = states[0];
+        _ = states[1];
+    }
+    try std.testing.expect(upper.registers.ready);
+    try std.testing.expectEqual(@as(u32, 0), lower.registers.result);
+    input[1].dir = 0;
+    const states = clockUsb(&lower, &upper, &usb, input);
+    _ = states[0];
+    _ = states[1];
+    try std.testing.expect(!upper.registers.ready);
+}
+
+test "USB serializer matches independently captured wire symbols including cross-byte stuffing" {
+    const Vector = struct {
+        name: []const u8,
+        speed: bool,
+        data: []const u8,
+        symbols: []const u2,
+    };
+    const parsed = try std.json.parseFromSlice(
+        []const Vector,
+        std.testing.allocator,
+        @embedFile("usb-transmit-vectors"),
+        .{},
+    );
+    defer parsed.deinit();
+
+    for (parsed.value) |vector| {
+        const speed: Usb.State.Speed = if (vector.speed)
+            .full
+        else
+            .low;
+
+        var usb: Usb.State = .{ .pending = 0x80 };
+        var upper: Registers = .{ .enabled = true };
+        var next: usize = 0;
+        for (vector.symbols) |symbol| {
+            usb.transmit(&upper);
+            const observed = Usb.State.line(symbol & 1 != 0, symbol & 2 != 0, speed);
+            std.testing.expectEqual(observed, usb.drive.?) catch |err| {
+                std.debug.print("USB transmitter vector {s}\n", .{vector.name});
+                return err;
+            };
+            if (upper.ready) {
+                upper.ready = false;
+                if (next < vector.data.len) {
+                    usb.pending = vector.data[next];
+                    next += 1;
+                }
+            }
+        }
+        try std.testing.expectEqual(vector.data.len, next);
+        usb.transmit(&upper);
+        try std.testing.expectEqual(@as(?Usb.State.Line, null), usb.drive);
+    }
 }

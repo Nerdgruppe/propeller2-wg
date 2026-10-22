@@ -1,0 +1,629 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "s0-k0-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 0
+//? const: phase = 0
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k0-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 0
+//? const: phase = 3
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k0-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 0
+//? const: phase = 7
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k0-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 0
+//? const: phase = 11
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k0-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 0
+//? const: phase = 15
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k1-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 1
+//? const: phase = 0
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k1-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 1
+//? const: phase = 3
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k1-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 1
+//? const: phase = 7
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k1-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 1
+//? const: phase = 11
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k1-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 1
+//? const: phase = 15
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k2-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 2
+//? const: phase = 0
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k2-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 2
+//? const: phase = 3
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k2-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 2
+//? const: phase = 7
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k2-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 2
+//? const: phase = 11
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k2-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 2
+//? const: phase = 15
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k3-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 3
+//? const: phase = 0
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k3-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 3
+//? const: phase = 3
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k3-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 3
+//? const: phase = 7
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k3-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 3
+//? const: phase = 11
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k3-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 3
+//? const: phase = 15
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k4-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 4
+//? const: phase = 0
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k4-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 4
+//? const: phase = 3
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k4-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 4
+//? const: phase = 7
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k4-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 4
+//? const: phase = 11
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k4-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 4
+//? const: phase = 15
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k5-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 5
+//? const: phase = 0
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k5-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 5
+//? const: phase = 3
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k5-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 5
+//? const: phase = 7
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k5-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 5
+//? const: phase = 11
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s0-k5-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: kind = 5
+//? const: phase = 15
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 28
+//? run: "s1-k0-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 0
+//? const: phase = 0
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k0-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 0
+//? const: phase = 3
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k0-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 0
+//? const: phase = 7
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k0-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 0
+//? const: phase = 11
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k0-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 0
+//? const: phase = 15
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k1-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 1
+//? const: phase = 0
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k1-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 1
+//? const: phase = 3
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k1-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 1
+//? const: phase = 7
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k1-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 1
+//? const: phase = 11
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k1-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 1
+//? const: phase = 15
+//? post: cog[0].reg[result] == 65417
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k2-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 2
+//? const: phase = 0
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k2-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 2
+//? const: phase = 3
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k2-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 2
+//? const: phase = 7
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k2-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 2
+//? const: phase = 11
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k2-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 2
+//? const: phase = 15
+//? post: cog[0].reg[result] == 65289
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k3-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 3
+//? const: phase = 0
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k3-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 3
+//? const: phase = 3
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k3-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 3
+//? const: phase = 7
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k3-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 3
+//? const: phase = 11
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k3-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 3
+//? const: phase = 15
+//? post: cog[0].reg[result] == 21897
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k4-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 4
+//? const: phase = 0
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k4-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 4
+//? const: phase = 3
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k4-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 4
+//? const: phase = 7
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k4-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 4
+//? const: phase = 11
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k4-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 4
+//? const: phase = 15
+//? post: cog[0].reg[result] == 21769
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k5-p0"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 5
+//? const: phase = 0
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k5-p3"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 5
+//? const: phase = 3
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k5-p7"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 5
+//? const: phase = 7
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k5-p11"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 5
+//? const: phase = 11
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "s1-k5-p15"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 20480
+//? const: kind = 5
+//? const: phase = 15
+//? post: cog[0].reg[result] == 13193
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+
+                // Configure the physical pair before applying the shared lower-pin baud and role.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                WRPIN   aug(0x60000000),    aug(42 | (1 << 6))
+                WRPIN   aug(mode0),         40
+                WRPIN   aug(mode1),         41
+                WXPIN   aug(x),             40
+                DIRH    aug(40 | (1 << 6))
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   128
+                // Give the receiver a valid driven idle before the first packet.
+                WAITX   aug(256)
+                WAITX   aug(phase)
+                WYPIN   0x80,               aug(40 | (1 << 6))
+.if kind > 0
+                MOV     budget,             aug(4096)
+wait1:
+                TESTP   41                  :wc
+    if(C)       JMP     nrel(send1)
+                DJNZ    budget, nrel(wait1)
+                JMP     nrel(finished)
+send1:
+                WYPIN   0xff,   aug(40 | (1 << 6))
+.endif
+.if kind > 1
+                MOV     budget, aug(4096)
+wait2:
+                TESTP   41                  :wc
+    if(C)       JMP     nrel(send2)
+                DJNZ    budget, nrel(wait2)
+                JMP     nrel(finished)
+send2:
+                WYPIN   0xff,   aug(40 | (1 << 6))
+.endif
+.if kind > 2
+                MOV     budget, aug(4096)
+wait3:
+                TESTP   41                  :wc
+    if(C)       JMP     nrel(send3)
+                DJNZ    budget, nrel(wait3)
+                JMP     nrel(finished)
+send3:
+                WYPIN   0x55,   aug(40 | (1 << 6))
+.endif
+                WAITX   aug(512)
+.if kind == 4
+                // A new empty packet distinguishes retained last-byte state from SOP clearing.
+                WYPIN   0x80,   aug(40 | (1 << 6))
+                WAITX   aug(512)
+.endif
+.if kind == 5
+                // A new first byte must reset the byte toggle even after the previous odd byte count.
+                WYPIN   0x80,   aug(40 | (1 << 6))
+                MOV     budget, aug(4096)
+wait4:
+                TESTP   41                  :wc
+    if(C)       JMP     nrel(send4)
+                DJNZ    budget, nrel(wait4)
+                JMP     nrel(finished)
+send4:
+                WYPIN   0x33,   aug(40 | (1 << 6))
+                WAITX   aug(512)
+.endif
+finished:
+// Preserve result, carry, both engine handshakes and paired physical input aliases.
+                RQPIN   result, 40                  :wc
+                MOV     flags,  0
+                MUXC    flags,  1
+                RQPIN   upper,  41                  :wc
+                MUXC    flags,  2
+                TESTP   40                          :wc
+                MUXC    flags,  4
+                TESTP   41                          :wc
+                MUXC    flags,  8
+                TESTP   42                          :wc
+                MUXC    flags,  16
+                TESTP   43                          :wc
+                MUXC    flags,  32
+                // Release every experiment pin before the oracle reporter.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,      aug(40 | (3 << 6))
+                JMP     nrel(_end)
+var result:     LONG    0
+var upper:      LONG    0
+var flags:      LONG    0
+var budget:     LONG    0
+

@@ -1,8 +1,11 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: memory_hole_read = 126997
+//? issues: memory_hole_write = 4
 //? timeout-ms: 10000
 //? max-cycles: 4000000
 //? post: cog[0].reg[failures] == 0
 
+                // Count hole reads separately from discarded writes, including FIFO read-ahead.
                 // Buffered accesses use the ordinary 20-bit map, including the hole, mirror and address rollover.
                 WRLONG  value,      aug(0x7fffc)
                 WRLONG  other,      0
@@ -63,4 +66,3 @@ var failures:   LONG    0
 .data
 .align  32
 payload:        LONG    [0x11223344] * 32
-

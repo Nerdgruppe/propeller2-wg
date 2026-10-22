@@ -1,0 +1,1328 @@
+//? WINDTUNNEL CHECK LIST
+//? issues: pin_buffer_overwrite = 0
+//? run: "x0-p0-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 0
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p0-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p3-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 3
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p3-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p7-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 7
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p7-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p11-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 11
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p11-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p15-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 15
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x0-p15-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 0
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p0-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 0
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p0-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p3-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 3
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p3-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p7-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 7
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p7-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p11-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 11
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p11-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p15-d0"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 15
+//? const: delay = 0
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x1-p15-d256"
+//? issues: pin_buffer_overwrite = 3
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 1
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 0
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 0
+//? run: "x2048-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 40
+//? run: "x2048-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 40
+//? run: "x2048-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 9
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x2048-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 2048
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4095-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4095
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4096-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4096
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x4097-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 4097
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x6000-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 6000
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x8192-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 8192
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x12000-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 12000
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p0-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 0
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p0-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 0
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p0-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 0
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p3-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 3
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p3-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 3
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p3-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 3
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p7-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 7
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p7-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 7
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p7-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 7
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p11-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 11
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p11-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 11
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p11-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 11
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p15-d32"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 15
+//? const: delay = 32
+//? post: cog[0].reg[result] == 2
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p15-d128"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 15
+//? const: delay = 128
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+//? run: "x16383-p15-d256"
+//? const: mode0 = 118
+//? const: mode1 = 118
+//? const: x = 16383
+//? const: phase = 15
+//? const: delay = 256
+//? post: cog[0].reg[result] == 10
+//? post: cog[0].reg[upper] == 0
+//? post: cog[0].reg[flags] == 44
+
+                // Floating line charge with a stopped NCO is deliberately not asserted.
+                // Configure the physical pair before applying the shared lower-pin baud and role.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                WRPIN   aug(0x60000000),    aug(42 | (1 << 6))
+                WRPIN   aug(mode0),         40
+                WRPIN   aug(mode1),         41
+                WXPIN   aug(x),             40
+                DIRH    aug(40 | (1 << 6))
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   128
+                // Clear startup error history after the pair is held in a driven J state.
+                WYPIN   0x80,               aug(40 | (1 << 6))
+                WAITX   aug(512)
+                WYPIN   3,                  aug(40 | (1 << 6))
+                WAITX   128
+                WAITX   aug(phase)
+                WYPIN   2,                  aug(40 | (1 << 6))
+                WAITX   aug(delay)
+                // Preserve result, carry, both engine handshakes and paired physical input aliases.
+                RQPIN   result,             40                  :wc
+                MOV     flags,              0
+                MUXC    flags,              1
+                RQPIN   upper,              41                  :wc
+                MUXC    flags,              2
+                TESTP   40                                      :wc
+                MUXC    flags,              4
+                TESTP   41                                      :wc
+                MUXC    flags,              8
+                TESTP   42                                      :wc
+                MUXC    flags,              16
+                TESTP   43                                      :wc
+                MUXC    flags,              32
+// Ignore retained charge on the two floating physical pads when baud is stopped.
+.if x < 2
+                AND     flags,              15
+                TESTB   flags,              0                   :wc
+.endif
+                // Release every experiment pin before the oracle reporter.
+                DIRL    aug(40 | (3 << 6))
+                WRPIN   0,                  aug(40 | (3 << 6))
+                JMP     nrel(_end)
+var result:     LONG    0
+var upper:      LONG    0
+var flags:      LONG    0

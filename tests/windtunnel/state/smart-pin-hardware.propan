@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: pin_command_collision = 0
 //? max-cycles: 100_000
 //? run: "Smart pin WXPIN -> RQPIN, gap 0"
 //? const: probe_case = 0
@@ -58,6 +59,7 @@
 //? const: probe_case = 18
 //? post: cog[*].reg[probe_result] == 170
 //? run: "Smart pin collision cog 1, offset 0"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 19
 //? post: cog[*].reg[probe_result] == 511
 //? run: "Smart pin collision cog 1, offset 1"
@@ -73,6 +75,7 @@
 //? const: probe_case = 23
 //? post: cog[*].reg[probe_result] == 170
 //? run: "Smart pin collision cog 2, offset 0"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 24
 //? post: cog[*].reg[probe_result] == 511
 //? run: "Smart pin collision cog 2, offset 1"
@@ -88,6 +91,7 @@
 //? const: probe_case = 28
 //? post: cog[*].reg[probe_result] == 170
 //? run: "Smart pin collision cog 7, offset 0"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 29
 //? post: cog[*].reg[probe_result] == 511
 //? run: "Smart pin collision cog 7, offset 1"
@@ -145,21 +149,27 @@
 //? const: probe_case = 47
 //? post: cog[*].reg[probe_result] == 1
 //? run: "Smart pin mixed WXPIN / WXPIN (0x0aa,)"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 48
 //? post: cog[*].reg[probe_result] == 426
 //? run: "Smart pin mixed WXPIN / WYPIN (2,)"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 49
 //? post: cog[*].reg[probe_result] == 0
 //? run: "Smart pin mixed WXPIN / WRPIN (1,)"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 50
 //? post: cog[*].reg[probe_result] == 0
 //? run: "Smart pin mixed WXPIN / RDPIN (register(301),)"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 51
 //? post: cog[*].reg[probe_result] == 0
 //? run: "Smart pin mixed WXPIN / WRPIN (2,)"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 52
 //? post: cog[*].reg[probe_result] == 0
 //? run: "Smart pin identical simultaneous WXPIN values"
+//? issues: pin_command_collision = 1
 //? const: probe_case = 53
 //? post: cog[*].reg[probe_result] == 341
 //? run: "GPIO OUTL -> TESTP, gap 0"
@@ -2618,4 +2628,3 @@ halt_worker:
 .data
 
 .endif
-

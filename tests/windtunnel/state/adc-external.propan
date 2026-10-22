@@ -1,0 +1,102 @@
+//? WINDTUNNEL CHECK LIST
+//? run: "x0-v0"
+//? const: x = 0
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x0-v1"
+//? const: x = 0
+//? const: level = 1
+//? post: cog[0].reg[value] == 2
+//? post: cog[0].reg[flag] == 2
+//? run: "x1-v0"
+//? const: x = 1
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x1-v1"
+//? const: x = 1
+//? const: level = 1
+//? post: cog[0].reg[value] == 4
+//? post: cog[0].reg[flag] == 2
+//? run: "x2-v0"
+//? const: x = 2
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x2-v1"
+//? const: x = 2
+//? const: level = 1
+//? post: cog[0].reg[value] == 8
+//? post: cog[0].reg[flag] == 2
+//? run: "x3-v0"
+//? const: x = 3
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x3-v1"
+//? const: x = 3
+//? const: level = 1
+//? post: cog[0].reg[value] == 16
+//? post: cog[0].reg[flag] == 2
+//? run: "x19-v0"
+//? const: x = 19
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x19-v1"
+//? const: x = 19
+//? const: level = 1
+//? post: cog[0].reg[value] == 468
+//? post: cog[0].reg[flag] == 2
+//? run: "x35-v0"
+//? const: x = 35
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x35-v1"
+//? const: x = 35
+//? const: level = 1
+//? post: cog[0].reg[value] == 13476
+//? post: cog[0].reg[flag] == 2
+//? run: "x51-v0"
+//? const: x = 51
+//? const: level = 0
+//? post: cog[0].reg[value] == 0
+//? post: cog[0].reg[flag] == 2
+//? run: "x51-v1"
+//? const: x = 51
+//? const: level = 1
+//? post: cog[0].reg[value] == 4294967295
+//? post: cog[0].reg[flag] == 2
+
+                // An independently driven B signal clocks a constant A-selected OUT value.
+                DIRL    aug(40 | (1 << 6))
+                WRPIN   aug(0x41000032),    40
+                WRPIN   0,                  41
+                WXPIN   x,                  40
+                OUTL    aug(40 | (1 << 6))
+.if level
+                OUTH    40
+.endif
+                DIRH    aug(40 | (1 << 6))
+                MOV     count,              64
+sampling_loop:
+                OUTH    41
+                WAITX   8
+                OUTL    41
+                WAITX   8
+                DJNZ    count,  sampling_loop
+                WAITX   16
+                RQPIN   value,  40                  :wc
+                MOV     flag,   0
+                MUXC    flag,   1
+                TESTP   40                          :wc
+                MUXC    flag,   2
+                DIRL    aug(40 | (1 << 6))
+                WRPIN   0,      aug(40 | (1 << 6))
+                JMP     nrel(_end)
+var value:      LONG    0
+var flag:       LONG    0
+var count:      LONG    0
+

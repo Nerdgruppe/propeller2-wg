@@ -1,0 +1,166 @@
+// Hardware-only analog monitor. It starts at RCFAST and preserves the ROM-calibrated 2 Mbaud UART.
+
+.cogexec
+                HUBSET  0xf0
+                DIRL    aug(8 | (7 << 6))
+                WRPIN   0,                      aug(8 | (7 << 6))
+                WRPIN   P_TT_01 | P_ASYNC_TX,   62
+                DIRH    62
+                WRPIN   P_ASYNC_RX,             63
+                DIRH    63
+                MOV     PA,                     '!'
+                CALL    write_byte
+// Dispatch bounded host commands; experiment pins start floating.
+main:
+                CALL    read_byte
+                CMP     PA, 'F'     :wz
+    if(Z)       JMP     finish
+                CMP     PA, 'D'     :wz
+    if(Z)       JMP     dacs
+                CMP     PA, 'C'     :wz
+    if(Z)       JMP     configure
+                CMP     PA, 'R'     :wz
+    if(Z)       JMP     read
+                CMP     PA, 'M'     :wz
+    if(Z)       JMP     measure
+                CMP     PA, 'X'     :wz
+    if(Z)       JMP     writex
+                CMP     PA, 'S'     :wz
+    if(Z)       JMP     scope
+                JMP     main
+// Set mode and parameters while holding the smart engine in reset.
+configure:
+                CALL    read_long
+                MOV     pin,    word
+                DIRL    pin
+                CALL    read_long
+                WRPIN   word,   pin
+                CALL    read_long
+                WXPIN   word,   pin
+                CALL    read_long
+                WYPIN   word,   pin
+                CALL    read_long
+                CMP     word,   0       :wz
+    if(Z)       OUTL    pin
+    if(!Z)      OUTH    pin
+                CALL    read_long
+                CMP     word,   0       :wz
+    if(!Z)      DIRH    pin
+                JMP     ack
+// Set the four background DAC bytes without restarting the monitor.
+dacs:
+                CALL    read_long
+                SETDACS word
+                JMP     ack
+// Return the result, carry and IN state without acknowledging the engine.
+read:
+                CALL    read_long
+                MOV     pin,    word
+                RQPIN   value,  pin     :wc
+                MOV     flags,  0
+                MUXC    flags,  1
+                TESTP   pin             :wc
+                MUXC    flags,  2
+                MOV     PA,     value
+                CALL    write_long
+                MOV     PA,     flags
+                CALL    write_long
+                JMP     main
+// Deliver a live X write, allowing repository and lifecycle probes.
+writex:
+                CALL    read_long
+                MOV     pin,    word
+                CALL    read_long
+                WXPIN   word,   pin
+                JMP     ack
+// Read the selected generic four-pin scope data pipe.
+scope:
+                CALL    read_long
+                SETSCP  word
+                WAITX   100
+                GETSCP  PA
+                CALL    write_long
+                JMP     main
+// Discard startup conversions, then average 64 automatic SINC2 results.
+measure:
+                CALL    read_long
+                MOV     pin,    word
+                MOV     count,  3
+                CALL    sample
+                MOV     sum,    0
+                MOV     count,  64
+                CALL    sample
+                MOV     PA,     sum
+                CALL    write_long
+                JMP     main
+// Accumulate completed conversions using IN as the conversion handshake.
+sample:
+                TESTP   pin             :wc
+    if(!C)      JMP     sample
+                RDPIN   value,  pin
+                ADD     sum,    value
+                DJNZ    count,  sample
+                RET
+// Release all connected experiment pins before acknowledging cleanup.
+finish:
+                DIRL    aug(8 | (7 << 6))
+                WRPIN   0,  aug(8 | (7 << 6))
+// Confirm command completion through the calibrated UART.
+ack:
+                MOV     PA, '.'
+                CALL    write_byte
+                JMP     main
+var pin:        LONG    0
+var value:      LONG    0
+var flags:      LONG    0
+var count:      LONG    0
+var sum:        LONG    0
+
+// Release every experiment pin after a lost host connection or canceled session.
+read_byte:
+                GETCT   timeout_start
+.wait:          TESTP   63                                  :wc
+    if(C)       JMP     .ready
+                GETCT   timeout_now
+                SUB     timeout_now,    timeout_start
+                CMP     timeout_now,    aug(40000000)       :wc
+    if(C)       JMP     .wait
+                DIRL    aug(8 | (7 << 6))
+                WRPIN   0,              aug(8 | (7 << 6))
+                GETCT   timeout_start
+                JMP     .wait
+.ready:         RDPIN   PA,             63
+                SHR     PA,             24
+                RET
+// Transmit one UART byte and wait for completion.
+write_byte:
+                WYPIN   PA, 62
+                WAITX   1
+.wait:          TESTP   62      :wc
+    if(!C)      JMP     .wait
+                RET
+// Transmit a little-endian 32-bit measurement.
+write_long:
+                MOV     bytes,  4
+.loop:          CALL    write_byte
+                SHR     PA,     8
+                DJNZ    bytes,  .loop
+                RET
+// Receive one little-endian host parameter.
+read_long:
+                MOV     word,   0
+                MOV     bytes,  4
+.loop:          CALL    read_byte
+                SHR     word,   8
+                SHL     PA,     24
+                OR      word,   PA
+                DJNZ    bytes,  .loop
+                RET
+var bytes:      LONG    0
+var word:       LONG    0
+
+var timeout_start:
+                LONG    0
+var timeout_now:
+                LONG    0
+

@@ -1,0 +1,44 @@
+//? WINDTUNNEL CHECK LIST
+//? profile: cog
+//? max-cycles: 200_000
+//? run: "COGINIT preserves every source byte alignment"
+//? post: cog[0].reg[failures] == 0
+
+                // Copy the same cog image to each byte alignment, then require its first instruction to run.
+                MOV     alignment,  0
+next_alignment:
+                MOV     PTRA,       aug(hubaddr(image))
+                MOV     PTRB,       aug(0x8000)
+                ADD     PTRB,       alignment
+                MOV     source,     PTRB
+                REP     2,          aug(504 * 4)
+                RDBYTE  PA,         PTRA++
+                WRBYTE  PA,         PTRB++
+                MOV     mailbox,    aug(hubaddr(stamp))
+                WRLONG  0,          mailbox
+                SETQ    mailbox
+                COGINIT 1,          source
+                WAITX   aug(1024)
+                RDLONG  PA,         mailbox
+                CMP     PA,         aug(0x12345678)     :wz
+    if(!Z)      ADD     failures,   1
+                COGSTOP 1
+                ADD     alignment,  1
+                CMP     alignment,  4                   :wz
+    if(!Z)      JMP     next_alignment
+                JMP     nrel(_end)
+var failures:   LONG    0
+var alignment:  LONG    0
+var source:     LONG    0
+var mailbox:    LONG    0
+.data
+stamp:          LONG    0
+
+// An ordinary long-aligned image is copied byte by byte so the assembler cannot add padding.
+.cogexec    16384, 0
+image:
+                MOV     PA, aug(0x12345678)
+                WRLONG  PA, PTRA
+                COGSTOP 1
+                LONG    [0] * 500
+

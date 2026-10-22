@@ -1,4 +1,34 @@
 const std = @import("std");
+const Issue = @import("sim/Issue.zig");
+pub const IssueKind = std.meta.Tag(Issue.Kind);
+pub const IssueExpectation = struct { kind: IssueKind, count: u64 };
+
+test "issue expectations merge by kind and reject invalid counts and names" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const source = "//? WINDTUNNEL CHECK LIST\n" ++
+        "//? issues: streamer_mode = 2\n//? issues: pc_domain = 3\n" ++
+        "//? run: \"first\"\n//? issues: streamer_mode = 0\n//? run: \"second\"\n";
+    const list = try parse(arena.allocator(), "issues", source, &errors.writer);
+    const first = try list.forRun(arena.allocator(), list.runs[0]);
+    try std.testing.expectEqual(@as(usize, 2), first.issues.len);
+    try std.testing.expectEqual(IssueKind.pc_domain, first.issues[0].kind);
+    try std.testing.expectEqual(@as(u64, 0), first.issues[1].count);
+    const second = try list.forRun(arena.allocator(), list.runs[1]);
+    try std.testing.expectEqual(@as(u64, 2), second.issues[0].count);
+    for ([_][]const u8{
+        "//? issues: streamer_mode = -1\n",
+        "//? issues: imaginary = 1\n",
+        "//? issues: streamer_mode = 1\n//? issues: streamer_mode = 2\n",
+    }) |invalid| {
+        const text = try std.mem.concat(arena.allocator(), u8, &.{ "//? WINDTUNNEL CHECK LIST\n", invalid });
+        try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "issues", text, &errors.writer));
+    }
+}
 
 pub const Address = union(enum) {
     number: u32,
@@ -28,6 +58,7 @@ pub const Run = struct {
     cog: ?u3 = null,
     constants: []const Constant = &.{},
     name: ?[]const u8 = null,
+    issues: []const IssueExpectation = &.{},
     pre: []const Assignment = &.{},
     post: []const Assignment = &.{},
     stdin: ?[]const u8 = null,
@@ -47,6 +78,7 @@ pub const List = struct {
     stdin: []const u8 = "",
     stdout: []const u8 = "",
     stdin_after: []const u8 = "",
+    issues: []const IssueExpectation = &.{},
     pre: []const Assignment = &.{},
     post: []const Assignment = &.{},
     runs: []const Run = &.{},
@@ -89,6 +121,20 @@ pub const List = struct {
         try pre.appendSlice(allocator, run.pre);
         result.pre = pre.items;
         result.post = try std.mem.concat(allocator, Assignment, &.{ list.post, run.post });
+        var issues: std.ArrayList(IssueExpectation) = .empty;
+        for (list.issues) |common| {
+            var replaced = false;
+            for (run.issues) |local| {
+                if (common.kind == local.kind) {
+                    replaced = true;
+                }
+            }
+            if (!replaced) {
+                try issues.append(allocator, common);
+            }
+        }
+        try issues.appendSlice(allocator, run.issues);
+        result.issues = issues.items;
         result.runs = &.{};
         return result;
     }
@@ -394,6 +440,7 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     var list: List = .{};
     var pre: std.ArrayList(Assignment) = .empty;
     var post: std.ArrayList(Assignment) = .empty;
+    var issues: std.ArrayList(IssueExpectation) = .empty;
     var runs: std.ArrayList(Run) = .empty;
     var constants: std.ArrayList(Constant) = .empty;
     var seen: std.StringHashMap(void) = .init(allocator);
@@ -424,15 +471,29 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
                 list.pre = pre.items;
                 list.post = post.items;
                 list.constants = constants.items;
+                list.issues = issues.items;
             } else {
                 runs.items[runs.items.len - 1].pre = pre.items;
                 runs.items[runs.items.len - 1].post = post.items;
                 runs.items[runs.items.len - 1].constants = constants.items;
+                runs.items[runs.items.len - 1].issues = issues.items;
             }
             constants = .empty;
+            issues = .empty;
             pre = .empty;
             post = .empty;
             try runs.append(allocator, .{ .name = run_name });
+        } else if (std.mem.eql(u8, name, "issues")) {
+            const kind = std.meta.stringToEnum(IssueKind, try p.take()) orelse return p.fail("unknown issue kind");
+            try p.expect("=");
+            const count = try p.integer(try p.take());
+            if (count < 0)
+                return p.fail("issue count must be nonnegative");
+            for (issues.items) |old| {
+                if (old.kind == kind)
+                    return p.fail("duplicate issue expectation");
+            }
+            try issues.append(allocator, .{ .kind = kind, .count = @intCast(count) });
         } else if (std.mem.eql(u8, name, "const")) {
             const symbol = try p.take();
             if (symbol.len == 0 or
@@ -571,11 +632,13 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
         list.pre = pre.items;
         list.post = post.items;
         list.constants = constants.items;
+        list.issues = issues.items;
         try runs.append(allocator, .{});
     } else {
         runs.items[runs.items.len - 1].pre = pre.items;
         runs.items[runs.items.len - 1].post = post.items;
         runs.items[runs.items.len - 1].constants = constants.items;
+        runs.items[runs.items.len - 1].issues = issues.items;
     }
     list.runs = runs.items;
     for (list.runs) |run| {

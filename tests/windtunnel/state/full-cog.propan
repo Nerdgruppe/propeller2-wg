@@ -12,4 +12,3 @@ tail:
                 COGID   result
                 JMP     nrel(_end)
 var result:     LONG    0
-

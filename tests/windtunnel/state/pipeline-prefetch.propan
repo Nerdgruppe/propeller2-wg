@@ -22,4 +22,3 @@ flushed_instruction:
 var adjacent:   LONG    0
 var spaced:     LONG    0
 var flushed:    LONG    0
-

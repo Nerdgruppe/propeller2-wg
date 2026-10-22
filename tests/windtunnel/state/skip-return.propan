@@ -38,4 +38,3 @@ done:
 var status:     LONG    0
 var pattern_out:
                 LONG    0
-

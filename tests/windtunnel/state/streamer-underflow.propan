@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: streamer_starvation = 1
 //? post: cog[*].reg[amount] == 0
 //? post: cog[*].reg[value] == 0
 //? run: "phase 0"
@@ -41,4 +42,3 @@ var value:      LONG    0
 .data
 .align  4
 var data:       LONG    0x87654321
-

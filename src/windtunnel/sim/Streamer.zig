@@ -1,9 +1,11 @@
-//! Cog-local digital streamer, DAC overrides and TMDS serializer. No analog signal generation.
+//! Cog-local streamer, scope capture, DAC-byte overrides and TMDS serializer; IO resolves pad voltages.
 const std = @import("std");
+const access_types = @import("access.zig");
 const Cog = @import("Cog.zig");
-const Debugger = @import("Debugger.zig");
+const Hub = @import("Hub.zig");
 const pipeline = @import("pipeline.zig");
 const Streamer = @This();
+const Issue = @import("Issue.zig");
 
 const DdsOutput = struct {
     selector: u4,
@@ -16,7 +18,8 @@ const AccumulatorState = struct {
 };
 
 pub const Start = enum { immediate, zero, continuous };
-pub const Source = enum { immediate, fifo, pins, dds };
+pub const Source = enum { immediate, fifo, pins, scope, dds };
+pub const ScopeFormat = enum { none, one, one_pins8, two, two_pins16, four };
 pub const Pixel = enum { none, luma8, rgbi8, rgb8, rgb16, rgb24 };
 pub const Video = enum(u2) { normal, normal_reverse, forward, reverse };
 
@@ -28,21 +31,37 @@ pub const Format = struct {
     lut: bool,
     alternate: bool,
     pixel: Pixel,
+    scope: ScopeFormat,
 };
 
 /// Captured instruction operands survive command buffering and execute-stage stalls.
+pub const DecodeError = error{ UncharacterizedMode, ReservedMode };
+
 pub const Command = struct {
     control: u32,
     data: u32,
     frequency: ?u32,
     start: Start,
     format: Format,
-    provenance: Debugger.Provenance,
+    provenance: access_types.Provenance,
 
     /// Decode every digital mode, distinguishing excluded hardware from reserved encodings.
-    pub fn init(control: u32, data: u32, frequency: ?u32, start: Start, provenance: Debugger.Provenance) error{ UnsupportedMode, ReservedMode }!Command {
+    pub fn init(
+        control: u32,
+        data: u32,
+        frequency: ?u32,
+        start: Start,
+        provenance: access_types.Provenance,
+    ) DecodeError!Command {
         const major: u4 = @truncate(control >> 28);
-        const minor: u4 = @truncate(control >> 16);
+        const encoded_minor: u4 = @truncate(control >> 16);
+        // In the four-bit raw formats D[19] selects a pin bank, not a different format.
+        const minor = if ((major == 6 or major == 10 or major == 14) and encoded_minor >= 8 and encoded_minor <= 13)
+            encoded_minor - 8
+        else if (major == 15 and encoded_minor == 15)
+            @as(u4, 7)
+        else
+            encoded_minor;
         var format: Format = .{
             .source = .immediate,
             .bits = 0,
@@ -50,6 +69,7 @@ pub const Command = struct {
             .lut = false,
             .alternate = false,
             .pixel = .none,
+            .scope = .none,
         };
         if (major <= 3) {
             format.lut = true;
@@ -106,13 +126,27 @@ pub const Command = struct {
                     },
                     2...9 => {
                         if (major == 15) {
-                            if (minor != 7)
-                                return error.UnsupportedMode;
-                            format.source = .dds;
-                            format.bits = 32;
-                            format.channel_bits = 8;
-                            format.lut = true;
+                            if (minor <= 6) {
+                                format.source = .scope;
+                                format.scope = @enumFromInt(minor - 1);
+                                format.bits = switch (format.scope) {
+                                    .one => 8,
+                                    .one_pins8, .two => 16,
+                                    .two_pins16, .four => 32,
+                                    .none => unreachable,
+                                };
+                                format.channel_bits = 8;
+                            } else {
+                                if (minor != 7)
+                                    return error.ReservedMode;
+                                format.source = .dds;
+                                format.bits = 32;
+                                format.channel_bits = 8;
+                                format.lut = true;
+                            }
                         } else if (major == 7) {
+                            if (minor == 9)
+                                return error.ReservedMode;
                             format.source = .fifo;
                             format.lut = true;
                             format.bits = @as(u6, 1) << @as(u2, @intCast((minor - 2) >> 1));
@@ -160,10 +194,59 @@ pub const Command = struct {
         return switch (command.format.source) {
             .immediate, .dds => null,
             .fifo => .read,
-            .pins => if (command.control & (1 << 23) != 0) .write else null,
+            .pins, .scope => if (command.control & (1 << 23) != 0) .write else null,
         };
     }
 };
+
+test "all upper control words match independent silicon streamer patterns" {
+    // Literal patterns from the shipped silicon table: letters are operand/configuration fields.
+    const patterns = [_][]const u8{
+        "0000ddddepppbbbb", "0001ddddepppbbbb", "0010ddddepppbbbb", "0011ddddepppbbbb",
+        "0100ddddeppppppa", "0101ddddeppppp0a", "0101ddddeppppp1a", "0110ddddepppp00a",
+        "0110ddddepppp01a", "0110ddddepppp10a", "0110ddddeppp0110", "0110ddddeppp0111",
+        "0110ddddeppp1110", "0110ddddeppp1111", "0111ddddeppp0000", "0111ddddeppp0001",
+        "0111ddddeppp001a", "0111ddddeppp010a", "0111ddddeppp011a", "0111ddddeppp1000",
+        "1000ddddeppppppa", "1001ddddeppppp0a", "1001ddddeppppp1a", "1010ddddepppp00a",
+        "1010ddddepppp01a", "1010ddddepppp10a", "1010ddddeppp0110", "1010ddddeppp0111",
+        "1010ddddeppp1110", "1010ddddeppp1111", "1011ddddeppp0000", "1011ddddeppp0001",
+        "1011ddddeppp0010", "1011ddddeppp0011", "1011ddddeppp0100", "1011ddddeppp0101",
+        "1011ddddeppp0110", "1100ddddwppppppa", "1101ddddwppppp0a", "1101ddddwppppp1a",
+        "1110ddddwpppp00a", "1110ddddwpppp01a", "1110ddddwpppp10a", "1110ddddwppp0110",
+        "1110ddddwppp0111", "1110ddddwppp1110", "1110ddddwppp1111", "1111ddddwppp0000",
+        "1111ddddwppp0001", "1111ddddw---0010", "1111ddddwppp0011", "1111ddddw---0100",
+        "1111ddddwppp0101", "1111ddddw---0110", "1111dddd0pppp111", "1111dddd1pppp111",
+    };
+    for (0..65536) |upper| {
+        var documented = false;
+        for (patterns) |pattern| {
+            var matches = true;
+            for (pattern, 0..) |bit, index| {
+                switch (bit) {
+                    '0', '1' => {
+                        if (((upper >> @intCast(15 - index)) & 1) != bit - '0') {
+                            matches = false;
+                            break;
+                        }
+                    },
+                    else => {},
+                }
+            }
+            documented = documented or matches;
+        }
+        for ([_]u16{ 0, 1, 0xffff }) |count| {
+            const control = (@as(u32, @intCast(upper)) << 16) | count;
+            for ([_]Start{ .immediate, .zero, .continuous }) |start| {
+                if (documented) {
+                    const command = try Command.init(control, 0xa5a5_5a5a, 0x1000_0000, start, .{});
+                    try std.testing.expect(command.format.bits > 0);
+                } else {
+                    try std.testing.expectError(error.ReservedMode, Command.init(control, 0, null, start, .{}));
+                }
+            }
+        }
+    }
+}
 
 pub const Action = union(enum) {
     command: Command,
@@ -199,8 +282,12 @@ pin_data: u64 = 0,
 pin_pipeline: pipeline.Pipeline(u64, 2) = .init(0),
 video_pipeline: pipeline.Pipeline(?u64, 2) = .init(null),
 /// Companion writes own the shared LUT port on this edge.
-lut_write: ?u9 = null,
+lut_write: ?Issue.Participant = null,
+/// Retain the capture producer until a competing software write supplies its actual operand.
+displaced_capture: ?Issue.Participant = null,
 lut_value: u32 = 0,
+/// Address that produced the retained value when the companion port displaces a subsequent read.
+lut_address: u9 = 0,
 tmds: Tmds = .{},
 /// Multiplication/integration registers clock only while DDS/Goertzel is active.
 goertzel_mul: [2]i32 = @splat(0),
@@ -307,12 +394,14 @@ pub fn step(streamer: *Streamer, cog: *Cog) void {
         streamer.drain_clocks = 5;
     }
     if (streamer.issued_frequency) |issued| {
+        std.debug.assert(Hub.clock_reached(issued.at, cog.hub.counter));
         if (issued.at == cog.hub.counter) {
             streamer.frequency = issued.value;
             streamer.issued_frequency = null;
         }
     }
     if (streamer.issued) |issued| {
+        std.debug.assert(Hub.clock_reached(issued.at, cog.hub.counter));
         if (issued.at == cog.hub.counter) {
             streamer.issued = null;
             if (issued.command.start == .immediate and streamer.active != null and !streamer.active.?.first_clock) {
@@ -451,22 +540,33 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
         return;
     }
     if (command.fifoMode()) |mode| {
-        if (cog.exec_mode == .hub or cog.fifo_state.engine == null or cog.fifo_state.engine.?.mode != mode) {
-            cog.hub.fault = .{
-                .cog = cog.id,
-                .pc = command.provenance.pc orelse 0,
-                .instruction = command.provenance.instruction orelse 0,
-                .result = .{ .illegal = "active streamer lost its RDFAST/WRFAST FIFO" },
-            };
+        if (cog.exec_mode == .hub or cog.fifo_state.engine == null or std.meta.activeTag(cog.fifo_state.engine.?.direction) != mode) {
+            cog.hub.report(.{ .streamer_fifo_lost = .{ .control = command.control, .value = 0 } }, command.provenance);
             return;
         }
     }
     var value: u32 = 0;
-    if (format.source == .pins) {
+    if (format.source == .scope) {
+        const channel: u2 = @truncate(command.data);
+        const pin_word: u32 = @truncate(std.math.rotr(u64, cog.hub.io.get_in(), command.pinBase()));
+        const byte = (cog.scope >> (@as(u5, channel) * 8)) & 255;
+        const pair = (cog.scope >> (@as(u5, channel & 2) * 8)) & 0xffff;
+        value = switch (format.scope) {
+            .one => byte,
+            .one_pins8 => (byte << 8) | (pin_word & 255),
+            .two => pair,
+            .two_pins16 => (pair << 16) | (pin_word & 0xffff),
+            .four => cog.scope,
+            .none => unreachable,
+        };
+    } else if (format.source == .pins) {
         value = @truncate(std.math.rotr(u64, cog.hub.io.get_in(), command.pinBase()));
     } else {
         if (format.source == .fifo and active.samples_left == 0) {
             const bytes: u3 = if (format.lut) 4 else @intCast(@max(@as(u6, 8), format.bits) / 8);
+            if (cog.fifo_state.request != null or cog.peek_fifo(bytes - 1) == null) {
+                cog.hub.report(.{ .streamer_starvation = .{ .control = command.control, .value = 0 } }, command.provenance);
+            }
             active.shift = cog.read_fifo(bytes) orelse 0;
             if (format.alternate) {
                 active.shift = reorder(active.shift, format.bits);
@@ -487,9 +587,12 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
         // The initial lookup is prefetched before command publication; subsequent reads share the write port.
         if (initial or streamer.lut_write == null) {
             streamer.lut_value = cog.read_lut(address);
+            streamer.lut_address = address;
             if (address == 0x1ff) {
                 cog.signal_event(.XRL);
             }
+        } else {
+            streamer.reportLutCollision(cog, command, address);
         }
         value = streamer.lut_value;
         streamer.channels = dacBytes(value);
@@ -499,25 +602,21 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
     } else {
         streamer.channels = expand(value, format.bits, format.channel_bits);
     }
-    if (format.source == .pins and command.control & (1 << 23) != 0) {
+    if ((format.source == .pins or format.source == .scope) and command.control & (1 << 23) != 0) {
         if (format.bits < 8) {
             const offset = if (format.alternate) 8 - format.bits - active.capture_bits else active.capture_bits;
             active.capture |= value << @as(u5, @intCast(offset));
             active.capture_bits += @intCast(format.bits);
             if (active.capture_bits == 8) {
-                if (!cog.fifo_write_in_use()) {
-                    _ = cog.write_fifo(active.capture, 1);
-                }
+                streamer.capture(cog, command, active.capture, 1);
                 active.capture = 0;
                 active.capture_bits = 0;
             }
         } else {
-            if (!cog.fifo_write_in_use()) {
-                _ = cog.write_fifo(value, @intCast(format.bits / 8));
-            }
+            streamer.capture(cog, command, value, @intCast(format.bits / 8));
         }
     }
-    if (format.source != .pins) {
+    if (format.source != .pins and format.source != .scope) {
         if (format.source == .fifo or active.samples_left > 1) {
             if (format.bits == 32) {
                 active.shift = 0;
@@ -527,7 +626,7 @@ fn sample(streamer: *Streamer, cog: *Cog, initial: bool) void {
             active.samples_left -= 1;
         }
     }
-    if (command.control & (1 << 23) != 0 and format.source != .pins) {
+    if (command.control & (1 << 23) != 0 and format.source != .pins and format.source != .scope) {
         streamer.pin_data = std.math.rotl(u64, value, command.pinBase());
     } else {
         streamer.pin_data = 0;
@@ -571,9 +670,12 @@ fn sampleDds(streamer: *Streamer, cog: *Cog, command: Command, initial: bool) vo
     const address = (offset & ~mask) | ((offset +% index) & mask);
     if (initial or streamer.lut_write == null) {
         streamer.lut_value = cog.read_lut(address);
+        streamer.lut_address = address;
         if (address == 0x1ff) {
             cog.signal_event(.XRL);
         }
+    } else {
+        streamer.reportLutCollision(cog, command, address);
     }
     const value = streamer.lut_value;
     streamer.channels = dacBytes(value ^ 0x8080_8080);
@@ -782,11 +884,10 @@ test "TMDS literal symbols and reverse pin order serialize without touching DAC 
 }
 
 test "immediate data repeats its last sample, restores background, and resets per cog" {
-    const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.streamer.apply(cog, .{ .dacs = 0x78563412 });
     const command = try Command.init(0x6f0e0006, 0x04030201, null, .immediate, .{});
@@ -805,11 +906,10 @@ test "immediate data repeats its last sample, restores background, and resets pe
 }
 
 test "LUT address wraps, raises XRL and selectable sensors, and shared writes win" {
-    const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.lut[0x1ff] = 0x12345678;
     cog.lut[0] = 0xabcdef01;
@@ -823,7 +923,16 @@ test "LUT address wraps, raises XRL and selectable sensors, and shared writes wi
     cog.streamer.step(cog);
     try std.testing.expectEqualSlices(u8, &.{ 1, 0xef, 0xcd, 0xab }, &cog.dacs);
     cog.events = .empty;
-    cog.streamer.lut_write = 100;
+    cog.streamer.lut_write = .{
+        .provenance = .{},
+        .space = .lut,
+        .cog = cog.id,
+        .address = 100,
+        .access = .write,
+        .value = 0,
+        .class = .data,
+        .storage = .ram,
+    };
     const colliding = try Command.init(0x3f0f0002, 0x1f20, null, .immediate, .{});
     cog.streamer.apply(cog, .{ .command = colliding });
     cog.streamer.step(cog);
@@ -839,13 +948,12 @@ test "alternate ordering reverses samples within bytes, preserving sample bit or
 }
 
 test "raw ADC density feeds Goertzel without analog DAC feedback" {
-    const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.io.editConfiguration(@enumFromInt(0), 0x0011_8000);
-    try hub.io.setAdcDensity(@enumFromInt(0), 0.75);
+    try hub.io.setAdcOverride(@enumFromInt(0), 0.75);
     for (0..32) |_| {
         _ = hub.step();
     }
@@ -866,11 +974,10 @@ test "raw ADC density feeds Goertzel without analog DAC feedback" {
 }
 
 test "DDS publishes the physically checked four-entry DAC waveform every clock" {
-    const Hub = @import("Hub.zig");
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     @memcpy(cog.lut[0..4], &[_]u32{ 0x7f00_c080, 0x807f_00c0, 0xc080_7f00, 0x00c0_807f });
     const command = try Command.init(0xff07_ffff, 7 << 9, 0x2000_0000, .immediate, .{});
@@ -896,4 +1003,46 @@ test "DDS publishes the physically checked four-entry DAC waveform every clock" 
     _ = hub.step();
     _ = hub.step();
     try std.testing.expectEqualSlices(u8, &.{ 0, 0, 0, 0 }, &cog.dacs);
+}
+
+/// Retain both the displaced LUT reader and the companion write responsible for port priority.
+fn reportLutCollision(streamer: *const Streamer, cog: *Cog, command: Command, address: u9) void {
+    const reader: Issue.Participant = .{
+        .provenance = command.provenance,
+        .space = .lut,
+        .cog = cog.id,
+        .address = address,
+        .access = .read,
+        .value = streamer.lut_value,
+        .class = .data,
+        .storage = .ram,
+    };
+    cog.hub.report(.{
+        .lut_read_write = .{
+            .clock = cog.hub.counter,
+            .writer = streamer.lut_write.?,
+            .reader = reader,
+            .read_source = .{
+                .retained_lut = streamer.lut_address,
+            },
+        },
+    }, command.provenance);
+}
+
+/// Report dropped captures or retain their provenance until the competing software writer executes.
+fn capture(streamer: *Streamer, cog: *Cog, command: Command, value: u32, bytes: u3) void {
+    if (cog.fifo_write_in_use()) {
+        streamer.displaced_capture = .{
+            .provenance = command.provenance,
+            .space = .hub,
+            .cog = null,
+            .address = cog.fifo_state.address orelse 0,
+            .access = .write,
+            .value = value,
+            .class = .data,
+            .storage = .ram,
+        };
+    } else if (!cog.write_fifo(value, bytes)) {
+        cog.hub.report(.{ .streamer_capture_dropped = .{ .control = command.control, .value = value } }, command.provenance);
+    }
 }

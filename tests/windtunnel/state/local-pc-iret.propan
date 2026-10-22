@@ -1,7 +1,9 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: pc_domain = 5
 //? timeout-ms: 3000
 //? const: phase = 20
 //? run: "no-interrupt-cog0"
+//? issues: pc_domain = 8
 //? cog: 0
 //? const: level = 0
 //? pre: cog[*].c = true
@@ -14,6 +16,7 @@
 //? post: cog[*].c == true
 //? post: cog[*].z == true
 //? run: "no-interrupt-cog7"
+//? issues: pc_domain = 8
 //? cog: 7
 //? const: level = 0
 //? pre: cog[*].c = true
@@ -98,6 +101,7 @@
 //? post: cog[*].c == true
 //? post: cog[*].z == true
 //? run: "int1-overflow-400-cog0"
+//? issues: pc_domain = 1
 //? cog: 0
 //? const: level = 1
 //? const: phase = 12
@@ -111,6 +115,7 @@
 //? post: cog[*].c == true
 //? post: cog[*].z == true
 //? run: "int1-overflow-400-cog7"
+//? issues: pc_domain = 1
 //? cog: 7
 //? const: level = 1
 //? const: phase = 12
@@ -243,4 +248,3 @@ hub_after:
 hub_from_400:
                 MOV     landed, 2
                 JMP     nrel(done)
-

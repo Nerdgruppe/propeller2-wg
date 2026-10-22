@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//? issues: lut_read_write = 16
 //? run: "address0 shift0 sinc0"
 //? const: address = 0
 //? const: shift = 0
@@ -16,6 +17,7 @@
 //? post: cog[0].reg[r4] == 2035
 //? post: cog[0].reg[r5] == 1295
 //? run: "address0 shift1 sinc0"
+//? issues: lut_read_write = 15
 //? const: address = 0
 //? const: shift = 1
 //? const: sinc = 0
@@ -24,6 +26,7 @@
 //? post: cog[0].reg[r4] == 110
 //? post: cog[0].reg[r5] == 70
 //? run: "address0 shift1 sinc1"
+//? issues: lut_read_write = 15
 //? const: address = 0
 //? const: shift = 1
 //? const: sinc = 1
@@ -48,6 +51,7 @@
 //? post: cog[0].reg[r4] == 555
 //? post: cog[0].reg[r5] == 925
 //? run: "address100 shift1 sinc0"
+//? issues: lut_read_write = 15
 //? const: address = 100
 //? const: shift = 1
 //? const: sinc = 0
@@ -56,6 +60,7 @@
 //? post: cog[0].reg[r4] == 30
 //? post: cog[0].reg[r5] == 50
 //? run: "address100 shift1 sinc1"
+//? issues: lut_read_write = 15
 //? const: address = 100
 //? const: shift = 1
 //? const: sinc = 1
@@ -126,4 +131,3 @@ wait:
                 COGSTOP 1
                 LONG    [0] * 480
 .data
-

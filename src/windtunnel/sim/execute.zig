@@ -2,7 +2,6 @@
 //! Generated dispatch/signatures wrap preserved runtime, ALU and instruction bodies.
 
 const std = @import("std");
-const logger = std.log.scoped(.execute);
 
 const decode = @import("decode.zig");
 const encoding = @import("encoding.zig");
@@ -75,16 +74,27 @@ fn streamerCommand(cog: *Cog, args: encoding.Both_Dimm_Simm, start: Streamer.Sta
         const data = operandS(cog, args.s, args.s_imm);
         const frequency = if (cog.setq_pending and !cog.q2) cog.q else null;
         const command = Streamer.Command.init(control, data, frequency, start, cog.provenance()) catch |err| {
-            return switch (err) {
-                error.UnsupportedMode => .not_implemented,
-                error.ReservedMode => .{ .illegal = "reserved streamer mode" },
-            };
+            cog.hub.report(.{ .streamer_mode = .{
+                .reason = switch (err) {
+                    error.ReservedMode => .reserved_encoding,
+                    error.UncharacterizedMode => .uncharacterized_behavior,
+                },
+                .control = control,
+                .data = data,
+                .frequency = frequency,
+                .start = switch (start) {
+                    .immediate => .immediate,
+                    .zero => .zero,
+                    .continuous => .continuous,
+                },
+            } }, cog.provenance());
+            return .next;
         };
         if (command.fifoMode()) |mode| {
             if (cog.exec_mode == .hub)
-                return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
-            if (cog.fifo_state.engine == null or cog.fifo_state.address == null or cog.fifo_state.engine.?.mode != mode)
-                return .{ .illegal = "streamer FIFO mode requires matching RDFAST/WRFAST" };
+                return cog.reject(.hub_fifo_conflict);
+            if (cog.fifo_state.engine == null or cog.fifo_state.address == null or std.meta.activeTag(cog.fifo_state.engine.?.direction) != mode)
+                return cog.reject(.streamer_fifo_mismatch);
             if (cog.debug.state == .active) {
                 cog.debug.fifo_untouched = false;
             }
@@ -104,11 +114,11 @@ fn streamerCommand(cog: *Cog, args: encoding.Both_Dimm_Simm, start: Streamer.Sta
 
 /// Configure the shared interface once while a blocking instruction retries its captured operands.
 fn configureFifo(cog: *Cog, args: encoding.Both_Dimm_Simm, mode: Cog.FifoMode) Cog.ExecResult {
+    if (cog.exec_mode == .hub)
+        return cog.reject(.hub_fifo_conflict);
     if (cog.debug.state == .active) {
         cog.debug.fifo_untouched = false;
     }
-    if (cog.exec_mode == .hub)
-        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
     const state = if (cog.collecting_writes)
         &cog.pipeline[3].?
     else
@@ -139,11 +149,11 @@ fn configureFifo(cog: *Cog, args: encoding.Both_Dimm_Simm, mode: Cog.FifoMode) C
 /// Read a fixed-width FIFO value and update only requested flags.
 fn readFifo(cog: *Cog, args: encoding.Only_D_Flags, size: u3) Cog.ExecResult {
     if (cog.exec_mode == .hub)
-        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+        return cog.reject(.hub_fifo_conflict);
     if (cog.fifo_state.address == null or
         cog.fifo_state.engine == null or
-        cog.fifo_state.engine.?.mode != .read)
-        return .{ .illegal = "FIFO read requires RDFAST" };
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) != .read)
+        return cog.reject(.fifo_read_unconfigured);
     const value = cog.read_fifo(size) orelse return .wait;
     cog.write_result(args.d, value);
     setFlags(cog, args, value, @intCast(@as(u6, size) * 8 - 1));
@@ -153,11 +163,11 @@ fn readFifo(cog: *Cog, args: encoding.Only_D_Flags, size: u3) Cog.ExecResult {
 /// Decode up to four bytes, using the full fourth byte and the terminating byte's sign bit.
 fn readFifoVariable(cog: *Cog, args: encoding.Only_D_Flags, signed: bool) Cog.ExecResult {
     if (cog.exec_mode == .hub)
-        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+        return cog.reject(.hub_fifo_conflict);
     if (cog.fifo_state.address == null or
         cog.fifo_state.engine == null or
-        cog.fifo_state.engine.?.mode != .read)
-        return .{ .illegal = "FIFO read requires RDFAST" };
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) != .read)
+        return cog.reject(.fifo_read_unconfigured);
     var value: u32 = 0;
     var size: u3 = 0;
     var bits: u6 = 0;
@@ -204,11 +214,11 @@ fn readFifoVariable(cog: *Cog, args: encoding.Only_D_Flags, signed: bool) Cog.Ex
 /// Enqueue a captured value without committing it directly to hub RAM during clocked execution.
 fn writeFifo(cog: *Cog, args: encoding.Only_Dimm, size: u3) Cog.ExecResult {
     if (cog.exec_mode == .hub)
-        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+        return cog.reject(.hub_fifo_conflict);
     if (cog.fifo_state.address == null or
         cog.fifo_state.engine == null or
-        cog.fifo_state.engine.?.mode != .write)
-        return .{ .illegal = "FIFO write requires WRFAST" };
+        std.meta.activeTag(cog.fifo_state.engine.?.direction) != .write)
+        return cog.reject(.fifo_write_unconfigured);
     const state = if (cog.collecting_writes)
         &cog.pipeline[3].?
     else
@@ -353,6 +363,7 @@ fn memoryAddress(cog: *Cog, reg: Cog.Register, immediate: bool, scale: u3, block
 /// Honor redirected/canceled results, underlying tail RAM, LUT destinations and final-beat flags.
 fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecResult {
     if (cog.memory_transfer == null) {
+        cog.read_bus.fragment = null;
         const block = size == 4 and cog.setq_pending;
         const state = cog.pipeline[3];
         cog.memory_transfer = .{
@@ -394,6 +405,10 @@ fn readMemory(cog: *Cog, args: encoding.Both_D_Simm_Flags, size: u3) Cog.ExecRes
         transfer.direction.read.value orelse return .wait
     else
         cog.hub.read_memory(transfer.address, size);
+    if (transfer.timed) {
+        cog.report_read_race(transfer.direction.read.value_race);
+        transfer.direction.read.value_race = null;
+    }
     if (!transfer.direction.read.no_result) {
         if (transfer.lut) {
             cog.write_lut(transfer.reg, value);
@@ -472,6 +487,7 @@ fn progressWrite(cog: *Cog, size: u3, masked: bool) Cog.ExecResult {
     if (transfer.timed) {
         const low_size: u3 = @intCast(@min(size, 4 - (transfer.address & 3)));
         const crossing = low_size < size;
+        std.debug.assert(cog.hub_writeback == null);
         cog.hub_writeback = .{
             .provenance = transfer.provenance,
             .address = transfer.address +% (if (crossing)
@@ -541,6 +557,7 @@ fn callPointer(cog: *Cog, pointer: Cog.Register, target: u20) Cog.ExecResult {
 /// Predecrement the selected hub stack, wait for its read, then restore the return address and requested flags.
 fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog.ExecResult {
     if (cog.memory_transfer == null) {
+        cog.read_bus.fragment = null;
         const address = cog.read_operand(pointer) -% 4;
         cog.memory_transfer = .{
             .provenance = cog.provenance(),
@@ -563,6 +580,9 @@ fn returnPointer(cog: *Cog, pointer: Cog.Register, args: encoding.OnlyFlags) Cog
         transfer.direction.read.value orelse return .wait
     else
         cog.hub.read_memory(transfer.address, 4);
+    if (transfer.timed) {
+        cog.report_read_race(transfer.direction.read.value_race);
+    }
     cog.memory_transfer = null;
     jumpFlags(cog, args, value);
     return .next;
@@ -878,7 +898,7 @@ fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
     const enc: encoding.Instruction = .{ .raw = raw };
 
     switch (opcode) {
-        .invalid => return .trap,
+        .invalid => return cog.reject(.invalid_encoding),
         .ror => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ROR, true),
         .rol => return execute_alu(cog, state, enc.both_d_simm_flags, alu.ROL, true),
         .shr => return execute_alu(cog, state, enc.both_d_simm_flags, alu.SHR, true),
@@ -997,8 +1017,6 @@ fn dispatch(cog: *Cog, state: Cog.PipelineState) Cog.ExecResult {
             @setEvalBranchQuota(10_000);
             const field = comptime decode.instruction_type.get(opc);
             const params = @field(enc, field);
-
-            // logger.debug("0x{X:0>5}: 0x{X:0>8} {t}: {f}", .{ state.pc, state.instr, opc, params });
 
             return @field(@This(), @tagName(opc))(cog, params);
         },
@@ -1287,6 +1305,8 @@ pub fn jmprel(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn skipf(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:skipf
+    if (cog.exec_mode == .hub)
+        return cog.reject(.hub_skipf);
     cog.begin_skip(.fast, operandD(cog, args.d, args.d_imm));
     return .next;
     // codegen: end:skipf
@@ -2929,6 +2949,9 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
         if (id == cog.id and cog.collecting_writes) {
             // Self restart takes effect after the next ordinary instruction's
             // writeback. The new startup remains timed from the command grant.
+            if (hub.pending_starts[id]) |previous| {
+                hub.report(.{ .cog_start_replaced = .{ .previous = previous.provenance, .replacement = cog.provenance(), .target = id } }, cog.provenance());
+            }
             hub.pending_starts[id] = .{
                 .provenance = cog.provenance(),
                 .at = hub.counter +% 3,
@@ -2943,7 +2966,7 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
                 .ptra = ptra,
                 .load_image = d & 0x20 == 0,
                 .clocked = cog.collecting_writes,
-            }) catch return .trap;
+            });
         }
         if (pair) {
             hub.start_cog(id + 1, .{
@@ -2951,7 +2974,7 @@ pub fn coginit(cog: *Cog, args: encoding.Both_Dimm_Simm_CFlag) Cog.ExecResult {
                 .ptra = ptra,
                 .load_image = d & 0x20 == 0,
                 .clocked = cog.collecting_writes,
-            }) catch return .trap;
+            });
         }
         if (id == cog.id) {
             cog.branched = true;
@@ -3013,7 +3036,6 @@ pub fn cogstop(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 
     const id: u3 = @truncate(operandD(cog, args.d, args.d_imm));
 
-    logger.info("stop cog {}", .{id});
     cog.hub.cogs[id].reset();
 
     return .next;
@@ -3170,7 +3192,7 @@ pub fn getptr(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
 pub fn fblock(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:fblock
     if (cog.exec_mode == .hub)
-        return .{ .illegal = "hub execution uses the FIFO for instruction fetching" };
+        return cog.reject(.hub_fifo_conflict);
     cog.fifo_block(operandD(cog, args.d, args.d_imm), operandS(cog, args.s, args.s_imm));
     return .next;
     // codegen: end:fblock
@@ -4763,8 +4785,6 @@ pub fn wrpin(cog: *Cog, args: encoding.Both_Dimm_Simm) Cog.ExecResult {
     // codegen: begin:wrpin
     const value = operandD(cog, args.d, args.d_imm);
     const field = operandS(cog, args.s, args.s_imm);
-    if (!IO.supported(value))
-        return .not_implemented;
     pinCommand(cog, pinMask(cog, field), if (value & 1 != 0)
         .acknowledge
     else
@@ -4828,10 +4848,13 @@ pub fn setdacs(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn setscp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
     // codegen: begin:setscp
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    const configuration: types.OscilloscopeConfig = @bitCast(operandD(cog, args.d, args.d_imm));
+    if (cog.collecting_writes) {
+        cog.writeback.scope = configuration;
+    } else {
+        cog.scope_configuration = configuration;
+    }
+    return .next;
     // codegen: end:setscp
 }
 
@@ -4844,10 +4867,8 @@ pub fn setscp(cog: *Cog, args: encoding.Only_Dimm) Cog.ExecResult {
 /// access:      mem=None, reg=None, stack=None
 pub fn getscp(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     // codegen: begin:getscp
-    _ = cog;
-    _ = args;
-    return .not_implemented;
-    // return .next;
+    cog.write_result(args.d, cog.scope);
+    return .next;
     // codegen: end:getscp
 }
 
@@ -4925,75 +4946,6 @@ pub fn getxacc(cog: *Cog, args: encoding.Only_D) Cog.ExecResult {
     }
     return .next;
     // codegen: end:getxacc
-}
-
-test "HUBSET delegates shared configuration and completes unsupported values" {
-    const Hub = @import("Hub.zig");
-    const hub = try std.testing.allocator.create(Hub);
-    defer std.testing.allocator.destroy(hub);
-
-    hub.init();
-    const cog = &hub.cogs[0];
-    const args: encoding.Only_Dimm = .{ ._mask1 = 0, .d = @enumFromInt(24), .d_imm = false, ._mask2 = 0, .cond = .IF_ALWAYS };
-
-    cog.write_reg(@enumFromInt(24), 0x0100_09fb);
-    try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
-    try std.testing.expectEqual(@as(u64, 200_000_000), hub.io.clock_frequency);
-
-    cog.write_reg(@enumFromInt(24), 0x8000_1234);
-    try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
-    try std.testing.expectEqual(@as(u64, 0x8000_1234_0000_0000), hub.random.s1);
-
-    const random = hub.random;
-    cog.write_reg(@enumFromInt(24), 3);
-    try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
-    try std.testing.expectEqual(@as(u32, 0x0100_09fb), hub.io.clock_mode);
-    try std.testing.expectEqual(@as(u64, 200_000_000), hub.io.clock_frequency);
-    try std.testing.expectEqualDeep(random, hub.random);
-}
-
-test "local relative JMP and CALL use nonlinear fallthrough and cancel without side effects" {
-    const Hub = @import("Hub.zig");
-    const hub = try std.testing.allocator.create(Hub);
-    defer std.testing.allocator.destroy(hub);
-
-    for ([_]bool{ false, true }) |is_call| {
-        for ([_]i20{ -11, -9, 1, 3, 5, 7 }) |delta| {
-            hub.init();
-            const cog = &hub.cogs[0];
-            cog.exec_mode = .cog;
-            cog.pc = 0x130;
-            cog.c = true;
-            cog.z = false;
-            const word: u32 = (if (is_call)
-                @as(u32, 0xFDB0_0000)
-            else
-                0xFD90_0000) | @as(u20, @bitCast(delta));
-            // A prepared REP wrap or SKIPF step may differ from both the dispatch PC and current fetch PC.
-            cog.pipeline[3] = .{ .pc = 0x110, .instr = word, .next_pc = 0x120 };
-            cog.dispatch_pc = 0x110;
-            try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, cog.pipeline[3].?));
-            try std.testing.expectEqual(@as(u20, @bitCast(@as(i20, 0x120) + (delta >> 2))), cog.pc);
-            try std.testing.expect(cog.c and !cog.z);
-            if (is_call) {
-                try std.testing.expectEqual(@as(u32, 0x8000_0120), cog.stack[0]);
-            }
-
-            hub.init();
-            const canceled = &hub.cogs[0];
-            canceled.exec_mode = .cog;
-            canceled.pc = 0x130;
-            canceled.c = false;
-            canceled.z = true;
-            const conditional_word = (word & 0x0fff_ffff) | 0xC000_0000; // IF_C.
-            canceled.pipeline[3] = .{ .pc = 0x110, .instr = conditional_word, .next_pc = 0x120 };
-            canceled.dispatch_pc = 0x110;
-            try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(canceled, canceled.pipeline[3].?));
-            try std.testing.expectEqual(@as(u20, 0x130), canceled.pc);
-            try std.testing.expectEqual(@as(u32, 0), canceled.stack[0]);
-            try std.testing.expect(!canceled.c and canceled.z);
-        }
-    }
 }
 
 test "all ALU opcodes delegate to libp2" {
@@ -5113,11 +5065,80 @@ test "all ALU opcodes delegate to libp2" {
 }
 
 // codegen: begin:executortests
+test "HUBSET delegates shared configuration and completes unsupported values" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    try hub.init(.ideal);
+    const cog = &hub.cogs[0];
+    const args: encoding.Only_Dimm = .{ ._mask1 = 0, .d = @enumFromInt(24), .d_imm = false, ._mask2 = 0, .cond = .IF_ALWAYS };
+
+    cog.write_reg(@enumFromInt(24), 0x0100_09fb);
+    try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
+    try std.testing.expectEqual(@as(f64, 200_000_000), hub.io.clock.frequency());
+
+    cog.write_reg(@enumFromInt(24), 0x8000_1234);
+    try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
+    try std.testing.expectEqual(@as(u64, 0x8000_1234_0000_0000), hub.random.s1);
+
+    const random = hub.random;
+    cog.write_reg(@enumFromInt(24), 3);
+    try std.testing.expectEqual(Cog.ExecResult.next, hubset(cog, args));
+    try std.testing.expectEqual(@as(u32, 0x0100_09fb), hub.io.clock_mode);
+    try std.testing.expectEqual(@as(f64, 200_000_000), hub.io.clock.frequency());
+    try std.testing.expectEqualDeep(random, hub.random);
+}
+
+test "local relative JMP and CALL use nonlinear fallthrough and cancel without side effects" {
+    const Hub = @import("Hub.zig");
+    const hub = try std.testing.allocator.create(Hub);
+    defer std.testing.allocator.destroy(hub);
+
+    for ([_]bool{ false, true }) |is_call| {
+        for ([_]i20{ -11, -9, 1, 3, 5, 7 }) |delta| {
+            try hub.init(.ideal);
+            const cog = &hub.cogs[0];
+            cog.exec_mode = .cog;
+            cog.pc = 0x130;
+            cog.c = true;
+            cog.z = false;
+            const word: u32 = (if (is_call)
+                @as(u32, 0xFDB0_0000)
+            else
+                0xFD90_0000) | @as(u20, @bitCast(delta));
+            // A prepared REP wrap or SKIPF step may differ from both the dispatch PC and current fetch PC.
+            cog.pipeline[3] = .{ .pc = 0x110, .instr = word, .next_pc = 0x120 };
+            cog.dispatch_pc = 0x110;
+            try std.testing.expectEqual(Cog.ExecResult.next, execute_instruction(cog, cog.pipeline[3].?));
+            try std.testing.expectEqual(@as(u20, @bitCast(@as(i20, 0x120) + (delta >> 2))), cog.pc);
+            try std.testing.expect(cog.c and !cog.z);
+            if (is_call) {
+                try std.testing.expectEqual(@as(u32, 0x8000_0120), cog.stack[0]);
+            }
+
+            try hub.init(.ideal);
+            const canceled = &hub.cogs[0];
+            canceled.exec_mode = .cog;
+            canceled.pc = 0x130;
+            canceled.c = false;
+            canceled.z = true;
+            const conditional_word = (word & 0x0fff_ffff) | 0xC000_0000; // IF_C.
+            canceled.pipeline[3] = .{ .pc = 0x110, .instr = conditional_word, .next_pc = 0x120 };
+            canceled.dispatch_pc = 0x110;
+            try std.testing.expectEqual(Cog.ExecResult.skip, execute_instruction(canceled, canceled.pipeline[3].?));
+            try std.testing.expectEqual(@as(u20, 0x130), canceled.pc);
+            try std.testing.expectEqual(@as(u32, 0), canceled.stack[0]);
+            try std.testing.expect(!canceled.c and canceled.z);
+        }
+    }
+}
+
 test "random consumers share the current cog word and wait samples only once" {
     const hub = try std.testing.allocator.create(hub_module);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     for (&hub.cogs) |*cog| {
         for (0..8) |phase| {
             _ = hub.step();
@@ -5198,7 +5219,7 @@ test "all event polls and waits consume only their selected latch and honor flag
             for (0..4) |flags| {
                 for (0..4) |seed| {
                     for ([_]bool{ false, true }) |active| {
-                        hub.init();
+                        try hub.init(.ideal);
                         const cog = &hub.cogs[0];
                         cog.events = .full;
                         cog.events.setPresent(event, active);
@@ -5255,7 +5276,7 @@ test "all event branch polarities consume the latch with immediate and register 
         for ([_]bool{ false, true }) |positive| {
             for ([_]bool{ false, true }) |active| {
                 for ([_]bool{ false, true }) |immediate| {
-                    hub.init();
+                    try hub.init(.ideal);
                     const cog = &hub.cogs[0];
                     cog.exec_mode = .cog;
                     cog.pc = 7;
@@ -5302,7 +5323,7 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
     const events = std.enums.values(EventId);
     for (events[0 .. events.len - 1]) |event| {
         for (std.enums.values(Scenario)) |scenario| {
-            hub.init();
+            try hub.init(.ideal);
             const start = std.math.maxInt(u64) - 3;
             hub.counter = start;
             const cog = &hub.cogs[0];
@@ -5348,7 +5369,7 @@ test "all event waits retain prefix and pipeline state across delivery timeout a
                     hub.clocking = false;
                 }
                 _ = hub.step();
-                try std.testing.expect(hub.fault == null);
+                try std.testing.expect(hub.issues.len == 0);
                 if (elapsed < completion) {
                     try std.testing.expect(cog.pipeline[3] != null);
                     try std.testing.expect(cog.pipeline[4] == null);
@@ -5375,7 +5396,7 @@ test "forwarded source stays with a waiting instruction" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
     cog.write_reg(@enumFromInt(24), 0x8000);
@@ -5403,10 +5424,10 @@ test "unaligned hub memory wraps, extended pointer indices are unscaled, and zer
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     hub.write_memory(0xffff_ffff, 0x1122_3344, 4, false);
     try std.testing.expectEqual(@as(u32, 0x1122_3344), hub.read_memory(0xfffff, 4));
-    try std.testing.expectEqual(@as(u8, 0x33), hub.memory[0]);
+    try std.testing.expectEqual(@as(u8, 0x33), hub.ram.bytes()[0]);
     hub.write_memory(0xfffff, 0x0055_0066, 4, true);
     try std.testing.expectEqual(@as(u32, 0x1155_3366), hub.read_memory(0xfffff, 4));
     const cog = &hub.cogs[0];
@@ -5431,7 +5452,7 @@ test "block transfers bypass special registers and wrap register addresses" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.write_reg(.PTRA, 0x1000);
     cog.q = 9;
@@ -5483,7 +5504,7 @@ fn test_alu_dispatch(comptime opcode: decode.OpCode, template: u32, comptime fun
         for (0..4) |effects| {
             for ([_]bool{ false, true }) |immediate| {
                 for ([_]bool{ false, true }) |altered| {
-                    hub.init();
+                    try hub.init(.ideal);
                     const cog = &hub.cogs[0];
                     cog.c = flags & 2 != 0;
                     cog.z = flags & 1 != 0;
@@ -5600,13 +5621,13 @@ test "software FIFO address obeys the 20-bit map in direct execution" {
     const hub = try std.testing.allocator.create(Hub);
     defer std.testing.allocator.destroy(hub);
 
-    hub.init();
+    try hub.init(.ideal);
     const cog = &hub.cogs[0];
     cog.exec_mode = .cog;
-    hub.memory[0] = 0xaa;
-    hub.memory[0x7ffff] = 0xbb;
-    hub.memory[0x7c000] = 0xcc;
-    hub.memory[0x7c001] = 0; // This test supplies its own bytes over the initialized ROM cache.
+    hub.ram.bytes()[0] = 0xaa;
+    hub.ram.bytes()[0x7ffff] = 0xbb;
+    hub.ram.bytes()[0x7c000] = 0xcc;
+    hub.ram.bytes()[0x7c001] = 0; // This test supplies its own bytes over the initialized ROM cache.
     const cases = [_]struct { address: u32, bytes: [2]u32 }{
         .{ .address = 0x80000, .bytes = .{ 0, 0 } },
         .{ .address = 0x7ffff, .bytes = .{ 0xbb, 0 } },
@@ -5633,7 +5654,7 @@ test "hub stack transfers retain their issue-time privilege through stalls and w
 
     for ([_]Cog.Register{ .PTRA, .PTRB }) |pointer| {
         for ([_]bool{ false, true }) |debug| {
-            hub.init();
+            try hub.init(.ideal);
             hub.debug.protected = true;
             const previous_value = hub.read_memory(0xff800, 4);
             const cog = &hub.cogs[0];
@@ -5653,6 +5674,8 @@ test "hub stack transfers retain their issue-time privilege through stalls and w
             try std.testing.expectEqual(origin, cog.hub_writeback.?.origin);
             cog.collecting_writes = false;
             cog.exec_mode = .stopped;
+            // The queued write commits at its following physical grant edge.
+            hub.counter +%= 1;
             _ = hub.step();
             try std.testing.expectEqual(if (debug) return_value else previous_value, hub.read_memory(0xff800, 4));
             try std.testing.expectEqual(@as(u32, 0xff804), cog.read_reg(pointer));

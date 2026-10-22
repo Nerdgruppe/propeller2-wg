@@ -1,4 +1,5 @@
                 //? WINDTUNNEL CHECK LIST
+                //? issues: pc_domain = 2
                 //? timeout-ms: 3000
                 //? run: "kind0-cog0"
                 //? post: cog[*].reg[link] == 0x401
@@ -209,4 +210,3 @@ tail_template:
 .else
                 ADD     hits,       2
 .endif
-

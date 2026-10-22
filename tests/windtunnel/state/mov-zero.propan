@@ -13,4 +13,3 @@ _start:
                 MOV     result, 0   :wcz
                 JMP     nrel(_end)
 var result:     LONG    0xffff_ffff
-

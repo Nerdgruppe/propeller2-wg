@@ -1,7 +1,9 @@
                 //? WINDTUNNEL CHECK LIST
+                //? issues: pc_domain = 3
                 //? timeout-ms: 10000
                 //? max-cycles: 3000000
                 //? run: "source0"
+                //? issues: pc_domain = 1047552
                 //? post: cog[*].reg[link] == 0x2
                 //? post: cog[*].reg[hits] == 0x0
                 //? post: cog[*].reg[stamp_a] == 0x0
@@ -162,4 +164,3 @@ tail_template:
 
 
 .import "../local-pc-lut.propan"
-
