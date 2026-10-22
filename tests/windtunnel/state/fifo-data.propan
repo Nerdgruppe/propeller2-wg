@@ -1,130 +1,162 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 3000
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "cog0-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 0
+//?
 //? run: "cog0-align1"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 1
+//?
 //? run: "cog0-align2"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 2
+//?
 //? run: "cog0-align3"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_alignment = 3
+//?
 //? run: "cog1-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 0
+//?
 //? run: "cog1-align1"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 1
+//?
 //? run: "cog1-align2"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 2
+//?
 //? run: "cog1-align3"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_alignment = 3
+//?
 //? run: "cog2-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 0
+//?
 //? run: "cog2-align1"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 1
+//?
 //? run: "cog2-align2"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 2
+//?
 //? run: "cog2-align3"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_alignment = 3
+//?
 //? run: "cog3-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 0
+//?
 //? run: "cog3-align1"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 1
+//?
 //? run: "cog3-align2"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 2
+//?
 //? run: "cog3-align3"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_alignment = 3
+//?
 //? run: "cog4-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 0
+//?
 //? run: "cog4-align1"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 1
+//?
 //? run: "cog4-align2"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 2
+//?
 //? run: "cog4-align3"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_alignment = 3
+//?
 //? run: "cog5-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 0
+//?
 //? run: "cog5-align1"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 1
+//?
 //? run: "cog5-align2"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 2
+//?
 //? run: "cog5-align3"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_alignment = 3
+//?
 //? run: "cog6-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 0
+//?
 //? run: "cog6-align1"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 1
+//?
 //? run: "cog6-align2"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 2
+//?
 //? run: "cog6-align3"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_alignment = 3
+//?
 //? run: "cog7-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 0
+//?
 //? run: "cog7-align1"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 1
+//?
 //? run: "cog7-align2"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_alignment = 2
+//?
 //? run: "cog7-align3"
 //? cog: 7
 //? const: probe_cog = 7

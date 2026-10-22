@@ -1,98 +1,115 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: probe_write required
+//?
 //? run: "0-0"
+//? macro: probe_write set RDLONG
 //? cog: 0
 //? const: probe_cog = 0
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "0-1"
+//? macro: probe_write set WRLONG
 //? cog: 0
 //? const: probe_cog = 0
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
+//?
 //? run: "1-0"
+//? macro: probe_write set RDLONG
 //? cog: 1
 //? const: probe_cog = 1
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "1-1"
+//? macro: probe_write set WRLONG
 //? cog: 1
 //? const: probe_cog = 1
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
+//?
 //? run: "2-0"
+//? macro: probe_write set RDLONG
 //? cog: 2
 //? const: probe_cog = 2
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "2-1"
+//? macro: probe_write set WRLONG
 //? cog: 2
 //? const: probe_cog = 2
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
+//?
 //? run: "3-0"
+//? macro: probe_write set RDLONG
 //? cog: 3
 //? const: probe_cog = 3
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "3-1"
+//? macro: probe_write set WRLONG
 //? cog: 3
 //? const: probe_cog = 3
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
+//?
 //? run: "4-0"
+//? macro: probe_write set RDLONG
 //? cog: 4
 //? const: probe_cog = 4
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "4-1"
+//? macro: probe_write set WRLONG
 //? cog: 4
 //? const: probe_cog = 4
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
+//?
 //? run: "5-0"
+//? macro: probe_write set RDLONG
 //? cog: 5
 //? const: probe_cog = 5
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "5-1"
+//? macro: probe_write set WRLONG
 //? cog: 5
 //? const: probe_cog = 5
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
+//?
 //? run: "6-0"
+//? macro: probe_write set RDLONG
 //? cog: 6
 //? const: probe_cog = 6
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "6-1"
+//? macro: probe_write set WRLONG
 //? cog: 6
 //? const: probe_cog = 6
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
+//?
 //? run: "7-0"
+//? macro: probe_write set RDLONG
 //? cog: 7
 //? const: probe_cog = 7
-//? const: probe_write = 0
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0xb570a895
+//?
 //? run: "7-1"
+//? macro: probe_write set WRLONG
 //? cog: 7
 //? const: probe_cog = 7
-//? const: probe_write = 1
 //? const: probe_alignment = 0
 //? post: cog[*].reg[checksum] == 0x8732a875
 
@@ -122,11 +139,7 @@ pause_loop:
 cog_return:
                 GETCT   start
                 SETQ    length
-.if probe_write == 1
-                WRLONG  register(200),  address
-.else
-                RDLONG  register(200),  address
-.endif
+                {{ probe_write }}   register(200), address
                 GETCT   finish
                 SUB     finish,         start
                 AND     start,          7

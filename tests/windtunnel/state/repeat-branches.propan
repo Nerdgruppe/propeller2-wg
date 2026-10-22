@@ -1,293 +1,334 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
+//? macro: selected_kind required
+//?
 //? run: "kind0-count0-cog0"
+//? macro: selected_kind set JMP destination
 //? cog: 0
-//? const: kind = 0
 //? const: count = 0
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind0-count0-cog7"
+//? macro: selected_kind set JMP destination
 //? cog: 7
-//? const: kind = 0
 //? const: count = 0
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind0-count1-cog0"
+//? macro: selected_kind set JMP destination
 //? cog: 0
-//? const: kind = 0
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind0-count1-cog7"
+//? macro: selected_kind set JMP destination
 //? cog: 7
-//? const: kind = 0
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind0-count3-cog0"
+//? macro: selected_kind set JMP destination
 //? cog: 0
-//? const: kind = 0
 //? const: count = 3
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind0-count3-cog7"
+//? macro: selected_kind set JMP destination
 //? cog: 7
-//? const: kind = 0
 //? const: count = 3
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind1-count0-cog0"
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 0
-//? const: kind = 1
 //? const: count = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind1-count0-cog7"
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 7
-//? const: kind = 1
 //? const: count = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind1-count1-cog0"
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 0
-//? const: kind = 1
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind1-count1-cog7"
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 7
-//? const: kind = 1
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind1-count3-cog0"
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 0
-//? const: kind = 1
 //? const: count = 3
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind1-count3-cog7"
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 7
-//? const: kind = 1
 //? const: count = 3
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind2-count0-cog0"
+//? macro: selected_kind set JMP target
 //? cog: 0
-//? const: kind = 2
 //? const: count = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind2-count0-cog7"
+//? macro: selected_kind set JMP target
 //? cog: 7
-//? const: kind = 2
 //? const: count = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind2-count1-cog0"
+//? macro: selected_kind set JMP target
 //? cog: 0
-//? const: kind = 2
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind2-count1-cog7"
+//? macro: selected_kind set JMP target
 //? cog: 7
-//? const: kind = 2
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind2-count3-cog0"
+//? macro: selected_kind set JMP target
 //? cog: 0
-//? const: kind = 2
 //? const: count = 3
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind2-count3-cog7"
+//? macro: selected_kind set JMP target
 //? cog: 7
-//? const: kind = 2
 //? const: count = 3
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind3-count0-cog0"
+//? macro: selected_kind set CALL nrel(callee)
 //? cog: 0
-//? const: kind = 3
 //? const: count = 0
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 20
+//?
 //? run: "kind3-count0-cog7"
+//? macro: selected_kind set CALL nrel(callee)
 //? cog: 7
-//? const: kind = 3
 //? const: count = 0
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 20
+//?
 //? run: "kind3-count1-cog0"
+//? macro: selected_kind set CALL nrel(callee)
 //? cog: 0
-//? const: kind = 3
 //? const: count = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[elapsed] == 20
+//?
 //? run: "kind3-count1-cog7"
+//? macro: selected_kind set CALL nrel(callee)
 //? cog: 7
-//? const: kind = 3
 //? const: count = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[elapsed] == 20
+//?
 //? run: "kind3-count3-cog0"
+//? macro: selected_kind set CALL nrel(callee)
 //? cog: 0
-//? const: kind = 3
 //? const: count = 3
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 20
+//?
 //? run: "kind3-count3-cog7"
+//? macro: selected_kind set CALL nrel(callee)
 //? cog: 7
-//? const: kind = 3
 //? const: count = 3
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 20
+//?
 //? run: "kind4-count0-cog0"
+//? macro: selected_kind set CALLD link, target
 //? cog: 0
-//? const: kind = 4
 //? const: count = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind4-count0-cog7"
+//? macro: selected_kind set CALLD link, target
 //? cog: 7
-//? const: kind = 4
 //? const: count = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind4-count1-cog0"
+//? macro: selected_kind set CALLD link, target
 //? cog: 0
-//? const: kind = 4
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind4-count1-cog7"
+//? macro: selected_kind set CALLD link, target
 //? cog: 7
-//? const: kind = 4
 //? const: count = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind4-count3-cog0"
+//? macro: selected_kind set CALLD link, target
 //? cog: 0
-//? const: kind = 4
 //? const: count = 3
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind4-count3-cog7"
+//? macro: selected_kind set CALLD link, target
 //? cog: 7
-//? const: kind = 4
 //? const: count = 3
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[elapsed] == 18
+//?
 //? run: "kind5-count1-cog0"
+//? macro: selected_kind set TJZ value, destination
 //? cog: 0
-//? const: kind = 5
 //? const: count = 1
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 16
+//?
 //? run: "kind5-count1-cog7"
+//? macro: selected_kind set TJZ value, destination
 //? cog: 7
-//? const: kind = 5
 //? const: count = 1
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 16
+//?
 //? run: "kind5-count3-cog0"
+//? macro: selected_kind set TJZ value, destination
 //? cog: 0
-//? const: kind = 5
 //? const: count = 3
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 3
 //? post: cog[*].reg[elapsed] == 28
+//?
 //? run: "kind5-count3-cog7"
+//? macro: selected_kind set TJZ value, destination
 //? cog: 7
-//? const: kind = 5
 //? const: count = 3
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 3
 //? post: cog[*].reg[elapsed] == 28
+//?
 //? run: "kind6-count0-cog0"
+//? macro: selected_kind set REP 0, 0
 //? cog: 0
-//? const: kind = 6
 //? const: count = 0
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 2
 //? post: cog[*].reg[elapsed] == 22
+//?
 //? run: "kind6-count0-cog7"
+//? macro: selected_kind set REP 0, 0
 //? cog: 7
-//? const: kind = 6
 //? const: count = 0
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 2
 //? post: cog[*].reg[elapsed] == 22
+//?
 //? run: "kind6-count1-cog0"
+//? macro: selected_kind set REP 0, 0
 //? cog: 0
-//? const: kind = 6
 //? const: count = 1
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 16
+//?
 //? run: "kind6-count1-cog7"
+//? macro: selected_kind set REP 0, 0
 //? cog: 7
-//? const: kind = 6
 //? const: count = 1
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 1
 //? post: cog[*].reg[elapsed] == 16
+//?
 //? run: "kind6-count3-cog0"
+//? macro: selected_kind set REP 0, 0
 //? cog: 0
-//? const: kind = 6
 //? const: count = 3
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 2
 //? post: cog[*].reg[elapsed] == 22
+//?
 //? run: "kind6-count3-cog7"
+//? macro: selected_kind set REP 0, 0
 //? cog: 7
-//? const: kind = 6
 //? const: count = 3
 //? post: cog[*].reg[landed] == 1
 //? post: cog[*].reg[value] == 2
@@ -298,21 +339,7 @@
                 REP     3,      count
                 ADD     value,  1
                 NOP
-.if kind == 0
-                JMP     destination
-.elif   kind == 1
-                JMP     nrel(destination)
-.elif   kind == 2
-                JMP     target
-.elif   kind == 3
-                CALL    nrel(callee)
-.elif   kind == 4
-                CALLD   link,   target
-.elif   kind == 5
-                TJZ     value,  destination
-.else
-                REP     0,      0
-.endif
+                {{ selected_kind }}
                 MOV     landed, 1
                 JMP     nrel(checked)
                 NOP

@@ -1,5 +1,5 @@
-                //? WINDTUNNEL CHECK LIST
-                //? post: cog[*].reg[failures] == 0
+//? WINDTUNNEL CHECK LIST
+//? post: cog[*].reg[failures] == 0
 
                 // Broadcast wraps inside port A, and SETQ overrides the encoded count in B.
                 WRPIN   2,                  aug(31 | (1 << 6))

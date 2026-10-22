@@ -1,6 +1,7 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//?
 //? run: "pll0-mode29"
 //? const: mode = 29
 //? post: cog[*].reg[result0] == 0x00000000
@@ -11,6 +12,7 @@
 //? post: cog[*].reg[ready2] == 0x00000000
 //? post: cog[*].reg[reset_result] == 0x00000000
 //? post: cog[*].reg[count] == 0x00000000
+//?
 //? run: "pll0-mode31"
 //? const: mode = 31
 //? post: cog[*].reg[result0] == 0x00000000

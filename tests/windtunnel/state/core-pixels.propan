@@ -7,21 +7,27 @@
 //? post: cog[0].c == true
 //? post: cog[0].z == false
 //? pre: sym[mix_source] = u32 [ 0x10203040 ]
+//?
 //? run: "saturated"
 //? post: cog[0].reg[mixed] == 0xffffffff
+//?
 //? run:
 //? pre: sym[mixed] = u32 [ 0 ]
 //? post: cog[0].reg[mixed] == 0x10203040
+//?
 //? run: "lane sum"
 //? pre: sym[mixed] = u32 [ 0x10203040 ]
 //? post: cog[0].reg[mixed] == 0x20406080
+//?
 //? run: "one byte"
 //? pre: sym[mixed] = hex [ 00 ]
 //? post: cog[0].reg[mixed] == 0xffffff40
+//?
 //? run: "shared patch override"
 //? pre: sym[mix_source] = u16 [ 0x0201, 0x0403 ]
 //? pre: sym[mixed] = u32 [ 0 ]
 //? post: cog[0].reg[mixed] == 0x04030201
+//?
 //? run: "base restored"
 //? post: cog[0].reg[mixed] == 0xffffffff
 

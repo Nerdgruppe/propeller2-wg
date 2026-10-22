@@ -5,27 +5,28 @@
 //? post: cog[*].reg[flags] == 3
 //? post: cog[*].reg[elapsed] == 4
 //? post: hub[cell] == u32 [0]
+//? macro: skip required
+//?
 //? run: "slow-cog0"
+//? macro: skip set SKIP
 //? cog: 0
-//? const: fast = 0
+//?
 //? run: "fast-cog0"
+//? macro: skip set SKIPF
 //? cog: 0
-//? const: fast = 1
+//?
 //? run: "slow-cog7"
+//? macro: skip set SKIP
 //? cog: 7
-//? const: fast = 0
+//?
 //? run: "fast-cog7"
+//? macro: skip set SKIPF
 //? cog: 7
-//? const: fast = 1
 
                 // Skipped commands, faults, returns and prefixes must have no architectural effects.
                 MOV     PTRA,           address
                 MODCZ   _SET,           _SET            :wcz
-.if fast
-                SKIPF   aug(0x1ffff)
-.else
-                SKIP    aug(0x1ffff)
-.endif
+                {{ skip }}  aug(0x1ffff)
                 COGSTOP 0
                 LOCKNEW value
                 QMUL    3,              4

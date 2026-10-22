@@ -5,9 +5,11 @@
 //? post: cog[0].reg[unsigned_zero] == 1
 //? post: cog[0].reg[signed_zero] == 1
 //? post: cog[0].reg[product] == 0
+//?
 //? run: "zero low destination"
 //? pre: sym[product] = u32 [0x10000]
 //? pre: sym[source] = u32 [1]
+//?
 //? run: "zero low source"
 //? pre: sym[product] = u32 [1]
 //? pre: sym[source] = u32 [0x80000000]

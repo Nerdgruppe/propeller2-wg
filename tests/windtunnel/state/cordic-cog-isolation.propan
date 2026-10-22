@@ -3,171 +3,227 @@
 //? post: cog[*].reg[first_x] == 91
 //? post: cog[*].reg[last_x] == 95
 //? post: cog[*].reg[own_qmt] == 0
+//?
 //? run: "issuer 0 reader 1"
 //? cog: 0
 //? const: reader_cog = 1
+//?
 //? run: "issuer 0 reader 2"
 //? cog: 0
 //? const: reader_cog = 2
+//?
 //? run: "issuer 0 reader 3"
 //? cog: 0
 //? const: reader_cog = 3
+//?
 //? run: "issuer 0 reader 4"
 //? cog: 0
 //? const: reader_cog = 4
+//?
 //? run: "issuer 0 reader 5"
 //? cog: 0
 //? const: reader_cog = 5
+//?
 //? run: "issuer 0 reader 6"
 //? cog: 0
 //? const: reader_cog = 6
+//?
 //? run: "issuer 0 reader 7"
 //? cog: 0
 //? const: reader_cog = 7
+//?
 //? run: "issuer 1 reader 0"
 //? cog: 1
 //? const: reader_cog = 0
+//?
 //? run: "issuer 1 reader 2"
 //? cog: 1
 //? const: reader_cog = 2
+//?
 //? run: "issuer 1 reader 3"
 //? cog: 1
 //? const: reader_cog = 3
+//?
 //? run: "issuer 1 reader 4"
 //? cog: 1
 //? const: reader_cog = 4
+//?
 //? run: "issuer 1 reader 5"
 //? cog: 1
 //? const: reader_cog = 5
+//?
 //? run: "issuer 1 reader 6"
 //? cog: 1
 //? const: reader_cog = 6
+//?
 //? run: "issuer 1 reader 7"
 //? cog: 1
 //? const: reader_cog = 7
+//?
 //? run: "issuer 2 reader 0"
 //? cog: 2
 //? const: reader_cog = 0
+//?
 //? run: "issuer 2 reader 1"
 //? cog: 2
 //? const: reader_cog = 1
+//?
 //? run: "issuer 2 reader 3"
 //? cog: 2
 //? const: reader_cog = 3
+//?
 //? run: "issuer 2 reader 4"
 //? cog: 2
 //? const: reader_cog = 4
+//?
 //? run: "issuer 2 reader 5"
 //? cog: 2
 //? const: reader_cog = 5
+//?
 //? run: "issuer 2 reader 6"
 //? cog: 2
 //? const: reader_cog = 6
+//?
 //? run: "issuer 2 reader 7"
 //? cog: 2
 //? const: reader_cog = 7
+//?
 //? run: "issuer 3 reader 0"
 //? cog: 3
 //? const: reader_cog = 0
+//?
 //? run: "issuer 3 reader 1"
 //? cog: 3
 //? const: reader_cog = 1
+//?
 //? run: "issuer 3 reader 2"
 //? cog: 3
 //? const: reader_cog = 2
+//?
 //? run: "issuer 3 reader 4"
 //? cog: 3
 //? const: reader_cog = 4
+//?
 //? run: "issuer 3 reader 5"
 //? cog: 3
 //? const: reader_cog = 5
+//?
 //? run: "issuer 3 reader 6"
 //? cog: 3
 //? const: reader_cog = 6
+//?
 //? run: "issuer 3 reader 7"
 //? cog: 3
 //? const: reader_cog = 7
+//?
 //? run: "issuer 4 reader 0"
 //? cog: 4
 //? const: reader_cog = 0
+//?
 //? run: "issuer 4 reader 1"
 //? cog: 4
 //? const: reader_cog = 1
+//?
 //? run: "issuer 4 reader 2"
 //? cog: 4
 //? const: reader_cog = 2
+//?
 //? run: "issuer 4 reader 3"
 //? cog: 4
 //? const: reader_cog = 3
+//?
 //? run: "issuer 4 reader 5"
 //? cog: 4
 //? const: reader_cog = 5
+//?
 //? run: "issuer 4 reader 6"
 //? cog: 4
 //? const: reader_cog = 6
+//?
 //? run: "issuer 4 reader 7"
 //? cog: 4
 //? const: reader_cog = 7
+//?
 //? run: "issuer 5 reader 0"
 //? cog: 5
 //? const: reader_cog = 0
+//?
 //? run: "issuer 5 reader 1"
 //? cog: 5
 //? const: reader_cog = 1
+//?
 //? run: "issuer 5 reader 2"
 //? cog: 5
 //? const: reader_cog = 2
+//?
 //? run: "issuer 5 reader 3"
 //? cog: 5
 //? const: reader_cog = 3
+//?
 //? run: "issuer 5 reader 4"
 //? cog: 5
 //? const: reader_cog = 4
+//?
 //? run: "issuer 5 reader 6"
 //? cog: 5
 //? const: reader_cog = 6
+//?
 //? run: "issuer 5 reader 7"
 //? cog: 5
 //? const: reader_cog = 7
+//?
 //? run: "issuer 6 reader 0"
 //? cog: 6
 //? const: reader_cog = 0
+//?
 //? run: "issuer 6 reader 1"
 //? cog: 6
 //? const: reader_cog = 1
+//?
 //? run: "issuer 6 reader 2"
 //? cog: 6
 //? const: reader_cog = 2
+//?
 //? run: "issuer 6 reader 3"
 //? cog: 6
 //? const: reader_cog = 3
+//?
 //? run: "issuer 6 reader 4"
 //? cog: 6
 //? const: reader_cog = 4
+//?
 //? run: "issuer 6 reader 5"
 //? cog: 6
 //? const: reader_cog = 5
+//?
 //? run: "issuer 6 reader 7"
 //? cog: 6
 //? const: reader_cog = 7
+//?
 //? run: "issuer 7 reader 0"
 //? cog: 7
 //? const: reader_cog = 0
+//?
 //? run: "issuer 7 reader 1"
 //? cog: 7
 //? const: reader_cog = 1
+//?
 //? run: "issuer 7 reader 2"
 //? cog: 7
 //? const: reader_cog = 2
+//?
 //? run: "issuer 7 reader 3"
 //? cog: 7
 //? const: reader_cog = 3
+//?
 //? run: "issuer 7 reader 4"
 //? cog: 7
 //? const: reader_cog = 4
+//?
 //? run: "issuer 7 reader 5"
 //? cog: 7
 //? const: reader_cog = 5
+//?
 //? run: "issuer 7 reader 6"
 //? cog: 7
 //? const: reader_cog = 6

@@ -1,33 +1,41 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "0"
 //? cog: 0
 //? const: probe_writer = 1
 //? const: attention_mask = 1
+//?
 //? run: "1"
 //? cog: 1
 //? const: probe_writer = 0
 //? const: attention_mask = 2
+//?
 //? run: "2"
 //? cog: 2
 //? const: probe_writer = 3
 //? const: attention_mask = 4
+//?
 //? run: "3"
 //? cog: 3
 //? const: probe_writer = 2
 //? const: attention_mask = 8
+//?
 //? run: "4"
 //? cog: 4
 //? const: probe_writer = 5
 //? const: attention_mask = 16
+//?
 //? run: "5"
 //? cog: 5
 //? const: probe_writer = 4
 //? const: attention_mask = 32
+//?
 //? run: "6"
 //? cog: 6
 //? const: probe_writer = 7
 //? const: attention_mask = 64
+//?
 //? run: "7"
 //? cog: 7
 //? const: probe_writer = 6

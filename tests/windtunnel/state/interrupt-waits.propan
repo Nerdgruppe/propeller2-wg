@@ -1,197 +1,298 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//? macro: interrupt_level required
+//? macro: stalli default
+//? macro: wait required
+//? macro: cmp_operand required
+//? macro: cmp_2_operand required
+//? macro: sub required
+//? macro: add required
+//? macro: cmp_3 required
+//? macro: add_2 required
+//?
 //? run: "int1-cog0-kind0"
+//? macro: interrupt_level set 1
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 1
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 0
 //? const: irq_level = 1
-//? const: kind = 0
+//?
 //? run: "int1-cog0-kind1"
+//? macro: interrupt_level set 1
+//? macro: stalli override STALLI
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 0
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 0
 //? const: irq_level = 1
-//? const: kind = 1
+//?
 //? run: "int1-cog0-kind2"
+//? macro: interrupt_level set 1
+//? macro: wait set WAITATN
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 1
+//? macro: sub set
+//? macro: add set
+//? macro: cmp_3 set
+//? macro: add_2 set
 //? cog: 0
 //? const: irq_level = 1
-//? const: kind = 2
+//?
 //? run: "int1-cog7-kind0"
+//? macro: interrupt_level set 1
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 1
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 7
 //? const: irq_level = 1
-//? const: kind = 0
+//?
 //? run: "int1-cog7-kind1"
+//? macro: interrupt_level set 1
+//? macro: stalli override STALLI
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 0
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 7
 //? const: irq_level = 1
-//? const: kind = 1
+//?
 //? run: "int1-cog7-kind2"
+//? macro: interrupt_level set 1
+//? macro: wait set WAITATN
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 1
+//? macro: sub set
+//? macro: add set
+//? macro: cmp_3 set
+//? macro: add_2 set
 //? cog: 7
 //? const: irq_level = 1
-//? const: kind = 2
+//?
 //? run: "int2-cog0-kind0"
+//? macro: interrupt_level set 2
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 1
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 0
 //? const: irq_level = 2
-//? const: kind = 0
+//?
 //? run: "int2-cog0-kind1"
+//? macro: interrupt_level set 2
+//? macro: stalli override STALLI
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 0
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 0
 //? const: irq_level = 2
-//? const: kind = 1
+//?
 //? run: "int2-cog0-kind2"
+//? macro: interrupt_level set 2
+//? macro: wait set WAITATN
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 1
+//? macro: sub set
+//? macro: add set
+//? macro: cmp_3 set
+//? macro: add_2 set
 //? cog: 0
 //? const: irq_level = 2
-//? const: kind = 2
+//?
 //? run: "int2-cog7-kind0"
+//? macro: interrupt_level set 2
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 1
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 7
 //? const: irq_level = 2
-//? const: kind = 0
+//?
 //? run: "int2-cog7-kind1"
+//? macro: interrupt_level set 2
+//? macro: stalli override STALLI
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 0
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 7
 //? const: irq_level = 2
-//? const: kind = 1
+//?
 //? run: "int2-cog7-kind2"
+//? macro: interrupt_level set 2
+//? macro: wait set WAITATN
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 1
+//? macro: sub set
+//? macro: add set
+//? macro: cmp_3 set
+//? macro: add_2 set
 //? cog: 7
 //? const: irq_level = 2
-//? const: kind = 2
+//?
 //? run: "int3-cog0-kind0"
+//? macro: interrupt_level set 3
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 1
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 0
 //? const: irq_level = 3
-//? const: kind = 0
+//?
 //? run: "int3-cog0-kind1"
+//? macro: interrupt_level set 3
+//? macro: stalli override STALLI
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 0
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 0
 //? const: irq_level = 3
-//? const: kind = 1
+//?
 //? run: "int3-cog0-kind2"
+//? macro: interrupt_level set 3
+//? macro: wait set WAITATN
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 1
+//? macro: sub set
+//? macro: add set
+//? macro: cmp_3 set
+//? macro: add_2 set
 //? cog: 0
 //? const: irq_level = 3
-//? const: kind = 2
+//?
 //? run: "int3-cog7-kind0"
+//? macro: interrupt_level set 3
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 1
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 7
 //? const: irq_level = 3
-//? const: kind = 0
+//?
 //? run: "int3-cog7-kind1"
+//? macro: interrupt_level set 3
+//? macro: stalli override STALLI
+//? macro: wait set WAITINT
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 0
+//? macro: sub set SUB target, start
+//? macro: add set ADD target, 4
+//? macro: cmp_3 set CMP elapsed, target :wz
+//? macro: add_2 set if(!Z) ADD failures, 1
 //? cog: 7
 //? const: irq_level = 3
-//? const: kind = 1
+//?
 //? run: "int3-cog7-kind2"
+//? macro: interrupt_level set 3
+//? macro: wait set WAITATN
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 1
+//? macro: sub set
+//? macro: add set
+//? macro: cmp_3 set
+//? macro: add_2 set
 //? cog: 7
 //? const: irq_level = 3
-//? const: kind = 2
 
 const vector_reg = register(0x1f6 - 2 * irq_level)
 
                 MOV     vector_reg, vector
                 // A latched INT is pollable but does not satisfy WAITINT on this silicon.
-.if irq_level == 1
-                TRGINT1
-.elif   irq_level == 2
-                TRGINT2
-.else
-                TRGINT3
-.endif
+                TRGINT{{ interrupt_level }}
                 NOP
                 NOP
                 NOP
                 MODCZ   _CLR,       _CLR    :wcz
     if(C)       WAITINT
-                POLLINT                     :wc
+                POLLINT :wc
     if(!C)      ADD     failures,   1
-.if irq_level == 1
-                TRGINT1
-.elif   irq_level == 2
-                TRGINT2
-.else
-                TRGINT3
-.endif
+                TRGINT{{ interrupt_level }}
                 NOP
                 NOP
                 NOP
                 GETCT   timeout
                 ADD     timeout,    64
                 SETQ    timeout
-                WAITINT                     :wcz
+                WAITINT :wcz
     if(!C)      ADD     failures,   1
     if(!Z)      ADD     failures,   1
-                POLLINT                     :wc
+                POLLINT :wc
     if(C)       ADD     failures,   1
                 MOV     count,      0
                 // A new pending request wakes WAITINT even while STALLI holds entry off.
                 GETCT   target
                 ADD     target,     64
                 ADDCT1  target,     0
-.if irq_level == 1
-                SETINT1 1
-.elif   irq_level == 2
-                SETINT2 1
-.else
-                SETINT3 1
-.endif
-.if kind == 1
-                STALLI
-.endif
+                SETINT{{ interrupt_level }} 1
+                {{ stalli }}
                 GETCT   timeout
                 ADD     timeout,    128
                 GETCT   start
                 SETQ    timeout
-.if kind == 2
-                WAITATN                     :wc
-.else
-                WAITINT                     :wc
-.endif
+                {{ wait }}  :wc
                 GETCT   elapsed
                 WRC     timedout
                 NOP
                 NOP
                 NOP
                 SUB     elapsed,    start
-.if kind == 2
-                CMP     timedout,   1       :wz
-.else
-                CMP     timedout,   0       :wz
-.endif
+                CMP     timedout, {{ cmp_operand }} :wz
     if(!Z)      ADD     failures,   1
-.if kind == 1
-                CMP     count,      0       :wz
-.else
-                CMP     count,      1       :wz
-.endif
+                CMP     count, {{ cmp_2_operand }} :wz
     if(!Z)      ADD     failures,   1
-.if kind != 2
-                SUB     target,     start
-                ADD     target,     4
-                CMP     elapsed,    target  :wz
-    if(!Z)      ADD     failures,   1
-.endif
+                {{ sub }}
+                {{ add }}
+                {{ cmp_3 }}
+                {{ add_2 }}
                 STALLI
-.if irq_level == 1
-                NIXINT1
-.elif   irq_level == 2
-                NIXINT2
-.else
-                NIXINT3
-.endif
-.if irq_level == 1
-                SETINT1 0
-.elif   irq_level == 2
-                SETINT2 0
-.else
-                SETINT3 0
-.endif
+                NIXINT{{ interrupt_level }}
+                SETINT{{ interrupt_level }} 0
                 SETQ    0
                 MODCZ   _CLR,       _CLR    :wcz
                 JMP     nrel(_end)
 isr:
-.if irq_level == 1
-                SETINT1 0
-.elif   irq_level == 2
-                SETINT2 0
-.else
-                SETINT3 0
-.endif
+                SETINT{{ interrupt_level }} 0
                 ADD     count,  1
-.if irq_level == 1
-                RETI1
-.elif   irq_level == 2
-                RETI2
-.else
-                RETI3
-.endif
+                RETI{{ interrupt_level }}
 var vector:     LONG    pcaddr(isr)
 var target:     LONG    0
 var timeout:    LONG    0

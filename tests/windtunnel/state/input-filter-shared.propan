@@ -1,51 +1,67 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[highs] == 3
 //? post: cog[*].reg[lows] == 0
+//?
 //? run: "filter0-length0"
 //? const: index = 0
 //? const: length = 0
+//?
 //? run: "filter0-length1"
 //? const: index = 0
 //? const: length = 1
+//?
 //? run: "filter0-length2"
 //? const: index = 0
 //? const: length = 2
+//?
 //? run: "filter0-length3"
 //? const: index = 0
 //? const: length = 3
+//?
 //? run: "filter1-length0"
 //? const: index = 1
 //? const: length = 0
+//?
 //? run: "filter1-length1"
 //? const: index = 1
 //? const: length = 1
+//?
 //? run: "filter1-length2"
 //? const: index = 1
 //? const: length = 2
+//?
 //? run: "filter1-length3"
 //? const: index = 1
 //? const: length = 3
+//?
 //? run: "filter2-length0"
 //? const: index = 2
 //? const: length = 0
+//?
 //? run: "filter2-length1"
 //? const: index = 2
 //? const: length = 1
+//?
 //? run: "filter2-length2"
 //? const: index = 2
 //? const: length = 2
+//?
 //? run: "filter2-length3"
 //? const: index = 2
 //? const: length = 3
+//?
 //? run: "filter3-length0"
 //? const: index = 3
 //? const: length = 0
+//?
 //? run: "filter3-length1"
 //? const: index = 3
 //? const: length = 1
+//?
 //? run: "filter3-length2"
 //? const: index = 3
 //? const: length = 2
+//?
 //? run: "filter3-length3"
 //? const: index = 3
 //? const: length = 3

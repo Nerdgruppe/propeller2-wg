@@ -18,9 +18,9 @@ var spaced_value:
                 LONG    0
 var refetched_value:
                 LONG    0
-// Encode MOV result,#2: overwrite the immediate while keeping the same result register.
+// Keep an assembled MOV word for the self-modifying instruction replacement.
 var replacement:
-                LONG    0xf6040002 | (cogaddr(result) << 9)
+                MOV     result, 2
 .lutexec    0x4000, 0x200
 lut_code:
                 WRLUT   replacement,    aug(pcaddr(near_instruction) - 0x200)

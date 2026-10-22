@@ -1,8 +1,10 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "cog0"
 //? cog: 0
+//?
 //? run: "cog7"
 //? cog: 7
 

@@ -1,288 +1,331 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
+//? macro: skip required
+//? macro: selected_kind required
+//? macro: pop default
+//?
 //? run: "kind0-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMP destination
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMP destination
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 0
-//? const: kind = 1
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 7
-//? const: kind = 1
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMP target
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMP target
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind3-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMPREL distance
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind3-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set JMPREL distance
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind4-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL target
+//? macro: pop override POP link
 //? cog: 0
-//? const: kind = 4
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 1
+//?
 //? run: "kind4-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL target
+//? macro: pop override POP link
 //? cog: 7
-//? const: kind = 4
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 1
+//?
 //? run: "kind5-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL destination
+//? macro: pop override POP link
 //? cog: 0
-//? const: kind = 5
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 1
+//?
 //? run: "kind5-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALL destination
+//? macro: pop override POP link
 //? cog: 7
-//? const: kind = 5
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[inside] == 402653184
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 1
+//?
 //? run: "kind6-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set TJZ value, destination
 //? cog: 0
-//? const: kind = 6
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind6-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set TJZ value, destination
 //? cog: 7
-//? const: kind = 6
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind7-fast0-cog0"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALLD link, target
 //? cog: 0
-//? const: kind = 7
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind7-fast0-cog7"
+//? macro: skip set SKIP
+//? macro: selected_kind set CALLD link, target
 //? cog: 7
-//? const: kind = 7
-//? const: fast = 0
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 3
 //? post: cog[*].reg[inside] == 134217728
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMP destination
 //? cog: 0
-//? const: kind = 0
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind0-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMP destination
 //? cog: 7
-//? const: kind = 0
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 0
-//? const: kind = 1
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind1-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMP nrel(destination)
 //? cog: 7
-//? const: kind = 1
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMP target
 //? cog: 0
-//? const: kind = 2
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind2-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMP target
 //? cog: 7
-//? const: kind = 2
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind3-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMPREL distance
 //? cog: 0
-//? const: kind = 3
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind3-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set JMPREL distance
 //? cog: 7
-//? const: kind = 3
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind4-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL target
+//? macro: pop override POP link
 //? cog: 0
-//? const: kind = 4
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 4
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind4-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL target
+//? macro: pop override POP link
 //? cog: 7
-//? const: kind = 4
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 4
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind5-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL destination
+//? macro: pop override POP link
 //? cog: 0
-//? const: kind = 5
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 4
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind5-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALL destination
+//? macro: pop override POP link
 //? cog: 7
-//? const: kind = 5
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 4
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind6-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set TJZ value, destination
 //? cog: 0
-//? const: kind = 6
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind6-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set TJZ value, destination
 //? cog: 7
-//? const: kind = 6
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 2
 //? post: cog[*].reg[link] == 0
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind7-fast1-cog0"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALLD link, target
 //? cog: 0
-//? const: kind = 7
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 4
 //? post: cog[*].reg[inside] == 0
 //? post: cog[*].reg[after] == 0
 //? post: cog[*].reg[pattern_out] == 0
+//?
 //? run: "kind7-fast1-cog7"
+//? macro: skip set SKIPF
+//? macro: selected_kind set CALLD link, target
 //? cog: 7
-//? const: kind = 7
-//? const: fast = 1
 //? post: cog[*].reg[landed] == 3
 //? post: cog[*].reg[link] == 4
 //? post: cog[*].reg[inside] == 0
@@ -290,39 +333,15 @@
 //? post: cog[*].reg[pattern_out] == 0
 
 // Observe nonlinear branch bases, absolute-target behavior and saved returns.
-.if fast
-                SKIPF   2
-.else
-                SKIP    2
-.endif
-.if kind == 0
-                JMP     destination
-.elif   kind == 1
-                JMP     nrel(destination)
-.elif   kind == 2
-                JMP     target
-.elif   kind == 3
-                JMPREL  distance
-.elif   kind == 4
-                CALL    target
-.elif   kind == 5
-                CALL    destination
-.elif   kind == 6
-                TJZ     value,  destination
-.else
-                CALLD   link,   target
-.endif
+                {{ skip }}  2
+                {{ selected_kind }}
                 NOP
                 MOV     after,  1
                 JMP     nrel(checked)
 destination:
                 ADD     landed, 1
                 ADD     landed, 2
-.if kind == 4
-                POP     link
-.elif   kind == 5
-                POP     link
-.endif
+                {{ pop }}
                 JMP     nrel(checked)
 checked:
                 GETBRK  inside                  :wc

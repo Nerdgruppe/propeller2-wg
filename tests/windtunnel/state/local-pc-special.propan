@@ -1,6 +1,7 @@
                 //? WINDTUNNEL CHECK LIST
                 //? issues: pc_domain = 2
                 //? timeout-ms: 3000
+                //?
                 //? run: "source495-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1ef
@@ -8,6 +9,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 495
+                //?
                 //? run: "source495-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1ef
@@ -15,6 +17,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 495
+                //?
                 //? run: "source496-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f0
@@ -22,6 +25,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 496
+                //?
                 //? run: "source496-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f0
@@ -29,6 +33,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 496
+                //?
                 //? run: "source503-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f7
@@ -36,6 +41,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 503
+                //?
                 //? run: "source503-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f7
@@ -43,6 +49,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 503
+                //?
                 //? run: "source504-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f8
@@ -50,6 +57,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 504
+                //?
                 //? run: "source504-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f8
@@ -57,6 +65,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 504
+                //?
                 //? run: "source505-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f9
@@ -64,6 +73,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 505
+                //?
                 //? run: "source505-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1f9
@@ -71,6 +81,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 505
+                //?
                 //? run: "source506-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fa
@@ -78,6 +89,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 506
+                //?
                 //? run: "source506-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fa
@@ -85,6 +97,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 506
+                //?
                 //? run: "source507-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fb
@@ -92,6 +105,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 507
+                //?
                 //? run: "source507-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fb
@@ -99,6 +113,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 507
+                //?
                 //? run: "source508-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fc
@@ -106,6 +121,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 508
+                //?
                 //? run: "source508-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fc
@@ -113,6 +129,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 7
                 //? const: source = 508
+                //?
                 //? run: "source509-cog0"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fd
@@ -120,6 +137,7 @@
                 //? post: cog[*].reg[landed] == 0x1
                 //? cog: 0
                 //? const: source = 509
+                //?
                 //? run: "source509-cog7"
                 //? post: cog[*].reg[link] == 0x401
                 //? post: cog[*].reg[hits] == 0x1fd
@@ -187,7 +205,7 @@ hit6:
                 MOV     landed, 6
                 JMP     nrel(done)
 var branch_word:
-                LONG    0xfb200000 | (cogaddr(link) << 9) | cogaddr(target1)
+                CALLD   link,   target1
 var landed:     LONG    0
 var target1:    LONG    pcaddr(hit1)
 var target2:    LONG    pcaddr(hit2)
@@ -225,9 +243,13 @@ tail_template:
 special_template:
                 CALLD   link,   target2
 .data   0x3204
+                // Raw register-source CALLD: D=link, S=target2, no immediate/effect bits.
+                // These words supply physical slots 505..511; native .cogexec rejects
+                // instruction storage at the I/O-register slots 506..511.
                 LONG    [0xfb200000 | (cogaddr(link) << 9) | cogaddr(target2)] * 7
 .cogexec    0x3300, 495
                 CALLD   link,   target1
                 CALLD   link,   target1
 .cogexec    0x3400, 503
                 CALLD   link,   target1
+

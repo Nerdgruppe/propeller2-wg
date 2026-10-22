@@ -3,44 +3,57 @@
 //? stop: _end
 //? timeout-ms: 1000
 //? max-cycles: 1_000_000
+//? macro: trigger required
+//? macro: trigger_2 default NOP
+//?
 //? run: "trigger=0"
-//? const: trigger = 0
+//? macro: trigger set
 //? const: control = 1
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x02\x00\x00\x00\x80\x00\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "trigger=1"
-//? const: trigger = 1
+//? macro: trigger set TRGINT1
 //? const: control = 2
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x00\x01\x00\x00\x90\x00\x00\x00\x0c\x00\x00\x00"
+//?
 //? run: "trigger=2"
-//? const: trigger = 2
+//? macro: trigger set TRGINT2
 //? const: control = 4
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x03\x01\x00\x00\x90\x00\x00\x00\x30\x00\x00\x00"
+//?
 //? run: "trigger=3"
-//? const: trigger = 3
+//? macro: trigger set TRGINT3
 //? const: control = 8
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x06\x01\x00\x00\x90\x00\x00\x00\xc0\x00\x00\x00"
+//?
 //? run: "trigger=4"
-//? const: trigger = 4
+//? macro: trigger set TRGINT1
 //? const: control = 32
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x00\x01\x00\x00\x90\x00\x00\x00\x0c\x00\x00\x00"
+//?
 //? run: "trigger=5"
-//? const: trigger = 5
+//? macro: trigger set TRGINT2
 //? const: control = 64
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x03\x01\x00\x00\x90\x00\x00\x00\x30\x00\x00\x00"
+//?
 //? run: "trigger=6"
-//? const: trigger = 6
+//? macro: trigger set TRGINT3
 //? const: control = 128
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x06\x01\x00\x00\x90\x00\x00\x00\xc0\x00\x00\x00"
+//?
 //? run: "trigger=7"
-//? const: trigger = 7
+//? macro: trigger set
+//? macro: trigger_2 override BRK 42
 //? const: control = 16
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x11\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x2a"
+//?
 //? run: "trigger=8"
-//? const: trigger = 8
+//? macro: trigger set COGATN 2
 //? const: control = 57856
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x10\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x00"
+//?
 //? run: "trigger=9"
-//? const: trigger = 9
+//? macro: trigger set
 //? const: control = 66560
 //? stdout: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x00\x11\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x00"
 
@@ -102,25 +115,10 @@ target:
                 MOV     IJMP1,          aug(cogaddr(isr1))
                 MOV     IJMP2,          aug(cogaddr(isr2))
                 MOV     IJMP3,          aug(cogaddr(isr3))
-.if (trigger == 1) | (trigger == 4)
-                TRGINT1
-.endif
-.if (trigger == 2) | (trigger == 5)
-                TRGINT2
-.endif
-.if (trigger == 3) | (trigger == 6)
-                TRGINT3
-.endif
-.if trigger == 8
-                COGATN  2
-.endif
+                {{ trigger }}
                 JMP     nrel(0x10)
 .org    0x10
-.if trigger == 7
-                BRK     42
-.else
-                NOP
-.endif
+                {{ trigger_2 }}
                 MOV     register(0x30), 17
                 NOP
                 NOP

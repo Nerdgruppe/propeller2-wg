@@ -1,75 +1,124 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[failures] == 0
+//? macro: selected_operation required
+//?
 //? run: "qmul cog 0"
+//? macro: selected_operation set QMUL input_d, input_s
 //? cog: 0
 //? const: operation = 0
+//?
 //? run: "qmul cog 3"
+//? macro: selected_operation set QMUL input_d, input_s
 //? cog: 3
 //? const: operation = 0
+//?
 //? run: "qmul cog 7"
+//? macro: selected_operation set QMUL input_d, input_s
 //? cog: 7
 //? const: operation = 0
+//?
 //? run: "qdiv cog 0"
+//? macro: selected_operation set QDIV input_d, input_s
 //? cog: 0
 //? const: operation = 1
+//?
 //? run: "qdiv cog 3"
+//? macro: selected_operation set QDIV input_d, input_s
 //? cog: 3
 //? const: operation = 1
+//?
 //? run: "qdiv cog 7"
+//? macro: selected_operation set QDIV input_d, input_s
 //? cog: 7
 //? const: operation = 1
+//?
 //? run: "qfrac cog 0"
+//? macro: selected_operation set QFRAC input_d, input_s
 //? cog: 0
 //? const: operation = 2
+//?
 //? run: "qfrac cog 3"
+//? macro: selected_operation set QFRAC input_d, input_s
 //? cog: 3
 //? const: operation = 2
+//?
 //? run: "qfrac cog 7"
+//? macro: selected_operation set QFRAC input_d, input_s
 //? cog: 7
 //? const: operation = 2
+//?
 //? run: "qsqrt cog 0"
+//? macro: selected_operation set QSQRT input_d, input_s
 //? cog: 0
 //? const: operation = 3
+//?
 //? run: "qsqrt cog 3"
+//? macro: selected_operation set QSQRT input_d, input_s
 //? cog: 3
 //? const: operation = 3
+//?
 //? run: "qsqrt cog 7"
+//? macro: selected_operation set QSQRT input_d, input_s
 //? cog: 7
 //? const: operation = 3
+//?
 //? run: "qrotate cog 0"
+//? macro: selected_operation set QROTATE input_d, input_s
 //? cog: 0
 //? const: operation = 4
+//?
 //? run: "qrotate cog 3"
+//? macro: selected_operation set QROTATE input_d, input_s
 //? cog: 3
 //? const: operation = 4
+//?
 //? run: "qrotate cog 7"
+//? macro: selected_operation set QROTATE input_d, input_s
 //? cog: 7
 //? const: operation = 4
+//?
 //? run: "qvector cog 0"
+//? macro: selected_operation set QVECTOR input_d, input_s
 //? cog: 0
 //? const: operation = 5
+//?
 //? run: "qvector cog 3"
+//? macro: selected_operation set QVECTOR input_d, input_s
 //? cog: 3
 //? const: operation = 5
+//?
 //? run: "qvector cog 7"
+//? macro: selected_operation set QVECTOR input_d, input_s
 //? cog: 7
 //? const: operation = 5
+//?
 //? run: "qlog cog 0"
+//? macro: selected_operation set QLOG input_d
 //? cog: 0
 //? const: operation = 6
+//?
 //? run: "qlog cog 3"
+//? macro: selected_operation set QLOG input_d
 //? cog: 3
 //? const: operation = 6
+//?
 //? run: "qlog cog 7"
+//? macro: selected_operation set QLOG input_d
 //? cog: 7
 //? const: operation = 6
+//?
 //? run: "qexp cog 0"
+//? macro: selected_operation set QEXP input_d
 //? cog: 0
 //? const: operation = 7
+//?
 //? run: "qexp cog 3"
+//? macro: selected_operation set QEXP input_d
 //? cog: 3
 //? const: operation = 7
+//?
 //? run: "qexp cog 7"
+//? macro: selected_operation set QEXP input_d
 //? cog: 7
 //? const: operation = 7
 
@@ -83,23 +132,7 @@ loop:
                 SETQ    4
                 RDLONG  input_q,    PTRB++
                 SETQ    input_q
-.if operation == 0
-                QMUL    input_d,    input_s
-.elif   operation == 1
-                QDIV    input_d,    input_s
-.elif   operation == 2
-                QFRAC   input_d,    input_s
-.elif   operation == 3
-                QSQRT   input_d,    input_s
-.elif   operation == 4
-                QROTATE input_d,    input_s
-.elif   operation == 5
-                QVECTOR input_d,    input_s
-.elif   operation == 6
-                QLOG    input_d
-.elif   operation == 7
-                QEXP    input_d
-.endif
+                {{ selected_operation }}
                 GETQX   actual                  :wcz
                 WRC     actual_c
                 WRZ     actual_z
@@ -177,7 +210,7 @@ vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000
                 LONG    [0x6edb8a5f, 0xbbea0e99, 0x0782c019, 0x7d802cf1, 0x05836043]
                 LONG    [0x4dde4eb4, 0xef01c459, 0x5f5ffee2, 0xa466a492, 0x590b477b]
                 LONG    [0x15db28bd, 0x2ed4b949, 0xb7ea2386, 0x2467f736, 0x21a4e564]
-.elif   operation == 1
+.elif operation == 1
 const vector_count = 35
 vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0xffffffff, 0x00000000]
                 LONG    [0x00000000, 0x00000001, 0x00000000, 0xffffffff, 0x00000001]
@@ -214,7 +247,7 @@ vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0xffffffff, 0x00000
                 LONG    [0x127bcb29, 0xd62691db, 0xf4b38fba, 0x13564646, 0xbd4468ff]
                 LONG    [0x0778cfea, 0xf5d91c7d, 0xb16c3a1f, 0x0ac7f609, 0x55184766]
                 LONG    [0xb8155298, 0x32f755f0, 0xb1bdd938, 0xeb4144b9, 0xc3da7c78]
-.elif   operation == 2
+.elif operation == 2
 const vector_count = 35
 vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0xffffffff, 0x00000000]
                 LONG    [0x00000000, 0x00000001, 0x00000000, 0xfffffffe, 0x00000000]
@@ -251,7 +284,7 @@ vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0xffffffff, 0x00000
                 LONG    [0x7e5b4d51, 0x69734531, 0x64f5cfa6, 0xf8960699, 0xe9504f1b]
                 LONG    [0xc1f81cc5, 0x3cf9ae63, 0x7654ac10, 0x83ea69e4, 0x2d5c4e85]
                 LONG    [0xd8378873, 0xf8385936, 0x6c388913, 0x0d7a2ac4, 0x6c6377e7]
-.elif   operation == 3
+.elif operation == 3
 const vector_count = 35
 vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000]
                 LONG    [0x00000000, 0x00000001, 0x00000000, 0x00000001, 0x00000000]
@@ -288,7 +321,7 @@ vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000
                 LONG    [0xe7ae8911, 0x391e3609, 0x6441a216, 0xa0347910, 0x00000000]
                 LONG    [0xbfff18ad, 0x76ddedf8, 0xa1a4e498, 0xcb6c45dd, 0x00000000]
                 LONG    [0xead12af5, 0x1ef3415c, 0x2ae9aed7, 0x68d00721, 0x00000000]
-.elif   operation == 4
+.elif operation == 4
 const vector_count = 235
 vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000]
                 LONG    [0x00000000, 0x00000001, 0x00000000, 0x00000001, 0x00000000]
@@ -525,7 +558,7 @@ vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000
                 LONG    [0xb906b8cb, 0x175071f0, 0x69b7cd76, 0x10fe941c, 0x48bf093a]
                 LONG    [0xf8860d9e, 0x74a89e22, 0xb0fe3d37, 0xcf059613, 0x95db768c]
                 LONG    [0x260341ef, 0x3e553ee8, 0x5a973a26, 0xbbf21a3e, 0x1a70339b]
-.elif   operation == 5
+.elif operation == 5
 const vector_count = 235
 vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000]
                 LONG    [0x00000000, 0x00000001, 0x00000000, 0x00000001, 0x00000000]
@@ -762,7 +795,7 @@ vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000
                 LONG    [0xb5f1524c, 0x4147a669, 0x766d73e4, 0x873a4e9d, 0x2b795fa0]
                 LONG    [0xba25b954, 0x0f18fa1e, 0x591c2062, 0x5a613980, 0x3929712b]
                 LONG    [0x0c9c4cff, 0xecd430d2, 0xce0cbd80, 0x3580bcac, 0xb1119b5b]
-.elif   operation == 6
+.elif operation == 6
 const vector_count = 235
 vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000]
                 LONG    [0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000]
@@ -999,7 +1032,7 @@ vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000
                 LONG    [0x3dfab369, 0x42c27151, 0x5951cc34, 0xf07cba43, 0x00000000]
                 LONG    [0x5b5afbdc, 0xf5dc5719, 0x0fca6e2d, 0xff8898a0, 0x00000000]
                 LONG    [0x2aae9e10, 0x36195e89, 0xc90ef2c0, 0xee0f6d48, 0x00000000]
-.elif   operation == 7
+.elif operation == 7
 const vector_count = 235
 vectors:        LONG    [0x00000000, 0x00000000, 0x00000000, 0x00000001, 0x00000000]
                 LONG    [0x00000000, 0x00000001, 0x00000000, 0x00000001, 0x00000000]

@@ -1,51 +1,80 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//? macro: selected_kind required
+//? macro: cmp_operand required
+//? macro: cmp_2_operand required
+//? macro: cmp_3 default
+//? macro: add default
+//?
 //? run: "kind0-cog0"
+//? macro: selected_kind set GETBRK before :wcz
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
+//? macro: cmp_3 override CMP before, 8 :wz
+//? macro: add override if(!Z) ADD failures, 1
 //? cog: 0
-//? const: kind = 0
+//?
 //? run: "kind0-cog7"
+//? macro: selected_kind set GETBRK before :wcz
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
+//? macro: cmp_3 override CMP before, 8 :wz
+//? macro: add override if(!Z) ADD failures, 1
 //? cog: 7
-//? const: kind = 0
+//?
 //? run: "kind1-cog0"
+//? macro: selected_kind set POLLINT :wc
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
 //? cog: 0
-//? const: kind = 1
+//?
 //? run: "kind1-cog7"
+//? macro: selected_kind set POLLINT :wc
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
 //? cog: 7
-//? const: kind = 1
+//?
 //? run: "kind2-cog0"
+//? macro: selected_kind set STALLI
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 10
 //? cog: 0
-//? const: kind = 2
+//?
 //? run: "kind2-cog7"
+//? macro: selected_kind set STALLI
+//? macro: cmp_operand set 0
+//? macro: cmp_2_operand set 10
 //? cog: 7
-//? const: kind = 2
+//?
 //? run: "kind3-cog0"
+//? macro: selected_kind set NIXINT1
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
 //? cog: 0
-//? const: kind = 3
+//?
 //? run: "kind3-cog7"
+//? macro: selected_kind set NIXINT1
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
 //? cog: 7
-//? const: kind = 3
+//?
 //? run: "kind4-cog0"
+//? macro: selected_kind set SETINT1 0
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
 //? cog: 0
-//? const: kind = 4
+//?
 //? run: "kind4-cog7"
+//? macro: selected_kind set SETINT1 0
+//? macro: cmp_operand set 1
+//? macro: cmp_2_operand set 0
 //? cog: 7
-//? const: kind = 4
 
                 // Probe control and state visibility immediately following TRGINT1.
                 MOV     IJMP1,      vector
                 TRGINT1
-.if kind == 0
-                GETBRK  before              :wcz
-.elif   kind == 1
-                POLLINT                     :wc
-.elif   kind == 2
-                STALLI
-.elif   kind == 3
-                NIXINT1
-.else
-                SETINT1 0
-.endif
+                {{ selected_kind }}
                 WRC     poll_flag
                 NOP
                 NOP
@@ -55,20 +84,12 @@
                 // GETBRK before the synthetic CALLD sees pending, and POLLINT sees no entry yet.
                 CMP     poll_flag,  0       :wz
     if(!Z)      ADD     failures,   1
-.if kind == 2
-                CMP     count,      0       :wz
+                CMP     count, {{ cmp_operand }} :wz
     if(!Z)      ADD     failures,   1
-                CMP     after,      10      :wz
-.else
-                CMP     count,      1       :wz
+                CMP     after, {{ cmp_2_operand }} :wz
     if(!Z)      ADD     failures,   1
-                CMP     after,      0       :wz
-.endif
-    if(!Z)      ADD     failures,   1
-.if kind == 0
-                CMP     before,     8       :wz
-    if(!Z)      ADD     failures,   1
-.endif
+                {{ cmp_3 }}
+                {{ add }}
                 SETQ    0
                 MODCZ   _CLR,       _CLR    :wcz
                 JMP     nrel(_end)

@@ -1,27 +1,35 @@
 //? WINDTUNNEL CHECK LIST
 //? issues: lut_write_conflict = 4
 //? post: hub[results] == u32 [ 1 2 1 2 1 2 1 2 ]
+//?
 //? run: "0"
 //? cog: 0
 //? const: probe_writer = 1
+//?
 //? run: "1"
 //? cog: 1
 //? const: probe_writer = 0
+//?
 //? run: "2"
 //? cog: 2
 //? const: probe_writer = 3
+//?
 //? run: "3"
 //? cog: 3
 //? const: probe_writer = 2
+//?
 //? run: "4"
 //? cog: 4
 //? const: probe_writer = 5
+//?
 //? run: "5"
 //? cog: 5
 //? const: probe_writer = 4
+//?
 //? run: "6"
 //? cog: 6
 //? const: probe_writer = 7
+//?
 //? run: "7"
 //? cog: 7
 //? const: probe_writer = 6

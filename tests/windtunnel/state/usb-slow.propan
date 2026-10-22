@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "x512-p0-d32"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -8,6 +9,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 16
+//?
 //? run: "x512-p0-d128"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -17,6 +19,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
+//?
 //? run: "x512-p0-d256"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -26,6 +29,7 @@
 //? post: cog[0].reg[result] == 2
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
+//?
 //? run: "x512-p3-d32"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -35,6 +39,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 16
+//?
 //? run: "x512-p3-d128"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -44,6 +49,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
+//?
 //? run: "x512-p3-d256"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -53,6 +59,7 @@
 //? post: cog[0].reg[result] == 2
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
+//?
 //? run: "x512-p7-d32"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -62,6 +69,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 16
+//?
 //? run: "x512-p7-d128"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -71,6 +79,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
+//?
 //? run: "x512-p7-d256"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -80,6 +89,7 @@
 //? post: cog[0].reg[result] == 2
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
+//?
 //? run: "x512-p11-d32"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -89,6 +99,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 16
+//?
 //? run: "x512-p11-d128"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -98,6 +109,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
+//?
 //? run: "x512-p11-d256"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -107,6 +119,7 @@
 //? post: cog[0].reg[result] == 2
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 44
+//?
 //? run: "x512-p15-d32"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -116,6 +129,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 16
+//?
 //? run: "x512-p15-d128"
 //? const: mode0 = 118
 //? const: mode1 = 118
@@ -125,6 +139,7 @@
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 40
+//?
 //? run: "x512-p15-d256"
 //? const: mode0 = 118
 //? const: mode1 = 118

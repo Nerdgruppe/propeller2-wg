@@ -1,8 +1,10 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 3000
+//? macro: explicit required
+//?
 //? run: "explicit"
+//? macro: explicit set RET :wcz
 //? cog: 0
-//? const: explicit = 1
 //? post: cog[*].reg[status1] == 33554432
 //? post: cog[*].reg[status2] == 50397184
 //? post: cog[*].reg[status3] == 33554432
@@ -16,9 +18,10 @@
 //? post: cog[*].reg[status5] == 50331648
 //? post: cog[*].reg[pa4] == 3
 //? post: cog[*].reg[pa5] == 4
+//?
 //? run: "implicit"
+//? macro: explicit set return MOV marker, 1
 //? cog: 0
-//? const: explicit = 0
 //? post: cog[*].reg[status1] == 33554432
 //? post: cog[*].reg[status2] == 50397184
 //? post: cog[*].reg[status3] == 33554432
@@ -53,11 +56,7 @@ second:
                 MOV     pa2,    PA
                 MOV     q_out,  0
                 MUXQ    q_out,  all_bits
-.if explicit
-                RET                         :wcz
-.else
-    return      MOV     marker, 1
-.endif
+                {{ explicit }}
 third:
                 GETBRK  status3         :wc
                 MOV     pa3,    PA

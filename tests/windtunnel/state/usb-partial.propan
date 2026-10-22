@@ -1,19 +1,23 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "gpio"
 //? const: upper_mode = 0
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "repository-noise"
 //? const: upper_mode = 66
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "repository-random"
 //? const: upper_mode = 68
 //? post: cog[0].reg[result] == 9
 //? post: cog[0].reg[upper] == 0
 //? post: cog[0].reg[flags] == 0
+//?
 //? run: "repository-pwm"
 //? const: upper_mode = 70
 //? post: cog[0].reg[result] == 9

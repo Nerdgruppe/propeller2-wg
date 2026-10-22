@@ -18,20 +18,28 @@
 //? post: cog[*].reg[last_x] == 4294967288
 //? post: cog[*].reg[last_y] == 7
 //? post: cog[*].reg[qmt] == 1
+//?
 //? run: "cog 0"
 //? cog: 0
+//?
 //? run: "cog 1"
 //? cog: 1
+//?
 //? run: "cog 2"
 //? cog: 2
+//?
 //? run: "cog 3"
 //? cog: 3
+//?
 //? run: "cog 4"
 //? cog: 4
+//?
 //? run: "cog 5"
 //? cog: 5
+//?
 //? run: "cog 6"
 //? cog: 6
+//?
 //? run: "cog 7"
 //? cog: 7
 

@@ -6,10 +6,21 @@
 //? post: cog[0].reg[hole] == 0
 //? post: cog[0].reg[ignored_write] == 99
 //? post: cog[0].reg[mirror_ok] == 1
+//? macro: entry_pc required
+//? macro: setq required
+//? macro: coginit required
+//?
 //? run: "physical boundary"
+//? macro: entry_pc set // Physical-end fall-through stays in the RAM hole, so another cog supplies the exit.
+//? macro: setq set SETQ cogaddr(recovered)
+//? macro: coginit set COGINIT 1, aug(hubaddr(rescue))
 //? const: entry_pc = 0x7fffc
 //? post: cog[0].reg[result] == 0
+//?
 //? run: "20-bit boundary"
+//? macro: entry_pc set
+//? macro: setq set
+//? macro: coginit set
 //? issues: memory_hole_read = 1
 //? issues: pc_domain = 3
 //? const: entry_pc = 0xffffc
@@ -34,11 +45,9 @@
                 WRLONG  instruction,    0
                 RDLONG  instruction,    PTRA++
                 WRLONG  instruction,    4
-.if entry_pc == 0x7fffc
-                // Physical-end fall-through stays in the RAM hole, so another cog supplies the exit.
-                SETQ    cogaddr(recovered)
-                COGINIT 1,              aug(hubaddr(rescue))
-.endif
+                {{ entry_pc }}
+                {{ setq }}
+                {{ coginit }}
                 JMP     entry_address
 done:
                 MOV     result, 9

@@ -1,441 +1,529 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 2000
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "cog0-bank0-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog0-bank0-align1"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog0-bank0-align2"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog0-bank0-align3"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog0-bank1-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog0-bank2-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog0-bank3-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog0-bank4-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog0-bank5-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog0-bank6-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog0-bank7-align0"
 //? cog: 0
 //? const: probe_cog = 0
 //? const: bank = 7
 //? const: alignment = 0
+//?
 //? run: "cog1-bank0-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog1-bank0-align1"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog1-bank0-align2"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog1-bank0-align3"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog1-bank1-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog1-bank2-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog1-bank3-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog1-bank4-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog1-bank5-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog1-bank6-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog1-bank7-align0"
 //? cog: 1
 //? const: probe_cog = 1
 //? const: bank = 7
 //? const: alignment = 0
+//?
 //? run: "cog2-bank0-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog2-bank0-align1"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog2-bank0-align2"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog2-bank0-align3"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog2-bank1-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog2-bank2-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog2-bank3-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog2-bank4-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog2-bank5-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog2-bank6-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog2-bank7-align0"
 //? cog: 2
 //? const: probe_cog = 2
 //? const: bank = 7
 //? const: alignment = 0
+//?
 //? run: "cog3-bank0-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog3-bank0-align1"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog3-bank0-align2"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog3-bank0-align3"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog3-bank1-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog3-bank2-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog3-bank3-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog3-bank4-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog3-bank5-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog3-bank6-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog3-bank7-align0"
 //? cog: 3
 //? const: probe_cog = 3
 //? const: bank = 7
 //? const: alignment = 0
+//?
 //? run: "cog4-bank0-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog4-bank0-align1"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog4-bank0-align2"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog4-bank0-align3"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog4-bank1-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog4-bank2-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog4-bank3-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog4-bank4-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog4-bank5-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog4-bank6-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog4-bank7-align0"
 //? cog: 4
 //? const: probe_cog = 4
 //? const: bank = 7
 //? const: alignment = 0
+//?
 //? run: "cog5-bank0-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog5-bank0-align1"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog5-bank0-align2"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog5-bank0-align3"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog5-bank1-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog5-bank2-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog5-bank3-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog5-bank4-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog5-bank5-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog5-bank6-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog5-bank7-align0"
 //? cog: 5
 //? const: probe_cog = 5
 //? const: bank = 7
 //? const: alignment = 0
+//?
 //? run: "cog6-bank0-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog6-bank0-align1"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog6-bank0-align2"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog6-bank0-align3"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog6-bank1-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog6-bank2-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog6-bank3-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog6-bank4-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog6-bank5-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog6-bank6-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog6-bank7-align0"
 //? cog: 6
 //? const: probe_cog = 6
 //? const: bank = 7
 //? const: alignment = 0
+//?
 //? run: "cog7-bank0-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 0
 //? const: alignment = 0
+//?
 //? run: "cog7-bank0-align1"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 0
 //? const: alignment = 1
+//?
 //? run: "cog7-bank0-align2"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 0
 //? const: alignment = 2
+//?
 //? run: "cog7-bank0-align3"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 0
 //? const: alignment = 3
+//?
 //? run: "cog7-bank1-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 1
 //? const: alignment = 0
+//?
 //? run: "cog7-bank2-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 2
 //? const: alignment = 0
+//?
 //? run: "cog7-bank3-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 3
 //? const: alignment = 0
+//?
 //? run: "cog7-bank4-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 4
 //? const: alignment = 0
+//?
 //? run: "cog7-bank5-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 5
 //? const: alignment = 0
+//?
 //? run: "cog7-bank6-align0"
 //? cog: 7
 //? const: probe_cog = 7
 //? const: bank = 6
 //? const: alignment = 0
+//?
 //? run: "cog7-bank7-align0"
 //? cog: 7
 //? const: probe_cog = 7

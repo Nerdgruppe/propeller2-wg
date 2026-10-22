@@ -1,6 +1,7 @@
 //? WINDTUNNEL CHECK LIST
 //? profile: cog
 //? max-cycles: 200_000
+//?
 //? run: "COGINIT preserves every source byte alignment"
 //? post: cog[0].reg[failures] == 0
 

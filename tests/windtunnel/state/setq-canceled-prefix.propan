@@ -4,52 +4,54 @@
 //? post: cog[*].reg[copied2] == 3
 //? post: cog[*].reg[copied3] == 4
 //? post: cog[*].reg[lut_value] == 17
+//? macro: setq required
+//? macro: canceled_aug required
+//?
 //? run: "cog=0 lut=0 aug=0"
+//? macro: setq set SETQ
+//? macro: canceled_aug set if(C) MOV scratch, 0
 //? cog: 0
-//? const: lut_prefix = 0
-//? const: canceled_aug = 0
+//?
 //? run: "cog=0 lut=0 aug=1"
+//? macro: setq set SETQ
+//? macro: canceled_aug set if(C) AUGS 0
 //? cog: 0
-//? const: lut_prefix = 0
-//? const: canceled_aug = 1
+//?
 //? run: "cog=0 lut=1 aug=0"
+//? macro: setq set SETQ2
+//? macro: canceled_aug set if(C) MOV scratch, 0
 //? cog: 0
-//? const: lut_prefix = 1
-//? const: canceled_aug = 0
+//?
 //? run: "cog=0 lut=1 aug=1"
+//? macro: setq set SETQ2
+//? macro: canceled_aug set if(C) AUGS 0
 //? cog: 0
-//? const: lut_prefix = 1
-//? const: canceled_aug = 1
+//?
 //? run: "cog=2 lut=0 aug=0"
+//? macro: setq set SETQ
+//? macro: canceled_aug set if(C) MOV scratch, 0
 //? cog: 2
-//? const: lut_prefix = 0
-//? const: canceled_aug = 0
+//?
 //? run: "cog=2 lut=0 aug=1"
+//? macro: setq set SETQ
+//? macro: canceled_aug set if(C) AUGS 0
 //? cog: 2
-//? const: lut_prefix = 0
-//? const: canceled_aug = 1
+//?
 //? run: "cog=2 lut=1 aug=0"
+//? macro: setq set SETQ2
+//? macro: canceled_aug set if(C) MOV scratch, 0
 //? cog: 2
-//? const: lut_prefix = 1
-//? const: canceled_aug = 0
+//?
 //? run: "cog=2 lut=1 aug=1"
+//? macro: setq set SETQ2
+//? macro: canceled_aug set if(C) AUGS 0
 //? cog: 2
-//? const: lut_prefix = 1
-//? const: canceled_aug = 1
 
                 // A canceled instruction consumes either block-transfer prefix.
                 MODCZ   _CLR,           _CLR                    :wcz
                 WRLUT   17,             100
-.if lut_prefix == 0
-                SETQ    3
-.else
-                SETQ2   3
-.endif
-.if canceled_aug == 0
-    if(C)       MOV     scratch,        0
-.else
-    if(C)       AUGS    0
-.endif
+                {{ setq }}  3
+                {{ canceled_aug }}
                 RDLONG  register(100),  aug(hubaddr(source))
                 RDLUT   lut_value,      100
                 SETQ    0

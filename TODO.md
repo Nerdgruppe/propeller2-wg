@@ -146,17 +146,11 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - Hardware Chip Reset and ROM Boot
 - Cache `hub.random.word` to not compute it multiple times per clock
 - Implement Streamer FIFO bypass erratum
-- Extend test runner to store/print the time per test fixture and test run to find outliers.
 - Create a concept for how to react to misbehavior/undefined behavior.
 - Refactor code to adapt to better coding standards.
 - Improve CLI user experience
-- Refactor test suit to enable `macro: name ...` which replaces `{{name}}` or `{{ name }}` with "..."
-- forbid things like `LONG 0xfe900000 | (operand & 0xfffff)` in the testsuite unless there's a really good reason for it.
 - Use CLI seeding through electrical noise for RNG seed
 - GUI file dialog support via nfd-zig
-- New rule for test suite things:
-  - Allow empty `//?` lines
-  - `//? run:` must be prefixed by an empty line
 - Simple GUI Terminal/Stream
 - Rework how the GUI works. The "reinitialize" is bullshit, also is "reboot" vs. "reset".
 

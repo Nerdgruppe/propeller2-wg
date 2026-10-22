@@ -157,6 +157,7 @@ const Arguments = struct {
 const Job = struct {
     path: []const u8,
     source: []const u8,
+    expanded_source: []const u8,
     list: checklist.List,
     name: []const u8,
     fixture: usize,
@@ -322,7 +323,7 @@ const WorkGroup = struct {
                 }
             }
 
-            job.status = runOne(context, job.path, job.source, job.list, job.name) catch |err| {
+            job.status = runOne(context, job.path, job.source, job.expanded_source, job.list, job.name) catch |err| {
                 job.failure = err;
                 continue;
             };
@@ -393,10 +394,11 @@ test "workers isolate cases, retain failures and finish every queued job" {
     const source =
         "//? WINDTUNNEL CHECK LIST\n" ++
         "//? post: cog[0].reg[result] == 7\n" ++
-        "//? run: \"first\"\n//? pre: sym[value] = u32 [7]\n" ++
-        "//? run: \"failure\"\n//? pre: sym[value] = u32 [8]\n" ++
-        "//? run: \"last\"\n//? pre: sym[value] = u32 [7]\n" ++
-        "\nMOV result, value\nJMP nrel(_end)\nNOP\nvar result: LONG 0\nvar value: LONG 0\n";
+        "//? macro: operation required\n" ++
+        "//?\n//? run: \"first\"\n//? macro: operation set MOV result, value\n//? pre: sym[value] = u32 [7]\n" ++
+        "//?\n//? run: \"failure\"\n//? macro: operation set ADD result, value\n//? pre: sym[value] = u32 [8]\n" ++
+        "//?\n//? run: \"last\"\n//? macro: operation set MOV result, value\n//? pre: sym[value] = u32 [7]\n" ++
+        "\n{{ operation }}\nJMP nrel(_end)\nNOP\nvar result: LONG 0\nvar value: LONG 0\n";
     try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "fixture.propan", .data = source });
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
@@ -406,15 +408,16 @@ test "workers isolate cases, retain failures and finish every queued job" {
     var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
     defer errors.deinit();
 
-    const list = try checklist.parse(allocator, path, source, &errors.writer);
+    const runs = try checklist.prepare(allocator, path, source, &errors.writer);
     for ([_]usize{ 1, 4 }) |workers| {
         var jobs: [3]Job = undefined;
-        for (&jobs, list.runs) |*job, run| {
+        for (&jobs, runs) |*job, run| {
             job.* = .{
                 .path = path,
                 .source = source,
-                .list = try list.forRun(allocator, run),
-                .name = run.name.?,
+                .expanded_source = run.source,
+                .list = run.list,
+                .name = run.name,
                 .fixture = 0,
                 .progress = .none,
                 .diagnostics = .init(std.testing.allocator),
@@ -458,6 +461,7 @@ test "timing reports aggregate and rank files and runs, including failures and e
         .{
             .path = "fast.propan",
             .source = "",
+            .expanded_source = "",
             .list = .{},
             .name = "fast",
             .fixture = 0,
@@ -469,6 +473,7 @@ test "timing reports aggregate and rank files and runs, including failures and e
         .{
             .path = "slow.propan",
             .source = "",
+            .expanded_source = "",
             .list = .{},
             .name = "failed | case",
             .fixture = 1,
@@ -480,6 +485,7 @@ test "timing reports aggregate and rank files and runs, including failures and e
         .{
             .path = "slow.propan",
             .source = "",
+            .expanded_source = "",
             .list = .{},
             .name = "slow",
             .fixture = 1,
@@ -762,11 +768,10 @@ fn runSource(ctx: Context, path: []const u8, source: []const u8) !oracle.Status 
     var arena: std.heap.ArenaAllocator = .init(ctx.allocator);
     defer arena.deinit();
 
-    const list = try checklist.parse(arena.allocator(), path, source, ctx.errors);
+    const runs = try checklist.prepare(arena.allocator(), path, source, ctx.errors);
     var status: oracle.Status = .skipped;
-    for (list.runs, 1..) |run, index| {
-        const name = run.name orelse try std.fmt.allocPrint(arena.allocator(), "run {d}", .{index});
-        status = try runOne(ctx, path, source, try list.forRun(arena.allocator(), run), name);
+    for (runs) |run| {
+        status = try runOne(ctx, path, source, run.source, run.list, run.name);
     }
     return status;
 }
@@ -776,6 +781,7 @@ fn runOne(
     ctx: Context,
     path: []const u8,
     source: []const u8,
+    expanded_source: []const u8,
     list: checklist.List,
     run_name: []const u8,
 ) !oracle.Status {
@@ -793,10 +799,10 @@ fn runOne(
         for (list.constants) |constant| {
             try program_source.writer.print("const {s} = {d}\n", .{ constant.name, constant.value });
         }
-        try program_source.writer.writeAll(source);
+        try program_source.writer.writeAll(expanded_source);
     }
     var compiled = if (list.profile == .cog)
-        try oracle.assemble(oracle_ctx, path, list, &.{}, &.{}, 1, false)
+        try oracle.assemble(oracle_ctx, path, expanded_source, list, &.{}, &.{}, 1, false)
     else
         try propan.assemble(ctx.allocator, ctx.io, path, program_source.written(), ctx.errors);
     defer compiled.deinit();
@@ -873,7 +879,7 @@ fn runOne(
     }
 
     if (list.profile == .cog) {
-        const initialized = try oracle.assemble(oracle_ctx, path, list, pre.items, observations.items, entry, false);
+        const initialized = try oracle.assemble(oracle_ctx, path, expanded_source, list, pre.items, observations.items, entry, false);
         compiled.deinit();
         compiled = initialized;
         stop = try codeAddress(compiled.module, "_wt_stop");
@@ -895,6 +901,7 @@ fn runOne(
             .path = path,
             .run_name = run_name,
             .source = source,
+            .expanded_source = expanded_source,
             .list = list,
             .entry = entry,
             .seeds = pre.items,
@@ -951,6 +958,7 @@ fn runOne(
                 path,
                 run_name,
                 source,
+                expanded_source,
                 compiled.image,
                 pre.items,
                 observations.items,
@@ -1134,6 +1142,7 @@ fn runOne(
         .path = path,
         .run_name = run_name,
         .source = source,
+        .expanded_source = expanded_source,
         .list = list,
         .entry = entry,
         .seeds = pre.items,
@@ -1248,17 +1257,18 @@ pub fn main(init: std.process.Init) !u8 {
         }
 
         const source = try std.Io.Dir.cwd().readFileAlloc(init.io, path, allocator, .limited(1 << 20));
-        const list = checklist.parse(allocator, path, source, &stderr.interface) catch |err| {
+        const runs = checklist.prepare(allocator, path, source, &stderr.interface) catch |err| {
             try stderr.interface.print("FAIL {s}: {t}\n", .{ path, err });
             failed_fixture.* = true;
             continue;
         };
-        for (list.runs, 1..) |run, index| {
+        for (runs) |run| {
             try jobs.append(allocator, .{
                 .path = path,
                 .source = source,
-                .list = try list.forRun(allocator, run),
-                .name = run.name orelse try std.fmt.allocPrint(allocator, "run {d}", .{index}),
+                .expanded_source = run.source,
+                .list = run.list,
+                .name = run.name,
                 .fixture = fixture_index,
                 .progress = progress,
                 .diagnostics = .init(init.gpa),
@@ -1414,18 +1424,22 @@ test "runs patch cog and hub initialization independently" {
         \\//? pre: sym[value] = u32 [1]
         \\//? post: cog[0].reg[value] == 2
         \\//? post: hub[buffer] == u32 [2]
+        \\//?
         \\//? run: "zero"
         \\//? pre: sym[buffer] = u8 [0, 0, 0, 0]
         \\//? pre: cog[0].c = true
         \\//? post: cog[0].reg[loaded] == 0
         \\//? post: cog[0].c == true
+        \\//?
         \\//? run:
         \\//? post: cog[0].reg[loaded] == 0x01020304
         \\//? post: cog[0].c == false
+        \\//?
         \\//? run: "partial"
         \\//? pre: sym[buffer] = hex [ff]
         \\//? post: cog[0].reg[loaded] == 0x010203ff
         \\//? post: cog[0].c == false
+        \\//?
         \\//? run: "restored"
         \\//? post: cog[0].reg[loaded] == 0x01020304
         \\//? post: cog[0].c == false
@@ -1473,7 +1487,9 @@ test "oracle preparation applies patches to every run and records run identity" 
         \\//? post: cog[0].reg[value] == 0x76543210
         \\//? post: cog[0].reg[next] == 0xfedcba98
         \\//? pre: sym[value] = u32 [0x76543210, 0xfedcba98]
+        \\//?
         \\//? run: "first"
+        \\//?
         \\//? run: "second"
         \\
         \\JMP nrel(_end)
@@ -1552,10 +1568,10 @@ test "matrix runs assemble constants and select fresh cogs" {
         "//? WINDTUNNEL CHECK LIST\n" ++
             "//? const: value = 3\n" ++
             "//? const: adjustment = 1\n" ++
-            "//? run: \"cog zero\"\n" ++
+            "//?\n//? run: \"cog zero\"\n" ++
             "//? cog: 0\n" ++
             "//? post: cog[*].reg[result] == 4\n" ++
-            "//? run: \"cog seven\"\n" ++
+            "//?\n//? run: \"cog seven\"\n" ++
             "//? cog: 7\n" ++
             "//? const: value = 8\n" ++
             "//? post: cog[*].reg[result] == 9\n" ++
@@ -1722,4 +1738,89 @@ test "streamer excluded modes and FIFO ownership fail explicitly, while cancella
     try std.testing.expectError(error.UnexpectedIssue, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_RFLONG_32P_4DAC8 | 1), 0\nCOGSTOP 0\n"));
     try std.testing.expectError(error.UnexpectedIssue, runTemporary(ctx, "//? WINDTUNNEL CHECK LIST\n//? profile: program\n\n.cogexec\nXINIT aug(X_32P_4DAC8_WFLONG | X_WRITE_ON | 1), 0\nCOGSTOP 0\n"));
     try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx, header ++ "if(C) SETCMOD 0x120\nif(C) XINIT aug(X_DDS_GOERTZEL_SINC1 | 1), 0\nJMP nrel(_end)\n"));
+}
+
+test "materialized cog sources preserve relative imports and prepare both source versions" {
+    var tmp = std.testing.tmpDir(.{ .iterate = true });
+    defer tmp.cleanup();
+
+    try tmp.dir.createDir(std.testing.io, "helper", .default_dir);
+    try tmp.dir.writeFile(std.testing.io, .{
+        .sub_path = "helper/constants.propan",
+        .data = ".import once\nconst BASE = 7\n",
+    });
+    const source =
+        "//? WINDTUNNEL CHECK LIST\n" ++
+        "//? macro: instruction required\n" ++
+        "//? macro: expected required\n" ++
+        "//? post: cog[*].reg[result] == {{expected}}\n" ++
+        "//?\n//? run: \"base\"\n//? macro: instruction set MOV result, BASE\n//? macro: expected set 7\n" ++
+        "//?\n//? run: \"override\"\n" ++
+        "//? macro: instruction set MOV result, 9\n" ++
+        "//? macro: expected set 9\n" ++
+        "//?\n//? run: \"restored\"\n//? macro: instruction set MOV result, BASE\n//? macro: expected set 7\n\n" ++
+        ".import \"helper/constants.propan\"\n" ++
+        ".import \"helper/constants.propan\"\n" ++
+        "{{ instruction }}\nJMP nrel(_end)\nNOP\nvar result: LONG 0\n";
+    try tmp.dir.writeFile(std.testing.io, .{ .sub_path = "fixture.propan", .data = source });
+    const path = try tmp.dir.realPathFileAlloc(std.testing.io, "fixture.propan", std.testing.allocator);
+    defer std.testing.allocator.free(path);
+
+    const artifacts = try tmp.dir.realPathFileAlloc(std.testing.io, ".", std.testing.allocator);
+    defer std.testing.allocator.free(artifacts);
+
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+    errdefer std.debug.print("{s}\n", .{errors.written()});
+
+    const ctx: Context = .{
+        .allocator = std.testing.allocator,
+        .io = std.testing.io,
+        .errors = &errors.writer,
+        .options = .{ .@"prepare-oracle" = true, .@"artifact-dir" = artifacts },
+        .retain_failures = false,
+    };
+    try std.testing.expectEqual(oracle.Status.prepared, try runSource(ctx, path, source));
+    var iterator = tmp.dir.iterate();
+    var count: usize = 0;
+    while (try iterator.next(std.testing.io)) |entry| {
+        if (entry.kind != .directory or std.mem.eql(u8, entry.name, "helper"))
+            continue;
+        var dir = try tmp.dir.openDir(std.testing.io, entry.name, .{});
+        defer dir.close(std.testing.io);
+
+        const original = try dir.readFileAlloc(std.testing.io, "fixture.propan", std.testing.allocator, .limited(1 << 20));
+        defer std.testing.allocator.free(original);
+        const expanded = try dir.readFileAlloc(std.testing.io, "expanded-fixture.propan", std.testing.allocator, .limited(1 << 20));
+        defer std.testing.allocator.free(expanded);
+        try std.testing.expectEqualStrings(source, original);
+        try std.testing.expect(std.mem.find(u8, expanded, "{{") == null);
+        try std.testing.expect(std.mem.find(u8, expanded, ".import \"helper/constants.propan\"") != null);
+        count += 1;
+    }
+    try std.testing.expectEqual(@as(usize, 3), count);
+}
+
+test "program macros expand instructions and stream expectations per run" {
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const ctx: Context = .{ .allocator = std.testing.allocator, .io = std.testing.io, .errors = &errors.writer, .retain_failures = false };
+    try std.testing.expectEqual(oracle.Status.skipped, try runTemporary(ctx,
+        \\//? WINDTUNNEL CHECK LIST
+        \\//? profile: program
+        \\//? macro: stop required
+        \\//? macro: output set
+        \\//? stdout: "{{output}}"
+        \\//?
+        \\//? run: "first"
+        \\//? macro: stop set COGSTOP 0
+        \\//?
+        \\//? run: "second"
+        \\//? macro: stop set COGSTOP register(1)
+        \\
+        \\.cogexec
+        \\MOV register(1), 0
+        \\{{stop}}
+    ));
 }

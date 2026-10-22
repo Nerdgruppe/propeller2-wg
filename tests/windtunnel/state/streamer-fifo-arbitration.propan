@@ -37,3 +37,4 @@ var amount:     LONG    0
 .data
 .align  4
 var buffer:     LONG    [0xcc] * 128
+

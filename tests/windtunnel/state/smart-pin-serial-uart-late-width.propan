@@ -1,94 +1,117 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//?
 //? run: "pll0-delay520"
 //? const: delay = 520
 //? post: cog[*].reg[result] == 0xcdef0000
 //? post: cog[*].reg[ready] == 0x00000001
+//?
 //? run: "pll0-delay536"
 //? const: delay = 536
 //? post: cog[*].reg[result] == 0xcdef0000
 //? post: cog[*].reg[ready] == 0x00000001
+//?
 //? run: "pll0-delay552"
 //? const: delay = 552
 //? post: cog[*].reg[result] == 0xcdef0000
 //? post: cog[*].reg[ready] == 0x00000001
+//?
 //? run: "pll0-delay560"
 //? const: delay = 560
 //? post: cog[*].reg[result] == 0xcdef0000
 //? post: cog[*].reg[ready] == 0x00000001
+//?
 //? run: "pll0-delay576"
 //? const: delay = 576
 //? post: cog[*].reg[result] == 0xcdef0000
 //? post: cog[*].reg[ready] == 0x00000001
+//?
 //? run: "pll0-delay600"
 //? const: delay = 600
 //? post: cog[*].reg[result] == 0xcdef0000
 //? post: cog[*].reg[ready] == 0x00000001
+//?
 //? run: "pll0-delay608"
 //? const: delay = 608
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay609"
 //? const: delay = 609
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay610"
 //? const: delay = 610
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay611"
 //? const: delay = 611
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay612"
 //? const: delay = 612
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay613"
 //? const: delay = 613
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay614"
 //? const: delay = 614
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay615"
 //? const: delay = 615
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay616"
 //? const: delay = 616
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay617"
 //? const: delay = 617
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay618"
 //? const: delay = 618
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay619"
 //? const: delay = 619
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay620"
 //? const: delay = 620
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay621"
 //? const: delay = 621
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay622"
 //? const: delay = 622
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay623"
 //? const: delay = 623
 //? post: cog[*].reg[result] == 0xef000000
 //? post: cog[*].reg[ready] == 0x00000000
+//?
 //? run: "pll0-delay624"
 //? const: delay = 624
 //? post: cog[*].reg[result] == 0xef000000

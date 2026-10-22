@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "before1000000 after0 sinc0"
 //? const: before = 16777216
 //? const: after = 0
@@ -9,6 +10,7 @@
 //? post: cog[0].reg[r3] == 1748
 //? post: cog[0].reg[r4] == 480
 //? post: cog[0].reg[r5] == 480
+//?
 //? run: "before1000000 after0 sinc1"
 //? const: before = 16777216
 //? const: after = 0
@@ -19,6 +21,7 @@
 //? post: cog[0].reg[r3] == 33444
 //? post: cog[0].reg[r4] == 15840
 //? post: cog[0].reg[r5] == 15840
+//?
 //? run: "before1000000 after8000000 sinc0"
 //? const: before = 16777216
 //? const: after = 134217728
@@ -29,6 +32,7 @@
 //? post: cog[0].reg[r3] == 156
 //? post: cog[0].reg[r4] == 192
 //? post: cog[0].reg[r5] == 196
+//?
 //? run: "before1000000 after8000000 sinc1"
 //? const: before = 16777216
 //? const: after = 134217728
@@ -39,6 +43,7 @@
 //? post: cog[0].reg[r3] == 17464
 //? post: cog[0].reg[r4] == 4672
 //? post: cog[0].reg[r5] == 4730
+//?
 //? run: "before1000000 after23456789 sinc0"
 //? const: before = 16777216
 //? const: after = 591751049
@@ -49,6 +54,7 @@
 //? post: cog[0].reg[r3] == 139
 //? post: cog[0].reg[r4] == 67
 //? post: cog[0].reg[r5] == 70
+//?
 //? run: "before1000000 after23456789 sinc1"
 //? const: before = 16777216
 //? const: after = 591751049
@@ -59,6 +65,7 @@
 //? post: cog[0].reg[r3] == 17333
 //? post: cog[0].reg[r4] == 5031
 //? post: cog[0].reg[r5] == 5098
+//?
 //? run: "before10000000 after0 sinc0"
 //? const: before = 268435456
 //? const: after = 0
@@ -69,6 +76,7 @@
 //? post: cog[0].reg[r3] == 4294967124
 //? post: cog[0].reg[r4] == 0
 //? post: cog[0].reg[r5] == 6
+//?
 //? run: "before10000000 after0 sinc1"
 //? const: before = 268435456
 //? const: after = 0
@@ -79,6 +87,7 @@
 //? post: cog[0].reg[r3] == 4294953666
 //? post: cog[0].reg[r4] == 4294963456
 //? post: cog[0].reg[r5] == 4294963645
+//?
 //? run: "before10000000 after8000000 sinc0"
 //? const: before = 268435456
 //? const: after = 134217728
@@ -89,6 +98,7 @@
 //? post: cog[0].reg[r3] == 4294967052
 //? post: cog[0].reg[r4] == 4294967008
 //? post: cog[0].reg[r5] == 4294967012
+//?
 //? run: "before10000000 after8000000 sinc1"
 //? const: before = 268435456
 //? const: after = 134217728
@@ -99,6 +109,7 @@
 //? post: cog[0].reg[r3] == 4294952126
 //? post: cog[0].reg[r4] == 4294961504
 //? post: cog[0].reg[r5] == 4294961642
+//?
 //? run: "before10000000 after23456789 sinc0"
 //? const: before = 268435456
 //? const: after = 591751049
@@ -109,6 +120,7 @@
 //? post: cog[0].reg[r3] == 4294967033
 //? post: cog[0].reg[r4] == 4294967139
 //? post: cog[0].reg[r5] == 4294967141
+//?
 //? run: "before10000000 after23456789 sinc1"
 //? const: before = 268435456
 //? const: after = 591751049

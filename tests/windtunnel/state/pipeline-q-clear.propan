@@ -1,110 +1,151 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[failures] == 0
+//? macro: setq default
+//? macro: rdlong default
+//? macro: canceled_instruction required
+//?
 //? run: "cog=0 COGINIT mode=0"
+//? macro: canceled_instruction set COGINIT
 //? cog: 0
-//? const: canceled_instruction = 0xccec0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=0 COGINIT mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set COGINIT
 //? cog: 0
-//? const: canceled_instruction = 0xccec0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=0 COGINIT mode=2"
+//? macro: canceled_instruction set COGINIT
 //? cog: 0
-//? const: canceled_instruction = 0xccec0001
 //? const: execution_mode = 2
+//?
 //? run: "cog=0 QDIV mode=0"
+//? macro: canceled_instruction set QDIV
 //? cog: 0
-//? const: canceled_instruction = 0xcd1c0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=0 QDIV mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set QDIV
 //? cog: 0
-//? const: canceled_instruction = 0xcd1c0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=0 QDIV mode=2"
+//? macro: canceled_instruction set QDIV
 //? cog: 0
-//? const: canceled_instruction = 0xcd1c0001
 //? const: execution_mode = 2
+//?
 //? run: "cog=0 QFRAC mode=0"
+//? macro: canceled_instruction set QFRAC
 //? cog: 0
-//? const: canceled_instruction = 0xcd2c0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=0 QFRAC mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set QFRAC
 //? cog: 0
-//? const: canceled_instruction = 0xcd2c0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=0 QFRAC mode=2"
+//? macro: canceled_instruction set QFRAC
 //? cog: 0
-//? const: canceled_instruction = 0xcd2c0001
 //? const: execution_mode = 2
+//?
 //? run: "cog=0 QROTATE mode=0"
+//? macro: canceled_instruction set QROTATE
 //? cog: 0
-//? const: canceled_instruction = 0xcd4c0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=0 QROTATE mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set QROTATE
 //? cog: 0
-//? const: canceled_instruction = 0xcd4c0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=0 QROTATE mode=2"
+//? macro: canceled_instruction set QROTATE
 //? cog: 0
-//? const: canceled_instruction = 0xcd4c0001
 //? const: execution_mode = 2
+//?
 //? run: "cog=2 COGINIT mode=0"
+//? macro: canceled_instruction set COGINIT
 //? cog: 2
-//? const: canceled_instruction = 0xccec0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=2 COGINIT mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set COGINIT
 //? cog: 2
-//? const: canceled_instruction = 0xccec0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=2 COGINIT mode=2"
+//? macro: canceled_instruction set COGINIT
 //? cog: 2
-//? const: canceled_instruction = 0xccec0001
 //? const: execution_mode = 2
+//?
 //? run: "cog=2 QDIV mode=0"
+//? macro: canceled_instruction set QDIV
 //? cog: 2
-//? const: canceled_instruction = 0xcd1c0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=2 QDIV mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set QDIV
 //? cog: 2
-//? const: canceled_instruction = 0xcd1c0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=2 QDIV mode=2"
+//? macro: canceled_instruction set QDIV
 //? cog: 2
-//? const: canceled_instruction = 0xcd1c0001
 //? const: execution_mode = 2
+//?
 //? run: "cog=2 QFRAC mode=0"
+//? macro: canceled_instruction set QFRAC
 //? cog: 2
-//? const: canceled_instruction = 0xcd2c0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=2 QFRAC mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set QFRAC
 //? cog: 2
-//? const: canceled_instruction = 0xcd2c0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=2 QFRAC mode=2"
+//? macro: canceled_instruction set QFRAC
 //? cog: 2
-//? const: canceled_instruction = 0xcd2c0001
 //? const: execution_mode = 2
+//?
 //? run: "cog=2 QROTATE mode=0"
+//? macro: canceled_instruction set QROTATE
 //? cog: 2
-//? const: canceled_instruction = 0xcd4c0001
 //? const: execution_mode = 0
+//?
 //? run: "cog=2 QROTATE mode=1"
+//? macro: setq override SETQ2 aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
+//? macro: rdlong override RDLONG register(0), aug(hubaddr(probe_start))
+//? macro: canceled_instruction set QROTATE
 //? cog: 2
-//? const: canceled_instruction = 0xcd4c0001
 //? const: execution_mode = 1
+//?
 //? run: "cog=2 QROTATE mode=2"
+//? macro: canceled_instruction set QROTATE
 //? cog: 2
-//? const: canceled_instruction = 0xcd4c0001
 //? const: execution_mode = 2
 
                 // The selected instruction is always if(C), with C held clear.
                 // All four instructions clear Q during decode without executing.
                 MODCZ   _CLR,           _CLR                                        :wcz
                 WRLUT   19,             lut_address
-.if execution_mode == 1
-                SETQ2   aug((hubaddr(probe_end) - hubaddr(probe_start)) / 4 - 1)
-                RDLONG  register(0),    aug(hubaddr(probe_start))
-.endif
+                {{ setq }}
+                {{ rdlong }}
                 JMP     nrel(probe_start)
 var failures:   LONG    0
 var sample:     LONG    0
@@ -125,18 +166,7 @@ probe_start:
                 // An unprefixed, canceled instruction clears Q.
                 SETQ    3
                 MOV     scratch,    1
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     0           :wz
@@ -144,18 +174,7 @@ probe_start:
 
                 // An immediately preceding SETQ wins the clear.
                 SETQ    3
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     3           :wz
@@ -163,18 +182,7 @@ probe_start:
 
                 // An immediately preceding SETQ2 also wins the clear.
                 SETQ2   3
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     3           :wz
@@ -183,18 +191,7 @@ probe_start:
                 // SETQ protection survives an executed augmentation.
                 SETQ    3
                 AUGS    0
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     3           :wz
@@ -203,18 +200,7 @@ probe_start:
                 // SETQ2 protection does not survive augmentation.
                 SETQ2   3
                 AUGS    0
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     0           :wz
@@ -223,18 +209,7 @@ probe_start:
                 // A canceled ordinary instruction consumes SETQ.
                 SETQ    3
     if(C)       MOV     scratch,    0
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     0           :wz
@@ -243,18 +218,7 @@ probe_start:
                 // A canceled augmentation also consumes SETQ.
                 SETQ    3
     if(C)       AUGS    0
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     0           :wz
@@ -264,18 +228,7 @@ probe_start:
                 SETQ    3
                 MOV     scratch,    1
                 CRCNIB  scratch,    all_bits
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     48          :wz
@@ -283,18 +236,7 @@ probe_start:
 
                 // RDLUT loses the adjacent decode clear.
                 RDLUT   scratch,    lut_address
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     0           :wz
@@ -303,18 +245,7 @@ probe_start:
                 // XORO32 loses the adjacent decode clear.
                 MOV     scratch,    1
                 XORO32  scratch
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     0           :wz
@@ -324,18 +255,7 @@ probe_start:
                 SETQ    3
                 MOV     before,     0
                 MUXQ    before,     all_bits
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
                 CMP     sample,     0           :wz
@@ -347,18 +267,7 @@ probe_start:
                 SETQ    3
                 MOV     scratch,    1
                 JMP     nrel(branch_return)
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
 branch_return:
                 MOV     sample,     0
                 MUXQ    sample,     all_bits
@@ -370,18 +279,7 @@ branch_return:
                 MOV     scratch,    1
                 JMP     nrel(guard_return)
                 NOP
-.if canceled_instruction == 0xccec0001
-    if(C)       COGINIT 0,          1
-.endif
-.if canceled_instruction == 0xcd1c0001
-    if(C)       QDIV    0,          1
-.endif
-.if canceled_instruction == 0xcd2c0001
-    if(C)       QFRAC   0,          1
-.endif
-.if canceled_instruction == 0xcd4c0001
-    if(C)       QROTATE 0,          1
-.endif
+    if(C)       {{ canceled_instruction }}  0, 1
 guard_return:
                 MOV     sample,     0
                 MUXQ    sample,     all_bits

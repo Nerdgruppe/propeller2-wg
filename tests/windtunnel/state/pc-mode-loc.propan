@@ -4,7 +4,18 @@
 //? post: cog[*].c == false
 //? post: cog[*].z == true
 //? const: relative_offset = 0
+//? macro: setq required
+//? macro: rdlong required
+//? macro: wrlong required
+//? macro: mov default
+//? macro: mov_2 default
+//? macro: mov_3 default
+//? macro: mov_4 default
+//?
 //? run: "cog-00400-loc-abs"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 1
@@ -12,7 +23,11 @@
 //? post: cog[*].reg[result] == 0xabc80
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
+//?
 //? run: "cog-00400-loc-rel-minus128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 0
@@ -21,7 +36,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = -128
+//?
 //? run: "cog-00400-loc-rel0"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 0
@@ -30,7 +49,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = 0
+//?
 //? run: "cog-00400-loc-rel128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 0
@@ -39,7 +62,12 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = 128
+//?
 //? run: "cog-00401-loc-abs"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
 //? issues: pc_domain = 4
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -48,7 +76,12 @@
 //? post: cog[*].reg[result] == 0xabc80
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
+//?
 //? run: "cog-00401-loc-rel-minus128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
 //? issues: pc_domain = 4
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -58,7 +91,12 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = -128
+//?
 //? run: "cog-00401-loc-rel0"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
 //? issues: pc_domain = 4
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -68,7 +106,12 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = 0
+//?
 //? run: "cog-00401-loc-rel128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
 //? issues: pc_domain = 4
 //? const: domain = 1
 //? const: probe_pc = 1025
@@ -78,7 +121,15 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = 128
+//?
 //? run: "cog-00404-loc-abs"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
 //? issues: pc_domain = 7
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -87,7 +138,15 @@
 //? post: cog[*].reg[result] == 0xabc80
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
+//?
 //? run: "cog-00404-loc-rel-minus128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
 //? issues: pc_domain = 7
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -97,7 +156,15 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = -128
+//?
 //? run: "cog-00404-loc-rel0"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
 //? issues: pc_domain = 7
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -107,7 +174,15 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = 0
+//?
 //? run: "cog-00404-loc-rel128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
+//? macro: mov override MOV register(1), selector_2
+//? macro: mov_2 override MOV register(2), selector_3
+//? macro: mov_3 override MOV register(3), selector_4
+//? macro: mov_4 override MOV register(4), selector_5
 //? issues: pc_domain = 7
 //? const: domain = 1
 //? const: probe_pc = 1028
@@ -117,7 +192,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x0
 //? const: relative_offset = 128
+//?
 //? run: "hub-00000-loc-abs"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 1
@@ -125,7 +204,11 @@
 //? post: cog[*].reg[result] == 0xabc80
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
+//?
 //? run: "hub-00000-loc-rel-minus128"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 0
@@ -134,7 +217,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = -128
+//?
 //? run: "hub-00000-loc-rel0"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 0
@@ -143,7 +230,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = 0
+//?
 //? run: "hub-00000-loc-rel128"
+//? macro: setq set
+//? macro: rdlong set
+//? macro: wrlong set
 //? const: domain = 0
 //? const: probe_pc = 0
 //? const: form = 0
@@ -152,7 +243,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = 128
+//?
 //? run: "hub-00100-loc-abs"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 67
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -161,7 +256,11 @@
 //? post: cog[*].reg[result] == 0xabc80
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
+//?
 //? run: "hub-00100-loc-rel-minus128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 67
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -171,7 +270,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = -128
+//?
 //? run: "hub-00100-loc-rel0"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 67
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -181,7 +284,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = 0
+//?
 //? run: "hub-00100-loc-rel128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 67
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -191,7 +298,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = 128
+//?
 //? run: "hub-001f0-loc-abs"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -200,7 +311,11 @@
 //? post: cog[*].reg[result] == 0xabc80
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
+//?
 //? run: "hub-001f0-loc-rel-minus128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -210,7 +325,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = -128
+//?
 //? run: "hub-001f0-loc-rel0"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -220,7 +339,11 @@
 //? post: cog[*].reg[observed_pc] == 0x0
 //? post: cog[*].reg[landed] == 0x3
 //? const: relative_offset = 0
+//?
 //? run: "hub-001f0-loc-rel128"
+//? macro: setq set SETQ probe_pc / 4 - 1
+//? macro: rdlong set RDLONG register(256), aug(hubaddr(hub_prefix))
+//? macro: wrlong set WRLONG register(256), 0
 //? issues: pc_domain = 127
 //? const: domain = 0
 //? const: probe_pc = 496
@@ -249,30 +372,20 @@ setup:
                 MOV     probe_address,                  aug(hubaddr(probe_table) + form * 4)
 .if domain == 0
 // Copy an explicitly unrolled NOP prefix, then wrap a hub FIFO through $FFFFC into low hub RAM.
-.if probe_pc > 0
-                SETQ    probe_pc / 4 - 1
-                RDLONG  register(256),                  aug(hubaddr(hub_prefix))
-                SETQ    probe_pc / 4 - 1
-                WRLONG  register(256),                  0
-.endif
+                {{ setq }}
+                {{ rdlong }}
+                {{ setq }}
+                {{ wrlong }}
                 RDLONG  word,                           probe_address
                 WRLONG  word,                           aug(probe_pc)
                 WRLONG  fallthrough_word,               aug(probe_pc + 4)
                 WRLONG  0,                              aug(0x7fffc)
-.elif   domain == 1
+.elif domain == 1
 // The canceled native MOVs select the physical source of each retained logical overflow PC.
-.if probe_pc >= 0x401
-                MOV     register(1),                    selector_2
-.endif
-.if probe_pc >= 0x402
-                MOV     register(2),                    selector_3
-.endif
-.if probe_pc >= 0x403
-                MOV     register(3),                    selector_4
-.endif
-.if probe_pc >= 0x404
-                MOV     register(4),                    selector_5
-.endif
+                {{ mov }}
+                {{ mov_2 }}
+                {{ mov_3 }}
+                {{ mov_4 }}
                 RDLONG  word,                           probe_address
                 MOV     register(probe_pc - 0x400 + 1), word
                 MOV     register(0),                    exit_word
@@ -337,7 +450,7 @@ var fallthrough_target:
 .if domain == 0
 var entry_target:
                 LONG    0xffffc
-.elif   domain == 1
+.elif domain == 1
 var entry_target:
                 LONG    0x3ff
 .else

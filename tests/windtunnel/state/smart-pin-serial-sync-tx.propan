@@ -2,9 +2,11 @@
 //? issues: pin_buffer_overwrite = 0
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//? macro: wypin required
+//?
 //? run: "pll0-mode3-write0"
+//? macro: wypin set
 //? const: mode = 3
-//? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000001
@@ -28,10 +30,11 @@
 //? post: cog[*].reg[result13] == 0x02468acf
 //? post: cog[*].reg[result14] == 0x02468acf
 //? post: cog[*].reg[result15] == 0x02468acf
+//?
 //? run: "pll0-mode3-write1"
+//? macro: wypin set WYPIN aug(0x76543210), 4
 //? issues: pin_buffer_overwrite = 1
 //? const: mode = 3
-//? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000001
@@ -55,9 +58,10 @@
 //? post: cog[*].reg[result13] == 0x0eca8642
 //? post: cog[*].reg[result14] == 0x0eca8642
 //? post: cog[*].reg[result15] == 0x0eca8642
+//?
 //? run: "pll0-mode35-write0"
+//? macro: wypin set
 //? const: mode = 35
-//? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000000
@@ -81,9 +85,10 @@
 //? post: cog[*].reg[result13] == 0x02468acf
 //? post: cog[*].reg[result14] == 0x02468acf
 //? post: cog[*].reg[result15] == 0x02468acf
+//?
 //? run: "pll0-mode35-write1"
+//? macro: wypin set WYPIN aug(0x76543210), 4
 //? const: mode = 35
-//? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000000
@@ -107,9 +112,10 @@
 //? post: cog[*].reg[result13] == 0x0eca8642
 //? post: cog[*].reg[result14] == 0x0eca8642
 //? post: cog[*].reg[result15] == 0x0eca8642
+//?
 //? run: "pll0-mode7-write0"
+//? macro: wypin set
 //? const: mode = 7
-//? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000001
@@ -133,10 +139,11 @@
 //? post: cog[*].reg[result13] == 0xdf13579b
 //? post: cog[*].reg[result14] == 0xdf13579b
 //? post: cog[*].reg[result15] == 0xf02468ac
+//?
 //? run: "pll0-mode7-write1"
+//? macro: wypin set WYPIN aug(0x76543210), 4
 //? issues: pin_buffer_overwrite = 1
 //? const: mode = 7
-//? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000001
@@ -160,9 +167,10 @@
 //? post: cog[*].reg[result13] == 0xdf13579b
 //? post: cog[*].reg[result14] == 0xdf13579b
 //? post: cog[*].reg[result15] == 0x20eca864
+//?
 //? run: "pll0-mode39-write0"
+//? macro: wypin set
 //? const: mode = 39
-//? const: write = 0
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000000
@@ -186,9 +194,10 @@
 //? post: cog[*].reg[result13] == 0xf02468ac
 //? post: cog[*].reg[result14] == 0xf02468ac
 //? post: cog[*].reg[result15] == 0xf02468ac
+//?
 //? run: "pll0-mode39-write1"
+//? macro: wypin set WYPIN aug(0x76543210), 4
 //? const: mode = 39
-//? const: write = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[updated_output] == 0x00000000
@@ -243,9 +252,7 @@
                 DRVL    5
                 WAITX   8
 
-.if write
-                WYPIN   aug(0x76543210),                        4
-.endif
+                {{ wypin }}
 
                 // Clock one bit, observe the settled output, and acknowledge any buffer transfer.
                 DRVH    5

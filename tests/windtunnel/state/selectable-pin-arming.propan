@@ -2,326 +2,391 @@
 //? timeout-ms: 1000
 //? max-cycles: 100000
 //? post: cog[*].reg[failures] == 0
+//? macro: event_tracker required
+//?
 //? run: "cog0-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog0-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog0-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog0-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog0-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog0-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog0-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog0-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
+//?
 //? run: "cog1-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog1-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog1-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog1-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog1-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog1-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog1-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog1-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 1
 //? const: probe_writer = 0
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
+//?
 //? run: "cog2-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog2-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog2-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog2-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog2-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog2-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog2-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog2-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 2
 //? const: probe_writer = 3
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
+//?
 //? run: "cog3-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog3-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog3-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog3-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog3-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog3-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog3-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog3-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
+//?
 //? run: "cog4-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog4-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog4-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog4-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog4-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog4-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog4-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog4-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 4
 //? const: probe_writer = 5
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
+//?
 //? run: "cog5-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog5-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog5-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog5-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog5-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog5-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog5-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog5-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 5
 //? const: probe_writer = 4
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
+//?
 //? run: "cog6-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog6-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog6-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog6-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog6-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog6-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog6-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog6-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 6
 //? const: probe_writer = 7
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
+//?
 //? run: "cog7-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
-//? const: probe_tracker = 1
+//?
 //? run: "cog7-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
-//? const: probe_tracker = 2
+//?
 //? run: "cog7-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
-//? const: probe_tracker = 3
+//?
 //? run: "cog7-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
-//? const: probe_tracker = 4
+//?
 //? run: "cog7-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
-//? const: probe_tracker = 1
+//?
 //? run: "cog7-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
-//? const: probe_tracker = 2
+//?
 //? run: "cog7-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
-//? const: probe_tracker = 3
+//?
 //? run: "cog7-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
-//? const: probe_tracker = 4
 
                 // Hold two opposite input levels with a companion cog. Only sensor arming timing is measured.
                 MOV     PTRA,           aug(hubaddr(mailbox))
@@ -339,216 +404,51 @@ level_loop:
                 WRLONG  command,    PTRA
                 CALL    await_ack
 // Clear inherited/previous notifications before starting from a quiet LUT source.
-.if probe_tracker == 1
-                SETSE1  0
-.endif
-.if probe_tracker == 2
-                SETSE2  0
-.endif
-.if probe_tracker == 3
-                SETSE3  0
-.endif
-.if probe_tracker == 4
-                SETSE4  0
-.endif
+                SETSE{{ event_tracker }}    0
                 WAITX   64
-.if probe_tracker == 1
-                POLLSE1
-.endif
-.if probe_tracker == 2
-                POLLSE2
-.endif
-.if probe_tracker == 3
-                POLLSE3
-.endif
-.if probe_tracker == 4
-                POLLSE4
-.endif
+                POLLSE{{ event_tracker }}
                 MOV     selector,   (0x100 | probe_pin)
                 TEST    command,    1                           :wz
     if(!Z)      OR      selector,   0x80
 // Configuring a matching level does not satisfy the immediately following poll.
-.if probe_tracker == 1
-                SETSE1  selector
-.endif
-.if probe_tracker == 2
-                SETSE2  selector
-.endif
-.if probe_tracker == 3
-                SETSE3  selector
-.endif
-.if probe_tracker == 4
-                SETSE4  selector
-.endif
-.if probe_tracker == 1
-                POLLSE1                                         :wcz
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wcz
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wcz
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wcz
-.endif
+                SETSE{{ event_tracker }}    selector
+                POLLSE{{ event_tracker }}   :wcz
     if(C)       ADD     failures,   1
     if(Z)       ADD     failures,   1
                 // Once the sensor notification arrives, held levels reassert after consumption.
                 WAITX   64
-.if probe_tracker == 1
-                POLLSE1                                         :wcz
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wcz
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wcz
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wcz
-.endif
+                POLLSE{{ event_tracker }}   :wcz
     if(!C)      ADD     failures,   1
     if(!Z)      ADD     failures,   1
-.if probe_tracker == 1
-                POLLSE1                                         :wcz
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wcz
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wcz
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wcz
-.endif
+                POLLSE{{ event_tracker }}   :wcz
     if(!C)      ADD     failures,   1
     if(!Z)      ADD     failures,   1
                 // Switching away from an asserted level clears the latch, but an old sample still arrives.
                 MOV     selector,   (0x40 | probe_pin)
                 TEST    command,    1                           :wz
     if(!Z)      MOV     selector,   (0x80 | probe_pin)
-.if probe_tracker == 1
-                SETSE1  selector
-.endif
-.if probe_tracker == 2
-                SETSE2  selector
-.endif
-.if probe_tracker == 3
-                SETSE3  selector
-.endif
-.if probe_tracker == 4
-                SETSE4  selector
-.endif
+                SETSE{{ event_tracker }}    selector
                 WAITX   64
-.if probe_tracker == 1
-                POLLSE1                                         :wcz
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wcz
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wcz
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wcz
-.endif
+                POLLSE{{ event_tracker }}   :wcz
     if(!C)      ADD     failures,   1
     if(!Z)      ADD     failures,   1
-.if probe_tracker == 1
-                POLLSE1                                         :wcz
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wcz
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wcz
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wcz
-.endif
+                POLLSE{{ event_tracker }}   :wcz
     if(C)       ADD     failures,   1
     if(Z)       ADD     failures,   1
 // Rearming an edge or selecting another stable input must not invent a transition.
-.if probe_tracker == 1
-                SETSE1  selector
-.endif
-.if probe_tracker == 2
-                SETSE2  selector
-.endif
-.if probe_tracker == 3
-                SETSE3  selector
-.endif
-.if probe_tracker == 4
-                SETSE4  selector
-.endif
+                SETSE{{ event_tracker }}    selector
                 WAITX   64
-.if probe_tracker == 1
-                POLLSE1                                         :wc
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wc
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wc
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wc
-.endif
+                POLLSE{{ event_tracker }}   :wc
     if(C)       ADD     failures,   1
                 MOV     selector,   (0x40 | (probe_pin + 1))
-.if probe_tracker == 1
-                SETSE1  selector
-.endif
-.if probe_tracker == 2
-                SETSE2  selector
-.endif
-.if probe_tracker == 3
-                SETSE3  selector
-.endif
-.if probe_tracker == 4
-                SETSE4  selector
-.endif
+                SETSE{{ event_tracker }}    selector
                 WAITX   64
-.if probe_tracker == 1
-                POLLSE1                                         :wc
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wc
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wc
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wc
-.endif
+                POLLSE{{ event_tracker }}   :wc
     if(C)       ADD     failures,   1
                 MOV     selector,   (0x80 | (probe_pin + 1))
-.if probe_tracker == 1
-                SETSE1  selector
-.endif
-.if probe_tracker == 2
-                SETSE2  selector
-.endif
-.if probe_tracker == 3
-                SETSE3  selector
-.endif
-.if probe_tracker == 4
-                SETSE4  selector
-.endif
+                SETSE{{ event_tracker }}    selector
                 WAITX   64
-.if probe_tracker == 1
-                POLLSE1                                         :wc
-.endif
-.if probe_tracker == 2
-                POLLSE2                                         :wc
-.endif
-.if probe_tracker == 3
-                POLLSE3                                         :wc
-.endif
-.if probe_tracker == 4
-                POLLSE4                                         :wc
-.endif
+                POLLSE{{ event_tracker }}   :wc
     if(C)       ADD     failures,   1
 
                 ADD     command,    1

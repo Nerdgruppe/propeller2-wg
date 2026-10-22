@@ -2,8 +2,9 @@
 
 A `.propan` fixture starts with `//? WINDTUNNEL CHECK LIST`, followed by contiguous
 `//?` lines. Leading spaces or tabs are accepted, including the indentation
-produced by `propan --pretty-print`. The first ordinary source line ends the
-checklist. Run the suite with
+produced by `propan --pretty-print` for placeholder-free files. Empty `//?`
+lines are allowed and one is required immediately before every `run:`, including
+the first. An ordinary blank source line ends the checklist. Run the suite with
 `zig-0.16.0 build install test-windtunnel`, or select files with
 `zig-out/bin/windtunnel-tests FILE.propan ...`.
 
@@ -64,11 +65,14 @@ an extra run when explicit sections exist.
 //? timeout-ms: 1000
 //? pre: sym[input] = u32 [ 10 ]
 //? post: cog[0].c == false
+//?
 //? run: "common input"
 //? post: cog[0].reg[result] == 11
+//?
 //? run:
 //? pre: sym[input] = u32 [ 20 ]
 //? post: cog[0].reg[result] == 21
+//?
 //? run: "common input restored"
 //? post: cog[0].reg[result] == 11
 
@@ -85,8 +89,10 @@ A matrix can share its source and assertions while varying assembly-time values:
 //? WINDTUNNEL CHECK LIST
 //? const: size = 4
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "cog 0, long"
 //? cog: 0
+//?
 //? run: "cog 7, byte"
 //? cog: 7
 //? const: size = 1
@@ -130,6 +136,102 @@ A local seed for C, Z, or Q replaces the common seed for that field. Repeated
 seeds for a field within the effective section are errors. Common and local
 postconditions are all checked. `sym[...]` is only a precondition target;
 `cog[N].reg[...]` and `hub[...]` are postcondition targets.
+
+## Single-line macros
+
+Macro declarations state whether a value is fixed, has a meaningful default,
+or must be supplied by each run. Global scope is the checklist section before
+the first `run:`. All run-local assignments require a global declaration.
+
+| Directive | Scope | Meaning |
+| --- | --- | --- |
+| `macro: name set text` | Global | Fixed value; runs cannot assign this macro |
+| `macro: name default text` | Global | Baseline value used unless a run overrides it |
+| `macro: name required` | Global | Every explicit run must set a value |
+| `macro: name override text` | Run | Replace a globally declared `default` for this run |
+| `macro: name set text` | Run | Supply a globally declared `required` value for this run |
+
+`required` takes no replacement text. All value-bearing actions accept an empty
+body, including a required macro's run-local `set`. An empty `override` suppresses
+a nonempty default. `default` and `required` are forbidden inside runs;
+`override` is forbidden globally. A global `set` cannot be reassigned, even to the
+same value. Duplicate declarations or assignments within a section are errors.
+A fixture with only an implicit run can use fixed values and defaults, but cannot
+satisfy a `required` declaration. Required values are checked even if unused.
+
+Use `required` for an instruction or operand that selects the test case, rather
+than assigning one arbitrary case as the global default. Use it as well when
+most runs would override a declaration. Use `default` for a meaningful baseline,
+such as optional setup omitted by default or common initialization with a few
+explicit exceptions. A fixed shared value uses global `set`.
+
+Replacement text substitutes literally in checklist values and assembly,
+including instruction names and operands. Both `{{name}}` and `{{ name }}` are
+accepted. Names use ASCII letters, digits, and underscores, starting with a letter
+or underscore, and are case-sensitive. Declarations and run assignments are
+collected before expansion, so they can follow their uses within their section.
+Overrides never carry into the next run.
+
+```propan
+//? WINDTUNNEL CHECK LIST
+//? macro: operation required
+//? macro: expected required
+//? macro: optional default
+//? post: cog[*].reg[result] == {{ expected }}
+//?
+//? run: "move"
+//? macro: operation set MOV result, 7
+//? macro: expected set 7
+//?
+//? run: "add"
+//? macro: operation set ADD result, 9
+//? macro: expected set 9
+//? macro: optional override NOP
+
+                {{ operation }}
+                {{optional}}
+                JMP     nrel(_end)
+var result:     LONG    0
+```
+
+Expansion performs one pass. Bodies cannot reference other macros: write the
+replacement explicitly in each definition instead of building nested templates.
+Undefined macros, malformed placeholders, and invalid names are errors.
+Directive names and section boundaries are literal; values, including quoted run
+names, expand before their normal validation. Expanded explicit run names must
+remain nonempty and unique. Macro bodies are single lines, with no escape decoding
+or multiline syntax; existing checklist string escapes retain their usual meaning.
+
+Use macros to select instructions, operands, conditions, and effects directly
+instead of branching on numeric selectors with `.if`. Use `const:` for numeric
+assembler expressions and layout. Keep structural conditionals where distinct
+execution segments, data tables, or substantial control flow are clearer.
+
+The Windtunnel runner owns preprocessing. Propan receives expanded source through
+its existing APIs and remains unchanged. `propan --pretty-print` rejects
+unexpanded assembly placeholders; maintain template sources in the established
+assembly style and use the formatter for placeholder-free files. Imported helper
+files use ordinary Propan imports; macro substitution applies to the fixture
+source, not to helper file contents. Relative imports resolve from the fixture's
+original path for both simulator and oracle images.
+
+Each run retains the original physical line numbering. Preparation and expansion
+contribute to fixture timing. Evidence directories contain `fixture.propan`
+(original input) and `expanded-fixture.propan` (the selected run's materialized
+source), together with the existing binaries and run metadata.
+
+## Instruction words in fixtures
+
+Write ordinary instructions using native assembly, including labeled instruction
+words used for self-modifying code. Avoid constructing opcodes with `LONG`, masks,
+and shifts when a mnemonic expresses the same instruction.
+
+Retain raw words only for an exact-bit probe or an encoding/storage location that
+native assembly cannot express. Explain the instruction, relevant fields, and
+reason beside the literal, or beside the template using a raw macro replacement.
+Current examples include unaligned branch displacement fields, a relocated A20
+CALLD probe, and instruction words supplying physical I/O-register slots.
+This is a documented review rule; the runner does not reject raw words by pattern.
 
 ## Values and observations
 

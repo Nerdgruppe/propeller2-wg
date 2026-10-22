@@ -5,9 +5,11 @@
 //? max-cycles: 1_000_000
 //? timeout-ms: 1000
 //? baudrate: 2000000
+//?
 //? run: "binary terminal packet"
 //? stdin: hex [00 80 ff]
 //? stdout: "!\x00\x80\xff"
+//?
 //? run: "text terminal packet"
 //? stdin: "ABC"
 //? stdout: "!ABC"
@@ -56,3 +58,4 @@ write_byte:
 var first:      LONG    0
 var second:     LONG    0
 var third:      LONG    0
+

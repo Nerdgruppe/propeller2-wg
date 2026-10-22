@@ -1,160 +1,192 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "target=0 alignment=0"
 //? cog: 7
 //? const: probe_observer = 7
 //? const: probe_target = 0
 //? const: probe_alignment = 0
+//?
 //? run: "target=0 alignment=1"
 //? cog: 7
 //? const: probe_observer = 7
 //? const: probe_target = 0
 //? const: probe_alignment = 1
+//?
 //? run: "target=0 alignment=2"
 //? cog: 7
 //? const: probe_observer = 7
 //? const: probe_target = 0
 //? const: probe_alignment = 2
+//?
 //? run: "target=0 alignment=3"
 //? cog: 7
 //? const: probe_observer = 7
 //? const: probe_target = 0
 //? const: probe_alignment = 3
+//?
 //? run: "target=1 alignment=0"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 1
 //? const: probe_alignment = 0
+//?
 //? run: "target=1 alignment=1"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 1
 //? const: probe_alignment = 1
+//?
 //? run: "target=1 alignment=2"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 1
 //? const: probe_alignment = 2
+//?
 //? run: "target=1 alignment=3"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 1
 //? const: probe_alignment = 3
+//?
 //? run: "target=2 alignment=0"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 2
 //? const: probe_alignment = 0
+//?
 //? run: "target=2 alignment=1"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 2
 //? const: probe_alignment = 1
+//?
 //? run: "target=2 alignment=2"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 2
 //? const: probe_alignment = 2
+//?
 //? run: "target=2 alignment=3"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 2
 //? const: probe_alignment = 3
+//?
 //? run: "target=3 alignment=0"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 3
 //? const: probe_alignment = 0
+//?
 //? run: "target=3 alignment=1"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 3
 //? const: probe_alignment = 1
+//?
 //? run: "target=3 alignment=2"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 3
 //? const: probe_alignment = 2
+//?
 //? run: "target=3 alignment=3"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 3
 //? const: probe_alignment = 3
+//?
 //? run: "target=4 alignment=0"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 4
 //? const: probe_alignment = 0
+//?
 //? run: "target=4 alignment=1"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 4
 //? const: probe_alignment = 1
+//?
 //? run: "target=4 alignment=2"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 4
 //? const: probe_alignment = 2
+//?
 //? run: "target=4 alignment=3"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 4
 //? const: probe_alignment = 3
+//?
 //? run: "target=5 alignment=0"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 5
 //? const: probe_alignment = 0
+//?
 //? run: "target=5 alignment=1"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 5
 //? const: probe_alignment = 1
+//?
 //? run: "target=5 alignment=2"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 5
 //? const: probe_alignment = 2
+//?
 //? run: "target=5 alignment=3"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 5
 //? const: probe_alignment = 3
+//?
 //? run: "target=6 alignment=0"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 6
 //? const: probe_alignment = 0
+//?
 //? run: "target=6 alignment=1"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 6
 //? const: probe_alignment = 1
+//?
 //? run: "target=6 alignment=2"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 6
 //? const: probe_alignment = 2
+//?
 //? run: "target=6 alignment=3"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 6
 //? const: probe_alignment = 3
+//?
 //? run: "target=7 alignment=0"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 7
 //? const: probe_alignment = 0
+//?
 //? run: "target=7 alignment=1"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 7
 //? const: probe_alignment = 1
+//?
 //? run: "target=7 alignment=2"
 //? cog: 0
 //? const: probe_observer = 0
 //? const: probe_target = 7
 //? const: probe_alignment = 2
+//?
 //? run: "target=7 alignment=3"
 //? cog: 0
 //? const: probe_observer = 0
@@ -373,3 +405,4 @@ hub7:
                 WRLONG  register(20),   PTRA
                 COGID   register(21)
                 COGSTOP register(21)
+

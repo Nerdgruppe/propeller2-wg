@@ -1,4 +1,5 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "mode70010000-count1-delay8"
 //? const: mode = 1879113728
 //? const: count = 1
@@ -6,6 +7,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count1-delay11"
 //? const: mode = 1879113728
 //? const: count = 1
@@ -13,6 +15,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count1-delay12"
 //? const: mode = 1879113728
 //? const: count = 1
@@ -20,6 +23,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count1-delay13"
 //? const: mode = 1879113728
 //? const: count = 1
@@ -27,6 +31,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count2-delay8"
 //? const: mode = 1879113728
 //? const: count = 2
@@ -34,6 +39,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 1
+//?
 //? run: "mode70010000-count2-delay11"
 //? const: mode = 1879113728
 //? const: count = 2
@@ -41,6 +47,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count2-delay12"
 //? const: mode = 1879113728
 //? const: count = 2
@@ -48,6 +55,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count2-delay13"
 //? const: mode = 1879113728
 //? const: count = 2
@@ -55,6 +63,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count3-delay8"
 //? const: mode = 1879113728
 //? const: count = 3
@@ -62,6 +71,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 1
+//?
 //? run: "mode70010000-count3-delay11"
 //? const: mode = 1879113728
 //? const: count = 3
@@ -69,6 +79,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count3-delay12"
 //? const: mode = 1879113728
 //? const: count = 3
@@ -76,6 +87,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "mode70010000-count3-delay13"
 //? const: mode = 1879113728
 //? const: count = 3
@@ -83,6 +95,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 1
+//?
 //? run: "modef0070000-count1-delay8"
 //? const: mode = 4026990592
 //? const: count = 1
@@ -90,6 +103,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count1-delay11"
 //? const: mode = 4026990592
 //? const: count = 1
@@ -97,6 +111,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count1-delay12"
 //? const: mode = 4026990592
 //? const: count = 1
@@ -104,6 +119,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count1-delay13"
 //? const: mode = 4026990592
 //? const: count = 1
@@ -111,6 +127,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count2-delay8"
 //? const: mode = 4026990592
 //? const: count = 2
@@ -118,6 +135,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 1
+//?
 //? run: "modef0070000-count2-delay11"
 //? const: mode = 4026990592
 //? const: count = 2
@@ -125,6 +143,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count2-delay12"
 //? const: mode = 4026990592
 //? const: count = 2
@@ -132,6 +151,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count2-delay13"
 //? const: mode = 4026990592
 //? const: count = 2
@@ -139,6 +159,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count3-delay8"
 //? const: mode = 4026990592
 //? const: count = 3
@@ -146,6 +167,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 0
 //? post: cog[0].reg[third] == 1
+//?
 //? run: "modef0070000-count3-delay11"
 //? const: mode = 4026990592
 //? const: count = 3
@@ -153,6 +175,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count3-delay12"
 //? const: mode = 4026990592
 //? const: count = 3
@@ -160,6 +183,7 @@
 //? post: cog[0].reg[first] == 1
 //? post: cog[0].reg[second] == 1
 //? post: cog[0].reg[third] == 0
+//?
 //? run: "modef0070000-count3-delay13"
 //? const: mode = 4026990592
 //? const: count = 3

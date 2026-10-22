@@ -1,9 +1,13 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//? macro: wypin required
+//? macro: wypin_2 required
+//?
 //? run: "pll0-mode28-prime0"
+//? macro: wypin set
+//? macro: wypin_2 set WYPIN 0xa5, 4
 //? const: mode = 28
-//? const: prime = 0
 //? post: cog[*].reg[initial_output] == 0x00000000
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[initial_busy] == 0x00000000
@@ -14,9 +18,11 @@
 //? post: cog[*].reg[restarted_result] == 0xfe000001
 //? post: cog[*].reg[restarted_busy] == 0x00000001
 //? post: cog[*].reg[count] == 0x00000000
+//?
 //? run: "pll0-mode28-prime1"
+//? macro: wypin set WYPIN 0xa5, 4
+//? macro: wypin_2 set
 //? const: mode = 28
-//? const: prime = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[initial_busy] == 0x00000000
@@ -27,9 +33,11 @@
 //? post: cog[*].reg[restarted_result] == 0xfe000001
 //? post: cog[*].reg[restarted_busy] == 0x00000001
 //? post: cog[*].reg[count] == 0x00000000
+//?
 //? run: "pll0-mode30-prime0"
+//? macro: wypin set
+//? macro: wypin_2 set WYPIN 0xa5, 4
 //? const: mode = 30
-//? const: prime = 0
 //? post: cog[*].reg[initial_output] == 0x00000000
 //? post: cog[*].reg[initial_result] == 0x000000a5
 //? post: cog[*].reg[initial_busy] == 0x00000001
@@ -40,9 +48,11 @@
 //? post: cog[*].reg[restarted_result] == 0xc0000029
 //? post: cog[*].reg[restarted_busy] == 0x00000000
 //? post: cog[*].reg[count] == 0x00000000
+//?
 //? run: "pll0-mode30-prime1"
+//? macro: wypin set WYPIN 0xa5, 4
+//? macro: wypin_2 set
 //? const: mode = 30
-//? const: prime = 1
 //? post: cog[*].reg[initial_output] == 0x00000001
 //? post: cog[*].reg[initial_result] == 0x00000000
 //? post: cog[*].reg[initial_busy] == 0x00000000
@@ -62,13 +72,9 @@
                 WRPIN   aug(0x71000000 | P_TT_01 | (mode << 1)),    4
                 WRPIN   aug(0x60000000),                            6
                 WXPIN   aug((32 << 16) | 7),                        4
-.if prime
-                WYPIN   0xa5,                                       4
-.endif
+                {{ wypin }}
                 DIRH    4
-.if prime == 0
-                WYPIN   0xa5,                                       4
-.endif
+                {{ wypin_2 }}
                 WAITX   32
                 TESTP   6                                               :wc
                 WRC     initial_output

@@ -2,27 +2,35 @@
 //? timeout-ms: 5000
 //? max-cycles: 2000000
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "cog0"
 //? cog: 0
 //? const: probe_cog = 0
+//?
 //? run: "cog1"
 //? cog: 1
 //? const: probe_cog = 1
+//?
 //? run: "cog2"
 //? cog: 2
 //? const: probe_cog = 2
+//?
 //? run: "cog3"
 //? cog: 3
 //? const: probe_cog = 3
+//?
 //? run: "cog4"
 //? cog: 4
 //? const: probe_cog = 4
+//?
 //? run: "cog5"
 //? cog: 5
 //? const: probe_cog = 5
+//?
 //? run: "cog6"
 //? cog: 6
 //? const: probe_cog = 6
+//?
 //? run: "cog7"
 //? cog: 7
 //? const: probe_cog = 7

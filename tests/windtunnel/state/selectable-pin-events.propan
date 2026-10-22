@@ -2,242 +2,339 @@
 //? timeout-ms: 2000
 //? max-cycles: 200000
 //? post: cog[*].reg[failures] == 0
+//? macro: event_tracker required
+//?
 //? run: "cog0-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
 //? const: probe_tracker = 1
+//?
 //? run: "cog0-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
 //? const: probe_tracker = 2
+//?
 //? run: "cog0-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
 //? const: probe_tracker = 3
+//?
 //? run: "cog0-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 0
 //? const: probe_tracker = 4
+//?
 //? run: "cog0-pin31-se1"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 31
 //? const: probe_tracker = 1
+//?
 //? run: "cog0-pin31-se2"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 31
 //? const: probe_tracker = 2
+//?
 //? run: "cog0-pin31-se3"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 31
 //? const: probe_tracker = 3
+//?
 //? run: "cog0-pin31-se4"
+//? macro: event_tracker set 4
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 31
 //? const: probe_tracker = 4
+//?
 //? run: "cog0-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
 //? const: probe_tracker = 1
+//?
 //? run: "cog0-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
 //? const: probe_tracker = 2
+//?
 //? run: "cog0-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
 //? const: probe_tracker = 3
+//?
 //? run: "cog0-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 32
 //? const: probe_tracker = 4
+//?
 //? run: "cog0-pin59-se1"
+//? macro: event_tracker set 1
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 59
 //? const: probe_tracker = 1
+//?
 //? run: "cog0-pin59-se2"
+//? macro: event_tracker set 2
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 59
 //? const: probe_tracker = 2
+//?
 //? run: "cog0-pin59-se3"
+//? macro: event_tracker set 3
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 59
 //? const: probe_tracker = 3
+//?
 //? run: "cog0-pin59-se4"
+//? macro: event_tracker set 4
 //? cog: 0
 //? const: probe_writer = 1
 //? const: probe_pin = 59
 //? const: probe_tracker = 4
+//?
 //? run: "cog3-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
 //? const: probe_tracker = 1
+//?
 //? run: "cog3-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
 //? const: probe_tracker = 2
+//?
 //? run: "cog3-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
 //? const: probe_tracker = 3
+//?
 //? run: "cog3-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 0
 //? const: probe_tracker = 4
+//?
 //? run: "cog3-pin31-se1"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 31
 //? const: probe_tracker = 1
+//?
 //? run: "cog3-pin31-se2"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 31
 //? const: probe_tracker = 2
+//?
 //? run: "cog3-pin31-se3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 31
 //? const: probe_tracker = 3
+//?
 //? run: "cog3-pin31-se4"
+//? macro: event_tracker set 4
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 31
 //? const: probe_tracker = 4
+//?
 //? run: "cog3-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
 //? const: probe_tracker = 1
+//?
 //? run: "cog3-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
 //? const: probe_tracker = 2
+//?
 //? run: "cog3-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
 //? const: probe_tracker = 3
+//?
 //? run: "cog3-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 32
 //? const: probe_tracker = 4
+//?
 //? run: "cog3-pin59-se1"
+//? macro: event_tracker set 1
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 59
 //? const: probe_tracker = 1
+//?
 //? run: "cog3-pin59-se2"
+//? macro: event_tracker set 2
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 59
 //? const: probe_tracker = 2
+//?
 //? run: "cog3-pin59-se3"
+//? macro: event_tracker set 3
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 59
 //? const: probe_tracker = 3
+//?
 //? run: "cog3-pin59-se4"
+//? macro: event_tracker set 4
 //? cog: 3
 //? const: probe_writer = 2
 //? const: probe_pin = 59
 //? const: probe_tracker = 4
+//?
 //? run: "cog7-pin0-se1"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
 //? const: probe_tracker = 1
+//?
 //? run: "cog7-pin0-se2"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
 //? const: probe_tracker = 2
+//?
 //? run: "cog7-pin0-se3"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
 //? const: probe_tracker = 3
+//?
 //? run: "cog7-pin0-se4"
+//? macro: event_tracker set 4
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 0
 //? const: probe_tracker = 4
+//?
 //? run: "cog7-pin31-se1"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 31
 //? const: probe_tracker = 1
+//?
 //? run: "cog7-pin31-se2"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 31
 //? const: probe_tracker = 2
+//?
 //? run: "cog7-pin31-se3"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 31
 //? const: probe_tracker = 3
+//?
 //? run: "cog7-pin31-se4"
+//? macro: event_tracker set 4
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 31
 //? const: probe_tracker = 4
+//?
 //? run: "cog7-pin32-se1"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
 //? const: probe_tracker = 1
+//?
 //? run: "cog7-pin32-se2"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
 //? const: probe_tracker = 2
+//?
 //? run: "cog7-pin32-se3"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
 //? const: probe_tracker = 3
+//?
 //? run: "cog7-pin32-se4"
+//? macro: event_tracker set 4
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 32
 //? const: probe_tracker = 4
+//?
 //? run: "cog7-pin59-se1"
+//? macro: event_tracker set 1
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 59
 //? const: probe_tracker = 1
+//?
 //? run: "cog7-pin59-se2"
+//? macro: event_tracker set 2
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 59
 //? const: probe_tracker = 2
+//?
 //? run: "cog7-pin59-se3"
+//? macro: event_tracker set 3
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 59
 //? const: probe_tracker = 3
+//?
 //? run: "cog7-pin59-se4"
+//? macro: event_tracker set 4
 //? cog: 7
 //? const: probe_writer = 6
 //? const: probe_pin = 59
@@ -432,47 +529,14 @@ latch_event:
                 RET
 // Configure or deselect only the tracker under test.
 configure:
-.if probe_tracker == 1
-                SETSE1  selector
-.endif
-.if probe_tracker == 2
-                SETSE2  selector
-.endif
-.if probe_tracker == 3
-                SETSE3  selector
-.endif
-.if probe_tracker == 4
-                SETSE4  selector
-.endif
+                SETSE{{ event_tracker }}    selector
                 RET
 disable_sensor:
-.if probe_tracker == 1
-                SETSE1  0
-.endif
-.if probe_tracker == 2
-                SETSE2  0
-.endif
-.if probe_tracker == 3
-                SETSE3  0
-.endif
-.if probe_tracker == 4
-                SETSE4  0
-.endif
+                SETSE{{ event_tracker }}    0
                 RET
 // Poll the selected latch and capture C before returning.
 poll_sensor:
-.if probe_tracker == 1
-                POLLSE1         :wc
-.endif
-.if probe_tracker == 2
-                POLLSE2         :wc
-.endif
-.if probe_tracker == 3
-                POLLSE3         :wc
-.endif
-.if probe_tracker == 4
-                POLLSE4         :wc
-.endif
+                POLLSE{{ event_tracker }}   :wc
                 WRC     value
                 RET
 // Bound both the timeout and delayed-event wakeup tests.
@@ -480,48 +544,15 @@ wait_sensor:
                 GETCT   timer
                 ADD     timer,  aug(4096)
                 SETQ    timer
-.if probe_tracker == 1
-                WAITSE1                     :wcz
-.endif
-.if probe_tracker == 2
-                WAITSE2                     :wcz
-.endif
-.if probe_tracker == 3
-                WAITSE3                     :wcz
-.endif
-.if probe_tracker == 4
-                WAITSE4                     :wcz
-.endif
+                WAITSE{{ event_tracker }}   :wcz
                 RET
 // Capture taken/not-taken behavior for both event branch polarities.
 positive_branch:
-.if probe_tracker == 1
-                JSE1    branch_taken
-.endif
-.if probe_tracker == 2
-                JSE2    branch_taken
-.endif
-.if probe_tracker == 3
-                JSE3    branch_taken
-.endif
-.if probe_tracker == 4
-                JSE4    branch_taken
-.endif
+                JSE{{ event_tracker }}  branch_taken
                 MOV     value,  0
                 RET
 negative_branch:
-.if probe_tracker == 1
-                JNSE1   branch_taken
-.endif
-.if probe_tracker == 2
-                JNSE2   branch_taken
-.endif
-.if probe_tracker == 3
-                JNSE3   branch_taken
-.endif
-.if probe_tracker == 4
-                JNSE4   branch_taken
-.endif
+                JNSE{{ event_tracker }} branch_taken
 
                 MOV     value,  0
                 RET

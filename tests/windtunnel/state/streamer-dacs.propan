@@ -1,50 +1,66 @@
 //? WINDTUNNEL CHECK LIST
 //? oracle: off "DAC output state has no digital silicon readback"
+//?
 //? run: "DAC route 0"
 //? const: selector = 0
 //? post: cog[*].dacs == u8 [0x12 0x34 0x56 0x78]
+//?
 //? run: "DAC route 1"
 //? const: selector = 1
 //? post: cog[*].dacs == u8 [0x89 0x89 0x89 0x89]
+//?
 //? run: "DAC route 2"
 //? const: selector = 2
 //? post: cog[*].dacs == u8 [0x89 0x89 0x56 0x78]
+//?
 //? run: "DAC route 3"
 //? const: selector = 3
 //? post: cog[*].dacs == u8 [0x12 0x34 0x89 0x89]
+//?
 //? run: "DAC route 4"
 //? const: selector = 4
 //? post: cog[*].dacs == u8 [0x89 0x34 0x56 0x78]
+//?
 //? run: "DAC route 5"
 //? const: selector = 5
 //? post: cog[*].dacs == u8 [0x12 0x89 0x56 0x78]
+//?
 //? run: "DAC route 6"
 //? const: selector = 6
 //? post: cog[*].dacs == u8 [0x12 0x34 0x89 0x78]
+//?
 //? run: "DAC route 7"
 //? const: selector = 7
 //? post: cog[*].dacs == u8 [0x12 0x34 0x56 0x89]
+//?
 //? run: "DAC route 8"
 //? const: selector = 8
 //? post: cog[*].dacs == u8 [0x89 0x76 0x89 0x76]
+//?
 //? run: "DAC route 9"
 //? const: selector = 9
 //? post: cog[*].dacs == u8 [0x89 0x76 0x56 0x78]
+//?
 //? run: "DAC route 10"
 //? const: selector = 10
 //? post: cog[*].dacs == u8 [0x12 0x34 0x89 0x76]
+//?
 //? run: "DAC route 11"
 //? const: selector = 11
 //? post: cog[*].dacs == u8 [0x89 0xab 0x89 0xab]
+//?
 //? run: "DAC route 12"
 //? const: selector = 12
 //? post: cog[*].dacs == u8 [0x89 0xab 0x56 0x78]
+//?
 //? run: "DAC route 13"
 //? const: selector = 13
 //? post: cog[*].dacs == u8 [0x12 0x34 0x89 0xab]
+//?
 //? run: "DAC route 14"
 //? const: selector = 14
 //? post: cog[*].dacs == u8 [0x89 0x76 0xab 0x54]
+//?
 //? run: "DAC route 15"
 //? const: selector = 15
 //? post: cog[*].dacs == u8 [0x89 0xab 0xcd 0xef]

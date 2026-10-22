@@ -1,72 +1,87 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: outh required
+//?
 //? run: "x0-v0"
+//? macro: outh set
 //? const: x = 0
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x0-v1"
+//? macro: outh set OUTH 40
 //? const: x = 0
-//? const: level = 1
 //? post: cog[0].reg[value] == 2
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x1-v0"
+//? macro: outh set
 //? const: x = 1
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x1-v1"
+//? macro: outh set OUTH 40
 //? const: x = 1
-//? const: level = 1
 //? post: cog[0].reg[value] == 4
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x2-v0"
+//? macro: outh set
 //? const: x = 2
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x2-v1"
+//? macro: outh set OUTH 40
 //? const: x = 2
-//? const: level = 1
 //? post: cog[0].reg[value] == 8
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-v0"
+//? macro: outh set
 //? const: x = 3
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-v1"
+//? macro: outh set OUTH 40
 //? const: x = 3
-//? const: level = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-v0"
+//? macro: outh set
 //? const: x = 19
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-v1"
+//? macro: outh set OUTH 40
 //? const: x = 19
-//? const: level = 1
 //? post: cog[0].reg[value] == 468
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-v0"
+//? macro: outh set
 //? const: x = 35
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-v1"
+//? macro: outh set OUTH 40
 //? const: x = 35
-//? const: level = 1
 //? post: cog[0].reg[value] == 13476
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-v0"
+//? macro: outh set
 //? const: x = 51
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-v1"
+//? macro: outh set OUTH 40
 //? const: x = 51
-//? const: level = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flag] == 2
 
@@ -76,9 +91,7 @@
                 WRPIN   0,                  41
                 WXPIN   x,                  40
                 OUTL    aug(40 | (1 << 6))
-.if level
-                OUTH    40
-.endif
+                {{ outh }}
                 DIRH    aug(40 | (1 << 6))
                 MOV     count,              64
 sampling_loop:

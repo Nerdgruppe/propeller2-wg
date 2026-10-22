@@ -1,79 +1,95 @@
 //? WINDTUNNEL CHECK LIST
+//?
 //? run: "logic0-a0-b0"
 //? const: logic = 0
 //? const: a = 0
 //? const: b = 0
 //? post: cog[*].reg[result] == 0
+//?
 //? run: "logic0-a0-b1"
 //? const: logic = 0
 //? const: a = 0
 //? const: b = 1
 //? post: cog[*].reg[result] == 0
+//?
 //? run: "logic0-a1-b0"
 //? const: logic = 0
 //? const: a = 1
 //? const: b = 0
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic0-a1-b1"
 //? const: logic = 0
 //? const: a = 1
 //? const: b = 1
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic1-a0-b0"
 //? const: logic = 1
 //? const: a = 0
 //? const: b = 0
 //? post: cog[*].reg[result] == 0
+//?
 //? run: "logic1-a0-b1"
 //? const: logic = 1
 //? const: a = 0
 //? const: b = 1
 //? post: cog[*].reg[result] == 0
+//?
 //? run: "logic1-a1-b0"
 //? const: logic = 1
 //? const: a = 1
 //? const: b = 0
 //? post: cog[*].reg[result] == 0
+//?
 //? run: "logic1-a1-b1"
 //? const: logic = 1
 //? const: a = 1
 //? const: b = 1
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic2-a0-b0"
 //? const: logic = 2
 //? const: a = 0
 //? const: b = 0
 //? post: cog[*].reg[result] == 0
+//?
 //? run: "logic2-a0-b1"
 //? const: logic = 2
 //? const: a = 0
 //? const: b = 1
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic2-a1-b0"
 //? const: logic = 2
 //? const: a = 1
 //? const: b = 0
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic2-a1-b1"
 //? const: logic = 2
 //? const: a = 1
 //? const: b = 1
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic3-a0-b0"
 //? const: logic = 3
 //? const: a = 0
 //? const: b = 0
 //? post: cog[*].reg[result] == 0
+//?
 //? run: "logic3-a0-b1"
 //? const: logic = 3
 //? const: a = 0
 //? const: b = 1
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic3-a1-b0"
 //? const: logic = 3
 //? const: a = 1
 //? const: b = 0
 //? post: cog[*].reg[result] == 1
+//?
 //? run: "logic3-a1-b1"
 //? const: logic = 3
 //? const: a = 1
@@ -88,3 +104,4 @@
                 WRC     result
                 JMP     nrel(_end)
 var result:     LONG    0
+

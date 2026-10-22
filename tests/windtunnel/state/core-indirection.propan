@@ -94,7 +94,7 @@ var lanes:      LONG    0
 var bit_index:  LONG    3
 var bit_value:  LONG    0
 var instruction:
-                LONG    0xf6040009 | (cogaddr(executed) << 9)
+                MOV     executed,   9
 var executed:   LONG    0
 var cancelled:  LONG    123
 var index:      LONG    0

@@ -1,96 +1,112 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? max-cycles: 500000
+//?
 //? run: "pll0-y0-initial0-delay3"
 //? const: y = 0
 //? const: initial = 0
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000007
 //? post: cog[*].reg[second] == 0x00000008
+//?
 //? run: "pll0-y0-initial0-delay9"
 //? const: y = 0
 //? const: initial = 0
 //? const: delay = 9
 //? post: cog[*].reg[first] == 0x0000000d
 //? post: cog[*].reg[second] == 0x0000000e
+//?
 //? run: "pll0-y0-initial1-delay3"
 //? const: y = 0
 //? const: initial = 1
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000024
+//?
 //? run: "pll0-y0-initial1-delay9"
 //? const: y = 0
 //? const: initial = 1
 //? const: delay = 9
 //? post: cog[*].reg[first] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000024
+//?
 //? run: "pll0-y1-initial0-delay3"
 //? const: y = 1
 //? const: initial = 0
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000007
 //? post: cog[*].reg[second] == 0x00000008
+//?
 //? run: "pll0-y1-initial0-delay9"
 //? const: y = 1
 //? const: initial = 0
 //? const: delay = 9
 //? post: cog[*].reg[first] == 0x0000000d
 //? post: cog[*].reg[second] == 0x0000000e
+//?
 //? run: "pll0-y1-initial1-delay3"
 //? const: y = 1
 //? const: initial = 1
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000024
+//?
 //? run: "pll0-y1-initial1-delay9"
 //? const: y = 1
 //? const: initial = 1
 //? const: delay = 9
 //? post: cog[*].reg[first] == 0x00000000
 //? post: cog[*].reg[second] == 0x00000024
+//?
 //? run: "pll0-y2-initial0-delay3"
 //? const: y = 2
 //? const: initial = 0
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000007
 //? post: cog[*].reg[second] == 0x00000025
+//?
 //? run: "pll0-y2-initial0-delay9"
 //? const: y = 2
 //? const: initial = 0
 //? const: delay = 9
 //? post: cog[*].reg[first] == 0x0000000d
 //? post: cog[*].reg[second] == 0x00000025
+//?
 //? run: "pll0-y2-initial1-delay3"
 //? const: y = 2
 //? const: initial = 1
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000007
 //? post: cog[*].reg[second] == 0x00000025
+//?
 //? run: "pll0-y2-initial1-delay9"
 //? const: y = 2
 //? const: initial = 1
 //? const: delay = 9
 //? post: cog[*].reg[first] == 0x0000000d
 //? post: cog[*].reg[second] == 0x00000025
+//?
 //? run: "pll0-y3-initial0-delay3"
 //? const: y = 3
 //? const: initial = 0
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000007
 //? post: cog[*].reg[second] == 0x00000025
+//?
 //? run: "pll0-y3-initial0-delay9"
 //? const: y = 3
 //? const: initial = 0
 //? const: delay = 9
 //? post: cog[*].reg[first] == 0x0000000d
 //? post: cog[*].reg[second] == 0x00000025
+//?
 //? run: "pll0-y3-initial1-delay3"
 //? const: y = 3
 //? const: initial = 1
 //? const: delay = 3
 //? post: cog[*].reg[first] == 0x00000007
 //? post: cog[*].reg[second] == 0x00000025
+//?
 //? run: "pll0-y3-initial1-delay9"
 //? const: y = 3
 //? const: initial = 1

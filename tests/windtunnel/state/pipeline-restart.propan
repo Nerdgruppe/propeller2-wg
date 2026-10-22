@@ -1,84 +1,101 @@
 //? WINDTUNNEL CHECK LIST
 //? post: cog[*].reg[failures] == 0
+//? macro: coginit required
+//?
 //? run: "cog=0 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 0
 //? const: probe_cog = 0
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=0 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 0
 //? const: probe_cog = 0
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
+//?
 //? run: "cog=1 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 1
 //? const: probe_cog = 1
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=1 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 1
 //? const: probe_cog = 1
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
+//?
 //? run: "cog=2 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 2
 //? const: probe_cog = 2
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=2 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 2
 //? const: probe_cog = 2
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
+//?
 //? run: "cog=3 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 3
 //? const: probe_cog = 3
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=3 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 3
 //? const: probe_cog = 3
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
+//?
 //? run: "cog=4 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 4
 //? const: probe_cog = 4
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=4 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 4
 //? const: probe_cog = 4
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
+//?
 //? run: "cog=5 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 5
 //? const: probe_cog = 5
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=5 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 5
 //? const: probe_cog = 5
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
+//?
 //? run: "cog=6 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 6
 //? const: probe_cog = 6
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=6 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 6
 //? const: probe_cog = 6
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
+//?
 //? run: "cog=7 wc=0"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address
 //? cog: 7
 //? const: probe_cog = 7
-//? const: probe_wc = 0
 //? post: cog[*].reg[fallthrough] == 8
+//?
 //? run: "cog=7 wc=1"
+//? macro: coginit set COGINIT 0x20 + probe_cog, restart_address :wc
 //? cog: 7
 //? const: probe_cog = 7
-//? const: probe_wc = 1
 //? post: cog[*].reg[fallthrough] == 0
 
 // Measure no-load self-restart with and without WC across cogs and command phases.
@@ -99,11 +116,7 @@ phase_loop:
                 MODCZ   _SET,               _SET            :wcz
                 GETCT   start
                 SETQ    77
-.if probe_wc == 1
-                COGINIT 0x20 + probe_cog,   restart_address :wc
-.else
-                COGINIT 0x20 + probe_cog,   restart_address
-.endif
+                {{ coginit }}
                 // This younger instruction can finish before a no-WC restart takes effect.
                 ADD     fallthrough,        1
                 JMP     nrel(_end)

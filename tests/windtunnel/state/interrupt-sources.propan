@@ -1,12 +1,15 @@
 //? WINDTUNNEL CHECK LIST
 //? timeout-ms: 1000
 //? post: cog[*].reg[failures] == 0
+//?
 //? run: "cog0"
 //? cog: 0
 //? const: probe_cog = 0
+//?
 //? run: "cog3"
 //? cog: 3
 //? const: probe_cog = 3
+//?
 //? run: "cog7"
 //? cog: 7
 //? const: probe_cog = 7

@@ -1,290 +1,339 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: outh required
+//?
 //? run: "x3-p0-v0"
+//? macro: outh set
 //? const: x = 3
 //? const: period = 0
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p0-v1"
+//? macro: outh set OUTH 40
 //? const: x = 3
 //? const: period = 0
-//? const: level = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p1-v0"
+//? macro: outh set
 //? const: x = 3
 //? const: period = 1
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p1-v1"
+//? macro: outh set OUTH 40
 //? const: x = 3
 //? const: period = 1
-//? const: level = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p7-v0"
+//? macro: outh set
 //? const: x = 3
 //? const: period = 7
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p7-v1"
+//? macro: outh set OUTH 40
 //? const: x = 3
 //? const: period = 7
-//? const: level = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p8-v0"
+//? macro: outh set
 //? const: x = 3
 //? const: period = 8
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p8-v1"
+//? macro: outh set OUTH 40
 //? const: x = 3
 //? const: period = 8
-//? const: level = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p9-v0"
+//? macro: outh set
 //? const: x = 3
 //? const: period = 9
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p9-v1"
+//? macro: outh set OUTH 40
 //? const: x = 3
 //? const: period = 9
-//? const: level = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p16383-v0"
+//? macro: outh set
 //? const: x = 3
 //? const: period = 16383
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x3-p16383-v1"
+//? macro: outh set OUTH 40
 //? const: x = 3
 //? const: period = 16383
-//? const: level = 1
 //? post: cog[0].reg[value] == 16
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p0-v0"
+//? macro: outh set
 //? const: x = 19
 //? const: period = 0
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p0-v1"
+//? macro: outh set OUTH 40
 //? const: x = 19
 //? const: period = 0
-//? const: level = 1
 //? post: cog[0].reg[value] == 134160384
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p1-v0"
+//? macro: outh set
 //? const: x = 19
 //? const: period = 1
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p1-v1"
+//? macro: outh set OUTH 40
 //? const: x = 19
 //? const: period = 1
-//? const: level = 1
 //? post: cog[0].reg[value] == 199998
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p7-v0"
+//? macro: outh set
 //? const: x = 19
 //? const: period = 7
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p7-v1"
+//? macro: outh set OUTH 40
 //? const: x = 19
 //? const: period = 7
-//? const: level = 1
 //? post: cog[0].reg[value] == 1399930
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p8-v0"
+//? macro: outh set
 //? const: x = 19
 //? const: period = 8
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p8-v1"
+//? macro: outh set OUTH 40
 //? const: x = 19
 //? const: period = 8
-//? const: level = 1
 //? post: cog[0].reg[value] == 1599940
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p9-v0"
+//? macro: outh set
 //? const: x = 19
 //? const: period = 9
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p9-v1"
+//? macro: outh set OUTH 40
 //? const: x = 19
 //? const: period = 9
-//? const: level = 1
 //? post: cog[0].reg[value] == 1799910
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p16383-v0"
+//? macro: outh set
 //? const: x = 19
 //? const: period = 16383
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x19-p16383-v1"
+//? macro: outh set OUTH 40
 //? const: x = 19
 //? const: period = 16383
-//? const: level = 1
 //? post: cog[0].reg[value] == 133783567
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p0-v0"
+//? macro: outh set
 //? const: x = 35
 //? const: period = 0
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p0-v1"
+//? macro: outh set OUTH 40
 //? const: x = 35
 //? const: period = 0
-//? const: level = 1
 //? post: cog[0].reg[value] == 44867584
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p1-v0"
+//? macro: outh set
 //? const: x = 35
 //? const: period = 1
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p1-v1"
+//? macro: outh set OUTH 40
 //? const: x = 35
 //? const: period = 1
-//? const: level = 1
 //? post: cog[0].reg[value] == 1058531
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p7-v0"
+//? macro: outh set
 //? const: x = 35
 //? const: period = 7
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p7-v1"
+//? macro: outh set OUTH 40
 //? const: x = 35
 //? const: period = 7
-//? const: level = 1
 //? post: cog[0].reg[value] == 130427823
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p8-v0"
+//? macro: outh set
 //? const: x = 35
 //? const: period = 8
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p8-v1"
+//? macro: outh set OUTH 40
 //? const: x = 35
 //? const: period = 8
-//? const: level = 1
 //? post: cog[0].reg[value] == 133886228
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p9-v0"
+//? macro: outh set
 //? const: x = 35
 //? const: period = 9
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p9-v1"
+//? macro: outh set OUTH 40
 //? const: x = 35
 //? const: period = 9
-//? const: level = 1
 //? post: cog[0].reg[value] == 129345005
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p16383-v0"
+//? macro: outh set
 //? const: x = 35
 //? const: period = 16383
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x35-p16383-v1"
+//? macro: outh set OUTH 40
 //? const: x = 35
 //? const: period = 16383
-//? const: level = 1
 //? post: cog[0].reg[value] == 49627016
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p0-v0"
+//? macro: outh set
 //? const: x = 51
 //? const: period = 0
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p0-v1"
+//? macro: outh set OUTH 40
 //? const: x = 51
 //? const: period = 0
-//? const: level = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p1-v0"
+//? macro: outh set
 //? const: x = 51
 //? const: period = 1
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p1-v1"
+//? macro: outh set OUTH 40
 //? const: x = 51
 //? const: period = 1
-//? const: level = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p7-v0"
+//? macro: outh set
 //? const: x = 51
 //? const: period = 7
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p7-v1"
+//? macro: outh set OUTH 40
 //? const: x = 51
 //? const: period = 7
-//? const: level = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p8-v0"
+//? macro: outh set
 //? const: x = 51
 //? const: period = 8
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p8-v1"
+//? macro: outh set OUTH 40
 //? const: x = 51
 //? const: period = 8
-//? const: level = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p9-v0"
+//? macro: outh set
 //? const: x = 51
 //? const: period = 9
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p9-v1"
+//? macro: outh set OUTH 40
 //? const: x = 51
 //? const: period = 9
-//? const: level = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p16383-v0"
+//? macro: outh set
 //? const: x = 51
 //? const: period = 16383
-//? const: level = 0
 //? post: cog[0].reg[value] == 0
 //? post: cog[0].reg[flag] == 2
+//?
 //? run: "x51-p16383-v1"
+//? macro: outh set OUTH 40
 //? const: x = 51
 //? const: period = 16383
-//? const: level = 1
 //? post: cog[0].reg[value] == 4294967295
 //? post: cog[0].reg[flag] == 2
 
@@ -294,9 +343,7 @@
                 WRPIN   aug(0x40000030),    40
                 WXPIN   x,                  40
                 WYPIN   aug(period),        40
-.if level
-                OUTH    40
-.endif
+                {{ outh }}
                 DIRH    40
                 WAITX   aug(200000)
                 RQPIN   value,              40  :wc

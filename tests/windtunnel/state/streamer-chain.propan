@@ -1,26 +1,31 @@
 //? WINDTUNNEL CHECK LIST
+//? macro: zero required
+//?
 //? run: "XCONT fractional"
+//? macro: zero set XCONT
 //? post: cog[*].reg[elapsed] == 149
 //? post: cog[*].reg[frequency] == 149
-//? const: zero = 0
 //? const: frac = 0x30000000
 //? const: count = 8
+//?
 //? run: "XZERO fractional"
+//? macro: zero set XZERO
 //? post: cog[*].reg[elapsed] == 150
 //? post: cog[*].reg[frequency] == 150
-//? const: zero = 1
 //? const: frac = 0x30000000
 //? const: count = 8
+//?
 //? run: "XCONT perpetual"
+//? macro: zero set XCONT
 //? post: cog[*].reg[elapsed] == 306
 //? post: cog[*].reg[frequency] == 306
-//? const: zero = 0
 //? const: frac = 0x10000000
 //? const: count = 0xffff
+//?
 //? run: "XZERO perpetual"
+//? macro: zero set XZERO
 //? post: cog[*].reg[elapsed] == 306
 //? post: cog[*].reg[frequency] == 306
-//? const: zero = 1
 //? const: frac = 0x10000000
 //? const: count = 0xffff
 
@@ -28,11 +33,7 @@
                 SETXFRQ aug(frac)
                 GETCT   elapsed
                 XINIT   aug(X_IMM_1X32_4DAC8 | count),  0
-.if zero
-                XZERO   aug(X_IMM_1X32_4DAC8 | 32),     0
-.else
-                XCONT   aug(X_IMM_1X32_4DAC8 | 32),     0
-.endif
+                {{ zero }}  aug(X_IMM_1X32_4DAC8 | 32), 0
                 SETQ    aug(0x40000000)
                 XCONT   aug(X_IMM_1X32_4DAC8 | 16),     0
                 WAITXFI

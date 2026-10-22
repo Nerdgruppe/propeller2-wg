@@ -1,5 +1,6 @@
 //? WINDTUNNEL CHECK LIST
 //? issues: lut_read_write = 14
+//?
 //? run: "LUT shift 0 phase 0"
 //? const: phase = 0
 //? const: shift = 0
@@ -15,6 +16,7 @@
 //? post: cog[*].reg[s9] == 0x12345678
 //? post: cog[*].reg[s10] == 0x12345678
 //? post: cog[*].reg[s11] == 0x12345678
+//?
 //? run: "LUT shift 0 phase 1"
 //? const: phase = 1
 //? const: shift = 0
@@ -30,6 +32,7 @@
 //? post: cog[*].reg[s9] == 0x12345678
 //? post: cog[*].reg[s10] == 0x12345678
 //? post: cog[*].reg[s11] == 0x12345678
+//?
 //? run: "LUT shift 1 phase 0"
 //? issues: lut_read_write = 13
 //? const: phase = 0
@@ -46,6 +49,7 @@
 //? post: cog[*].reg[s9] == 0x12345678
 //? post: cog[*].reg[s10] == 0x12345678
 //? post: cog[*].reg[s11] == 0x12345678
+//?
 //? run: "LUT shift 1 phase 1"
 //? const: phase = 1
 //? const: shift = 1
@@ -128,3 +132,4 @@ wait:
                 COGSTOP 1
                 LONG    [0] * 480
 .data
+

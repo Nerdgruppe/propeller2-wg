@@ -12,7 +12,7 @@ test "issue expectations merge by kind and reject invalid counts and names" {
 
     const source = "//? WINDTUNNEL CHECK LIST\n" ++
         "//? issues: streamer_mode = 2\n//? issues: pc_domain = 3\n" ++
-        "//? run: \"first\"\n//? issues: streamer_mode = 0\n//? run: \"second\"\n";
+        "//?\n//? run: \"first\"\n//? issues: streamer_mode = 0\n//?\n//? run: \"second\"\n";
     const list = try parse(arena.allocator(), "issues", source, &errors.writer);
     const first = try list.forRun(arena.allocator(), list.runs[0]);
     try std.testing.expectEqual(@as(usize, 2), first.issues.len);
@@ -85,7 +85,7 @@ pub const List = struct {
     constants: []const Constant = &.{},
 
     /// Common patches apply first; run-local flag/Q seeds replace common seeds.
-    pub fn forRun(list: List, allocator: std.mem.Allocator, run: Run) !List {
+    fn forRun(list: List, allocator: std.mem.Allocator, run: Run) !List {
         var result = list;
         result.cog = run.cog orelse list.cog;
         result.stdin = run.stdin orelse list.stdin;
@@ -378,8 +378,256 @@ pub fn hasHeader(source: []const u8) bool {
     return std.mem.eql(u8, std.mem.trim(u8, lines.next() orelse "", " \t\r"), "//? WINDTUNNEL CHECK LIST");
 }
 
+/// One materialized run, ready for either simulator or oracle assembly.
+pub const PreparedRun = struct {
+    name: []const u8,
+    source: []const u8,
+    list: List,
+};
+
+const Macro = struct {
+    name: []const u8,
+    action: Action,
+    text: []const u8,
+    line: usize,
+
+    const Action = enum { set, default, required, override };
+};
+const Section = struct {
+    first: usize,
+    macros: std.ArrayList(Macro) = .empty,
+};
+
+/// Report preprocessing failures against the original fixture and selected run.
+fn preparationError(errors: *std.Io.Writer, path: []const u8, run: usize, line: usize, message: []const u8) error{InvalidChecklist} {
+    errors.print("{s}:{d}: checklist [run {d}]: {s}\n", .{ path, line, run, message }) catch {};
+    return error.InvalidChecklist;
+}
+
+/// Macro names are simple identifiers in a namespace separate from assembler constants.
+fn macroName(name: []const u8) bool {
+    if (name.len == 0 or !(std.ascii.isAlphabetic(name[0]) or name[0] == '_'))
+        return false;
+    for (name) |byte| {
+        if (!(std.ascii.isAlphanumeric(byte) or byte == '_'))
+            return false;
+    }
+    return true;
+}
+
+/// Expand a single line once, preferring the selected run's definitions over common ones.
+fn expandLine(
+    writer: *std.Io.Writer,
+    text: []const u8,
+    common: []const Macro,
+    local: []const Macro,
+    errors: *std.Io.Writer,
+    path: []const u8,
+    run: usize,
+    line: usize,
+) !void {
+    var position: usize = 0;
+    while (position < text.len) {
+        const open = std.mem.findPos(u8, text, position, "{{") orelse text.len;
+        const stray = std.mem.findPos(u8, text, position, "}}");
+        if (stray != null and stray.? < open)
+            return preparationError(errors, path, run, line, "unmatched macro closing braces");
+        try writer.writeAll(text[position..open]);
+        if (open == text.len)
+            break;
+        const close = std.mem.findPos(u8, text, open + 2, "}}") orelse
+            return preparationError(errors, path, run, line, "unterminated macro placeholder");
+        const name = std.mem.trim(u8, text[open + 2 .. close], " \t");
+        if (!macroName(name))
+            return preparationError(errors, path, run, line, "invalid macro placeholder name");
+        const replacement = find: {
+            for (local) |macro| {
+                if (std.mem.eql(u8, name, macro.name))
+                    break :find macro.text;
+            }
+            for (common) |macro| {
+                if (std.mem.eql(u8, name, macro.name))
+                    break :find macro.text;
+            }
+            try errors.print("{s}:{d}: checklist [run {d}]: undefined macro '{s}'\n", .{ path, line, run, name });
+            return error.InvalidChecklist;
+        };
+        try writer.writeAll(replacement);
+        position = close + 2;
+    }
+}
+
+/// Collect physical sections, then materialize each run; all returned storage belongs to the caller's arena.
+pub fn prepare(allocator: std.mem.Allocator, path: []const u8, source: []const u8, errors: *std.Io.Writer) ![]const PreparedRun {
+    if (!hasHeader(source))
+        return preparationError(errors, path, 0, 1, "missing WINDTUNNEL CHECK LIST header");
+    var lines: std.ArrayList([]const u8) = .empty;
+    var iterator = std.mem.splitScalar(u8, source, '\n');
+    while (iterator.next()) |line| {
+        try lines.append(allocator, line);
+    }
+    var sections: std.ArrayList(Section) = .empty;
+    try sections.append(allocator, .{ .first = 1 });
+    var checklist_end: usize = lines.items.len;
+    var previous_empty = false;
+    for (lines.items[1..], 1..) |raw, index| {
+        const comment = std.mem.trimStart(u8, raw, " \t");
+        if (!std.mem.startsWith(u8, comment, "//?")) {
+            checklist_end = index;
+            break;
+        }
+        const content = std.mem.trim(u8, comment[3..], " \t\r");
+        defer previous_empty = content.len == 0;
+        const colon = std.mem.indexOfScalar(u8, content, ':') orelse continue;
+        const directive = std.mem.trimEnd(u8, content[0..colon], " \t");
+        if (std.mem.find(u8, directive, "{{") != null or std.mem.find(u8, directive, "}}") != null)
+            return preparationError(errors, path, sections.items.len - 1, index + 1, "directive names must be literal");
+        if (std.mem.eql(u8, directive, "run")) {
+            if (!previous_empty)
+                return preparationError(errors, path, sections.items.len, index + 1, "run: must follow an empty //? line");
+            try sections.append(allocator, .{ .first = index });
+        } else if (std.mem.eql(u8, directive, "macro")) {
+            const definition = std.mem.trimStart(u8, content[colon + 1 ..], " \t");
+            const end = std.mem.indexOfAny(u8, definition, " \t") orelse definition.len;
+            const name = definition[0..end];
+            const tail = std.mem.trimStart(u8, definition[end..], " \t");
+            const action_end = std.mem.indexOfAny(u8, tail, " \t") orelse tail.len;
+            const action = std.meta.stringToEnum(Macro.Action, tail[0..action_end]) orelse
+                return preparationError(errors, path, sections.items.len - 1, index + 1, "expected macro action: set, default, required, or override");
+            const body = std.mem.trimStart(u8, tail[action_end..], " \t");
+            if (!macroName(name))
+                return preparationError(errors, path, sections.items.len - 1, index + 1, "invalid macro name");
+            if (std.mem.find(u8, body, "{{") != null or std.mem.find(u8, body, "}}") != null)
+                return preparationError(errors, path, sections.items.len - 1, index + 1, "macro bodies cannot contain macro references");
+            const global = sections.items.len == 1;
+            switch (action) {
+                .set => {},
+                .default, .required => {
+                    if (!global)
+                        return preparationError(errors, path, sections.items.len - 1, index + 1, "default and required are global macro declarations");
+                },
+                .override => {
+                    if (global)
+                        return preparationError(errors, path, 0, index + 1, "override is only allowed inside a run");
+                },
+            }
+            if (action == .required and body.len != 0)
+                return preparationError(errors, path, 0, index + 1, "required does not accept a macro value");
+            const section = &sections.items[sections.items.len - 1];
+            for (section.macros.items) |old| {
+                if (std.mem.eql(u8, old.name, name))
+                    return preparationError(errors, path, sections.items.len - 1, index + 1, "duplicate macro in section");
+            }
+            try section.macros.append(allocator, .{
+                .name = name,
+                .action = action,
+                .text = body,
+                .line = index + 1,
+            });
+        }
+    }
+    const common = sections.items[0].macros.items;
+    for (sections.items[1..], 1..) |section, run| {
+        for (section.macros.items) |local| {
+            const declaration = find: {
+                for (common) |global| {
+                    if (std.mem.eql(u8, global.name, local.name))
+                        break :find global;
+                }
+                return preparationError(errors, path, run, local.line, "run macro requires a global declaration");
+            };
+            const message: ?[]const u8 = switch (declaration.action) {
+                .set => "a globally set macro cannot be assigned inside a run",
+                .default => if (local.action != .override)
+                    "a default macro requires override inside a run"
+                else
+                    null,
+                .required => if (local.action != .set)
+                    "a required macro requires set inside a run"
+                else
+                    null,
+                .override => unreachable,
+            };
+            if (message) |text|
+                return preparationError(errors, path, run, local.line, text);
+        }
+    }
+    const count = @max(1, sections.items.len - 1);
+    const prepared = try allocator.alloc(PreparedRun, count);
+    var explicit_names: std.StringHashMap(void) = .init(allocator);
+    for (prepared, 0..) |*result, run_index| {
+        const selected = if (sections.items.len == 1)
+            0
+        else
+            run_index + 1;
+        for (common) |declaration| {
+            if (declaration.action != .required)
+                continue;
+            const assigned = find: {
+                if (selected != 0) {
+                    for (sections.items[selected].macros.items) |local| {
+                        if (std.mem.eql(u8, declaration.name, local.name))
+                            break :find true;
+                    }
+                }
+                break :find false;
+            };
+            if (!assigned) {
+                const message = try std.fmt.allocPrint(
+                    allocator,
+                    "required macro '{s}' must be set in every run",
+                    .{declaration.name},
+                );
+                return preparationError(errors, path, run_index + 1, sections.items[selected].first + 1, message);
+            }
+        }
+        var expanded: std.Io.Writer.Allocating = .init(allocator);
+        var section_index: usize = 0;
+        for (lines.items, 0..) |raw, index| {
+            if (section_index + 1 < sections.items.len and index == sections.items[section_index + 1].first) {
+                section_index += 1;
+            }
+            const in_checklist = index > 0 and index < checklist_end;
+            const content = if (in_checklist)
+                std.mem.trim(u8, std.mem.trimStart(u8, raw, " \t")[3..], " \t\r")
+            else
+                "";
+            const colon = std.mem.indexOfScalar(u8, content, ':');
+            const is_macro = colon != null and std.mem.eql(u8, std.mem.trimEnd(u8, content[0..colon.?], " \t"), "macro");
+            if (in_checklist and (is_macro or (section_index != 0 and section_index != selected))) {
+                try expanded.writer.writeAll("//?");
+            } else {
+                try expandLine(
+                    &expanded.writer,
+                    raw,
+                    sections.items[0].macros.items,
+                    sections.items[selected].macros.items,
+                    errors,
+                    path,
+                    run_index + 1,
+                    index + 1,
+                );
+            }
+            if (index + 1 < lines.items.len) {
+                try expanded.writer.writeByte('\n');
+            }
+        }
+        const text = try expanded.toOwnedSlice();
+        const list = try parse(allocator, path, text, errors);
+        const run = list.runs[0];
+        const name = run.name orelse try std.fmt.allocPrint(allocator, "run {d}", .{run_index + 1});
+        if (run.name != null) {
+            const entry = try explicit_names.getOrPut(name);
+            if (entry.found_existing)
+                return preparationError(errors, path, run_index + 1, sections.items[selected].first + 1, "duplicate run name");
+        }
+        result.* = .{ .name = name, .source = text, .list = try list.forRun(allocator, run) };
+    }
+    return prepared;
+}
+
 /// Allocations belong to the caller's arena, including token and value storage.
-pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8, errors: *std.Io.Writer) !List {
+fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8, errors: *std.Io.Writer) !List {
     if (!hasHeader(source)) {
         try errors.print("{s}:1: checklist: missing WINDTUNNEL CHECK LIST header\n", .{path});
         return error.InvalidChecklist;
@@ -388,12 +636,17 @@ pub fn parse(allocator: std.mem.Allocator, path: []const u8, source: []const u8,
     _ = lines.next();
     var tokens: std.ArrayList(Token) = .empty;
     var line_number: u32 = 1;
+    var previous_empty = false;
     while (lines.next()) |raw| {
         line_number += 1;
         const comment = std.mem.trimStart(u8, raw, " \t");
         if (!std.mem.startsWith(u8, comment, "//?"))
             break;
         const line = std.mem.trimEnd(u8, comment[3..], "\r");
+        const content = std.mem.trim(u8, line, " \t");
+        if (std.mem.startsWith(u8, content, "run:") and !previous_empty)
+            return preparationError(errors, path, 0, line_number, "run: must follow an empty //? line");
+        previous_empty = content.len == 0;
         var i: usize = 0;
         while (i < line.len) {
             if (std.ascii.isWhitespace(line[i])) {
@@ -732,9 +985,11 @@ test "run sections inherit common conditions and preserve local seeds" {
         \\//? pre: cog[0].c = true
         \\//? pre: sym[buffer] = u16 [ 0x1234, -1 ]
         \\//? post: cog[0].z == false
+        \\//?
         \\//? run:
         \\//? pre: cog[0].c = false
         \\//? post: cog[0].reg[value] == 1
+        \\//?
         \\//? run: "a named run"
         \\//? pre: sym[buffer] = hex [ abcd ]
     , &errors.writer);
@@ -755,14 +1010,14 @@ test "run sections inherit common conditions and preserve local seeds" {
     try std.testing.expectEqual(@as(usize, 1), implicit.runs.len);
     try std.testing.expectEqual(@as(usize, 1), (try implicit.forRun(allocator, implicit.runs[0])).pre.len);
     for ([_][]const u8{
-        "//? run: unquoted\n",
-        "//? run: \"\"\n",
-        "//? run: \"same\"\n//? run: \"same\"\n",
-        "//? run:\n//? timeout-ms: 1000\n",
-        "//? run:\n//? post: cog[1].c == true\n",
+        "//?\n//? run: unquoted\n",
+        "//?\n//? run: \"\"\n",
+        "//?\n//? run: \"same\"\n//?\n//? run: \"same\"\n",
+        "//?\n//? run:\n//? timeout-ms: 1000\n",
+        "//?\n//? run:\n//? post: cog[1].c == true\n",
         "//? post: sym[value] == u32 [1]\n",
         "//? pre: sym[42] = u32 [1]\n",
-        "//? profile: program\n//? run:\n//? pre: cog[0].c = true\n",
+        "//? profile: program\n//?\n//? run:\n//? pre: cog[0].c = true\n",
     }) |body| {
         const source = try std.fmt.allocPrint(allocator, "//? WINDTUNNEL CHECK LIST\n{s}", .{body});
         try std.testing.expectError(error.InvalidChecklist, parse(allocator, "fixture", source, &errors.writer));
@@ -783,10 +1038,10 @@ test "run constants and cog selection inherit without leaking across runs" {
         "//? WINDTUNNEL CHECK LIST\n" ++
             "//? const: width = 4\n" ++
             "//? post: cog[*].reg[result] == 0\n" ++
-            "//? run: \"override\"\n" ++
+            "//?\n//? run: \"override\"\n" ++
             "//? cog: 7\n" ++
             "//? const: width = 1\n" ++
-            "//? run: \"restored\"\n",
+            "//?\n//? run: \"restored\"\n",
         &errors.writer,
     );
     const first = try list.forRun(allocator, list.runs[0]);
@@ -799,9 +1054,9 @@ test "run constants and cog selection inherit without leaking across runs" {
         "//? const: x = 1\n//? const: x = 2\n",
         "//? const: _wt_target_cog = 2\n",
         "//? const: x-y = 2\n",
-        "//? run:\n//? cog: 8\n",
-        "//? run:\n//? cog: 2\n//? cog: 3\n",
-        "//? run:\n//? cog: 7\n//? post: cog[0].c == true\n",
+        "//?\n//? run:\n//? cog: 8\n",
+        "//?\n//? run:\n//? cog: 2\n//? cog: 3\n",
+        "//?\n//? run:\n//? cog: 7\n//? post: cog[0].c == true\n",
     }) |body| {
         const source = try std.fmt.allocPrint(allocator, "//? WINDTUNNEL CHECK LIST\n{s}", .{body});
         try std.testing.expectError(error.InvalidChecklist, parse(allocator, "fixture", source, &errors.writer));
@@ -815,8 +1070,8 @@ test "program matrix streams override common values, including an empty stream" 
     var errors: std.Io.Writer.Allocating = .init(arena.allocator());
     const source =
         "//? WINDTUNNEL CHECK LIST\n//? profile: program\n//? stdin: \"common\"\n//? stdout: \"ready\"\n" ++
-        "//? stdin-after: \"ready\"\n//? run: \"first\"\n//? stdin: \"\"\n//? stdout: \"ready first\"\n" ++
-        "//? run: \"second\"\n//? stdin-after: \"r\"\n";
+        "//? stdin-after: \"ready\"\n//?\n//? run: \"first\"\n//? stdin: \"\"\n//? stdout: \"ready first\"\n" ++
+        "//?\n//? run: \"second\"\n//? stdin-after: \"r\"\n";
     const list = try parse(arena.allocator(), "matrix", source, &errors.writer);
     const first = try list.forRun(arena.allocator(), list.runs[0]);
     const second = try list.forRun(arena.allocator(), list.runs[1]);
@@ -827,5 +1082,196 @@ test "program matrix streams override common values, including an empty stream" 
     try std.testing.expectEqualStrings("ready", second.stdout);
     try std.testing.expectEqualStrings("r", second.stdin_after);
     try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "matrix", source ++ "//? stdin-after: \"duplicate\"\n", &errors.writer));
-    try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "matrix", "//? WINDTUNNEL CHECK LIST\n//? run:\n//? stdin: \"x\"\n", &errors.writer));
+    try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "matrix", "//? WINDTUNNEL CHECK LIST\n//?\n//? run:\n//? stdin: \"x\"\n", &errors.writer));
+}
+
+test "macros materialize common values and forward run overrides without leaking" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const source =
+        "\t//? WINDTUNNEL CHECK LIST\r\n" ++
+        "\t//? macro: operation required\r\n" ++
+        "\t//? macro: expected default 7\r\n" ++
+        "\t//? macro: optional default\r\n" ++
+        "\t//? macro: label default base\r\n" ++
+        "\t//? macro: fixed set 23\r\n" ++
+        "\t//? post: cog[*].reg[result] == {{ expected }}\r\n" ++
+        "\t//? \r\n" ++
+        "\t//? run: \"{{ label }}\"\r\n" ++
+        "\t//? macro: label override override\r\n" ++
+        "\t//? macro: operation set ADD result, 8\r\n" ++
+        "\t//? macro: expected override 8\r\n" ++
+        "\t//?\r\n" ++
+        "\t//? run:\r\n" ++
+        "\t//? macro: operation set MOV result, 7\r\n" ++
+        "\r\n{{operation}}\r\n{{ optional }}\r\nvar fixed_value: LONG {{fixed}}\r\n";
+    const runs = try prepare(arena.allocator(), "macros", source, &errors.writer);
+    try std.testing.expectEqual(@as(usize, 2), runs.len);
+    try std.testing.expectEqualStrings("override", runs[0].name);
+    try std.testing.expectEqualStrings("run 2", runs[1].name);
+    try std.testing.expectEqualSlices(u8, &.{ 8, 0, 0, 0 }, runs[0].list.post[0].bytes);
+    try std.testing.expectEqualSlices(u8, &.{ 7, 0, 0, 0 }, runs[1].list.post[0].bytes);
+    try std.testing.expectEqual(@as(u32, 7), runs[0].list.post[0].line);
+    try std.testing.expect(std.mem.find(u8, runs[0].source, "ADD result, 8\r\n\r\n") != null);
+    try std.testing.expect(std.mem.find(u8, runs[1].source, "MOV result, 7\r\n\r\n") != null);
+    try std.testing.expectEqual(std.mem.count(u8, source, "\n"), std.mem.count(u8, runs[0].source, "\n"));
+    const implicit = try prepare(arena.allocator(), "implicit", "//? WINDTUNNEL CHECK LIST\n//? macro: value set 23\n//? post: cog[0].reg[result] == {{value}}\n\nMOV result, {{value}}\n", &errors.writer);
+    try std.testing.expectEqual(@as(usize, 1), implicit.len);
+    try std.testing.expectEqualStrings("run 1", implicit[0].name);
+    try std.testing.expect(std.mem.find(u8, implicit[0].source, "MOV result, 23") != null);
+}
+
+test "macro definitions and placeholders reject invalid input with original line diagnostics" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    for ([_][]const u8{
+        "//? macro: value set 1\n//? macro: value set 2\n",
+        "//? macro: 2bad set MOV result, 1\n",
+        "//? macro: bad-name set MOV result, 1\n",
+        "//? macro:\n",
+        "//? macro: outer set {{inner}}\n",
+        "//? macro: outer set }}\n",
+        "//? post: cog[0].q == {{missing}}\n",
+        "//? {{directive}}: 1\n",
+        "//?\n//? run: \"{{missing}}\"\n",
+        "//? macro: name set same\n//?\n//? run: \"{{name}}\"\n//?\n//? run: \"same\"\n",
+        "//?\n//? run:\n//? macro: value set 1\n//? macro: value set 2\n",
+        "\nMOV result, {{missing}}\n",
+        "\nMOV result, {{}}\n",
+        "\nMOV result, {{bad name}}\n",
+        "\nMOV result, {{unfinished\n",
+        "\nMOV result, unmatched}}\n",
+    }) |body| {
+        errors.clearRetainingCapacity();
+        const source = try std.mem.concat(arena.allocator(), u8, &.{ "//? WINDTUNNEL CHECK LIST\n", body });
+        try std.testing.expectError(error.InvalidChecklist, prepare(arena.allocator(), "bad.propan", source, &errors.writer));
+        try std.testing.expect(std.mem.startsWith(u8, errors.written(), "bad.propan:"));
+        try std.testing.expect(std.mem.find(u8, errors.written(), "run") != null);
+    }
+    errors.clearRetainingCapacity();
+    try std.testing.expectError(error.InvalidChecklist, prepare(arena.allocator(), "location.propan", "//? WINDTUNNEL CHECK LIST\n//?\n//? run: \"broken\"\n\n{{missing}}\n", &errors.writer));
+    try std.testing.expect(std.mem.startsWith(u8, errors.written(), "location.propan:5:"));
+}
+
+test "run spacing requires a physically preceding empty checklist comment" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    for ([_][]const u8{
+        "//? WINDTUNNEL CHECK LIST\n//? run:\n",
+        "//? WINDTUNNEL CHECK LIST\n//? post: cog[0].q == 0\n//? run:\n",
+        "//? WINDTUNNEL CHECK LIST\n//?\n//? run:\n//? run:\n",
+    }) |source| {
+        try std.testing.expectError(error.InvalidChecklist, prepare(arena.allocator(), "spacing", source, &errors.writer));
+        try std.testing.expectError(error.InvalidChecklist, parse(arena.allocator(), "spacing", source, &errors.writer));
+    }
+    const source = "//? WINDTUNNEL CHECK LIST\n//?\n//?\n//? run:\n\n//? run:\n";
+    const runs = try prepare(arena.allocator(), "end", source, &errors.writer);
+    try std.testing.expectEqual(@as(usize, 1), runs.len);
+}
+
+test "macro policies enforce scope, declaration, and per-run assignment contracts" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const header = "//? WINDTUNNEL CHECK LIST\n";
+    const run = "//?\n//? run: \"first\"\n";
+    const Invalid = struct { body: []const u8, message: []const u8 };
+    for ([_]Invalid{
+        .{ .body = "//? macro: value MOV result, 1\n", .message = "expected macro action" },
+        .{ .body = "//? macro: value\n", .message = "expected macro action" },
+        .{ .body = "//? macro: value override 1\n", .message = "only allowed inside a run" },
+        .{ .body = run ++ "//? macro: value default 1\n", .message = "global macro declarations" },
+        .{ .body = run ++ "//? macro: value required\n", .message = "global macro declarations" },
+        .{ .body = run ++ "//? macro: value set 1\n", .message = "requires a global declaration" },
+        .{ .body = run ++ "//? macro: value override 1\n", .message = "requires a global declaration" },
+        .{ .body = "//? macro: value required 1\n", .message = "does not accept a macro value" },
+        .{ .body = "//? macro: value required\n", .message = "must be set in every run" },
+        .{ .body = "//? macro: value required\n" ++ run, .message = "must be set in every run" },
+        .{
+            .body = "//? macro: value required\n" ++ run ++ "//? macro: value set 1\n//?\n//? run: \"second\"\n",
+            .message = "must be set in every run",
+        },
+        .{
+            .body = "//? macro: value required\n" ++ run ++ "//? macro: value override 1\n",
+            .message = "required macro requires set",
+        },
+        .{
+            .body = "//? macro: value default 1\n" ++ run ++ "//? macro: value set 1\n",
+            .message = "default macro requires override",
+        },
+        .{
+            .body = "//? macro: value set 1\n" ++ run ++ "//? macro: value set 1\n",
+            .message = "globally set macro cannot be assigned",
+        },
+        .{
+            .body = "//? macro: value set 1\n" ++ run ++ "//? macro: value override 2\n",
+            .message = "globally set macro cannot be assigned",
+        },
+        .{
+            .body = "//? macro: value required\n//? macro: value default 1\n",
+            .message = "duplicate macro in section",
+        },
+        .{
+            .body = "//? macro: value required\n" ++ run ++ "//? macro: value set 1\n//? macro: value set 2\n",
+            .message = "duplicate macro in section",
+        },
+        .{
+            .body = "//? macro: value default\n" ++ run ++ "//? macro: value override\n//? macro: value override 2\n",
+            .message = "duplicate macro in section",
+        },
+    }) |invalid| {
+        errors.clearRetainingCapacity();
+        const source = try std.mem.concat(arena.allocator(), u8, &.{ header, invalid.body });
+        try std.testing.expectError(error.InvalidChecklist, prepare(arena.allocator(), "policies", source, &errors.writer));
+        try std.testing.expect(std.mem.find(u8, errors.written(), invalid.message) != null);
+    }
+    const empty = try prepare(arena.allocator(), "empty", header ++ "//? macro: value required\n" ++ run ++ "//? macro: value set\n\n{{value}}\n", &errors.writer);
+    try std.testing.expect(std.mem.endsWith(u8, empty[0].source, "\n\n"));
+    const implicit = try prepare(arena.allocator(), "default", header ++ "//? macro: value default 23\n\nMOV result, {{value}}\n", &errors.writer);
+    try std.testing.expect(std.mem.endsWith(u8, implicit[0].source, "MOV result, 23\n"));
+}
+
+test "empty run overrides suppress defaults and subsequent runs restore them" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+
+    var errors: std.Io.Writer.Allocating = .init(std.testing.allocator);
+    defer errors.deinit();
+
+    const source =
+        \\//? WINDTUNNEL CHECK LIST
+        \\//? macro: operation required
+        \\//? macro: optional default NOP
+        \\//? macro: fixed set JMP nrel(_end)
+        \\//?
+        \\//? run: "without optional instruction"
+        \\//? macro: operation set MOV result, 1
+        \\//? macro: optional override
+        \\//?
+        \\//? run: "default restored"
+        \\//? macro: operation set MOV result, 2
+        \\
+        \\{{operation}}
+        \\{{optional}}
+        \\{{fixed}}
+    ;
+    const runs = try prepare(arena.allocator(), "restore", source, &errors.writer);
+    try std.testing.expectEqual(@as(usize, 2), runs.len);
+    try std.testing.expect(std.mem.endsWith(u8, runs[0].source, "MOV result, 1\n\nJMP nrel(_end)"));
+    try std.testing.expect(std.mem.endsWith(u8, runs[1].source, "MOV result, 2\nNOP\nJMP nrel(_end)"));
 }

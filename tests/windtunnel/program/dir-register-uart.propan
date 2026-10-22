@@ -4,10 +4,13 @@
 //? stdout: "x"
 //? max-cycles: 1_000_000
 //? timeout-ms: 1000
+//? macro: enable_method required
+//?
 //? run: "MOV DIRB"
-//? const: enable_method = 0
+//? macro: enable_method set MOV
+//?
 //? run: "OR DIRB"
-//? const: enable_method = 1
+//? macro: enable_method set OR
 
 // Verify UART enable through MOV and OR writes to DIRB in separate runs.
 // Use direct register writes rather than DIRH to catch peripheral enable paths that bypass writeback.
@@ -16,11 +19,7 @@
 .cogexec
                 HUBSET  0xF0
                 WRPIN   P_TT_01 | P_ASYNC_TX,   62
-.if enable_method == 0
-                MOV     DIRB,                   aug(1 << 30)
-.else
-                OR      DIRB,                   aug(1 << 30)
-.endif
+                {{ enable_method }} DIRB, aug(1 << 30)
                 WYPIN   'x',                    62
 // Observe acceptance before polling busy, whose return pipeline can still hold idle.
 accepted:

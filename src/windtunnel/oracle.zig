@@ -1,5 +1,6 @@
 const std = @import("std");
 const propan = @import("propan");
+const fixture_assembly = @import("fixture_assembly.zig");
 const checklist = @import("check_list.zig");
 const p2aas = @import("p2aas.zig");
 
@@ -28,6 +29,7 @@ pub const Case = struct {
     path: []const u8,
     run_name: []const u8,
     source: []const u8,
+    expanded_source: []const u8,
     list: checklist.List,
     entry: u20,
     seeds: []const Resolved,
@@ -56,6 +58,7 @@ pub fn retainLocalFailure(
     path: []const u8,
     run_name: []const u8,
     source: []const u8,
+    expanded_source: []const u8,
     image: []const u8,
     seeds: []const Resolved,
     observations: []const Observation,
@@ -70,6 +73,7 @@ pub fn retainLocalFailure(
     defer dir.close(ctx.io);
 
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = source });
+    try dir.writeFile(ctx.io, .{ .sub_path = "expanded-fixture.propan", .data = expanded_source });
     try dir.writeFile(ctx.io, .{ .sub_path = "original.bin", .data = image });
     if (diagnostics.len != 0) {
         try dir.writeFile(ctx.io, .{ .sub_path = "issues.txt", .data = diagnostics });
@@ -193,6 +197,7 @@ pub fn reservedMemory(module: propan.Module, offset: u32, len: usize) bool {
 pub fn assemble(
     ctx: Context,
     path: []const u8,
+    expanded_source: []const u8,
     list: checklist.List,
     seeds: []const Resolved,
     observations: []const Observation,
@@ -270,11 +275,13 @@ pub fn assemble(
     defer allocator.free(template);
 
     try source.writer.writeAll(template);
-    var result = try propan.assemble(
+    var result = try fixture_assembly.assemble(
         allocator,
         ctx.io,
         "tests/windtunnel/oracle.propan.in",
         source.written(),
+        path,
+        expanded_source,
         ctx.errors,
     );
     errdefer result.deinit();
@@ -301,6 +308,7 @@ pub fn run(ctx: Context, case: Case) !Status {
         try assemble(
             ctx,
             case.path,
+            case.expanded_source,
             case.list,
             case.seeds,
             case.observations,
@@ -328,6 +336,7 @@ pub fn run(ctx: Context, case: Case) !Status {
     defer dir.close(ctx.io);
 
     try dir.writeFile(ctx.io, .{ .sub_path = "fixture.propan", .data = case.source });
+    try dir.writeFile(ctx.io, .{ .sub_path = "expanded-fixture.propan", .data = case.expanded_source });
     try dir.writeFile(ctx.io, .{ .sub_path = "original.bin", .data = case.original_image });
     try dir.writeFile(ctx.io, .{ .sub_path = "uploaded.bin", .data = image });
     if (prepared) |p| {

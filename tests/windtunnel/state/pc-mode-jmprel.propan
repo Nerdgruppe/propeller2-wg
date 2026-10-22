@@ -3,6 +3,10 @@
 //? timeout-ms: 3000
 //? post: cog[*].c == false
 //? post: cog[*].z == true
+//? macro: target default
+//? macro: target_2 default
+//? macro: target_3 default
+//?
 //? run: "cog-400-imm4"
 //? const: domain = 1
 //? const: probe_pc = 1024
@@ -12,6 +16,7 @@
 //? post: cog[*].reg[result] == 0x409
 //? post: cog[*].reg[observed_pc] == 0x409
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-400-imm4"
 //? issues: pc_domain = 0
 //? const: domain = 2
@@ -22,7 +27,11 @@
 //? post: cog[*].reg[result] == 0x418
 //? post: cog[*].reg[observed_pc] == 0x418
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-100-imm4"
+//? macro: target override MOV register(target), landing_loc
+//? macro: target_2 override MOV register(target + 1), local_marker
+//? macro: target_3 override MOV register(target + 2), exit_word
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -32,6 +41,7 @@
 //? post: cog[*].reg[result] == 0x115
 //? post: cog[*].reg[observed_pc] == 0x115
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-400-imm3"
 //? const: domain = 1
 //? const: probe_pc = 1024
@@ -41,6 +51,7 @@
 //? post: cog[*].reg[result] == 0x408
 //? post: cog[*].reg[observed_pc] == 0x408
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-400-imm3"
 //? issues: pc_domain = 0
 //? const: domain = 2
@@ -51,6 +62,7 @@
 //? post: cog[*].reg[result] == 0x414
 //? post: cog[*].reg[observed_pc] == 0x414
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "cog-400-imm0"
 //? const: domain = 1
 //? const: probe_pc = 1024
@@ -60,6 +72,7 @@
 //? post: cog[*].reg[result] == 0x405
 //? post: cog[*].reg[observed_pc] == 0x405
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-400-imm0"
 //? issues: pc_domain = 0
 //? const: domain = 2
@@ -70,7 +83,11 @@
 //? post: cog[*].reg[result] == 0x408
 //? post: cog[*].reg[observed_pc] == 0x408
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-100-imm0"
+//? macro: target override MOV register(target), landing_loc
+//? macro: target_2 override MOV register(target + 1), local_marker
+//? macro: target_3 override MOV register(target + 2), exit_word
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -80,7 +97,11 @@
 //? post: cog[*].reg[result] == 0x105
 //? post: cog[*].reg[observed_pc] == 0x105
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-400-reg-minus129"
+//? macro: target override WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 override WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 override WRLUT exit_word, aug(target - 0x200 + 2)
 //? const: domain = 1
 //? const: probe_pc = 1024
 //? const: form = 1
@@ -90,7 +111,11 @@
 //? post: cog[*].reg[result] == 0x381
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "hub-400-reg-minus33"
+//? macro: target override WRLUT landing_loc, aug(target - 0x200)
+//? macro: target_2 override WRLUT local_marker, aug(target - 0x200 + 1)
+//? macro: target_3 override WRLUT exit_word, aug(target - 0x200 + 2)
 //? issues: pc_domain = 0
 //? const: domain = 2
 //? const: probe_pc = 1024
@@ -101,6 +126,7 @@
 //? post: cog[*].reg[result] == 0x381
 //? post: cog[*].reg[observed_pc] == 0x381
 //? post: cog[*].reg[landed] == 0x80
+//?
 //? run: "cog-400-reg4"
 //? const: domain = 1
 //? const: probe_pc = 1024
@@ -111,7 +137,11 @@
 //? post: cog[*].reg[result] == 0x409
 //? post: cog[*].reg[observed_pc] == 0x409
 //? post: cog[*].reg[landed] == 0x100
+//?
 //? run: "hub-100-reg4"
+//? macro: target override MOV register(target), landing_loc
+//? macro: target_2 override MOV register(target + 1), local_marker
+//? macro: target_3 override MOV register(target + 2), exit_word
 //? issues: pc_domain = 66
 //? const: domain = 0
 //? const: probe_pc = 256
@@ -141,30 +171,16 @@ setup:
                 MOV     probe_address,                  aug(hubaddr(probe_table) + form * 4)
 .if domain == 0
 // Copy an explicitly unrolled NOP prefix, then wrap a hub FIFO through $FFFFC into low hub RAM.
-.if probe_pc > 0
                 SETQ    probe_pc / 4 - 1
                 RDLONG  register(256),                  aug(hubaddr(hub_prefix))
                 SETQ    probe_pc / 4 - 1
                 WRLONG  register(256),                  0
-.endif
                 RDLONG  word,                           probe_address
                 WRLONG  word,                           aug(probe_pc)
                 WRLONG  fallthrough_word,               aug(probe_pc + 4)
                 WRLONG  0,                              aug(0x7fffc)
-.elif   domain == 1
+.elif domain == 1
 // The canceled native MOVs select the physical source of each retained logical overflow PC.
-.if probe_pc >= 0x401
-                MOV     register(1),                    selector_2
-.endif
-.if probe_pc >= 0x402
-                MOV     register(2),                    selector_3
-.endif
-.if probe_pc >= 0x403
-                MOV     register(3),                    selector_4
-.endif
-.if probe_pc >= 0x404
-                MOV     register(4),                    selector_5
-.endif
                 RDLONG  word,                           probe_address
                 MOV     register(probe_pc - 0x400 + 1), word
                 MOV     register(0),                    exit_word
@@ -179,15 +195,9 @@ setup:
                 WRLONG  landing_loc,                    aug(target)
                 WRLONG  hub_marker,                     aug(target + 4)
                 WRLONG  exit_word,                      aug(target + 8)
-.if target < 0x200
-                MOV     register(target),               landing_loc
-                MOV     register(target + 1),           local_marker
-                MOV     register(target + 2),           exit_word
-.elif   target < 0x400
-                WRLUT   landing_loc,                    aug(target - 0x200)
-                WRLUT   local_marker,                   aug(target - 0x200 + 1)
-                WRLUT   exit_word,                      aug(target - 0x200 + 2)
-.endif
+                {{ target }}
+                {{ target_2 }}
+                {{ target_3 }}
                 // Z=1 cancels source selectors and deliberately remains present in saved CALLD link words.
                 CMP     zero,                           0                                       :wcz
                 CALLD   exit_link,                      entry_target
@@ -242,7 +252,7 @@ var fallthrough_target:
 .if domain == 0
 var entry_target:
                 LONG    0xffffc
-.elif   domain == 1
+.elif domain == 1
 var entry_target:
                 LONG    0x3ff
 .else

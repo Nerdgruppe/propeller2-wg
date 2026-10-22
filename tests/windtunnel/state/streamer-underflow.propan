@@ -2,20 +2,28 @@
 //? issues: streamer_starvation = 1
 //? post: cog[*].reg[amount] == 0
 //? post: cog[*].reg[value] == 0
+//?
 //? run: "phase 0"
 //? const: phase = 0
+//?
 //? run: "phase 1"
 //? const: phase = 1
+//?
 //? run: "phase 2"
 //? const: phase = 2
+//?
 //? run: "phase 3"
 //? const: phase = 3
+//?
 //? run: "phase 4"
 //? const: phase = 4
+//?
 //? run: "phase 5"
 //? const: phase = 5
+//?
 //? run: "phase 6"
 //? const: phase = 6
+//?
 //? run: "phase 7"
 //? const: phase = 7
 
@@ -42,3 +50,4 @@ var value:      LONG    0
 .data
 .align  4
 var data:       LONG    0x87654321
+

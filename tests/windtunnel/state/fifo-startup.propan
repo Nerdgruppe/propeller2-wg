@@ -2,962 +2,2396 @@
 //? timeout-ms: 5000
 //? max-cycles: 2000000
 //? post: cog[*].reg[failures] == 0
+//? macro: nop required
+//? macro: nop_2 required
+//? macro: nop_3 required
+//? macro: nop_4 required
+//? macro: nop_5 default
+//? macro: nop_6 default
+//? macro: nop_7 default
+//? macro: probe_kind required
+//? macro: cmp default
+//? macro: add default
+//?
 //? run: "cog0-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog0-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog0-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog0-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog0-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog0-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog0-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog0-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog0-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog0-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog0-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog0-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog0-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog0-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog0-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog0-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog0-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog0-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog0-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog0-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog0-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog0-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog0-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog0-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
 //? const: probe_gap = 7
+//?
 //? run: "cog1-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog1-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog1-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog1-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog1-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog1-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog1-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog1-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog1-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog1-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog1-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog1-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog1-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog1-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog1-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog1-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog1-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog1-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog1-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog1-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog1-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog1-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog1-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog1-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
 //? const: probe_gap = 7
+//?
 //? run: "cog2-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog2-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog2-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog2-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog2-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog2-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog2-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog2-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog2-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog2-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog2-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog2-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog2-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog2-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog2-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog2-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog2-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog2-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog2-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog2-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog2-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog2-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog2-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog2-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
 //? const: probe_gap = 7
+//?
 //? run: "cog3-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog3-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog3-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog3-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog3-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog3-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog3-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog3-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog3-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog3-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog3-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog3-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog3-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog3-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog3-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog3-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog3-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog3-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog3-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog3-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog3-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog3-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog3-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog3-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
 //? const: probe_gap = 7
+//?
 //? run: "cog4-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog4-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog4-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog4-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog4-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog4-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog4-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog4-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog4-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog4-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog4-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog4-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog4-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog4-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog4-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog4-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog4-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog4-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog4-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog4-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog4-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog4-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog4-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog4-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
 //? const: probe_gap = 7
+//?
 //? run: "cog5-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog5-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog5-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog5-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog5-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog5-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog5-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog5-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog5-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog5-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog5-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog5-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog5-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog5-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog5-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog5-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog5-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog5-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog5-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog5-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog5-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog5-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog5-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog5-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
 //? const: probe_gap = 7
+//?
 //? run: "cog6-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog6-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog6-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog6-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog6-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog6-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog6-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog6-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog6-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog6-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog6-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog6-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog6-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog6-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog6-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog6-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog6-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog6-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog6-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog6-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog6-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog6-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog6-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog6-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
 //? const: probe_gap = 7
+//?
 //? run: "cog7-kind0-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 0
+//?
 //? run: "cog7-kind0-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 1
+//?
 //? run: "cog7-kind0-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 2
+//?
 //? run: "cog7-kind0-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 3
+//?
 //? run: "cog7-kind0-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 4
+//?
 //? run: "cog7-kind0-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 5
+//?
 //? run: "cog7-kind0-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 6
+//?
 //? run: "cog7-kind0-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RFLONG loaded
+//? macro: cmp override CMP expected_pointer, address :wz
+//? macro: add override if(!Z) ADD expected, 1
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
 //? const: probe_gap = 7
+//?
 //? run: "cog7-kind1-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 0
+//?
 //? run: "cog7-kind1-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 1
+//?
 //? run: "cog7-kind1-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 2
+//?
 //? run: "cog7-kind1-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 3
+//?
 //? run: "cog7-kind1-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 4
+//?
 //? run: "cog7-kind1-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 5
+//?
 //? run: "cog7-kind1-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 6
+//?
 //? run: "cog7-kind1-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set RDLONG loaded, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
 //? const: probe_gap = 7
+//?
 //? run: "cog7-kind2-gap0"
+//? macro: nop set
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
 //? const: probe_gap = 0
+//?
 //? run: "cog7-kind2-gap1"
+//? macro: nop set NOP
+//? macro: nop_2 set
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
 //? const: probe_gap = 1
+//?
 //? run: "cog7-kind2-gap2"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
 //? const: probe_gap = 2
+//?
 //? run: "cog7-kind2-gap3"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
 //? const: probe_gap = 3
+//?
 //? run: "cog7-kind2-gap4"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
 //? const: probe_gap = 4
+//?
 //? run: "cog7-kind2-gap5"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
 //? const: probe_gap = 5
+//?
 //? run: "cog7-kind2-gap6"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
 //? const: probe_gap = 6
+//?
 //? run: "cog7-kind2-gap7"
+//? macro: nop set NOP
+//? macro: nop_2 set NOP
+//? macro: nop_3 set NOP
+//? macro: nop_4 set NOP
+//? macro: nop_5 override NOP
+//? macro: nop_6 override NOP
+//? macro: nop_7 override NOP
+//? macro: probe_kind set WRLONG written, random_address
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
@@ -984,35 +2418,15 @@ phase_loop:
                 WAITCT1
                 GETCT   start
                 RDFAST  no_wait,            address
-.if probe_gap >= 1
-                NOP
-.endif
-.if probe_gap >= 2
-                NOP
-.endif
-.if probe_gap >= 3
-                NOP
-.endif
-.if probe_gap >= 4
-                NOP
-.endif
-.if probe_gap >= 5
-                NOP
-.endif
-.if probe_gap >= 6
-                NOP
-.endif
-.if probe_gap >= 7
-                NOP
-.endif
+                {{ nop }}
+                {{ nop_2 }}
+                {{ nop_3 }}
+                {{ nop_4 }}
+                {{ nop_5 }}
+                {{ nop_6 }}
+                {{ nop_7 }}
 
-.if probe_kind == 0
-                RFLONG  loaded
-.elif   probe_kind == 1
-                RDLONG  loaded,             random_address
-.else
-                WRLONG  written,            random_address
-.endif
+                {{ probe_kind }}
                 GETPTR  pointer
                 WAITX   100
                 // Calculate the first FIFO grant and response from the captured CT, independently of simulator state.
@@ -1034,7 +2448,7 @@ phase_loop:
     if(>=)      MOV     expected,           bank
     if(>=)      ADD     expected,           1
     if(>=)      ADD     expected_pointer,   4
-.elif   probe_kind == 1
+.elif probe_kind == 1
                 MOV     grant,              request
                 ADD     grant,              2
                 MOV     temporary,          phase
@@ -1059,10 +2473,8 @@ compare:
                 RFLONG  late
                 MOV     expected,           bank
                 ADD     expected,           1
-.if probe_kind == 0
-                CMP     expected_pointer,   address             :wz
-    if(!Z)      ADD     expected,           1
-.endif
+                {{ cmp }}
+                {{ add }}
                 CMP     late,               expected            :wz
     if(!Z)      ADD     failures,           1
                 ADD     phase,              1

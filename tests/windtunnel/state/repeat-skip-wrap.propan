@@ -1,20 +1,35 @@
 //? WINDTUNNEL CHECK LIST
 //? issues: pc_domain = 2
 //? timeout-ms: 1000
+//? macro: wrlong default WRLONG word, aug(0x7fffc)
+//? macro: wrlong_2 default WRLONG word, 0
+//? macro: wrlong_3 default WRLONG word, 4
+//? macro: wrlong_4 default WRLONG word, 8
+//? macro: mov default MOV register(0), exit_word
+//?
 //? run: "local-repeat"
 //? const: kind = 0
 //? post: cog[0].reg[value] == 6
+//?
 //? run: "local-skipf"
 //? const: kind = 1
 //? post: cog[0].reg[value] == 1
+//?
 //? run: "hub-body-wrap"
+//? macro: wrlong override WRLONG word, aug(0x7fff8)
+//? macro: wrlong_2 override WRLONG word, aug(0x7fffc)
+//? macro: wrlong_3 override WRLONG word, 0
+//? macro: wrlong_4 override WRLONG word, 4
+//? macro: mov override
 //? issues: pc_domain = 7
 //? const: kind = 2
 //? post: cog[0].reg[value] == 6
+//?
 //? run: "hub-repeat-start-zero"
 //? issues: pc_domain = 3
 //? const: kind = 3
 //? post: cog[0].reg[value] == 2
+//?
 //? run: "maximum-length"
 //? issues: pc_domain = 0
 //? const: kind = 4
@@ -36,7 +51,7 @@
                 MOV     register(0),    word
                 MOV     register(1),    word
                 JMP     nrel(local_rep)
-.elif   kind == 1
+.elif kind == 1
                 MOV     register(0),    exit_word
                 MOV     register(1),    exit_word
                 MOV     PTRA,           aug(hubaddr(local_skip))
@@ -45,29 +60,19 @@
                 RDLONG  word,           PTRA++
                 WRLUT   word,           aug(508)
                 JMP     nrel(local_skip)
-.elif   kind == 4
+.elif kind == 4
                 JMP     nrel(maximum)
 .else
                 MOV     PTRA,           aug(hubaddr(hub_template))
                 RDLONG  word,           PTRA++
-.if kind == 2
-                WRLONG  word,           aug(0x7fff8)
+                {{ wrlong }}
                 RDLONG  word,           PTRA++
-                WRLONG  word,           aug(0x7fffc)
+                {{ wrlong_2 }}
                 RDLONG  word,           PTRA++
-                WRLONG  word,           0
+                {{ wrlong_3 }}
                 RDLONG  word,           PTRA++
-                WRLONG  word,           4
-.else
-                WRLONG  word,           aug(0x7fffc)
-                RDLONG  word,           PTRA++
-                WRLONG  word,           0
-                RDLONG  word,           PTRA++
-                WRLONG  word,           4
-                RDLONG  word,           PTRA++
-                WRLONG  word,           8
-                MOV     register(0),    exit_word
-.endif
+                {{ wrlong_4 }}
+                {{ mov }}
                 JMP     entry_address
 .endif
 done:
@@ -76,7 +81,8 @@ var value:      LONG    0
 var word:       LONG    0
 var entry_address:
                 LONG    0xffff8 + 4 * (kind == 3)
-var exit_word:  LONG    0xfd800000 | pcaddr(done)
+var exit_word:
+                JMP     nrel(done)
 
 .cogexec    0x3000, 0
 cog_template:
@@ -106,3 +112,4 @@ maximum:
                 LONG    [0] * 509
                 ADD     value,  1
                 JMP     nrel(_end)
+

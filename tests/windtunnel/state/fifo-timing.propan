@@ -2,195 +2,402 @@
 //? timeout-ms: 5000
 //? max-cycles: 2000000
 //? post: cog[*].reg[failures] == 0
+//? macro: wrfast default
+//? macro: wflong default
+//? macro: probe_kind required
+//? macro: probe_kind_2 required
+//? macro: add default
+//? macro: add_2 default
+//? macro: fge default
+//?
 //? run: "cog0-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 0
+//?
 //? run: "cog0-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 1
+//?
 //? run: "cog0-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 2
+//?
 //? run: "cog0-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 3
+//?
 //? run: "cog0-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 4
+//?
 //? run: "cog0-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 0
 //? const: probe_cog = 0
 //? const: probe_kind = 5
+//?
 //? run: "cog1-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 0
+//?
 //? run: "cog1-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 1
+//?
 //? run: "cog1-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 2
+//?
 //? run: "cog1-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 3
+//?
 //? run: "cog1-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 4
+//?
 //? run: "cog1-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 1
 //? const: probe_cog = 1
 //? const: probe_kind = 5
+//?
 //? run: "cog2-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 0
+//?
 //? run: "cog2-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 1
+//?
 //? run: "cog2-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 2
+//?
 //? run: "cog2-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 3
+//?
 //? run: "cog2-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 4
+//?
 //? run: "cog2-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 2
 //? const: probe_cog = 2
 //? const: probe_kind = 5
+//?
 //? run: "cog3-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 0
+//?
 //? run: "cog3-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 1
+//?
 //? run: "cog3-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 2
+//?
 //? run: "cog3-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 3
+//?
 //? run: "cog3-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 4
+//?
 //? run: "cog3-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 3
 //? const: probe_cog = 3
 //? const: probe_kind = 5
+//?
 //? run: "cog4-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 0
+//?
 //? run: "cog4-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 1
+//?
 //? run: "cog4-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 2
+//?
 //? run: "cog4-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 3
+//?
 //? run: "cog4-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 4
+//?
 //? run: "cog4-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 4
 //? const: probe_cog = 4
 //? const: probe_kind = 5
+//?
 //? run: "cog5-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 0
+//?
 //? run: "cog5-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 1
+//?
 //? run: "cog5-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 2
+//?
 //? run: "cog5-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 3
+//?
 //? run: "cog5-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 4
+//?
 //? run: "cog5-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 5
 //? const: probe_cog = 5
 //? const: probe_kind = 5
+//?
 //? run: "cog6-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 0
+//?
 //? run: "cog6-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 1
+//?
 //? run: "cog6-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 2
+//?
 //? run: "cog6-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 3
+//?
 //? run: "cog6-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 4
+//?
 //? run: "cog6-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 6
 //? const: probe_cog = 6
 //? const: probe_kind = 5
+//?
 //? run: "cog7-kind0"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 0
+//?
 //? run: "cog7-kind1"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 1
+//?
 //? run: "cog7-kind2"
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 2
+//?
 //? run: "cog7-kind3"
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 3
+//?
 //? run: "cog7-kind4"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set WRFAST
+//? macro: probe_kind_2 set CMP alignment, 0 :wz
+//? macro: add override if(!Z) ADD expected, 1
+//? macro: add_2 override ADD expected, 2
+//? macro: fge override FGE expected, 5
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 4
+//?
 //? run: "cog7-kind5"
+//? macro: wrfast override WRFAST 0, address
+//? macro: wflong override WFLONG aug(0x12121212)
+//? macro: probe_kind set RDFAST
+//? macro: probe_kind_2 set ADD expected, 15
 //? cog: 7
 //? const: probe_cog = 7
 //? const: probe_kind = 5
@@ -209,16 +416,10 @@ phase_loop:
                 ADD     timer,      phase
                 ADDCT1  timer,      0
                 WAITCT1
-.if probe_kind >= 4
-                WRFAST  0,          address
-                WFLONG  aug(0x12121212)
-.endif
+                {{ wrfast }}
+                {{ wflong }}
                 GETCT   start
-.if probe_kind == 0 or probe_kind == 2 or probe_kind == 5
-                RDFAST  config,     address
-.else
-                WRFAST  config,     address
-.endif
+                {{ probe_kind }}    config, address
                 GETCT   finish
                 SUB     finish,     start
                 AND     start,      7
@@ -229,23 +430,19 @@ phase_loop:
                 SUB     expected,   5
                 AND     expected,   7
                 ADD     expected,   12
-.elif   probe_kind == 1
+.elif probe_kind == 1
                 MOV     expected,   5
-.elif   probe_kind == 2 or probe_kind == 3
+.elif probe_kind == 2 or probe_kind == 3
                 MOV     expected,   4
 .else
                 MOV     expected,   bank
                 SUB     expected,   start
                 SUB     expected,   probe_cog
                 AND     expected,   7
-.if probe_kind == 4
-                CMP     alignment,  0               :wz
-    if(!Z)      ADD     expected,   1
-                ADD     expected,   2
-                FGE     expected,   5
-.else
-                ADD     expected,   15
-.endif
+                {{ probe_kind_2 }}
+                {{ add }}
+                {{ add_2 }}
+                {{ fge }}
 .endif
                 CMP     finish,     expected        :wz
     if(!Z)      ADD     failures,   1
