@@ -10,7 +10,7 @@ Install [Zig 0.16](https://ziglang.org/download/#release-0.16.0), then build the
 [user@machine propeller2-wg]$ zig build -Doptimize=ReleaseSafe
 [user@machine propeller2-wg]$
 [user@machine propeller2-wg]$ ls ./zig-out/bin/
-propan  propan-lsp  turboprop  windtunnel  windtunnel-gui  windtunnel-export
+propan  propan-lsp  turboprop  windtunnel  windtunnel-p2aas  windtunnel-gui  windtunnel-export
 [user@machine propeller2-wg]$ ./zig-out/bin/propan --help
 Usage: ./zig-out/bin/propan [-h] [-o <output>] <sources...>
 
@@ -58,7 +58,7 @@ optional kcov collection.
 Use `zig-0.16.0 build install test-windtunnel -Dfast-io=true` to accelerate serial
 endpoints, or run selected fixtures with `zig-out/bin/windtunnel-tests --fast-io FILE.propan`.
 The simulator also accepts `windtunnel --fast-io --image program.bin` and
-`windtunnel --serve --fast-io`. UART baud delays become single-clock word transfers;
+`windtunnel-p2aas --fast-io`. UART baud delays become single-clock word transfers;
 USART endpoints already transfer one word per pin update. Fast RX holds unread
 words until acknowledgement. CPU clocks and explicit `WAITX` warmups still run
 normally. Fixtures requiring serial frame timing can opt out with
@@ -66,6 +66,18 @@ normally. Fixtures requiring serial frame timing can opt out with
 
 See [Windtunnel core coverage](docs/windtunnel/core.md) for implemented operations
 and the remaining functional and timing limitations.
+
+Windtunnel's reusable Zig module lives in [`src/windtunnel/`](src/windtunnel/).
+The terminal executable lives in [`src/windtunnel-cli/`](src/windtunnel-cli/) and
+installs as `windtunnel`; the independent P2AAS server lives in
+[`src/windtunnel-p2aas/`](src/windtunnel-p2aas/) and installs as `windtunnel-p2aas`.
+Both import `windtunnel`, as do the GUI and export tool. The module supplies
+simulation, serial boot, debugging and capture serialization; applications own
+startup configuration, entropy, logging and host file/network operations.
+Build either executable with `zig-0.16.0 build build-windtunnel` or
+`zig-0.16.0 build build-windtunnel-p2aas`.
+Run their adapter tests with `test-windtunnel-cli` or `test-windtunnel-p2aas`;
+both are included in `test-windtunnel-unit` and `test-windtunnel`.
 
 The `windtunnel-gui` desktop starter uses zig-gamedev's GLFW/OpenGL packages and
 zgui (Dear ImGui), with pinned dependencies managed by Zig's package manager.
@@ -82,9 +94,9 @@ to convert it. See [Scope capture and export](docs/windtunnel/scope.md) for stor
 accounting and CLI options.
 
 Use `windtunnel --sim ideal|realistic --image program.bin` to select an electrical
-profile (default: ideal). The same option applies to server sessions.
+profile (default: ideal). The same option applies to `windtunnel-p2aas` server sessions.
 
-`zig-out/bin/windtunnel --serve` exposes a compatible P2AAS endpoint at
+`zig-out/bin/windtunnel-p2aas` exposes a compatible P2AAS endpoint at
 `ws://127.0.0.1:21591/`. See [the server documentation](docs/windtunnel/p2aas.md)
 for protocol behavior, client interchangeability, and hardware comparisons.
 
@@ -121,7 +133,7 @@ install
 failed command: ./.zig-cache/o/acb1656cfd74dec78085048b417c27f6/byacc -s -p spinyy -t -l -b /home/felix/projects/nerdgruppe/propeller2-wg/.zig-cache/o/7d79a20a5a7e5cb0883d16882f4252b7/spin -d /home/felix/projects/nerdgruppe/propeller2-wg/zig-pkg/N-V-__8AAOUErQDX6Zwe1aeK_COII7E566nhOgG8bC4qX88S/frontends/spin/spin.y
 
 [user@machine propeller2-wg]$ ls zig-out/bin/
-flexspin  loadp2  propan  turboprop  windtunnel
+flexspin  loadp2  propan  turboprop  windtunnel  windtunnel-p2aas
 [user@machine propeller2-wg]$ ./zig-out/bin/flexspin -h
 Propeller Spin/PASM Compiler 'FlexSpin' (c) 2011-2025 Total Spectrum Software Inc. and contributors
 Version 7.1.1 Compiled on: Sep 13 2026

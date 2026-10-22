@@ -4,15 +4,15 @@ Windtunnel can replace the local P2AAS hardware service for firmware supported b
 
 ```sh
 zig-0.16.0 build install -Doptimize=ReleaseFast
-zig-out/bin/windtunnel --serve
+zig-out/bin/windtunnel-p2aas
 # Equivalent, or select another bind address and port:
-zig-out/bin/windtunnel --serve --url=ws://127.0.0.1:21591/
+zig-out/bin/windtunnel-p2aas --url=ws://127.0.0.1:21591/
 ```
 
 The default URL is `ws://127.0.0.1:21591/`. Listen URLs accept an IPv4/IPv6 address or `localhost`,
 a root path, and the `ws` scheme. An explicitly supplied URL without a port uses port 80.
-`--serve` cannot be combined with `--image`. Regular host logs are printed
-in server mode; `--verbose` also enables debug logging.
+The server accepts uploads over P2AAS; terminal image and boot options belong to
+`windtunnel`. Regular host logs are printed by the server; `--verbose` also enables debug logging.
 Completed-edge issue and service diagnostics go to stderr. Signal recording is
 available in the CLI/GUI through native Scope captures; `windtunnel-export` converts
 saved captures to VCD.

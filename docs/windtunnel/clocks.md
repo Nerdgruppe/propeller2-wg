@@ -18,7 +18,7 @@ room-temperature RCFAST value of one board does not replace the datasheet typica
 
 ## CLI and reproducibility
 
-These options work in the CLI, GUI and `--serve` mode:
+These options work in the CLI, GUI and `windtunnel-p2aas`:
 
 ```sh
 windtunnel --sim realistic --seed 42 --rcfast 24-4+6 --image program.bin

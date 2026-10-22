@@ -171,7 +171,7 @@ The CLI selects a profile for image runs or all fresh server sessions:
 ```sh
 zig-out/bin/windtunnel --sim ideal --image program.bin
 zig-out/bin/windtunnel --sim realistic --image program.bin
-zig-out/bin/windtunnel --sim realistic --oversample 8 --serve
+zig-out/bin/windtunnel-p2aas --sim realistic --oversample 8
 ```
 
 `--sim` accepts only `ideal` or `realistic` and defaults to `ideal`.

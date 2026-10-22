@@ -11,12 +11,14 @@ const args_parser = @import("args");
 const Oscillator = windtunnel.ClockConfiguration.Oscillator;
 const Scope = @import("Scope.zig");
 
+const SimulationProfile = enum { ideal, realistic };
+
 const CliArgs = struct {
     help: bool = false,
     image: ?[]const u8 = null,
     boot: bool = false,
     baudrate: u32 = 115_200,
-    sim: windtunnel.SimulationProfile = .ideal,
+    sim: SimulationProfile = .ideal,
     rcfast: ?Oscillator = null,
     rcslow: ?Oscillator = null,
     crystal: ?Oscillator = null,
@@ -75,12 +77,21 @@ pub fn main(init: std.process.Init) !u8 {
         .ideal => .ideal,
         .realistic => .realistic,
     };
-    windtunnel.configureClocks(init, &gui.configuration_draft, .{
-        .rcfast = cli.options.rcfast,
-        .rcslow = cli.options.rcslow,
-        .crystal = cli.options.crystal,
-        .seed = cli.options.seed,
+    inline for (.{ "rcfast", "rcslow", "crystal" }) |name| {
+        if (@field(cli.options, name)) |value| {
+            @field(gui.configuration_draft.clocks, name) = value;
+        }
+    }
+    gui.configuration_draft.clocks.seed = cli.options.seed orelse blk: {
+        var seed: u64 = undefined;
+        std.Io.random(init.io, std.mem.asBytes(&seed));
+        break :blk seed;
+    };
+    std.log.info("clock seed: {d} (--seed {d})", .{
+        gui.configuration_draft.clocks.seed,
+        gui.configuration_draft.clocks.seed,
     });
+
     try gui.hub.init(gui.configuration_draft);
     gui.hub.debugger = &gui.debugger;
     try gui.scope.start(&gui.hub, init.gpa);

@@ -128,7 +128,7 @@ pub fn drawContents(scope: *Scope, hub: *windtunnel.Hub, allocator: std.mem.Allo
     const path = std.mem.sliceTo(&scope.path, 0);
     zgui.beginDisabled(.{ .disabled = io == null or path.len == 0 });
     if (zgui.button("Save capture", .{})) {
-        windtunnel.saveCapture(capture, io.?, path) catch |err| {
+        saveCapture(capture, io.?, path) catch |err| {
             scope.failure = err;
         };
     }
@@ -523,4 +523,14 @@ fn snapTrace(scope: *const Scope, comptime Sample: type, capture: *const Capture
         }
         previous = sample;
     }
+}
+
+/// Save a retained Scope recording without exposing host file operations to simulator stepping.
+fn saveCapture(capture: *const Capture, io: std.Io, path: []const u8) !void {
+    const file = try std.Io.Dir.cwd().createFile(io, path, .{});
+    defer file.close(io);
+
+    var buffer: [4096]u8 = undefined;
+    var output = file.writer(io, &buffer);
+    try capture.writeNative(&output.interface);
 }

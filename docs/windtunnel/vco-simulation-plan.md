@@ -31,7 +31,7 @@ Direct P-up has returned incorrect data despite correct final frequency. Report 
 | `src/windtunnel/sim/Hub.zig`, `configure` / `step` | Executes one system edge and increments CT | Own/advance a stateful clock source and consume a shared physical interval for that edge. Preserve existing instruction and smart-pin ordering. |
 | `src/windtunnel/sim/IO.zig`, `resolvePads` | Computes electrical dt as `1 / clock_frequency / oversample` | Consume the actual edge interval, split consistently over analog substeps. |
 | `src/windtunnel/sim/Vcd.zig` | Generates half-period timestamps from a frequency; rejects zero | Emit the same integrated intervals used by the simulation. Represent quiet intervals without invented system edges. |
-| `src/windtunnel/p2aas_server.zig` | Computes virtual time and scheduling batches from frequency/CT | Pace by accumulated physical time, including acquisition intervals without CPU edges. Avoid division by zero and CT-based busy loops. |
+| `src/windtunnel-p2aas/server.zig` | Computes virtual time and scheduling batches from frequency/CT | Pace by accumulated physical time, including acquisition intervals without CPU edges. Avoid division by zero and CT-based busy loops. |
 | Serial boot, terminal and GUI clock consumers | Read `clock_frequency` directly in several places | Audit consumers; distinguish nominal configuration, instantaneous/effective rate, and physical elapsed time. Keep ideal ROM handoff behavior deterministic. |
 
 Do not modify generated instruction dispatch merely to add physics: HUBSET already routes through shared Hub configuration. Inspect all callers before choosing the exact clock-state ownership and API.

@@ -72,9 +72,9 @@ zig-out/bin/windtunnel --image program.bin --oversample 16 \
 `stop` at the memory limit, a successful completion, or can use `rolling`. It saves
 the retained recording on normal completion, Ctrl-A/Ctrl-Q, capture-full, and
 handled simulation errors. Export failures return an error. Process termination
-by an external signal does not guarantee export. Scope is unavailable with
-`--serve`. VCD conversion is provided by `windtunnel-export` after the native
-capture has been saved.
+by an external signal does not guarantee export. Scope capture belongs to the
+terminal CLI and GUI; the separate `windtunnel-p2aas` server does not record captures.
+VCD conversion is provided by `windtunnel-export` after the native capture has been saved.
 
 The GUI saves native captures using Scope's Export path field. Native files
 cannot yet be reopened in Scope. The standalone tool's VCD output includes separate

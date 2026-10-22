@@ -158,6 +158,7 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
   - Allow empty `//?` lines
   - `//? run:` must be prefixed by an empty line
 - Simple GUI Terminal/Stream
+- Rework how the GUI works. The "reinitialize" is bullshit, also is "reboot" vs. "reset".
 
 ### Analog Subsystem
 

@@ -1,10 +1,11 @@
 //! Raw host terminal and independent physical UART input for the CLI.
 const std = @import("std");
-const Hub = @import("sim/Hub.zig");
-const Issue = @import("sim/Issue.zig");
-const Capture = @import("sim/Capture.zig");
-const smart_pin = @import("sim/smart_pin.zig");
-const serial_boot = @import("serial_boot.zig");
+const windtunnel = @import("windtunnel");
+const Hub = windtunnel.Hub;
+const Issue = Hub.Issue;
+const Capture = windtunnel.Capture;
+const smart_pin = windtunnel.smart_pin;
+const serial_boot = windtunnel.serial_boot;
 const Terminal = @This();
 
 io: std.Io,

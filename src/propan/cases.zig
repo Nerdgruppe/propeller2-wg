@@ -321,12 +321,12 @@ pub const emit_compare_tests: []const []const u8 = &[_][]const u8{
     "tests/propan/equivalence/implicit-field-aliases.propan",
 };
 
-pub const formatter_tests = [_]struct { input: []const u8, expected: []const u8 }{
-    .{ .input = "tests/propan/format/input.propan", .expected = @embedFile("format/expected.propan") },
-    .{ .input = "tests/propan/format/layout-input.propan", .expected = @embedFile("format/layout-expected.propan") },
-    .{ .input = "tests/propan/format/constants.propan", .expected = @embedFile("format/constants-expected.propan") },
-    .{ .input = "tests/propan/format/operands-input.propan", .expected = @embedFile("format/operands-expected.propan") },
-    .{ .input = "tests/propan/sema/res-labels.propan", .expected = @embedFile("format/res-expected.propan") },
+pub const formatter_tests = [_]struct { input: []const u8, expected_path: []const u8 }{
+    .{ .input = "tests/propan/format/input.propan", .expected_path = "tests/propan/format/expected.propan" },
+    .{ .input = "tests/propan/format/layout-input.propan", .expected_path = "tests/propan/format/layout-expected.propan" },
+    .{ .input = "tests/propan/format/constants.propan", .expected_path = "tests/propan/format/constants-expected.propan" },
+    .{ .input = "tests/propan/format/operands-input.propan", .expected_path = "tests/propan/format/operands-expected.propan" },
+    .{ .input = "tests/propan/sema/res-labels.propan", .expected_path = "tests/propan/format/res-expected.propan" },
 };
 
 // Additional imports, reference files, and payloads used by runtime tests.
