@@ -157,6 +157,33 @@ pub fn build(b: *std.Build) !void {
         break :blk exe;
     };
 
+    const windtunnel_export_mod = b.createModule(.{
+        .root_source_file = b.path("src/windtunnel-export/main.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "windtunnel", .module = windtunnel_mod },
+            .{ .name = "args", .module = args_mod },
+        },
+    });
+    const windtunnel_export = b.addExecutable(.{
+        .name = "windtunnel-export",
+        .root_module = windtunnel_export_mod,
+        .use_llvm = true,
+    });
+    fb.installArtifact(windtunnel_export);
+    const export_build = b.step("build-windtunnel-export", "Build and install the Scope inspection and VCD conversion tool");
+    if (no_emit_bin) {
+        export_build.dependOn(&windtunnel_export.step);
+    } else {
+        export_build.dependOn(&b.addInstallArtifact(windtunnel_export, .{}).step);
+    }
+    const export_tests = b.addTest(.{ .name = "windtunnel-export-tests", .root_module = windtunnel_export_mod, .use_llvm = true });
+    const export_test_run = b.addRunArtifact(export_tests);
+    const export_test_step = b.step("test-windtunnel-export", "Test Scope metadata inspection");
+    export_test_step.dependOn(&export_test_run.step);
+    windtunnel_test_step.dependOn(&export_test_run.step);
+
     if (!no_gui) {
         const zglfw = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
         const zopengl = b.dependency("zopengl", .{ .target = target });
@@ -179,6 +206,8 @@ pub fn build(b: *std.Build) !void {
         });
         gui_mod.linkLibrary(zglfw.artifact("glfw"));
         gui_mod.linkLibrary(zgui.artifact("imgui"));
+        gui_mod.addIncludePath(zgui.path("libs/imgui"));
+        gui_mod.addCSourceFile(.{ .file = b.path("src/windtunnel-gui/imgui.cpp"), .flags = &.{} });
 
         const exe = b.addExecutable(.{
             .name = "windtunnel-gui",

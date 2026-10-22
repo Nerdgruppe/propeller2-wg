@@ -1,5 +1,9 @@
 # Plan: stateful clock and VCO behavior for Windtunnel
 
+This historical plan describes the former live VCD path. The simulator now records
+native Scope captures; `windtunnel-export` owns VCD conversion. References to
+`sim/Vcd.zig` below document the earlier design and its validation.
+
 Status: implemented within the measured coverage, 18 October 2026. See the
 [clock model and CLI reference](clocks.md) for the shipped behavior and limits.
 The design below records the rationale and remaining identification work. Basis: [100 MS/s PLL characterization](../measurements/pll-100ms.md), its [portable aggregates](../measurements/pll-100ms-summary.json), and retained raw/firmware evidence.

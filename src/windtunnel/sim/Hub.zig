@@ -11,7 +11,7 @@ const IO = @import("IO.zig");
 pub const SystemConfiguration = @import("SystemConfiguration.zig");
 const Cordic = @import("Cordic.zig");
 const Random = @import("Random.zig");
-const Vcd = @import("Vcd.zig");
+const Capture = @import("Capture.zig");
 const Hub = @This();
 pub const Debugger = @import("Debugger.zig");
 pub const Issue = @import("Issue.zig");
@@ -58,7 +58,8 @@ debug: struct {
     locked: bool = false,
 } = .{},
 
-vcd: ?*Vcd = null,
+/// Caller-owned electrical recording survives chip resets.
+capture: ?*Capture = null,
 issues: Issue.Collection = .{},
 /// Actual committed writes for same-edge writer conflict detection.
 edge_writes: [8 * max_cog_edge_writes]Issue.Participant = undefined,
@@ -167,10 +168,10 @@ pub fn configure(hub: *Hub, mode: u32) void {
     }
 }
 
-/// Attach a caller-owned trace writer and capture the initial state.
-pub fn attachVcd(hub: *Hub, vcd: *Vcd) void {
-    vcd.capture(hub, 0);
-    hub.vcd = vcd;
+/// Attach a caller-owned capture and observe current levels, preserving history when reattaching after reset.
+pub fn attachCapture(hub: *Hub, capture: *Capture) void {
+    hub.capture = capture;
+    hub.io.observeCapture(capture, hub.io.pads);
 }
 
 /// Release ownership while retaining allocation and last owner, and signal lock-release events.
@@ -435,10 +436,7 @@ pub fn step(hub: *Hub) StepResult {
     }
     const interval = hub.io.clock.step();
     if (interval.quiet != 0) {
-        hub.io.advanceQuiet(hub, IO.Clock.secondsOf(interval.quiet));
-        if (hub.vcd) |vcd| {
-            vcd.advanceQuiet(hub, interval.quiet);
-        }
+        hub.io.advanceQuiet(hub, interval.quiet);
     }
     if (interval.period == 0) {
         return .normal;
@@ -609,9 +607,6 @@ pub fn step(hub: *Hub) StepResult {
         }
     }
     hub.counter +%= 1;
-    if (hub.vcd) |vcd| {
-        vcd.capture(hub, interval.period);
-    }
     if (hub.debugger) |debugger| {
         debugger.afterClock(hub);
         if (debugger.stop != .none)
@@ -628,8 +623,13 @@ pub fn report(hub: *Hub, kind: Issue.Kind, provenance: access_types.Provenance) 
 /// Reset chip state while retaining reports already detected on this edge.
 fn firmwareReset(hub: *Hub) void {
     const issues = hub.issues;
+    const capture = hub.capture;
     hub.init(hub.system_configuration) catch unreachable;
     hub.issues = issues;
+    if (capture) |recording| {
+        recording.reset(.firmware);
+        hub.attachCapture(recording);
+    }
 }
 
 /// Return whether any cog is executing or waiting for startup to complete.
@@ -1246,11 +1246,6 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     var debugger: Debugger = .{ .allocator = std.testing.allocator, .stop = .execution };
     defer debugger.deinit();
 
-    var trace: std.Io.Writer.Allocating = .init(std.testing.allocator);
-    defer trace.deinit();
-
-    var vcd: Vcd = .{ .writer = &trace.writer };
-    hub.vcd = &vcd;
     hub.debugger = &debugger;
     hub.configure(0x1fff_ffff);
     try std.testing.expectEqual(StepResult.reset, hub.step());
@@ -1263,7 +1258,7 @@ test "HUBSET reset clears the entire Hub even while a debugger stop is pending" 
     try std.testing.expect(hub.io.getExternal(@enumFromInt(0)) == null);
     try std.testing.expectEqual(@as(u32, 0), hub.io.pins[0].smart.registers.x);
     try std.testing.expect(!hub.locks[0].allocated and !hub.locks[0].taken);
-    try std.testing.expect(hub.debugger == null and hub.vcd == null);
+    try std.testing.expect(hub.debugger == null);
     try std.testing.expect(hub.issues.len == 0 and !hub.reset_requested and !hub.clocking);
     try std.testing.expect(std.mem.allEqual(u8, hub.ram.bytes()[0..0x7c000], 0));
     try std.testing.expectEqualSlices(u8, boot_rom, hub.ram.bytes()[0x7c000..]);
@@ -1342,10 +1337,10 @@ test "an unready empirical PLL advances shared physical time and pads without CT
     configuration.clocks.rcfast = IO.Clock.Configuration.ideal.rcfast;
     try hub.init(configuration);
     try hub.io.setExternal(@enumFromInt(2), .{ .voltage = 3.3, .resistance = 1000, .capacitance = 1e-8 });
-    var output: std.Io.Writer.Allocating = .init(std.testing.allocator);
-    defer output.deinit();
-    var vcd: Vcd = .{ .writer = &output.writer };
-    hub.attachVcd(&vcd);
+    var capture = try Capture.init(std.testing.allocator, Capture.minimum_memory, .stop, hub.io.captureState(hub.io.pads));
+    defer capture.deinit();
+
+    hub.attachCapture(&capture);
     hub.configure(0x010007fb);
     const random_before = hub.random;
     for (0..100) |_| {
@@ -1355,12 +1350,12 @@ test "an unready empirical PLL advances shared physical time and pads without CT
     }
     try std.testing.expect(hub.io.getExternal(@enumFromInt(2)).?.voltage > 1);
     try std.testing.expect(hub.io.clock.elapsed.femtoseconds > 9_000_000_000);
-    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, vcd.elapsed);
+    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, capture.metadataConst().end);
     var iterations: usize = 100;
     while (hub.counter == 0 and iterations < 10000) : (iterations += 1) {
         _ = hub.step();
     }
     try std.testing.expectEqual(@as(u64, 1), hub.counter);
-    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, vcd.elapsed);
-    try std.testing.expectEqual(hub.io.clock.elapsed.fraction, vcd.fraction);
+    try std.testing.expectEqual(hub.io.clock.elapsed.femtoseconds, capture.metadataConst().end);
+    try std.testing.expectEqual(hub.io.clock.elapsed.fraction, capture.metadataConst().time.fraction);
 }

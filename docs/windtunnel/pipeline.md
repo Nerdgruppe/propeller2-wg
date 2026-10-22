@@ -17,7 +17,7 @@ Implement the pipeline for the existing instruction coverage first.
 
 - The native runner's `--characterize` mode assembles and uploads without running
   the simulator, validates WTOR frames, and retains complete decoded register
-  snapshots and requested hub observations. VCD provides physical-time signal capture.
+  snapshots and requested hub observations. Scope records physical-time signals for standalone export.
 - Cog/LUT execution has five stage positions, two-clock issue, captured operands,
   deferred result/flag writes, stalls, and branch flush/refill. Hardware agrees on
   GETCT/NOP/cancellation, WAITX, RDLUT/pixel latency, dependencies, LUT execution,

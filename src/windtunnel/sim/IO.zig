@@ -1,5 +1,6 @@
 //! Electrical pads, physical receivers, routing, and simultaneous cog-to-smart-pin commands.
 const std = @import("std");
+const Capture = @import("Capture.zig");
 const test_support = @import("../test_support.zig");
 const access_types = @import("access.zig");
 const Hub = @import("Hub.zig");
@@ -446,7 +447,7 @@ pub fn step(io: *IO, hub: *Hub) void {
         const sync_pipeline = &io.pins[i].sync_output_pipeline;
         state.* = sync_pipeline.step(.{ .level = io.outputState(@enumFromInt(i)), .strength = io.pins[i].strength });
     }
-    io.resolvePads(hub, Clock.secondsOf(io.clock.last_interval.period), true);
+    io.resolvePads(hub, io.clock.last_interval.period, true);
     io.samples.pads[hub.counter % io.samples.pads.len] = io.pads;
     io.samples.receivers[hub.counter % io.samples.receivers.len] = io.receiver_inputs;
     io.samples.out[hub.counter % io.samples.out.len] = io.drives;
@@ -701,14 +702,16 @@ fn selected(io: *const IO, index: PinIndex, selector: PinConfiguration.Selector)
 }
 
 /// Advance simultaneous RC substeps, updating asynchronous feedback between electrical solves.
-fn resolvePads(io: *IO, hub: *Hub, seconds: f64, clocked: bool) void {
+fn resolvePads(io: *IO, hub: *Hub, interval: u128, clocked: bool) void {
     const system = &hub.system_configuration;
-    const dt = seconds / @as(f64, @floatFromInt(system.oversample));
-    if (hub.vcd) |vcd| {
-        if (clocked and system.oversample > 1) {
-            vcd.beginClock(hub.counter, io.clock.last_interval.period);
-        }
+    const dt = Clock.secondsOf(interval) / @as(f64, @floatFromInt(system.oversample));
+    if (hub.capture) |capture| {
+        capture.noteSubstep(interval / system.oversample);
     }
+    const capture_start = if (hub.capture) |capture|
+        capture.metadataConst().time
+    else
+        Capture.Time{};
     var all_logic = true;
     for (&io.pins) |*pin| {
         if (pin.configuration.pad_mode != .logic) {
@@ -805,9 +808,13 @@ fn resolvePads(io: *IO, hub: *Hub, seconds: f64, clocked: bool) void {
                 input.* = receiver.output;
             }
         }
-        if (hub.vcd) |vcd| {
-            if (clocked and substep + 1 < system.oversample) {
-                vcd.capturePads(io, system, @intCast(substep + 1));
+        if (hub.capture) |capture| {
+            if (capture.metadata().status == .recording) {
+                const offset = (interval / system.oversample) * (substep + 1) +
+                    ((interval % system.oversample) * (substep + 1)) / system.oversample;
+                capture.metadata().time = capture_start;
+                capture.metadata().time.add(offset);
+                io.observeCapture(capture, levels);
             }
         }
     }
@@ -818,9 +825,35 @@ fn resolvePads(io: *IO, hub: *Hub, seconds: f64, clocked: bool) void {
     }
 }
 
+/// Snapshot physical pad levels and quantized voltages for capture initialization or observation.
+pub fn captureState(io: *const IO, levels: [64]Signal) Capture.InitialState {
+    var digital: [64]Capture.Level = undefined;
+    var analog: [64]u16 = undefined;
+    for (levels, 0..) |level, i| {
+        digital[i] = switch (level) {
+            .low => .low,
+            .high => .high,
+        };
+        const value = if (io.analog_pads.get(i)) |pad|
+            pad.voltage
+        else
+            0;
+        analog[i] = Capture.voltage(value);
+    }
+    return .{ .digital = digital, .analog = analog };
+}
+
+/// Publish the physical pad plane without observing routed receiver or cog-visible inputs.
+pub fn observeCapture(io: *const IO, capture: *Capture, levels: [64]Signal) void {
+    if (capture.metadataConst().status != .recording)
+        return;
+    const state = io.captureState(levels);
+    capture.observe(state.digital, state.analog);
+}
+
 /// Integrate asynchronous electrical state during a clock-not-ready interval without clocking ADCs or smart pins.
-pub fn advanceQuiet(io: *IO, hub: *Hub, seconds: f64) void {
-    io.resolvePads(hub, seconds, false);
+pub fn advanceQuiet(io: *IO, hub: *Hub, interval: u128) void {
+    io.resolvePads(hub, interval, false);
 }
 
 /// Compute SmartA/SmartB from the previous pad samples without advancing smart logic.

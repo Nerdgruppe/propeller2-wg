@@ -19,6 +19,7 @@ const serial_boot = @import("serial_boot.zig");
 const Terminal = @import("Terminal.zig");
 comptime {
     _ = Terminal;
+    _ = @import("capture_tests.zig");
 }
 
 pub const std_options: std.Options = .{ .log_level = .err };

@@ -289,7 +289,7 @@ pub fn step(clock: *Clock) Interval {
     const rate = 1 / period;
     if (rate != clock.cached_frequency) {
         clock.cached_frequency = rate;
-        // Preserve exact rational periods for integer-Hz ideal clocks and fractional carry in VCD.
+        // Preserve exact rational periods for integer-Hz ideal clocks and fractional carry in physical time.
         if (rate >= 1 and rate <= 1e12 and rate == @floor(rate)) {
             const hz: u64 = @intFromFloat(rate);
             clock.cached_period = (((@as(u128, 500_000_000_000_000) << 64) + hz / 2) / hz) * 2;

@@ -157,6 +157,7 @@ Currently, Propan does not support the "debug()" syntax from SPIN2
 - New rule for test suite things:
   - Allow empty `//?` lines
   - `//? run:` must be prefixed by an empty line
+- Simple GUI Terminal/Stream
 
 ### Analog Subsystem
 

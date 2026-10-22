@@ -12,6 +12,8 @@ pub const types = p2.types;
 const disassembly = @import("sim/disassemble.zig");
 pub const disassemble = disassembly.disassemble;
 pub const Frame = @import("sim/Frame.zig");
+pub const Capture = @import("sim/Capture.zig");
+pub const CaptureTime = @import("CaptureTime.zig");
 pub const inspect = @import("sim/inspect.zig");
 pub const Debugger = @import("sim/Debugger.zig");
 pub const access = @import("sim/access.zig");
@@ -25,7 +27,6 @@ pub const Cog = @import("sim/Cog.zig");
 pub const IO = @import("sim/IO.zig");
 pub const Pad = @import("sim/Pad.zig");
 pub const Pads = @import("sim/Pads.zig");
-const Vcd = @import("sim/Vcd.zig");
 pub const SystemConfiguration = @import("sim/SystemConfiguration.zig");
 pub const ClockConfiguration = @import("sim/ClockConfiguration.zig");
 
@@ -61,7 +62,9 @@ const CliArgs = struct {
     url: []const u8 = "ws://127.0.0.1:21591/",
     @"fast-io": bool = false,
     image: []const u8 = "",
-    vcd: []const u8 = "",
+    scope: []const u8 = "",
+    @"scope-memory": usize = Capture.default_memory / (1024 * 1024),
+    @"scope-overflow": Capture.Overflow = .stop,
 
     pub const shorthands = .{
         .h = "help",
@@ -70,7 +73,7 @@ const CliArgs = struct {
     };
 
     pub const meta = .{
-        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N] [--oversample N] [--fast-io] [--vcd PATH] [--boot] [--baudrate N] [-i IMAGE | --serve [--url URL]]",
+        .usage_summary = "[-h] [-v] [--sim ideal|realistic] [--rcfast CLOCK] [--rcslow CLOCK] [--crystal CLOCK] [--seed N] [--oversample N] [--fast-io] [--scope PATH] [--boot] [--baudrate N] [-i IMAGE | --serve [--url URL]]",
 
         .full_text =
         \\Windtunnel is a cycle-exact simulator for the Parallax Propeller 2.
@@ -87,11 +90,13 @@ const CliArgs = struct {
             .rcslow = "RCSLOW: same syntax, bare values in MHz (typical 0.020 MHz, realistic 12..30 kHz)",
             .crystal = "XI frequency: same syntax (default fixed 20 MHz; specify its actual tolerance explicitly)",
             .seed = "Drift RNG seed; omitted generates entropy, selected seed is printed to stderr",
-            .oversample = "Analog samples per system clock (positive integer, default 1); VCD records intermediate pads",
+            .oversample = "Analog samples per system clock (positive integer, default 1); Scope records intermediate pads",
             .url = "Listen URL for --serve (default ws://127.0.0.1:21591/)",
             .@"fast-io" = "Use virtual image-run TX (server: RX/TX); interactive input and ROM sessions retain UART timing",
             .image = "The image file which contains the hub data.",
-            .vcd = "Export digital and analog signals with physical simulation timestamps",
+            .scope = "Save all pin streams to a native Scope block image",
+            .@"scope-memory" = "Scope memory in MiB, minimum 2 (default 256)",
+            .@"scope-overflow" = "Scope retention: rolling or stop (default stop)",
         },
     };
 };
@@ -102,6 +107,16 @@ pub const ClockOptions = struct {
     crystal: ?Oscillator,
     seed: ?u64,
 };
+
+/// Save a retained Scope recording without exposing host file operations to simulator stepping.
+pub fn saveCapture(capture: *const Capture, io: std.Io, path: []const u8) !void {
+    const file = try std.Io.Dir.cwd().createFile(io, path, .{});
+    defer file.close(io);
+
+    var buffer: [4096]u8 = undefined;
+    var output = file.writer(io, &buffer);
+    try capture.writeNative(&output.interface);
+}
 
 /// Resolve source overrides and entropy once at process startup; always disclose the replay seed.
 pub fn configureClocks(init: std.process.Init, configuration: *SystemConfiguration, options: ClockOptions) void {
@@ -150,11 +165,21 @@ pub fn main(init: std.process.Init) !u8 {
         return 1;
     }
 
-    if (cli.options.vcd.len != 0 and cli.options.serve) {
-        std.log.err("--vcd cannot be combined with --serve", .{});
+    const scope_requested = cli.options.scope.len != 0;
+    if ((scope_requested and cli.options.serve) or
+        (!scope_requested and (cli.options.@"scope-memory" != 256 or cli.options.@"scope-overflow" != .stop)))
+    {
+        std.log.err("Scope requires --scope and is unavailable with --serve", .{});
         return 1;
     }
-
+    const scope_memory = std.math.mul(usize, cli.options.@"scope-memory", 1024 * 1024) catch {
+        std.log.err("Scope memory size overflows the host address space", .{});
+        return 1;
+    };
+    if (scope_requested and scope_memory < Capture.minimum_memory) {
+        std.log.err("Scope memory must be at least 2 MiB", .{});
+        return 1;
+    }
     if (cli.options.boot and cli.options.serve) {
         std.log.err("--boot cannot be combined with --serve", .{});
         return 1;
@@ -252,42 +277,26 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
-    const vcd_file: ?std.Io.File = if (cli.options.vcd.len != 0)
-        try std.Io.Dir.cwd().createFile(init.io, cli.options.vcd, .{})
+    var capture: ?Capture = if (scope_requested)
+        try Capture.init(init.gpa, scope_memory, cli.options.@"scope-overflow", hub.io.captureState(hub.io.pads))
     else
         null;
     defer {
-        if (vcd_file) |file| {
-            file.close(init.io);
+        if (capture) |*recording| {
+            hub.capture = null;
+            recording.deinit();
         }
     }
-
-    var vcd_buffer: [4096]u8 = undefined;
-    var vcd_writer = if (vcd_file) |file|
-        file.writer(init.io, &vcd_buffer)
-    else
-        undefined;
-    var vcd: Vcd = .{ .writer = &vcd_writer.interface };
-    defer {
-        if (vcd_file != null) {
-            vcd.finish();
-        }
-    }
-
-    if (vcd_file != null) {
-        hub.attachVcd(&vcd);
-        if (vcd.failure) |err| {
-            std.log.err("VCD export failed: {t}", .{err});
-            return 1;
-        }
+    if (capture) |*recording| {
+        hub.attachCapture(recording);
     }
     var terminal: Terminal = .{
         .io = init.io,
         .allocator = init.gpa,
         .output = &stdout.interface,
         .sink = &terminal_sink,
-        .vcd = if (vcd_file != null)
-            &vcd
+        .capture = if (capture) |*recording|
+            recording
         else
             null,
     };
@@ -333,18 +342,28 @@ pub fn main(init: std.process.Init) !u8 {
         };
         break :session completed;
     };
-    const exit_code = result catch |err| {
-        std.log.err("simulation stopped: {t}", .{err});
-        return 1;
-    };
-
-    if (vcd_file != null) {
-        vcd.finish();
-        if (vcd.failure) |err| {
-            std.log.err("VCD export failed: {t}", .{err});
-            return 1;
+    var export_failed = false;
+    if (capture) |*recording| {
+        if (recording.metadata().status == .recording) {
+            recording.metadata().status = .frozen;
         }
+        saveCapture(recording, init.io, cli.options.scope) catch |err| {
+            std.log.err("Scope export failed: {t}", .{err});
+            export_failed = true;
+        };
+        std.log.info("Scope {t}: retained {d}..{d} fs, {Bi:.2} / {Bi:.2}", .{
+            recording.metadataConst().status, recording.metadataConst().start, recording.metadataConst().end, recording.memoryUsed(), recording.memoryCapacity(),
+        });
     }
+    const exit_code = result catch |err| switch (err) {
+        error.CaptureFull => 0,
+        else => blk: {
+            std.log.err("simulation stopped: {t}", .{err});
+            break :blk @as(u8, 1);
+        },
+    };
+    if (export_failed)
+        return 1;
 
     stdout.interface.flush() catch |err| {
         std.log.err("writing stdout failed: {t}", .{err});

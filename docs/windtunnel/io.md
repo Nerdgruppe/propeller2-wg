@@ -26,7 +26,7 @@ It then runs explicit phases:
    the input/result pipelines.
 
 The cogs then execute and queue commands for future frames, followed by counter
-advancement and VCD capture of the completed clock. Physical receiver feedback updates within analog substeps; clocked feedback samples
+advancement and Scope capture of electrical substeps. Physical receiver feedback updates within analog substeps; clocked feedback samples
 once per system clock. Each RC pad advances through the configured analog substeps per frame. Commands queued outside `Hub.step()` use the same delivery delay; external
 driver changes are staged until the next frame.
 All smart-pin mode encodings have engines. Endpoint failures still record the issuing pin, cog, PC and instruction.
@@ -177,7 +177,7 @@ zig-out/bin/windtunnel --sim realistic --oversample 8 --serve
 `--sim` accepts only `ideal` or `realistic` and defaults to `ideal`.
 `--oversample N` selects a positive integer number of analog samples per system
 clock and defaults to 1. It applies to image runs and every fresh server session,
-with or without VCD recording.
+with or without Scope recording.
 
 Every Hub is initialized with an explicit host-side configuration:
 
@@ -312,7 +312,8 @@ logical routing, not an electrical connection between pads.
 ### Analog oversampling
 
 ```sh
-zig-out/bin/windtunnel --image program.bin --sim realistic --oversample 8 --vcd pads.vcd
+zig-out/bin/windtunnel --image program.bin --sim realistic --oversample 8 --scope pads.wtscope
+zig-out/bin/windtunnel-export --vcd pads.vcd pads.wtscope
 ```
 
 Each completed hub clock runs N electrical substeps. Cog/streamer/smart-DAC codes and
@@ -635,76 +636,27 @@ DIR samples gate reset and publication. These stages share the ordinary digital
 result return delay; no divider-specific readback rule is used.
 Serial mode timing is functional and has no physical waveform equivalence claim.
 
-## VCD
+## Signal capture
 
 ```sh
-zig-out/bin/windtunnel --image program.bin --sim realistic --vcd pins.vcd
+zig-out/bin/windtunnel --image program.bin --sim realistic --scope pins.wtscope
+zig-out/bin/windtunnel-export --inspect --vcd pins.vcd pins.wtscope
 ```
 
-The CLI supports VCD for image runs. For embedded use, create `sim/Vcd.zig` with
-a `*std.Io.Writer`, call `hub.attachVcd(&vcd)` before stepping, and `vcd.finish()`
-before closing the writer. Keep the exporter alive while attached. Export
-failures stop the simulator. Firmware reset detaches the exporter; attach a fresh
-exporter for a new trace. Finishing only flushes output and adds no clock edges.
+[Scope capture](scope.md) records all physical pad digital levels and quantized
+analog voltages in a bounded, shared block pool. It observes electrical substeps,
+including quiet clock acquisition. The GUI supplies visibility controls and a
+Scope window, and saves native captures through its Export path field. Capture
+time continues across chip resets without changing reboot execution behavior.
+See the linked document for storage invariants, retention, embedding, and the
+native block-image format.
 
-Signals use this hierarchy (waveform viewers may display `/` as `.`):
-
-| Path | Meaning |
-|---|---|
-| `windtunnel/CT` | 64-bit completed-clock counter |
-| `windtunnel/clk` | System clock, initially high, with a 50% duty cycle |
-| `windtunnel/cog0/alive` | Cog is running, starting, or waiting; false when stopped |
-| `windtunnel/cog0/starting` | Cog startup sequence is still in progress |
-| `windtunnel/cog0/DIRA` | Complete 32-bit direction register |
-| `windtunnel/cog0/DIRA/DIRA[10]` | Independently selectable direction bit 10 |
-| `windtunnel/io/DIRA` | Combined direction vector |
-| `windtunnel/io/DIRA/DIRA[10]` | Independently selectable combined direction bit |
-| `windtunnel/io/pads/p1/receiver` | Physical receiver output, including hysteresis/comparison |
-| `windtunnel/io/pads/p1/adc` | Raw ADC bit, emitted once per system clock |
-| `windtunnel/io/pads/p1/state` | Thresholded driven state: `0`, `1`, or disconnected `z` |
-| `windtunnel/io/pads/p1/voltage` | VCD real value in volts, including retained charge |
-
-Cog scopes run from `cog0` through `cog7`; pad scopes run from `p0` through `p63`.
-Both vectors and individual bits are available for OUTA/B, DIRA/B and INA/B in
-every cog scope and the combined I/O scope. Bit numbers are local to the
-register: DIRB bit 0 controls P32. Combined OUT is the raw OR of cog OUT registers.
-Pending cog starts do not set `alive` until delivered. Debugger pause and waits
-do not stop a cog or change its liveness.
-
-Pad `state` uses the drivers committed for its completed clock or analog substep, including
-WRPIN drive settings and physical output enable. It becomes `z` only when both
-internal and external drive are disconnected; a zero-current source also counts
-as disconnected. Capacitance and leakage alone do not constitute drive. A
-floating pad may retain a voltage or decay through leakage while its trace state
-remains `z`. Binary simulator reads still threshold that voltage normally. Before
-the first clock, pads are recorded as `z` and 0 V. Staging an external source does
-not change the trace until the next clock begins integrating it.
-
-Voltage is emitted independently of digital transitions, with round-trip precision.
-Nominal levels are 0–3.3 V, but values are **not clipped**: custom supplies,
-external overvoltage and negative voltages remain visible.
-
-Timestamps represent physical simulation time at a 1 fs resolution, independent
-of wall time. Each completed clock emits a falling midpoint and a rising boundary,
-then the completed snapshot at that rising boundary. With oversampling enabled,
-pad voltage and state changes also appear at `k/N` of the period. CT, cog liveness
-and register signals are emitted only at the completed-clock boundary. Odd factors
-still place the falling edge at exactly half a period, between neighboring samples.
-Unchanged pad samples add no redundant records. The first boundary has CT=1
-when starting from reset. The period uses exactly the frequency consumed by that
-clock's pad integration, including HUBSET changes. Fractional femtoseconds are
-carried across steps and frequency changes; timestamp quantization is below 1 fs
-at supported P2 frequencies and time remains monotonic across CT rollover.
-Tracing does not change execution timing or pad integration. Intermediate records
-stream without allocating buffers proportional to the oversampling factor. Export
-errors during a substep are reported when that hub clock completes.
-
-Hub performs full and intermediate captures automatically when attached with
-`attachVcd`. Direct callers of
-`vcd.capture(hub, period)` must supply every consecutive completed clock
-and its actual period as Q64 femtoseconds (`u128`). Use zero for an initial or
-same-counter snapshot. `advanceQuiet` advances physical time and pads without
-emitting CPU clock edges or incrementing CT. Skipping clocks returns
-`error.NonConsecutiveClock`; repeating an unchanged snapshot emits nothing.
-Host-only changes at the same counter are emitted at the existing timestamp
-without clock transitions. There are no fabricated transitions while paused.
+The simulator core produces native Scope recordings. The standalone
+`windtunnel-export` tool owns VCD conversion and file-writer failures, after
+simulation or from an existing saved dump. VCD signals are `scope/P0` through
+`scope/P63` for physical binary levels, `scope/P0_voltage` through
+`scope/P63_voltage` for quantized volts, matching `_clipped` signals (0=none,
+1=low, 2=high), and `scope/reset_count`. Floating pads retain their thresholded
+physical voltage as a binary level. Timestamps have 1 fs resolution and are
+rebased to the retained start, which is recorded in a comment. Constant channels
+export their initial descriptor value even when they own no sample blocks.

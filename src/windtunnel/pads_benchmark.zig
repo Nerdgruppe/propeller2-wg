@@ -1,6 +1,7 @@
 //! Reproducible electrical-kernel and complete Hub.step timings, with setup excluded.
 const std = @import("std");
 const Hub = @import("sim/Hub.zig");
+const Capture = @import("sim/Capture.zig");
 const Pad = @import("sim/Pad.zig");
 const Pads = @import("sim/Pads.zig");
 const Reference = @import("sim/pad_reference.zig");
@@ -166,7 +167,7 @@ fn electrical(io: std.Io, configuration: *const Hub.SystemConfiguration, workloa
 }
 
 /// Run real GPIO instruction loops and time completed Hub clocks only.
-fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Workload, steps: usize) !i96 {
+fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Workload, steps: usize, record: bool) !i96 {
     const hub = try std.heap.page_allocator.create(Hub);
     defer std.heap.page_allocator.destroy(hub);
 
@@ -223,6 +224,18 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
         if (notification != .normal)
             return error.SimulationFailed;
     }
+    var capture: ?Capture = if (record)
+        try Capture.init(std.heap.page_allocator, Capture.minimum_memory, .rolling, hub.io.captureState(hub.io.pads))
+    else
+        null;
+    defer {
+        if (capture) |*recording| {
+            recording.deinit();
+        }
+    }
+    if (capture) |*recording| {
+        hub.attachCapture(recording);
+    }
     std.mem.doNotOptimizeAway(hub);
     const start = std.Io.Timestamp.now(io, .awake).toNanoseconds();
     for (0..steps) |_| {
@@ -244,7 +257,7 @@ fn hubSteps(io: std.Io, configuration: Hub.SystemConfiguration, workload: Worklo
 /// Print machine-readable timing; repeat randomized paired invocations for meaningful medians.
 pub fn main(init: std.process.Init) !void {
     const args = try init.minimal.args.toSlice(init.arena.allocator());
-    if (args.len != 5)
+    if (args.len != 5 and args.len != 6)
         return error.ExpectedProfileWorkloadKernelSteps;
     const configuration: Hub.SystemConfiguration = if (std.mem.eql(u8, args[1], "ideal"))
         .ideal
@@ -256,11 +269,14 @@ pub fn main(init: std.process.Init) !void {
     const kernel = std.meta.stringToEnum(Kernel, args[3]) orelse return error.InvalidKernel;
     if (workload.isMemory() and kernel != .hub)
         return error.MemoryWorkloadRequiresHubKernel;
+    const record = args.len == 6;
+    if (record and (!std.mem.eql(u8, args[5], "capture") or kernel != .hub))
+        return error.ExpectedOptionalHubCapture;
     const steps = try std.fmt.parseInt(usize, args[4], 10);
     if (steps == 0)
         return error.InvalidSteps;
     const elapsed = switch (kernel) {
-        .hub => try hubSteps(init.io, configuration, workload, steps),
+        .hub => try hubSteps(init.io, configuration, workload, steps, record),
         .scalar => try electrical(init.io, &configuration, workload, steps, .scalar),
         .scalar_small_sort => try electrical(init.io, &configuration, workload, steps, .scalar_small_sort),
         .simd => try electrical(init.io, &configuration, workload, steps, .simd),

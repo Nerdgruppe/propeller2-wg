@@ -13,7 +13,9 @@ The default URL is `ws://127.0.0.1:21591/`. Listen URLs accept an IPv4/IPv6 addr
 a root path, and the `ws` scheme. An explicitly supplied URL without a port uses port 80.
 `--serve` cannot be combined with `--image`. Regular host logs are printed
 in server mode; `--verbose` also enables debug logging.
-Completed-edge issue and service diagnostics go to stderr; VCD remains the signal export format.
+Completed-edge issue and service diagnostics go to stderr. Signal recording is
+available in the CLI/GUI through native Scope captures; `windtunnel-export` converts
+saved captures to VCD.
 Add `--sim realistic` to initialize every fresh session with datasheet-based pad and [clock](clocks.md)
 characteristics; the default is `--sim ideal`. The selected configuration survives
 firmware resets. Add `--fast-io` for single-clock serial endpoint throughput in every fresh session;

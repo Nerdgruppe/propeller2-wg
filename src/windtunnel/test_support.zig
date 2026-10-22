@@ -33,32 +33,18 @@ pub fn needsAttention(hub: *const Hub) bool {
     return hub.issues.len != 0 or serviceFailed(hub);
 }
 
-/// Inspect sticky endpoint and export failures without performing I/O.
-pub fn serviceFailed(hub: *const Hub) bool {
-    if (hub.vcd) |vcd| {
-        if (vcd.failure != null)
-            return true;
-    }
-    return ioFailed(&hub.io);
-}
-
 /// Print all reports and service errors from the completed edge.
 pub fn diagnostics(hub: *const Hub, writer: *std.Io.Writer) std.Io.Writer.Error!void {
     for (0..hub.issues.len) |issue_index| {
         const issue = hub.issues.at(issue_index);
         try writer.print("{f}\n", .{issue});
     }
-    if (hub.vcd) |vcd| {
-        if (vcd.failure) |err| {
-            try writer.print("VCD service: {t}\n", .{err});
-        }
-    }
     try ioDiagnostics(&hub.io, writer);
 }
 
 /// Inspect endpoint failures without changing or retrying their I/O state.
-fn ioFailed(io: *const IO) bool {
-    for (&io.pins) |*pin| {
+pub fn serviceFailed(hub: *const Hub) bool {
+    for (&hub.io.pins) |*pin| {
         const source = switch (pin.smart.rx_mode) {
             .exact => null,
             .emulated, .virtual => |value| value,

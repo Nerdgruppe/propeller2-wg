@@ -10,7 +10,7 @@ Install [Zig 0.16](https://ziglang.org/download/#release-0.16.0), then build the
 [user@machine propeller2-wg]$ zig build -Doptimize=ReleaseSafe
 [user@machine propeller2-wg]$
 [user@machine propeller2-wg]$ ls ./zig-out/bin/
-propan  propan-lsp  turboprop  windtunnel  windtunnel-gui
+propan  propan-lsp  turboprop  windtunnel  windtunnel-gui  windtunnel-export
 [user@machine propeller2-wg]$ ./zig-out/bin/propan --help
 Usage: ./zig-out/bin/propan [-h] [-o <output>] <sources...>
 
@@ -76,6 +76,10 @@ memory and pins. The Hub inspector provides ideal/realistic system presets and
 editable electrical parameters; apply them by reinitializing the simulation.
 See [the I/O documentation](docs/windtunnel/io.md#initialization-time-system-configuration).
 A desktop session with OpenGL 3.3 is required.
+
+`windtunnel-export pins.wtscope` inspects a saved Scope dump; add `--vcd pins.vcd`
+to convert it. See [Scope capture and export](docs/windtunnel/scope.md) for storage
+accounting and CLI options.
 
 Use `windtunnel --sim ideal|realistic --image program.bin` to select an electrical
 profile (default: ideal). The same option applies to server sessions.

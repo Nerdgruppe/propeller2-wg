@@ -2,7 +2,7 @@
 const std = @import("std");
 const Hub = @import("sim/Hub.zig");
 const Issue = @import("sim/Issue.zig");
-const Vcd = @import("sim/Vcd.zig");
+const Capture = @import("sim/Capture.zig");
 const smart_pin = @import("sim/smart_pin.zig");
 const serial_boot = @import("serial_boot.zig");
 const Terminal = @This();
@@ -11,7 +11,7 @@ io: std.Io,
 allocator: std.mem.Allocator,
 output: *std.Io.Writer,
 sink: *const smart_pin.DataSink,
-vcd: ?*const Vcd,
+capture: ?*const Capture,
 input: std.ArrayList(u8) = .empty,
 input_position: usize = 0,
 input_mutex: std.Io.Mutex = .init,
@@ -238,14 +238,10 @@ fn warning(writer: *std.Io.Writer, issue: Issue) !void {
 }
 
 /// Apply the CLI's policy after every edge, including edges advanced by the serial host.
-/// Only the CLI-owned sink and selected VCD export are checked; warnings keep execution running.
+/// The CLI checks owned adapters and capture capacity; traps take precedence over a full capture.
 pub fn afterStep(terminal: *Terminal, hub: *const Hub) !void {
     if (terminal.sink.failure) |err|
         return err;
-    if (terminal.vcd) |vcd| {
-        if (vcd.failure) |err|
-            return err;
-    }
     var trapped = false;
     for (0..hub.issues.len) |issue_index| {
         const issue = hub.issues.at(issue_index);
@@ -264,6 +260,10 @@ pub fn afterStep(terminal: *Terminal, hub: *const Hub) !void {
     }
     if (trapped)
         return error.SimulationTrap;
+    if (terminal.capture) |capture| {
+        if (capture.metadataConst().status == .full)
+            return error.CaptureFull;
+    }
 }
 
 pub const Session = struct {
@@ -356,7 +356,7 @@ test "terminal settling warnings remain inline and the application runs to compl
         .allocator = std.testing.allocator,
         .output = &output,
         .sink = &sink,
-        .vcd = null,
+        .capture = null,
     };
     defer terminal.deinit();
 
@@ -386,7 +386,7 @@ test "terminal warnings are inline traps start a line and only selected adapters
         .allocator = std.testing.allocator,
         .output = &output,
         .sink = &sink,
-        .vcd = null,
+        .capture = null,
     };
     defer terminal.deinit();
 
@@ -394,11 +394,17 @@ test "terminal warnings are inline traps start a line and only selected adapters
     try terminal.afterStep(hub);
     try std.testing.expectEqualStrings("[unsupported HUBSET $30000000]", output.buffered());
     hub.issues.clear();
+    var capture = try Capture.init(std.testing.allocator, Capture.minimum_memory, .stop, hub.io.captureState(hub.io.pads));
+    defer capture.deinit();
+
+    capture.metadata().status = .full;
+    terminal.capture = &capture;
     hub.report(.invalid_encoding, .{ .cog = 0, .pc = 42, .instruction = 123 });
     try std.testing.expectError(error.SimulationTrap, terminal.afterStep(hub));
     try std.testing.expect(std.mem.indexOf(u8, output.buffered(), "]\r\nclock ") != null);
     try std.testing.expect(std.mem.endsWith(u8, output.buffered(), "\r\n"));
     hub.issues.clear();
+    try std.testing.expectError(error.CaptureFull, terminal.afterStep(hub));
     sink.failure = error.WriteFailed;
     try std.testing.expectError(error.WriteFailed, terminal.afterStep(hub));
 }
